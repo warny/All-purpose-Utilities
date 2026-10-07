@@ -9925,6 +9925,20 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.WolofOrdinalLanguageSpecifics.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.WolofOrdinalLanguageSpecifics.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.WolofOrdinalLanguageSpecifics",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.WolofOrdinalLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Domain guard for Wolof ordinals (NTS-16). Every supported value is produced by the declarative XML\npipeline (the suppletive <code>bu njëkk</code> for 1 and the <code>-eel</code> suffix on the last element of the\ncardinal for 2-999); this plugin never builds a form itself and only rejects the values whose\nordinal would rest on an unsettled base.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.NumberToString.YearFormatOptions.yml",
       "output": {
         ".html": {
@@ -9977,7 +9991,7 @@
       "Uid": null,
       "IsMRef": true,
       "Title": "Utils.NumberToString.ZeroOrdinalUnsupportedLanguageSpecifics",
-      "Summary": "<p sourcefile=\"api/Utils.NumberToString.ZeroOrdinalUnsupportedLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Shared domain guard for languages whose productive ordinal suffix or prefix would mechanically\nform an ordinal of zero that no consulted source attests (NTS-14: Catalan &quot;zeroè&quot;, Wolof\n&quot;seroël&quot;, Ewe &quot;etsõ zero&quot;). Zero is rejected with <xref href=\"System.NotSupportedException\" data-throw-if-not-resolved=\"false\"></xref>, like the\nlanguages without any zero formation (NTS-12); every other value falls through to the\ndeclarative ordinal pipeline unchanged. Builds no text and finalizes nothing.</p>\n"
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.ZeroOrdinalUnsupportedLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Shared domain guard for languages whose productive ordinal suffix or prefix would mechanically\nform an ordinal of zero that no consulted source attests (NTS-14: Catalan &quot;zeroè&quot;; Wolof now\nuses <xref href=\"Utils.NumberToString.WolofOrdinalLanguageSpecifics\" data-throw-if-not-resolved=\"false\"></xref> and Ewe has no ordinals since NTS-16). Zero is rejected with <xref href=\"System.NotSupportedException\" data-throw-if-not-resolved=\"false\"></xref>, like the\nlanguages without any zero formation (NTS-12); every other value falls through to the\ndeclarative ordinal pipeline unchanged. Builds no text and finalizes nothing.</p>\n"
     },
     {
       "type": "ManagedReference",

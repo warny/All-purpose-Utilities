@@ -682,6 +682,14 @@ and the list of variant rules.</p>
 </dd>
     </dl>
     <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.WolofOrdinalLanguageSpecifics.html">WolofOrdinalLanguageSpecifics</a></dt>
+      <dd><p>Domain guard for Wolof ordinals (NTS-16). Every supported value is produced by the declarative XML
+pipeline (the suppletive <code>bu njëkk</code> for 1 and the <code>-eel</code> suffix on the last element of the
+cardinal for 2-999); this plugin never builds a form itself and only rejects the values whose
+ordinal would rest on an unsettled base.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
       <dt><a class="xref" href="Utils.NumberToString.YearFormatOptions.html">YearFormatOptions</a></dt>
       <dd><p>Immutable year-format options that drive <a class="xref" href="Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_ConvertYear_System_Int32_">ConvertYear(int)</a>.</p>
 </dd>
@@ -700,8 +708,8 @@ When present, years within any declared <a class="xref" href="Utils.NumberToStri
     <dl class="jumplist">
       <dt><a class="xref" href="Utils.NumberToString.ZeroOrdinalUnsupportedLanguageSpecifics.html">ZeroOrdinalUnsupportedLanguageSpecifics</a></dt>
       <dd><p>Shared domain guard for languages whose productive ordinal suffix or prefix would mechanically
-form an ordinal of zero that no consulted source attests (NTS-14: Catalan &quot;zeroè&quot;, Wolof
-&quot;seroël&quot;, Ewe &quot;etsõ zero&quot;). Zero is rejected with <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.notsupportedexception">NotSupportedException</a>, like the
+form an ordinal of zero that no consulted source attests (NTS-14: Catalan &quot;zeroè&quot;; Wolof now
+uses <a class="xref" href="Utils.NumberToString.WolofOrdinalLanguageSpecifics.html">WolofOrdinalLanguageSpecifics</a> and Ewe has no ordinals since NTS-16). Zero is rejected with <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.notsupportedexception">NotSupportedException</a>, like the
 languages without any zero formation (NTS-12); every other value falls through to the
 declarative ordinal pipeline unchanged. Builds no text and finalizes nothing.</p>
 </dd>

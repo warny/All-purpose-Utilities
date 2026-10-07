@@ -70303,6 +70303,53 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.VariantsType.Variants
   nameWithType: VariantsType.Variants
+- uid: Utils.NumberToString.WolofOrdinalLanguageSpecifics
+  name: WolofOrdinalLanguageSpecifics
+  href: api/Utils.NumberToString.WolofOrdinalLanguageSpecifics.html
+  commentId: T:Utils.NumberToString.WolofOrdinalLanguageSpecifics
+  fullName: Utils.NumberToString.WolofOrdinalLanguageSpecifics
+  nameWithType: WolofOrdinalLanguageSpecifics
+- uid: Utils.NumberToString.WolofOrdinalLanguageSpecifics.FinalizeWriting(System.String,System.String)
+  name: FinalizeWriting(string, string)
+  href: api/Utils.NumberToString.WolofOrdinalLanguageSpecifics.html#Utils_NumberToString_WolofOrdinalLanguageSpecifics_FinalizeWriting_System_String_System_String_
+  commentId: M:Utils.NumberToString.WolofOrdinalLanguageSpecifics.FinalizeWriting(System.String,System.String)
+  name.vb: FinalizeWriting(String, String)
+  fullName: Utils.NumberToString.WolofOrdinalLanguageSpecifics.FinalizeWriting(string, string)
+  fullName.vb: Utils.NumberToString.WolofOrdinalLanguageSpecifics.FinalizeWriting(String, String)
+  nameWithType: WolofOrdinalLanguageSpecifics.FinalizeWriting(string, string)
+  nameWithType.vb: WolofOrdinalLanguageSpecifics.FinalizeWriting(String, String)
+- uid: Utils.NumberToString.WolofOrdinalLanguageSpecifics.FinalizeWriting*
+  name: FinalizeWriting
+  href: api/Utils.NumberToString.WolofOrdinalLanguageSpecifics.html#Utils_NumberToString_WolofOrdinalLanguageSpecifics_FinalizeWriting_
+  commentId: Overload:Utils.NumberToString.WolofOrdinalLanguageSpecifics.FinalizeWriting
+  isSpec: "True"
+  fullName: Utils.NumberToString.WolofOrdinalLanguageSpecifics.FinalizeWriting
+  nameWithType: WolofOrdinalLanguageSpecifics.FinalizeWriting
+- uid: Utils.NumberToString.WolofOrdinalLanguageSpecifics.TryConvertOrdinal(System.Int32,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String@)
+  name: TryConvertOrdinal(int, IReadOnlyDictionary<string, string>, out string?)
+  href: api/Utils.NumberToString.WolofOrdinalLanguageSpecifics.html#Utils_NumberToString_WolofOrdinalLanguageSpecifics_TryConvertOrdinal_System_Int32_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__System_String__
+  commentId: M:Utils.NumberToString.WolofOrdinalLanguageSpecifics.TryConvertOrdinal(System.Int32,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String@)
+  name.vb: TryConvertOrdinal(Integer, IReadOnlyDictionary(Of String, String), String)
+  fullName: Utils.NumberToString.WolofOrdinalLanguageSpecifics.TryConvertOrdinal(int, System.Collections.Generic.IReadOnlyDictionary<string, string>, out string?)
+  fullName.vb: Utils.NumberToString.WolofOrdinalLanguageSpecifics.TryConvertOrdinal(Integer, System.Collections.Generic.IReadOnlyDictionary(Of String, String), String)
+  nameWithType: WolofOrdinalLanguageSpecifics.TryConvertOrdinal(int, IReadOnlyDictionary<string, string>, out string?)
+  nameWithType.vb: WolofOrdinalLanguageSpecifics.TryConvertOrdinal(Integer, IReadOnlyDictionary(Of String, String), String)
+- uid: Utils.NumberToString.WolofOrdinalLanguageSpecifics.TryConvertOrdinal(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String@)
+  name: TryConvertOrdinal(long, IReadOnlyDictionary<string, string>, out string?)
+  href: api/Utils.NumberToString.WolofOrdinalLanguageSpecifics.html#Utils_NumberToString_WolofOrdinalLanguageSpecifics_TryConvertOrdinal_System_Int64_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__System_String__
+  commentId: M:Utils.NumberToString.WolofOrdinalLanguageSpecifics.TryConvertOrdinal(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String@)
+  name.vb: TryConvertOrdinal(Long, IReadOnlyDictionary(Of String, String), String)
+  fullName: Utils.NumberToString.WolofOrdinalLanguageSpecifics.TryConvertOrdinal(long, System.Collections.Generic.IReadOnlyDictionary<string, string>, out string?)
+  fullName.vb: Utils.NumberToString.WolofOrdinalLanguageSpecifics.TryConvertOrdinal(Long, System.Collections.Generic.IReadOnlyDictionary(Of String, String), String)
+  nameWithType: WolofOrdinalLanguageSpecifics.TryConvertOrdinal(long, IReadOnlyDictionary<string, string>, out string?)
+  nameWithType.vb: WolofOrdinalLanguageSpecifics.TryConvertOrdinal(Long, IReadOnlyDictionary(Of String, String), String)
+- uid: Utils.NumberToString.WolofOrdinalLanguageSpecifics.TryConvertOrdinal*
+  name: TryConvertOrdinal
+  href: api/Utils.NumberToString.WolofOrdinalLanguageSpecifics.html#Utils_NumberToString_WolofOrdinalLanguageSpecifics_TryConvertOrdinal_
+  commentId: Overload:Utils.NumberToString.WolofOrdinalLanguageSpecifics.TryConvertOrdinal
+  isSpec: "True"
+  fullName: Utils.NumberToString.WolofOrdinalLanguageSpecifics.TryConvertOrdinal
+  nameWithType: WolofOrdinalLanguageSpecifics.TryConvertOrdinal
 - uid: Utils.NumberToString.YearFormatOptions
   name: YearFormatOptions
   href: api/Utils.NumberToString.YearFormatOptions.html
