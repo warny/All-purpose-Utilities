@@ -62373,6 +62373,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.GroupsListType.Groups
   nameWithType: GroupsListType.Groups
+- uid: Utils.NumberToString.GroupsListType.OnScale
+  name: OnScale
+  href: api/Utils.NumberToString.GroupsListType.html#Utils_NumberToString_GroupsListType_OnScale
+  commentId: P:Utils.NumberToString.GroupsListType.OnScale
+  fullName: Utils.NumberToString.GroupsListType.OnScale
+  nameWithType: GroupsListType.OnScale
+- uid: Utils.NumberToString.GroupsListType.OnScale*
+  name: OnScale
+  href: api/Utils.NumberToString.GroupsListType.html#Utils_NumberToString_GroupsListType_OnScale_
+  commentId: Overload:Utils.NumberToString.GroupsListType.OnScale
+  isSpec: "True"
+  fullName: Utils.NumberToString.GroupsListType.OnScale
+  nameWithType: GroupsListType.OnScale
 - uid: Utils.NumberToString.HungarianOrdinalLanguageSpecifics
   name: HungarianOrdinalLanguageSpecifics
   href: api/Utils.NumberToString.HungarianOrdinalLanguageSpecifics.html
@@ -63474,6 +63487,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.LanguageType.Multiplicatives
   nameWithType: LanguageType.Multiplicatives
+- uid: Utils.NumberToString.LanguageType.MultiplierPosition
+  name: MultiplierPosition
+  href: api/Utils.NumberToString.LanguageType.html#Utils_NumberToString_LanguageType_MultiplierPosition
+  commentId: P:Utils.NumberToString.LanguageType.MultiplierPosition
+  fullName: Utils.NumberToString.LanguageType.MultiplierPosition
+  nameWithType: LanguageType.MultiplierPosition
+- uid: Utils.NumberToString.LanguageType.MultiplierPosition*
+  name: MultiplierPosition
+  href: api/Utils.NumberToString.LanguageType.html#Utils_NumberToString_LanguageType_MultiplierPosition_
+  commentId: Overload:Utils.NumberToString.LanguageType.MultiplierPosition
+  isSpec: "True"
+  fullName: Utils.NumberToString.LanguageType.MultiplierPosition
+  nameWithType: LanguageType.MultiplierPosition
 - uid: Utils.NumberToString.LanguageType.NumberScale
   name: NumberScale
   href: api/Utils.NumberToString.LanguageType.html#Utils_NumberToString_LanguageType_NumberScale
@@ -63552,6 +63578,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.LanguageType.ScaleConnectorThresholdString
   nameWithType: LanguageType.ScaleConnectorThresholdString
+- uid: Utils.NumberToString.LanguageType.ScaleScopedGroups
+  name: ScaleScopedGroups
+  href: api/Utils.NumberToString.LanguageType.html#Utils_NumberToString_LanguageType_ScaleScopedGroups
+  commentId: P:Utils.NumberToString.LanguageType.ScaleScopedGroups
+  fullName: Utils.NumberToString.LanguageType.ScaleScopedGroups
+  nameWithType: LanguageType.ScaleScopedGroups
+- uid: Utils.NumberToString.LanguageType.ScaleScopedGroups*
+  name: ScaleScopedGroups
+  href: api/Utils.NumberToString.LanguageType.html#Utils_NumberToString_LanguageType_ScaleScopedGroups_
+  commentId: Overload:Utils.NumberToString.LanguageType.ScaleScopedGroups
+  isSpec: "True"
+  fullName: Utils.NumberToString.LanguageType.ScaleScopedGroups
+  nameWithType: LanguageType.ScaleScopedGroups
 - uid: Utils.NumberToString.LanguageType.Separator
   name: Separator
   href: api/Utils.NumberToString.LanguageType.html#Utils_NumberToString_LanguageType_Separator
@@ -63818,6 +63857,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.LanguageXmlModel.Groups
   nameWithType: LanguageXmlModel.Groups
+- uid: Utils.NumberToString.LanguageXmlModel.GroupsElements
+  name: GroupsElements
+  href: api/Utils.NumberToString.LanguageXmlModel.html#Utils_NumberToString_LanguageXmlModel_GroupsElements
+  commentId: P:Utils.NumberToString.LanguageXmlModel.GroupsElements
+  fullName: Utils.NumberToString.LanguageXmlModel.GroupsElements
+  nameWithType: LanguageXmlModel.GroupsElements
+- uid: Utils.NumberToString.LanguageXmlModel.GroupsElements*
+  name: GroupsElements
+  href: api/Utils.NumberToString.LanguageXmlModel.html#Utils_NumberToString_LanguageXmlModel_GroupsElements_
+  commentId: Overload:Utils.NumberToString.LanguageXmlModel.GroupsElements
+  isSpec: "True"
+  fullName: Utils.NumberToString.LanguageXmlModel.GroupsElements
+  nameWithType: LanguageXmlModel.GroupsElements
 - uid: Utils.NumberToString.LanguageXmlModel.IntraGroupConnector
   name: IntraGroupConnector
   href: api/Utils.NumberToString.LanguageXmlModel.html#Utils_NumberToString_LanguageXmlModel_IntraGroupConnector
@@ -63896,6 +63948,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.LanguageXmlModel.Multiplicatives
   nameWithType: LanguageXmlModel.Multiplicatives
+- uid: Utils.NumberToString.LanguageXmlModel.MultiplierPosition
+  name: MultiplierPosition
+  href: api/Utils.NumberToString.LanguageXmlModel.html#Utils_NumberToString_LanguageXmlModel_MultiplierPosition
+  commentId: P:Utils.NumberToString.LanguageXmlModel.MultiplierPosition
+  fullName: Utils.NumberToString.LanguageXmlModel.MultiplierPosition
+  nameWithType: LanguageXmlModel.MultiplierPosition
+- uid: Utils.NumberToString.LanguageXmlModel.MultiplierPosition*
+  name: MultiplierPosition
+  href: api/Utils.NumberToString.LanguageXmlModel.html#Utils_NumberToString_LanguageXmlModel_MultiplierPosition_
+  commentId: Overload:Utils.NumberToString.LanguageXmlModel.MultiplierPosition
+  isSpec: "True"
+  fullName: Utils.NumberToString.LanguageXmlModel.MultiplierPosition
+  nameWithType: LanguageXmlModel.MultiplierPosition
 - uid: Utils.NumberToString.LanguageXmlModel.NumberScale
   name: NumberScale
   href: api/Utils.NumberToString.LanguageXmlModel.html#Utils_NumberToString_LanguageXmlModel_NumberScale
@@ -66568,6 +66633,32 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberToStringConverter.ScaleForms
   nameWithType: NumberToStringConverter.ScaleForms
+- uid: Utils.NumberToString.NumberToStringConverter.ScaleMultiplierPosition
+  name: ScaleMultiplierPosition
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_ScaleMultiplierPosition
+  commentId: P:Utils.NumberToString.NumberToStringConverter.ScaleMultiplierPosition
+  fullName: Utils.NumberToString.NumberToStringConverter.ScaleMultiplierPosition
+  nameWithType: NumberToStringConverter.ScaleMultiplierPosition
+- uid: Utils.NumberToString.NumberToStringConverter.ScaleMultiplierPosition*
+  name: ScaleMultiplierPosition
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_ScaleMultiplierPosition_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverter.ScaleMultiplierPosition
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverter.ScaleMultiplierPosition
+  nameWithType: NumberToStringConverter.ScaleMultiplierPosition
+- uid: Utils.NumberToString.NumberToStringConverter.ScaleScopedGroups
+  name: ScaleScopedGroups
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_ScaleScopedGroups
+  commentId: P:Utils.NumberToString.NumberToStringConverter.ScaleScopedGroups
+  fullName: Utils.NumberToString.NumberToStringConverter.ScaleScopedGroups
+  nameWithType: NumberToStringConverter.ScaleScopedGroups
+- uid: Utils.NumberToString.NumberToStringConverter.ScaleScopedGroups*
+  name: ScaleScopedGroups
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_ScaleScopedGroups_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverter.ScaleScopedGroups
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverter.ScaleScopedGroups
+  nameWithType: NumberToStringConverter.ScaleScopedGroups
 - uid: Utils.NumberToString.NumberToStringConverter.Separator
   name: Separator
   href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_Separator
@@ -67773,6 +67864,32 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberToStringConverterOptions.ScaleForms
   nameWithType: NumberToStringConverterOptions.ScaleForms
+- uid: Utils.NumberToString.NumberToStringConverterOptions.ScaleMultiplierPosition
+  name: ScaleMultiplierPosition
+  href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_ScaleMultiplierPosition
+  commentId: P:Utils.NumberToString.NumberToStringConverterOptions.ScaleMultiplierPosition
+  fullName: Utils.NumberToString.NumberToStringConverterOptions.ScaleMultiplierPosition
+  nameWithType: NumberToStringConverterOptions.ScaleMultiplierPosition
+- uid: Utils.NumberToString.NumberToStringConverterOptions.ScaleMultiplierPosition*
+  name: ScaleMultiplierPosition
+  href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_ScaleMultiplierPosition_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverterOptions.ScaleMultiplierPosition
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverterOptions.ScaleMultiplierPosition
+  nameWithType: NumberToStringConverterOptions.ScaleMultiplierPosition
+- uid: Utils.NumberToString.NumberToStringConverterOptions.ScaleScopedGroups
+  name: ScaleScopedGroups
+  href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_ScaleScopedGroups
+  commentId: P:Utils.NumberToString.NumberToStringConverterOptions.ScaleScopedGroups
+  fullName: Utils.NumberToString.NumberToStringConverterOptions.ScaleScopedGroups
+  nameWithType: NumberToStringConverterOptions.ScaleScopedGroups
+- uid: Utils.NumberToString.NumberToStringConverterOptions.ScaleScopedGroups*
+  name: ScaleScopedGroups
+  href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_ScaleScopedGroups_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverterOptions.ScaleScopedGroups
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverterOptions.ScaleScopedGroups
+  nameWithType: NumberToStringConverterOptions.ScaleScopedGroups
 - uid: Utils.NumberToString.NumberToStringConverterOptions.Separator
   name: Separator
   href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_Separator
@@ -68967,6 +69084,75 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.ScaleFormEntry.Scale
   nameWithType: ScaleFormEntry.Scale
+- uid: Utils.NumberToString.ScaleMultiplierPosition
+  name: ScaleMultiplierPosition
+  href: api/Utils.NumberToString.ScaleMultiplierPosition.html
+  commentId: T:Utils.NumberToString.ScaleMultiplierPosition
+  fullName: Utils.NumberToString.ScaleMultiplierPosition
+  nameWithType: ScaleMultiplierPosition
+- uid: Utils.NumberToString.ScaleMultiplierPosition.AfterScale
+  name: AfterScale
+  href: api/Utils.NumberToString.ScaleMultiplierPosition.html#Utils_NumberToString_ScaleMultiplierPosition_AfterScale
+  commentId: F:Utils.NumberToString.ScaleMultiplierPosition.AfterScale
+  fullName: Utils.NumberToString.ScaleMultiplierPosition.AfterScale
+  nameWithType: ScaleMultiplierPosition.AfterScale
+- uid: Utils.NumberToString.ScaleMultiplierPosition.BeforeScale
+  name: BeforeScale
+  href: api/Utils.NumberToString.ScaleMultiplierPosition.html#Utils_NumberToString_ScaleMultiplierPosition_BeforeScale
+  commentId: F:Utils.NumberToString.ScaleMultiplierPosition.BeforeScale
+  fullName: Utils.NumberToString.ScaleMultiplierPosition.BeforeScale
+  nameWithType: ScaleMultiplierPosition.BeforeScale
+- uid: Utils.NumberToString.ScaleScopedGroups
+  name: ScaleScopedGroups
+  href: api/Utils.NumberToString.ScaleScopedGroups.html
+  commentId: T:Utils.NumberToString.ScaleScopedGroups
+  fullName: Utils.NumberToString.ScaleScopedGroups
+  nameWithType: ScaleScopedGroups
+- uid: Utils.NumberToString.ScaleScopedGroups.#ctor(System.String,System.Collections.Generic.IReadOnlyDictionary{System.Int32,Utils.NumberToString.DigitListType})
+  name: ScaleScopedGroups(string, IReadOnlyDictionary<int, DigitListType>)
+  href: api/Utils.NumberToString.ScaleScopedGroups.html#Utils_NumberToString_ScaleScopedGroups__ctor_System_String_System_Collections_Generic_IReadOnlyDictionary_System_Int32_Utils_NumberToString_DigitListType__
+  commentId: M:Utils.NumberToString.ScaleScopedGroups.#ctor(System.String,System.Collections.Generic.IReadOnlyDictionary{System.Int32,Utils.NumberToString.DigitListType})
+  name.vb: New(String, IReadOnlyDictionary(Of Integer, DigitListType))
+  fullName: Utils.NumberToString.ScaleScopedGroups.ScaleScopedGroups(string, System.Collections.Generic.IReadOnlyDictionary<int, Utils.NumberToString.DigitListType>)
+  fullName.vb: Utils.NumberToString.ScaleScopedGroups.New(String, System.Collections.Generic.IReadOnlyDictionary(Of Integer, Utils.NumberToString.DigitListType))
+  nameWithType: ScaleScopedGroups.ScaleScopedGroups(string, IReadOnlyDictionary<int, DigitListType>)
+  nameWithType.vb: ScaleScopedGroups.New(String, IReadOnlyDictionary(Of Integer, DigitListType))
+- uid: Utils.NumberToString.ScaleScopedGroups.#ctor*
+  name: ScaleScopedGroups
+  href: api/Utils.NumberToString.ScaleScopedGroups.html#Utils_NumberToString_ScaleScopedGroups__ctor_
+  commentId: Overload:Utils.NumberToString.ScaleScopedGroups.#ctor
+  isSpec: "True"
+  name.vb: New
+  fullName: Utils.NumberToString.ScaleScopedGroups.ScaleScopedGroups
+  fullName.vb: Utils.NumberToString.ScaleScopedGroups.New
+  nameWithType: ScaleScopedGroups.ScaleScopedGroups
+  nameWithType.vb: ScaleScopedGroups.New
+- uid: Utils.NumberToString.ScaleScopedGroups.Groups
+  name: Groups
+  href: api/Utils.NumberToString.ScaleScopedGroups.html#Utils_NumberToString_ScaleScopedGroups_Groups
+  commentId: P:Utils.NumberToString.ScaleScopedGroups.Groups
+  fullName: Utils.NumberToString.ScaleScopedGroups.Groups
+  nameWithType: ScaleScopedGroups.Groups
+- uid: Utils.NumberToString.ScaleScopedGroups.Groups*
+  name: Groups
+  href: api/Utils.NumberToString.ScaleScopedGroups.html#Utils_NumberToString_ScaleScopedGroups_Groups_
+  commentId: Overload:Utils.NumberToString.ScaleScopedGroups.Groups
+  isSpec: "True"
+  fullName: Utils.NumberToString.ScaleScopedGroups.Groups
+  nameWithType: ScaleScopedGroups.Groups
+- uid: Utils.NumberToString.ScaleScopedGroups.OnScale
+  name: OnScale
+  href: api/Utils.NumberToString.ScaleScopedGroups.html#Utils_NumberToString_ScaleScopedGroups_OnScale
+  commentId: P:Utils.NumberToString.ScaleScopedGroups.OnScale
+  fullName: Utils.NumberToString.ScaleScopedGroups.OnScale
+  nameWithType: ScaleScopedGroups.OnScale
+- uid: Utils.NumberToString.ScaleScopedGroups.OnScale*
+  name: OnScale
+  href: api/Utils.NumberToString.ScaleScopedGroups.html#Utils_NumberToString_ScaleScopedGroups_OnScale_
+  commentId: Overload:Utils.NumberToString.ScaleScopedGroups.OnScale
+  isSpec: "True"
+  fullName: Utils.NumberToString.ScaleScopedGroups.OnScale
+  nameWithType: ScaleScopedGroups.OnScale
 - uid: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics
   name: ScandinavianOrdinalLanguageSpecifics
   href: api/Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.html

@@ -561,6 +561,14 @@ the selector choosing which form the group multiplier governs. Projected into
 </dd>
     </dl>
     <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.ScaleScopedGroups.html">ScaleScopedGroups</a></dt>
+      <dd><p>Digit tables used to render the <em>multiplier</em> of the scales covered by <a class="xref" href="Utils.NumberToString.ScaleScopedGroups.html#Utils_NumberToString_ScaleScopedGroups_OnScale">OnScale</a>
+(e.g. the &quot;two&quot; of &quot;two thousand&quot;), for languages whose multiplier of a scale noun is built with a
+different grammar than the standalone cardinal. Every other value, including the units chunk (scale 0),
+is rendered with the default <a class="xref" href="Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_Groups">Groups</a>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
       <dt><a class="xref" href="Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.html">ScandinavianOrdinalLanguageSpecifics</a></dt>
       <dd><p>Shared productive ordinal formation for the Scandinavian languages (Danish, Norwegian Bokmål,
 Swedish). Below one hundred the whole number is a single ordinal word (Danish
@@ -708,8 +716,8 @@ When present, years within any declared <a class="xref" href="Utils.NumberToStri
     <dl class="jumplist">
       <dt><a class="xref" href="Utils.NumberToString.ZeroOrdinalUnsupportedLanguageSpecifics.html">ZeroOrdinalUnsupportedLanguageSpecifics</a></dt>
       <dd><p>Shared domain guard for languages whose productive ordinal suffix or prefix would mechanically
-form an ordinal of zero that no consulted source attests (NTS-14: Catalan &quot;zeroè&quot;; Wolof now
-uses <a class="xref" href="Utils.NumberToString.WolofOrdinalLanguageSpecifics.html">WolofOrdinalLanguageSpecifics</a> and Ewe has no ordinals since NTS-16). Zero is rejected with <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.notsupportedexception">NotSupportedException</a>, like the
+form an ordinal of zero that no consulted source attests (NTS-14: Catalan &quot;zeroè&quot;; NTS-20: Ewe
+&quot;naneke o&quot; + &quot;-lia&quot;; Wolof uses <a class="xref" href="Utils.NumberToString.WolofOrdinalLanguageSpecifics.html">WolofOrdinalLanguageSpecifics</a>). Zero is rejected with <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.notsupportedexception">NotSupportedException</a>, like the
 languages without any zero formation (NTS-12); every other value falls through to the
 declarative ordinal pipeline unchanged. Builds no text and finalizes nothing.</p>
 </dd>
@@ -776,6 +784,11 @@ Enums
     <dl class="jumplist">
       <dt><a class="xref" href="Utils.NumberToString.ReplacementScope.html">ReplacementScope</a></dt>
       <dd><p>Defines how a replacement should be applied to the converted value.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.ScaleMultiplierPosition.html">ScaleMultiplierPosition</a></dt>
+      <dd><p>Position of a scale multiplier relative to the scale noun it multiplies.</p>
 </dd>
     </dl>
     <dl class="jumplist">

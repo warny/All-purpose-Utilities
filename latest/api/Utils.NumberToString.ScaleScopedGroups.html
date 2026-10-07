@@ -2,11 +2,11 @@
 <html>
   <head>
     <meta charset="utf-8">
-      <title>Class YearFormatType | omy.Utils Documentation </title>
+      <title>Class ScaleScopedGroups | omy.Utils Documentation </title>
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <meta name="title" content="Class YearFormatType | omy.Utils Documentation ">
+      <meta name="title" content="Class ScaleScopedGroups | omy.Utils Documentation ">
       
-      <meta name="description" content="Configures the year-format algorithm used by . When present, years within any declared  are split at the hundreds boundary.">
+      <meta name="description" content="Digit tables used to render the multiplier of the scales covered by  (e.g. the &amp;quot;two&amp;quot; of &amp;quot;two thousand&amp;quot;), for languages whose multiplier of a scale noun is built with a different grammar than the standalone cardinal. Every other value, including the units chunk (scale 0), is rendered with the default .">
       <link rel="icon" href="../favicon.ico">
       <link rel="stylesheet" href="../public/docfx.min.css">
       <link rel="stylesheet" href="../public/main.css">
@@ -16,7 +16,7 @@
       <meta name="docfx:rel" content="../">
       
       
-      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_NumberToString_YearFormatType.md&amp;value=---%0Auid%3A%20Utils.NumberToString.YearFormatType%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_NumberToString_ScaleScopedGroups.md&amp;value=---%0Auid%3A%20Utils.NumberToString.ScaleScopedGroups%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
       <meta name="loc:inThisArticle" content="In this article">
       <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
       <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
@@ -84,12 +84,12 @@
           <nav id="breadcrumb"></nav>
         </div>
 
-        <article data-uid="Utils.NumberToString.YearFormatType">
+        <article data-uid="Utils.NumberToString.ScaleScopedGroups">
 
 
 
-  <h1 id="Utils_NumberToString_YearFormatType" data-uid="Utils.NumberToString.YearFormatType" class="text-break">
-Class YearFormatType  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L1315"><i class="bi bi-code-slash"></i></a>
+  <h1 id="Utils_NumberToString_ScaleScopedGroups" data-uid="Utils.NumberToString.ScaleScopedGroups" class="text-break">
+Class ScaleScopedGroups  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/ScaleScopedGroups.cs/#L27"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -97,13 +97,15 @@ Class YearFormatType  <a class="header-action link-secondary" title="View source
   <dl><dt>Assembly</dt><dd>Utils.NumberToString.dll</dd></dl>
   </div>
 
-  <div class="markdown summary"><p>Configures the year-format algorithm used by <a class="xref" href="Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_ConvertYear_System_Int32_">ConvertYear(int)</a>.
-When present, years within any declared <a class="xref" href="Utils.NumberToString.YearFormatType.html#Utils_NumberToString_YearFormatType_SplitRanges">SplitRanges</a> are split at the hundreds boundary.</p>
+  <div class="markdown summary"><p>Digit tables used to render the <em>multiplier</em> of the scales covered by <a class="xref" href="Utils.NumberToString.ScaleScopedGroups.html#Utils_NumberToString_ScaleScopedGroups_OnScale">OnScale</a>
+(e.g. the &quot;two&quot; of &quot;two thousand&quot;), for languages whose multiplier of a scale noun is built with a
+different grammar than the standalone cardinal. Every other value, including the units chunk (scale 0),
+is rendered with the default <a class="xref" href="Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_Groups">Groups</a>.</p>
 </div>
   <div class="markdown conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public class YearFormatType</code></pre>
+    <pre><code class="lang-csharp hljs">public sealed record ScaleScopedGroups : IEquatable&lt;ScaleScopedGroups&gt;</code></pre>
   </div>
 
 
@@ -113,10 +115,16 @@ When present, years within any declared <a class="xref" href="Utils.NumberToStri
     <dt>Inheritance</dt>
     <dd>
       <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></div>
-      <div><span class="xref">YearFormatType</span></div>
+      <div><span class="xref">ScaleScopedGroups</span></div>
     </dd>
   </dl>
 
+  <dl class="typelist implements">
+    <dt>Implements</dt>
+    <dd>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a class="xref" href="Utils.NumberToString.ScaleScopedGroups.html">ScaleScopedGroups</a>&gt;</div>
+    </dd>
+  </dl>
 
 
   <dl class="typelist inheritedMembers">
@@ -133,9 +141,6 @@ When present, years within any declared <a class="xref" href="Utils.NumberToStri
     </div>
     <div>
       <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gettype">object.GetType()</a>
-    </div>
-    <div>
-      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone">object.MemberwiseClone()</a>
     </div>
     <div>
       <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.referenceequals">object.ReferenceEquals(object, object)</a>
@@ -239,28 +244,91 @@ When present, years within any declared <a class="xref" href="Utils.NumberToStri
 
 
 
+  <h2 id="Utils_NumberToString_ScaleScopedGroups_remarks">Remarks</h2>
+  <div class="markdown level0 remarks"><p>The set replaces the default tables as a whole (all levels together), so a multiplier never
+mixes the units of one table with the tens of another. Its digits carry their own
+<a class="xref" href="Utils.NumberToString.DigitType.html#Utils_NumberToString_DigitType_Fusions">Fusions</a>. Everything after the multiplier text is unchanged: the scale noun is
+still appended (see <a class="xref" href="Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_ScaleMultiplierPosition">ScaleMultiplierPosition</a>), then the
+<code>onScale</code> replacements and variant rules run with the numeric multiplier, then the triggers.
+Whole-number <a class="xref" href="Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_Exceptions">Exceptions</a> are shared by every table.</p>
+<p>Validation (at converter construction): the range is required, every covered index is at least
+1, two sets never cover the same index, and the levels are exactly those of the default
+<a class="xref" href="Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_Groups">Groups</a>.</p>
+</div>
+
+
+  <h2 class="section" id="constructors">Constructors
+</h2>
+
+
+  <a id="Utils_NumberToString_ScaleScopedGroups__ctor_" data-uid="Utils.NumberToString.ScaleScopedGroups.#ctor*"></a>
+
+  <h3 id="Utils_NumberToString_ScaleScopedGroups__ctor_System_String_System_Collections_Generic_IReadOnlyDictionary_System_Int32_Utils_NumberToString_DigitListType__" data-uid="Utils.NumberToString.ScaleScopedGroups.#ctor(System.String,System.Collections.Generic.IReadOnlyDictionary{System.Int32,Utils.NumberToString.DigitListType})">
+  ScaleScopedGroups(string, IReadOnlyDictionary&lt;int, DigitListType&gt;)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/ScaleScopedGroups.cs/#L27"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Digit tables used to render the <em>multiplier</em> of the scales covered by <a class="xref" href="Utils.NumberToString.ScaleScopedGroups.html#Utils_NumberToString_ScaleScopedGroups_OnScale">OnScale</a>
+(e.g. the &quot;two&quot; of &quot;two thousand&quot;), for languages whose multiplier of a scale noun is built with a
+different grammar than the standalone cardinal. Every other value, including the units chunk (scale 0),
+is rendered with the default <a class="xref" href="Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_Groups">Groups</a>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ScaleScopedGroups(string OnScale, IReadOnlyDictionary&lt;int, DigitListType&gt; Groups)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>OnScale</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>The scale indices covered (1 = thousands, 2 = the next scale …), in the range syntax of
+<a class="xref" href="Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_ParseRangeExpression_System_String_">ParseRangeExpression(string)</a> (e.g. <code>&quot;1&quot;</code>, <code>&quot;2..4&quot;</code>, <code>&quot;1..&quot;</code>).</p>
+</dd>
+    <dt><code>Groups</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlydictionary-2">IReadOnlyDictionary</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a>, <a class="xref" href="Utils.NumberToString.DigitListType.html">DigitListType</a>&gt;</dt>
+    <dd><p>The digit tables keyed by group level, like <a class="xref" href="Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_Groups">Groups</a>.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section" id="Utils_NumberToString_ScaleScopedGroups__ctor_System_String_System_Collections_Generic_IReadOnlyDictionary_System_Int32_Utils_NumberToString_DigitListType___remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>The set replaces the default tables as a whole (all levels together), so a multiplier never
+mixes the units of one table with the tens of another. Its digits carry their own
+<a class="xref" href="Utils.NumberToString.DigitType.html#Utils_NumberToString_DigitType_Fusions">Fusions</a>. Everything after the multiplier text is unchanged: the scale noun is
+still appended (see <a class="xref" href="Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_ScaleMultiplierPosition">ScaleMultiplierPosition</a>), then the
+<code>onScale</code> replacements and variant rules run with the numeric multiplier, then the triggers.
+Whole-number <a class="xref" href="Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_Exceptions">Exceptions</a> are shared by every table.</p>
+<p>Validation (at converter construction): the range is required, every covered index is at least
+1, two sets never cover the same index, and the levels are exactly those of the default
+<a class="xref" href="Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_Groups">Groups</a>.</p>
+</div>
+
+
 
 
   <h2 class="section" id="properties">Properties
 </h2>
 
 
-  <a id="Utils_NumberToString_YearFormatType_BeforeChristSuffix_" data-uid="Utils.NumberToString.YearFormatType.BeforeChristSuffix*"></a>
+  <a id="Utils_NumberToString_ScaleScopedGroups_Groups_" data-uid="Utils.NumberToString.ScaleScopedGroups.Groups*"></a>
 
-  <h3 id="Utils_NumberToString_YearFormatType_BeforeChristSuffix" data-uid="Utils.NumberToString.YearFormatType.BeforeChristSuffix">
-  BeforeChristSuffix
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L1337"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_NumberToString_ScaleScopedGroups_Groups" data-uid="Utils.NumberToString.ScaleScopedGroups.Groups">
+  Groups
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/ScaleScopedGroups.cs/#L27"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Gets or sets the suffix appended after the year body for negative (BC) years,
-replacing the default <code>minus</code> prefix.
-Example: <code>&quot;av. J.-C.&quot;</code> → -44 reads as &quot;quarante-quatre av. J.-C.&quot;.
-When absent, negative years use the language's <code>minus</code> template.</p>
+  <div class="markdown level1 summary"><p>The digit tables keyed by group level, like <a class="xref" href="Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_Groups">Groups</a>.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public string? BeforeChristSuffix { get; set; }</code></pre>
+    <pre><code class="lang-csharp hljs">public IReadOnlyDictionary&lt;int, DigitListType&gt; Groups { get; init; }</code></pre>
   </div>
 
 
@@ -269,7 +337,7 @@ When absent, negative years use the language's <code>minus</code> template.</p>
 
   <h4 class="section">Property Value</h4>
   <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlydictionary-2">IReadOnlyDictionary</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a>, <a class="xref" href="Utils.NumberToString.DigitListType.html">DigitListType</a>&gt;</dt>
     <dd></dd>
   </dl>
 
@@ -280,85 +348,20 @@ When absent, negative years use the language's <code>minus</code> template.</p>
 
 
 
-  <a id="Utils_NumberToString_YearFormatType_HundredWord_" data-uid="Utils.NumberToString.YearFormatType.HundredWord*"></a>
+  <a id="Utils_NumberToString_ScaleScopedGroups_OnScale_" data-uid="Utils.NumberToString.ScaleScopedGroups.OnScale*"></a>
 
-  <h3 id="Utils_NumberToString_YearFormatType_HundredWord" data-uid="Utils.NumberToString.YearFormatType.HundredWord">
-  HundredWord
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L1321"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_NumberToString_ScaleScopedGroups_OnScale" data-uid="Utils.NumberToString.ScaleScopedGroups.OnScale">
+  OnScale
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/ScaleScopedGroups.cs/#L27"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Gets or sets the word appended when the year is a round century (remainder == 0).
-Example: &quot;hundred&quot; → 1900 reads as &quot;nineteen hundred&quot;.</p>
+  <div class="markdown level1 summary"><p>The scale indices covered (1 = thousands, 2 = the next scale …), in the range syntax of
+<a class="xref" href="Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_ParseRangeExpression_System_String_">ParseRangeExpression(string)</a> (e.g. <code>&quot;1&quot;</code>, <code>&quot;2..4&quot;</code>, <code>&quot;1..&quot;</code>).</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public string? HundredWord { get; set; }</code></pre>
-  </div>
-
-
-
-
-
-  <h4 class="section">Property Value</h4>
-  <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
-    <dd></dd>
-  </dl>
-
-
-
-
-
-
-
-
-  <a id="Utils_NumberToString_YearFormatType_SplitRanges_" data-uid="Utils.NumberToString.YearFormatType.SplitRanges*"></a>
-
-  <h3 id="Utils_NumberToString_YearFormatType_SplitRanges" data-uid="Utils.NumberToString.YearFormatType.SplitRanges">
-  SplitRanges
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L1341"><i class="bi bi-code-slash"></i></a>
-  </h3>
-
-  <div class="markdown level1 summary"><p>Gets or sets the year ranges for which the split algorithm applies.</p>
-</div>
-  <div class="markdown level1 conceptual"></div>
-
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public List&lt;YearFormatSplitRangeType&gt; SplitRanges { get; set; }</code></pre>
-  </div>
-
-
-
-
-
-  <h4 class="section">Property Value</h4>
-  <dl class="parameters">
-    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1">List</a>&lt;<a class="xref" href="Utils.NumberToString.YearFormatSplitRangeType.html">YearFormatSplitRangeType</a>&gt;</dt>
-    <dd></dd>
-  </dl>
-
-
-
-
-
-
-
-
-  <a id="Utils_NumberToString_YearFormatType_ZeroConnector_" data-uid="Utils.NumberToString.YearFormatType.ZeroConnector*"></a>
-
-  <h3 id="Utils_NumberToString_YearFormatType_ZeroConnector" data-uid="Utils.NumberToString.YearFormatType.ZeroConnector">
-  ZeroConnector
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L1328"><i class="bi bi-code-slash"></i></a>
-  </h3>
-
-  <div class="markdown level1 summary"><p>Gets or sets the connector inserted before single-digit remainders (1–9).
-Example: &quot;oh&quot; → 2005 reads as &quot;twenty oh five&quot;.</p>
-</div>
-  <div class="markdown level1 conceptual"></div>
-
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public string? ZeroConnector { get; set; }</code></pre>
+    <pre><code class="lang-csharp hljs">public string OnScale { get; init; }</code></pre>
   </div>
 
 
@@ -382,7 +385,7 @@ Example: &quot;oh&quot; → 2005 reads as &quot;twenty oh five&quot;.</p>
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L1315" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/ScaleScopedGroups.cs/#L27" class="edit-link">Edit this page</a>
         </div>
 
 

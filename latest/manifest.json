@@ -9673,6 +9673,34 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.ScaleMultiplierPosition.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.ScaleMultiplierPosition.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.ScaleMultiplierPosition",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.ScaleMultiplierPosition.yml\" sourcestartlinenumber=\"1\">Position of a scale multiplier relative to the scale noun it multiplies.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.ScaleScopedGroups.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.ScaleScopedGroups.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.ScaleScopedGroups",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.ScaleScopedGroups.yml\" sourcestartlinenumber=\"1\">Digit tables used to render the <em>multiplier</em> of the scales covered by <xref href=\"Utils.NumberToString.ScaleScopedGroups.OnScale\" data-throw-if-not-resolved=\"false\"></xref>\n(e.g. the &quot;two&quot; of &quot;two thousand&quot;), for languages whose multiplier of a scale noun is built with a\ndifferent grammar than the standalone cardinal. Every other value, including the units chunk (scale 0),\nis rendered with the default <xref href=\"Utils.NumberToString.NumberToStringConverterOptions.Groups\" data-throw-if-not-resolved=\"false\"></xref>.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ScaleWords.yml",
       "output": {
         ".html": {
@@ -9991,7 +10019,7 @@
       "Uid": null,
       "IsMRef": true,
       "Title": "Utils.NumberToString.ZeroOrdinalUnsupportedLanguageSpecifics",
-      "Summary": "<p sourcefile=\"api/Utils.NumberToString.ZeroOrdinalUnsupportedLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Shared domain guard for languages whose productive ordinal suffix or prefix would mechanically\nform an ordinal of zero that no consulted source attests (NTS-14: Catalan &quot;zeroè&quot;; Wolof now\nuses <xref href=\"Utils.NumberToString.WolofOrdinalLanguageSpecifics\" data-throw-if-not-resolved=\"false\"></xref> and Ewe has no ordinals since NTS-16). Zero is rejected with <xref href=\"System.NotSupportedException\" data-throw-if-not-resolved=\"false\"></xref>, like the\nlanguages without any zero formation (NTS-12); every other value falls through to the\ndeclarative ordinal pipeline unchanged. Builds no text and finalizes nothing.</p>\n"
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.ZeroOrdinalUnsupportedLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Shared domain guard for languages whose productive ordinal suffix or prefix would mechanically\nform an ordinal of zero that no consulted source attests (NTS-14: Catalan &quot;zeroè&quot;; NTS-20: Ewe\n&quot;naneke o&quot; + &quot;-lia&quot;; Wolof uses <xref href=\"Utils.NumberToString.WolofOrdinalLanguageSpecifics\" data-throw-if-not-resolved=\"false\"></xref>). Zero is rejected with <xref href=\"System.NotSupportedException\" data-throw-if-not-resolved=\"false\"></xref>, like the\nlanguages without any zero formation (NTS-12); every other value falls through to the\ndeclarative ordinal pipeline unchanged. Builds no text and finalizes nothing.</p>\n"
     },
     {
       "type": "ManagedReference",
