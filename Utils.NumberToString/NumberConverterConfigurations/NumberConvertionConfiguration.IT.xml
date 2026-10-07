@@ -240,9 +240,10 @@
 			  "diecimillesimo"), and an inner tre loses its accent as in "ventitremila"/"ventitremillesimo"
 			  (ordinal-only replacements; the cardinal "ventitré milioni" is unchanged). The stems and the
 			  gender suffix are the shared ones (milione → milion + esimo/esima).
-			  NTS-18. Scales 5-6 (biliardo, trilione): Ministero delle Infrastrutture e dei Trasporti, ADN
-			  table of multiples and submultiples ("Biliardesimo", "Trilionesimo"); Nuovo De Mauro and GDLI
-			  "trilionesimo" (agg. num. ord.). Multipliers above one ("duebiliardesimo", "duetrilionesimo")
+			  NTS-18. Scales 5-6 (biliardo, trilione): "trilionesimo" is attested as an ordinal (Nuovo De
+			  Mauro, GDLI: agg. num. ord.); "biliardesimo" is lexically attested as the submultiple 10^-15
+			  (ADN 2017, MIT Italian translation, §1.2.2.1, which also lists "Trilionesimo" 10^-18) and its
+			  ordinal use follows the general Treccani rule (cardinal stem + -esimo, as miliardo → miliardesimo). Multipliers above one ("duebiliardesimo", "duetrilionesimo")
 			  follow the same productive rule as "duemillesimo"/"duemilionesimo", not individual attestations.
 			  The "trébili" replacement also covers biliardo ("ventitrébiliardesimo" → "ventitrebiliardesimo");
 			  no trilione multiplier above 9 fits a long, so no "trétri" junction can arise. Non-round values
@@ -259,8 +260,9 @@
 			  synthetic form). Treccani, vocabolario "centomillesimo": "i successivi sono:
 			  centomillesimoprimo, centomillesimosecondo, centomillesimoterzo, ecc.", soldered, the
 			  synthetic "un centomiladuesimo" being a partitive. Both parts take the requested gender.
-			  Other non-round thousands deliberately fail closed: Treccani attests the juxtaposition only on
-			  millesimo and centomillesimo, and no source selects a split or a spelling elsewhere.
+			  Other non-round thousands deliberately fail closed: among the consulted Treccani material the
+			  juxtaposition is explicitly exemplified only for millesimo and centomillesimo, and no consulted
+			  source establishes a split or a spelling elsewhere.
 			-->
 			<OrdinalComposition for="1010" divisor="1000" separator=" " />
 			<OrdinalComposition for="100001..100009" divisor="1000" separator="" />

@@ -22,7 +22,7 @@ namespace Utils.NumberToString;
 /// <list type="bullet">
 ///   <item><description>zero — the NTS-12 decision is unchanged (<c>zeresimo</c> is only attested in special, mathematical uses);</description></item>
 ///   <item><description>1110, 1210 … 1910 — two analytic splits are possible (<c>millesimo centodecimo</c>, <c>millecentesimo decimo</c>) and no source selects one;</description></item>
-///   <item><description>the other non-round thousands above 1999 — Treccani attests the juxtaposition only on millesimo and centomillesimo, and treats the synthetic <c>centomiladuesimo</c> as a partitive;</description></item>
+///   <item><description>the other non-round thousands above 1999 — among the consulted Treccani material the juxtaposition is explicitly exemplified only for millesimo and centomillesimo, and Treccani treats the synthetic <c>centomiladuesimo</c> as a partitive;</description></item>
 ///   <item><description>the non-round values from a million — the only proposals (<c>milionesimoprimo</c>, <c>unmilioneunesimo</c>) are self-declared virtual extrapolations.</description></item>
 /// </list>
 /// </remarks>

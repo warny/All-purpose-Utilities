@@ -71,19 +71,28 @@ would be a choice made by intuition. No engine primitive was added.
 
 Three levels of evidence are distinguished.
 
-- **Explicitly attested** — *millesimo*, *duemillesimo*, *diecimillesimo*, *centomillesimo*
-  (Treccani vocabolario *ordinale*, *centomillesimo*); *milionesimo*, *miliardesimo*, *bilionesimo*,
-  *decimilionesimo (o diecimilionesimo)* (Treccani vocabolario); *duemilionesimo* (CNR press release
-  on the .it registry); *biliardesimo* and *trilionesimo* (Ministero delle Infrastrutture e dei
-  Trasporti, ADN provisions on units of measurement, table of multiples and submultiples: 10^15
-  *Biliardo* / 10^-15 *Biliardesimo*, 10^18 *Trilione* / 10^-18 *Trilionesimo*, cited from the task
-  brief — the ministry document itself could not be retrieved online during this pass); *trilionesimo*
-  (Nuovo De Mauro, read: "agg.num.ord., s.m. [1987] che in una serie ordinata occupa il posto
-  corrispondente al trilione"; GDLI, "agg. numerale ordinale di un trilione", cited from the task
-  brief, not re-read); *millesimo decimo*,
-  *centomillesimoprimo … centomillesimonono* (Treccani *ordinale*, *centomillesimo*).
-  The Nuovo De Mauro has no entry *biliardesimo* (page not found); Italian Wikipedia "Biliardo
-  (numero)" lists the ordinal *Biliardesimo* without a source (corroboration only).
+- **Explicitly attested as ordinals** — *millesimo*, *duemillesimo*, *diecimillesimo*,
+  *centomillesimo* (Treccani vocabolario *ordinale*, *centomillesimo*); *milionesimo*,
+  *miliardesimo*, *bilionesimo*, *decimilionesimo (o diecimilionesimo)* (Treccani vocabolario);
+  *duemilionesimo* (CNR press release on the .it registry); *trilionesimo* (Nuovo De Mauro, read:
+  "agg.num.ord., s.m. [1987] che in una serie ordinata occupa il posto corrispondente al trilione";
+  GDLI, "agg. numerale ordinale di un trilione", cited from the task brief, not re-read);
+  *millesimo decimo*, *centomillesimoprimo … centomillesimonono* (Treccani *ordinale*,
+  *centomillesimo*).
+- **Lexically attested and licensed by the productive ordinal rule** — *biliardesimo*. Consulted:
+  ADN 2017, vol. I, Italian translation by the Ministero delle Infrastrutture e dei Trasporti
+  (ECE/TRANS/258, §1.2.2.1 "Unità di misura"; the translation states it has no legal force), table
+  of the decimal multiples and submultiples, read in the PDF: the factors 10^18 … 10 are named
+  *Trilione, Biliardo, Bilione, Miliardo, Milione, Mille, Cento, Dieci* and the factors 10^-1 …
+  10^-18 *Decimo, Centesimo, Millesimo, Milionesimo, Miliardesimo, Bilionesimo, Biliardesimo,
+  Trilionesimo* (10^-15 *Biliardesimo*, 10^-18 *Trilionesimo*). The table names submultiples, i.e.
+  the fractional reading ("un biliardesimo" = 10^-15): it confirms the lexical form, not its use as
+  an ordinal — the ordinal/fraction distinction this document makes elsewhere. The ordinal status
+  follows from the general Treccani rule already retained ("dal tema del corrispondente cardinale
+  [...] con l'aggiunta della terminazione -èsimo"; *biliardo* → *biliardesimo*, as *miliardo* →
+  *miliardesimo*). The Nuovo De Mauro has no entry *biliardesimo* (page not found); Italian
+  Wikipedia "Biliardo (numero)" lists the ordinal *Biliardesimo* without a source (corroboration
+  only, not a source). For *trilionesimo* the same table adds a second lexical attestation.
 - **Productivity retained** — *duemilionesimo* is attested, and *duemiliardesimo*,
   *duebilionesimo*, *duebiliardesimo*, *duetrilionesimo*, *ventunobiliardesimo*,
   *ventitrebiliardesimo*, *novetrilionesimo* … apply the same rule already retained for the thousands
@@ -98,10 +107,12 @@ Three levels of evidence are distinguished.
 - **Not canonical / not established (rejected)** — 1110–1910: two splits are conceivable
   (*millesimo centodecimo*, *millecentesimo decimo*, or a soldered *millecentodecimo*) and no source
   selects one. Other non-round thousands above 1999 (*duemillesimo primo*? *duemillesimoprimo*?
-  *duemillesimo decimo*? *ventunomillesimo primo*?): Treccani *ordinale* gives the juxtaposition only
-  on *millesimo* ("pressoché l'unico [...] *millesimo primo, millesimo secondo, millesimo decimo*")
-  and *centomillesimo* never generalises it to other heads, and the synthetic derivation is the
-  partitive (*centomiladuesimo*). Non-round values from a million (*milionesimo primo*?
+  *duemillesimo decimo*? *ventunomillesimo primo*?): among the consulted Treccani material, the
+  juxtaposition above a thousand is explicitly exemplified only for *millesimo* (*ordinale*:
+  "pressoché l'unico [...] *millesimo primo, millesimo secondo, millesimo decimo*") and
+  *centomillesimo* (*centomillesimoprimo …*). The absence of other examples does not show that
+  Treccani excludes other heads; it means no consulted source establishes their form or spelling
+  (separate or soldered), and the synthetic derivation is the partitive (*centomiladuesimo*). Non-round values from a million (*milionesimo primo*?
   *milionesimoprimo*? *duemilionesimo primo*? *miliardesimo primo*? *bilionesimo primo*?): no
   dictionary or grammar gives a form. An Italian Language Stack Exchange answer proposes
   *unmilioneunesimo* or *milionesimoprimo* for 1 000 001 while stating that it is a virtual

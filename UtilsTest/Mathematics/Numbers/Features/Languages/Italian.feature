@@ -373,10 +373,11 @@ Examples:
     | 10000000 | gender=femminile | diecimilionesima |
     | 1000000000 | gender=femminile | miliardesima |
 
-# NTS-18. The ordinals of biliardo (10^15) and trilione (10^18) are sourced: Ministero delle
-# Infrastrutture e dei Trasporti, ADN table of multiples and submultiples ("Biliardesimo" 10^-15,
-# "Trilionesimo" 10^-18); Nuovo De Mauro "trilionesimo" (agg. num. ord., "che in una serie ordinata
-# occupa il posto corrispondente al trilione"); GDLI "trilionesimo". The forms with a multiplier above
+# NTS-18. "trilionesimo" is attested as an ordinal: Nuovo De Mauro (agg. num. ord., "che in una serie
+# ordinata occupa il posto corrispondente al trilione"), GDLI. "biliardesimo" is lexically attested as
+# the submultiple 10^-15 (ADN 2017, Italian translation by the Ministero delle Infrastrutture e dei
+# Trasporti, §1.2.2.1, beside "Trilionesimo" 10^-18); that table gives the fractional reading, and the
+# ordinal use follows the general Treccani rule (cardinal stem + -esimo, miliardo → miliardesimo). The forms with a multiplier above
 # one ("duebiliardesimo", "duetrilionesimo") are not individually attested: they result from the same
 # productive rule already retained for "duemillesimo", "duemilionesimo", "duemiliardesimo" and
 # "duebilionesimo". Every round multiple of trilione that fits a long is at most 9 × 10^18, so the
@@ -409,9 +410,9 @@ Examples:
 # them (<OrdinalComposition>), but no consulted source establishes a canonical form or spelling.
 # Zero: NTS-12 decision unchanged (Treccani attests "zeresimo" only in special, mathematical uses).
 # 1110-1910: two analytic splits are possible ("millesimo centodecimo" or "millecentesimo decimo")
-# and no source selects one. The non-round thousands above 1999 outside 100001-100009: Treccani
-# attests the juxtaposition only on millesimo and centomillesimo, never "duemillesimo primo", and
-# treats the synthetic form as partitive. The non-round values from a million: the only proposals
+# and no source selects one. The non-round thousands above 1999 outside 100001-100009: among the
+# consulted Treccani material the juxtaposition is explicitly exemplified only for millesimo and
+# centomillesimo, no consulted source gives "duemillesimo primo", and the synthetic form is partitive. The non-round values from a million: the only proposals
 # ("milionesimoprimo", "unmilioneunesimo") are self-declared virtual extrapolations.
 Scenario Outline: Ordinals outside the validated domain are rejected
     Given I use the variants "<variants>"
