@@ -43,6 +43,22 @@ All notable changes to this project will be documented in this file.
 - Added `ItalianOrdinalLanguageSpecifics`, restricting Italian ordinals to verified forms.
 - Added `WolofOrdinalLanguageSpecifics`, a domain guard rejecting the Wolof ordinals of zero and of the round thousands.
 
+### Fixed — `omy.Utils.NumberToString` (NTS-24 closed)
+- Corrected Conway-Wechsler dynamic scale generation (intentional output change): `undecillion`,
+  `vigintillion`, `trigintillion` (and every round tens: `quadragintillion` … `nonagintillion`) and the
+  grouped names above the 999th -illion now follow the strict Conway-Guy-Wechsler construction: each
+  three-digit group restarts from `Scale0Prefixes` (10^3003 `millinillion`, was `unillinillion`;
+  10^3000012 `millinillitrillion`), and a single Conway linking consonant is inserted (`trescentillion`,
+  `seducentillion`, `sexoctogintacentillion`). `quinquadecillion`, `sedecillion` and `novendecillion` are
+  kept as the systematic Conway forms. Languages inheriting `SCALE-SHORT`/`SCALE-LONG` (EN, EE, ID, MS,
+  SW, TR; BG, CS, DA, DE, FR, HR, HU, IT, NO/NB, RU, SK, SV, UK and their regional variants) receive the
+  corrected names automatically; German also gains `eine` before the corrected `-illion` names.
+- Prefix table entries accept a bracketed ending, `(start)stem[default|-illi=>form](end)`, used when the
+  component ends its group (`(ns)trigint[a|-illi=>i]`); an unsupported context is rejected when the
+  scale is built. `FirstLetterUppercase` now capitalizes a grouped name once. An empty
+  `Scale0Prefixes` entry 1–9 makes the scale bounded (`IsUnbounded` false) instead of producing a
+  degenerate name; ID declares `mi`/`bi` there. No public API or XSD schema change.
+
 ### Changed — `omy.Utils.NumberToString` (NTS-23 closed)
 - Ewe large-number naming now follows the Conway-Wechsler short scale, anchored by sourced `miliɔn`,
   `biliɔn` and `triliɔn` forms and productively extended to higher `-liɔn` names (`quadriliɔn`,

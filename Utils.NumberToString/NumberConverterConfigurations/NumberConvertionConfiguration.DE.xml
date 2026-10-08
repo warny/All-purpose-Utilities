@@ -61,14 +61,14 @@
 			<TensPrefixes>
 				<Digit digit="0" string=""/>
 				<Digit digit="1" string="(n)dezi"/>
-				<Digit digit="2" string="(ms)vingti"/>
-				<Digit digit="3" string="(ns)triginta"/>
-				<Digit digit="4" string="(ns)quadraginta"/>
-				<Digit digit="5" string="(ns)quinquaginta"/>
-				<Digit digit="6" string="(n)sexaginta"/>
-				<Digit digit="7" string="(n)septuaginta"/>
-				<Digit digit="8" string="(mxs)octoginta"/>
-				<Digit digit="9" string="nonaginta"/>
+				<Digit digit="2" string="(ms)viginti"/>
+				<Digit digit="3" string="(ns)trigint[a|-illi=>i]"/>
+				<Digit digit="4" string="(ns)quadragint[a|-illi=>i]"/>
+				<Digit digit="5" string="(ns)quinquagint[a|-illi=>i]"/>
+				<Digit digit="6" string="(n)sexagint[a|-illi=>i]"/>
+				<Digit digit="7" string="(n)septuagint[a|-illi=>i]"/>
+				<Digit digit="8" string="(mxs)octogint[a|-illi=>i]"/>
+				<Digit digit="9" string="nonagint[a|-illi=>i]"/>
 			</TensPrefixes>
 		</NumberScale>
 		<Replacements>

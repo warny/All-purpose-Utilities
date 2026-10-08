@@ -1,7 +1,8 @@
 # Utils.NumberToString — Current backlog
 
-Re-audited on 2026-10-07 after closing NTS-23 (Ewe large scales: Conway-Wechsler short scale inherited
-from SCALE-SHORT, unbounded domain; opened NTS-24), after closing NTS-22 (Ewe millions: static `miliɔn`,
+Re-audited on 2026-10-08 after closing NTS-24 (strict Conway-Guy-Wechsler scale names shared by every
+SCALE-SHORT and SCALE-LONG language; opened NTS-25), on 2026-10-07 after closing NTS-23 (Ewe large scales:
+Conway-Wechsler short scale inherited from SCALE-SHORT, unbounded domain; opened NTS-24), after closing NTS-22 (Ewe millions: static `miliɔn`,
 domain 0–999 999 999; opened NTS-23), after closing NTS-20 (Ewe cardinals rebuilt to 999 999 and `-lia` ordinals
 restored, with the generic `<Groups onScale>` and `multiplierPosition` primitives; opened NTS-22), after
 closing NTS-19 (Wolof cardinals and ordinals to 999 999; opened NTS-21),
@@ -69,25 +70,20 @@ classification.
   gives a million as `fukki téeméeri junni` (the regular 10 × 100 × 1000 with the connective) or
   `benn milyoŋ`, with the velar nasal. Decide the canonical form (decree 2005-992 alphabet for `ŋ`,
   a grammar or dictionary for the loan) before opening the domain above 999 999.
-- **NTS-24 — Correct the Conway-Wechsler prefix-table errors in SCALE-SHORT.** Found by NTS-23. The
-  target is strict Conway-Guy-Wechsler, the convention the project applies (and chose for Ewe). Two
-  table entries are wrong: units prefix `uni` instead of `un` (10^36 `unidecillion` instead of
-  `undecillion`, likewise `univingtillion` …) and tens prefix `vingti` instead of `viginti` (10^63
-  `vingtillion` instead of `vigintillion`). Also to check with the fix: 10^93 `trigintallion` (strict
-  `trigintillion`, final vowel of the last prefix not turned into `i`) and 10^3003 `unillinillion`
-  (strict `millinillion`). Not errors, to keep and document as intentional divergences from dictionary
-  spellings: `quinquadecillion` (`quindecillion`), `sedecillion` (`sexdecillion`), `novendecillion`
-  (`novemdecillion`), which are the systematic Conway forms. The fix deliberately changes EN, ID, SW, TR
-  and EE (`unideciliɔn` → `undeciliɔn`, `vingtiliɔn` → `vigintiliɔn`): update `SCALE.xml`,
-  `English.feature` and `NumberScaleContractTests.ShortScale_ConwayWechsler_KnownTableErrors` together.
-
+- **NTS-25 — Junction and script of grouped Conway names in derived scales.** Found by NTS-24, pre-existing.
+  (a) With `groupSeparator=""` (ID, MS, SW, TR) the `-li-` sound lives in the suffix (`liun`, `lioni`,
+  `lyon`), so groups above the 999th -illion are joined without any junction (ID n = 1000 `miniliun`,
+  SW `minilioni`, TR `minilyon`). (b) BG, RU and UK override `Scale0Prefixes` in Cyrillic but inherit the
+  Latin units/tens/hundreds tables and `voidGroup`, so names from the 10th -illion mix scripts (RU
+  `deciллион`, n = 1000 `миллиniллион`). Decide per language whether these names should be localized
+  (own tables, own junction) or the domain bounded, from sources; no engine change is expected.
 - **NTS-09 — `Trigger` elements are not inherited through `baseOn`.** `XmlSerializer` materializes
   an absent `<Trigger>` list as an empty list, so `MergeLanguageDefinition`'s
   `overriding.Triggers ?? inherited.Triggers` never falls back to the base. No built-in configuration
   uses triggers today; the README and XSD document the current behaviour. Fix by treating an empty
   list as absent (as `Cultures` already does) together with a regression test.
 
-NTS-01 through NTS-05 and NTS-10 through NTS-20, NTS-22 and NTS-23, are closed:
+NTS-01 through NTS-05 and NTS-10 through NTS-20, NTS-22, NTS-23 and NTS-24, are closed:
 
 - NTS-01 — XSD validation: `DONE-2026-08-21.md`.
 - NTS-02 — initialization isolation: `DONE-2026-08-21.md`.
@@ -122,6 +118,9 @@ NTS-01 through NTS-05 and NTS-10 through NTS-20, NTS-22 and NTS-23, are closed:
   `DONE-2026-10-07(4).md`.
 - NTS-23 (Ewe large scales: Conway-Wechsler short scale from SCALE-SHORT, `akpe`/`miliɔn`/`biliɔn`/
   `triliɔn` anchors, unbounded domain; `kpakple` not corroborated): `DONE-2026-10-07(5).md`.
+- NTS-24 (strict Conway-Guy-Wechsler scale names for every SCALE-SHORT/SCALE-LONG language: `uni` → `un`,
+  `vingti` → `viginti`, terminal `[a|-illi=>i]` endings, grouped names above the 999th restarting from
+  `Scale0Prefixes`, single Conway linking consonant): `DONE-2026-10-08.md`.
 
 Full multi-form plural systems (Russian/Slavic count-dependent noun forms,
 Arabic dual/paucal/plural categories) are deliberately out of scope — the

@@ -60,6 +60,26 @@ the remaining validation and its criterion are tracked per capability in `TODO.m
 | EE | EE | SCALE-SHORT (scale tables only, NTS-23) | Yes (NTS-20): cardinal + `-lia` on the last element, `gbãtɔ` for 1 | Declarative + `ZeroOrdinalUnsupportedLanguageSpecifics` | **Deferred** | — | none | **Consulted** (NTS-20): Dzablu-Kumah, *Basic Ewe for Foreign Students*; Biblica Open Ewe Contemporary Scriptures; *Ewe Basic Course* 1968; Peace Corps Togo 2010; Wiktionary | Cardinals unbounded (NTS-23): static `akpe`, then the Conway-Wechsler short scale `miliɔn`, `biliɔn`, `triliɔn` (sourced anchors), `quadriliɔn` … (project extrapolation), each before its standalone multiplier (`multiplierPosition="afterScale"`); zero ordinal unsupported |
 | WO | WO | none | Yes (`-éel`, NTS-16, NTS-19) | Declarative + `WolofOrdinalLanguageSpecifics` | **Deferred** | — | none | No consistent source found | Cardinals 0–999 999; no ordinal of zero nor of the round thousands |
 
+## NTS-24 — Strict Conway-Guy-Wechsler scale names (2026-10-08)
+
+- **Convention.** Strict Conway-Guy-Wechsler, a project decision: `quinquadecillion`, `sedecillion`,
+  `novendecillion` are kept (not the dictionary `quindecillion`, `sexdecillion`, `novemdecillion`).
+- **Marker table.** Units `un`, `duo`, `tre*`, `quattuor`, `quinqua`, `se*`, `septe*`, `octo`, `nove*`;
+  tens `n deci`, `ms viginti`, `ns triginta`, `ns quadraginta`, `ns quinquaginta`, `n sexaginta`,
+  `n septuaginta`, `mx octoginta`, `nonaginta`; hundreds `nx centi`, `n ducenti`, `ns trecenti`,
+  `ns quadringenti`, `ns quingenti`, `n sescenti`, `n septingenti`, `mx octingenti`, `nongenti`. `tre`
+  takes `s` before an s- or x-marked component, `se` takes `s` or `x`, `septe`/`nove` take `m` or `n`.
+  The final vowel of a group becomes `i` before `-illion` (`trigintillion`; `centi` + `illion` =
+  `centillion`). Above the 999th, `XilliYilliZillion` names the (10^6 X + 10^3 Y + Z)-th, with `nilli`
+  for a zero group (`millinillion` 10^3003, `millinillitrillion` 10^3000012,
+  `undecillinilliseptuagintasescentillisestrigintillion` 10^33002010111).
+- **Sources.** Robert Munafo, *Large Numbers*, Conway-Wechsler section (marker table, `trescentillion`,
+  `sexoctogintillion`, `millinillitrillion`, `sextillisexagintaquingentillion`):
+  <https://www.mrob.com/pub/math/largenum.html>; Wikipedia, *Names of large numbers*, Conway-Guy section
+  (marker footnotes, 10^3000012 and 10^33002010111 examples):
+  <https://en.wikipedia.org/wiki/Names_of_large_numbers>. Wikipedia's 10^29629629633 example spells
+  `trequadraginta` and `duecenti`, contradicting the same article's marker rules; it is not used.
+
 ## NTS-23 — Ewe scales above the million (2026-10-07)
 
 - **Premises (ticket, not re-audited).** The linguistic audit preceding NTS-23 is taken as validated:
@@ -83,9 +103,9 @@ the remaining validation and its criterion are tracked per capability in `TODO.m
   prefix + `li` + `ɔn` (`mi`+`li`+`ɔn` = `miliɔn`, `quadri`+`li`+`ɔn` = `quadriliɔn`). The effective
   `startIndex` is 0: with two static names, scale 2 is Conway n = 1. The higher names therefore follow the
   shared tables as they are. Conway's systematic forms are intended (`quinquadeciliɔn`, `sedeciliɔn`,
-  `novendeciliɔn`, not the dictionary `quin-`, `sex-`, `novem-`); two table errors (`uni` for `un`,
-  `vingti` for `viginti`, hence `unideciliɔn`, `vingtiliɔn`) are tracked for every SCALE-SHORT language
-  in NTS-24.
+  `novendeciliɔn`, not the dictionary `quin-`, `sex-`, `novem-`). The shared construction was corrected
+  for every SCALE-SHORT and SCALE-LONG language by NTS-24 (`undeciliɔn`, `vigintiliɔn`, `trigintiliɔn`,
+  `miliniliɔn`; see `DONE-2026-10-08.md`), with no Ewe-specific configuration.
 - **Domain.** The scale is unbounded (`NumberScale.IsUnbounded`, `CanNameGroup` true for every index), so
   `maxNumber` is removed, the policy of the other SCALE-SHORT languages (EN, ID, SW, TR). Cardinals accept
   any `BigInteger` (10^303 = `centiliɔn ɖeka`); ordinals keep the engine-wide `long` limit.

@@ -275,8 +275,8 @@ Examples:
     | number                                                                          | expected         |
     |                   1000000000000000000000000000000000000000000000000000000000000 | un decillion     |
     |                1000000000000000000000000000000000000000000000000000000000000000 | un decilliard    |
-    |             1000000000000000000000000000000000000000000000000000000000000000000 | un unidecillion  |
-    |          1000000000000000000000000000000000000000000000000000000000000000000000 | un unidecilliard |
+    |             1000000000000000000000000000000000000000000000000000000000000000000 | un undecillion  |
+    |          1000000000000000000000000000000000000000000000000000000000000000000000 | un undecilliard |
     |       1000000000000000000000000000000000000000000000000000000000000000000000000 | un duodecillion  |
     |    1000000000000000000000000000000000000000000000000000000000000000000000000000 | un duodecilliard |
     | 1000000000000000000000000000000000000000000000000000000000000000000000000000000 | un tredecillion  |
@@ -291,7 +291,7 @@ Scenario: A composed very large long-scale cardinal number
 Scenario: A very large cardinal number follows the shipped scale vocabulary
     Given I use the "FR-fr" number converter
     When I convert the cardinal number 1852673427797059126777135760139006525652319754650249024631321344126610074238975
-    Then the result is "un tredecillion huit cent cinquante deux duodecilliards six cent soixante treize duodecillions quatre cent vingt sept unidecilliards sept cent quatre-vingt dix sept unidecillions cinquante neuf decilliards cent vingt six decillions sept cent soixante dix sept nonilliards cent trente cinq nonillions sept cent soixante octilliards cent trente neuf octillions six septilliards cinq cent vingt cinq septillions six cent cinquante deux sextilliards trois cent dix neuf sextillions sept cent cinquante quatre quintilliards six cent cinquante quintillions deux cent quarante neuf quadrilliards vingt quatre quadrillions six cent trente et un trilliards trois cent vingt et un trillions trois cent quarante quatre billiards cent vingt six billions six cent dix milliards soixante quatorze millions deux cent trente huit mille neuf cent soixante quinze"
+    Then the result is "un tredecillion huit cent cinquante deux duodecilliards six cent soixante treize duodecillions quatre cent vingt sept undecilliards sept cent quatre-vingt dix sept undecillions cinquante neuf decilliards cent vingt six decillions sept cent soixante dix sept nonilliards cent trente cinq nonillions sept cent soixante octilliards cent trente neuf octillions six septilliards cinq cent vingt cinq septillions six cent cinquante deux sextilliards trois cent dix neuf sextillions sept cent cinquante quatre quintilliards six cent cinquante quintillions deux cent quarante neuf quadrilliards vingt quatre quadrillions six cent trente et un trilliards trois cent vingt et un trillions trois cent quarante quatre billiards cent vingt six billions six cent dix milliards soixante quatorze millions deux cent trente huit mille neuf cent soixante quinze"
 
 Scenario Outline: Composite thousands preserve the terminal unit in metropolitan French
     Given I use the "FR-fr" number converter

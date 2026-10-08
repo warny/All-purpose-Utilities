@@ -219,13 +219,16 @@ Examples:
     | number                                                                          | expected                  |
     | 1000000000000000000000000000000                                                 | one nonillion             |
     | 1000000000000000000000000000000000000000000000000000000000000                 | one novendecillion        |
-    | 1000000000000000000000000000000000000000000000000000000000000000000000000000  | one quattuorvingtillion   |
+    | 1000000000000000000000000000000000000                                           | one undecillion           |
+    | 1000000000000000000000000000000000000000000000000000000000000000                | one vigintillion          |
+    | 1000000000000000000000000000000000000000000000000000000000000000000000000000    | one quattuorvigintillion  |
+    | 1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000 | one trigintillion         |
 
 @HugeNumber
 Scenario: A very large cardinal number follows the shipped scale vocabulary
     Given I use the "en-UK" number converter
     When I convert the cardinal number 1852673427797059126777135760139006525652319754650249024631321344126610074238975
-    Then the result is "one quinquavingtillion, eight hundred and fifty-two quattuorvingtillion, six hundred and seventy-three tresvingtillion, four hundred and twenty-seven duovingtillion, seven hundred and ninety-seven univingtillion, fifty-nine vingtillion, one hundred and twenty-six novendecillion, seven hundred and seventy-seven octodecillion, one hundred and thirty-five septendecillion, seven hundred and sixty sedecillion, one hundred and thirty-nine quinquadecillion, six quattuordecillion, five hundred and twenty-five tredecillion, six hundred and fifty-two duodecillion, three hundred and nineteen unidecillion, seven hundred and fifty-four decillion, six hundred and fifty nonillion, two hundred and forty-nine octillion, twenty-four septillion, six hundred and thirty-one sextillion, three hundred and twenty-one quintillion, three hundred and forty-four quadrillion, one hundred and twenty-six trillion, six hundred and ten billion, seventy-four million, two hundred and thirty-eight thousand, nine hundred and seventy-five"
+    Then the result is "one quinquavigintillion, eight hundred and fifty-two quattuorvigintillion, six hundred and seventy-three tresvigintillion, four hundred and twenty-seven duovigintillion, seven hundred and ninety-seven unvigintillion, fifty-nine vigintillion, one hundred and twenty-six novendecillion, seven hundred and seventy-seven octodecillion, one hundred and thirty-five septendecillion, seven hundred and sixty sedecillion, one hundred and thirty-nine quinquadecillion, six quattuordecillion, five hundred and twenty-five tredecillion, six hundred and fifty-two duodecillion, three hundred and nineteen undecillion, seven hundred and fifty-four decillion, six hundred and fifty nonillion, two hundred and forty-nine octillion, twenty-four septillion, six hundred and thirty-one sextillion, three hundred and twenty-one quintillion, three hundred and forty-four quadrillion, one hundred and twenty-six trillion, six hundred and ten billion, seventy-four million, two hundred and thirty-eight thousand, nine hundred and seventy-five"
 
 Scenario: Ordinal conversion is supported
     Given I use the "EN" number converter

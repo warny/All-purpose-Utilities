@@ -1521,6 +1521,26 @@ a rule covering it is inert there.
 prefix and the suffix of generated names (default `lli`: "million"); Italian uses `li` for
 "milione", "miliardo", "bilione".
 
+The shared `SCALE-SHORT` and `SCALE-LONG` tables implement the strict Conway-Guy-Wechsler system
+(`quinquadecillion`, `sedecillion` and `novendecillion` are its systematic forms, kept on purpose
+instead of the dictionary `quindecillion`, `sexdecillion`, `novemdecillion`). The generated prefix
+value is split into groups of three digits, each named on its own and joined by `groupSeparator`:
+`000` is `voidGroup`, `1`–`9` is `Scale0Prefixes`, `10`–`999` composes units, tens and hundreds.
+Each units/tens/hundreds entry reads `(start)stem[default|-illi=>form](end)`, every part but the
+stem optional: a component takes the first of its `(end)` consonants accepted by the next
+component's `(start)` markers, and the bracketed ending uses `form` when the component ends its
+group, right before the `-illi-` junction:
+
+```csharp
+var en = NumberToStringConverter.GetConverter("EN");
+en.Scale.GetScaleName(12);        // "undecillion"         10^36   (Conway n = scale index - 1)
+en.Scale.GetScaleName(21);        // "vigintillion"        10^63
+en.Scale.GetScaleName(31);        // "trigintillion"       10^93   (trigint[a|-illi=>i])
+en.Scale.GetScaleName(131);       // "trigintacentillion"  10^393  (triginta inside the group)
+en.Scale.GetScaleName(1001);      // "millinillion"        10^3003 (groups 1 | 0)
+en.Scale.GetScaleName(1_000_004); // "millinillitrillion"  10^3000012
+```
+
 #### Scale lexical forms — `<ScaleForm>`
 
 When a language needs more than singular/plural for a scale noun, `<ScaleForm>` (inside

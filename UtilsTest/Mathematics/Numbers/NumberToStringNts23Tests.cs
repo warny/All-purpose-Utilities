@@ -62,13 +62,19 @@ public class NumberToStringNts23Tests
         for (int index = 0; index < expected.Length; index++)
             Assert.AreEqual(expected[index], scale.GetScaleName(index), $"scale {index}");
 
-        // Higher names follow the SCALE-SHORT tables as they are: sedeciliɔn is the intended Conway form, while
-        // unideciliɔn and vingtiliɔn carry the two table errors tracked by NTS-24 (strict undeciliɔn, vigintiliɔn).
-        Assert.AreEqual("unideciliɔn", scale.GetScaleName(12));
+        // Higher names follow the shared strict Conway-Wechsler construction of SCALE-SHORT (NTS-24), with the Ewe
+        // junction "li" and suffix "ɔn": sedeciliɔn is the intended Conway form, the final vowel of a group becomes i
+        // (trigintiliɔn), and each three-digit group above the 999th restarts from Scale0Prefixes (miliniliɔn).
+        Assert.AreEqual("undeciliɔn", scale.GetScaleName(12));
         Assert.AreEqual("duodeciliɔn", scale.GetScaleName(13));
         Assert.AreEqual("sedeciliɔn", scale.GetScaleName(17));
-        Assert.AreEqual("vingtiliɔn", scale.GetScaleName(21));
+        Assert.AreEqual("vigintiliɔn", scale.GetScaleName(21));
+        Assert.AreEqual("trigintiliɔn", scale.GetScaleName(31));
         Assert.AreEqual("centiliɔn", scale.GetScaleName(101));
+        Assert.AreEqual("miliniliɔn", scale.GetScaleName(1001));
+        Assert.AreEqual("milimiliɔn", scale.GetScaleName(1002));
+        Assert.AreEqual("miliniliniliɔn", scale.GetScaleName(1_000_001));
+        Assert.AreEqual("milinilitriliɔn", scale.GetScaleName(1_000_004));
     }
 
     /// <summary>The generated scale is unbounded, so the domain has no maximum, like the other SCALE-SHORT languages.</summary>
@@ -177,7 +183,8 @@ public class NumberToStringNts23Tests
     {
         var converter = Ewe;
         Assert.AreEqual("quintiliɔn ɖeka", converter.Convert(Pow10(18)));
-        Assert.AreEqual("vingtiliɔn ɖeka", converter.Convert(Pow10(63)));
+        Assert.AreEqual("vigintiliɔn ɖeka", converter.Convert(Pow10(63)));
+        Assert.AreEqual("trigintiliɔn ɖeka", converter.Convert(Pow10(93)));
         Assert.AreEqual("centiliɔn ɖeka", converter.Convert(Pow10(303)));
         Assert.AreEqual("centiliɔn eve kple noniliɔn ɖeka kple ɖeka", converter.Convert(2 * Pow10(303) + Pow10(30) + 1));
         Assert.AreEqual("minus centiliɔn ɖeka", converter.Convert(-Pow10(303)));
