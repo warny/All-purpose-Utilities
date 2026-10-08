@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
     <Language
-        baseOn="SCALE-LONG"
+        baseOn="SCALE-SHORT-CYRILLIC"
         groupSize="3"
         separator=" "
         groupSeparator=""
@@ -50,12 +50,17 @@
                 <Digit digit="9" string="дев'ятсот" buildString="дев'ятсот *" />
             </Group>
         </Groups>
-        <!-- Long scale with groupSeparator="ль":
-             мі+ль+йон(ів)=мільйон(ів), мі+ль+ярд(ів)=мільярд(ів),
-             бі+ль+йон(ів)=більйон(ів), три+ль+йон(ів)=трильйон(ів)…
-             Note: й (U+0439) starts suffix йон, я (U+044F) starts suffix ярд.
+        <!-- Short scale with мільярд (NTS-25): мільйон 10^6 and мільярд 10^9 are static, then
+             три+ль+йон(ів) = трильйон(ів) (10^12), квадрильйон(ів) (10^15), квінтильйон(ів)…
+             startIndex=2 maps scale 4 (10^12) to Conway index 3.
+             The four Conway tables are overridden in Ukrainian spelling: і after в, г, к, л, м, н
+             and и after д, т, р, ц ("правило дев'ятки": вігінти, тригінта, квінгенти, центи);
+             the geminate of кваттуор is simplified (кватуор); the void group is "ні".
+             The engine uses the same junction between Conway groups and before the suffix, so
+             n = 1000 is мі+ль+ні+ль+йон = мільнільйон (accepted limitation, NTS-25).
+             Note: й (U+0439) starts suffix йон.
              Plural (ів) fires for n≥2; 2–4 form (мільйони) is not handled — accepted limitation. -->
-        <NumberScale firstLetterUpperCase="false" groupSeparator="ль">
+        <NumberScale firstLetterUpperCase="false" voidGroup="ні" groupSeparator="ль" startIndex="2">
             <StaticNames>
                 <Scale value="0" string="" />
                 <!--
@@ -63,10 +68,11 @@
                     Full Ukrainian inflection (тисяча/тисячі/тисяч) is not implemented.
                 -->
                 <Scale value="1" string="тисяч" />
+                <Scale value="2" string="мільйон(ів)" />
+                <Scale value="3" string="мільярд(ів)" />
             </StaticNames>
             <Suffixes>
                 <Suffix>йон(ів)</Suffix>
-                <Suffix>ярд(ів)</Suffix>
             </Suffixes>
             <Scale0Prefixes>
                 <Digit digit="0" string="" />
@@ -80,6 +86,42 @@
                 <Digit digit="8" string="окти" />
                 <Digit digit="9" string="нони" />
             </Scale0Prefixes>
+            <UnitsPrefixes>
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="ун" />
+                <Digit digit="2" string="дуо" />
+                <Digit digit="3" string="тре(с)" />
+                <Digit digit="4" string="кватуор" />
+                <Digit digit="5" string="квінква" />
+                <Digit digit="6" string="се(кс,с)" />
+                <Digit digit="7" string="септе(мн)" />
+                <Digit digit="8" string="окто" />
+                <Digit digit="9" string="нове(мн)" />
+            </UnitsPrefixes>
+            <TensPrefixes>
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="(н)деци" />
+                <Digit digit="2" string="(мс)вігінти" />
+                <Digit digit="3" string="(нс)тригінт[а|-illi=>и]" />
+                <Digit digit="4" string="(нс)квадрагінт[а|-illi=>и]" />
+                <Digit digit="5" string="(нс)квінквагінт[а|-illi=>и]" />
+                <Digit digit="6" string="(н)сексагінт[а|-illi=>и]" />
+                <Digit digit="7" string="(н)септуагінт[а|-illi=>и]" />
+                <Digit digit="8" string="(м,кс,с)октогінт[а|-illi=>и]" />
+                <Digit digit="9" string="нонагінт[а|-illi=>и]" />
+            </TensPrefixes>
+            <HundredsPrefixes>
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="(н,кс,с)центи" />
+                <Digit digit="2" string="(н)дуценти" />
+                <Digit digit="3" string="(нс)треценти" />
+                <Digit digit="4" string="(нс)квадрингенти" />
+                <Digit digit="5" string="(нс)квінгенти" />
+                <Digit digit="6" string="(н)сесценти" />
+                <Digit digit="7" string="(н)септингенти" />
+                <Digit digit="8" string="(м,кс,с)октингенти" />
+                <Digit digit="9" string="нонгенти" />
+            </HundredsPrefixes>
         </NumberScale>
         <Replacements>
             <!-- Drop "один" before "тисяч": 1000 = "тисяч" not "один тисяч" -->

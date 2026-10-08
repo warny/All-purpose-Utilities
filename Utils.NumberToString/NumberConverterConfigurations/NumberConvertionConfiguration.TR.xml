@@ -52,10 +52,15 @@
             </Group>
         </Groups>
         <!-- Turkish hybrid scale: milyon (10^6) and milyar (10^9) are borrowed from French
-             and treated as static names. From 10^12, Turkish uses suffix "lyon" with Turkish
-             prefix names: tri+lyon=trilyon, katri+lyon=katrilyon, kenti+lyon=kentilyon…
-             startIndex=2 shifts the first generated prefix to index 3 ("tri") for scale 4 (10^12). -->
-        <NumberScale firstLetterUpperCase="false" groupSeparator="" startIndex="2">
+             and treated as static names. From 10^12, Turkish uses groupSeparator "l" and suffix
+             "yon" with Turkish prefix names: tri+l+yon=trilyon, katri+l+yon=katrilyon…
+             startIndex=2 shifts the first generated prefix to index 3 ("tri") for scale 4 (10^12).
+             The "l" junction also joins Conway groups (NTS-25): mi+l+ni+l+yon = milnilyon (n = 1000);
+             the engine uses the same junction between groups and before the suffix, so the -i- of a
+             Latin "milli-" is not restored (accepted limitation). The UnitsPrefixes/TensPrefixes/
+             HundredsPrefixes tables are the shared Latin ones; their adaptation to the Turkish
+             alphabet (no q, x) is deferred to NTS-25B. -->
+        <NumberScale firstLetterUpperCase="false" groupSeparator="l" startIndex="2">
             <StaticNames>
                 <Scale value="0" string="" />
                 <!-- Turkish: "bin" alone for 1000; "bir bin" is ungrammatical -->
@@ -64,7 +69,7 @@
                 <Scale value="3" string="milyar" />
             </StaticNames>
             <Suffixes>
-                <Suffix>lyon</Suffix>
+                <Suffix>yon</Suffix>
             </Suffixes>
             <Scale0Prefixes>
                 <Digit digit="0" string="" />
@@ -110,9 +115,8 @@
                 <Replacement oldValue="bin" newValue="bini" scope="LastWord" />
                 <Replacement oldValue="milyon" newValue="milyonu" scope="LastWord" />
                 <Replacement oldValue="milyar" newValue="milyarı" scope="LastWord" />
-                <Replacement oldValue="trilyon" newValue="trilyonu" scope="LastWord" />
-                <Replacement oldValue="katrilyon" newValue="katrilyonu" scope="LastWord" />
-                <Replacement oldValue="kentilyon" newValue="kentilyonu" scope="LastWord" />
+                <!-- Every generated scale name ends with the suffix yon (trilyon, katrilyon, milnilyon…). -->
+                <Replacement oldValue="yon" newValue="yonu" scope="EndsWith" />
             </Variant>
             <Variant type="case" variant="dative">
                 <Replacement oldValue="bir" newValue="bire" scope="LastWord" />
@@ -137,9 +141,8 @@
                 <Replacement oldValue="bin" newValue="bine" scope="LastWord" />
                 <Replacement oldValue="milyon" newValue="milyona" scope="LastWord" />
                 <Replacement oldValue="milyar" newValue="milyara" scope="LastWord" />
-                <Replacement oldValue="trilyon" newValue="trilyona" scope="LastWord" />
-                <Replacement oldValue="katrilyon" newValue="katrilyona" scope="LastWord" />
-                <Replacement oldValue="kentilyon" newValue="kentilyona" scope="LastWord" />
+                <!-- Every generated scale name ends with the suffix yon (trilyon, katrilyon, milnilyon…). -->
+                <Replacement oldValue="yon" newValue="yona" scope="EndsWith" />
             </Variant>
         </Variants>
         <!-- The ordinal suffix -(I)ncI follows vowel harmony and attaches to the last word only

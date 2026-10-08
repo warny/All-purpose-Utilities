@@ -53,18 +53,19 @@
                 <Digit digit="9" string="mia tisa" buildString="mia tisa na *" />
             </Group>
         </Groups>
-        <!-- Short scale with suffix "lioni" and groupSeparator="" (no connector):
-             mi+""+lioni=milioni (10^6), bi+""+lioni=bilioni (10^9),
-             tri+""+lioni=trilioni (10^12)…
-             Default Latin prefixes (mi, bi, tri, quadri, quinti…) are used. -->
-        <NumberScale firstLetterUpperCase="false" groupSeparator="">
+        <!-- Short scale with groupSeparator="li" and suffix "oni" (NTS-25):
+             mi+li+oni=milioni (10^6), bi+li+oni=bilioni (10^9), tri+li+oni=trilioni (10^12)…
+             The "li" junction also joins Conway groups: mi+li+ni+li+oni = milinilioni (n = 1000).
+             Default Latin prefixes (mi, bi, tri, quadri, quinti…) are used; their adaptation to the
+             Swahili alphabet (no q, x) is deferred to NTS-25B. -->
+        <NumberScale firstLetterUpperCase="false" groupSeparator="li">
             <StaticNames>
                 <Scale value="0" string="" />
                 <!-- Swahili: "elfu" alone for 1000; "moja elfu" → "elfu" via Replacement -->
                 <Scale value="1" string="elfu" />
             </StaticNames>
             <Suffixes>
-                <Suffix>lioni</Suffix>
+                <Suffix>oni</Suffix>
             </Suffixes>
         </NumberScale>
         <Replacements>

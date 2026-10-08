@@ -26,14 +26,14 @@ the remaining validation and its criterion are tracked per capability in `TODO.m
 | DA | DA, DA-DK | SCALE-LONG | Yes | `DanishOrdinalLanguageSpecifics` (int range) | Yes | 5 / 12 | `gender` (fælleskøn/intetkøn): neuter `et` for the clock hour | **Consulted**: sproget.dk (Dansk Sprognævn), “Den 101. dalmatiner …” (`hundrede` is the ordinal of 100 per Retskrivningsordbogen); reference usage for the vigesimal ordinals (`halvtredsindstyvende`) and the clock | Ordinals above `int.MaxValue` fail closed |
 | NO | NO, NB, NB-NO | SCALE-LONG | Yes | `NorwegianOrdinalLanguageSpecifics` (int range) | Yes | 5 / 12 | `gender` (hankjønn/hunkjønn/intetkjønn): neuter `ett` for the clock hour | **Consulted**: Riksmålsforbundet, *Grammatikk*, ch. 7 “Tallord” (`tjueførste`, `hundrede`, `tusende`, `millionte`, compounds written together); Språkrådet, “Tall, tid og dato” (no word forms) | Bokmål `andre` retained (Riksmål prefers `annen`) |
 | SV | SV, SV-SE | SCALE-LONG | Yes | `SwedishOrdinalLanguageSpecifics` (int range) | Yes | 5 / 12 | none | Reference usage (`tjugoförsta`, `hundrade`, `tusende`; `fem i halv två`) | Ordinals above `int.MaxValue` fail closed |
-| BG | BG, BG-BG | SCALE-LONG | Yes | `BulgarianOrdinalLanguageSpecifics` (int range, gendered) | Yes | 15 / 12 | `gender` (standalone/masculine/feminine/neuter) | **Consulted**: ezik.bg, “Числително име” (`хиляда сто и втори`, gender endings); dumite-bg.com, entry `двехиляден` | Round thousands with a multi-word multiplier and round millions above one are declined (unverified compound adjectives) |
+| BG | BG, BG-BG | SCALE-SHORT-CYRILLIC (NTS-25A; was SCALE-LONG) | Yes | `BulgarianOrdinalLanguageSpecifics` (int range, gendered) | Yes | 15 / 12 | `gender` (standalone/masculine/feminine/neuter) | **Consulted**: ezik.bg, “Числително име” (`хиляда сто и втори`, gender endings); dumite-bg.com, entry `двехиляден` | Round thousands with a multi-word multiplier and round millions above one are declined (unverified compound adjectives) |
 | HR | HR, HR-HR | SCALE-LONG | Yes (repaired) | Declarative last-word rules + `CroatianOrdinalLanguageSpecifics` (rejects unverified round scales) | Yes | 15 / 12 | none | **Consulted**: Hrvatski pravopis (IHJJ), “Višerječnice”, rule 31 (`tisuću jedan`, `tisuću tristo jedanaest`, `tri tisuće sedamsto trideset tri`, `milijun petsto trideset tisuća`, `dvije milijarde trideset tri milijuna …`; ordinals `tisuću prvi`, `tri tisuće sedamsto trideset treći`); Hrvatski jezični portal, entries `tisućiti`, `milijunti`, `milijarditi`. Reference usage for the clock (`pola dva`, `petnaest do dva`, `sat/sata/sati`) | Masculine nominative ordinals only; every round scale value other than the lexical units 1 000 / 1 000 000 / 1 000 000 000 fails closed as an ordinal. A single thousand followed by a remainder is `tisuću` wherever it stands (`milijun tisuću jedan`) |
 | HU | HU, HU-HU | SCALE-LONG | Yes (repaired) | `HungarianOrdinalLanguageSpecifics` (int range) | Yes | 15 / 12 | none | Reference usage (vowel harmony `tizenegyedik`, `huszonkettedik`; hyphen above 2000; `negyed kettő`, `fél kettő`) | The former `suffix="."` pseudo-ordinals are gone |
 | CS | CS, CS-CZ | SCALE-LONG | Yes | `CzechOrdinalLanguageSpecifics` (gender × case) | Yes | 15 / 12 | `gender` (standalone/mužský/ženský/střední) × `case` | **Consulted** (via search summary): Naše řeč, “Řadové číslovky” (`stý první`, `dvoustý`); reference: Internetová jazyková příručka “Časové údaje” (`půl druhé`, `čtvrt na dvě`) | Ordinals verified up to 9 999; round millions/milliards only for one |
 | SK | SK, SK-SK | SCALE-LONG | Yes | `SlovakOrdinalLanguageSpecifics` (gender × case) | Yes | 15 / 12 | `gender` (mužský/ženský/stredný) × `case` | **Consulted**: teraz.sk, “Ako písať jednoslovné a viacslovné číslovky” (`stoprvý`, `dvetisícdruhý`, `päťsto dvadsiaty ôsmy`); lexika.sk / search summaries (`dvojstý`, `trojstý`, `tisíci`) | Ordinals verified up to 9 999 and one million |
 | PL | PL | none | Yes (existing) | `PolishOrdinalLanguageSpecifics` + declarative | Yes | 5 / 12 | rodzaj × przypadek | Reference usage (Poradnia PWN conventions: `pięć po pierwszej`, `wpół do drugiej`, `za pięć druga`) | — |
-| RU | RU | SCALE-LONG | Yes (existing) | Declarative | Yes | 15 / 12 | gender × case | Reference usage (`четверть второго`, `половина второго`, `без четверти два`, `час/часа/часов`) | Ordinal of zero `нулевой` (NTS-14) |
-| UK | UK, UK-UA | SCALE-LONG | Yes | `UkrainianOrdinalLanguageSpecifics` (gender × case) | Yes | 15 / 12 | `gender` × `case` (Ukrainian values) | Reference usage (`двадцять перший`; `чверть по першій`, `пів на другу`, `чверть до другої`) | Round thousands verified up to 10 000; ASCII apostrophe as in the cardinals |
+| RU | RU | SCALE-SHORT-CYRILLIC (NTS-25A; was SCALE-LONG) | Yes (existing) | Declarative | Yes | 15 / 12 | gender × case | Reference usage (`четверть второго`, `половина второго`, `без четверти два`, `час/часа/часов`) | Ordinal of zero `нулевой` (NTS-14) |
+| UK | UK, UK-UA | SCALE-SHORT-CYRILLIC (NTS-25A; was SCALE-LONG) | Yes | `UkrainianOrdinalLanguageSpecifics` (gender × case) | Yes | 15 / 12 | `gender` × `case` (Ukrainian values) | Reference usage (`двадцять перший`; `чверть по першій`, `пів на другу`, `чверть до другої`) | Round thousands verified up to 10 000; ASCII apostrophe as in the cardinals |
 | ES | ES | none | Yes (existing) | Declarative | Yes | 5 / 12 | gender × form | Reference usage (RAE, *Diccionario panhispánico de dudas*, “hora”) | Exact `Convert(TimeOnly)` unchanged |
 | IT | IT | SCALE-LONG | Yes: 1–1999 except 1110–1910, round thousands 2000–999000, 100001–100009, round multiples of milione/miliardo/bilione/biliardo/trilione | Declarative `<OrdinalStem>`, `<OrdinalComposition>`, `<OrdinalScale>` + `ItalianOrdinalLanguageSpecifics` (domain guard) | Yes | 5 / 12 | gender | Reference usage (Accademia della Crusca: `l'una e mezzo`, `le due meno un quarto`, `le otto meno venti`) | Cardinals soldered with `<Fusion>` (NTS-10); compound ordinals by `<OrdinalStem>` (NTS-13, see below), analytic 1010 and 100001–100009 (NTS-15) and round scale ordinals through trilione (NTS-17, NTS-18) (see below); zero, 1110–1910, the other non-round thousands above 1999 and the non-round values from a million deliberately fail closed as ordinals (Italian closure, see below); millions and above are separate nouns joined by `e` (NTS-14, see below) |
 | PT | PT | none | Yes (existing) | Declarative | Yes | 5 / 12 | gender | **Consulted** for the constructions the configuration does *not* use: Ciberdúvidas, “Minutos para a hora” (`um quarto para as dez`, `dez para as três`, `três menos dez`). The direct reading itself (`uma hora e quarenta e cinco`) is a project convention not attested by that source | Deliberate direct numeric reading; `para`/`menos` constructions not produced; PT-PT/PT-BR not split |
@@ -59,6 +59,38 @@ the remaining validation and its criterion are tracked per capability in `TODO.m
 | ZU | ZU | none | **Deferred** | — | Yes | 15 / 12 | none | **Consulted**: Unisa, *Learn online Zulu*, Theme 4 (`Yihora lesihlanu`, `Ligamenxe elesihlanu`, `... lishayile elesihlanu`, `... ngaphambi kwelesihlanu`) — single source | Hour forms are literal ClockTime patterns; they do not enable ordinals |
 | EE | EE | SCALE-SHORT (scale tables only, NTS-23) | Yes (NTS-20): cardinal + `-lia` on the last element, `gbãtɔ` for 1 | Declarative + `ZeroOrdinalUnsupportedLanguageSpecifics` | **Deferred** | — | none | **Consulted** (NTS-20): Dzablu-Kumah, *Basic Ewe for Foreign Students*; Biblica Open Ewe Contemporary Scriptures; *Ewe Basic Course* 1968; Peace Corps Togo 2010; Wiktionary | Cardinals unbounded (NTS-23): static `akpe`, then the Conway-Wechsler short scale `miliɔn`, `biliɔn`, `triliɔn` (sourced anchors), `quadriliɔn` … (project extrapolation), each before its standalone multiplier (`multiplierPosition="afterScale"`); zero ordinal unsupported |
 | WO | WO | none | Yes (`-éel`, NTS-16, NTS-19) | Declarative + `WolofOrdinalLanguageSpecifics` | **Deferred** | — | none | No consistent source found | Cardinals 0–999 999; no ordinal of zero nor of the round thousands |
+
+## NTS-25A — Localized Conway names: Cyrillic tables, SW and TR junctions (2026-10-08)
+
+- **Project rule (generation convention, not a linguistic norm).** When a language has adopted the
+  mi/bi/tri/… large-number family, the library permits a productive Conway-Wechsler extension using that
+  language's own transliteration or adaptation of the prefix tables. Individual names above the forms the
+  language actually uses are not claimed to be attested; what is required is a consistent transliteration.
+- **Short scale with milliard (RU, BG, UK).** Russian, Bulgarian and Ukrainian count 10^12 as trillion
+  (триллион, трилион, трильйон) with milliard for 10^9; the previous `SCALE-LONG` inheritance (10^12
+  `биллион`/`билион`/`більйон`) was wrong and the feature tests asserting it were corrected. Consulted:
+  ru.wikipedia, *Именные названия степеней тысячи* (short scale; `триллион` 10^12, `квадриллион` 10^15,
+  `дециллион` 10^33, `ундециллион` 10^36, `кваттордециллион` with the variant `кваттуордециллион` 10^45,
+  `седециллион`/`сексдециллион`, `септдециллион`/`септендециллион`, `центиллион` 10^303, `дуцентиллион`
+  10^603; read through a page summary); Wikipedia, *Long and short scales*, "By continent — Europe"
+  (Russian, Ukrainian, Bulgarian and Turkish under short scale, Russian `миллиард`/`триллион`, Turkish
+  `milyar`/`trilyon`). The strict Conway variants are kept where the page lists both (`кваттуор`,
+  `седеци`, `септендеци`), consistently with NTS-24.
+- **Cyrillic transliteration (`SCALE-SHORT-CYRILLIC`).** Letter mapping of the NTS-24 marker table:
+  c → ц, qu → кв, x → кс, i → и, terminal a → и before the junction; markers n → н, m → м, s → с,
+  x → кс (two letters, written as the comma list `(н,кс,с)`/`се(кс,с)`); void group `ни`. The base
+  follows the Russian spelling attested above (`кваттуор`, `дуценти`). Bulgarian and Ukrainian simplify
+  the geminate (`кватуор`), as they do in their own `милион`/`мільйон` against Russian `миллион`.
+  Ukrainian writes и after д, т, р, ц and і elsewhere (*правило дев'ятки* for loanwords): `вігінти`,
+  `тригінта`, `квінква`, `квінгенти`, `центи`, `квадрингенти`; void group `ні`. Online Bulgarian and
+  Ukrainian lists of names above the decillion could not be retrieved (bg/uk Wikipedia pages not
+  found), so these spellings rest on the rule above, not on individual attestation.
+- **Junctions.** RU `лли` + `он` (миллиниллион), BG `ли` + `он` (милинилион), SW `li` + `oni`
+  (milinilioni) reproduce the Latin `-illi-` in both positions. UK `ль` + `йон` and TR `l` + `yon` cannot:
+  the engine has one `groupSeparator` for both positions, so 10^3003 is `мільнільйон`/`milnilyon` (owner
+  decision: accepted limitation).
+- **Deferred to NTS-25B (owner decision).** ID/MS units/tens/hundreds tables, and the TR/SW Latin
+  tables containing letters absent from those alphabets (q, x; Turkish c read /dʒ/).
 
 ## NTS-24 — Strict Conway-Guy-Wechsler scale names (2026-10-08)
 

@@ -1486,6 +1486,8 @@
                                                     "(start)stem[default|-illi=>form](end)": the first (end) letter accepted
                                                     by the next component's (start) markers links them, and the bracketed
                                                     ending uses "form" when the component ends its group (before -illi-).
+                                                    Without commas each letter of a marker list is one marker ("(nxs)");
+                                                    a comma-separated list holds multi-letter markers ("се(кс,с)").
                                                 </xs:documentation>
                                             </xs:annotation>
                                         </xs:element>

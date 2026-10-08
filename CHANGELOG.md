@@ -43,6 +43,24 @@ All notable changes to this project will be documented in this file.
 - Added `ItalianOrdinalLanguageSpecifics`, restricting Italian ordinals to verified forms.
 - Added `WolofOrdinalLanguageSpecifics`, a domain guard rejecting the Wolof ordinals of zero and of the round thousands.
 
+### Fixed — `omy.Utils.NumberToString` (NTS-25A; NTS-25B open)
+- Russian, Bulgarian and Ukrainian large scales now use the short scale with a static milliard
+  (intentional output change, the previous long scale was wrong for these languages): 10^12 is
+  `триллион`/`трилион`/`трильйон` (was `биллион`/`билион`/`більйон`), 10^15 `квадриллион`, 10^18
+  `квинтиллион`. Their names above 10^30 come from the new `SCALE-SHORT-CYRILLIC` base, a Cyrillic
+  transliteration of the Conway-Guy-Wechsler tables, instead of mixing scripts (`deciллион` →
+  `дециллион`, 10^3003 `миллиниллион`, `милинилион`, `мільнільйон`); Bulgarian (`кватуор`) and
+  Ukrainian (і/и spelling) override the tables where their orthography differs.
+- Swahili and Turkish keep the Conway junction between groups above the 999th -illion: SW splits its
+  suffix into `groupSeparator="li"` + `oni` (10^3003 `milinilioni`, was `minilioni`), TR into `l` + `yon`
+  (`milnilyon`, was `minilyon`); the names up to the 999th -illion are unchanged. Turkish accusative
+  and dative now inflect every generated scale name (`seksilyonu`, `milnilyona`), not only
+  `trilyon`/`katrilyon`/`kentilyon`. ID and MS are unchanged (audited in NTS-25B).
+- Prefix table entries accept multi-letter linking consonants: a comma-separated `(start)`/`(end)`
+  marker list holds one marker per token (`се(кс,с)` + `(н,кс,с)центи` → `сексцентиллион`); without a
+  comma each letter remains a marker. Empty tokens are rejected when the scale is built. No public API
+  or XSD schema change.
+
 ### Fixed — `omy.Utils.NumberToString` (NTS-24 closed)
 - Corrected Conway-Wechsler dynamic scale generation (intentional output change): `undecillion`,
   `vigintillion`, `trigintillion` (and every round tens: `quadragintillion` … `nonagintillion`) and the

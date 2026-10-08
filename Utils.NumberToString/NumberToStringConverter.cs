@@ -3333,7 +3333,8 @@ namespace Utils.NumberToString
         /// The units, tens and hundreds entries compose a base-1000 group between 10 and 999, read in that order.
         /// Each entry follows <c>(start)stem[default|-illi=&gt;form](end)</c>, every part but the stem being optional:
         /// <c>end</c> lists the linking consonants the component may take before the next one, the first one accepted
-        /// by the next component's <c>start</c> markers being inserted; the bracketed ending uses <c>form</c> when the
+        /// by the next component's <c>start</c> markers being inserted (each letter is a marker, unless the list is
+        /// comma-separated: <c>се(кс,с)</c> takes the two-letter кс or с); the bracketed ending uses <c>form</c> when the
         /// component is the last of its group, right before the -illi- junction, and <c>default</c> otherwise
         /// (<c>(ns)trigint[a|-illi=&gt;i]</c>: trigintillion, trigintacentillion).
         /// </remarks>
@@ -3510,9 +3511,9 @@ namespace Utils.NumberToString
 
                 builder.Append(component.Value);
                 // At most one linking consonant: the first end marker that the next component accepts.
-                foreach (char marker in component.End)
+                foreach (string marker in component.End)
                 {
-                    if (components[next].Start.Contains(marker))
+                    if (Array.IndexOf(components[next].Start, marker) >= 0)
                     {
                         builder.Append(marker);
                         break;
@@ -3526,7 +3527,8 @@ namespace Utils.NumberToString
         /// every part except the stem being optional: <c>start</c> lists the markers accepted from the preceding
         /// component, <c>end</c> the linking consonants this component may take before the next one (the first accepted
         /// one is inserted), and the bracketed ending selects <c>form</c> when the component is the last of its group
-        /// (before the -illi- junction) and <c>default</c> otherwise. An empty entry is an empty component; any other
+        /// (before the -illi- junction) and <c>default</c> otherwise. A marker list separated by commas holds
+        /// multi-letter linking consonants (<c>се(кс,с)</c>). An empty entry is an empty component; any other
         /// entry must match the grammar completely, or <see cref="ArgumentException"/> is thrown.
         /// </summary>
         /// <param name="table">Validated ten-entry table.</param>
@@ -3557,8 +3559,26 @@ namespace Utils.NumberToString
                     value = stem + defaultEnding;
                     illiValue = stem + illiEnding;
                 }
-                result[digit] = new PrefixComponent(match.Groups["start"].Value, value, match.Groups["end"].Value, illiValue);
+                result[digit] = new PrefixComponent(
+                    ParseMarkers(match.Groups["start"].Value), value, ParseMarkers(match.Groups["end"].Value), illiValue);
             }
+            return result;
+        }
+
+        /// <summary>
+        /// Splits a <c>(start)</c> or <c>(end)</c> marker list into linking markers. Without a comma every character is
+        /// one marker (<c>nxs</c>: n, x, s); with commas every comma-separated token is one marker, so a linking consonant
+        /// may be spelled with several letters (<c>кс,с</c>: кс, с). The prefix grammar already rejects empty tokens.
+        /// </summary>
+        /// <param name="markers">Marker list captured between the parentheses, or an empty string when absent.</param>
+        /// <returns>The markers in priority order; empty when the list is absent.</returns>
+        private static string[] ParseMarkers(string markers)
+        {
+            if (markers.Length == 0) return [];
+            if (markers.Contains(',')) return markers.Split(',');
+            var result = new string[markers.Length];
+            for (int i = 0; i < markers.Length; i++)
+                result[i] = markers[i].ToString();
             return result;
         }
 
@@ -3603,19 +3623,22 @@ namespace Utils.NumberToString
         /// <summary>One parsed entry of a units, tens or hundreds prefix table.</summary>
         /// <param name="Start">Markers accepted from the preceding component's end markers.</param>
         /// <param name="Value">Text used when another component of the group follows.</param>
-        /// <param name="End">Linking consonants this component may take, in priority order.</param>
+        /// <param name="End">Linking consonants this component may take, in priority order; each one is inserted verbatim.</param>
         /// <param name="IlliValue">Text used when the component is the last of its group.</param>
-        private readonly record struct PrefixComponent(string Start, string Value, string End, string IlliValue)
+        private readonly record struct PrefixComponent(string[] Start, string Value, string[] End, string IlliValue)
         {
             /// <summary>Gets the component standing for an empty table entry.</summary>
-            public static PrefixComponent Empty { get; } = new("", "", "", "");
+            public static PrefixComponent Empty { get; } = new([], "", [], "");
 
             /// <summary>Gets whether the component contributes nothing to the name.</summary>
             public bool IsEmpty => Value.Length == 0 && IlliValue.Length == 0;
         }
 
-        /// <summary>Matches a complete prefix table entry: <c>(start)stem[endings](end)</c>, nothing before or after.</summary>
-        [GeneratedRegex(@"\A(\((?<start>\w+)\))?(?<value>\w+)(\[(?<endings>[^\]]*)\])?(\((?<end>\w+)\))?\z", RegexOptions.Compiled)]
+        /// <summary>
+        /// Matches a complete prefix table entry: <c>(start)stem[endings](end)</c>, nothing before or after. A marker list
+        /// is either a run of single-letter markers or comma-separated non-empty tokens (no leading, trailing or doubled comma).
+        /// </summary>
+        [GeneratedRegex(@"\A(\((?<start>\w+(,\w+)*)\))?(?<value>\w+)(\[(?<endings>[^\]]*)\])?(\((?<end>\w+(,\w+)*)\))?\z", RegexOptions.Compiled)]
         private static partial Regex PrefixParserRegex();
     }
 }
