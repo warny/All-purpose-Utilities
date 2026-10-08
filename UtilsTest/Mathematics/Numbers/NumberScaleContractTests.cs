@@ -235,6 +235,49 @@ public class NumberScaleContractTests
         Assert.IsFalse(scale.CanNameGroup(999));
     }
 
+    /// <summary>
+    /// Every 1..9 entry of the units, tens and hundreds tables is needed by some 10..999 group, so an empty one makes
+    /// the scale bounded and the groups that need it unnameable, instead of silently dropping the component.
+    /// </summary>
+    [TestMethod]
+    public void EmptyCompositionPrefix_IsNotNameable()
+    {
+        string[] full = ["", "a", "b", "c", "d", "e", "f", "g", "h", "i"];
+        string[] missingOne = ["", "", "b", "c", "d", "e", "f", "g", "h", "i"];
+
+        // Index = prefix value - 1 (no static names): 011 needs units[1] and tens[1], 100 needs hundreds[1].
+        var noUnit = new NumberScale([], ["on"], scale0Prefixes: full, unitsPrefixes: missingOne, tensPrefixes: full, hundredsPrefixes: full);
+        Assert.IsFalse(noUnit.IsUnbounded);
+        Assert.IsFalse(noUnit.CanNameGroup(10));
+        Assert.IsTrue(noUnit.CanNameGroup(11));
+
+        var noTen = new NumberScale([], ["on"], scale0Prefixes: full, unitsPrefixes: full, tensPrefixes: missingOne, hundredsPrefixes: full);
+        Assert.IsFalse(noTen.IsUnbounded);
+        Assert.IsFalse(noTen.CanNameGroup(9));
+        Assert.IsFalse(noTen.CanNameGroup(10));
+        Assert.IsTrue(noTen.CanNameGroup(20));
+
+        var noHundred = new NumberScale([], ["on"], scale0Prefixes: full, unitsPrefixes: full, tensPrefixes: full, hundredsPrefixes: missingOne);
+        Assert.IsFalse(noHundred.IsUnbounded);
+        Assert.IsFalse(noHundred.CanNameGroup(99));
+        Assert.IsFalse(noHundred.CanNameGroup(1_000_100));
+        Assert.IsTrue(noHundred.CanNameGroup(199));
+    }
+
+    /// <summary>A composition entry must match the prefix grammar completely; text before or after it is rejected.</summary>
+    [TestMethod]
+    public void PrefixEntry_TrailingOrLeadingText_IsRejected()
+    {
+        string[] digits = ["", "a", "b", "c", "d", "e", "f", "g", "h", "i"];
+        foreach (string entry in new[] { "trigint[a|-illi=>i]garbage", "trigint!", "-trigint", "x(ns)trigint", "trigint a" })
+        {
+            string[] tens = ["", "deci", "", entry, "", "", "", "", "", ""];
+            Assert.ThrowsExactly<ArgumentException>(() => new NumberScale(
+                [], ["on"], scale0Prefixes: digits, unitsPrefixes: digits, tensPrefixes: tens, hundredsPrefixes: digits),
+                entry);
+        }
+    }
+
     /// <summary>FirstLetterUppercase capitalizes the complete name once, not each -illi- group.</summary>
     [TestMethod]
     public void FirstLetterUppercase_CapitalizesOnlyTheWholeName()

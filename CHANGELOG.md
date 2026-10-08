@@ -55,9 +55,10 @@ All notable changes to this project will be documented in this file.
   corrected names automatically; German also gains `eine` before the corrected `-illion` names.
 - Prefix table entries accept a bracketed ending, `(start)stem[default|-illi=>form](end)`, used when the
   component ends its group (`(ns)trigint[a|-illi=>i]`); an unsupported context is rejected when the
-  scale is built. `FirstLetterUppercase` now capitalizes a grouped name once. An empty
-  `Scale0Prefixes` entry 1–9 makes the scale bounded (`IsUnbounded` false) instead of producing a
-  degenerate name; ID declares `mi`/`bi` there. No public API or XSD schema change.
+  scale is built, as is an entry with text outside the grammar. `FirstLetterUppercase` now capitalizes
+  a grouped name once. An empty entry 1–9 in `Scale0Prefixes`, `UnitsPrefixes`, `TensPrefixes` or
+  `HundredsPrefixes` makes the scale bounded (`IsUnbounded` false) and the groups needing it
+  unnameable instead of producing a degenerate name; ID declares `mi`/`bi` in `Scale0Prefixes`. No public API or XSD schema change.
 
 ### Changed — `omy.Utils.NumberToString` (NTS-23 closed)
 - Ewe large-number naming now follows the Conway-Wechsler short scale, anchored by sourced `miliɔn`,
