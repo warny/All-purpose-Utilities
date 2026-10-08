@@ -9,7 +9,7 @@ namespace UtilsTest.NumberToString;
 
 /// <summary>
 /// NTS-25 (part A) guards for the localized Conway-Wechsler scales. RU, BG and UK use the Cyrillic Conway tables of
-/// SCALE-SHORT-CYRILLIC (short scale with a static milliard), and SW and TR keep the Latin tables but split their
+/// SCALE-SHORT-CYRILLIC (short scale with a static milliard), and SW and TR (whose tables NTS-25B localized) split their
 /// former suffix into a junction (groupSeparator) and a suffix so that multi-group names keep the junction. The
 /// higher names are a project-defined productive extension of the mi/bi/tri family each language has adopted, so
 /// the tests check the mechanism and the consistency of the transliteration, not individually attested forms.
@@ -249,8 +249,8 @@ public class NumberToStringNts25Tests
         // Static names "" and elfu, no index offset: scale n + 1 is Conway n.
         (int N, string Name)[] expected =
         [
-            (1, "milioni"), (2, "bilioni"), (3, "trilioni"), (4, "quadrilioni"), (10, "decilioni"),
-            (20, "vigintilioni"), (30, "trigintilioni"), (100, "centilioni"), (1000, "milinilioni"),
+            (1, "milioni"), (2, "bilioni"), (3, "trilioni"), (4, "kwadrilioni"), (10, "desilioni"),
+            (20, "vigintilioni"), (30, "trigintilioni"), (100, "sentilioni"), (1000, "milinilioni"),
             (1001, "milimilioni"), (1_000_003, "milinilitrilioni"),
         ];
         foreach (var (n, name) in expected)
@@ -273,8 +273,8 @@ public class NumberToStringNts25Tests
         // Four static names and startIndex 2: scale n + 1 is Conway n from n = 3.
         (int N, string Name)[] expected =
         [
-            (3, "trilyon"), (4, "katrilyon"), (5, "kentilyon"), (10, "decilyon"), (20, "vigintilyon"),
-            (30, "trigintilyon"), (100, "centilyon"), (1000, "milnilyon"), (1001, "milmilyon"),
+            (3, "trilyon"), (4, "katrilyon"), (5, "kentilyon"), (10, "desilyon"), (20, "vigintilyon"),
+            (30, "trigintilyon"), (100, "sentilyon"), (1000, "milnilyon"), (1001, "milmilyon"),
             (1_000_003, "milniltrilyon"),
         ];
         foreach (var (n, name) in expected)
@@ -290,8 +290,8 @@ public class NumberToStringNts25Tests
     [DataRow(12, "case=dative", "bir trilyona")]
     [DataRow(15, "case=accusative", "bir katrilyonu")]
     [DataRow(15, "case=dative", "bir katrilyona")]
-    [DataRow(21, "case=accusative", "bir seksilyonu")]
-    [DataRow(21, "case=dative", "bir seksilyona")]
+    [DataRow(21, "case=accusative", "bir sekstilyonu")]
+    [DataRow(21, "case=dative", "bir sekstilyona")]
     [DataRow(3003, "case=accusative", "bir milnilyonu")]
     [DataRow(3003, "case=dative", "bir milnilyona")]
     [DataRow(6, "case=accusative", "bir milyonu")]

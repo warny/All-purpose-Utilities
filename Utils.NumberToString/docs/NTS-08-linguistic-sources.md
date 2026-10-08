@@ -60,6 +60,35 @@ the remaining validation and its criterion are tracked per capability in `TODO.m
 | EE | EE | SCALE-SHORT (scale tables only, NTS-23) | Yes (NTS-20): cardinal + `-lia` on the last element, `gbãtɔ` for 1 | Declarative + `ZeroOrdinalUnsupportedLanguageSpecifics` | **Deferred** | — | none | **Consulted** (NTS-20): Dzablu-Kumah, *Basic Ewe for Foreign Students*; Biblica Open Ewe Contemporary Scriptures; *Ewe Basic Course* 1968; Peace Corps Togo 2010; Wiktionary | Cardinals unbounded (NTS-23): static `akpe`, then the Conway-Wechsler short scale `miliɔn`, `biliɔn`, `triliɔn` (sourced anchors), `quadriliɔn` … (project extrapolation), each before its standalone multiplier (`multiplierPosition="afterScale"`); zero ordinal unsupported |
 | WO | WO | none | Yes (`-éel`, NTS-16, NTS-19) | Declarative + `WolofOrdinalLanguageSpecifics` | **Deferred** | — | none | No consistent source found | Cardinals 0–999 999; no ordinal of zero nor of the round thousands |
 
+## NTS-25B — Conway tables localized to ID/MS, SW and TR spelling (2026-10-08)
+
+- **Project rule.** A language that has integrated the million/billion/trillion family under identifiable local
+  forms gets a productive Conway-Wechsler extension in its own spelling; the prefixes are adapted with the same
+  mechanisms as its attested loans. Two kinds of names are therefore produced: **attested local forms** (listed
+  below with their source) and **project-authorized Conway extrapolations** (every other name, including all
+  n = 1000 names such as `miliniliun`, `milinilion`, `milinilioni`, `milnilyon`), which are not presented as
+  normative.
+- **ID.** Attested (KBBI, via detik.com and penerbitdeepublish.com summaries of the KBBI entries): `triliun`,
+  `kuadriliun`, `kuintiliun`, `sekstiliun`, `septiliun`, `oktiliun`, `noniliun`, `desiliun`. Rules: qu → ku,
+  x → ks, soft c → s, hard c → k; junction `li` + suffix `un`.
+- **MS.** Attested (DBP PRPM, already cited above for `bilion`, `trilion`): `trilion`, `kuadrilion`,
+  `kuintilion`, `sekstilion`, `septilion`, `oktilion`. Same tables as ID (`baseOn="ID"`), suffix `on`.
+- **SW.** Attested (Wiktionary Swahili entries, "borrowed from English"): `kwadrilioni`, `kwintilioni`,
+  `sekstilioni`, `desilioni`; `milioni`, `bilioni`, `trilioni` were already in use. Rules: qu → kw, x → ks, soft
+  c → s, hard c → k (Swahili writes no q or x, and c only in ch). Contradicting source not followed: the
+  `tarakimu` Python library (`kuadrilioni`, `kuintilioni`, `seksitilioni`).
+- **TR.** Attested (tr.wikipedia, *Büyük sayıların adları*; webtekno.com and sorubak.com for the first terms):
+  `trilyon`, `katrilyon`, `kentilyon`, `sekstilyon`, `septilyon`, `oktilyon`, `nonilyon`, `desilyon`,
+  `undesilyon`, `dodesilyon`, `tredesilyon`, `katordesilyon`, `kendesilyon`, `seksdesilyon`, `septendesilyon`,
+  `oktodesilyon`, `novemdesilyon`, `vigintilyon`, `trigintilyon`, `katragintilyon`, `kenkagintilyon`,
+  `sentilyon`. Morphemes taken from them: qu → k (`katri`, `kenti`, `kator`, `katragint`, `kenkagint`, units
+  `kenka`), duo → `do`, x → ks, c → s (Turkish c reads /dʒ/). The list is the dictionary series; the strict
+  Conway structure (NTS-24) keeps `kenkadesilyon`, `sedesilyon`, `novendesilyon` for n = 15, 16, 19. NTS-25A's
+  `seksi` was wrong (`sekstilyon` is the attested form) and is corrected to `seksti`.
+- **TR n = 1000.** `milnilyon` is kept; `VoidGroup="ini"` (`milinilyon`) was evaluated and not adopted, because
+  it changes only zero groups (`milmilyon`, `mildesilyon` keep the bare `l`) and Turkish accepts `ln` inside a
+  word (`yalnız`). See `DONE-2026-10-08(2).md`.
+
 ## NTS-25A — Localized Conway names: Cyrillic tables, SW and TR junctions (2026-10-08)
 
 - **Project rule (generation convention, not a linguistic norm).** When a language has adopted the
@@ -89,7 +118,7 @@ the remaining validation and its criterion are tracked per capability in `TODO.m
   (milinilioni) reproduce the Latin `-illi-` in both positions. UK `ль` + `йон` and TR `l` + `yon` cannot:
   the engine has one `groupSeparator` for both positions, so 10^3003 is `мільнільйон`/`milnilyon` (owner
   decision: accepted limitation).
-- **Deferred to NTS-25B (owner decision).** ID/MS units/tens/hundreds tables, and the TR/SW Latin
+- **Deferred to NTS-25B (owner decision; done, see the NTS-25B section).** ID/MS units/tens/hundreds tables, and the TR/SW Latin
   tables containing letters absent from those alphabets (q, x; Turkish c read /dʒ/).
 
 ## NTS-24 — Strict Conway-Guy-Wechsler scale names (2026-10-08)

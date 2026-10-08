@@ -53,10 +53,16 @@
             </Group>
         </Groups>
         <!-- Scale: ribu (10^3), juta (10^6), miliar (10^9) as static names.
-             From 10^12 (triliun) onward: generated with suffix "liun", groupSeparator="",
-             startIndex=2 so that scale 4 maps to prefix index 3 ("tri") → "triliun".
-             Scale0Prefixes provide Indonesian/Malay spellings. -->
-        <NumberScale firstLetterUpperCase="false" groupSeparator="" startIndex="2">
+             From 10^12 (triliun) onward the Conway-Wechsler short scale is generated with
+             groupSeparator "li" and suffix "un": tri+li+un = triliun, kuadriliun … desiliun
+             (KBBI). startIndex=2 maps scale 4 to Conway index 3 ("tri").
+             The four Conway tables are adapted to Indonesian spelling (NTS-25B) with the same
+             rules as the attested loans: qu → ku (kuadri, kuinti), x → ks (seksti), soft c → s
+             (desi, senti), hard c → k (okti). Conway's x-link is the two-letter marker ks
+             (se(ks,s) + (n,ks,s)senti = sekssentiliun). The "li" junction also joins Conway
+             groups: mi+li+ni+li+un = miliniliun (n = 1000). Names above desiliun are a
+             productive project extrapolation, not attested forms. MS inherits these tables. -->
+        <NumberScale firstLetterUpperCase="false" groupSeparator="li" startIndex="2">
             <StaticNames>
                 <Scale value="0" string="" />
                 <Scale value="1" string="ribu" />
@@ -64,7 +70,7 @@
                 <Scale value="3" string="miliar" />
             </StaticNames>
             <Suffixes>
-                <Suffix>liun</Suffix>
+                <Suffix>un</Suffix>
             </Suffixes>
             <Scale0Prefixes>
                 <Digit digit="0" string="" />
@@ -78,6 +84,42 @@
                 <Digit digit="8" string="okti" />
                 <Digit digit="9" string="noni" />
             </Scale0Prefixes>
+            <UnitsPrefixes>
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="un" />
+                <Digit digit="2" string="duo" />
+                <Digit digit="3" string="tre(s)" />
+                <Digit digit="4" string="kuatuor" />
+                <Digit digit="5" string="kuinkua" />
+                <Digit digit="6" string="se(ks,s)" />
+                <Digit digit="7" string="septe(mn)" />
+                <Digit digit="8" string="okto" />
+                <Digit digit="9" string="nove(mn)" />
+            </UnitsPrefixes>
+            <TensPrefixes>
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="(n)desi" />
+                <Digit digit="2" string="(ms)viginti" />
+                <Digit digit="3" string="(ns)trigint[a|-illi=>i]" />
+                <Digit digit="4" string="(ns)kuadragint[a|-illi=>i]" />
+                <Digit digit="5" string="(ns)kuinkuagint[a|-illi=>i]" />
+                <Digit digit="6" string="(n)seksagint[a|-illi=>i]" />
+                <Digit digit="7" string="(n)septuagint[a|-illi=>i]" />
+                <Digit digit="8" string="(m,ks,s)oktogint[a|-illi=>i]" />
+                <Digit digit="9" string="nonagint[a|-illi=>i]" />
+            </TensPrefixes>
+            <HundredsPrefixes>
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="(n,ks,s)senti" />
+                <Digit digit="2" string="(n)dusenti" />
+                <Digit digit="3" string="(ns)tresenti" />
+                <Digit digit="4" string="(ns)kuadringenti" />
+                <Digit digit="5" string="(ns)kuingenti" />
+                <Digit digit="6" string="(n)sessenti" />
+                <Digit digit="7" string="(n)septingenti" />
+                <Digit digit="8" string="(m,ks,s)oktingenti" />
+                <Digit digit="9" string="nongenti" />
+            </HundredsPrefixes>
         </NumberScale>
         <Replacements>
             <!-- 1000 = "seribu" not "satu ribu" (se- prefix replaces satu before ribu) -->

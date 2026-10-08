@@ -1,7 +1,7 @@
 # Utils.NumberToString — Current backlog
 
-Re-audited on 2026-10-08 after closing NTS-25A (Cyrillic Conway tables, RU/BG/UK short scale, SW/TR
-junctions; NTS-25B left open for ID/MS and the TR/SW alphabets), and after closing NTS-24 (strict Conway-Guy-Wechsler scale names shared by every
+Re-audited on 2026-10-08 after closing NTS-25 (NTS-25B: ID/MS, SW and TR Conway tables localized to their
+alphabets; NTS-25A: Cyrillic Conway tables, RU/BG/UK short scale, SW/TR junctions), and after closing NTS-24 (strict Conway-Guy-Wechsler scale names shared by every
 SCALE-SHORT and SCALE-LONG language; opened NTS-25), on 2026-10-07 after closing NTS-23 (Ewe large scales:
 Conway-Wechsler short scale inherited from SCALE-SHORT, unbounded domain; opened NTS-24), after closing NTS-22 (Ewe millions: static `miliɔn`,
 domain 0–999 999 999; opened NTS-23), after closing NTS-20 (Ewe cardinals rebuilt to 999 999 and `-lia` ordinals
@@ -71,28 +71,13 @@ classification.
   gives a million as `fukki téeméeri junni` (the regular 10 × 100 × 1000 with the connective) or
   `benn milyoŋ`, with the velar nasal. Decide the canonical form (decree 2005-992 alphabet for `ŋ`,
   a grammar or dictionary for the loan) before opening the domain above 999 999.
-- **NTS-25 — Localized Conway names in derived scales (partially closed).** Found by NTS-24, pre-existing.
-  Project rule: once a language has adopted the mi/bi/tri/… large-number family, the library extends it
-  productively with Conway-Wechsler, using that language's own transliteration of the prefix tables (a
-  generation convention of the library, not a claim about the languages' norms).
-  - *NTS-25A closed* (`DONE-2026-10-08(1).md`): Cyrillic Conway tables (`SCALE-SHORT-CYRILLIC`, multi-letter
-    linking marker `кс`), RU/BG/UK moved to the short scale with a static milliard, SW junction (`li` + `oni`),
-    TR junction (`l` + `yon`) and TR case variants on every generated name.
-  - **NTS-25 remaining (NTS-25B): audit ID/MS localized Conway prefix tables beyond Scale0Prefixes.** Their
-    `Scale0Prefixes` are already localized (`kuadri`, `kuinti`, `seksti`, `okti`…) while the units/tens/hundreds
-    tables are the shared Latin ones, and `groupSeparator=""` still loses the junction above the 999th
-    -illion (ID n = 1000 `miniliun`). Same iteration, decided by the owner: adapt the TR and SW Latin tables
-    to their alphabets (no q or x in Turkish or Swahili: TR `quattuordecilyon`, `sexcentilyon`, `decilyon`
-    read with Turkish c; SW `quadrilioni`, `quintilioni`, `sextilioni` — the SW 1–9 forms would change too).
-  - Accepted limitation (engine, owner decision): one `groupSeparator` serves both between Conway groups
-    and before the suffix, so UK n = 1000 is `мільнільйон` and TR `milnilyon` (not `мілінільйон`/`milinilyon`).
 - **NTS-09 — `Trigger` elements are not inherited through `baseOn`.** `XmlSerializer` materializes
   an absent `<Trigger>` list as an empty list, so `MergeLanguageDefinition`'s
   `overriding.Triggers ?? inherited.Triggers` never falls back to the base. No built-in configuration
   uses triggers today; the README and XSD document the current behaviour. Fix by treating an empty
   list as absent (as `Cultures` already does) together with a regression test.
 
-NTS-01 through NTS-05 and NTS-10 through NTS-20, NTS-22, NTS-23 and NTS-24, are closed:
+NTS-01 through NTS-05 and NTS-10 through NTS-20, NTS-22, NTS-23, NTS-24 and NTS-25, are closed:
 
 - NTS-01 — XSD validation: `DONE-2026-08-21.md`.
 - NTS-02 — initialization isolation: `DONE-2026-08-21.md`.
@@ -130,8 +115,9 @@ NTS-01 through NTS-05 and NTS-10 through NTS-20, NTS-22, NTS-23 and NTS-24, are 
 - NTS-24 (strict Conway-Guy-Wechsler scale names for every SCALE-SHORT/SCALE-LONG language: `uni` → `un`,
   `vingti` → `viginti`, terminal `[a|-illi=>i]` endings, grouped names above the 999th restarting from
   `Scale0Prefixes`, single Conway linking consonant): `DONE-2026-10-08.md`.
-- NTS-25A (part of NTS-25: Cyrillic Conway tables, RU/BG/UK short scale with a static milliard, SW and TR
-  Conway junctions; NTS-25B stays open above): `DONE-2026-10-08(1).md`.
+- NTS-25 (localized Conway names): NTS-25A (Cyrillic Conway tables, RU/BG/UK short scale with a static
+  milliard, SW and TR Conway junctions, multi-letter linking markers) in `DONE-2026-10-08(1).md`; NTS-25B
+  (ID/MS, SW and TR Conway tables localized to their alphabets, ID/MS junctions) in `DONE-2026-10-08(2).md`.
 
 Full multi-form plural systems (Russian/Slavic count-dependent noun forms,
 Arabic dual/paucal/plural categories) are deliberately out of scope — the

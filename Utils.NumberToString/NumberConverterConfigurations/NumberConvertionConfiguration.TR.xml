@@ -57,9 +57,13 @@
              startIndex=2 shifts the first generated prefix to index 3 ("tri") for scale 4 (10^12).
              The "l" junction also joins Conway groups (NTS-25): mi+l+ni+l+yon = milnilyon (n = 1000);
              the engine uses the same junction between groups and before the suffix, so the -i- of a
-             Latin "milli-" is not restored (accepted limitation). The UnitsPrefixes/TensPrefixes/
-             HundredsPrefixes tables are the shared Latin ones; their adaptation to the Turkish
-             alphabet (no q, x) is deferred to NTS-25B. -->
+             Latin "milli-" is not restored (accepted limitation).
+             The four Conway tables are adapted to Turkish spelling (NTS-25B), which has no q or x and
+             reads c as /dʒ/, with the morphemes of the attested names (tr.wikipedia "Büyük sayıların
+             adları"): qu → k (katri, kenti, kator from katordesilyon, katragint from katragintilyon,
+             kenka from kenkagintilyon), duo → do (dodesilyon), x → ks (sekstilyon), c → s (desilyon,
+             sentilyon). The structure stays strict Conway (NTS-24): kenkadesilyon, sedesilyon and
+             novendesilyon, not the dictionary kendesilyon, seksdesilyon, novemdesilyon. -->
         <NumberScale firstLetterUpperCase="false" groupSeparator="l" startIndex="2">
             <StaticNames>
                 <Scale value="0" string="" />
@@ -78,11 +82,47 @@
                 <Digit digit="3" string="tri" />
                 <Digit digit="4" string="katri" />
                 <Digit digit="5" string="kenti" />
-                <Digit digit="6" string="seksi" />
+                <Digit digit="6" string="seksti" />
                 <Digit digit="7" string="septi" />
                 <Digit digit="8" string="okti" />
                 <Digit digit="9" string="noni" />
             </Scale0Prefixes>
+            <UnitsPrefixes>
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="un" />
+                <Digit digit="2" string="do" />
+                <Digit digit="3" string="tre(s)" />
+                <Digit digit="4" string="kator" />
+                <Digit digit="5" string="kenka" />
+                <Digit digit="6" string="se(ks,s)" />
+                <Digit digit="7" string="septe(mn)" />
+                <Digit digit="8" string="okto" />
+                <Digit digit="9" string="nove(mn)" />
+            </UnitsPrefixes>
+            <TensPrefixes>
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="(n)desi" />
+                <Digit digit="2" string="(ms)viginti" />
+                <Digit digit="3" string="(ns)trigint[a|-illi=>i]" />
+                <Digit digit="4" string="(ns)katragint[a|-illi=>i]" />
+                <Digit digit="5" string="(ns)kenkagint[a|-illi=>i]" />
+                <Digit digit="6" string="(n)seksagint[a|-illi=>i]" />
+                <Digit digit="7" string="(n)septuagint[a|-illi=>i]" />
+                <Digit digit="8" string="(m,ks,s)oktogint[a|-illi=>i]" />
+                <Digit digit="9" string="nonagint[a|-illi=>i]" />
+            </TensPrefixes>
+            <HundredsPrefixes>
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="(n,ks,s)senti" />
+                <Digit digit="2" string="(n)dusenti" />
+                <Digit digit="3" string="(ns)tresenti" />
+                <Digit digit="4" string="(ns)katringenti" />
+                <Digit digit="5" string="(ns)kengenti" />
+                <Digit digit="6" string="(n)sessenti" />
+                <Digit digit="7" string="(n)septingenti" />
+                <Digit digit="8" string="(m,ks,s)oktingenti" />
+                <Digit digit="9" string="nongenti" />
+            </HundredsPrefixes>
         </NumberScale>
         <Replacements>
             <!-- Safety net: drop "bir" before "bin" if the engine generates "bir bin" -->

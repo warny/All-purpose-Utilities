@@ -50,16 +50,16 @@ dotnet add package omy.Utils.NumberToString --version 2.0.0-rc.2
 | AR | Arabic | ✓ 1–99, 100, 1000 | ✓ 15 min, 12 h | gender | local | Other ordinals above 99 fail closed; thousands take the form their multiplier governs (ألف, ألفان, ثلاثة آلاف, أحد عشر ألفًا) |
 | HE | Hebrew | ✓ 1–10 adjectives, above ten the agreeing cardinal (masculine by default, also for compounds ending in a teen) | ✓ 15 min, 12 h | gender (standalone/zachar/nekeva) | local | No ordinal of zero |
 | FA, FA-IR | Persian | ✓ declarative | ✓ 15 min, 12 h | — | local | — |
-| TR, TR-TR | Turkish | ✓ declarative (vowel harmony) | ✓ 15 min, 12 h | case (nominative/accusative/dative) | local | Static `milyon`/`milyar`, then Conway `trilyon`, `katrilyon` … (`l` + `yon`, 10^3003 `milnilyon`), unbounded |
+| TR, TR-TR | Turkish | ✓ declarative (vowel harmony) | ✓ 15 min, 12 h | case (nominative/accusative/dative) | local | Static `milyon`/`milyar`, then Conway in Turkish spelling: `trilyon`, `katrilyon`, `sekstilyon`, `desilyon`, `dodesilyon`, `sentilyon` (`l` + `yon`, 10^3003 `milnilyon`), unbounded |
 | HI | Hindi | ✓ declarative | ✓ 15 min, 12 h | gender | local | No lakh/crore grouping |
 | JA | Japanese | ✓ prefix 第 | ✓ 5 min, 12 h | — | local | No 午前/午後 |
 | KO | Korean | ✓ prefix 제 | ✓ 5 min, 12 h | — | local | Native hour words only in ClockTime; no 오전/오후 |
 | ZH | Chinese | ✓ prefix 第 | ✓ 15 min, 12 h | — | local | `两` only in ClockTime; no 上午/下午 |
 | VN, VI, VI-VN | Vietnamese | ✓ prefix thứ | ✓ 15 min, 12 h | — | local | No sáng/chiều/tối |
-| ID, ID-ID | Indonesian | ✓ plugin | ✓ 5 min, 12 h | — | local | No day-part wording |
-| MS, MS-MY | Malay (lapan, bilion, trilion) | ✓ plugin | ✓ 5 min, 12 h, own section | — | child of ID | No day-part wording |
+| ID, ID-ID | Indonesian | ✓ plugin | ✓ 5 min, 12 h | — | local | No day-part wording. Conway in Indonesian spelling, `li` + `un` (`kuadriliun`, `desiliun`, 10^3003 `miliniliun`), unbounded |
+| MS, MS-MY | Malay (lapan, bilion, trilion) | ✓ plugin | ✓ 5 min, 12 h, own section | — | child of ID | No day-part wording. Indonesian Conway tables with suffix `on` (`kuadrilion`, `desilion`), unbounded |
 | EU, eu-ES | Basque | ✓ declarative | ✓ 15 min, 12 h | — | local | Clock-case forms only in ClockTime |
-| SW, SW-KE, SW-TZ | Swahili | — deferred (noun-class concord) | ✓ 15 min, 12 h, six-hour offset | — | local | No asubuhi/mchana/jioni/usiku. Conway short scale `li` + `oni` (`milioni`, 10^3003 `milinilioni`), unbounded |
+| SW, SW-KE, SW-TZ | Swahili | — deferred (noun-class concord) | ✓ 15 min, 12 h, six-hour offset | — | local | No asubuhi/mchana/jioni/usiku. Conway short scale in Swahili spelling, `li` + `oni` (`kwadrilioni`, `sekstilioni`, `desilioni`, 10^3003 `milinilioni`), unbounded |
 | ZU | Zulu | — deferred (noun-class policy) | ✓ 15 min, 12 h | — | local | Hour forms only in ClockTime |
 | EE | Ewe | ✓ declarative `-lia` on the last element, first `gbãtɔ` + zero guard | — deferred (no sourced minute convention) | — | local | Large scales: short Conway-Wechsler scale (`baseOn="SCALE-SHORT"`, unbounded); `akpe`/`miliɔn`/`biliɔn`/`triliɔn` sourced, higher `-liɔn` names (`quadriliɔn`, `quintiliɔn` …) productively generated, not individually attested. Scale noun first: `akpe eve` = 2000, `biliɔn alafa eve` = 200 000 000 000 (`multiplierPosition="afterScale"`); no ordinal of zero |
 | WO | Wolof | ✓ declarative `-éel` + plugin guard | — deferred (competing conventions) | — | local | Cardinals to 999 999; no ordinal of zero nor of the round thousands |
@@ -1557,6 +1557,8 @@ ru.Scale.GetScaleName(107);          // "сексцентиллион" 10^321 (�
 ru.Scale.GetScaleName(1001);         // "миллиниллион"   10^3003
 NumberToStringConverter.GetConverter("SW").Scale.GetScaleName(1001); // "milinilioni" (li + oni)
 ```
+
+Latin-script languages adapt the tables the same way: Indonesian and Malay (`kuadri`, `kuatuor`, `desi`, `senti`, `se(ks,s)`), Swahili (`kwadri`, `kwatuor`, `desi`) and Turkish (`katri`, `kenti`, `kator`, `do`, `desi`, `senti`) write no `q`, no `x` and no Latin `c`; only the names those languages actually use are attested, the others are project extrapolations.
 
 `groupSeparator` is used both between Conway groups and before the suffix, so a language whose junction
 differs in the two positions keeps one spelling: Ukrainian `ль` gives `мільнільйон`, Turkish `l` gives
