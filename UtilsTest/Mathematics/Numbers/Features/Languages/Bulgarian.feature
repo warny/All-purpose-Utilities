@@ -32,8 +32,8 @@ Examples:
     | 10000 | десет хиляда |
     | 1000000 | едно милион |
     | 1000000000 | едно милиард |
-    | 1000000000000 | едно билион |
-    | 1000000000000000 | едно билиард |
+    | 1000000000000 | едно трилион |
+    | 1000000000000000 | едно квадрилион |
 
 Scenario: The regional alias uses Bulgarian wording
     Then the "BG" and "BG-BG" converters produce the same cardinal wording for 1

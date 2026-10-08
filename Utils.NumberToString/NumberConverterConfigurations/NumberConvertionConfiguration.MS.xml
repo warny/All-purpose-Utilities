@@ -21,8 +21,11 @@
                 <Scale value="2" string="juta" />
                 <Scale value="3" string="bilion" />
             </StaticNames>
+            <!-- Malay keeps the Indonesian Conway tables and "li" junction (baseOn="ID") with its own
+                 suffix "on": tri+li+on = trilion, kuadrilion, kuintilion, sekstilion (DBP PRPM);
+                 n = 1000 is milinilion (project extrapolation). -->
             <Suffixes>
-                <Suffix>lion</Suffix>
+                <Suffix>on</Suffix>
             </Suffixes>
         </NumberScale>
         <Exceptions>

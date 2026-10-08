@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
     <Language
-        baseOn="SCALE-LONG"
+        baseOn="SCALE-SHORT-CYRILLIC"
         groupSize="3"
         separator=" "
         groupSeparator=""
@@ -52,32 +52,35 @@
                 <Digit digit="9" string="деветстотин" buildString="деветстотин *" />
             </Group>
         </Groups>
-        <!-- Long scale with Cyrillic prefixes and groupSeparator="л":
-             ми+л+ион=милион, ми+л+иард=милиард,
-             би+л+ион=билион, би+л+иард=билиард,
-             три+л+ион=трилион… -->
-        <NumberScale firstLetterUpperCase="false" groupSeparator="л">
+        <!-- Short scale with милиард (NTS-25): милион 10^6 and милиард 10^9 are static, then
+             SCALE-SHORT-CYRILLIC generates три+ли+он = трилион (10^12), квадрилион (10^15)…
+             startIndex=2 maps scale 4 (10^12) to Conway index 3. The junction "ли" keeps the
+             -i- between Conway groups: ми+ли+ни+ли+он = милинилион (n = 1000).
+             Bulgarian simplifies the geminate of the Russian кваттуор (кватуордецилион), so
+             only UnitsPrefixes is overridden. -->
+        <NumberScale firstLetterUpperCase="false" groupSeparator="ли" startIndex="2">
             <StaticNames>
                 <Scale value="0" string="" />
                 <!-- Bulgarian: "хиляда" alone for 1000; "едно хиляда" → "хиляда" via Replacement -->
                 <Scale value="1" string="хиляда" />
+                <Scale value="2" string="милион" />
+                <Scale value="3" string="милиард" />
             </StaticNames>
             <Suffixes>
-                <Suffix>ион</Suffix>
-                <Suffix>иард</Suffix>
+                <Suffix>он</Suffix>
             </Suffixes>
-            <Scale0Prefixes>
+            <UnitsPrefixes>
                 <Digit digit="0" string="" />
-                <Digit digit="1" string="ми" />
-                <Digit digit="2" string="би" />
-                <Digit digit="3" string="три" />
-                <Digit digit="4" string="квадри" />
-                <Digit digit="5" string="квинти" />
-                <Digit digit="6" string="сексти" />
-                <Digit digit="7" string="септи" />
-                <Digit digit="8" string="окти" />
-                <Digit digit="9" string="нони" />
-            </Scale0Prefixes>
+                <Digit digit="1" string="ун" />
+                <Digit digit="2" string="дуо" />
+                <Digit digit="3" string="тре(с)" />
+                <Digit digit="4" string="кватуор" />
+                <Digit digit="5" string="квинква" />
+                <Digit digit="6" string="се(кс,с)" />
+                <Digit digit="7" string="септе(мн)" />
+                <Digit digit="8" string="окто" />
+                <Digit digit="9" string="нове(мн)" />
+            </UnitsPrefixes>
         </NumberScale>
         <Replacements>
             <!-- Drop "едно" before "хиляда": 1000 = "хиляда" not "едно хиляда" -->

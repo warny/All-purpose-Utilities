@@ -30,14 +30,14 @@ dotnet add package omy.Utils.NumberToString --version 2.0.0-rc.2
 | DA, DA-DK | Danish | ✓ plugin (int range) | ✓ 5 min, 12 h | gender (fælleskøn/intetkøn) | local | Ordinals above `int.MaxValue` fail closed |
 | NO, NB, NB-NO | Norwegian Bokmål | ✓ plugin (int range) | ✓ 5 min, 12 h | gender (hankjønn/hunkjønn/intetkjønn) | local | Ordinals above `int.MaxValue` fail closed |
 | SV, SV-SE | Swedish | ✓ plugin (int range) | ✓ 5 min, 12 h | — | local | Ordinals above `int.MaxValue` fail closed |
-| BG, BG-BG | Bulgarian | ✓ plugin, gendered | ✓ 15 min, 12 h | gender (standalone/masculine/feminine/neuter) | local | Unverified compound round thousands/millions fail closed |
+| BG, BG-BG | Bulgarian | ✓ plugin, gendered | ✓ 15 min, 12 h | gender (standalone/masculine/feminine/neuter) | local | Unverified compound round thousands/millions fail closed. Short scale with `милиард`; Cyrillic Conway names above (`SCALE-SHORT-CYRILLIC`, `кватуор`), unbounded |
 | HR, HR-HR | Croatian | ✓ declarative (last word) + range plugin | ✓ 15 min, 12 h | — | local | Masculine nominative ordinals only; round scale ordinals other than tisućiti (1 000), milijunti (1 000 000) and milijarditi (1 000 000 000) fail closed, including 10^12 and above |
 | HU, HU-HU | Hungarian | ✓ plugin (int range) | ✓ 15 min, 12 h | — | local | — |
 | CS, CS-CZ | Czech | ✓ plugin, gender × case | ✓ 15 min, 12 h | gender × case | local | Ordinals verified up to 9 999 (round millions/milliards: one only) |
 | SK, SK-SK | Slovak | ✓ plugin, gender × case | ✓ 15 min, 12 h | gender × case | local | Ordinals verified up to 9 999 and one million |
 | PL | Polish | ✓ plugin + declarative | ✓ 5 min, 12 h | rodzaj × przypadek | local | No ordinal of zero |
-| RU | Russian | ✓ declarative (zero: `нулевой`) | ✓ 15 min, 12 h | gender × case | local | — |
-| UK, UK-UA | Ukrainian | ✓ plugin, gender × case | ✓ 15 min, 12 h | gender × case | local | Round thousands verified up to 10 000 |
+| RU | Russian | ✓ declarative (zero: `нулевой`) | ✓ 15 min, 12 h | gender × case | local | Short scale with `миллиард`; Cyrillic Conway names above (`SCALE-SHORT-CYRILLIC`), unbounded |
+| UK, UK-UA | Ukrainian | ✓ plugin, gender × case | ✓ 15 min, 12 h | gender × case | local | Round thousands verified up to 10 000. Short scale with `мільярд`; Ukrainian-spelled Conway names above (`вігінтильйон`), unbounded |
 | ES | Spanish | ✓ declarative | ✓ 5 min, 12 h | gender × form | local | No ordinal of zero |
 | IT | Italian | ✓ validated productive forms through round trilione: 1–1999 except 1110–1910, round thousands to 999000, round multiples of milione/miliardo/bilione/biliardo/trilione; selected sourced analytic compounds (1010, 100001–100009) (`<OrdinalStem>`, `<OrdinalComposition>`, `<OrdinalScale>`, domain-guard plugin) | ✓ 5 min, 12 h | gender | local | Unsourced ordinals fail closed by design: zero, 1110–1910, the other non-round thousands above 1999 and the non-round values from a million (no canonical form established); millions are separate nouns joined by `e` ("due milioni e centomila") |
 | PT | Portuguese | ✓ declarative | ✓ 5 min, 12 h (direct "e …") | gender | local | Deliberate direct numeric reading (no "para"/"menos" constructions); PT-PT/PT-BR not split; no ordinal of zero |
@@ -50,16 +50,16 @@ dotnet add package omy.Utils.NumberToString --version 2.0.0-rc.2
 | AR | Arabic | ✓ 1–99, 100, 1000 | ✓ 15 min, 12 h | gender | local | Other ordinals above 99 fail closed; thousands take the form their multiplier governs (ألف, ألفان, ثلاثة آلاف, أحد عشر ألفًا) |
 | HE | Hebrew | ✓ 1–10 adjectives, above ten the agreeing cardinal (masculine by default, also for compounds ending in a teen) | ✓ 15 min, 12 h | gender (standalone/zachar/nekeva) | local | No ordinal of zero |
 | FA, FA-IR | Persian | ✓ declarative | ✓ 15 min, 12 h | — | local | — |
-| TR, TR-TR | Turkish | ✓ declarative (vowel harmony) | ✓ 15 min, 12 h | case (nominative/accusative/dative) | local | — |
+| TR, TR-TR | Turkish | ✓ declarative (vowel harmony) | ✓ 15 min, 12 h | case (nominative/accusative/dative) | local | Static `milyon`/`milyar`, then Conway in Turkish spelling: `trilyon`, `katrilyon`, `sekstilyon`, `desilyon`, `dodesilyon`, `sentilyon` (`l` + `yon`, 10^3003 `milnilyon`), unbounded |
 | HI | Hindi | ✓ declarative | ✓ 15 min, 12 h | gender | local | No lakh/crore grouping |
 | JA | Japanese | ✓ prefix 第 | ✓ 5 min, 12 h | — | local | No 午前/午後 |
 | KO | Korean | ✓ prefix 제 | ✓ 5 min, 12 h | — | local | Native hour words only in ClockTime; no 오전/오후 |
 | ZH | Chinese | ✓ prefix 第 | ✓ 15 min, 12 h | — | local | `两` only in ClockTime; no 上午/下午 |
 | VN, VI, VI-VN | Vietnamese | ✓ prefix thứ | ✓ 15 min, 12 h | — | local | No sáng/chiều/tối |
-| ID, ID-ID | Indonesian | ✓ plugin | ✓ 5 min, 12 h | — | local | No day-part wording |
-| MS, MS-MY | Malay (lapan, bilion, trilion) | ✓ plugin | ✓ 5 min, 12 h, own section | — | child of ID | No day-part wording |
+| ID, ID-ID | Indonesian | ✓ plugin | ✓ 5 min, 12 h | — | local | No day-part wording. Conway in Indonesian spelling, `li` + `un` (`kuadriliun`, `desiliun`, 10^3003 `miliniliun`), unbounded |
+| MS, MS-MY | Malay (lapan, bilion, trilion) | ✓ plugin | ✓ 5 min, 12 h, own section | — | child of ID | No day-part wording. Indonesian Conway tables with suffix `on` (`kuadrilion`, `desilion`), unbounded |
 | EU, eu-ES | Basque | ✓ declarative | ✓ 15 min, 12 h | — | local | Clock-case forms only in ClockTime |
-| SW, SW-KE, SW-TZ | Swahili | — deferred (noun-class concord) | ✓ 15 min, 12 h, six-hour offset | — | local | No asubuhi/mchana/jioni/usiku |
+| SW, SW-KE, SW-TZ | Swahili | — deferred (noun-class concord) | ✓ 15 min, 12 h, six-hour offset | — | local | No asubuhi/mchana/jioni/usiku. Conway short scale in Swahili spelling, `li` + `oni` (`kwadrilioni`, `sekstilioni`, `desilioni`, 10^3003 `milinilioni`), unbounded |
 | ZU | Zulu | — deferred (noun-class policy) | ✓ 15 min, 12 h | — | local | Hour forms only in ClockTime |
 | EE | Ewe | ✓ declarative `-lia` on the last element, first `gbãtɔ` + zero guard | — deferred (no sourced minute convention) | — | local | Large scales: short Conway-Wechsler scale (`baseOn="SCALE-SHORT"`, unbounded); `akpe`/`miliɔn`/`biliɔn`/`triliɔn` sourced, higher `-liɔn` names (`quadriliɔn`, `quintiliɔn` …) productively generated, not individually attested. Scale noun first: `akpe eve` = 2000, `biliɔn alafa eve` = 200 000 000 000 (`multiplierPosition="afterScale"`); no ordinal of zero |
 | WO | Wolof | ✓ declarative `-éel` + plugin guard | — deferred (competing conventions) | — | local | Cardinals to 999 999; no ordinal of zero nor of the round thousands |
@@ -1540,6 +1540,29 @@ en.Scale.GetScaleName(131);       // "trigintacentillion"  10^393  (triginta ins
 en.Scale.GetScaleName(1001);      // "millinillion"        10^3003 (groups 1 | 0)
 en.Scale.GetScaleName(1_000_004); // "millinillitrillion"  10^3000012
 ```
+
+When a language has adopted the mi/bi/tri/… large-number family, the library permits a productive
+Conway-Wechsler extension using that language's own transliteration or adaptation of the prefix
+tables. This is a generation convention of the library, not a normative claim about the language:
+only the names the language actually uses (million, milliard, trillion…) are sourced; higher names are
+consistent extrapolations. `SCALE-SHORT-CYRILLIC` (`baseOn="SCALE-SHORT"`) holds the Cyrillic
+transliteration used by RU, BG and UK (BG and UK override a table where their spelling differs). A
+linking consonant spelled with several letters is written as a comma-separated marker list — `(кс,с)`
+offers `кс` then `с`, while `(nxs)` without commas still means the three letters n, x, s:
+
+```csharp
+var ru = NumberToStringConverter.GetConverter("RU");
+ru.Convert(BigInteger.Pow(10, 12));  // "один триллион"  (short scale, static миллион/миллиард)
+ru.Scale.GetScaleName(107);          // "сексцентиллион" 10^321 (се(кс,с) + (н,кс,с)центи)
+ru.Scale.GetScaleName(1001);         // "миллиниллион"   10^3003
+NumberToStringConverter.GetConverter("SW").Scale.GetScaleName(1001); // "milinilioni" (li + oni)
+```
+
+Latin-script languages adapt the tables the same way: Indonesian and Malay (`kuadri`, `kuatuor`, `desi`, `senti`, `se(ks,s)`), Swahili (`kwadri`, `kwatuor`, `desi`) and Turkish (`katri`, `kenti`, `kator`, `do`, `desi`, `senti`) write no `q`, no `x` and no Latin `c`; only the names those languages actually use are attested, the others are project extrapolations.
+
+`groupSeparator` is used both between Conway groups and before the suffix, so a language whose junction
+differs in the two positions keeps one spelling: Ukrainian `ль` gives `мільнільйон`, Turkish `l` gives
+`milnilyon`.
 
 #### Scale lexical forms — `<ScaleForm>`
 

@@ -53,19 +53,71 @@
                 <Digit digit="9" string="mia tisa" buildString="mia tisa na *" />
             </Group>
         </Groups>
-        <!-- Short scale with suffix "lioni" and groupSeparator="" (no connector):
-             mi+""+lioni=milioni (10^6), bi+""+lioni=bilioni (10^9),
-             tri+""+lioni=trilioni (10^12)…
-             Default Latin prefixes (mi, bi, tri, quadri, quinti…) are used. -->
-        <NumberScale firstLetterUpperCase="false" groupSeparator="">
+        <!-- Short scale with groupSeparator="li" and suffix "oni" (NTS-25):
+             mi+li+oni=milioni (10^6), bi+li+oni=bilioni (10^9), tri+li+oni=trilioni (10^12)…
+             The "li" junction also joins Conway groups: mi+li+ni+li+oni = milinilioni (n = 1000).
+             The four Conway tables are adapted to Swahili spelling (NTS-25B), which has no q or x and
+             writes c only in ch, with the rules of the attested loans kwadrilioni, kwintilioni,
+             sekstilioni, desilioni (Wiktionary): qu → kw, x → ks, soft c → s, hard c → k. Conway's
+             x-link is the two-letter marker ks (se(ks,s) + (n,ks,s)senti = sekssentilioni).
+             Names above desilioni are a productive project extrapolation, not attested forms. -->
+        <NumberScale firstLetterUpperCase="false" groupSeparator="li">
             <StaticNames>
                 <Scale value="0" string="" />
                 <!-- Swahili: "elfu" alone for 1000; "moja elfu" → "elfu" via Replacement -->
                 <Scale value="1" string="elfu" />
             </StaticNames>
             <Suffixes>
-                <Suffix>lioni</Suffix>
+                <Suffix>oni</Suffix>
             </Suffixes>
+            <Scale0Prefixes>
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="mi" />
+                <Digit digit="2" string="bi" />
+                <Digit digit="3" string="tri" />
+                <Digit digit="4" string="kwadri" />
+                <Digit digit="5" string="kwinti" />
+                <Digit digit="6" string="seksti" />
+                <Digit digit="7" string="septi" />
+                <Digit digit="8" string="okti" />
+                <Digit digit="9" string="noni" />
+            </Scale0Prefixes>
+            <UnitsPrefixes>
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="un" />
+                <Digit digit="2" string="duo" />
+                <Digit digit="3" string="tre(s)" />
+                <Digit digit="4" string="kwatuor" />
+                <Digit digit="5" string="kwinkwa" />
+                <Digit digit="6" string="se(ks,s)" />
+                <Digit digit="7" string="septe(mn)" />
+                <Digit digit="8" string="okto" />
+                <Digit digit="9" string="nove(mn)" />
+            </UnitsPrefixes>
+            <TensPrefixes>
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="(n)desi" />
+                <Digit digit="2" string="(ms)viginti" />
+                <Digit digit="3" string="(ns)trigint[a|-illi=>i]" />
+                <Digit digit="4" string="(ns)kwadragint[a|-illi=>i]" />
+                <Digit digit="5" string="(ns)kwinkwagint[a|-illi=>i]" />
+                <Digit digit="6" string="(n)seksagint[a|-illi=>i]" />
+                <Digit digit="7" string="(n)septuagint[a|-illi=>i]" />
+                <Digit digit="8" string="(m,ks,s)oktogint[a|-illi=>i]" />
+                <Digit digit="9" string="nonagint[a|-illi=>i]" />
+            </TensPrefixes>
+            <HundredsPrefixes>
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="(n,ks,s)senti" />
+                <Digit digit="2" string="(n)dusenti" />
+                <Digit digit="3" string="(ns)tresenti" />
+                <Digit digit="4" string="(ns)kwadringenti" />
+                <Digit digit="5" string="(ns)kwingenti" />
+                <Digit digit="6" string="(n)sessenti" />
+                <Digit digit="7" string="(n)septingenti" />
+                <Digit digit="8" string="(m,ks,s)oktingenti" />
+                <Digit digit="9" string="nongenti" />
+            </HundredsPrefixes>
         </NumberScale>
         <Replacements>
             <!-- Drop "moja" before "elfu": 1000 = "elfu" not "moja elfu" -->

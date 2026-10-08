@@ -43,6 +43,37 @@ All notable changes to this project will be documented in this file.
 - Added `ItalianOrdinalLanguageSpecifics`, restricting Italian ordinals to verified forms.
 - Added `WolofOrdinalLanguageSpecifics`, a domain guard rejecting the Wolof ordinals of zero and of the round thousands.
 
+### Fixed — `omy.Utils.NumberToString` (NTS-25B; NTS-25 closed)
+- Indonesian, Malay, Swahili and Turkish large-scale names now come from Conway tables adapted to their own
+  spelling, with the mechanisms of their attested loans (intentional output change above the forms already in
+  use): no `q`, `x` or Latin `c` remains. ID `deciliun` → `desiliun`, `quattuordeciliun` → `kuatuordesiliun`;
+  MS `decilion` → `desilion`; SW `quadrilioni` → `kwadrilioni`, `quintilioni` → `kwintilioni`, `sextilioni` →
+  `sekstilioni`, `decilioni` → `desilioni`; TR `seksilyon` → `sekstilyon` (corrected), `decilyon` → `desilyon`,
+  `duodecilyon` → `dodesilyon`, `quattuordecilyon` → `katordesilyon`, `centilyon` → `sentilyon`. Turkish keeps
+  the morphemes of its attested series (`do`, `kator`, `katragint`, `kenkagint`); Malay inherits the Indonesian
+  tables. The two-letter Conway link is `ks` (`sekssentiliun`).
+- ID and MS keep the junction between Conway groups: `li` + `un` (10^3003 `miliniliun`, was `miniliun`) and
+  `li` + `on` (`milinilion`, was `minilion`). Turkish n = 1000 stays `milnilyon` (a `VoidGroup="ini"` variant
+  was evaluated and not adopted). No engine, public API or XSD change.
+
+### Fixed — `omy.Utils.NumberToString` (NTS-25A; NTS-25B open)
+- Russian, Bulgarian and Ukrainian large scales now use the short scale with a static milliard
+  (intentional output change, the previous long scale was wrong for these languages): 10^12 is
+  `триллион`/`трилион`/`трильйон` (was `биллион`/`билион`/`більйон`), 10^15 `квадриллион`, 10^18
+  `квинтиллион`. Their names above 10^30 come from the new `SCALE-SHORT-CYRILLIC` base, a Cyrillic
+  transliteration of the Conway-Guy-Wechsler tables, instead of mixing scripts (`deciллион` →
+  `дециллион`, 10^3003 `миллиниллион`, `милинилион`, `мільнільйон`); Bulgarian (`кватуор`) and
+  Ukrainian (і/и spelling) override the tables where their orthography differs.
+- Swahili and Turkish keep the Conway junction between groups above the 999th -illion: SW splits its
+  suffix into `groupSeparator="li"` + `oni` (10^3003 `milinilioni`, was `minilioni`), TR into `l` + `yon`
+  (`milnilyon`, was `minilyon`); the names up to the 999th -illion are unchanged. Turkish accusative
+  and dative now inflect every generated scale name (`seksilyonu`, `milnilyona`), not only
+  `trilyon`/`katrilyon`/`kentilyon`. ID and MS are unchanged (audited in NTS-25B).
+- Prefix table entries accept multi-letter linking consonants: a comma-separated `(start)`/`(end)`
+  marker list holds one marker per token (`се(кс,с)` + `(н,кс,с)центи` → `сексцентиллион`); without a
+  comma each letter remains a marker. Empty tokens are rejected when the scale is built. No public API
+  or XSD schema change.
+
 ### Fixed — `omy.Utils.NumberToString` (NTS-24 closed)
 - Corrected Conway-Wechsler dynamic scale generation (intentional output change): `undecillion`,
   `vigintillion`, `trigintillion` (and every round tens: `quadragintillion` … `nonagintillion`) and the
