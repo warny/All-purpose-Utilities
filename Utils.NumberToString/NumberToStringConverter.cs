@@ -3260,6 +3260,11 @@ namespace Utils.NumberToString
             if (UnitsPrefixes != null) ValidatePrefixTable(UnitsPrefixes, nameof(unitsPrefixes));
             if (TensPrefixes != null) ValidatePrefixTable(TensPrefixes, nameof(tensPrefixes));
             if (HundredsPrefixes != null) ValidatePrefixTable(HundredsPrefixes, nameof(hundredsPrefixes));
+
+            // Parse the composition tables once; name generation then works on the parsed components.
+            parsedUnits = UnitsPrefixes == null ? null : ParsePrefixTable(UnitsPrefixes, nameof(unitsPrefixes));
+            parsedTens = TensPrefixes == null ? null : ParsePrefixTable(TensPrefixes, nameof(tensPrefixes));
+            parsedHundreds = HundredsPrefixes == null ? null : ParsePrefixTable(HundredsPrefixes, nameof(hundredsPrefixes));
         }
 
         /// <summary>Validates that a decimal digit-prefix table has exactly 10 entries (one per decimal digit 0–9) and contains no null entries.</summary>
@@ -3302,10 +3307,21 @@ namespace Utils.NumberToString
 
         private static readonly Regex PrefixParser = PrefixParserRegex();
 
+        /// <summary>Parsed <see cref="UnitsPrefixes"/>, or <see langword="null"/> when the table is not configured.</summary>
+        private readonly PrefixComponent[]? parsedUnits;
+
+        /// <summary>Parsed <see cref="TensPrefixes"/>, or <see langword="null"/> when the table is not configured.</summary>
+        private readonly PrefixComponent[]? parsedTens;
+
+        /// <summary>Parsed <see cref="HundredsPrefixes"/>, or <see langword="null"/> when the table is not configured.</summary>
+        private readonly PrefixComponent[]? parsedHundreds;
+
         /// <summary>
         /// Gets the prefixes used for the base scale (10⁰) names, or <see langword="null"/> when
         /// not configured. Must be provided (directly or via <c>baseOn</c> inheritance) for
-        /// languages that use dynamic scale generation beyond the static names.
+        /// languages that use dynamic scale generation beyond the static names. Every base-1000 group
+        /// of the prefix value between 1 and 9 uses this table, including a group above the first one
+        /// (Conway-Wechsler 1000 is "mi" + "ni"), so entries 1 to 9 must be non-empty for an unbounded scale.
         /// </summary>
         public IReadOnlyList<string>? Scale0Prefixes { get; }
 
@@ -3313,6 +3329,14 @@ namespace Utils.NumberToString
         /// Gets the prefixes used when building unit multipliers, or <see langword="null"/> when
         /// not configured. Required only for scales whose prefix value exceeds 9.
         /// </summary>
+        /// <remarks>
+        /// The units, tens and hundreds entries compose a base-1000 group between 10 and 999, read in that order.
+        /// Each entry follows <c>(start)stem[default|-illi=&gt;form](end)</c>, every part but the stem being optional:
+        /// <c>end</c> lists the linking consonants the component may take before the next one, the first one accepted
+        /// by the next component's <c>start</c> markers being inserted; the bracketed ending uses <c>form</c> when the
+        /// component is the last of its group, right before the -illi- junction, and <c>default</c> otherwise
+        /// (<c>(ns)trigint[a|-illi=&gt;i]</c>: trigintillion, trigintacentillion).
+        /// </remarks>
         public IReadOnlyList<string>? UnitsPrefixes { get; }
 
         /// <summary>
@@ -3333,7 +3357,21 @@ namespace Utils.NumberToString
             && Scale0Prefixes != null
             && UnitsPrefixes != null
             && TensPrefixes != null
-            && HundredsPrefixes != null;
+            && HundredsPrefixes != null
+            && Scale0Prefixes.Skip(1).All(prefix => prefix.Length > 0)
+            && HasEveryDigit(parsedUnits!)
+            && HasEveryDigit(parsedTens!)
+            && HasEveryDigit(parsedHundreds!);
+
+        /// <summary>Determines whether entries 1 to 9 of a parsed composition table are all non-empty.</summary>
+        /// <param name="table">Parsed units, tens or hundreds table.</param>
+        /// <returns><see langword="true"/> when every non-zero digit contributes a component.</returns>
+        private static bool HasEveryDigit(PrefixComponent[] table)
+        {
+            for (int digit = 1; digit < table.Length; digit++)
+                if (table[digit].IsEmpty) return false;
+            return true;
+        }
 
         /// <summary>Determines whether the scale can safely name the supplied group index.</summary>
         /// <param name="groupIndex">The zero-based large-number group index.</param>
@@ -3374,75 +3412,210 @@ namespace Utils.NumberToString
             long dynamicScale = (long)scale - StaticValues.Count + StartIndex;
             var (quotient, remainder) = long.DivRem(dynamicScale, ScaleSuffixes.Count);
 
-            var suffix = ScaleSuffixes[(int)remainder];
-            long prefix = quotient + 1;
+            return BuildDynamicName(quotient + 1, ScaleSuffixes[(int)remainder]);
+        }
 
-            if (prefix.Between(0L, 9L))
+        /// <summary>
+        /// Builds a dynamic scale name from its prefix value (the Conway-Wechsler index for the Latin tables) and its suffix.
+        /// The value is split into base-1000 groups, most significant first; every group is named on its own by
+        /// <see cref="AppendPrefixGroup"/> and followed by the group separator, then the suffix closes the name.
+        /// </summary>
+        /// <param name="prefix">Positive prefix value; 1 names the first dynamic scale (e.g. million).</param>
+        /// <param name="suffix">Suffix appended after the last group separator (e.g. "on" or "ard").</param>
+        /// <returns>The generated name, capitalized once when <see cref="FirstLetterUppercase"/> is set.</returns>
+        internal string BuildDynamicName(long prefix, string suffix)
+        {
+            if (prefix < 1)
+                throw new ArgumentOutOfRangeException(nameof(prefix), $"prefix must be positive; got {prefix}.");
+
+            // A long has at most 19 decimal digits, hence at most 7 groups of three digits.
+            Span<int> groups = stackalloc int[7];
+            int count = 0;
+            for (long remaining = prefix; remaining > 0; count++)
+            {
+                (remaining, long group) = long.DivRem(remaining, 1000);
+                groups[count] = (int)group;
+            }
+
+            var value = new StringBuilder();
+            for (int i = count - 1; i >= 0; i--)
+            {
+                AppendPrefixGroup(value, groups[i], prefix);
+                value.Append(GroupSeparator);
+            }
+            value.Append(suffix);
+
+            if (FirstLetterUppercase && value.Length > 0)
+                value[0] = char.ToUpperInvariant(value[0]);
+            return value.ToString();
+        }
+
+        /// <summary>
+        /// Appends the name of one base-1000 group. Every group, the first one included, is named as an independent
+        /// index: 0 is the void-group placeholder, 1..9 is <see cref="Scale0Prefixes"/>, and 10..999 is composed from
+        /// the units, tens and hundreds tables, read in that order.
+        /// </summary>
+        /// <param name="builder">Builder receiving the group name.</param>
+        /// <param name="group">Group value, between 0 and 999.</param>
+        /// <param name="prefix">Complete prefix value, used in error messages.</param>
+        private void AppendPrefixGroup(StringBuilder builder, int group, long prefix)
+        {
+            if (group == 0)
+            {
+                builder.Append(VoidGroup);
+                return;
+            }
+
+            if (group < 10)
             {
                 if (Scale0Prefixes == null)
                     throw new InvalidOperationException(
-                        $"Scale0Prefixes is not configured for scale {scale}. " +
+                        $"Scale0Prefixes is not configured for prefix value {prefix}. " +
                         "Provide it directly in the NumberScale element or inherit it via baseOn.");
-                var value = Scale0Prefixes[(int)prefix] + GroupSeparator + suffix;
-                return FirstLetterUppercase && value.Length > 0 ? char.ToUpperInvariant(value[0]) + value[1..] : value;
+                string name = Scale0Prefixes[group];
+                if (name.Length == 0)
+                    throw new InvalidOperationException(
+                        $"Scale0Prefixes[{group}] is empty, so prefix value {prefix} cannot be named.");
+                builder.Append(name);
+                return;
             }
 
-            var prefixes = new List<string>();
+            if (parsedUnits == null || parsedTens == null || parsedHundreds == null)
+                throw new InvalidOperationException(
+                    $"HundredsPrefixes, TensPrefixes, and UnitsPrefixes must all be configured for prefix value {prefix} " +
+                    "(a group exceeds 9). Provide them directly or inherit via baseOn.");
 
-            while (prefix > 0)
+            (int hundreds, int rest) = Math.DivRem(group, 100);
+            (int tens, int units) = Math.DivRem(rest, 10);
+            ReadOnlySpan<PrefixComponent> components = [parsedUnits[units], parsedTens[tens], parsedHundreds[hundreds]];
+            ReadOnlySpan<int> digits = [units, tens, hundreds];
+            for (int i = 0; i < components.Length; i++)
+                if (digits[i] != 0 && components[i].IsEmpty)
+                    throw new InvalidOperationException(
+                        $"The {ComponentTableNames[i]} entry for digit {digits[i]} is empty, so prefix value {prefix} cannot be named.");
+
+            for (int i = 0; i < components.Length; i++)
             {
-                (prefix, long u) = long.DivRem(prefix, 10);
-                (prefix, long t) = long.DivRem(prefix, 10);
-                (prefix, long h) = long.DivRem(prefix, 10);
+                var component = components[i];
+                if (component.IsEmpty) continue;
 
-                if (h == 0 && t == 0 && u == 0)
+                int next = i + 1;
+                while (next < components.Length && components[next].IsEmpty) next++;
+                if (next == components.Length)
                 {
-                    prefixes.Add(VoidGroup);
+                    // Last component of the group: it is followed by the -illi- junction.
+                    builder.Append(component.IlliValue);
+                    break;
+                }
+
+                builder.Append(component.Value);
+                // At most one linking consonant: the first end marker that the next component accepts.
+                foreach (char marker in component.End)
+                {
+                    if (components[next].Start.Contains(marker))
+                    {
+                        builder.Append(marker);
+                        break;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Parses a units, tens or hundreds table. Each entry follows <c>(start)stem[default|-illi=&gt;form](end)</c>,
+        /// every part except the stem being optional: <c>start</c> lists the markers accepted from the preceding
+        /// component, <c>end</c> the linking consonants this component may take before the next one (the first accepted
+        /// one is inserted), and the bracketed ending selects <c>form</c> when the component is the last of its group
+        /// (before the -illi- junction) and <c>default</c> otherwise. An empty entry is an empty component; any other
+        /// entry must match the grammar completely, or <see cref="ArgumentException"/> is thrown.
+        /// </summary>
+        /// <param name="table">Validated ten-entry table.</param>
+        /// <param name="paramName">Public constructor parameter represented by the table.</param>
+        /// <returns>The parsed components, indexed by digit.</returns>
+        private static PrefixComponent[] ParsePrefixTable(IReadOnlyList<string> table, string paramName)
+        {
+            var result = new PrefixComponent[table.Count];
+            for (int digit = 0; digit < table.Count; digit++)
+            {
+                if (table[digit].Length == 0)
+                {
+                    result[digit] = PrefixComponent.Empty;
                     continue;
                 }
 
-                if (HundredsPrefixes == null || TensPrefixes == null || UnitsPrefixes == null)
-                    throw new InvalidOperationException(
-                        $"HundredsPrefixes, TensPrefixes, and UnitsPrefixes must all be configured for scale {scale} " +
-                        "(prefix value exceeds 9). Provide them directly or inherit via baseOn.");
-                Match[] groupValues = [
-                    PrefixParser.Match(HundredsPrefixes[(int)h]),
-                    PrefixParser.Match(TensPrefixes[(int)t]),
-                    PrefixParser.Match(UnitsPrefixes[(int)u])
-                ];
+                Match match = PrefixParser.Match(table[digit]);
+                if (!match.Success)
+                    throw new ArgumentException(
+                        $"Prefix entry '{table[digit]}' (digit {digit}) does not follow the (start)stem[default|-illi=>form](end) grammar.",
+                        paramName);
 
-                var value = new StringBuilder();
-                string start = "", end = "";
-
-                foreach (Match match in groupValues)
+                string stem = match.Groups["value"].Value;
+                string value = stem, illiValue = stem;
+                if (match.Groups["endings"].Success)
                 {
-                    if (match.Success)
-                    {
-                        end = match.Groups["end"].Value;
-
-                        if (!start.IsNullOrEmpty())
-                        {
-                            foreach (var s in end)
-                            {
-                                if (start.Contains(s)) value.Insert(0, s);
-                            }
-                        }
-                        value.Insert(0, match.Groups["value"].Value);
-                        start = match.Groups["start"].Value;
-                    }
+                    (string defaultEnding, string illiEnding) = ParseEndings(match.Groups["endings"].Value, table[digit], paramName);
+                    value = stem + defaultEnding;
+                    illiValue = stem + illiEnding;
                 }
-
-                if (FirstLetterUppercase && value.Length > 0)
-                {
-                    value[0] = char.ToUpperInvariant(value[0]);
-                }
-                prefixes.Add(value.ToString());
+                result[digit] = new PrefixComponent(match.Groups["start"].Value, value, match.Groups["end"].Value, illiValue);
             }
-
-            return string.Join(GroupSeparator, prefixes.AsEnumerable().Reverse()) + GroupSeparator + suffix;
+            return result;
         }
 
-        [GeneratedRegex(@"(\((?<start>\w+)\))?(?<value>\w+)(\((?<end>\w+)\))?", RegexOptions.Compiled)]
+        /// <summary>Parses the bracketed ending list <c>default|-illi=&gt;form</c> of a prefix table entry.</summary>
+        /// <param name="endings">Text between the brackets.</param>
+        /// <param name="entry">Complete table entry, used in error messages.</param>
+        /// <param name="paramName">Public constructor parameter represented by the table.</param>
+        /// <returns>The default ending and the ending used before the -illi- junction (the default when absent).</returns>
+        private static (string Default, string Illi) ParseEndings(string endings, string entry, string paramName)
+        {
+            string[] parts = endings.Split('|');
+            string defaultEnding = parts[0];
+            if (defaultEnding.Contains("=>", StringComparison.Ordinal))
+                throw new ArgumentException(
+                    $"Prefix entry '{entry}' must start its ending list with the default ending, not a context.", paramName);
+
+            string? illiEnding = null;
+            for (int i = 1; i < parts.Length; i++)
+            {
+                int arrow = parts[i].IndexOf("=>", StringComparison.Ordinal);
+                if (arrow < 0)
+                    throw new ArgumentException(
+                        $"Prefix entry '{entry}' has the alternative ending '{parts[i]}' without a 'context=>ending' form.", paramName);
+                string context = parts[i][..arrow];
+                if (context != IlliContext)
+                    throw new ArgumentException(
+                        $"Prefix entry '{entry}' uses the unsupported ending context '{context}'; only '{IlliContext}' is supported.", paramName);
+                if (illiEnding != null)
+                    throw new ArgumentException(
+                        $"Prefix entry '{entry}' declares the '{IlliContext}' context more than once.", paramName);
+                illiEnding = parts[i][(arrow + 2)..];
+            }
+            return (defaultEnding, illiEnding ?? defaultEnding);
+        }
+
+        /// <summary>Names of the composition tables, in the units, tens, hundreds order of a group.</summary>
+        private static readonly string[] ComponentTableNames = [nameof(UnitsPrefixes), nameof(TensPrefixes), nameof(HundredsPrefixes)];
+
+        /// <summary>Ending context naming the position before the -illi- junction, whatever the group separator spells.</summary>
+        private const string IlliContext = "-illi";
+
+        /// <summary>One parsed entry of a units, tens or hundreds prefix table.</summary>
+        /// <param name="Start">Markers accepted from the preceding component's end markers.</param>
+        /// <param name="Value">Text used when another component of the group follows.</param>
+        /// <param name="End">Linking consonants this component may take, in priority order.</param>
+        /// <param name="IlliValue">Text used when the component is the last of its group.</param>
+        private readonly record struct PrefixComponent(string Start, string Value, string End, string IlliValue)
+        {
+            /// <summary>Gets the component standing for an empty table entry.</summary>
+            public static PrefixComponent Empty { get; } = new("", "", "", "");
+
+            /// <summary>Gets whether the component contributes nothing to the name.</summary>
+            public bool IsEmpty => Value.Length == 0 && IlliValue.Length == 0;
+        }
+
+        /// <summary>Matches a complete prefix table entry: <c>(start)stem[endings](end)</c>, nothing before or after.</summary>
+        [GeneratedRegex(@"\A(\((?<start>\w+)\))?(?<value>\w+)(\[(?<endings>[^\]]*)\])?(\((?<end>\w+)\))?\z", RegexOptions.Compiled)]
         private static partial Regex PrefixParserRegex();
     }
 }

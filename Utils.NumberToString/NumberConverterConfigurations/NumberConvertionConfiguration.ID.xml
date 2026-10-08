@@ -68,8 +68,8 @@
             </Suffixes>
             <Scale0Prefixes>
                 <Digit digit="0" string="" />
-                <Digit digit="1" string="" />
-                <Digit digit="2" string="" />
+                <Digit digit="1" string="mi" />
+                <Digit digit="2" string="bi" />
                 <Digit digit="3" string="tri" />
                 <Digit digit="4" string="kuadri" />
                 <Digit digit="5" string="kuinti" />

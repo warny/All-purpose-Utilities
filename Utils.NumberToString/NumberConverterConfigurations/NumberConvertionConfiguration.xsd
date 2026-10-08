@@ -1472,7 +1472,8 @@
                                             <xs:annotation>
                                                 <xs:documentation>
                                                     Overrides the default Latin base-scale prefixes
-                                                    ("", "mi", "bi", "tri", …).
+                                                    ("", "mi", "bi", "tri", …). Also names every 1–9 group of a grouped
+                                                    index (1000 = "mi" + "ni"), so entries 1–9 must be non-empty.
                                                 </xs:documentation>
                                             </xs:annotation>
                                         </xs:element>
@@ -1481,7 +1482,10 @@
                                             <xs:annotation>
                                                 <xs:documentation>
                                                     Overrides the default unit-position prefixes used in
-                                                    compound scale names ("", "uni", "duo", "tre(s)", …).
+                                                    compound scale names ("", "un", "duo", "tre(s)", …). Entries read
+                                                    "(start)stem[default|-illi=>form](end)": the first (end) letter accepted
+                                                    by the next component's (start) markers links them, and the bracketed
+                                                    ending uses "form" when the component ends its group (before -illi-).
                                                 </xs:documentation>
                                             </xs:annotation>
                                         </xs:element>
@@ -1490,7 +1494,7 @@
                                             <xs:annotation>
                                                 <xs:documentation>
                                                     Overrides the default tens-position prefixes
-                                                    ("", "(n)deci", "(ms)vingti", …).
+                                                    ("", "(n)deci", "(ms)viginti", "(ns)trigint[a|-illi=>i]", …).
                                                 </xs:documentation>
                                             </xs:annotation>
                                         </xs:element>
@@ -1499,7 +1503,7 @@
                                             <xs:annotation>
                                                 <xs:documentation>
                                                     Overrides the default hundreds-position prefixes
-                                                    ("", "(nx)centi", "(ms)ducenti", …).
+                                                    ("", "(nxs)centi", "(n)ducenti", …).
                                                 </xs:documentation>
                                             </xs:annotation>
                                         </xs:element>
