@@ -67,6 +67,17 @@ classification.
     - EE ordinal of zero: no attested form (`ZeroOrdinalUnsupportedLanguageSpecifics`).
     - WO ordinals of zero and of the round thousands (last element `junni`): no attested ordinal of
       zero, conflicting forms for `junni` (`junneel`/`junniéél`); deliberate limitations.
+- **NTS-26 — Wolof connective `-i` inside the multiplier of `téeméer` (`juróom ñent téeméeri milyoŋ`).**
+  Found by NTS-21 (`DONE-2026-10-09.md`). The configuration follows the NTS-19 rule: the multiplier of
+  `téeméer` takes `-i` on its last element (`juróom ñenti téeméer` 900, `juróom ñaari téeméer` 700), also when
+  the hundreds are themselves a multiplier (`juróom ñenti téeméeri milyoŋ`). The Wolof Ajami Reader (Ngom et
+  al., Boston University, 2025, p. 192) writes `juróomi milyaar ak juróom ñent téeméeri milyoŋ ak ñaar fukk ak
+  juróom` and `juróom ñaar téeméeri milyoŋ`: no `-i` before `téeméer`, `-i` only before the scale noun.
+  Kosogorova 2023 (`ñaar tééméér`) and Gaye 1980 (`-i` optional with `ñaar`) already record forms without the
+  inner `-i`. Decide whether the inner `-i` is obligatory, optional (variant) or absent, possibly depending on
+  the following scale noun, from more sources (Bible corpus counts, decree 2005-992, grammars). Any change
+  alters the cardinals below a million (700–999, 700 000–999 999), byte-identical since NTS-19; a variant
+  dimension would keep the default output.
 
 
 NTS-01 through NTS-05, NTS-09 and NTS-10 through NTS-25 are closed:
