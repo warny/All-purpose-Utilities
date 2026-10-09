@@ -33,6 +33,10 @@ Scenario: Ordinal conversion is supported
 
 # Only the last component of a Ukrainian compound ordinal is ordinal ("двадцять перший",
 # "тисяча перший"). The apostrophe is the ASCII one used by the cardinals ("п'ять").
+# NTS-08 validation: Український правопис 2019, §38: compound ordinals in -сотий/-тисячний/
+# -мільйонний/-мільярдний are one word (трьохсотий, двохтисячний, десятитисячний); composite ones
+# are separate and write a single million or milliard without "один" ("мільйон трьохтисячний",
+# "мільярд чотирьохмільйонний", "тисяча дев'ятсот вісімдесят восьмий").
 Scenario Outline: Ukrainian ordinal numbers
     When I convert the ordinal number <number>
     Then the result is "<expected>"
@@ -55,6 +59,14 @@ Examples:
     | 1001 | тисяча перший |
     | 2000 | двохтисячний |
     | 2001 | дві тисячі перший |
+    | 300 | трьохсотий |
+    | 1988 | тисяча дев'ятсот вісімдесят восьмий |
+    | 10000 | десятитисячний |
+    | 1000000 | мільйонний |
+    | 1000001 | мільйон перший |
+    | 1003000 | мільйон трьохтисячний |
+    | 1000000000 | мільярдний |
+    | 1000000001 | мільярд перший |
 
 Scenario Outline: Ukrainian ordinals agree in gender and case
     Given I use the variants "<variants>"

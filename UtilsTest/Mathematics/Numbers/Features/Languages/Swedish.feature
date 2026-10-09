@@ -36,6 +36,10 @@ Scenario: Ordinal conversion is supported
 
 # Swedish compound ordinals are written as one word (tjugoförsta); the ordinals of hundra,
 # tusen and miljon are hundrade, tusende and miljonte.
+# NTS-08 validation: SAOB, TJUGO (compounds with första ... nionde), TJUGONDE, HUNDRADE, TUSENDE,
+# MILJONTE ("använt ss. ordningstal"); Språkrådet, Frågelådan 27138 (numbers below a million are
+# written as one word), 31080 (three identical consonants: one is dropped, missköta, nattåg) and
+# 21216 (after the tens "en" is used whatever the gender: tjugoen kilo, etthundratjugoen tallrikar).
 Scenario Outline: Swedish ordinal numbers
     When I convert the ordinal number <number>
     Then the result is "<expected>"
@@ -66,7 +70,27 @@ Examples:
     | 1000 | tusende |
     | 1001 | tusenförsta |
     | 2000 | tvåtusende |
+    | 47 | fyrtiosjunde |
+    | 1100 | tusenhundrade |
+    | 21000 | tjugoentusende |
+    | 21001 | tjugoentusenförsta |
+    | 101000 | hundraettusende |
+    | 999999 | niohundranittioniotusenniohundranittionionde |
     | 1000000 | miljonte |
+
+# NTS-08: above a million the words miljon and miljard stand apart (Språkrådet 27138), and no
+# consulted source settles the ordinal of a non-round value or of a multiple ("två miljonte" vs the
+# fused "tvåmiljonte" found in a press release); SAOB has no entry miljardte. These values fail closed.
+Scenario Outline: Swedish ordinals above one million are not supported
+    When I attempt to convert the ordinal number <number>
+    Then conversion is rejected because no ordinal form is available
+
+Examples:
+    | number |
+    | 1000001 |
+    | 2000000 |
+    | 1000000000 |
+    | 2147483647 |
 
 Scenario: Idiomatic clock-time conversion is supported
     Then the converter supports clock-time conversion

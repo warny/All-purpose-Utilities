@@ -9,7 +9,8 @@ namespace Utils.NumberToString;
 /// <c>ezredik</c>, <c>milliomodik</c>); only the numbers 1 and 2 standing alone are suppletive
 /// (<c>első</c>, <c>második</c>), whereas they are regular at the end of a compound
 /// (<c>huszonegyedik</c>, <c>tizenkettedik</c>). Numbers up to 2000 are written as one word and
-/// larger ones separate their thousand groups with hyphens (<c>kétezer-egyedik</c>).
+/// larger ones separate their thousand groups with hyphens (<c>kétezer-egyedik</c>); a single
+/// million or milliard is written with <c>egy</c> (<c>egymilliomodik</c>, <c>egymillió-egyedik</c>).
 /// </summary>
 /// <remarks>
 /// The non-ordinal prefix is rebuilt here because <see cref="IOrdinalLanguageSpecifics"/> receives
@@ -64,7 +65,9 @@ public sealed class HungarianOrdinalLanguageSpecifics : INumberToStringLanguageS
             var (value, scale) = groups[i];
             bool last = i == groups.Count - 1;
             var chunk = new StringBuilder();
-            if (!(value == 1 && scale > 0))
+            // A single thousand is the bare "ezer" (ezredik, ezeregyedik); a single million or milliard
+            // keeps "egy" (MTA "Számok" tool, AkH12-292: egymilliomodik, egymillió-egyedik).
+            if (!(value == 1 && scale == 1))
                 AppendGroup(chunk, value, ordinalEnd: last && scale == 0);
             if (scale > 0)
                 chunk.Append(last ? s_ordinalScales[scale] : s_scales[scale]);

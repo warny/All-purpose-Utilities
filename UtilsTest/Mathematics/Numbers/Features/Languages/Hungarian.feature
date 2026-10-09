@@ -57,6 +57,11 @@ Examples:
     | 1000000000 | milliárd |
     | 1000000000000 | billió |
 
+# NTS-08 validation: A magyar helyesírás szabályai (AkH12) §291 (one word up to 2000, then
+# hyphenated groups, round thousands and millions written together: hatmilliomodik,
+# négyezer-hatszázötödik) and the MTA Nyelvtudományi Intézet "Számok" tool (helyesiras.mta.hu,
+# AkH12-292), which writes the scale of one with "egy": egymilliomodik, egymilliárdodik,
+# egymillió-egyedik.
 Scenario Outline: Irregular ordinal numbers
     Given I use the "HU" number converter
     When I convert the ordinal number <number>
@@ -87,7 +92,18 @@ Examples:
     | 1001 | ezeregyedik |
     | 2000 | kétezredik |
     | 2001 | kétezer-egyedik |
-    | 1000000 | milliomodik |
+    | 2002 | kétezer-kettedik |
+    | 1999 | ezerkilencszázkilencvenkilencedik |
+    | 21000 | huszonegyezredik |
+    | 100001 | százezer-egyedik |
+    | 1000000 | egymilliomodik |
+    | 1000001 | egymillió-egyedik |
+    | 1001000 | egymillió-ezredik |
+    | 2000000 | kétmilliomodik |
+    | 21000000 | huszonegymilliomodik |
+    | 1000000000 | egymilliárdodik |
+    | 1000000001 | egymilliárd-egyedik |
+    | 2000000000 | kétmilliárdodik |
 
 Scenario: Ordinal conversion is supported
     Given I use the "HU" number converter

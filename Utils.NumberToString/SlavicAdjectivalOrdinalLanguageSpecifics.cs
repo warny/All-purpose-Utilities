@@ -459,14 +459,16 @@ public sealed class UkrainianOrdinalLanguageSpecifics : SlavicAdjectivalOrdinalL
     /// <param name="one">The scale noun after 1.</param>
     /// <param name="few">The scale noun after 2–4.</param>
     /// <param name="many">The scale noun after 0 and 5–20.</param>
-    /// <param name="feminine">Whether the scale noun is feminine (тисяча).</param>
+    /// <param name="feminine">Whether the scale noun is feminine (тисяча); it selects the feminine units (одна, дві).</param>
     private static void AppendCardinalChunk(List<string> words, int group, string one, string few, string many, bool feminine)
     {
         if (group == 0)
             return;
         if (group == 1)
         {
-            words.Add(feminine ? one : "один " + one);
+            // A single thousand, million or milliard is the bare noun (Український правопис 2019, §38:
+            // "мільйон трьохтисячний", "мільярд чотирьохмільйонний").
+            words.Add(one);
             return;
         }
         int hundreds = group / 100;
