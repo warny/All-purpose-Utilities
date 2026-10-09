@@ -1,6 +1,7 @@
 # Utils.NumberToString — Current backlog
 
-Re-audited on 2026-10-09 after closing NTS-21 (Wolof large scales: attested `milyoŋ`/`milyaar`, long-scale
+Re-audited on 2026-10-09 after closing NTS-08 (final linguistic validation of the ordinals and ClockTime;
+opened NTS-27, NTS-28 and NTS-29), after closing NTS-21 (Wolof large scales: attested `milyoŋ`/`milyaar`, long-scale
 Conway-Wechsler extension in Wolof spelling, unbounded cardinals; `suffixSeparator` primitive) and NTS-09
 (`Trigger` inheritance through `baseOn`), on 2026-10-08 after closing NTS-25 (NTS-25B: ID/MS, SW and TR Conway tables localized to their
 alphabets; NTS-25A: Cyrillic Conway tables, RU/BG/UK short scale, SW/TR junctions), and after closing NTS-24 (strict Conway-Guy-Wechsler scale names shared by every
@@ -23,50 +24,32 @@ classification.
 
 ## Open items
 
-- **NTS-08 — linguistic ordinal and ClockTime coverage audit (implementation done, validation open).**
-  Every natural-language configuration now has tested ordinal and ClockTime behaviour or an explicit
-  deferral (`docs/NTS-08-linguistic-sources.md`, `DONE-2026-10-01(1).md`). NTS-08 is not closed:
-  - **Linguistic validation remaining, tracked per capability.** A scenario only proves that a
-    configuration produces the string chosen by the PR; a capability counts as validated once its
-    tested wording rests on sufficient consulted evidence (see `docs/NTS-08-linguistic-sources.md`):
-    an authoritative normative or academic reference read during the audit, or at least two
-    independent sources. A capability backed by a single weak or isolated source (a learner blog,
-    a search summary, or a sole introductory course that could not be cross-checked) stays open.
-    Still unvalidated:
-    - *Ordinals added or changed by NTS-08*: SV; DA vigesimal tens (`halvtredsindstyvende` ...);
-      HU; UK; FA; TR; AR 20-99, 100 and 1000; HE above ten (agreeing-cardinal policy) and the AR/HE
-      compound cardinals 11-99 they rely on; VN `thứ tư`; CS compound spelling (search summary of
-      Naše řeč only); CS and SK gender/case declension tables.
-    - *ClockTime*: DA, NO, SV, BG, HR, HU, CS, SK, UK, PL, RU, ES, IT (five-minute step since NTS-10: the
-      Crusca covers `meno venti`/`meno dieci`, the `e` + minutes reading follows learner usage), PT
-      (the deliberate direct reading; the consulted source covers `para`/`menos` only), GL, RO, EL, FI, HE, FA, JA, VN; and,
-      backed by a single isolated source only, HI and ZH (one learner site each), TR (search summary
-      of TDK usage, page not read) and ZU (sole introductory course).
-    - *Pre-existing ordinals not re-verified by the audit*: NL, PL, RU, ES, PT, GL, EL, FI, HI,
-      JA, KO, ZH, EU.
-    Validated so far: NL (Taaladvies), EU (EHU grammar), KO (National Institute of Korean
-    Language), SW (two sources) and AR (university textbook) ClockTime; NO, BG, HR, RO and DA 100
-    (`hundrede`) ordinals; SK compound ordinal spelling; HR cardinals; IT ordinals 1–1999 (except
-    1110–1910) and round thousands (NTS-13: Treccani grammar and vocabolario, DICO, Crusca), 1010
-    and 100001–100009 (NTS-15: Treccani "ordinale", "centomillesimo"), the round multiples of
-    milione, miliardo and bilione (NTS-17: Treccani entries, CNR), and of biliardo and trilione
-    (NTS-18: MIT/ADN table, Nuovo De Mauro, GDLI); WO cardinals 0–999 999 and ordinals (NTS-16, NTS-19: decree
-    2005-992, Kosogorova 2023, Robert 2021, Gaye 1980; large ordinals apply the stated rule); EE
-    cardinals 0–999 999 and ordinals (NTS-20: Dzablu-Kumah, *Basic Ewe for Foreign Students*; the Biblica
-    Ewe Bible corpus; Ewe Basic Course 1968; large ordinals apply the stated rule). The remaining Italian values (1110–1910, other
-    non-round thousands, non-round values from a million) are deliberate linguistic limitations,
-    not open work: see `DONE-2026-10-07.md`.
-    NTS-08 closes when every capability above is validated or explicitly deferred; a corrected
-    string must be fixed in the `.feature` first, then in the configuration.
-  - The remaining gaps below are explicit decisions, each pinned by a "does not support"
-    scenario:
-    - SW and ZU ordinals: an obligatory noun-class concord, no standalone form; needs a public
-      `nounClass` dimension and a documented class inventory.
-    - EE ClockTime: no sourced minute convention.
-    - WO ClockTime: competing native and French-derived conventions, no single sourced system.
-    - EE ordinal of zero: no attested form (`ZeroOrdinalUnsupportedLanguageSpecifics`).
-    - WO ordinals of zero and of the round thousands (last element `junni`): no attested ordinal of
-      zero, conflicting forms for `junni` (`junneel`/`junniéél`); deliberate limitations.
+- **NTS-27 — cardinal defects found by the NTS-08 validation.** Each made an ordinal or clock wrong, so the
+  affected ordinals now fail closed (`DONE-2026-10-09(1).md`); the cardinals themselves are unchanged:
+  - SV: `ett miljon` (Språkrådet: *en miljon*), `tusen ett hundra`, `två tusen`, `tjugoett tusen` (one word below a
+    million, *en* after the tens: Frågelådan 27138, 21216).
+  - PL/RU: the thousands do not agree with the multiplier (`dwa tysiąc`, `два тысяча` for *dwa tysiące*, *две тысячи*).
+  - VN: `nghìn` for *một nghìn*, `hai nghìn năm` for *hai nghìn không trăm linh năm*.
+  - JA/KO/ZH: thousands split with spaces and no counting by 万/만 (`千 一`, `십 천`, `一 千`); ZH without 零 / 一十
+    (`一百一`, `一百十`).
+  - HI: `एक सौ हज़ार` for *एक लाख* (and the larger lakh/crore values); spelling `पांच` (anusvara) against the
+    chandrabindu of Kamta Prasad Guru (`पाँच`).
+  - EU: `mila bat` for *mila eta bat*, `bat milioi` for *milioi bat* (Euskaltzaindia rule 7).
+  - ES: `veintiuno mil` for *veintiún mil*.
+- **NTS-28 — compound ordinals the declarative pipeline does not build.** Sourced rules exist but need a plugin
+  (the last-word transformation cannot produce them); the values fail closed today:
+  - ES (DPD: *trigésimo primero*, *centésimo primero*, *ducentésimo*, *dosmilésimo*), PT (*vigésimo primeiro*,
+    *ducentésimo*), GL (*vixésimo primeiro*), EL (*εικοστός πρώτος*, *εκατοστός πρώτος*, *δισχιλιοστός*), FI
+    (*kahdeskymmenesensimmäinen*, and every inflected case: genitive *kolmannen*, partitive *kolmatta*).
+  - PL/RU from 2000 (*dwutysięczny*, *dwa tysiące pierwszy*; *двухтысячный*, *две тысячи первый*), after NTS-27.
+  - UK round thousands with a multiplier above ten and round millions/milliards above one (Pravopys 2019 §38:
+    *п'ятсоттридцятитисячний*, *чотирьохмільйонний*, *семимільярдний*).
+  - SV above one million (no consulted source settles *två miljonte* vs *tvåmiljonte*; *miljardte* unattested
+    in SAOB).
+  - AR above 100 (*المئة والسابع والثلاثون*, after M. Bussey/EMSA), not enabled by NTS-08.
+- **NTS-29 — attested ordinals of zero not enabled.** DA *nulte* (Retskrivningsordbogen since 1986, Dansk
+  Sprognævn SV00001178) and HU *nulladik* (MTA "Számok" tool) still fail closed; enabling them is additive.
+
 - **NTS-26 — Wolof connective `-i` inside the multiplier of `téeméer` (`juróom ñent téeméeri milyoŋ`).**
   Found by NTS-21 (`DONE-2026-10-09.md`). The configuration follows the NTS-19 rule: the multiplier of
   `téeméer` takes `-i` on its last element (`juróom ñenti téeméer` 900, `juróom ñaari téeméer` 700), also when
@@ -80,7 +63,7 @@ classification.
   byte-identical since NTS-19; a variant dimension would keep the default output.
 
 
-NTS-01 through NTS-05, NTS-09 and NTS-10 through NTS-25 are closed:
+NTS-01 through NTS-05, NTS-08, NTS-09 and NTS-10 through NTS-25 are closed:
 
 - NTS-01 — XSD validation: `DONE-2026-08-21.md`.
 - NTS-02 — initialization isolation: `DONE-2026-08-21.md`.
@@ -126,6 +109,9 @@ NTS-01 through NTS-05, NTS-09 and NTS-10 through NTS-25 are closed:
   `suffixSeparator` primitive): `DONE-2026-10-09.md`.
 - NTS-09 (`Trigger` elements inherited through `baseOn`; an empty list is read as absent), closed with NTS-21,
   which introduced the first production trigger: `DONE-2026-10-09.md`.
+- NTS-08 (linguistic validation of every ordinal and ClockTime capability: validated, corrected or fail-closed;
+  `OrdinalDomainGuardLanguageSpecifics`; NTS-27, NTS-28 and NTS-29 opened): `DONE-2026-10-09(1).md`, after the
+  implementation passes of `DONE-2026-10-01(1).md`.
 
 Full multi-form plural systems (Russian/Slavic count-dependent noun forms,
 Arabic dual/paucal/plural categories) are deliberately out of scope — the
@@ -139,6 +125,10 @@ a dated `DONE-*.md` file once resolved, per the repository's `AGENTS.md`
 TODO/DONE convention.
 
 
+### NTS-08 final validation (2026-10-09, closed)
+
+See `DONE-2026-10-09(1).md`.
+
 ### NTS-08 completion pass (2026-10-01)
 
 See `DONE-2026-10-01(1).md`.
@@ -149,4 +139,4 @@ See `DONE-2026-10-01(1).md`.
 - Split Valencian into a `baseOn="CA"` child with its own clock convention.
 - Split Malay into a `baseOn="ID"` child, preserving the Malay `lapan` stem and a distinct `pukul` clock convention.
 - Added productive Indonesian/Malay ordinal plugins handling suppletive `pertama` and `ke-` formation over language-specific cardinal stems.
-- Added English and Catalan ClockTime rules. Remaining languages listed above are still open and must not be marked supported without the documented grammatical audit.
+- Added English and Catalan ClockTime rules. The remaining languages were completed on 2026-10-01 and validated on 2026-10-09 (see above).
