@@ -187,12 +187,16 @@ public class NumberToStringNts21Tests
     }
 
     /// <summary>
-    /// Complete cardinals: the attested anchors "benn milyoŋ" and "benn milyaar", "ak" before a lower part, and the
-    /// connective -i on the last element of a multiplier above one, as for téeméer and junni (NTS-19).
+    /// Complete cardinals: "ak" before a lower part and the connective -i on the last element of a multiplier above one,
+    /// as for téeméer and junni (NTS-19). Attested: benn, ñaari, juróomi, fukki milyoŋ (Wolof Bible wolmbs, Mt 25),
+    /// juróom fukki milyoŋ and juróomi milyaar (Wolof Ajami Reader); the other values apply the rule productively.
     /// </summary>
     [TestMethod]
     [DataRow("1000000", "benn milyoŋ")]
     [DataRow("1000000000", "benn milyaar")]
+    [DataRow("5000000", "juróomi milyoŋ")]
+    [DataRow("50000000", "juróom fukki milyoŋ")]
+    [DataRow("5000000000", "juróomi milyaar")]
     [DataRow("1000000000000", "benn bilyoŋ")]
     [DataRow("1000000000000000", "benn bilyaar")]
     [DataRow("2000000", "ñaari milyoŋ")]
@@ -267,6 +271,58 @@ public class NumberToStringNts21Tests
         Assert.AreEqual(
             "juróom ñenti téeméer ak juróom ñent fukk ak juróom ñenti junni ak juróom ñenti téeméer ak juróom ñent fukk ak juróom ñentéel",
             Wolof.ConvertOrdinal(999_999));
+    }
+
+    /// <summary>NTS-09: a baseOn="WO" child without its own Trigger inherits the Wolof -i trigger.</summary>
+    [TestMethod]
+    public void Nts09_BaseOnWolof_InheritsTheTrigger()
+    {
+        string culture = "X-NTS09-WO-" + Guid.NewGuid().ToString("N")[..8];
+        string document = $"""
+            <?xml version="1.0" encoding="utf-8"?>
+            <Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+              <Language baseOn="WO"><Culture>{culture}</Culture></Language>
+            </Numbers>
+            """;
+        var child = NumberToStringConverter.ReadConfiguration(document)[culture];
+
+        Assert.AreEqual(Wolof.Triggers.Count, child.Triggers.Count);
+        foreach (string number in new[] { "1000000", "2000000", "5000000", "50000000", "21000000", "5000000000", "999999" })
+            Assert.AreEqual(Wolof.Convert(BigInteger.Parse(number)), child.Convert(BigInteger.Parse(number)), number);
+        Assert.AreEqual("ñaari milyoŋ", child.Convert(2_000_000));
+        Assert.AreEqual("juróom fukki milyoŋ", child.Convert(50_000_000));
+    }
+
+    /// <summary>NTS-09: without any Trigger a child inherits the base's triggers; with one it replaces the whole list.</summary>
+    [TestMethod]
+    public void Nts09_Triggers_InheritedWhenAbsent_ReplacedWhenDeclared()
+    {
+        string id = Guid.NewGuid().ToString("N")[..8];
+        string parent = "X-NTS09-P-" + id, inheriting = "X-NTS09-I-" + id, replacing = "X-NTS09-R-" + id;
+        string document = $"""
+            <?xml version="1.0" encoding="utf-8"?>
+            <Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+              <Language groupSize="3" separator=" " groupSeparator="" zero="zero" minus="minus *" decimalSeparator="point" maxNumber="9">
+                <Culture>{parent}</Culture>
+                <Groups>
+                  <Group level="1"><Digit digit="0" string="" /><Digit digit="1" string="one" /><Digit digit="2" string="two" /><Digit digit="3" string="three" /><Digit digit="4" string="four" /><Digit digit="5" string="five" /><Digit digit="6" string="six" /><Digit digit="7" string="seven" /><Digit digit="8" string="eight" /><Digit digit="9" string="nine" /></Group>
+                </Groups>
+                <NumberScale firstLetterUpperCase="false"><StaticNames><Scale value="0" string="" /></StaticNames></NumberScale>
+                <Trigger executeAt="end"><Replace from="one" to="ONE" /></Trigger>
+              </Language>
+              <Language baseOn="{parent}"><Culture>{inheriting}</Culture></Language>
+              <Language baseOn="{parent}">
+                <Culture>{replacing}</Culture>
+                <Trigger executeAt="end"><Replace from="two" to="TWO" /></Trigger>
+              </Language>
+            </Numbers>
+            """;
+        var converters = NumberToStringConverter.ReadConfiguration(document);
+
+        Assert.AreEqual("ONE", converters[parent].Convert(1));
+        Assert.AreEqual("ONE", converters[inheriting].Convert(1));
+        Assert.AreEqual("one", converters[replacing].Convert(1));
+        Assert.AreEqual("TWO", converters[replacing].Convert(2));
     }
 
     /// <summary>suffixSeparator: absent, it is the group separator (every other language); set, it joins only the suffix.</summary>

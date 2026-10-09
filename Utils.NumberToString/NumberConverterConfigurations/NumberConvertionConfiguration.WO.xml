@@ -9,9 +9,10 @@
       téeméer", "juróom benni téeméer", "ñaari junni", "fukki junni", "téeméeri junni"); the tens do
       not ("ñaar fukk"). "ak" joins every lower part ("téeméer ak benn", "junni ak benn").
       Zero is "tus" (Boston University 200 Word Project, Wiktionary, Janga Wolof).
-      NTS-21: the scales above junni are the French loans milyoŋ (10^6) and milyaar (10^9), the anchors
-      of the NTS-21 task (Guérin, university teaching material, Senegalese Twisted; Boston University
-      200 Word Project "benn milyoŋ", re-read). Their
+      NTS-21: the scales above junni are the French loans milyoŋ (10^6) and milyaar (10^9): Wolof Bible
+      (eBible wolmbs, Mt 25 "benn milyoŋ", "ñaari milyoŋ", "juróomi milyoŋ"), Wolof Ajami Reader (Boston
+      University, "juróomi milyaar", "juróom fukki milyoŋ"), BU 200 Word Project "benn milyoŋ"; Guérin and
+      Wolof university teaching material (milyoŋ / milyaar) as checked in the PR #628 review. Their
       pair is the LONG scale (million, milliard), which the library extends productively with the
       Conway-Guy-Wechsler tables below; the higher names are a library convention, not attested usage.
     -->
@@ -155,10 +156,10 @@
         </Exceptions>
         <!--
           NTS-21. The multiplier of milyoŋ, milyaar and every higher scale (all ending in yoŋ or yaar)
-          takes the connective -i on its last element, as for téeméer and junni (Boston University
-          "fukki téeméeri junni"): "ñaari milyoŋ", "fukk ak benni milyoŋ". One is the bare "benn
-          milyoŋ" / "benn milyaar" (Boston University, Senegalese Twisted). The forms with a multiplier
-          above one apply the NTS-19 rule; none is individually attested.
+          takes the connective -i on its last element, as for téeméer and junni. Attested: "benn milyoŋ"
+          (bare one), "ñaari milyoŋ", "juróomi milyoŋ", "fukki milyoŋ" (Wolof Bible, Mt 25), "juróom
+          fukki milyoŋ", "juróomi milyaar" (Wolof Ajami Reader). The other multipliers 1-999 apply the
+          same NTS-19 rule productively ("fukk ak benni milyoŋ").
         -->
         <Trigger executeAt="groupWithScale">
             <Replace from="(?&lt;!\S)(ñaar|ñett|ñent|juróom|fukk|téeméer) (\S+(?:yoŋ|yaar))$" to="${1}i ${2}" regex="true" />

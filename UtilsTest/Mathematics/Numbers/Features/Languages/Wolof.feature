@@ -99,12 +99,12 @@ Examples:
     | -1000 | minus junni |
     | -1001 | minus junni ak benn |
 
-# NTS-21. The scales above junni are the French loans milyoŋ (10^6) and milyaar (10^9), the anchors
-# given by the NTS-21 task (Guérin: most frequent forms above 1000; Wolof university teaching material;
-# Senegalese Twisted "benn milyoŋ", "benn milyaar"); Boston University 200 Word Project "fukki téeméeri
-# junni / benn milyoŋ" was re-read. One is the
+# NTS-21. The scales above junni are the French loans milyoŋ (10^6) and milyaar (10^9). One is the
 # bare "benn"; a multiplier above one takes the connective -i on its last element as for téeméer and
-# junni (NTS-19 rule, Boston University "fukki téeméeri junni"): productive, not individually attested.
+# junni (NTS-19). Attested: Wolof Bible (eBible wolmbs, Mt 25) "benn milyoŋ", "ñaari milyoŋ", "juróomi
+# milyoŋ", "fukki milyoŋ"; Wolof Ajami Reader (Boston University) "juróom fukki milyoŋ", "juróomi
+# milyaar"; BU 200 Word Project "benn milyoŋ"; Guérin and Wolof university teaching material (milyoŋ,
+# milyaar) as checked in the PR #628 review. The other multipliers apply the rule productively.
 # The pair is the long scale; bilyoŋ, bilyaar, trilyoŋ ... are the library's productive Conway
 # extension in Wolof spelling (qu → kw, x → ks, v → w, c → s/k), not attested usage.
 Scenario Outline: Cardinal numbers from a million
@@ -119,6 +119,9 @@ Examples:
     | 1000000000000 | benn bilyoŋ |
     | 2000000 | ñaari milyoŋ |
     | 2000000000 | ñaari milyaar |
+    | 5000000 | juróomi milyoŋ |
+    | 50000000 | juróom fukki milyoŋ |
+    | 5000000000 | juróomi milyaar |
     | 1000001 | benn milyoŋ ak benn |
     | 1001000 | benn milyoŋ ak junni |
     | 1001001 | benn milyoŋ ak junni ak benn |

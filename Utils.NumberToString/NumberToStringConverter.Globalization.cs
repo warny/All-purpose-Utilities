@@ -808,7 +808,9 @@ namespace Utils.NumberToString
             Ordinals = model.Ordinals,
             Variants = model.Variants,
             YearFormat = model.YearFormat,
-            Triggers = model.Triggers,
+            // XmlSerializer materializes an absent <Trigger> list as an empty one: treat it as absent so that a
+            // baseOn child inherits its base's triggers (NTS-09). A child declaring triggers replaces the base's list.
+            Triggers = model.Triggers is { Count: > 0 } ? model.Triggers : null,
             Multiplicatives = model.Multiplicatives,
             GroupConnector = model.GroupConnector,
             GroupConnectorThresholdString = model.GroupConnectorThresholdString,

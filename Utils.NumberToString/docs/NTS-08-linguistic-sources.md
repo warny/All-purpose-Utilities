@@ -62,12 +62,14 @@ the remaining validation and its criterion are tracked per capability in `TODO.m
 
 ## NTS-21 — Wolof large scales (2026-10-09)
 
-- **Anchors.** `milyoŋ` (10^6) and `milyaar` (10^9), French loans. Re-read: Boston University, The 200 Word
-  Project, "Woññi (Numbers)": million `Fukki Téémééri Junni / Benn Milyoŋ`. Given by the NTS-21 task as
-  authoritative and not reachable during NTS-21: Guérin's description of the Wolof numeral system (`milyoŋ`,
-  `milyaar` the most frequent forms above 1000), Wolof university teaching material (`milyoŋ` / `milyaar`),
-  Senegalese Twisted counting material (`benn milyoŋ`, `benn milyaar`). Kosogorova 2023 (re-read) stops at
-  `junni`. Rejected spellings: `milyon` (the former unused configuration suffix), `million`, `miliyar`.
+- **Anchors.** `milyoŋ` (10^6) and `milyaar` (10^9), French loans. **Consulted, full text**: Wolof Bible
+  (eBible `wolmbs` NT PDF, Mt 25:15–28: `juróomi milyoŋ`, `ñaari milyoŋ`, `benn milyoŋ`, `fukki milyoŋ`); Wolof
+  Ajami Reader (F. Ngom, D. Rodima-Taylor, J. Yanco, E. D. Diagne, Boston University, 2025: `juróomi milyaar ak
+  juróom ñent téeméeri milyoŋ …`, `juróom fukki milyoŋ` = 50.000.000 Faraŋ); Boston University, The 200 Word
+  Project (`Fukki Téémééri Junni / Benn Milyoŋ`); Kosogorova 2023 (stops at `junni`). **Checked in the PR #628
+  review** (not reachable from this session): M. Guérin, *Système de numération en wolof* (French borrowings most
+  frequent above 1000: `milyoŋ`, `milyaar`); Wolof university course (`milyoŋ (tamndareet)`, `milyaar
+  (tamñareet)`). Rejected spellings: `milyon` (the former unused configuration suffix), `million`, `miliyar`.
 - **Scale.** `milyaar` at 10^9 makes the borrowed system the long scale: 10^(6n) `-yoŋ`, 10^(6n+3) `-yaar`.
 - **Project rule** (as NTS-24/NTS-25). Wolof has adopted the `milyoŋ` / `milyaar` family. The library extends this
   family productively with Conway-Guy-Wechsler on the long scale using Wolof-compatible spellings. Generated
@@ -76,10 +78,10 @@ the remaining validation and its criterion are tracked per capability in `TODO.m
 - **Transliteration.** qu → kw, x → ks, v → w, soft c → s, hard c → k, -on → -yoŋ, -ard → -yaar; groups joined
   by `li`, empty group `ni`, suffix joined by `l` (new `suffixSeparator` attribute). Tables and reference names:
   `DONE-2026-10-09.md`.
-- **Multipliers.** One is the attested bare `benn milyoŋ` / `benn milyaar`; a multiplier above one takes the NTS-19
-  connective `-i` on its last element, as for `téeméer` and `junni` (Gaye 1980: linker between the number and the
-  counted object; BU `fukki téeméeri junni`): `ñaari milyoŋ`, `ñaar fukk ak benni milyoŋ` — productive, not
-  individually attested.
+- **Multipliers.** One is the bare `benn milyoŋ`; a multiplier above one takes the NTS-19 connective `-i` on its
+  last element, as for `téeméer` and `junni`. Attested: `ñaari`, `juróomi`, `fukki milyoŋ` (Bible),
+  `juróom fukki milyoŋ`, `juróomi milyaar` (Ajami Reader); the rest of 1–999 is productive. Variant not adopted:
+  Ajami Reader `juróom ñent téeméeri milyoŋ` (no `-i` before `téeméer`; NTS-19 keeps `juróom ñenti téeméer`).
 - **Ordinals.** Unchanged (1–999 999): no ordinal above the thousands is exemplified.
 
 ## NTS-25B — Conway tables localized to ID/MS, SW and TR spelling (2026-10-08)
