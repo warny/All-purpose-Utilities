@@ -345,7 +345,7 @@ required to generate scale names.</p>
 
   <h3 id="Utils_NumberToString_NumberScale_HundredsPrefixes" data-uid="Utils.NumberToString.NumberScale.HundredsPrefixes">
   HundredsPrefixes
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L3353"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L3361"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the prefixes used when building hundreds multipliers, or <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> when
@@ -378,7 +378,7 @@ not configured. Required only for scales whose prefix value exceeds 9.</p>
 
   <h3 id="Utils_NumberToString_NumberScale_IsUnbounded" data-uid="Utils.NumberToString.NumberScale.IsUnbounded">
   IsUnbounded
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L3356"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L3364"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets whether every non-negative group index can be named.</p>
@@ -410,7 +410,7 @@ not configured. Required only for scales whose prefix value exceeds 9.</p>
 
   <h3 id="Utils_NumberToString_NumberScale_Scale0Prefixes" data-uid="Utils.NumberToString.NumberScale.Scale0Prefixes">
   Scale0Prefixes
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L3326"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L3334"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the prefixes used for the base scale (10⁰) names, or <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> when
@@ -538,11 +538,46 @@ of the prefix value between 1 and 9 uses this table, including a group above the
 
 
 
+  <a id="Utils_NumberToString_NumberScale_SuffixSeparator_" data-uid="Utils.NumberToString.NumberScale.SuffixSeparator*"></a>
+
+  <h3 id="Utils_NumberToString_NumberScale_SuffixSeparator" data-uid="Utils.NumberToString.NumberScale.SuffixSeparator">
+  SuffixSeparator
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L3314"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the junction inserted between the last prefix group and the suffix, or <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> when the
+group separator is used there too (the default). A language whose loans join the suffix differently from the
+groups sets it: Wolof groupSeparator &quot;li&quot; with suffixSeparator &quot;l&quot; gives milyoŋ (mi + l + yoŋ) and, for 1000,
+milinilyoŋ (mi + li + ni + l + yoŋ). An empty string joins the suffix directly.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string? SuffixSeparator { get; init; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
   <a id="Utils_NumberToString_NumberScale_TensPrefixes_" data-uid="Utils.NumberToString.NumberScale.TensPrefixes*"></a>
 
   <h3 id="Utils_NumberToString_NumberScale_TensPrefixes" data-uid="Utils.NumberToString.NumberScale.TensPrefixes">
   TensPrefixes
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L3347"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L3355"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the prefixes used when building tens multipliers, or <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> when
@@ -575,7 +610,7 @@ not configured. Required only for scales whose prefix value exceeds 9.</p>
 
   <h3 id="Utils_NumberToString_NumberScale_UnitsPrefixes" data-uid="Utils.NumberToString.NumberScale.UnitsPrefixes">
   UnitsPrefixes
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L3341"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L3349"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the prefixes used when building unit multipliers, or <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> when
@@ -621,7 +656,7 @@ component is the last of its group, right before the -illi- junction, and <code>
 
   <h3 id="Utils_NumberToString_NumberScale_CanNameGroup_System_Int32_" data-uid="Utils.NumberToString.NumberScale.CanNameGroup(System.Int32)">
   CanNameGroup(int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L3380"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L3388"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Determines whether the scale can safely name the supplied group index.</p>
@@ -660,7 +695,7 @@ component is the last of its group, right before the -illi- junction, and <code>
 
   <h3 id="Utils_NumberToString_NumberScale_GetScaleName_System_Int32_" data-uid="Utils.NumberToString.NumberScale.GetScaleName(System.Int32)">
   GetScaleName(int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L3402"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.cs/#L3410"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Retrieves the name of the scale for a given power of 10.</p>

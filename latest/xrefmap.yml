@@ -64836,6 +64836,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberScale.StaticValues
   nameWithType: NumberScale.StaticValues
+- uid: Utils.NumberToString.NumberScale.SuffixSeparator
+  name: SuffixSeparator
+  href: api/Utils.NumberToString.NumberScale.html#Utils_NumberToString_NumberScale_SuffixSeparator
+  commentId: P:Utils.NumberToString.NumberScale.SuffixSeparator
+  fullName: Utils.NumberToString.NumberScale.SuffixSeparator
+  nameWithType: NumberScale.SuffixSeparator
+- uid: Utils.NumberToString.NumberScale.SuffixSeparator*
+  name: SuffixSeparator
+  href: api/Utils.NumberToString.NumberScale.html#Utils_NumberToString_NumberScale_SuffixSeparator_
+  commentId: Overload:Utils.NumberToString.NumberScale.SuffixSeparator
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberScale.SuffixSeparator
+  nameWithType: NumberScale.SuffixSeparator
 - uid: Utils.NumberToString.NumberScale.TensPrefixes
   name: TensPrefixes
   href: api/Utils.NumberToString.NumberScale.html#Utils_NumberToString_NumberScale_TensPrefixes
@@ -64959,6 +64972,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberScaleType.StaticNames
   nameWithType: NumberScaleType.StaticNames
+- uid: Utils.NumberToString.NumberScaleType.SuffixSeparator
+  name: SuffixSeparator
+  href: api/Utils.NumberToString.NumberScaleType.html#Utils_NumberToString_NumberScaleType_SuffixSeparator
+  commentId: P:Utils.NumberToString.NumberScaleType.SuffixSeparator
+  fullName: Utils.NumberToString.NumberScaleType.SuffixSeparator
+  nameWithType: NumberScaleType.SuffixSeparator
+- uid: Utils.NumberToString.NumberScaleType.SuffixSeparator*
+  name: SuffixSeparator
+  href: api/Utils.NumberToString.NumberScaleType.html#Utils_NumberToString_NumberScaleType_SuffixSeparator_
+  commentId: Overload:Utils.NumberToString.NumberScaleType.SuffixSeparator
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberScaleType.SuffixSeparator
+  nameWithType: NumberScaleType.SuffixSeparator
 - uid: Utils.NumberToString.NumberScaleType.Suffixes
   name: Suffixes
   href: api/Utils.NumberToString.NumberScaleType.html#Utils_NumberToString_NumberScaleType_Suffixes
@@ -65134,6 +65160,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberScaleXmlModel.StaticNames
   nameWithType: NumberScaleXmlModel.StaticNames
+- uid: Utils.NumberToString.NumberScaleXmlModel.SuffixSeparator
+  name: SuffixSeparator
+  href: api/Utils.NumberToString.NumberScaleXmlModel.html#Utils_NumberToString_NumberScaleXmlModel_SuffixSeparator
+  commentId: P:Utils.NumberToString.NumberScaleXmlModel.SuffixSeparator
+  fullName: Utils.NumberToString.NumberScaleXmlModel.SuffixSeparator
+  nameWithType: NumberScaleXmlModel.SuffixSeparator
+- uid: Utils.NumberToString.NumberScaleXmlModel.SuffixSeparator*
+  name: SuffixSeparator
+  href: api/Utils.NumberToString.NumberScaleXmlModel.html#Utils_NumberToString_NumberScaleXmlModel_SuffixSeparator_
+  commentId: Overload:Utils.NumberToString.NumberScaleXmlModel.SuffixSeparator
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberScaleXmlModel.SuffixSeparator
+  nameWithType: NumberScaleXmlModel.SuffixSeparator
 - uid: Utils.NumberToString.NumberScaleXmlModel.Suffixes
   name: Suffixes
   href: api/Utils.NumberToString.NumberScaleXmlModel.html#Utils_NumberToString_NumberScaleXmlModel_Suffixes
