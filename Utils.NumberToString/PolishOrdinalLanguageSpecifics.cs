@@ -7,6 +7,7 @@ namespace Utils.NumberToString;
 /// require both the tens and units components to carry ordinal endings — a transformation
 /// the XML word-rule engine cannot perform because it only rewrites the last word.
 /// Numbers 1–19 fall through to the XML pipeline (which carries full case/gender tables).
+/// Since NTS-08 the plugin also builds 1000–1999 and rejects every value from 2000.
 /// </summary>
 public sealed class PolishOrdinalLanguageSpecifics : INumberToStringLanguageSpecifics, IOrdinalLanguageSpecifics
 {
@@ -267,8 +268,23 @@ public sealed class PolishOrdinalLanguageSpecifics : INumberToStringLanguageSpec
     public string FinalizeWriting(string languageIdentifier, string text) => text;
 
     /// <inheritdoc />
+    /// <remarks>Values above <see cref="int"/> are outside the validated domain (1–1999) and fail closed.</remarks>
+    public bool TryConvertOrdinal(long number, IReadOnlyDictionary<string, string> activeVariants, out string? result)
+    {
+        if (number > int.MaxValue)
+            throw new System.NotSupportedException(
+                $"Polish ordinal {number} is not supported: the validated ordinal domain is 1–1999.");
+        return TryConvertOrdinal((int)number, activeVariants, out result);
+    }
+
+    /// <inheritdoc />
     public bool TryConvertOrdinal(int number, IReadOnlyDictionary<string, string> activeVariants, out string? result)
     {
+        // NTS-08: from 2000 the configured cardinal does not inflect the thousands ("dwa tysiąc") and the
+        // one-word round ordinals ("dwutysięczny") are not built, so those ordinals fail closed.
+        if (number >= 2000)
+            throw new System.NotSupportedException(
+                $"Polish ordinal {number} is not supported: the validated ordinal domain is 1–1999.");
         if (number < 20) { result = null; return false; }
 
         int ri = RodzajIndex(activeVariants.TryGetValue("rodzaj", out var r) ? r : "maskulin");
@@ -306,7 +322,28 @@ public sealed class PolishOrdinalLanguageSpecifics : INumberToStringLanguageSpec
             return lowerOrdinal is null ? null : cardinal + " " + lowerOrdinal;
         }
 
-        // 1000+: fall through to XML (tysięczny etc. covered by word rules).
+        if (number < 2000)
+        {
+            // NTS-08, ZPE "Odmiana liczebnika i zaimka": "tysięczny", "tysiąc osiemset pierwszy",
+            // "tysiąc osiemsetny", "tysiąc pięćset dwudziesty piąty" — the thousand stays cardinal and the
+            // rest is ordinal as below 1000; 1000 itself declines like "setny".
+            int lower = number - 1000;
+            if (lower == 0) return ThousandForm(ri, pi);
+            string? lowerOrdinal = GetForm(lower, ri, pi);
+            return lowerOrdinal is null ? null : "tysiąc " + lowerOrdinal;
+        }
+
         return null;
+    }
+
+    /// <summary>Declines the ordinal of one thousand (<c>tysięczny</c>) like <c>setny</c>.</summary>
+    /// <param name="ri">The gender (rodzaj) index.</param>
+    /// <param name="pi">The case (przypadek) index.</param>
+    /// <returns>The declined form of <c>tysięczny</c>.</returns>
+    private static string ThousandForm(int ri, int pi)
+    {
+        // Every form of "setny" starts with "set"; the ordinal of a thousand shares its adjectival endings.
+        string hundredForm = s_hundreds[0][ri * 6 + pi];
+        return "tysięcz" + hundredForm[3..];
     }
 }

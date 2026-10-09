@@ -82,6 +82,40 @@ Examples:
     | 1 | gender=ουδέτερο | πρώτο |
     | 20 | gender=θηλυκό | εικοστή |
 
+# NTS-08 validation: Λεξικό της Κοινής Νεοελληνικής (Triantafyllides): εικοστός "μετά το δέκατο
+# ένατο", εκατοστός ("Η εκατοστή πρώτη μέρα"), διακοσιοστός, χιλιοστός. Both parts of a compound
+# ordinal are ordinals agreeing in gender, so the feminine of 13 is δέκατη τρίτη.
+Scenario Outline: Greek ordinals of the teens agree in both parts
+    Given I use the "EL" number converter
+    And I use the variants "<variants>"
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | variants | expected |
+    | 13 |  | δέκατος τρίτος |
+    | 13 | gender=θηλυκό | δέκατη τρίτη |
+    | 13 | gender=ουδέτερο | δέκατο τρίτο |
+    | 19 | gender=θηλυκό | δέκατη ένατη |
+    | 19 | gender=ουδέτερο | δέκατο ένατο |
+    | 200 |  | διακοσιοστός |
+    | 1000 |  | χιλιοστός |
+
+# NTS-08: compounds above twenty are made of agreeing ordinals (εικοστός πρώτος, εκατοστός πρώτος,
+# δισχιλιοστός), whereas the declarative pipeline only rewrites the last word of the cardinal
+# ("είκοσι πρώτος", "εκατό πρώτος"): they fail closed.
+Scenario Outline: Greek ordinals outside the validated domain are not supported
+    Given I use the "EL" number converter
+    When I attempt to convert the ordinal number <number>
+    Then conversion is rejected because no ordinal form is available
+
+Examples:
+    | number |
+    | 21 |
+    | 99 |
+    | 101 |
+    | 2000 |
+
 Scenario: Ordinal conversion is supported
     Given I use the "EL" number converter
     Then the converter supports ordinal conversion

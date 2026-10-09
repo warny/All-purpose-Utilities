@@ -95,7 +95,11 @@ Examples:
     | 100 | gender=feminino | centésima |
     | 1000 | gender=feminino | milésima |
 
-Scenario Outline: Feminine ordinal numbers compound
+# NTS-08 validation: RAG/ILG, Normas ortográficas e morfolóxicas do idioma galego (2003), §16.2
+# Ordinais: décimo terceiro ... décimo noveno, vixésimo, trixésimo, cuadraxésimo, quincuaxésimo,
+# sesaxésimo, septuaxésimo, octoxésimo, nonaxésimo, centésimo, milésimo; in compounds gender and
+# number are marked only on the last element ("décimo primeira").
+Scenario Outline: Galician ordinals from the normative list
     Given I use the "GL" number converter
     And I use the variants "<variants>"
     When I convert the ordinal number <number>
@@ -103,9 +107,41 @@ Scenario Outline: Feminine ordinal numbers compound
 
 Examples:
     | number | variants | expected |
-    | 21 | gender=feminino | vinte e primeira |
-    | 22 | gender=feminino | vinte e segunda |
-    | 23 | gender=feminino | vinte e terceira |
+    | 11 |  | undécimo |
+    | 13 |  | décimo terceiro |
+    | 14 |  | décimo cuarto |
+    | 15 |  | décimo quinto |
+    | 16 |  | décimo sexto |
+    | 17 |  | décimo sétimo |
+    | 18 |  | décimo oitavo |
+    | 19 |  | décimo noveno |
+    | 13 | gender=feminino | décimo terceira |
+    | 19 | gender=feminino | décimo novena |
+    | 40 |  | cuadraxésimo |
+    | 50 |  | quincuaxésimo |
+    | 60 |  | sesaxésimo |
+    | 70 |  | septuaxésimo |
+    | 80 |  | octoxésimo |
+    | 90 |  | nonaxésimo |
+    | 40 | gender=feminino | cuadraxésima |
+
+# NTS-08: other compounds juxtapose ordinals (vixésimo primeiro), whereas the declarative pipeline
+# only rewrites the last word of the cardinal ("vinte e primeiro", "douscentos"): they fail closed.
+Scenario Outline: Galician ordinals outside the validated domain are not supported
+    Given I use the "GL" number converter
+    And I use the variants "<variants>"
+    When I attempt to convert the ordinal number <number>
+    Then conversion is rejected because no ordinal form is available
+
+Examples:
+    | number | variants |
+    | 21 |  |
+    | 21 | gender=feminino |
+    | 23 | gender=feminino |
+    | 99 |  |
+    | 101 |  |
+    | 200 |  |
+    | 2000 |  |
 
 Scenario: Time conversion is supported
     Given I use the "GL" number converter

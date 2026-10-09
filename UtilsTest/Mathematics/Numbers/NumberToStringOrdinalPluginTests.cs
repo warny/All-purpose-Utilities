@@ -220,22 +220,39 @@ public class NumberToStringOrdinalPluginTests
 
     /// <summary>
     /// Ensures the Greek feminine cardinal variant (added for clock hours) never leaks a feminine
-    /// cardinal word into a feminine ordinal: every cardinal word must be ordinalized.
+    /// cardinal word into a feminine ordinal: every cardinal word must be ordinalized. Since NTS-08
+    /// the values outside the validated ordinal domain (compounds above twenty, whose ordinal is made
+    /// of agreeing ordinals such as "εκατοστή πρώτη") fail closed instead of mixing a cardinal and an
+    /// ordinal ("διακόσια πρώτη").
     /// </summary>
     [TestMethod]
     public void GreekFeminineOrdinals_DoNotLeakFeminineCardinalWords()
     {
         NumberToStringConverter converter = NumberToStringConverter.GetConverter("EL");
         string[] cardinalWords = ["μία", "τρεις", "τέσσερις", "χίλιες", "διακόσιες", "εννιακόσιες"];
+        int supported = 0;
 
         for (int value = 1; value <= 1_100; value++)
         {
-            string ordinal = converter.ConvertOrdinal(value, "gender=θηλυκό");
+            string ordinal;
+            try
+            {
+                ordinal = converter.ConvertOrdinal(value, "gender=θηλυκό");
+            }
+            catch (NotSupportedException)
+            {
+                continue;
+            }
+            supported++;
             foreach (string word in ordinal.Split(' '))
                 CollectionAssert.DoesNotContain(cardinalWords, word, $"{value}: {ordinal}");
         }
+        Assert.AreEqual(37, supported, "1-20, the round tens 30-90, the nine round hundreds and 1000.");
         Assert.AreEqual("πρώτη", converter.ConvertOrdinal(1, "gender=θηλυκό"));
-        Assert.AreEqual("διακόσια πρώτη", converter.ConvertOrdinal(201, "gender=θηλυκό"));
+        Assert.AreEqual("δέκατη τρίτη", converter.ConvertOrdinal(13, "gender=θηλυκό"));
+        Assert.AreEqual("διακοσιοστή", converter.ConvertOrdinal(200, "gender=θηλυκό"));
+        Assert.AreEqual("χιλιοστή", converter.ConvertOrdinal(1000, "gender=θηλυκό"));
+        Assert.ThrowsExactly<NotSupportedException>(() => converter.ConvertOrdinal(201, "gender=θηλυκό"));
     }
 
     /// <summary>Ensures the Romanian plugin changes only the last word, in both genders, up to its range limit.</summary>

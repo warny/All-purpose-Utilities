@@ -63,6 +63,8 @@
             <Replacement oldValue="일 천" newValue="천" onScale="1" onValue="1" />
         </Replacements>
         <Exceptions />
+        <!-- NTS-08: ordinal domain guard; values outside the validated domain fail closed (see KoreanOrdinalLanguageSpecifics). -->
+        <LanguageSpecifics>KoreanOrdinalLanguageSpecifics</LanguageSpecifics>
         <Ordinals prefix="제" />
         <!-- Hours use native Korean attributive numerals (한, 두 ... 열두) while minutes use the
              Sino-Korean cardinals. The native forms are literal, clock-only patterns selected per

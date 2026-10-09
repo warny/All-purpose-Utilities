@@ -94,6 +94,8 @@
             <Dimension name="gender" values="maskulin,feminin,neutrum,plural" />
             <Dimension name="case"   values="именительный,родительный,дательный,винительный,творительный,предложный" />
         </Variants>
+        <!-- NTS-08: ordinal domain guard; values outside the validated domain fail closed (see RussianOrdinalLanguageSpecifics). -->
+        <LanguageSpecifics>RussianOrdinalLanguageSpecifics</LanguageSpecifics>
         <Ordinals suffix="ый" removeTrailing="ь">
             <!-- Ordinal 1 — exception by value (also handled as word rule below) -->
             <!-- NTS-14: the ordinal of ноль/нуль is the adjective нулевой (Wiktionary: relative

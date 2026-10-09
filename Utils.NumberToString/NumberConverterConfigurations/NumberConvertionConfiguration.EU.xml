@@ -122,8 +122,12 @@
                   For compounds ("hogeita bat", "ehun eta bi") the last word
                   receives the suffix: "hogeita batgarren", "ehun eta bigarren".
                 -->
+                <!-- NTS-08: ordinal domain guard; values outside the validated domain fail closed (see BasqueOrdinalLanguageSpecifics). -->
+                <LanguageSpecifics>BasqueOrdinalLanguageSpecifics</LanguageSpecifics>
                 <Ordinals suffix="garren">
                         <OrdinalException value="1" string="lehenengo" />
+                        <!-- NTS-08, Euskaltzaindia rule 18: bosgarren, hamabosgarren, hogeita bosgarren (not bostgarren). -->
+                        <OrdinalStem from="bost" to="bos" />
                 </Ordinals>
                 <!-- Sareko Euskal Gramatika (EHU), "Orduak nola eman euskaraz": definite whole hours (ordu bata,
                      ordu biak, hirurak), bare numeral before "eta erdiak" (ordu bat eta erdiak), "eta laurden",

@@ -68,7 +68,56 @@ Scenario Outline: Tens and compound ordinal numbers
 Examples:
     | number | variants | expected |
     | 21 |  | eenentwintigste |
-    | 101 |  | honderd eerste |
+    | 101 |  | honderdeerste |
+
+# NTS-08 validation: Taaladvies.net (Taalunie), "Aaneenschrijven van telwoorden (algemeen)": numbers
+# are written as one word up to and including duizend (honderdeen, tweehonderdvijfendertig,
+# zesduizend, achtentwintigduizend, driehonderdeenentachtigduizend), with a space after duizend
+# (vierduizend twee, zesduizend achtentwintig); an ordinal keeps the spelling of its cardinal and
+# adds -ste, -de or -e (honderdste, honderdvijfendertigste, drieduizend tweehonderdtwintigste).
+# Woordenlijst Nederlandse Taal: nulde, tweeëntwintigste, tweeduizendste, honderdeerste (rangtelwoord).
+Scenario Outline: Dutch cardinals are written as one word up to duizend
+    Given I use the "NL" number converter
+    When I convert the cardinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 22 | tweeëntwintig |
+    | 23 | drieëntwintig |
+    | 43 | drieënveertig |
+    | 101 | honderdeen |
+    | 135 | honderdvijfendertig |
+    | 235 | tweehonderdvijfendertig |
+    | 1001 | duizend een |
+    | 2000 | tweeduizend |
+    | 4002 | vierduizend twee |
+    | 6028 | zesduizend achtentwintig |
+    | 28064 | achtentwintigduizend vierenzestig |
+    | 100000 | honderdduizend |
+    | 271850 | tweehonderdeenenzeventigduizend achthonderdvijftig |
+    | 381000 | driehonderdeenentachtigduizend |
+
+Scenario Outline: Dutch ordinals keep the spelling of the cardinal
+    Given I use the "NL" number converter
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 0 | nulde |
+    | 8 | achtste |
+    | 22 | tweeëntwintigste |
+    | 102 | honderdtweede |
+    | 103 | honderdderde |
+    | 108 | honderdachtste |
+    | 111 | honderdelfde |
+    | 135 | honderdvijfendertigste |
+    | 1000 | duizendste |
+    | 2000 | tweeduizendste |
+    | 3220 | drieduizend tweehonderdtwintigste |
+    | 21000 | eenentwintigduizendste |
+    | 999999 | negenhonderdnegenennegentigduizend negenhonderdnegenennegentigste |
 
 Scenario: Ordinal conversion is supported
     Given I use the "NL" number converter

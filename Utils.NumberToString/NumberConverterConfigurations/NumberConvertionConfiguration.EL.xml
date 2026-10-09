@@ -78,6 +78,8 @@
 		  The first form (αρσενικό) also serves as the default when no variant is specified.
 		  13-19 have masculine forms only (no explicit gender variants in common use).
 		-->
+		<!-- NTS-08: ordinal domain guard; values outside the validated domain fail closed (see GreekOrdinalLanguageSpecifics). -->
+		<LanguageSpecifics>GreekOrdinalLanguageSpecifics</LanguageSpecifics>
 		<Ordinals>
 			<!-- Unités 1-9 — stems complètement différents des cardinaux -->
 			<Ordinal from="ένα">     <Variant type="gender" forms="πρώτος,πρώτη,πρώτο"           /></Ordinal>
@@ -94,14 +96,15 @@
 			<!-- Exceptions 11-12 (stems irréguliers, non déductibles depuis les cardinaux) -->
 			<OrdinalException value="11"> <Variant type="gender" forms="ενδέκατος,ενδέκατη,ενδέκατο"   /></OrdinalException>
 			<OrdinalException value="12"> <Variant type="gender" forms="δωδέκατος,δωδέκατη,δωδέκατο"   /></OrdinalException>
-			<!-- Exceptions 13-19 : ordinaux composés (formes αρσενικό uniquement) -->
-			<OrdinalException value="13" string="δέκατος τρίτος" />
-			<OrdinalException value="14" string="δέκατος τέταρτος" />
-			<OrdinalException value="15" string="δέκατος πέμπτος" />
-			<OrdinalException value="16" string="δέκατος έκτος" />
-			<OrdinalException value="17" string="δέκατος έβδομος" />
-			<OrdinalException value="18" string="δέκατος όγδοος" />
-			<OrdinalException value="19" string="δέκατος ένατος" />
+			<!-- Exceptions 13-19 : ordinaux composés dont les deux parties s'accordent en genre (NTS-08, Λεξικό της
+			     Κοινής Νεοελληνικής: "μετά το δέκατο ένατο", "Η εκατοστή πρώτη μέρα"). -->
+			<OrdinalException value="13" string="δέκατος τρίτος"> <Variant type="gender" forms="δέκατος τρίτος,δέκατη τρίτη,δέκατο τρίτο" /></OrdinalException>
+			<OrdinalException value="14" string="δέκατος τέταρτος"> <Variant type="gender" forms="δέκατος τέταρτος,δέκατη τέταρτη,δέκατο τέταρτο" /></OrdinalException>
+			<OrdinalException value="15" string="δέκατος πέμπτος"> <Variant type="gender" forms="δέκατος πέμπτος,δέκατη πέμπτη,δέκατο πέμπτο" /></OrdinalException>
+			<OrdinalException value="16" string="δέκατος έκτος"> <Variant type="gender" forms="δέκατος έκτος,δέκατη έκτη,δέκατο έκτο" /></OrdinalException>
+			<OrdinalException value="17" string="δέκατος έβδομος"> <Variant type="gender" forms="δέκατος έβδομος,δέκατη έβδομη,δέκατο έβδομο" /></OrdinalException>
+			<OrdinalException value="18" string="δέκατος όγδοος"> <Variant type="gender" forms="δέκατος όγδοος,δέκατη όγδοη,δέκατο όγδοο" /></OrdinalException>
+			<OrdinalException value="19" string="δέκατος ένατος"> <Variant type="gender" forms="δέκατος ένατος,δέκατη ένατη,δέκατο ένατο" /></OrdinalException>
 			<!-- Dizaines 20-90 -->
 			<Ordinal from="είκοσι">    <Variant type="gender" forms="εικοστός,εικοστή,εικοστό"               /></Ordinal>
 			<Ordinal from="τριάντα">   <Variant type="gender" forms="τριακοστός,τριακοστή,τριακοστό"         /></Ordinal>

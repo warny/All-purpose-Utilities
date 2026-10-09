@@ -69,6 +69,31 @@ Examples:
     | 20 |  | hogeigarren |
     | 21 |  | hogeita batgarren |
     | 1000 |  | milagarren |
+    | 5 |  | bosgarren |
+    | 15 |  | hamabosgarren |
+    | 25 |  | hogeita bosgarren |
+    | 75 |  | hirurogeita hamabosgarren |
+    | 100 |  | ehungarren |
+    | 101 |  | ehun eta batgarren |
+    | 500 |  | bostehungarren |
+
+# NTS-08 validation: Euskaltzaindia, rule 18 "Ordinalen eta banatzaileen idazkera": bigarren,
+# hirugarren, laugarren, bosgarren (not bostgarren), hamabosgarren, hogeita batgarren, hogeita
+# bosgarren, hirurogeita hamabosgarren, ehungarren, milagarren. Rule 7 "Zenbakien idazkeraz" gives
+# only "zero"/"huts" for 0 (no ordinal is attested) and writes "mila eta bat", "mila berrehun eta
+# bat" and "milioi bat", which the configured cardinals above 1000 do not follow ("mila bat",
+# "bat milioi"): these ordinals fail closed.
+Scenario Outline: Basque ordinals outside the validated domain are not supported
+    Given I use the "EU" number converter
+    When I attempt to convert the ordinal number <number>
+    Then conversion is rejected because no ordinal form is available
+
+Examples:
+    | number |
+    | 0 |
+    | 1001 |
+    | 2000 |
+    | 1000000 |
 
 Scenario: Ordinal conversion is supported
     Given I use the "EU" number converter

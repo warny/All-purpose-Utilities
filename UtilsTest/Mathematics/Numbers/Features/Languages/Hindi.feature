@@ -118,6 +118,31 @@ Examples:
     | 5 | gender=strī | पांचवीं |
     | 7 | gender=strī | सातवीं |
 
+# NTS-08 validation: Kamta Prasad Guru, हिंदी व्याकरण, §180: पहला, दूसरा, तीसरा, चौथा, छठा, otherwise -वाँ on the
+# last word, also above a hundred ("एक सौ तीनवाँ", "दो सौ आठवाँ"). From 100000 the configured cardinal is
+# wrong ("एक सौ हज़ार" instead of "एक लाख"): those ordinals fail closed.
+Scenario Outline: Hindi ordinals in the validated domain
+    Given I use the "HI" number converter
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 100 | एक सौवाँ |
+    | 101 | एक सौ एकवाँ |
+    | 1000 | हज़ारवाँ |
+    | 99999 | निन्यानवे हज़ार नौ सौ निन्यानवेवाँ |
+
+Scenario Outline: Hindi ordinals outside the validated domain are not supported
+    Given I use the "HI" number converter
+    When I attempt to convert the ordinal number <number>
+    Then conversion is rejected because no ordinal form is available
+
+Examples:
+    | number |
+    | 100000 |
+    | 1000000 |
+
 Scenario: Ordinal conversion is supported
     Given I use the "HI" number converter
     Then the converter supports ordinal conversion

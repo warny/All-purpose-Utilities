@@ -41,6 +41,31 @@ Examples:
     | 1 |  | 第一 |
     | 3 |  | 第三 |
 
+# NTS-08 validation: デジタル大辞泉, 第: "数を表す語に付いて、ものの順序を表す" (第一, 第五巻). Above 1000 the
+# configured cardinal splits the thousands with spaces and does not count by 万 ("十 千" for 10000):
+# those ordinals fail closed.
+Scenario Outline: Japanese ordinals in the validated domain
+    Given I use the "JA" number converter
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 100 | 第百 |
+    | 101 | 第百一 |
+    | 1000 | 第千 |
+
+Scenario Outline: Japanese ordinals outside the validated domain are not supported
+    Given I use the "JA" number converter
+    When I attempt to convert the ordinal number <number>
+    Then conversion is rejected because no ordinal form is available
+
+Examples:
+    | number |
+    | 1001 |
+    | 2000 |
+    | 10000 |
+
 Scenario: Ordinal conversion is supported
     Given I use the "JA" number converter
     Then the converter supports ordinal conversion

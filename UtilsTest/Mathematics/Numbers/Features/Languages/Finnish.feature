@@ -199,6 +199,30 @@ Examples:
     | number | variants | expected |
     | 4 |  | neljäs |
     | 5 |  | viides |
+    | 30 |  | kolmaskymmenes |
+    | 200 |  | kahdessadas |
+    | 17 | case=nominatiivi | seitsemästoista |
+
+# NTS-08: the Aalto University course "Numeroiden taivutus" inflects every stem of an ordinal
+# (genitive ensimmäisen, seitsemännentoista; partitive ensimmäistä, seitsemättätoista) and compounds
+# fuse their ordinal components (kahdeskymmenesensimmäinen). The declarative pipeline gave the cardinal
+# case forms (genitive "kolmen", partitive "kolmea") and "kaksikymmentä ensimmäinen": inflected
+# ordinals and compounds fail closed; the nominative of 0-20, the round tens and hundreds and 1000
+# stay supported.
+Scenario Outline: Finnish ordinals outside the validated domain are not supported
+    Given I use the "FI" number converter
+    And I use the variants "<variants>"
+    When I attempt to convert the ordinal number <number>
+    Then conversion is rejected because no ordinal form is available
+
+Examples:
+    | number | variants |
+    | 3 | case=genetiivi |
+    | 1 | case=partitiivi |
+    | 20 | sijamuoto=genetiivi |
+    | 21 |  |
+    | 101 |  |
+    | 2000 |  |
 
 Scenario: Ordinal conversion is supported
     Given I use the "FI" number converter
