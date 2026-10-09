@@ -3305,6 +3305,14 @@ namespace Utils.NumberToString
         private readonly string VoidGroup;
         private readonly string GroupSeparator;
 
+        /// <summary>
+        /// Gets the junction inserted between the last prefix group and the suffix, or <see langword="null"/> when the
+        /// group separator is used there too (the default). A language whose loans join the suffix differently from the
+        /// groups sets it: Wolof groupSeparator "li" with suffixSeparator "l" gives milyoŋ (mi + l + yoŋ) and, for 1000,
+        /// milinilyoŋ (mi + li + ni + l + yoŋ). An empty string joins the suffix directly.
+        /// </summary>
+        public string? SuffixSeparator { get; init; }
+
         private static readonly Regex PrefixParser = PrefixParserRegex();
 
         /// <summary>Parsed <see cref="UnitsPrefixes"/>, or <see langword="null"/> when the table is not configured.</summary>
@@ -3419,7 +3427,8 @@ namespace Utils.NumberToString
         /// <summary>
         /// Builds a dynamic scale name from its prefix value (the Conway-Wechsler index for the Latin tables) and its suffix.
         /// The value is split into base-1000 groups, most significant first; every group is named on its own by
-        /// <see cref="AppendPrefixGroup"/> and followed by the group separator, then the suffix closes the name.
+        /// <see cref="AppendPrefixGroup"/>; the groups are joined by the group separator, and the last one is followed by
+        /// <see cref="SuffixSeparator"/> (the group separator when not set), then by the suffix.
         /// </summary>
         /// <param name="prefix">Positive prefix value; 1 names the first dynamic scale (e.g. million).</param>
         /// <param name="suffix">Suffix appended after the last group separator (e.g. "on" or "ard").</param>
@@ -3442,7 +3451,7 @@ namespace Utils.NumberToString
             for (int i = count - 1; i >= 0; i--)
             {
                 AppendPrefixGroup(value, groups[i], prefix);
-                value.Append(GroupSeparator);
+                value.Append(i > 0 ? GroupSeparator : SuffixSeparator ?? GroupSeparator);
             }
             value.Append(suffix);
 

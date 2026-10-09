@@ -1315,8 +1315,8 @@ they are not globally registered converters and are not visible to `RegisterConf
 - `<Groups onScale="…">` tables are merged by range: a child table whose range is identical to an inherited one (compared in canonical form) replaces it, a disjoint range is added, and any other overlap is rejected. The default `<Groups>` follows the rule below independently.
 - Sections replaced as a whole when the child declares them (`Groups`, `Exceptions`, `Replacements`, `Fractions`, `Variants`, `YearFormat`, `Multiplicatives`, `TimeUnits`, `ClockTime`, `DateFormat`, `LanguageSpecifics`): the child's section replaces the base's completely, nothing is merged inside it. Omitted sections are inherited. An empty element (e.g. `<Replacements />`) explicitly overrides with an empty list.
 - `Fusion` rules belong to their `<Digit>` and therefore follow the `Groups` rule: a child that omits `<Groups>` inherits the base's digits together with their fusions; a child that declares `<Groups>` replaces every digit, and the base's fusions are not merged into it.
-- `Trigger` elements are currently **not** inherited: a child that needs the base's triggers must redeclare them (an absent `<Trigger>` list is read as an empty one). No built-in configuration uses triggers.
-- `NumberScale`: merged field by field, not replaced wholesale. A child may declare only the sub-elements it needs to override (e.g. `StaticNames`, `Suffixes`) while `startIndex`, `firstLetterUpperCase`, `groupSeparator`, `voidGroup`, and the `Scale0Prefixes`/`UnitsPrefixes`/`TensPrefixes`/`HundredsPrefixes` prefix tables independently fall back to the base when absent in the child. For example, `MS` (Malay) declares only `StaticNames`/`Suffixes` and still inherits `ID`'s `startIndex` and prefix tables unchanged.
+- `Trigger` elements are currently **not** inherited: a child that needs the base's triggers must redeclare them (an absent `<Trigger>` list is read as an empty one). Only Wolof uses a trigger (the connective `-i` of the multipliers of `milyoŋ` and higher, NTS-21), and no configuration derives from it.
+- `NumberScale`: merged field by field, not replaced wholesale. A child may declare only the sub-elements it needs to override (e.g. `StaticNames`, `Suffixes`) while `startIndex`, `firstLetterUpperCase`, `groupSeparator`, `suffixSeparator`, `voidGroup`, and the `Scale0Prefixes`/`UnitsPrefixes`/`TensPrefixes`/`HundredsPrefixes` prefix tables independently fall back to the base when absent in the child. For example, `MS` (Malay) declares only `StaticNames`/`Suffixes` and still inherits `ID`'s `startIndex` and prefix tables unchanged.
 - `Ordinals`: not replaced wholesale. `OrdinalException` entries are merged by `value`, and `OrdinalRule` and `OrdinalStem` entries by `from` (child wins on key conflicts, new keys are appended). `suffix`, `prefix`, `removeTrailing`, and `OrdinalVariants` fall back to the base when absent in the child (`OrdinalVariants`, when present, replaces the base's block). For example, `FR-be` declares only `<OrdinalException value="80" string="quatre-vingtième"/>` and keeps every other French ordinal rule.
 
 ---
@@ -1560,9 +1560,27 @@ NumberToStringConverter.GetConverter("SW").Scale.GetScaleName(1001); // "milinil
 
 Latin-script languages adapt the tables the same way: Indonesian and Malay (`kuadri`, `kuatuor`, `desi`, `senti`, `se(ks,s)`), Swahili (`kwadri`, `kwatuor`, `desi`) and Turkish (`katri`, `kenti`, `kator`, `do`, `desi`, `senti`) write no `q`, no `x` and no Latin `c`; only the names those languages actually use are attested, the others are project extrapolations.
 
-`groupSeparator` is used both between Conway groups and before the suffix, so a language whose junction
-differs in the two positions keeps one spelling: Ukrainian `ль` gives `мільнільйон`, Turkish `l` gives
-`milnilyon`.
+`groupSeparator` is used both between Conway groups and before the suffix unless `suffixSeparator` sets
+the junction before the suffix on its own (NTS-21). Wolof joins its groups with `li` and its suffixes with
+`l`, on the long scale of its attested loans `milyoŋ` / `milyaar` (the higher names are the library's
+productive extension, spelled `kw`, `ks`, `w`, `s`/`k` for the Latin qu, x, v, c):
+
+```xml
+<NumberScale firstLetterUpperCase="false" groupSeparator="li" suffixSeparator="l" voidGroup="ni">
+    <Suffixes><Suffix>yoŋ</Suffix><Suffix>yaar</Suffix></Suffixes>
+    …
+</NumberScale>
+```
+
+```csharp
+var wo = NumberToStringConverter.GetConverter("WO");
+wo.Convert(2_000_000_000);   // "ñaari milyaar"
+wo.Scale.GetScaleName(212);  // "sekssentilyoŋ" 10^636 (Conway 106: se(ks,s) + (n,ks,s)senti)
+wo.Scale.GetScaleName(2000); // "milinilyoŋ"    10^6000 (mi + li + ni + l + yoŋ)
+```
+
+Languages that set only `groupSeparator` keep one spelling in both positions: Ukrainian `ль` gives
+`мільнільйон`, Turkish `l` gives `milnilyon`.
 
 #### Scale lexical forms — `<ScaleForm>`
 

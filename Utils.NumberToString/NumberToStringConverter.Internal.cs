@@ -236,6 +236,10 @@ namespace Utils.NumberToString
         [XmlAttribute("groupSeparator")]
         public string? GroupSeparator { get; set; }
 
+        /// <summary>Gets or sets the junction inserted before the suffix; the group separator when absent.</summary>
+        [XmlAttribute("suffixSeparator")]
+        public string? SuffixSeparator { get; set; }
+
         /// <summary>Gets or sets the index offset applied when computing scale names.</summary>
         [XmlAttribute("startIndex")]
         public int StartIndex { get; set; }
@@ -326,6 +330,7 @@ namespace Utils.NumberToString
         public Optional<bool> FirstLetterUpperCase { get; init; }
         public string? VoidGroup { get; init; }
         public string? GroupSeparator { get; init; }
+        public string? SuffixSeparator { get; init; }
         public Optional<int> StartIndex { get; init; }
         public StaticNamesType? StaticNames { get; init; }
         public DigitListType? Scale0Prefixes { get; init; }

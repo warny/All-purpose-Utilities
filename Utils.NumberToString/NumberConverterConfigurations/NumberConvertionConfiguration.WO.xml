@@ -9,7 +9,11 @@
       téeméer", "juróom benni téeméer", "ñaari junni", "fukki junni", "téeméeri junni"); the tens do
       not ("ñaar fukk"). "ak" joins every lower part ("téeméer ak benn", "junni ak benn").
       Zero is "tus" (Boston University 200 Word Project, Wiktionary, Janga Wolof).
-      maxNumber stays 999999: the million (milyon / milyoŋ / fukki téeméeri junni) is not audited.
+      NTS-21: the scales above junni are the French loans milyoŋ (10^6) and milyaar (10^9), the anchors
+      of the NTS-21 task (Guérin, university teaching material, Senegalese Twisted; Boston University
+      200 Word Project "benn milyoŋ", re-read). Their
+      pair is the LONG scale (million, milliard), which the library extends productively with the
+      Conway-Guy-Wechsler tables below; the higher names are a library convention, not attested usage.
     -->
     <Language
         groupSize="3"
@@ -21,8 +25,6 @@
         minus="minus *"
         decimalSeparator="pojint"
         fractionSeparator="ci"
-
-                maxNumber="999999"
         >
         <Culture>WO</Culture>
         <Groups>
@@ -63,14 +65,70 @@
                 <Digit digit="9" string="juróom ñenti téeméer" buildString="juróom ñenti téeméer ak *" />
             </Group>
         </Groups>
-        <NumberScale firstLetterUpperCase="false">
+        <!--
+          NTS-21. Long scale (-yoŋ for 10^(6n), -yaar for 10^(6n+3)) on the strict Conway-Guy-Wechsler
+          structure of SCALE.xml (NTS-24), spelled with Wolof letter values: qu → kw, x → ks, v → w,
+          soft c → s, hard c → k (centi → senti, octo → okto, novem → nowem); -on → -yoŋ and -ard → -yaar after the
+          junction l (mi + l + yoŋ = milyoŋ). Groups above 999 are joined by li, an empty one being ni:
+          1000 = mi + li + ni + l + yoŋ = milinilyoŋ. Only milyoŋ and milyaar are attested.
+        -->
+        <NumberScale firstLetterUpperCase="false" groupSeparator="li" suffixSeparator="l" voidGroup="ni">
             <StaticNames>
                 <Scale value="0" string="" />
                 <Scale value="1" string="junni" />
             </StaticNames>
             <Suffixes>
-                <Suffix>milyon</Suffix>
+                <Suffix>yoŋ</Suffix>
+                <Suffix>yaar</Suffix>
             </Suffixes>
+            <Scale0Prefixes>
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="mi" />
+                <Digit digit="2" string="bi" />
+                <Digit digit="3" string="tri" />
+                <Digit digit="4" string="kwadri" />
+                <Digit digit="5" string="kwinti" />
+                <Digit digit="6" string="seksti" />
+                <Digit digit="7" string="septi" />
+                <Digit digit="8" string="okti" />
+                <Digit digit="9" string="noni" />
+            </Scale0Prefixes>
+            <UnitsPrefixes>
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="un" />
+                <Digit digit="2" string="duo" />
+                <Digit digit="3" string="tre(s)" />
+                <Digit digit="4" string="kwattuor" />
+                <Digit digit="5" string="kwinkwa" />
+                <Digit digit="6" string="se(ks,s)" />
+                <Digit digit="7" string="septe(mn)" />
+                <Digit digit="8" string="okto" />
+                <Digit digit="9" string="nowe(mn)" />
+            </UnitsPrefixes>
+            <TensPrefixes>
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="(n)desi" />
+                <Digit digit="2" string="(ms)wiginti" />
+                <Digit digit="3" string="(ns)trigint[a|-illi=>i]" />
+                <Digit digit="4" string="(ns)kwadragint[a|-illi=>i]" />
+                <Digit digit="5" string="(ns)kwinkwagint[a|-illi=>i]" />
+                <Digit digit="6" string="(n)seksagint[a|-illi=>i]" />
+                <Digit digit="7" string="(n)septuagint[a|-illi=>i]" />
+                <Digit digit="8" string="(m,ks,s)oktogint[a|-illi=>i]" />
+                <Digit digit="9" string="nonagint[a|-illi=>i]" />
+            </TensPrefixes>
+            <HundredsPrefixes>
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="(n,ks,s)senti" />
+                <Digit digit="2" string="(n)dusenti" />
+                <Digit digit="3" string="(ns)tresenti" />
+                <Digit digit="4" string="(ns)kwadringenti" />
+                <Digit digit="5" string="(ns)kwingenti" />
+                <Digit digit="6" string="(n)sessenti" />
+                <Digit digit="7" string="(n)septingenti" />
+                <Digit digit="8" string="(m,ks,s)oktingenti" />
+                <Digit digit="9" string="nongenti" />
+            </HundredsPrefixes>
         </NumberScale>
         <Replacements>
             <!-- 1000 is junni alone -->
@@ -95,6 +153,17 @@
             <Number value="18" string="fukk ak juróom ñett" />
             <Number value="19" string="fukk ak juróom ñent" />
         </Exceptions>
+        <!--
+          NTS-21. The multiplier of milyoŋ, milyaar and every higher scale (all ending in yoŋ or yaar)
+          takes the connective -i on its last element, as for téeméer and junni (Boston University
+          "fukki téeméeri junni"): "ñaari milyoŋ", "fukk ak benni milyoŋ". One is the bare "benn
+          milyoŋ" / "benn milyaar" (Boston University, Senegalese Twisted). The forms with a multiplier
+          above one apply the NTS-19 rule; none is individually attested.
+        -->
+        <Trigger executeAt="groupWithScale">
+            <Replace from="(?&lt;!\S)(ñaar|ñett|ñent|juróom|fukk|téeméer) (\S+(?:yoŋ|yaar))$" to="${1}i ${2}" regex="true" />
+            <Replace from="(?&lt;= )benn (\S+(?:yoŋ|yaar))$" to="benni ${1}" regex="true" />
+        </Trigger>
         <!--
           Ordinals (NTS-16, spelling NTS-19): the suffix goes on the last element of the cardinal
           (Kosogorova 2023 §4.2: "juróom ñetteel", "fukk ak ñaareel"; Robert 2021). Spelling -éel:

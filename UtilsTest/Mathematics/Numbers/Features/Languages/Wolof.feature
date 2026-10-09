@@ -99,6 +99,38 @@ Examples:
     | -1000 | minus junni |
     | -1001 | minus junni ak benn |
 
+# NTS-21. The scales above junni are the French loans milyoŋ (10^6) and milyaar (10^9), the anchors
+# given by the NTS-21 task (Guérin: most frequent forms above 1000; Wolof university teaching material;
+# Senegalese Twisted "benn milyoŋ", "benn milyaar"); Boston University 200 Word Project "fukki téeméeri
+# junni / benn milyoŋ" was re-read. One is the
+# bare "benn"; a multiplier above one takes the connective -i on its last element as for téeméer and
+# junni (NTS-19 rule, Boston University "fukki téeméeri junni"): productive, not individually attested.
+# The pair is the long scale; bilyoŋ, bilyaar, trilyoŋ ... are the library's productive Conway
+# extension in Wolof spelling (qu → kw, x → ks, v → w, c → s/k), not attested usage.
+Scenario Outline: Cardinal numbers from a million
+    Given I use the "WO" number converter
+    When I convert the cardinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 1000000 | benn milyoŋ |
+    | 1000000000 | benn milyaar |
+    | 1000000000000 | benn bilyoŋ |
+    | 2000000 | ñaari milyoŋ |
+    | 2000000000 | ñaari milyaar |
+    | 1000001 | benn milyoŋ ak benn |
+    | 1001000 | benn milyoŋ ak junni |
+    | 1001001 | benn milyoŋ ak junni ak benn |
+    | 10000000 | fukki milyoŋ |
+    | 21000000 | ñaar fukk ak benni milyoŋ |
+    | 200000000 | ñaari téeméeri milyoŋ |
+    | 1000000000000000 | benn bilyaar |
+    | 1000000000000000000 | benn trilyoŋ |
+    | 1000000000000000000000000 | benn kwadrilyoŋ |
+    | 1000000000000000000000000000000000000 | benn sekstilyoŋ |
+    | -1000000 | minus benn milyoŋ |
+
 # NTS-19. Zero is "tus" (Boston University, The 200 Word Project, "Tus (Zero)"; Wiktionary's Wolof
 # number list; Janga Wolof "tus / dara"). "dara" is the indefinite "anything / nothing" and "sero"
 # a French loan that no consulted source lists.
@@ -173,6 +205,21 @@ Examples:
     | 100000 |
     | 999000 |
     | -1000 |
+
+# NTS-21. The cardinals now reach the millions, but no consulted source exemplifies an ordinal above
+# the thousands: the ordinal domain stays the one audited by NTS-16/NTS-19.
+Scenario Outline: Ordinals from a million are not supported
+    Given I use the "WO" number converter
+    When I attempt to convert the ordinal number <number>
+    Then conversion is rejected because no ordinal form is available
+
+Examples:
+    | number |
+    | 1000000 |
+    | 1000001 |
+    | 2000000 |
+    | 1000000000 |
+    | -1000001 |
 
 Scenario: Ordinal conversion is supported
     Given I use the "WO" number converter

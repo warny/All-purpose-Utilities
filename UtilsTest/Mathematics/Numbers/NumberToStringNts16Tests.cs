@@ -21,7 +21,8 @@ public class NumberToStringNts16Tests
 
     /// <summary>
     /// The Wolof guard rejects zero and the round thousands (last element junni, NTS-19), and lets
-    /// every other value through to the declarative pipeline.
+    /// every other value below a million through to the declarative pipeline (NTS-21 rejects the
+    /// values from a million, see <see cref="NumberToStringNts21Tests"/>).
     /// </summary>
     [TestMethod]
     public void WolofGuard_RejectsZeroAndRoundThousands_LetsOtherValuesThrough()
@@ -31,7 +32,7 @@ public class NumberToStringNts16Tests
         foreach (long rejected in new long[] { 0, 1000, 2000, 21000, 999000, long.MaxValue - long.MaxValue % 1000 })
             Assert.Throws<NotSupportedException>(() => guard.TryConvertOrdinal(rejected, NoVariants, out _), rejected.ToString());
         Assert.Throws<NotSupportedException>(() => guard.TryConvertOrdinal(1000, NoVariants, out _));
-        foreach (long accepted in new long[] { 1, 999, 1001, 1100, 999999, long.MaxValue })
+        foreach (long accepted in new long[] { 1, 999, 1001, 1100, 999999 })
         {
             Assert.IsFalse(guard.TryConvertOrdinal(accepted, NoVariants, out string? result), accepted.ToString());
             Assert.IsNull(result);

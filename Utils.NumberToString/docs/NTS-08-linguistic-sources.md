@@ -58,7 +58,29 @@ the remaining validation and its criterion are tracked per capability in `TODO.m
 | SW | SW, SW-KE, SW-TZ | SCALE-SHORT | **Deferred** | — | Yes | 15 / 12, `hourOffset=-6` | none | **Consulted**: Five Colleges LangMedia, “Swahili – Tanzania – Telling Time”; SpokenSwahili, “Telling the time in Swahili” | No day-part words (asubuhi, mchana, jioni, usiku) |
 | ZU | ZU | none | **Deferred** | — | Yes | 15 / 12 | none | **Consulted**: Unisa, *Learn online Zulu*, Theme 4 (`Yihora lesihlanu`, `Ligamenxe elesihlanu`, `... lishayile elesihlanu`, `... ngaphambi kwelesihlanu`) — single source | Hour forms are literal ClockTime patterns; they do not enable ordinals |
 | EE | EE | SCALE-SHORT (scale tables only, NTS-23) | Yes (NTS-20): cardinal + `-lia` on the last element, `gbãtɔ` for 1 | Declarative + `ZeroOrdinalUnsupportedLanguageSpecifics` | **Deferred** | — | none | **Consulted** (NTS-20): Dzablu-Kumah, *Basic Ewe for Foreign Students*; Biblica Open Ewe Contemporary Scriptures; *Ewe Basic Course* 1968; Peace Corps Togo 2010; Wiktionary | Cardinals unbounded (NTS-23): static `akpe`, then the Conway-Wechsler short scale `miliɔn`, `biliɔn`, `triliɔn` (sourced anchors), `quadriliɔn` … (project extrapolation), each before its standalone multiplier (`multiplierPosition="afterScale"`); zero ordinal unsupported |
-| WO | WO | none | Yes (`-éel`, NTS-16, NTS-19) | Declarative + `WolofOrdinalLanguageSpecifics` | **Deferred** | — | none | No consistent source found | Cardinals 0–999 999; no ordinal of zero nor of the round thousands |
+| WO | WO | none | Yes (`-éel`, NTS-16, NTS-19) | Declarative + `WolofOrdinalLanguageSpecifics` | **Deferred** | — | none | No consistent source found | Cardinals unbounded (NTS-21): static `junni`, then the long-scale Conway-Wechsler names `milyoŋ`, `milyaar` (attested anchors), `bilyoŋ`, `bilyaar` … (project extrapolation in Wolof spelling); ordinals 1–999 999 only, no ordinal of zero nor of the round thousands |
+
+## NTS-21 — Wolof large scales (2026-10-09)
+
+- **Anchors.** `milyoŋ` (10^6) and `milyaar` (10^9), French loans. Re-read: Boston University, The 200 Word
+  Project, "Woññi (Numbers)": million `Fukki Téémééri Junni / Benn Milyoŋ`. Given by the NTS-21 task as
+  authoritative and not reachable during NTS-21: Guérin's description of the Wolof numeral system (`milyoŋ`,
+  `milyaar` the most frequent forms above 1000), Wolof university teaching material (`milyoŋ` / `milyaar`),
+  Senegalese Twisted counting material (`benn milyoŋ`, `benn milyaar`). Kosogorova 2023 (re-read) stops at
+  `junni`. Rejected spellings: `milyon` (the former unused configuration suffix), `million`, `miliyar`.
+- **Scale.** `milyaar` at 10^9 makes the borrowed system the long scale: 10^(6n) `-yoŋ`, 10^(6n+3) `-yaar`.
+- **Project rule** (as NTS-24/NTS-25). Wolof has adopted the `milyoŋ` / `milyaar` family. The library extends this
+  family productively with Conway-Guy-Wechsler on the long scale using Wolof-compatible spellings. Generated
+  higher names are a library generation convention, not a claim that every generated form is independently
+  attested in Wolof usage.
+- **Transliteration.** qu → kw, x → ks, v → w, soft c → s, hard c → k, -on → -yoŋ, -ard → -yaar; groups joined
+  by `li`, empty group `ni`, suffix joined by `l` (new `suffixSeparator` attribute). Tables and reference names:
+  `DONE-2026-10-09.md`.
+- **Multipliers.** One is the attested bare `benn milyoŋ` / `benn milyaar`; a multiplier above one takes the NTS-19
+  connective `-i` on its last element, as for `téeméer` and `junni` (Gaye 1980: linker between the number and the
+  counted object; BU `fukki téeméeri junni`): `ñaari milyoŋ`, `ñaar fukk ak benni milyoŋ` — productive, not
+  individually attested.
+- **Ordinals.** Unchanged (1–999 999): no ordinal above the thousands is exemplified.
 
 ## NTS-25B — Conway tables localized to ID/MS, SW and TR spelling (2026-10-08)
 
