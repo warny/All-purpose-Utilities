@@ -58,7 +58,31 @@ the remaining validation and its criterion are tracked per capability in `TODO.m
 | SW | SW, SW-KE, SW-TZ | SCALE-SHORT | **Deferred** | — | Yes | 15 / 12, `hourOffset=-6` | none | **Consulted**: Five Colleges LangMedia, “Swahili – Tanzania – Telling Time”; SpokenSwahili, “Telling the time in Swahili” | No day-part words (asubuhi, mchana, jioni, usiku) |
 | ZU | ZU | none | **Deferred** | — | Yes | 15 / 12 | none | **Consulted**: Unisa, *Learn online Zulu*, Theme 4 (`Yihora lesihlanu`, `Ligamenxe elesihlanu`, `... lishayile elesihlanu`, `... ngaphambi kwelesihlanu`) — single source | Hour forms are literal ClockTime patterns; they do not enable ordinals |
 | EE | EE | SCALE-SHORT (scale tables only, NTS-23) | Yes (NTS-20): cardinal + `-lia` on the last element, `gbãtɔ` for 1 | Declarative + `ZeroOrdinalUnsupportedLanguageSpecifics` | **Deferred** | — | none | **Consulted** (NTS-20): Dzablu-Kumah, *Basic Ewe for Foreign Students*; Biblica Open Ewe Contemporary Scriptures; *Ewe Basic Course* 1968; Peace Corps Togo 2010; Wiktionary | Cardinals unbounded (NTS-23): static `akpe`, then the Conway-Wechsler short scale `miliɔn`, `biliɔn`, `triliɔn` (sourced anchors), `quadriliɔn` … (project extrapolation), each before its standalone multiplier (`multiplierPosition="afterScale"`); zero ordinal unsupported |
-| WO | WO | none | Yes (`-éel`, NTS-16, NTS-19) | Declarative + `WolofOrdinalLanguageSpecifics` | **Deferred** | — | none | No consistent source found | Cardinals 0–999 999; no ordinal of zero nor of the round thousands |
+| WO | WO | none | Yes (`-éel`, NTS-16, NTS-19) | Declarative + `WolofOrdinalLanguageSpecifics` | **Deferred** | — | none | No consistent source found | Cardinals unbounded (NTS-21): static `junni`, then the long-scale Conway-Wechsler names `milyoŋ`, `milyaar` (attested anchors), `bilyoŋ`, `bilyaar` … (project extrapolation in Wolof spelling); ordinals 1–999 999 only, no ordinal of zero nor of the round thousands |
+
+## NTS-21 — Wolof large scales (2026-10-09)
+
+- **Anchors.** `milyoŋ` (10^6) and `milyaar` (10^9), French loans. **Consulted, full text**: Wolof Bible
+  (eBible `wolmbs` NT PDF, Mt 25:15–28: `juróomi milyoŋ`, `ñaari milyoŋ`, `benn milyoŋ`, `fukki milyoŋ`); Wolof
+  Ajami Reader (F. Ngom, D. Rodima-Taylor, J. Yanco, E. D. Diagne, Boston University, 2025: `juróomi milyaar ak
+  juróom ñent téeméeri milyoŋ …`, `juróom fukki milyoŋ` = 50.000.000 Faraŋ); Boston University, The 200 Word
+  Project (`Fukki Téémééri Junni / Benn Milyoŋ`); Kosogorova 2023 (stops at `junni`). **Checked in the PR #628
+  review** (not reachable from this session): M. Guérin, *Système de numération en wolof* (French borrowings most
+  frequent above 1000: `milyoŋ`, `milyaar`); Wolof university course (`milyoŋ (tamndareet)`, `milyaar
+  (tamñareet)`). Rejected spellings: `milyon` (the former unused configuration suffix), `million`, `miliyar`.
+- **Scale.** `milyaar` at 10^9 makes the borrowed system the long scale: 10^(6n) `-yoŋ`, 10^(6n+3) `-yaar`.
+- **Project rule** (as NTS-24/NTS-25). Wolof has adopted the `milyoŋ` / `milyaar` family. The library extends this
+  family productively with Conway-Guy-Wechsler on the long scale using Wolof-compatible spellings. Generated
+  higher names are a library generation convention, not a claim that every generated form is independently
+  attested in Wolof usage.
+- **Transliteration.** qu → kw, x → ks, v → w, soft c → s, hard c → k, -on → -yoŋ, -ard → -yaar; groups joined
+  by `li`, empty group `ni`, suffix joined by `l` (new `suffixSeparator` attribute). Tables and reference names:
+  `DONE-2026-10-09.md`.
+- **Multipliers.** One is the bare `benn milyoŋ`; a multiplier above one takes the NTS-19 connective `-i` on its
+  last element, as for `téeméer` and `junni`. Attested: `ñaari`, `juróomi`, `fukki milyoŋ` (Bible),
+  `juróom fukki milyoŋ`, `juróomi milyaar` (Ajami Reader); the rest of 1–999 is productive. Variant not adopted:
+  Ajami Reader `juróom ñent téeméeri milyoŋ` (no `-i` before `téeméer`; NTS-19 keeps `juróom ñenti téeméer`).
+- **Ordinals.** Unchanged (1–999 999): no ordinal above the thousands is exemplified.
 
 ## NTS-25B — Conway tables localized to ID/MS, SW and TR spelling (2026-10-08)
 

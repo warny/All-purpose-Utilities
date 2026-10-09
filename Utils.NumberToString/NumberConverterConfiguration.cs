@@ -1422,6 +1422,13 @@ public class NumberScaleType
     public string GroupSeparator { get; set; }
 
     /// <summary>
+    /// Gets or sets the junction inserted between the last prefix group and the suffix, or <see langword="null"/>
+    /// to use <see cref="GroupSeparator"/> there too.
+    /// </summary>
+    [XmlAttribute("suffixSeparator")]
+    public string? SuffixSeparator { get; set; }
+
+    /// <summary>
     /// Gets or sets the index offset applied when computing scale names.
     /// </summary>
     [XmlAttribute("startIndex")]

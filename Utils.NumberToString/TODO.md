@@ -1,6 +1,8 @@
 # Utils.NumberToString — Current backlog
 
-Re-audited on 2026-10-08 after closing NTS-25 (NTS-25B: ID/MS, SW and TR Conway tables localized to their
+Re-audited on 2026-10-09 after closing NTS-21 (Wolof large scales: attested `milyoŋ`/`milyaar`, long-scale
+Conway-Wechsler extension in Wolof spelling, unbounded cardinals; `suffixSeparator` primitive) and NTS-09
+(`Trigger` inheritance through `baseOn`), on 2026-10-08 after closing NTS-25 (NTS-25B: ID/MS, SW and TR Conway tables localized to their
 alphabets; NTS-25A: Cyrillic Conway tables, RU/BG/UK short scale, SW/TR junctions), and after closing NTS-24 (strict Conway-Guy-Wechsler scale names shared by every
 SCALE-SHORT and SCALE-LONG language; opened NTS-25), on 2026-10-07 after closing NTS-23 (Ewe large scales:
 Conway-Wechsler short scale inherited from SCALE-SHORT, unbounded domain; opened NTS-24), after closing NTS-22 (Ewe millions: static `miliɔn`,
@@ -66,18 +68,8 @@ classification.
     - WO ordinals of zero and of the round thousands (last element `junni`): no attested ordinal of
       zero, conflicting forms for `junni` (`junneel`/`junniéél`); deliberate limitations.
 
-- **NTS-21 — Wolof million-scale cardinals.** Found by NTS-19, which kept `maxNumber="999999"`. The
-  configuration's unused scale suffix `milyon` is unaudited: Boston University's 200 Word Project
-  gives a million as `fukki téeméeri junni` (the regular 10 × 100 × 1000 with the connective) or
-  `benn milyoŋ`, with the velar nasal. Decide the canonical form (decree 2005-992 alphabet for `ŋ`,
-  a grammar or dictionary for the loan) before opening the domain above 999 999.
-- **NTS-09 — `Trigger` elements are not inherited through `baseOn`.** `XmlSerializer` materializes
-  an absent `<Trigger>` list as an empty list, so `MergeLanguageDefinition`'s
-  `overriding.Triggers ?? inherited.Triggers` never falls back to the base. No built-in configuration
-  uses triggers today; the README and XSD document the current behaviour. Fix by treating an empty
-  list as absent (as `Cultures` already does) together with a regression test.
 
-NTS-01 through NTS-05 and NTS-10 through NTS-20, NTS-22, NTS-23, NTS-24 and NTS-25, are closed:
+NTS-01 through NTS-05, NTS-09 and NTS-10 through NTS-25 are closed:
 
 - NTS-01 — XSD validation: `DONE-2026-08-21.md`.
 - NTS-02 — initialization isolation: `DONE-2026-08-21.md`.
@@ -118,6 +110,11 @@ NTS-01 through NTS-05 and NTS-10 through NTS-20, NTS-22, NTS-23, NTS-24 and NTS-
 - NTS-25 (localized Conway names): NTS-25A (Cyrillic Conway tables, RU/BG/UK short scale with a static
   milliard, SW and TR Conway junctions, multi-letter linking markers) in `DONE-2026-10-08(1).md`; NTS-25B
   (ID/MS, SW and TR Conway tables localized to their alphabets, ID/MS junctions) in `DONE-2026-10-08(2).md`.
+- NTS-21 (Wolof large scales: attested `milyoŋ`/`milyaar`, productive long-scale Conway-Wechsler names in
+  Wolof spelling, `-i` on the multipliers, unbounded cardinals, ordinals kept to 999 999; the
+  `suffixSeparator` primitive): `DONE-2026-10-09.md`.
+- NTS-09 (`Trigger` elements inherited through `baseOn`; an empty list is read as absent), closed with NTS-21,
+  which introduced the first production trigger: `DONE-2026-10-09.md`.
 
 Full multi-form plural systems (Russian/Slavic count-dependent noun forms,
 Arabic dual/paucal/plural categories) are deliberately out of scope — the
