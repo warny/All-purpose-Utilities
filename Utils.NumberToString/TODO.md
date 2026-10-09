@@ -76,8 +76,8 @@ classification.
   Kosogorova 2023 (`ñaar tééméér`) and Gaye 1980 (`-i` optional with `ñaar`) already record forms without the
   inner `-i`. Decide whether the inner `-i` is obligatory, optional (variant) or absent, possibly depending on
   the following scale noun, from more sources (Bible corpus counts, decree 2005-992, grammars). Any change
-  alters the cardinals below a million (700–999, 700 000–999 999), byte-identical since NTS-19; a variant
-  dimension would keep the default output.
+  alters cardinals below a million (every value with 200–999 in a hundreds position, e.g. 200, 900, 900 000),
+  byte-identical since NTS-19; a variant dimension would keep the default output.
 
 
 NTS-01 through NTS-05, NTS-09 and NTS-10 through NTS-25 are closed:
