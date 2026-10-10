@@ -6,7 +6,7 @@
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <meta name="title" content="Class HungarianOrdinalLanguageSpecifics | omy.Utils Documentation ">
       
-      <meta name="description" content="Produces Hungarian ordinals. The ordinal suffix attaches to the last morpheme of the numeral with vowel harmony and stem changes (tizenegyedik, huszadik, sz&#225;zadik, ezredik, milliomodik); only the numbers 1 and 2 standing alone are suppletive (első, m&#225;sodik), whereas they are regular at the end of a compound (huszonegyedik, tizenkettedik). Numbers up to 2000 are written as one word and larger ones separate their thousand groups with hyphens (k&#233;tezer-egyedik).">
+      <meta name="description" content="Produces Hungarian ordinals. The ordinal suffix attaches to the last morpheme of the numeral with vowel harmony and stem changes (tizenegyedik, huszadik, sz&#225;zadik, ezredik, milliomodik); only the numbers 1 and 2 standing alone are suppletive (első, m&#225;sodik), whereas they are regular at the end of a compound (huszonegyedik, tizenkettedik). Numbers up to 2000 are written as one word and larger ones separate their thousand groups with hyphens (k&#233;tezer-egyedik); a single million or milliard is written with egy (egymilliomodik, egymilli&#243;-egyedik).">
       <link rel="icon" href="../favicon.ico">
       <link rel="stylesheet" href="../public/docfx.min.css">
       <link rel="stylesheet" href="../public/main.css">
@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_NumberToString_HungarianOrdinalLanguageSpecifics" data-uid="Utils.NumberToString.HungarianOrdinalLanguageSpecifics" class="text-break">
-Class HungarianOrdinalLanguageSpecifics  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/HungarianOrdinalLanguageSpecifics.cs/#L19"><i class="bi bi-code-slash"></i></a>
+Class HungarianOrdinalLanguageSpecifics  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/HungarianOrdinalLanguageSpecifics.cs/#L20"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -102,7 +102,8 @@ with vowel harmony and stem changes (<code>tizenegyedik</code>, <code>huszadik</
 <code>ezredik</code>, <code>milliomodik</code>); only the numbers 1 and 2 standing alone are suppletive
 (<code>első</code>, <code>második</code>), whereas they are regular at the end of a compound
 (<code>huszonegyedik</code>, <code>tizenkettedik</code>). Numbers up to 2000 are written as one word and
-larger ones separate their thousand groups with hyphens (<code>kétezer-egyedik</code>).</p>
+larger ones separate their thousand groups with hyphens (<code>kétezer-egyedik</code>); a single
+million or milliard is written with <code>egy</code> (<code>egymilliomodik</code>, <code>egymillió-egyedik</code>).</p>
 </div>
   <div class="markdown conceptual"></div>
 
@@ -262,7 +263,7 @@ no converter; it uses the attributive <code>két</code> before another morpheme.
 
   <h3 id="Utils_NumberToString_HungarianOrdinalLanguageSpecifics_FinalizeWriting_System_String_System_String_" data-uid="Utils.NumberToString.HungarianOrdinalLanguageSpecifics.FinalizeWriting(System.String,System.String)">
   FinalizeWriting(string, string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/HungarianOrdinalLanguageSpecifics.cs/#L33"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/HungarianOrdinalLanguageSpecifics.cs/#L34"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Finalizes a converted text according to language-specific writing rules.</p>
@@ -308,7 +309,7 @@ fragments without invoking this method, then invokes it exactly once for each pu
 
   <h3 id="Utils_NumberToString_HungarianOrdinalLanguageSpecifics_TryConvertOrdinal_System_Int32_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__System_String__" data-uid="Utils.NumberToString.HungarianOrdinalLanguageSpecifics.TryConvertOrdinal(System.Int32,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String@)">
   TryConvertOrdinal(int, IReadOnlyDictionary&lt;string, string&gt;, out string?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/HungarianOrdinalLanguageSpecifics.cs/#L36"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/HungarianOrdinalLanguageSpecifics.cs/#L37"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Attempts to convert a non-negative integer to its ordinal string representation.</p>
@@ -356,7 +357,7 @@ otherwise <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/HungarianOrdinalLanguageSpecifics.cs/#L19" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/HungarianOrdinalLanguageSpecifics.cs/#L20" class="edit-link">Edit this page</a>
         </div>
 
 

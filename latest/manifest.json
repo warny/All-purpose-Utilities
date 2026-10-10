@@ -8539,6 +8539,20 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.BasqueOrdinalLanguageSpecifics.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.BasqueOrdinalLanguageSpecifics.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.BasqueOrdinalLanguageSpecifics",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.BasqueOrdinalLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Basque ordinal domain (NTS-08). Euskaltzaindia, rule 18 (<code>bigarren</code>, <code>bosgarren</code>,\n<code>hogeita batgarren</code>, <code>ehungarren</code>, <code>milagarren</code>) and rule 7 (cardinals), validated from 1 to\n1000. Zero has no attested ordinal (rule 7 gives only <code>zero</code>/<code>huts</code>), and above 1000 the configured\ncardinal omits the <code>eta</code> required by rule 7 (<code>mila bat</code> instead of <code>mila eta bat</code>) or puts the\nmultiplier of a million first (<code>bat milioi</code> instead of <code>milioi bat</code>); those values fail closed.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.NumberToString.BulgarianOrdinalLanguageSpecifics.yml",
       "output": {
         ".html": {
@@ -8550,6 +8564,20 @@
       "IsMRef": true,
       "Title": "Utils.NumberToString.BulgarianOrdinalLanguageSpecifics",
       "Summary": "<p sourcefile=\"api/Utils.NumberToString.BulgarianOrdinalLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Produces Bulgarian ordinals. Only the last element of a compound is ordinal and, as in the\ncardinal, the conjunction <code>и</code> precedes that last element (<code>двадесет и първи</code>,\n<code>сто и първи</code>, <code>хиляда сто и втори</code>). Ordinals agree in gender: the masculine\ncitation form (<code>първи</code>, <code>стотен</code>) is used for the default <code>standalone</code> value and\nfor <code>masculine</code>; <code>feminine</code> and <code>neuter</code> derive <code>-а</code>/<code>-о</code>\n(<code>първа</code>, <code>първо</code>) and <code>-на</code>/<code>-но</code> (<code>стотна</code>, <code>стотно</code>).</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.ChineseOrdinalLanguageSpecifics.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.ChineseOrdinalLanguageSpecifics.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.ChineseOrdinalLanguageSpecifics",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.ChineseOrdinalLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Chinese ordinal domain (NTS-08): the prefix <code>第</code> before the cardinal (國語辭典: &quot;用於整數數詞之前。表事物的\n順序或等級&quot;), validated from 0 to 100 and for the round hundreds to 900. Other values above 100 rely on a\nconfigured cardinal without <code>零</code> or <code>一十</code> (<code>一百一</code> for 101, <code>一百十</code> for 110,\n<code>一 千</code> for 1000), so their ordinals fail closed.</p>\n"
     },
     {
       "type": "ManagedReference",
@@ -8805,6 +8833,34 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.DutchOrdinalLanguageSpecifics.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.DutchOrdinalLanguageSpecifics.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.DutchOrdinalLanguageSpecifics",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.DutchOrdinalLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Dutch ordinal domain (NTS-08). Taaladvies &quot;Aaneenschrijven van telwoorden&quot; and the Woordenlijst\nNederlandse Taal (<code>nulde</code>, <code>tweeduizendste</code>) validate the ordinals from 0 to 999 999, the\ndomain of the configured cardinal (<code>maxNumber</code>). Ordinals are not bounded by <code>maxNumber</code>: from a\nmillion the scale lookup of the unvalidated cardinal threw an <xref href=\"System.InvalidOperationException\" data-throw-if-not-resolved=\"false\"></xref>\n(configuration error) and no <code>-ste</code> rule exists for the scale nouns, so those values fail closed.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.FinnishOrdinalLanguageSpecifics.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.FinnishOrdinalLanguageSpecifics.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.FinnishOrdinalLanguageSpecifics",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.FinnishOrdinalLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Finnish ordinal domain (NTS-08). Validated in the nominative by the Aalto University course &quot;Numeroiden\ntaivutus&quot; and the Kielitoimisto (<code>kahdeskymmenes</code>, <code>sadas</code>, <code>tuhannes</code>; <code>nollas</code>,\nNTS-12): 0–20, the round tens, the round hundreds and 1000. Compounds fuse every component\n(<code>kahdeskymmenesensimmäinen</code>) and the inflected ordinals change every stem (genitive\n<code>kolmannen</code>, partitive <code>kolmatta</code>), which the declarative pipeline does not build; those\nvalues and every non-nominative case fail closed.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.NumberToString.ForcedVariantSet.yml",
       "output": {
         ".html": {
@@ -8875,6 +8931,20 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.GalicianOrdinalLanguageSpecifics.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.GalicianOrdinalLanguageSpecifics.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.GalicianOrdinalLanguageSpecifics",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.GalicianOrdinalLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Galician ordinal domain (NTS-08). Validated by the RAG/ILG <i>Normas ortográficas e morfolóxicas do idioma\ngalego</i> (2003), §16.2: 1–20 (<code>décimo terceiro</code> … <code>décimo noveno</code>), the round tens\n(<code>vixésimo</code> … <code>nonaxésimo</code>), <code>centésimo</code> and <code>milésimo</code>. Other compounds juxtapose\nordinals (<code>vixésimo primeiro</code>) and fail closed.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.NumberToString.GermanNumberToStringLanguageSpecifics.yml",
       "output": {
         ".html": {
@@ -8886,6 +8956,20 @@
       "IsMRef": true,
       "Title": "Utils.NumberToString.GermanNumberToStringLanguageSpecifics",
       "Summary": "<p sourcefile=\"api/Utils.NumberToString.GermanNumberToStringLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Applies German writing-specific finalization rules to converted numeric texts.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.GreekOrdinalLanguageSpecifics.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.GreekOrdinalLanguageSpecifics.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.GreekOrdinalLanguageSpecifics",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.GreekOrdinalLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Greek ordinal domain (NTS-08). Validated by the <i>Λεξικό της Κοινής Νεοελληνικής</i> (Triantafyllides):\n1–20, the round tens (<code>εικοστός</code> …), the round hundreds (<code>εκατοστός</code>, <code>διακοσιοστός</code> …)\nand <code>χιλιοστός</code>. Compounds are made of agreeing ordinals (<code>εικοστός πρώτος</code>,\n<code>εκατοστή πρώτη</code>), which the last-word pipeline cannot build from the cardinal; they fail closed.</p>\n"
     },
     {
       "type": "ManagedReference",
@@ -8917,6 +9001,20 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.HindiOrdinalLanguageSpecifics.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.HindiOrdinalLanguageSpecifics.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.HindiOrdinalLanguageSpecifics",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.HindiOrdinalLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Hindi ordinal domain (NTS-08). Kamta Prasad Guru, <i>हिंदी व्याकरण</i> §180: पहला, दूसरा, तीसरा, चौथा, छठा,\notherwise <code>-वाँ</code> on the last word, also above a hundred (<code>एक सौ तीनवाँ</code>). Validated from 0 to\n99 999; from 100 000 the configured cardinal is wrong (<code>एक सौ हज़ार</code> instead of <code>एक लाख</code>), so\nthose ordinals fail closed.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.NumberToString.HungarianOrdinalLanguageSpecifics.yml",
       "output": {
         ".html": {
@@ -8927,7 +9025,7 @@
       "Uid": null,
       "IsMRef": true,
       "Title": "Utils.NumberToString.HungarianOrdinalLanguageSpecifics",
-      "Summary": "<p sourcefile=\"api/Utils.NumberToString.HungarianOrdinalLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Produces Hungarian ordinals. The ordinal suffix attaches to the last morpheme of the numeral\nwith vowel harmony and stem changes (<code>tizenegyedik</code>, <code>huszadik</code>, <code>századik</code>,\n<code>ezredik</code>, <code>milliomodik</code>); only the numbers 1 and 2 standing alone are suppletive\n(<code>első</code>, <code>második</code>), whereas they are regular at the end of a compound\n(<code>huszonegyedik</code>, <code>tizenkettedik</code>). Numbers up to 2000 are written as one word and\nlarger ones separate their thousand groups with hyphens (<code>kétezer-egyedik</code>).</p>\n"
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.HungarianOrdinalLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Produces Hungarian ordinals. The ordinal suffix attaches to the last morpheme of the numeral\nwith vowel harmony and stem changes (<code>tizenegyedik</code>, <code>huszadik</code>, <code>századik</code>,\n<code>ezredik</code>, <code>milliomodik</code>); only the numbers 1 and 2 standing alone are suppletive\n(<code>első</code>, <code>második</code>), whereas they are regular at the end of a compound\n(<code>huszonegyedik</code>, <code>tizenkettedik</code>). Numbers up to 2000 are written as one word and\nlarger ones separate their thousand groups with hyphens (<code>kétezer-egyedik</code>); a single\nmillion or milliard is written with <code>egy</code> (<code>egymilliomodik</code>, <code>egymillió-egyedik</code>).</p>\n"
     },
     {
       "type": "ManagedReference",
@@ -9012,6 +9110,34 @@
       "IsMRef": true,
       "Title": "Utils.NumberToString.ItalianOrdinalLanguageSpecifics",
       "Summary": "<p sourcefile=\"api/Utils.NumberToString.ItalianOrdinalLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Domain guard for Italian ordinals. Every supported value is produced by the declarative XML\npipeline (exceptions 1-10, the <code>&lt;OrdinalStem&gt;</code> rules and the <code>-esimo</code>/<code>-esima</code>\nsuffix, <code>&lt;OrdinalComposition&gt;</code> for the analytic forms and <code>&lt;OrdinalScale&gt;</code> for the\nround values from a million); this plugin never builds a form itself and only rejects the values\nwhose ordinal is not established.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.JapaneseOrdinalLanguageSpecifics.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.JapaneseOrdinalLanguageSpecifics.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.JapaneseOrdinalLanguageSpecifics",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.JapaneseOrdinalLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Japanese ordinal domain (NTS-08): the prefix <code>第</code> before the cardinal (デジタル大辞泉, 第: &quot;数を表す語に付いて、\nものの順序を表す&quot;), validated from 0 to 1000. Above 1000 the configured cardinal splits the thousands with\nspaces and does not count by 万 (<code>十 千</code> for 10 000), so those ordinals fail closed.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.KoreanOrdinalLanguageSpecifics.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.KoreanOrdinalLanguageSpecifics.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.KoreanOrdinalLanguageSpecifics",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.KoreanOrdinalLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Korean ordinal domain (NTS-08): the prefix <code>제</code> before the Sino-Korean numeral (한글 맞춤법 제43항:\n<code>제삼 항</code>), validated from 0 to 1000. Above 1000 the configured cardinal spaces the thousands\n(<code>천 일</code>, <code>십 천</code>), whereas Korean numbers are spaced by units of 만, so those ordinals fail closed.</p>\n"
     },
     {
       "type": "ManagedReference",
@@ -9463,6 +9589,20 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Shared domain guard for languages whose ordinals are formed by the declarative XML pipeline but\nwhose wording was only validated on part of the numeric range (NTS-08). Values inside the validated\ndomain fall through to the declarative pipeline unchanged; every other value is rejected with\n<xref href=\"System.NotSupportedException\" data-throw-if-not-resolved=\"false\"></xref> instead of returning an unverified or known-wrong form.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.NumberToString.OrdinalExceptionType.yml",
       "output": {
         ".html": {
@@ -9599,7 +9739,21 @@
       "Uid": null,
       "IsMRef": true,
       "Title": "Utils.NumberToString.PolishOrdinalLanguageSpecifics",
-      "Summary": "<p sourcefile=\"api/Utils.NumberToString.PolishOrdinalLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Handles Polish ordinal conversion for numbers 20 and above, where compound forms\nrequire both the tens and units components to carry ordinal endings — a transformation\nthe XML word-rule engine cannot perform because it only rewrites the last word.\nNumbers 1–19 fall through to the XML pipeline (which carries full case/gender tables).</p>\n"
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.PolishOrdinalLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Handles Polish ordinal conversion for numbers 20 and above, where compound forms\nrequire both the tens and units components to carry ordinal endings — a transformation\nthe XML word-rule engine cannot perform because it only rewrites the last word.\nNumbers 1–19 fall through to the XML pipeline (which carries full case/gender tables).\nSince NTS-08 the plugin also builds 1000–1999 and rejects every value from 2000.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.PortugueseOrdinalLanguageSpecifics.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.PortugueseOrdinalLanguageSpecifics.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.PortugueseOrdinalLanguageSpecifics",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.PortugueseOrdinalLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Portuguese ordinal domain (NTS-08). Validated by the Priberam dictionary entries (<code>vigésimo</code> &quot;depois\ndo décimo nono&quot;, <code>trigésimo</code> … <code>nonagésimo</code> &quot;após o octogésimo nono&quot;, <code>centésimo</code>,\n<code>milésimo</code>): 1–20, the round tens, 100 and 1000. Other compounds juxtapose ordinals\n(<code>vigésimo primeiro</code>), which the last-word pipeline cannot build; they fail closed.</p>\n"
     },
     {
       "type": "ManagedReference",
@@ -9656,6 +9810,20 @@
       "IsMRef": true,
       "Title": "Utils.NumberToString.RomanianOrdinalLanguageSpecifics",
       "Summary": "<p sourcefile=\"api/Utils.NumberToString.RomanianOrdinalLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Produces Romanian ordinals following DOOM (dexonline): the masculine is the article <code>al</code>,\nthe cardinal, and <code>-lea</code> on its last word (<code>al doilea</code>, <code>al douăzeci și unulea</code>,\n<code>al o sutălea</code>, <code>al două sutelea</code>, <code>al o miilea</code>); the feminine is <code>a</code>, the\ncardinal, and <code>-a</code> on its last word (<code>a doua</code>, <code>a douăzeci și una</code>,\n<code>a o suta</code>, <code>a o mia</code>). One alone is suppletive (<code>primul</code>, <code>prima</code>).</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.RussianOrdinalLanguageSpecifics.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.RussianOrdinalLanguageSpecifics.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.RussianOrdinalLanguageSpecifics",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.RussianOrdinalLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Russian ordinal domain (NTS-08). Validated by the <i>Правила русской орфографии и пунктуации</i>, §132–133\n(only the last word of a composite ordinal is ordinal: <code>тысяча девятьсот девяносто четвёртый</code>):\n0 (<code>нулевой</code>, NTS-14) to 1999. From 2000 the configured cardinal is wrong (<code>два тысяча</code>\ninstead of <code>две тысячи</code>) and the one-word round ordinals (<code>двухтысячный</code>,\n<code>десятитысячный</code>, <code>миллионный</code>) are not built; those values fail closed.</p>\n"
     },
     {
       "type": "ManagedReference",
@@ -9768,6 +9936,20 @@
       "IsMRef": true,
       "Title": "Utils.NumberToString.SlovakOrdinalLanguageSpecifics",
       "Summary": "<p sourcefile=\"api/Utils.NumberToString.SlovakOrdinalLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Produces Slovak ordinals. Tens and units are ordinal (<code>dvadsiaty prvý</code>); hundreds and\nthousands of a compound stay cardinal, fused with a following unit (<code>stoprvý</code>,\n<code>dvetisícdruhý</code>) and separate before tens (<code>päťsto dvadsiaty ôsmy</code>). Declined for gender\n(<code>mužský</code>, <code>ženský</code>, <code>stredný</code>) and case with the long hard (<code>-ý</code>), the\nshort hard (<code>-y</code>, rhythmic law after a long syllable: <code>piaty</code>) and the soft (<code>-í</code>)\nadjective paradigms. Values from one million upwards (except one million itself) and round or\ncompound thousands above 9999 are declined because their written forms were not verified.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.SpanishOrdinalLanguageSpecifics.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.SpanishOrdinalLanguageSpecifics.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.SpanishOrdinalLanguageSpecifics",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.SpanishOrdinalLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Spanish ordinal domain (NTS-08). Validated by the RAE/ASALE <i>Diccionario panhispánico de dudas</i>,\n&quot;ordinales&quot;: 1–20, the univerbal 21–29 (<code>vigesimoprimero</code> … <code>vigesimonoveno</code>), the round tens\n(<code>trigésimo</code> … <code>nonagésimo</code>), <code>centésimo</code> and <code>milésimo</code>. From 31 the DPD ordinal\njuxtaposes ordinals (<code>trigésimo primero</code>, <code>ducentésimo</code>, <code>dosmilésimo</code>), which the\ndeclarative last-word pipeline cannot build from the cardinal; those values fail closed.</p>\n"
     },
     {
       "type": "ManagedReference",
@@ -9950,6 +10132,20 @@
       "IsMRef": true,
       "Title": "Utils.NumberToString.VariantsType",
       "Summary": "<p sourcefile=\"api/Utils.NumberToString.VariantsType.yml\" sourcestartlinenumber=\"1\">Holds the complete variant configuration for a language: the declared dimensions\nand the list of variant rules.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.VietnameseOrdinalLanguageSpecifics.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.VietnameseOrdinalLanguageSpecifics.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.VietnameseOrdinalLanguageSpecifics",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.VietnameseOrdinalLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Vietnamese ordinal domain (NTS-08): <code>thứ</code> + cardinal with the forms <code>thứ nhất</code> and <code>thứ tư</code>\n(Vietnamese dictionaries via vtudien), validated from 0 to 999. From 1000 the configured cardinal is wrong\n(<code>nghìn</code> instead of <code>một nghìn</code>, <code>hai nghìn năm</code> instead of\n<code>hai nghìn không trăm linh năm</code>), so those ordinals fail closed.</p>\n"
     },
     {
       "type": "ManagedReference",

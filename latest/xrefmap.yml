@@ -60801,6 +60801,54 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.ArabicScaleLexicalFormSelector.SelectForm
   nameWithType: ArabicScaleLexicalFormSelector.SelectForm
+- uid: Utils.NumberToString.BasqueOrdinalLanguageSpecifics
+  name: BasqueOrdinalLanguageSpecifics
+  href: api/Utils.NumberToString.BasqueOrdinalLanguageSpecifics.html
+  commentId: T:Utils.NumberToString.BasqueOrdinalLanguageSpecifics
+  fullName: Utils.NumberToString.BasqueOrdinalLanguageSpecifics
+  nameWithType: BasqueOrdinalLanguageSpecifics
+- uid: Utils.NumberToString.BasqueOrdinalLanguageSpecifics.IsSupported(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String})
+  name: IsSupported(long, IReadOnlyDictionary<string, string>)
+  href: api/Utils.NumberToString.BasqueOrdinalLanguageSpecifics.html#Utils_NumberToString_BasqueOrdinalLanguageSpecifics_IsSupported_System_Int64_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__
+  commentId: M:Utils.NumberToString.BasqueOrdinalLanguageSpecifics.IsSupported(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String})
+  name.vb: IsSupported(Long, IReadOnlyDictionary(Of String, String))
+  fullName: Utils.NumberToString.BasqueOrdinalLanguageSpecifics.IsSupported(long, System.Collections.Generic.IReadOnlyDictionary<string, string>)
+  fullName.vb: Utils.NumberToString.BasqueOrdinalLanguageSpecifics.IsSupported(Long, System.Collections.Generic.IReadOnlyDictionary(Of String, String))
+  nameWithType: BasqueOrdinalLanguageSpecifics.IsSupported(long, IReadOnlyDictionary<string, string>)
+  nameWithType.vb: BasqueOrdinalLanguageSpecifics.IsSupported(Long, IReadOnlyDictionary(Of String, String))
+- uid: Utils.NumberToString.BasqueOrdinalLanguageSpecifics.IsSupported*
+  name: IsSupported
+  href: api/Utils.NumberToString.BasqueOrdinalLanguageSpecifics.html#Utils_NumberToString_BasqueOrdinalLanguageSpecifics_IsSupported_
+  commentId: Overload:Utils.NumberToString.BasqueOrdinalLanguageSpecifics.IsSupported
+  isSpec: "True"
+  fullName: Utils.NumberToString.BasqueOrdinalLanguageSpecifics.IsSupported
+  nameWithType: BasqueOrdinalLanguageSpecifics.IsSupported
+- uid: Utils.NumberToString.BasqueOrdinalLanguageSpecifics.LanguageName
+  name: LanguageName
+  href: api/Utils.NumberToString.BasqueOrdinalLanguageSpecifics.html#Utils_NumberToString_BasqueOrdinalLanguageSpecifics_LanguageName
+  commentId: P:Utils.NumberToString.BasqueOrdinalLanguageSpecifics.LanguageName
+  fullName: Utils.NumberToString.BasqueOrdinalLanguageSpecifics.LanguageName
+  nameWithType: BasqueOrdinalLanguageSpecifics.LanguageName
+- uid: Utils.NumberToString.BasqueOrdinalLanguageSpecifics.LanguageName*
+  name: LanguageName
+  href: api/Utils.NumberToString.BasqueOrdinalLanguageSpecifics.html#Utils_NumberToString_BasqueOrdinalLanguageSpecifics_LanguageName_
+  commentId: Overload:Utils.NumberToString.BasqueOrdinalLanguageSpecifics.LanguageName
+  isSpec: "True"
+  fullName: Utils.NumberToString.BasqueOrdinalLanguageSpecifics.LanguageName
+  nameWithType: BasqueOrdinalLanguageSpecifics.LanguageName
+- uid: Utils.NumberToString.BasqueOrdinalLanguageSpecifics.SupportedDomain
+  name: SupportedDomain
+  href: api/Utils.NumberToString.BasqueOrdinalLanguageSpecifics.html#Utils_NumberToString_BasqueOrdinalLanguageSpecifics_SupportedDomain
+  commentId: P:Utils.NumberToString.BasqueOrdinalLanguageSpecifics.SupportedDomain
+  fullName: Utils.NumberToString.BasqueOrdinalLanguageSpecifics.SupportedDomain
+  nameWithType: BasqueOrdinalLanguageSpecifics.SupportedDomain
+- uid: Utils.NumberToString.BasqueOrdinalLanguageSpecifics.SupportedDomain*
+  name: SupportedDomain
+  href: api/Utils.NumberToString.BasqueOrdinalLanguageSpecifics.html#Utils_NumberToString_BasqueOrdinalLanguageSpecifics_SupportedDomain_
+  commentId: Overload:Utils.NumberToString.BasqueOrdinalLanguageSpecifics.SupportedDomain
+  isSpec: "True"
+  fullName: Utils.NumberToString.BasqueOrdinalLanguageSpecifics.SupportedDomain
+  nameWithType: BasqueOrdinalLanguageSpecifics.SupportedDomain
 - uid: Utils.NumberToString.BulgarianOrdinalLanguageSpecifics
   name: BulgarianOrdinalLanguageSpecifics
   href: api/Utils.NumberToString.BulgarianOrdinalLanguageSpecifics.html
@@ -60839,6 +60887,54 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.BulgarianOrdinalLanguageSpecifics.TryConvertOrdinal
   nameWithType: BulgarianOrdinalLanguageSpecifics.TryConvertOrdinal
+- uid: Utils.NumberToString.ChineseOrdinalLanguageSpecifics
+  name: ChineseOrdinalLanguageSpecifics
+  href: api/Utils.NumberToString.ChineseOrdinalLanguageSpecifics.html
+  commentId: T:Utils.NumberToString.ChineseOrdinalLanguageSpecifics
+  fullName: Utils.NumberToString.ChineseOrdinalLanguageSpecifics
+  nameWithType: ChineseOrdinalLanguageSpecifics
+- uid: Utils.NumberToString.ChineseOrdinalLanguageSpecifics.IsSupported(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String})
+  name: IsSupported(long, IReadOnlyDictionary<string, string>)
+  href: api/Utils.NumberToString.ChineseOrdinalLanguageSpecifics.html#Utils_NumberToString_ChineseOrdinalLanguageSpecifics_IsSupported_System_Int64_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__
+  commentId: M:Utils.NumberToString.ChineseOrdinalLanguageSpecifics.IsSupported(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String})
+  name.vb: IsSupported(Long, IReadOnlyDictionary(Of String, String))
+  fullName: Utils.NumberToString.ChineseOrdinalLanguageSpecifics.IsSupported(long, System.Collections.Generic.IReadOnlyDictionary<string, string>)
+  fullName.vb: Utils.NumberToString.ChineseOrdinalLanguageSpecifics.IsSupported(Long, System.Collections.Generic.IReadOnlyDictionary(Of String, String))
+  nameWithType: ChineseOrdinalLanguageSpecifics.IsSupported(long, IReadOnlyDictionary<string, string>)
+  nameWithType.vb: ChineseOrdinalLanguageSpecifics.IsSupported(Long, IReadOnlyDictionary(Of String, String))
+- uid: Utils.NumberToString.ChineseOrdinalLanguageSpecifics.IsSupported*
+  name: IsSupported
+  href: api/Utils.NumberToString.ChineseOrdinalLanguageSpecifics.html#Utils_NumberToString_ChineseOrdinalLanguageSpecifics_IsSupported_
+  commentId: Overload:Utils.NumberToString.ChineseOrdinalLanguageSpecifics.IsSupported
+  isSpec: "True"
+  fullName: Utils.NumberToString.ChineseOrdinalLanguageSpecifics.IsSupported
+  nameWithType: ChineseOrdinalLanguageSpecifics.IsSupported
+- uid: Utils.NumberToString.ChineseOrdinalLanguageSpecifics.LanguageName
+  name: LanguageName
+  href: api/Utils.NumberToString.ChineseOrdinalLanguageSpecifics.html#Utils_NumberToString_ChineseOrdinalLanguageSpecifics_LanguageName
+  commentId: P:Utils.NumberToString.ChineseOrdinalLanguageSpecifics.LanguageName
+  fullName: Utils.NumberToString.ChineseOrdinalLanguageSpecifics.LanguageName
+  nameWithType: ChineseOrdinalLanguageSpecifics.LanguageName
+- uid: Utils.NumberToString.ChineseOrdinalLanguageSpecifics.LanguageName*
+  name: LanguageName
+  href: api/Utils.NumberToString.ChineseOrdinalLanguageSpecifics.html#Utils_NumberToString_ChineseOrdinalLanguageSpecifics_LanguageName_
+  commentId: Overload:Utils.NumberToString.ChineseOrdinalLanguageSpecifics.LanguageName
+  isSpec: "True"
+  fullName: Utils.NumberToString.ChineseOrdinalLanguageSpecifics.LanguageName
+  nameWithType: ChineseOrdinalLanguageSpecifics.LanguageName
+- uid: Utils.NumberToString.ChineseOrdinalLanguageSpecifics.SupportedDomain
+  name: SupportedDomain
+  href: api/Utils.NumberToString.ChineseOrdinalLanguageSpecifics.html#Utils_NumberToString_ChineseOrdinalLanguageSpecifics_SupportedDomain
+  commentId: P:Utils.NumberToString.ChineseOrdinalLanguageSpecifics.SupportedDomain
+  fullName: Utils.NumberToString.ChineseOrdinalLanguageSpecifics.SupportedDomain
+  nameWithType: ChineseOrdinalLanguageSpecifics.SupportedDomain
+- uid: Utils.NumberToString.ChineseOrdinalLanguageSpecifics.SupportedDomain*
+  name: SupportedDomain
+  href: api/Utils.NumberToString.ChineseOrdinalLanguageSpecifics.html#Utils_NumberToString_ChineseOrdinalLanguageSpecifics_SupportedDomain_
+  commentId: Overload:Utils.NumberToString.ChineseOrdinalLanguageSpecifics.SupportedDomain
+  isSpec: "True"
+  fullName: Utils.NumberToString.ChineseOrdinalLanguageSpecifics.SupportedDomain
+  nameWithType: ChineseOrdinalLanguageSpecifics.SupportedDomain
 - uid: Utils.NumberToString.ClockAmountDirection
   name: ClockAmountDirection
   href: api/Utils.NumberToString.ClockAmountDirection.html
@@ -62017,6 +62113,102 @@ references:
   commentId: F:Utils.NumberToString.DuplicateCulturePolicy.Replace
   fullName: Utils.NumberToString.DuplicateCulturePolicy.Replace
   nameWithType: DuplicateCulturePolicy.Replace
+- uid: Utils.NumberToString.DutchOrdinalLanguageSpecifics
+  name: DutchOrdinalLanguageSpecifics
+  href: api/Utils.NumberToString.DutchOrdinalLanguageSpecifics.html
+  commentId: T:Utils.NumberToString.DutchOrdinalLanguageSpecifics
+  fullName: Utils.NumberToString.DutchOrdinalLanguageSpecifics
+  nameWithType: DutchOrdinalLanguageSpecifics
+- uid: Utils.NumberToString.DutchOrdinalLanguageSpecifics.IsSupported(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String})
+  name: IsSupported(long, IReadOnlyDictionary<string, string>)
+  href: api/Utils.NumberToString.DutchOrdinalLanguageSpecifics.html#Utils_NumberToString_DutchOrdinalLanguageSpecifics_IsSupported_System_Int64_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__
+  commentId: M:Utils.NumberToString.DutchOrdinalLanguageSpecifics.IsSupported(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String})
+  name.vb: IsSupported(Long, IReadOnlyDictionary(Of String, String))
+  fullName: Utils.NumberToString.DutchOrdinalLanguageSpecifics.IsSupported(long, System.Collections.Generic.IReadOnlyDictionary<string, string>)
+  fullName.vb: Utils.NumberToString.DutchOrdinalLanguageSpecifics.IsSupported(Long, System.Collections.Generic.IReadOnlyDictionary(Of String, String))
+  nameWithType: DutchOrdinalLanguageSpecifics.IsSupported(long, IReadOnlyDictionary<string, string>)
+  nameWithType.vb: DutchOrdinalLanguageSpecifics.IsSupported(Long, IReadOnlyDictionary(Of String, String))
+- uid: Utils.NumberToString.DutchOrdinalLanguageSpecifics.IsSupported*
+  name: IsSupported
+  href: api/Utils.NumberToString.DutchOrdinalLanguageSpecifics.html#Utils_NumberToString_DutchOrdinalLanguageSpecifics_IsSupported_
+  commentId: Overload:Utils.NumberToString.DutchOrdinalLanguageSpecifics.IsSupported
+  isSpec: "True"
+  fullName: Utils.NumberToString.DutchOrdinalLanguageSpecifics.IsSupported
+  nameWithType: DutchOrdinalLanguageSpecifics.IsSupported
+- uid: Utils.NumberToString.DutchOrdinalLanguageSpecifics.LanguageName
+  name: LanguageName
+  href: api/Utils.NumberToString.DutchOrdinalLanguageSpecifics.html#Utils_NumberToString_DutchOrdinalLanguageSpecifics_LanguageName
+  commentId: P:Utils.NumberToString.DutchOrdinalLanguageSpecifics.LanguageName
+  fullName: Utils.NumberToString.DutchOrdinalLanguageSpecifics.LanguageName
+  nameWithType: DutchOrdinalLanguageSpecifics.LanguageName
+- uid: Utils.NumberToString.DutchOrdinalLanguageSpecifics.LanguageName*
+  name: LanguageName
+  href: api/Utils.NumberToString.DutchOrdinalLanguageSpecifics.html#Utils_NumberToString_DutchOrdinalLanguageSpecifics_LanguageName_
+  commentId: Overload:Utils.NumberToString.DutchOrdinalLanguageSpecifics.LanguageName
+  isSpec: "True"
+  fullName: Utils.NumberToString.DutchOrdinalLanguageSpecifics.LanguageName
+  nameWithType: DutchOrdinalLanguageSpecifics.LanguageName
+- uid: Utils.NumberToString.DutchOrdinalLanguageSpecifics.SupportedDomain
+  name: SupportedDomain
+  href: api/Utils.NumberToString.DutchOrdinalLanguageSpecifics.html#Utils_NumberToString_DutchOrdinalLanguageSpecifics_SupportedDomain
+  commentId: P:Utils.NumberToString.DutchOrdinalLanguageSpecifics.SupportedDomain
+  fullName: Utils.NumberToString.DutchOrdinalLanguageSpecifics.SupportedDomain
+  nameWithType: DutchOrdinalLanguageSpecifics.SupportedDomain
+- uid: Utils.NumberToString.DutchOrdinalLanguageSpecifics.SupportedDomain*
+  name: SupportedDomain
+  href: api/Utils.NumberToString.DutchOrdinalLanguageSpecifics.html#Utils_NumberToString_DutchOrdinalLanguageSpecifics_SupportedDomain_
+  commentId: Overload:Utils.NumberToString.DutchOrdinalLanguageSpecifics.SupportedDomain
+  isSpec: "True"
+  fullName: Utils.NumberToString.DutchOrdinalLanguageSpecifics.SupportedDomain
+  nameWithType: DutchOrdinalLanguageSpecifics.SupportedDomain
+- uid: Utils.NumberToString.FinnishOrdinalLanguageSpecifics
+  name: FinnishOrdinalLanguageSpecifics
+  href: api/Utils.NumberToString.FinnishOrdinalLanguageSpecifics.html
+  commentId: T:Utils.NumberToString.FinnishOrdinalLanguageSpecifics
+  fullName: Utils.NumberToString.FinnishOrdinalLanguageSpecifics
+  nameWithType: FinnishOrdinalLanguageSpecifics
+- uid: Utils.NumberToString.FinnishOrdinalLanguageSpecifics.IsSupported(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String})
+  name: IsSupported(long, IReadOnlyDictionary<string, string>)
+  href: api/Utils.NumberToString.FinnishOrdinalLanguageSpecifics.html#Utils_NumberToString_FinnishOrdinalLanguageSpecifics_IsSupported_System_Int64_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__
+  commentId: M:Utils.NumberToString.FinnishOrdinalLanguageSpecifics.IsSupported(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String})
+  name.vb: IsSupported(Long, IReadOnlyDictionary(Of String, String))
+  fullName: Utils.NumberToString.FinnishOrdinalLanguageSpecifics.IsSupported(long, System.Collections.Generic.IReadOnlyDictionary<string, string>)
+  fullName.vb: Utils.NumberToString.FinnishOrdinalLanguageSpecifics.IsSupported(Long, System.Collections.Generic.IReadOnlyDictionary(Of String, String))
+  nameWithType: FinnishOrdinalLanguageSpecifics.IsSupported(long, IReadOnlyDictionary<string, string>)
+  nameWithType.vb: FinnishOrdinalLanguageSpecifics.IsSupported(Long, IReadOnlyDictionary(Of String, String))
+- uid: Utils.NumberToString.FinnishOrdinalLanguageSpecifics.IsSupported*
+  name: IsSupported
+  href: api/Utils.NumberToString.FinnishOrdinalLanguageSpecifics.html#Utils_NumberToString_FinnishOrdinalLanguageSpecifics_IsSupported_
+  commentId: Overload:Utils.NumberToString.FinnishOrdinalLanguageSpecifics.IsSupported
+  isSpec: "True"
+  fullName: Utils.NumberToString.FinnishOrdinalLanguageSpecifics.IsSupported
+  nameWithType: FinnishOrdinalLanguageSpecifics.IsSupported
+- uid: Utils.NumberToString.FinnishOrdinalLanguageSpecifics.LanguageName
+  name: LanguageName
+  href: api/Utils.NumberToString.FinnishOrdinalLanguageSpecifics.html#Utils_NumberToString_FinnishOrdinalLanguageSpecifics_LanguageName
+  commentId: P:Utils.NumberToString.FinnishOrdinalLanguageSpecifics.LanguageName
+  fullName: Utils.NumberToString.FinnishOrdinalLanguageSpecifics.LanguageName
+  nameWithType: FinnishOrdinalLanguageSpecifics.LanguageName
+- uid: Utils.NumberToString.FinnishOrdinalLanguageSpecifics.LanguageName*
+  name: LanguageName
+  href: api/Utils.NumberToString.FinnishOrdinalLanguageSpecifics.html#Utils_NumberToString_FinnishOrdinalLanguageSpecifics_LanguageName_
+  commentId: Overload:Utils.NumberToString.FinnishOrdinalLanguageSpecifics.LanguageName
+  isSpec: "True"
+  fullName: Utils.NumberToString.FinnishOrdinalLanguageSpecifics.LanguageName
+  nameWithType: FinnishOrdinalLanguageSpecifics.LanguageName
+- uid: Utils.NumberToString.FinnishOrdinalLanguageSpecifics.SupportedDomain
+  name: SupportedDomain
+  href: api/Utils.NumberToString.FinnishOrdinalLanguageSpecifics.html#Utils_NumberToString_FinnishOrdinalLanguageSpecifics_SupportedDomain
+  commentId: P:Utils.NumberToString.FinnishOrdinalLanguageSpecifics.SupportedDomain
+  fullName: Utils.NumberToString.FinnishOrdinalLanguageSpecifics.SupportedDomain
+  nameWithType: FinnishOrdinalLanguageSpecifics.SupportedDomain
+- uid: Utils.NumberToString.FinnishOrdinalLanguageSpecifics.SupportedDomain*
+  name: SupportedDomain
+  href: api/Utils.NumberToString.FinnishOrdinalLanguageSpecifics.html#Utils_NumberToString_FinnishOrdinalLanguageSpecifics_SupportedDomain_
+  commentId: Overload:Utils.NumberToString.FinnishOrdinalLanguageSpecifics.SupportedDomain
+  isSpec: "True"
+  fullName: Utils.NumberToString.FinnishOrdinalLanguageSpecifics.SupportedDomain
+  nameWithType: FinnishOrdinalLanguageSpecifics.SupportedDomain
 - uid: Utils.NumberToString.ForcedVariantSet
   name: ForcedVariantSet
   href: api/Utils.NumberToString.ForcedVariantSet.html
@@ -62313,6 +62505,54 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.FusionType.ToString
   nameWithType: FusionType.ToString
+- uid: Utils.NumberToString.GalicianOrdinalLanguageSpecifics
+  name: GalicianOrdinalLanguageSpecifics
+  href: api/Utils.NumberToString.GalicianOrdinalLanguageSpecifics.html
+  commentId: T:Utils.NumberToString.GalicianOrdinalLanguageSpecifics
+  fullName: Utils.NumberToString.GalicianOrdinalLanguageSpecifics
+  nameWithType: GalicianOrdinalLanguageSpecifics
+- uid: Utils.NumberToString.GalicianOrdinalLanguageSpecifics.IsSupported(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String})
+  name: IsSupported(long, IReadOnlyDictionary<string, string>)
+  href: api/Utils.NumberToString.GalicianOrdinalLanguageSpecifics.html#Utils_NumberToString_GalicianOrdinalLanguageSpecifics_IsSupported_System_Int64_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__
+  commentId: M:Utils.NumberToString.GalicianOrdinalLanguageSpecifics.IsSupported(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String})
+  name.vb: IsSupported(Long, IReadOnlyDictionary(Of String, String))
+  fullName: Utils.NumberToString.GalicianOrdinalLanguageSpecifics.IsSupported(long, System.Collections.Generic.IReadOnlyDictionary<string, string>)
+  fullName.vb: Utils.NumberToString.GalicianOrdinalLanguageSpecifics.IsSupported(Long, System.Collections.Generic.IReadOnlyDictionary(Of String, String))
+  nameWithType: GalicianOrdinalLanguageSpecifics.IsSupported(long, IReadOnlyDictionary<string, string>)
+  nameWithType.vb: GalicianOrdinalLanguageSpecifics.IsSupported(Long, IReadOnlyDictionary(Of String, String))
+- uid: Utils.NumberToString.GalicianOrdinalLanguageSpecifics.IsSupported*
+  name: IsSupported
+  href: api/Utils.NumberToString.GalicianOrdinalLanguageSpecifics.html#Utils_NumberToString_GalicianOrdinalLanguageSpecifics_IsSupported_
+  commentId: Overload:Utils.NumberToString.GalicianOrdinalLanguageSpecifics.IsSupported
+  isSpec: "True"
+  fullName: Utils.NumberToString.GalicianOrdinalLanguageSpecifics.IsSupported
+  nameWithType: GalicianOrdinalLanguageSpecifics.IsSupported
+- uid: Utils.NumberToString.GalicianOrdinalLanguageSpecifics.LanguageName
+  name: LanguageName
+  href: api/Utils.NumberToString.GalicianOrdinalLanguageSpecifics.html#Utils_NumberToString_GalicianOrdinalLanguageSpecifics_LanguageName
+  commentId: P:Utils.NumberToString.GalicianOrdinalLanguageSpecifics.LanguageName
+  fullName: Utils.NumberToString.GalicianOrdinalLanguageSpecifics.LanguageName
+  nameWithType: GalicianOrdinalLanguageSpecifics.LanguageName
+- uid: Utils.NumberToString.GalicianOrdinalLanguageSpecifics.LanguageName*
+  name: LanguageName
+  href: api/Utils.NumberToString.GalicianOrdinalLanguageSpecifics.html#Utils_NumberToString_GalicianOrdinalLanguageSpecifics_LanguageName_
+  commentId: Overload:Utils.NumberToString.GalicianOrdinalLanguageSpecifics.LanguageName
+  isSpec: "True"
+  fullName: Utils.NumberToString.GalicianOrdinalLanguageSpecifics.LanguageName
+  nameWithType: GalicianOrdinalLanguageSpecifics.LanguageName
+- uid: Utils.NumberToString.GalicianOrdinalLanguageSpecifics.SupportedDomain
+  name: SupportedDomain
+  href: api/Utils.NumberToString.GalicianOrdinalLanguageSpecifics.html#Utils_NumberToString_GalicianOrdinalLanguageSpecifics_SupportedDomain
+  commentId: P:Utils.NumberToString.GalicianOrdinalLanguageSpecifics.SupportedDomain
+  fullName: Utils.NumberToString.GalicianOrdinalLanguageSpecifics.SupportedDomain
+  nameWithType: GalicianOrdinalLanguageSpecifics.SupportedDomain
+- uid: Utils.NumberToString.GalicianOrdinalLanguageSpecifics.SupportedDomain*
+  name: SupportedDomain
+  href: api/Utils.NumberToString.GalicianOrdinalLanguageSpecifics.html#Utils_NumberToString_GalicianOrdinalLanguageSpecifics_SupportedDomain_
+  commentId: Overload:Utils.NumberToString.GalicianOrdinalLanguageSpecifics.SupportedDomain
+  isSpec: "True"
+  fullName: Utils.NumberToString.GalicianOrdinalLanguageSpecifics.SupportedDomain
+  nameWithType: GalicianOrdinalLanguageSpecifics.SupportedDomain
 - uid: Utils.NumberToString.GermanNumberToStringLanguageSpecifics
   name: GermanNumberToStringLanguageSpecifics
   href: api/Utils.NumberToString.GermanNumberToStringLanguageSpecifics.html
@@ -62335,6 +62575,54 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.GermanNumberToStringLanguageSpecifics.FinalizeWriting
   nameWithType: GermanNumberToStringLanguageSpecifics.FinalizeWriting
+- uid: Utils.NumberToString.GreekOrdinalLanguageSpecifics
+  name: GreekOrdinalLanguageSpecifics
+  href: api/Utils.NumberToString.GreekOrdinalLanguageSpecifics.html
+  commentId: T:Utils.NumberToString.GreekOrdinalLanguageSpecifics
+  fullName: Utils.NumberToString.GreekOrdinalLanguageSpecifics
+  nameWithType: GreekOrdinalLanguageSpecifics
+- uid: Utils.NumberToString.GreekOrdinalLanguageSpecifics.IsSupported(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String})
+  name: IsSupported(long, IReadOnlyDictionary<string, string>)
+  href: api/Utils.NumberToString.GreekOrdinalLanguageSpecifics.html#Utils_NumberToString_GreekOrdinalLanguageSpecifics_IsSupported_System_Int64_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__
+  commentId: M:Utils.NumberToString.GreekOrdinalLanguageSpecifics.IsSupported(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String})
+  name.vb: IsSupported(Long, IReadOnlyDictionary(Of String, String))
+  fullName: Utils.NumberToString.GreekOrdinalLanguageSpecifics.IsSupported(long, System.Collections.Generic.IReadOnlyDictionary<string, string>)
+  fullName.vb: Utils.NumberToString.GreekOrdinalLanguageSpecifics.IsSupported(Long, System.Collections.Generic.IReadOnlyDictionary(Of String, String))
+  nameWithType: GreekOrdinalLanguageSpecifics.IsSupported(long, IReadOnlyDictionary<string, string>)
+  nameWithType.vb: GreekOrdinalLanguageSpecifics.IsSupported(Long, IReadOnlyDictionary(Of String, String))
+- uid: Utils.NumberToString.GreekOrdinalLanguageSpecifics.IsSupported*
+  name: IsSupported
+  href: api/Utils.NumberToString.GreekOrdinalLanguageSpecifics.html#Utils_NumberToString_GreekOrdinalLanguageSpecifics_IsSupported_
+  commentId: Overload:Utils.NumberToString.GreekOrdinalLanguageSpecifics.IsSupported
+  isSpec: "True"
+  fullName: Utils.NumberToString.GreekOrdinalLanguageSpecifics.IsSupported
+  nameWithType: GreekOrdinalLanguageSpecifics.IsSupported
+- uid: Utils.NumberToString.GreekOrdinalLanguageSpecifics.LanguageName
+  name: LanguageName
+  href: api/Utils.NumberToString.GreekOrdinalLanguageSpecifics.html#Utils_NumberToString_GreekOrdinalLanguageSpecifics_LanguageName
+  commentId: P:Utils.NumberToString.GreekOrdinalLanguageSpecifics.LanguageName
+  fullName: Utils.NumberToString.GreekOrdinalLanguageSpecifics.LanguageName
+  nameWithType: GreekOrdinalLanguageSpecifics.LanguageName
+- uid: Utils.NumberToString.GreekOrdinalLanguageSpecifics.LanguageName*
+  name: LanguageName
+  href: api/Utils.NumberToString.GreekOrdinalLanguageSpecifics.html#Utils_NumberToString_GreekOrdinalLanguageSpecifics_LanguageName_
+  commentId: Overload:Utils.NumberToString.GreekOrdinalLanguageSpecifics.LanguageName
+  isSpec: "True"
+  fullName: Utils.NumberToString.GreekOrdinalLanguageSpecifics.LanguageName
+  nameWithType: GreekOrdinalLanguageSpecifics.LanguageName
+- uid: Utils.NumberToString.GreekOrdinalLanguageSpecifics.SupportedDomain
+  name: SupportedDomain
+  href: api/Utils.NumberToString.GreekOrdinalLanguageSpecifics.html#Utils_NumberToString_GreekOrdinalLanguageSpecifics_SupportedDomain
+  commentId: P:Utils.NumberToString.GreekOrdinalLanguageSpecifics.SupportedDomain
+  fullName: Utils.NumberToString.GreekOrdinalLanguageSpecifics.SupportedDomain
+  nameWithType: GreekOrdinalLanguageSpecifics.SupportedDomain
+- uid: Utils.NumberToString.GreekOrdinalLanguageSpecifics.SupportedDomain*
+  name: SupportedDomain
+  href: api/Utils.NumberToString.GreekOrdinalLanguageSpecifics.html#Utils_NumberToString_GreekOrdinalLanguageSpecifics_SupportedDomain_
+  commentId: Overload:Utils.NumberToString.GreekOrdinalLanguageSpecifics.SupportedDomain
+  isSpec: "True"
+  fullName: Utils.NumberToString.GreekOrdinalLanguageSpecifics.SupportedDomain
+  nameWithType: GreekOrdinalLanguageSpecifics.SupportedDomain
 - uid: Utils.NumberToString.GroupType
   name: GroupType
   href: api/Utils.NumberToString.GroupType.html
@@ -62386,6 +62674,54 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.GroupsListType.OnScale
   nameWithType: GroupsListType.OnScale
+- uid: Utils.NumberToString.HindiOrdinalLanguageSpecifics
+  name: HindiOrdinalLanguageSpecifics
+  href: api/Utils.NumberToString.HindiOrdinalLanguageSpecifics.html
+  commentId: T:Utils.NumberToString.HindiOrdinalLanguageSpecifics
+  fullName: Utils.NumberToString.HindiOrdinalLanguageSpecifics
+  nameWithType: HindiOrdinalLanguageSpecifics
+- uid: Utils.NumberToString.HindiOrdinalLanguageSpecifics.IsSupported(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String})
+  name: IsSupported(long, IReadOnlyDictionary<string, string>)
+  href: api/Utils.NumberToString.HindiOrdinalLanguageSpecifics.html#Utils_NumberToString_HindiOrdinalLanguageSpecifics_IsSupported_System_Int64_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__
+  commentId: M:Utils.NumberToString.HindiOrdinalLanguageSpecifics.IsSupported(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String})
+  name.vb: IsSupported(Long, IReadOnlyDictionary(Of String, String))
+  fullName: Utils.NumberToString.HindiOrdinalLanguageSpecifics.IsSupported(long, System.Collections.Generic.IReadOnlyDictionary<string, string>)
+  fullName.vb: Utils.NumberToString.HindiOrdinalLanguageSpecifics.IsSupported(Long, System.Collections.Generic.IReadOnlyDictionary(Of String, String))
+  nameWithType: HindiOrdinalLanguageSpecifics.IsSupported(long, IReadOnlyDictionary<string, string>)
+  nameWithType.vb: HindiOrdinalLanguageSpecifics.IsSupported(Long, IReadOnlyDictionary(Of String, String))
+- uid: Utils.NumberToString.HindiOrdinalLanguageSpecifics.IsSupported*
+  name: IsSupported
+  href: api/Utils.NumberToString.HindiOrdinalLanguageSpecifics.html#Utils_NumberToString_HindiOrdinalLanguageSpecifics_IsSupported_
+  commentId: Overload:Utils.NumberToString.HindiOrdinalLanguageSpecifics.IsSupported
+  isSpec: "True"
+  fullName: Utils.NumberToString.HindiOrdinalLanguageSpecifics.IsSupported
+  nameWithType: HindiOrdinalLanguageSpecifics.IsSupported
+- uid: Utils.NumberToString.HindiOrdinalLanguageSpecifics.LanguageName
+  name: LanguageName
+  href: api/Utils.NumberToString.HindiOrdinalLanguageSpecifics.html#Utils_NumberToString_HindiOrdinalLanguageSpecifics_LanguageName
+  commentId: P:Utils.NumberToString.HindiOrdinalLanguageSpecifics.LanguageName
+  fullName: Utils.NumberToString.HindiOrdinalLanguageSpecifics.LanguageName
+  nameWithType: HindiOrdinalLanguageSpecifics.LanguageName
+- uid: Utils.NumberToString.HindiOrdinalLanguageSpecifics.LanguageName*
+  name: LanguageName
+  href: api/Utils.NumberToString.HindiOrdinalLanguageSpecifics.html#Utils_NumberToString_HindiOrdinalLanguageSpecifics_LanguageName_
+  commentId: Overload:Utils.NumberToString.HindiOrdinalLanguageSpecifics.LanguageName
+  isSpec: "True"
+  fullName: Utils.NumberToString.HindiOrdinalLanguageSpecifics.LanguageName
+  nameWithType: HindiOrdinalLanguageSpecifics.LanguageName
+- uid: Utils.NumberToString.HindiOrdinalLanguageSpecifics.SupportedDomain
+  name: SupportedDomain
+  href: api/Utils.NumberToString.HindiOrdinalLanguageSpecifics.html#Utils_NumberToString_HindiOrdinalLanguageSpecifics_SupportedDomain
+  commentId: P:Utils.NumberToString.HindiOrdinalLanguageSpecifics.SupportedDomain
+  fullName: Utils.NumberToString.HindiOrdinalLanguageSpecifics.SupportedDomain
+  nameWithType: HindiOrdinalLanguageSpecifics.SupportedDomain
+- uid: Utils.NumberToString.HindiOrdinalLanguageSpecifics.SupportedDomain*
+  name: SupportedDomain
+  href: api/Utils.NumberToString.HindiOrdinalLanguageSpecifics.html#Utils_NumberToString_HindiOrdinalLanguageSpecifics_SupportedDomain_
+  commentId: Overload:Utils.NumberToString.HindiOrdinalLanguageSpecifics.SupportedDomain
+  isSpec: "True"
+  fullName: Utils.NumberToString.HindiOrdinalLanguageSpecifics.SupportedDomain
+  nameWithType: HindiOrdinalLanguageSpecifics.SupportedDomain
 - uid: Utils.NumberToString.HungarianOrdinalLanguageSpecifics
   name: HungarianOrdinalLanguageSpecifics
   href: api/Utils.NumberToString.HungarianOrdinalLanguageSpecifics.html
@@ -63208,6 +63544,102 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.ItalianOrdinalLanguageSpecifics.TryConvertOrdinal
   nameWithType: ItalianOrdinalLanguageSpecifics.TryConvertOrdinal
+- uid: Utils.NumberToString.JapaneseOrdinalLanguageSpecifics
+  name: JapaneseOrdinalLanguageSpecifics
+  href: api/Utils.NumberToString.JapaneseOrdinalLanguageSpecifics.html
+  commentId: T:Utils.NumberToString.JapaneseOrdinalLanguageSpecifics
+  fullName: Utils.NumberToString.JapaneseOrdinalLanguageSpecifics
+  nameWithType: JapaneseOrdinalLanguageSpecifics
+- uid: Utils.NumberToString.JapaneseOrdinalLanguageSpecifics.IsSupported(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String})
+  name: IsSupported(long, IReadOnlyDictionary<string, string>)
+  href: api/Utils.NumberToString.JapaneseOrdinalLanguageSpecifics.html#Utils_NumberToString_JapaneseOrdinalLanguageSpecifics_IsSupported_System_Int64_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__
+  commentId: M:Utils.NumberToString.JapaneseOrdinalLanguageSpecifics.IsSupported(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String})
+  name.vb: IsSupported(Long, IReadOnlyDictionary(Of String, String))
+  fullName: Utils.NumberToString.JapaneseOrdinalLanguageSpecifics.IsSupported(long, System.Collections.Generic.IReadOnlyDictionary<string, string>)
+  fullName.vb: Utils.NumberToString.JapaneseOrdinalLanguageSpecifics.IsSupported(Long, System.Collections.Generic.IReadOnlyDictionary(Of String, String))
+  nameWithType: JapaneseOrdinalLanguageSpecifics.IsSupported(long, IReadOnlyDictionary<string, string>)
+  nameWithType.vb: JapaneseOrdinalLanguageSpecifics.IsSupported(Long, IReadOnlyDictionary(Of String, String))
+- uid: Utils.NumberToString.JapaneseOrdinalLanguageSpecifics.IsSupported*
+  name: IsSupported
+  href: api/Utils.NumberToString.JapaneseOrdinalLanguageSpecifics.html#Utils_NumberToString_JapaneseOrdinalLanguageSpecifics_IsSupported_
+  commentId: Overload:Utils.NumberToString.JapaneseOrdinalLanguageSpecifics.IsSupported
+  isSpec: "True"
+  fullName: Utils.NumberToString.JapaneseOrdinalLanguageSpecifics.IsSupported
+  nameWithType: JapaneseOrdinalLanguageSpecifics.IsSupported
+- uid: Utils.NumberToString.JapaneseOrdinalLanguageSpecifics.LanguageName
+  name: LanguageName
+  href: api/Utils.NumberToString.JapaneseOrdinalLanguageSpecifics.html#Utils_NumberToString_JapaneseOrdinalLanguageSpecifics_LanguageName
+  commentId: P:Utils.NumberToString.JapaneseOrdinalLanguageSpecifics.LanguageName
+  fullName: Utils.NumberToString.JapaneseOrdinalLanguageSpecifics.LanguageName
+  nameWithType: JapaneseOrdinalLanguageSpecifics.LanguageName
+- uid: Utils.NumberToString.JapaneseOrdinalLanguageSpecifics.LanguageName*
+  name: LanguageName
+  href: api/Utils.NumberToString.JapaneseOrdinalLanguageSpecifics.html#Utils_NumberToString_JapaneseOrdinalLanguageSpecifics_LanguageName_
+  commentId: Overload:Utils.NumberToString.JapaneseOrdinalLanguageSpecifics.LanguageName
+  isSpec: "True"
+  fullName: Utils.NumberToString.JapaneseOrdinalLanguageSpecifics.LanguageName
+  nameWithType: JapaneseOrdinalLanguageSpecifics.LanguageName
+- uid: Utils.NumberToString.JapaneseOrdinalLanguageSpecifics.SupportedDomain
+  name: SupportedDomain
+  href: api/Utils.NumberToString.JapaneseOrdinalLanguageSpecifics.html#Utils_NumberToString_JapaneseOrdinalLanguageSpecifics_SupportedDomain
+  commentId: P:Utils.NumberToString.JapaneseOrdinalLanguageSpecifics.SupportedDomain
+  fullName: Utils.NumberToString.JapaneseOrdinalLanguageSpecifics.SupportedDomain
+  nameWithType: JapaneseOrdinalLanguageSpecifics.SupportedDomain
+- uid: Utils.NumberToString.JapaneseOrdinalLanguageSpecifics.SupportedDomain*
+  name: SupportedDomain
+  href: api/Utils.NumberToString.JapaneseOrdinalLanguageSpecifics.html#Utils_NumberToString_JapaneseOrdinalLanguageSpecifics_SupportedDomain_
+  commentId: Overload:Utils.NumberToString.JapaneseOrdinalLanguageSpecifics.SupportedDomain
+  isSpec: "True"
+  fullName: Utils.NumberToString.JapaneseOrdinalLanguageSpecifics.SupportedDomain
+  nameWithType: JapaneseOrdinalLanguageSpecifics.SupportedDomain
+- uid: Utils.NumberToString.KoreanOrdinalLanguageSpecifics
+  name: KoreanOrdinalLanguageSpecifics
+  href: api/Utils.NumberToString.KoreanOrdinalLanguageSpecifics.html
+  commentId: T:Utils.NumberToString.KoreanOrdinalLanguageSpecifics
+  fullName: Utils.NumberToString.KoreanOrdinalLanguageSpecifics
+  nameWithType: KoreanOrdinalLanguageSpecifics
+- uid: Utils.NumberToString.KoreanOrdinalLanguageSpecifics.IsSupported(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String})
+  name: IsSupported(long, IReadOnlyDictionary<string, string>)
+  href: api/Utils.NumberToString.KoreanOrdinalLanguageSpecifics.html#Utils_NumberToString_KoreanOrdinalLanguageSpecifics_IsSupported_System_Int64_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__
+  commentId: M:Utils.NumberToString.KoreanOrdinalLanguageSpecifics.IsSupported(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String})
+  name.vb: IsSupported(Long, IReadOnlyDictionary(Of String, String))
+  fullName: Utils.NumberToString.KoreanOrdinalLanguageSpecifics.IsSupported(long, System.Collections.Generic.IReadOnlyDictionary<string, string>)
+  fullName.vb: Utils.NumberToString.KoreanOrdinalLanguageSpecifics.IsSupported(Long, System.Collections.Generic.IReadOnlyDictionary(Of String, String))
+  nameWithType: KoreanOrdinalLanguageSpecifics.IsSupported(long, IReadOnlyDictionary<string, string>)
+  nameWithType.vb: KoreanOrdinalLanguageSpecifics.IsSupported(Long, IReadOnlyDictionary(Of String, String))
+- uid: Utils.NumberToString.KoreanOrdinalLanguageSpecifics.IsSupported*
+  name: IsSupported
+  href: api/Utils.NumberToString.KoreanOrdinalLanguageSpecifics.html#Utils_NumberToString_KoreanOrdinalLanguageSpecifics_IsSupported_
+  commentId: Overload:Utils.NumberToString.KoreanOrdinalLanguageSpecifics.IsSupported
+  isSpec: "True"
+  fullName: Utils.NumberToString.KoreanOrdinalLanguageSpecifics.IsSupported
+  nameWithType: KoreanOrdinalLanguageSpecifics.IsSupported
+- uid: Utils.NumberToString.KoreanOrdinalLanguageSpecifics.LanguageName
+  name: LanguageName
+  href: api/Utils.NumberToString.KoreanOrdinalLanguageSpecifics.html#Utils_NumberToString_KoreanOrdinalLanguageSpecifics_LanguageName
+  commentId: P:Utils.NumberToString.KoreanOrdinalLanguageSpecifics.LanguageName
+  fullName: Utils.NumberToString.KoreanOrdinalLanguageSpecifics.LanguageName
+  nameWithType: KoreanOrdinalLanguageSpecifics.LanguageName
+- uid: Utils.NumberToString.KoreanOrdinalLanguageSpecifics.LanguageName*
+  name: LanguageName
+  href: api/Utils.NumberToString.KoreanOrdinalLanguageSpecifics.html#Utils_NumberToString_KoreanOrdinalLanguageSpecifics_LanguageName_
+  commentId: Overload:Utils.NumberToString.KoreanOrdinalLanguageSpecifics.LanguageName
+  isSpec: "True"
+  fullName: Utils.NumberToString.KoreanOrdinalLanguageSpecifics.LanguageName
+  nameWithType: KoreanOrdinalLanguageSpecifics.LanguageName
+- uid: Utils.NumberToString.KoreanOrdinalLanguageSpecifics.SupportedDomain
+  name: SupportedDomain
+  href: api/Utils.NumberToString.KoreanOrdinalLanguageSpecifics.html#Utils_NumberToString_KoreanOrdinalLanguageSpecifics_SupportedDomain
+  commentId: P:Utils.NumberToString.KoreanOrdinalLanguageSpecifics.SupportedDomain
+  fullName: Utils.NumberToString.KoreanOrdinalLanguageSpecifics.SupportedDomain
+  nameWithType: KoreanOrdinalLanguageSpecifics.SupportedDomain
+- uid: Utils.NumberToString.KoreanOrdinalLanguageSpecifics.SupportedDomain*
+  name: SupportedDomain
+  href: api/Utils.NumberToString.KoreanOrdinalLanguageSpecifics.html#Utils_NumberToString_KoreanOrdinalLanguageSpecifics_SupportedDomain_
+  commentId: Overload:Utils.NumberToString.KoreanOrdinalLanguageSpecifics.SupportedDomain
+  isSpec: "True"
+  fullName: Utils.NumberToString.KoreanOrdinalLanguageSpecifics.SupportedDomain
+  nameWithType: KoreanOrdinalLanguageSpecifics.SupportedDomain
 - uid: Utils.NumberToString.LanguageType
   name: LanguageType
   href: api/Utils.NumberToString.LanguageType.html
@@ -68264,6 +68696,127 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.OrdinalCompositionType.Separator
   nameWithType: OrdinalCompositionType.Separator
+- uid: Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics
+  name: OrdinalDomainGuardLanguageSpecifics
+  href: api/Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.html
+  commentId: T:Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics
+  fullName: Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics
+  nameWithType: OrdinalDomainGuardLanguageSpecifics
+- uid: Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.FinalizeWriting(System.String,System.String)
+  name: FinalizeWriting(string, string)
+  href: api/Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.html#Utils_NumberToString_OrdinalDomainGuardLanguageSpecifics_FinalizeWriting_System_String_System_String_
+  commentId: M:Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.FinalizeWriting(System.String,System.String)
+  name.vb: FinalizeWriting(String, String)
+  fullName: Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.FinalizeWriting(string, string)
+  fullName.vb: Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.FinalizeWriting(String, String)
+  nameWithType: OrdinalDomainGuardLanguageSpecifics.FinalizeWriting(string, string)
+  nameWithType.vb: OrdinalDomainGuardLanguageSpecifics.FinalizeWriting(String, String)
+- uid: Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.FinalizeWriting*
+  name: FinalizeWriting
+  href: api/Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.html#Utils_NumberToString_OrdinalDomainGuardLanguageSpecifics_FinalizeWriting_
+  commentId: Overload:Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.FinalizeWriting
+  isSpec: "True"
+  fullName: Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.FinalizeWriting
+  nameWithType: OrdinalDomainGuardLanguageSpecifics.FinalizeWriting
+- uid: Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.IsRoundHundred(System.Int64)
+  name: IsRoundHundred(long)
+  href: api/Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.html#Utils_NumberToString_OrdinalDomainGuardLanguageSpecifics_IsRoundHundred_System_Int64_
+  commentId: M:Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.IsRoundHundred(System.Int64)
+  name.vb: IsRoundHundred(Long)
+  fullName: Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.IsRoundHundred(long)
+  fullName.vb: Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.IsRoundHundred(Long)
+  nameWithType: OrdinalDomainGuardLanguageSpecifics.IsRoundHundred(long)
+  nameWithType.vb: OrdinalDomainGuardLanguageSpecifics.IsRoundHundred(Long)
+- uid: Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.IsRoundHundred*
+  name: IsRoundHundred
+  href: api/Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.html#Utils_NumberToString_OrdinalDomainGuardLanguageSpecifics_IsRoundHundred_
+  commentId: Overload:Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.IsRoundHundred
+  isSpec: "True"
+  fullName: Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.IsRoundHundred
+  nameWithType: OrdinalDomainGuardLanguageSpecifics.IsRoundHundred
+- uid: Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.IsRoundTen(System.Int64)
+  name: IsRoundTen(long)
+  href: api/Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.html#Utils_NumberToString_OrdinalDomainGuardLanguageSpecifics_IsRoundTen_System_Int64_
+  commentId: M:Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.IsRoundTen(System.Int64)
+  name.vb: IsRoundTen(Long)
+  fullName: Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.IsRoundTen(long)
+  fullName.vb: Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.IsRoundTen(Long)
+  nameWithType: OrdinalDomainGuardLanguageSpecifics.IsRoundTen(long)
+  nameWithType.vb: OrdinalDomainGuardLanguageSpecifics.IsRoundTen(Long)
+- uid: Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.IsRoundTen*
+  name: IsRoundTen
+  href: api/Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.html#Utils_NumberToString_OrdinalDomainGuardLanguageSpecifics_IsRoundTen_
+  commentId: Overload:Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.IsRoundTen
+  isSpec: "True"
+  fullName: Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.IsRoundTen
+  nameWithType: OrdinalDomainGuardLanguageSpecifics.IsRoundTen
+- uid: Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.IsSupported(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String})
+  name: IsSupported(long, IReadOnlyDictionary<string, string>)
+  href: api/Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.html#Utils_NumberToString_OrdinalDomainGuardLanguageSpecifics_IsSupported_System_Int64_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__
+  commentId: M:Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.IsSupported(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String})
+  name.vb: IsSupported(Long, IReadOnlyDictionary(Of String, String))
+  fullName: Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.IsSupported(long, System.Collections.Generic.IReadOnlyDictionary<string, string>)
+  fullName.vb: Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.IsSupported(Long, System.Collections.Generic.IReadOnlyDictionary(Of String, String))
+  nameWithType: OrdinalDomainGuardLanguageSpecifics.IsSupported(long, IReadOnlyDictionary<string, string>)
+  nameWithType.vb: OrdinalDomainGuardLanguageSpecifics.IsSupported(Long, IReadOnlyDictionary(Of String, String))
+- uid: Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.IsSupported*
+  name: IsSupported
+  href: api/Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.html#Utils_NumberToString_OrdinalDomainGuardLanguageSpecifics_IsSupported_
+  commentId: Overload:Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.IsSupported
+  isSpec: "True"
+  fullName: Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.IsSupported
+  nameWithType: OrdinalDomainGuardLanguageSpecifics.IsSupported
+- uid: Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.LanguageName
+  name: LanguageName
+  href: api/Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.html#Utils_NumberToString_OrdinalDomainGuardLanguageSpecifics_LanguageName
+  commentId: P:Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.LanguageName
+  fullName: Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.LanguageName
+  nameWithType: OrdinalDomainGuardLanguageSpecifics.LanguageName
+- uid: Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.LanguageName*
+  name: LanguageName
+  href: api/Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.html#Utils_NumberToString_OrdinalDomainGuardLanguageSpecifics_LanguageName_
+  commentId: Overload:Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.LanguageName
+  isSpec: "True"
+  fullName: Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.LanguageName
+  nameWithType: OrdinalDomainGuardLanguageSpecifics.LanguageName
+- uid: Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.SupportedDomain
+  name: SupportedDomain
+  href: api/Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.html#Utils_NumberToString_OrdinalDomainGuardLanguageSpecifics_SupportedDomain
+  commentId: P:Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.SupportedDomain
+  fullName: Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.SupportedDomain
+  nameWithType: OrdinalDomainGuardLanguageSpecifics.SupportedDomain
+- uid: Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.SupportedDomain*
+  name: SupportedDomain
+  href: api/Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.html#Utils_NumberToString_OrdinalDomainGuardLanguageSpecifics_SupportedDomain_
+  commentId: Overload:Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.SupportedDomain
+  isSpec: "True"
+  fullName: Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.SupportedDomain
+  nameWithType: OrdinalDomainGuardLanguageSpecifics.SupportedDomain
+- uid: Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.TryConvertOrdinal(System.Int32,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String@)
+  name: TryConvertOrdinal(int, IReadOnlyDictionary<string, string>, out string?)
+  href: api/Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.html#Utils_NumberToString_OrdinalDomainGuardLanguageSpecifics_TryConvertOrdinal_System_Int32_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__System_String__
+  commentId: M:Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.TryConvertOrdinal(System.Int32,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String@)
+  name.vb: TryConvertOrdinal(Integer, IReadOnlyDictionary(Of String, String), String)
+  fullName: Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.TryConvertOrdinal(int, System.Collections.Generic.IReadOnlyDictionary<string, string>, out string?)
+  fullName.vb: Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.TryConvertOrdinal(Integer, System.Collections.Generic.IReadOnlyDictionary(Of String, String), String)
+  nameWithType: OrdinalDomainGuardLanguageSpecifics.TryConvertOrdinal(int, IReadOnlyDictionary<string, string>, out string?)
+  nameWithType.vb: OrdinalDomainGuardLanguageSpecifics.TryConvertOrdinal(Integer, IReadOnlyDictionary(Of String, String), String)
+- uid: Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.TryConvertOrdinal(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String@)
+  name: TryConvertOrdinal(long, IReadOnlyDictionary<string, string>, out string?)
+  href: api/Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.html#Utils_NumberToString_OrdinalDomainGuardLanguageSpecifics_TryConvertOrdinal_System_Int64_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__System_String__
+  commentId: M:Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.TryConvertOrdinal(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String@)
+  name.vb: TryConvertOrdinal(Long, IReadOnlyDictionary(Of String, String), String)
+  fullName: Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.TryConvertOrdinal(long, System.Collections.Generic.IReadOnlyDictionary<string, string>, out string?)
+  fullName.vb: Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.TryConvertOrdinal(Long, System.Collections.Generic.IReadOnlyDictionary(Of String, String), String)
+  nameWithType: OrdinalDomainGuardLanguageSpecifics.TryConvertOrdinal(long, IReadOnlyDictionary<string, string>, out string?)
+  nameWithType.vb: OrdinalDomainGuardLanguageSpecifics.TryConvertOrdinal(Long, IReadOnlyDictionary(Of String, String), String)
+- uid: Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.TryConvertOrdinal*
+  name: TryConvertOrdinal
+  href: api/Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.html#Utils_NumberToString_OrdinalDomainGuardLanguageSpecifics_TryConvertOrdinal_
+  commentId: Overload:Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.TryConvertOrdinal
+  isSpec: "True"
+  fullName: Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.TryConvertOrdinal
+  nameWithType: OrdinalDomainGuardLanguageSpecifics.TryConvertOrdinal
 - uid: Utils.NumberToString.OrdinalExceptionType
   name: OrdinalExceptionType
   href: api/Utils.NumberToString.OrdinalExceptionType.html
@@ -68842,6 +69395,15 @@ references:
   fullName.vb: Utils.NumberToString.PolishOrdinalLanguageSpecifics.TryConvertOrdinal(Integer, System.Collections.Generic.IReadOnlyDictionary(Of String, String), String)
   nameWithType: PolishOrdinalLanguageSpecifics.TryConvertOrdinal(int, IReadOnlyDictionary<string, string>, out string?)
   nameWithType.vb: PolishOrdinalLanguageSpecifics.TryConvertOrdinal(Integer, IReadOnlyDictionary(Of String, String), String)
+- uid: Utils.NumberToString.PolishOrdinalLanguageSpecifics.TryConvertOrdinal(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String@)
+  name: TryConvertOrdinal(long, IReadOnlyDictionary<string, string>, out string?)
+  href: api/Utils.NumberToString.PolishOrdinalLanguageSpecifics.html#Utils_NumberToString_PolishOrdinalLanguageSpecifics_TryConvertOrdinal_System_Int64_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__System_String__
+  commentId: M:Utils.NumberToString.PolishOrdinalLanguageSpecifics.TryConvertOrdinal(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String@)
+  name.vb: TryConvertOrdinal(Long, IReadOnlyDictionary(Of String, String), String)
+  fullName: Utils.NumberToString.PolishOrdinalLanguageSpecifics.TryConvertOrdinal(long, System.Collections.Generic.IReadOnlyDictionary<string, string>, out string?)
+  fullName.vb: Utils.NumberToString.PolishOrdinalLanguageSpecifics.TryConvertOrdinal(Long, System.Collections.Generic.IReadOnlyDictionary(Of String, String), String)
+  nameWithType: PolishOrdinalLanguageSpecifics.TryConvertOrdinal(long, IReadOnlyDictionary<string, string>, out string?)
+  nameWithType.vb: PolishOrdinalLanguageSpecifics.TryConvertOrdinal(Long, IReadOnlyDictionary(Of String, String), String)
 - uid: Utils.NumberToString.PolishOrdinalLanguageSpecifics.TryConvertOrdinal*
   name: TryConvertOrdinal
   href: api/Utils.NumberToString.PolishOrdinalLanguageSpecifics.html#Utils_NumberToString_PolishOrdinalLanguageSpecifics_TryConvertOrdinal_
@@ -68849,6 +69411,54 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.PolishOrdinalLanguageSpecifics.TryConvertOrdinal
   nameWithType: PolishOrdinalLanguageSpecifics.TryConvertOrdinal
+- uid: Utils.NumberToString.PortugueseOrdinalLanguageSpecifics
+  name: PortugueseOrdinalLanguageSpecifics
+  href: api/Utils.NumberToString.PortugueseOrdinalLanguageSpecifics.html
+  commentId: T:Utils.NumberToString.PortugueseOrdinalLanguageSpecifics
+  fullName: Utils.NumberToString.PortugueseOrdinalLanguageSpecifics
+  nameWithType: PortugueseOrdinalLanguageSpecifics
+- uid: Utils.NumberToString.PortugueseOrdinalLanguageSpecifics.IsSupported(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String})
+  name: IsSupported(long, IReadOnlyDictionary<string, string>)
+  href: api/Utils.NumberToString.PortugueseOrdinalLanguageSpecifics.html#Utils_NumberToString_PortugueseOrdinalLanguageSpecifics_IsSupported_System_Int64_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__
+  commentId: M:Utils.NumberToString.PortugueseOrdinalLanguageSpecifics.IsSupported(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String})
+  name.vb: IsSupported(Long, IReadOnlyDictionary(Of String, String))
+  fullName: Utils.NumberToString.PortugueseOrdinalLanguageSpecifics.IsSupported(long, System.Collections.Generic.IReadOnlyDictionary<string, string>)
+  fullName.vb: Utils.NumberToString.PortugueseOrdinalLanguageSpecifics.IsSupported(Long, System.Collections.Generic.IReadOnlyDictionary(Of String, String))
+  nameWithType: PortugueseOrdinalLanguageSpecifics.IsSupported(long, IReadOnlyDictionary<string, string>)
+  nameWithType.vb: PortugueseOrdinalLanguageSpecifics.IsSupported(Long, IReadOnlyDictionary(Of String, String))
+- uid: Utils.NumberToString.PortugueseOrdinalLanguageSpecifics.IsSupported*
+  name: IsSupported
+  href: api/Utils.NumberToString.PortugueseOrdinalLanguageSpecifics.html#Utils_NumberToString_PortugueseOrdinalLanguageSpecifics_IsSupported_
+  commentId: Overload:Utils.NumberToString.PortugueseOrdinalLanguageSpecifics.IsSupported
+  isSpec: "True"
+  fullName: Utils.NumberToString.PortugueseOrdinalLanguageSpecifics.IsSupported
+  nameWithType: PortugueseOrdinalLanguageSpecifics.IsSupported
+- uid: Utils.NumberToString.PortugueseOrdinalLanguageSpecifics.LanguageName
+  name: LanguageName
+  href: api/Utils.NumberToString.PortugueseOrdinalLanguageSpecifics.html#Utils_NumberToString_PortugueseOrdinalLanguageSpecifics_LanguageName
+  commentId: P:Utils.NumberToString.PortugueseOrdinalLanguageSpecifics.LanguageName
+  fullName: Utils.NumberToString.PortugueseOrdinalLanguageSpecifics.LanguageName
+  nameWithType: PortugueseOrdinalLanguageSpecifics.LanguageName
+- uid: Utils.NumberToString.PortugueseOrdinalLanguageSpecifics.LanguageName*
+  name: LanguageName
+  href: api/Utils.NumberToString.PortugueseOrdinalLanguageSpecifics.html#Utils_NumberToString_PortugueseOrdinalLanguageSpecifics_LanguageName_
+  commentId: Overload:Utils.NumberToString.PortugueseOrdinalLanguageSpecifics.LanguageName
+  isSpec: "True"
+  fullName: Utils.NumberToString.PortugueseOrdinalLanguageSpecifics.LanguageName
+  nameWithType: PortugueseOrdinalLanguageSpecifics.LanguageName
+- uid: Utils.NumberToString.PortugueseOrdinalLanguageSpecifics.SupportedDomain
+  name: SupportedDomain
+  href: api/Utils.NumberToString.PortugueseOrdinalLanguageSpecifics.html#Utils_NumberToString_PortugueseOrdinalLanguageSpecifics_SupportedDomain
+  commentId: P:Utils.NumberToString.PortugueseOrdinalLanguageSpecifics.SupportedDomain
+  fullName: Utils.NumberToString.PortugueseOrdinalLanguageSpecifics.SupportedDomain
+  nameWithType: PortugueseOrdinalLanguageSpecifics.SupportedDomain
+- uid: Utils.NumberToString.PortugueseOrdinalLanguageSpecifics.SupportedDomain*
+  name: SupportedDomain
+  href: api/Utils.NumberToString.PortugueseOrdinalLanguageSpecifics.html#Utils_NumberToString_PortugueseOrdinalLanguageSpecifics_SupportedDomain_
+  commentId: Overload:Utils.NumberToString.PortugueseOrdinalLanguageSpecifics.SupportedDomain
+  isSpec: "True"
+  fullName: Utils.NumberToString.PortugueseOrdinalLanguageSpecifics.SupportedDomain
+  nameWithType: PortugueseOrdinalLanguageSpecifics.SupportedDomain
 - uid: Utils.NumberToString.ReplacementScope
   name: ReplacementScope
   href: api/Utils.NumberToString.ReplacementScope.html
@@ -69065,6 +69675,54 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.RomanianOrdinalLanguageSpecifics.TryConvertOrdinal
   nameWithType: RomanianOrdinalLanguageSpecifics.TryConvertOrdinal
+- uid: Utils.NumberToString.RussianOrdinalLanguageSpecifics
+  name: RussianOrdinalLanguageSpecifics
+  href: api/Utils.NumberToString.RussianOrdinalLanguageSpecifics.html
+  commentId: T:Utils.NumberToString.RussianOrdinalLanguageSpecifics
+  fullName: Utils.NumberToString.RussianOrdinalLanguageSpecifics
+  nameWithType: RussianOrdinalLanguageSpecifics
+- uid: Utils.NumberToString.RussianOrdinalLanguageSpecifics.IsSupported(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String})
+  name: IsSupported(long, IReadOnlyDictionary<string, string>)
+  href: api/Utils.NumberToString.RussianOrdinalLanguageSpecifics.html#Utils_NumberToString_RussianOrdinalLanguageSpecifics_IsSupported_System_Int64_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__
+  commentId: M:Utils.NumberToString.RussianOrdinalLanguageSpecifics.IsSupported(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String})
+  name.vb: IsSupported(Long, IReadOnlyDictionary(Of String, String))
+  fullName: Utils.NumberToString.RussianOrdinalLanguageSpecifics.IsSupported(long, System.Collections.Generic.IReadOnlyDictionary<string, string>)
+  fullName.vb: Utils.NumberToString.RussianOrdinalLanguageSpecifics.IsSupported(Long, System.Collections.Generic.IReadOnlyDictionary(Of String, String))
+  nameWithType: RussianOrdinalLanguageSpecifics.IsSupported(long, IReadOnlyDictionary<string, string>)
+  nameWithType.vb: RussianOrdinalLanguageSpecifics.IsSupported(Long, IReadOnlyDictionary(Of String, String))
+- uid: Utils.NumberToString.RussianOrdinalLanguageSpecifics.IsSupported*
+  name: IsSupported
+  href: api/Utils.NumberToString.RussianOrdinalLanguageSpecifics.html#Utils_NumberToString_RussianOrdinalLanguageSpecifics_IsSupported_
+  commentId: Overload:Utils.NumberToString.RussianOrdinalLanguageSpecifics.IsSupported
+  isSpec: "True"
+  fullName: Utils.NumberToString.RussianOrdinalLanguageSpecifics.IsSupported
+  nameWithType: RussianOrdinalLanguageSpecifics.IsSupported
+- uid: Utils.NumberToString.RussianOrdinalLanguageSpecifics.LanguageName
+  name: LanguageName
+  href: api/Utils.NumberToString.RussianOrdinalLanguageSpecifics.html#Utils_NumberToString_RussianOrdinalLanguageSpecifics_LanguageName
+  commentId: P:Utils.NumberToString.RussianOrdinalLanguageSpecifics.LanguageName
+  fullName: Utils.NumberToString.RussianOrdinalLanguageSpecifics.LanguageName
+  nameWithType: RussianOrdinalLanguageSpecifics.LanguageName
+- uid: Utils.NumberToString.RussianOrdinalLanguageSpecifics.LanguageName*
+  name: LanguageName
+  href: api/Utils.NumberToString.RussianOrdinalLanguageSpecifics.html#Utils_NumberToString_RussianOrdinalLanguageSpecifics_LanguageName_
+  commentId: Overload:Utils.NumberToString.RussianOrdinalLanguageSpecifics.LanguageName
+  isSpec: "True"
+  fullName: Utils.NumberToString.RussianOrdinalLanguageSpecifics.LanguageName
+  nameWithType: RussianOrdinalLanguageSpecifics.LanguageName
+- uid: Utils.NumberToString.RussianOrdinalLanguageSpecifics.SupportedDomain
+  name: SupportedDomain
+  href: api/Utils.NumberToString.RussianOrdinalLanguageSpecifics.html#Utils_NumberToString_RussianOrdinalLanguageSpecifics_SupportedDomain
+  commentId: P:Utils.NumberToString.RussianOrdinalLanguageSpecifics.SupportedDomain
+  fullName: Utils.NumberToString.RussianOrdinalLanguageSpecifics.SupportedDomain
+  nameWithType: RussianOrdinalLanguageSpecifics.SupportedDomain
+- uid: Utils.NumberToString.RussianOrdinalLanguageSpecifics.SupportedDomain*
+  name: SupportedDomain
+  href: api/Utils.NumberToString.RussianOrdinalLanguageSpecifics.html#Utils_NumberToString_RussianOrdinalLanguageSpecifics_SupportedDomain_
+  commentId: Overload:Utils.NumberToString.RussianOrdinalLanguageSpecifics.SupportedDomain
+  isSpec: "True"
+  fullName: Utils.NumberToString.RussianOrdinalLanguageSpecifics.SupportedDomain
+  nameWithType: RussianOrdinalLanguageSpecifics.SupportedDomain
 - uid: Utils.NumberToString.ScaleFormEntry
   name: ScaleFormEntry
   href: api/Utils.NumberToString.ScaleFormEntry.html
@@ -69272,6 +69930,22 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.FinalizeWriting
   nameWithType: ScandinavianOrdinalLanguageSpecifics.FinalizeWriting
+- uid: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.Fuse(System.String,System.String)
+  name: Fuse(string, string)
+  href: api/Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.html#Utils_NumberToString_ScandinavianOrdinalLanguageSpecifics_Fuse_System_String_System_String_
+  commentId: M:Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.Fuse(System.String,System.String)
+  name.vb: Fuse(String, String)
+  fullName: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.Fuse(string, string)
+  fullName.vb: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.Fuse(String, String)
+  nameWithType: ScandinavianOrdinalLanguageSpecifics.Fuse(string, string)
+  nameWithType.vb: ScandinavianOrdinalLanguageSpecifics.Fuse(String, String)
+- uid: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.Fuse*
+  name: Fuse
+  href: api/Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.html#Utils_NumberToString_ScandinavianOrdinalLanguageSpecifics_Fuse_
+  commentId: Overload:Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.Fuse
+  isSpec: "True"
+  fullName: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.Fuse
+  nameWithType: ScandinavianOrdinalLanguageSpecifics.Fuse
 - uid: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.Hundred
   name: Hundred
   href: api/Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.html#Utils_NumberToString_ScandinavianOrdinalLanguageSpecifics_Hundred
@@ -69340,6 +70014,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.Join
   nameWithType: ScandinavianOrdinalLanguageSpecifics.Join
+- uid: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.MaxSupportedOrdinal
+  name: MaxSupportedOrdinal
+  href: api/Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.html#Utils_NumberToString_ScandinavianOrdinalLanguageSpecifics_MaxSupportedOrdinal
+  commentId: P:Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.MaxSupportedOrdinal
+  fullName: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.MaxSupportedOrdinal
+  nameWithType: ScandinavianOrdinalLanguageSpecifics.MaxSupportedOrdinal
+- uid: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.MaxSupportedOrdinal*
+  name: MaxSupportedOrdinal
+  href: api/Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.html#Utils_NumberToString_ScandinavianOrdinalLanguageSpecifics_MaxSupportedOrdinal_
+  commentId: Overload:Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.MaxSupportedOrdinal
+  isSpec: "True"
+  fullName: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.MaxSupportedOrdinal
+  nameWithType: ScandinavianOrdinalLanguageSpecifics.MaxSupportedOrdinal
 - uid: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.OrdinalBelowTwenty
   name: OrdinalBelowTwenty
   href: api/Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.html#Utils_NumberToString_ScandinavianOrdinalLanguageSpecifics_OrdinalBelowTwenty
@@ -69740,6 +70427,54 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.SlovakOrdinalLanguageSpecifics.TryDecompose
   nameWithType: SlovakOrdinalLanguageSpecifics.TryDecompose
+- uid: Utils.NumberToString.SpanishOrdinalLanguageSpecifics
+  name: SpanishOrdinalLanguageSpecifics
+  href: api/Utils.NumberToString.SpanishOrdinalLanguageSpecifics.html
+  commentId: T:Utils.NumberToString.SpanishOrdinalLanguageSpecifics
+  fullName: Utils.NumberToString.SpanishOrdinalLanguageSpecifics
+  nameWithType: SpanishOrdinalLanguageSpecifics
+- uid: Utils.NumberToString.SpanishOrdinalLanguageSpecifics.IsSupported(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String})
+  name: IsSupported(long, IReadOnlyDictionary<string, string>)
+  href: api/Utils.NumberToString.SpanishOrdinalLanguageSpecifics.html#Utils_NumberToString_SpanishOrdinalLanguageSpecifics_IsSupported_System_Int64_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__
+  commentId: M:Utils.NumberToString.SpanishOrdinalLanguageSpecifics.IsSupported(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String})
+  name.vb: IsSupported(Long, IReadOnlyDictionary(Of String, String))
+  fullName: Utils.NumberToString.SpanishOrdinalLanguageSpecifics.IsSupported(long, System.Collections.Generic.IReadOnlyDictionary<string, string>)
+  fullName.vb: Utils.NumberToString.SpanishOrdinalLanguageSpecifics.IsSupported(Long, System.Collections.Generic.IReadOnlyDictionary(Of String, String))
+  nameWithType: SpanishOrdinalLanguageSpecifics.IsSupported(long, IReadOnlyDictionary<string, string>)
+  nameWithType.vb: SpanishOrdinalLanguageSpecifics.IsSupported(Long, IReadOnlyDictionary(Of String, String))
+- uid: Utils.NumberToString.SpanishOrdinalLanguageSpecifics.IsSupported*
+  name: IsSupported
+  href: api/Utils.NumberToString.SpanishOrdinalLanguageSpecifics.html#Utils_NumberToString_SpanishOrdinalLanguageSpecifics_IsSupported_
+  commentId: Overload:Utils.NumberToString.SpanishOrdinalLanguageSpecifics.IsSupported
+  isSpec: "True"
+  fullName: Utils.NumberToString.SpanishOrdinalLanguageSpecifics.IsSupported
+  nameWithType: SpanishOrdinalLanguageSpecifics.IsSupported
+- uid: Utils.NumberToString.SpanishOrdinalLanguageSpecifics.LanguageName
+  name: LanguageName
+  href: api/Utils.NumberToString.SpanishOrdinalLanguageSpecifics.html#Utils_NumberToString_SpanishOrdinalLanguageSpecifics_LanguageName
+  commentId: P:Utils.NumberToString.SpanishOrdinalLanguageSpecifics.LanguageName
+  fullName: Utils.NumberToString.SpanishOrdinalLanguageSpecifics.LanguageName
+  nameWithType: SpanishOrdinalLanguageSpecifics.LanguageName
+- uid: Utils.NumberToString.SpanishOrdinalLanguageSpecifics.LanguageName*
+  name: LanguageName
+  href: api/Utils.NumberToString.SpanishOrdinalLanguageSpecifics.html#Utils_NumberToString_SpanishOrdinalLanguageSpecifics_LanguageName_
+  commentId: Overload:Utils.NumberToString.SpanishOrdinalLanguageSpecifics.LanguageName
+  isSpec: "True"
+  fullName: Utils.NumberToString.SpanishOrdinalLanguageSpecifics.LanguageName
+  nameWithType: SpanishOrdinalLanguageSpecifics.LanguageName
+- uid: Utils.NumberToString.SpanishOrdinalLanguageSpecifics.SupportedDomain
+  name: SupportedDomain
+  href: api/Utils.NumberToString.SpanishOrdinalLanguageSpecifics.html#Utils_NumberToString_SpanishOrdinalLanguageSpecifics_SupportedDomain
+  commentId: P:Utils.NumberToString.SpanishOrdinalLanguageSpecifics.SupportedDomain
+  fullName: Utils.NumberToString.SpanishOrdinalLanguageSpecifics.SupportedDomain
+  nameWithType: SpanishOrdinalLanguageSpecifics.SupportedDomain
+- uid: Utils.NumberToString.SpanishOrdinalLanguageSpecifics.SupportedDomain*
+  name: SupportedDomain
+  href: api/Utils.NumberToString.SpanishOrdinalLanguageSpecifics.html#Utils_NumberToString_SpanishOrdinalLanguageSpecifics_SupportedDomain_
+  commentId: Overload:Utils.NumberToString.SpanishOrdinalLanguageSpecifics.SupportedDomain
+  isSpec: "True"
+  fullName: Utils.NumberToString.SpanishOrdinalLanguageSpecifics.SupportedDomain
+  nameWithType: SpanishOrdinalLanguageSpecifics.SupportedDomain
 - uid: Utils.NumberToString.SpecialHourEntry
   name: SpecialHourEntry
   href: api/Utils.NumberToString.SpecialHourEntry.html
@@ -69951,6 +70686,22 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.ComposeOrdinal
   nameWithType: SwedishOrdinalLanguageSpecifics.ComposeOrdinal
+- uid: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.Fuse(System.String,System.String)
+  name: Fuse(string, string)
+  href: api/Utils.NumberToString.SwedishOrdinalLanguageSpecifics.html#Utils_NumberToString_SwedishOrdinalLanguageSpecifics_Fuse_System_String_System_String_
+  commentId: M:Utils.NumberToString.SwedishOrdinalLanguageSpecifics.Fuse(System.String,System.String)
+  name.vb: Fuse(String, String)
+  fullName: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.Fuse(string, string)
+  fullName.vb: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.Fuse(String, String)
+  nameWithType: SwedishOrdinalLanguageSpecifics.Fuse(string, string)
+  nameWithType.vb: SwedishOrdinalLanguageSpecifics.Fuse(String, String)
+- uid: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.Fuse*
+  name: Fuse
+  href: api/Utils.NumberToString.SwedishOrdinalLanguageSpecifics.html#Utils_NumberToString_SwedishOrdinalLanguageSpecifics_Fuse_
+  commentId: Overload:Utils.NumberToString.SwedishOrdinalLanguageSpecifics.Fuse
+  isSpec: "True"
+  fullName: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.Fuse
+  nameWithType: SwedishOrdinalLanguageSpecifics.Fuse
 - uid: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.Hundred
   name: Hundred
   href: api/Utils.NumberToString.SwedishOrdinalLanguageSpecifics.html#Utils_NumberToString_SwedishOrdinalLanguageSpecifics_Hundred
@@ -70019,6 +70770,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.Join
   nameWithType: SwedishOrdinalLanguageSpecifics.Join
+- uid: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.MaxSupportedOrdinal
+  name: MaxSupportedOrdinal
+  href: api/Utils.NumberToString.SwedishOrdinalLanguageSpecifics.html#Utils_NumberToString_SwedishOrdinalLanguageSpecifics_MaxSupportedOrdinal
+  commentId: P:Utils.NumberToString.SwedishOrdinalLanguageSpecifics.MaxSupportedOrdinal
+  fullName: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.MaxSupportedOrdinal
+  nameWithType: SwedishOrdinalLanguageSpecifics.MaxSupportedOrdinal
+- uid: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.MaxSupportedOrdinal*
+  name: MaxSupportedOrdinal
+  href: api/Utils.NumberToString.SwedishOrdinalLanguageSpecifics.html#Utils_NumberToString_SwedishOrdinalLanguageSpecifics_MaxSupportedOrdinal_
+  commentId: Overload:Utils.NumberToString.SwedishOrdinalLanguageSpecifics.MaxSupportedOrdinal
+  isSpec: "True"
+  fullName: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.MaxSupportedOrdinal
+  nameWithType: SwedishOrdinalLanguageSpecifics.MaxSupportedOrdinal
 - uid: Utils.NumberToString.SwedishOrdinalLanguageSpecifics.OrdinalBelowTwenty
   name: OrdinalBelowTwenty
   href: api/Utils.NumberToString.SwedishOrdinalLanguageSpecifics.html#Utils_NumberToString_SwedishOrdinalLanguageSpecifics_OrdinalBelowTwenty
@@ -70528,6 +71292,54 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.VariantsType.Variants
   nameWithType: VariantsType.Variants
+- uid: Utils.NumberToString.VietnameseOrdinalLanguageSpecifics
+  name: VietnameseOrdinalLanguageSpecifics
+  href: api/Utils.NumberToString.VietnameseOrdinalLanguageSpecifics.html
+  commentId: T:Utils.NumberToString.VietnameseOrdinalLanguageSpecifics
+  fullName: Utils.NumberToString.VietnameseOrdinalLanguageSpecifics
+  nameWithType: VietnameseOrdinalLanguageSpecifics
+- uid: Utils.NumberToString.VietnameseOrdinalLanguageSpecifics.IsSupported(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String})
+  name: IsSupported(long, IReadOnlyDictionary<string, string>)
+  href: api/Utils.NumberToString.VietnameseOrdinalLanguageSpecifics.html#Utils_NumberToString_VietnameseOrdinalLanguageSpecifics_IsSupported_System_Int64_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__
+  commentId: M:Utils.NumberToString.VietnameseOrdinalLanguageSpecifics.IsSupported(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String})
+  name.vb: IsSupported(Long, IReadOnlyDictionary(Of String, String))
+  fullName: Utils.NumberToString.VietnameseOrdinalLanguageSpecifics.IsSupported(long, System.Collections.Generic.IReadOnlyDictionary<string, string>)
+  fullName.vb: Utils.NumberToString.VietnameseOrdinalLanguageSpecifics.IsSupported(Long, System.Collections.Generic.IReadOnlyDictionary(Of String, String))
+  nameWithType: VietnameseOrdinalLanguageSpecifics.IsSupported(long, IReadOnlyDictionary<string, string>)
+  nameWithType.vb: VietnameseOrdinalLanguageSpecifics.IsSupported(Long, IReadOnlyDictionary(Of String, String))
+- uid: Utils.NumberToString.VietnameseOrdinalLanguageSpecifics.IsSupported*
+  name: IsSupported
+  href: api/Utils.NumberToString.VietnameseOrdinalLanguageSpecifics.html#Utils_NumberToString_VietnameseOrdinalLanguageSpecifics_IsSupported_
+  commentId: Overload:Utils.NumberToString.VietnameseOrdinalLanguageSpecifics.IsSupported
+  isSpec: "True"
+  fullName: Utils.NumberToString.VietnameseOrdinalLanguageSpecifics.IsSupported
+  nameWithType: VietnameseOrdinalLanguageSpecifics.IsSupported
+- uid: Utils.NumberToString.VietnameseOrdinalLanguageSpecifics.LanguageName
+  name: LanguageName
+  href: api/Utils.NumberToString.VietnameseOrdinalLanguageSpecifics.html#Utils_NumberToString_VietnameseOrdinalLanguageSpecifics_LanguageName
+  commentId: P:Utils.NumberToString.VietnameseOrdinalLanguageSpecifics.LanguageName
+  fullName: Utils.NumberToString.VietnameseOrdinalLanguageSpecifics.LanguageName
+  nameWithType: VietnameseOrdinalLanguageSpecifics.LanguageName
+- uid: Utils.NumberToString.VietnameseOrdinalLanguageSpecifics.LanguageName*
+  name: LanguageName
+  href: api/Utils.NumberToString.VietnameseOrdinalLanguageSpecifics.html#Utils_NumberToString_VietnameseOrdinalLanguageSpecifics_LanguageName_
+  commentId: Overload:Utils.NumberToString.VietnameseOrdinalLanguageSpecifics.LanguageName
+  isSpec: "True"
+  fullName: Utils.NumberToString.VietnameseOrdinalLanguageSpecifics.LanguageName
+  nameWithType: VietnameseOrdinalLanguageSpecifics.LanguageName
+- uid: Utils.NumberToString.VietnameseOrdinalLanguageSpecifics.SupportedDomain
+  name: SupportedDomain
+  href: api/Utils.NumberToString.VietnameseOrdinalLanguageSpecifics.html#Utils_NumberToString_VietnameseOrdinalLanguageSpecifics_SupportedDomain
+  commentId: P:Utils.NumberToString.VietnameseOrdinalLanguageSpecifics.SupportedDomain
+  fullName: Utils.NumberToString.VietnameseOrdinalLanguageSpecifics.SupportedDomain
+  nameWithType: VietnameseOrdinalLanguageSpecifics.SupportedDomain
+- uid: Utils.NumberToString.VietnameseOrdinalLanguageSpecifics.SupportedDomain*
+  name: SupportedDomain
+  href: api/Utils.NumberToString.VietnameseOrdinalLanguageSpecifics.html#Utils_NumberToString_VietnameseOrdinalLanguageSpecifics_SupportedDomain_
+  commentId: Overload:Utils.NumberToString.VietnameseOrdinalLanguageSpecifics.SupportedDomain
+  isSpec: "True"
+  fullName: Utils.NumberToString.VietnameseOrdinalLanguageSpecifics.SupportedDomain
+  nameWithType: VietnameseOrdinalLanguageSpecifics.SupportedDomain
 - uid: Utils.NumberToString.WolofOrdinalLanguageSpecifics
   name: WolofOrdinalLanguageSpecifics
   href: api/Utils.NumberToString.WolofOrdinalLanguageSpecifics.html
