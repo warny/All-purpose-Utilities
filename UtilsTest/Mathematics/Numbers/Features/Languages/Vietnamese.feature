@@ -22,13 +22,43 @@ Examples:
     | 21 | hai mươi mốt |
     | 25 | hai mươi lăm |
     | 100 | một trăm |
-    | 1000 | nghìn |
+    | 1000 | một nghìn |
     | 2000 | hai nghìn |
     | 1000000 | một triệu |
     | 2000000 | hai triệu |
     | 1000000000 | một tỷ |
     | 999999999999 | chín trăm chín mươi chín tỷ chín trăm chín mươi chín triệu chín trăm chín mươi chín nghìn chín trăm chín mươi chín |
 
+# NTS-27: a class (lớp) that follows a higher non-zero class is read with all its positions: "không trăm"
+# for zero hundreds, then "linh" before a lone unit (Toán 4 solution keys, vietjack.com, SGK Toán 4
+# p. 15 ex. 2: 400 070 192 "bốn trăm triệu không trăm bảy … nghìn một trăm chín mươi hai"; loigiaihay.com:
+# 178 320 005 "… ba trăm hai mươi nghìn không trăm linh năm"); 1000 is "một nghìn".
+Scenario Outline: NTS-27 Vietnamese classes after a higher class are read in full
+    When I convert the cardinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 100 | một trăm |
+    | 101 | một trăm linh một |
+    | 105 | một trăm linh năm |
+    | 110 | một trăm mười |
+    | 1000 | một nghìn |
+    | 1001 | một nghìn không trăm linh một |
+    | 1005 | một nghìn không trăm linh năm |
+    | 1010 | một nghìn không trăm mười |
+    | 1015 | một nghìn không trăm mười lăm |
+    | 1021 | một nghìn không trăm hai mươi mốt |
+    | 1100 | một nghìn một trăm |
+    | 2000 | hai nghìn |
+    | 2005 | hai nghìn không trăm linh năm |
+    | 10005 | mười nghìn không trăm linh năm |
+    | 20005 | hai mươi nghìn không trăm linh năm |
+    | 100005 | một trăm nghìn không trăm linh năm |
+    | 999999 | chín trăm chín mươi chín nghìn chín trăm chín mươi chín |
+    | 178320005 | một trăm bảy mươi tám triệu ba trăm hai mươi nghìn không trăm linh năm |
+    | 400070192 | bốn trăm triệu không trăm bảy mươi nghìn một trăm chín mươi hai |
+    | -2005 | âm hai nghìn không trăm linh năm |
 Scenario Outline: Ordinal numbers
     When I convert the ordinal number <number>
     Then the result is "<expected>"
@@ -90,8 +120,8 @@ Examples:
     | 999 | thứ chín trăm chín mươi chín |
 
 # NTS-08 validation: Vietnamese dictionaries (vtudien, Việt-Việt): "tư … Bốn: xếp thứ tư"; "thứ … chỗ
-# trong trật tự sắp xếp: hàng thứ nhất". From 1000 the configured cardinal is wrong ("nghìn" instead
-# of "một nghìn", "hai nghìn năm" instead of "hai nghìn không trăm linh năm"): the ordinals fail closed.
+# trong trật tự sắp xếp: hàng thứ nhất". NTS-27 corrected the cardinals from 1000 ("một nghìn", "hai nghìn
+# không trăm linh năm"), but no source settles the ordinal of these values: they still fail closed (NTS-28).
 Scenario Outline: Vietnamese ordinals from a thousand are not supported
     When I attempt to convert the ordinal number <number>
     Then conversion is rejected because no ordinal form is available

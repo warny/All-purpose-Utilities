@@ -9,8 +9,6 @@
         decimalSeparator="phẩy"
         fractionSeparator="trên"
         maxNumber="999999999999"
-        intraGroupConnector="linh"
-        intraGroupConnectorThreshold="10"
     >
         <Culture>VN</Culture>
         <Culture>VI</Culture>
@@ -28,8 +26,11 @@
                 <Digit digit="8" string="tám" />
                 <Digit digit="9" string="chín" />
             </Group>
+            <!-- NTS-27: "linh" joins a lone unit to the hundreds (một trăm linh năm), and to the zero hundreds
+                 of a class that follows a higher class (hai nghìn không trăm linh năm): the zero tens take the
+                 inner form "linh *" whenever a higher digit of the number is non-zero. -->
             <Group level="2">
-                <Digit digit="0" string="" buildString="*" />
+                <Digit digit="0" string="" buildString="*" innerBuildString="linh *" />
                 <Digit digit="1" string="mười" buildString="mười *" />
                 <Digit digit="2" string="hai mươi" buildString="hai mươi *" />
                 <Digit digit="3" string="ba mươi" buildString="ba mươi *" />
@@ -40,8 +41,11 @@
                 <Digit digit="8" string="tám mươi" buildString="tám mươi *" />
                 <Digit digit="9" string="chín mươi" buildString="chín mươi *" />
             </Group>
+            <!-- NTS-27: a class (lớp) that follows a higher non-zero class is read with its zero hundreds,
+                 "không trăm" (SGK Toán 4 solution keys: 400 070 192 "bốn trăm triệu không trăm bảy mươi nghìn
+                 …", 178 320 005 "… nghìn không trăm linh năm"); the most significant class omits them. -->
             <Group level="3">
-                <Digit digit="0" string="" buildString="*" />
+                <Digit digit="0" string="" buildString="*" innerBuildString="không trăm *" />
                 <Digit digit="1" string="một trăm" buildString="một trăm *" />
                 <Digit digit="2" string="hai trăm" buildString="hai trăm *" />
                 <Digit digit="3" string="ba trăm" buildString="ba trăm *" />
@@ -65,8 +69,7 @@
             </StaticNames>
         </NumberScale>
         <Replacements>
-            <!-- Drop "một" before "nghìn": 1000 = "nghìn" not "một nghìn" (Standalone: matched at group level) -->
-            <Replacement oldValue="một nghìn" newValue="nghìn" onScale="1" onValue="1" />
+
             <!-- "mốt" replaces "một" after tens particle mươi (21, 31, …) — Anywhere: appears inside longer strings -->
             <Replacement oldValue="mươi một" newValue="mươi mốt" scope="Anywhere" />
             <!-- "lăm" replaces "năm" after tens particle mươi (25, 35, …) -->
@@ -74,8 +77,8 @@
             <!-- "lăm" replaces "năm" after "mười" for 15 -->
             <Replacement oldValue="mười năm" newValue="mười lăm" scope="Anywhere" />
         </Replacements>
-        <!-- The "linh" connector (intraGroupConnector) is now handled by the engine:
-             101–109 → "một trăm linh một" (connector fires when remainder < 10). -->
+        <!-- NTS-27: 1000 is "một nghìn" (the former bare "nghìn" was wrong); "linh" is the inner form of
+             the zero tens (see Groups), which replaces the former intraGroupConnector. -->
         <!-- NTS-08: ordinal domain guard; values outside the validated domain fail closed (see VietnameseOrdinalLanguageSpecifics). -->
         <LanguageSpecifics>VietnameseOrdinalLanguageSpecifics</LanguageSpecifics>
         <Ordinals prefix="thứ ">

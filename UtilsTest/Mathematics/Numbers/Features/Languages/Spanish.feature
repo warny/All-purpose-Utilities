@@ -177,11 +177,71 @@ Scenario Outline: Composite thousands preserve the terminal unit
     When I convert the cardinal number <number>
     Then the result is "<expected>"
 
+# NTS-27: RAE/ASALE, Diccionario panhispánico de dudas, "cardinales" §1 (table) and §4, "uno" §2.2-2.3,
+# "mil" §1: uno and its compounds are apocopated before mil and before the nouns millón/millones
+# (veintiún mil, treinta y un mil, ciento un mil, un millón), mil alone for 1000 (not un mil),
+# 1 000 000 000 is mil millones, the hundreds are written apart from the following number (ciento uno).
 Examples:
     | number | expected             |
     | 1000   | mil                  |
-    | 21000  | veintiuno mil        |
-    | 31000  | treinta y uno mil    |
+    | 21000  | veintiún mil         |
+    | 31000  | treinta y un mil     |
+
+Scenario Outline: NTS-27 Spanish cardinals follow the DPD table
+    When I convert the cardinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number     | expected                                                          |
+    | 21         | veintiuno                                                         |
+    | 101        | ciento uno                                                        |
+    | 121        | ciento veintiuno                                                  |
+    | 131        | ciento treinta y uno                                              |
+    | 999        | novecientos noventa y nueve                                       |
+    | 1001       | mil uno                                                           |
+    | 1100       | mil cien                                                          |
+    | 1101       | mil ciento uno                                                    |
+    | 2021       | dos mil veintiuno                                                 |
+    | 2101       | dos mil ciento uno                                                |
+    | 21000      | veintiún mil                                                      |
+    | 41000      | cuarenta y un mil                                                 |
+    | 100000     | cien mil                                                          |
+    | 101000     | ciento un mil                                                     |
+    | 121000     | ciento veintiún mil                                               |
+    | 131000     | ciento treinta y un mil                                           |
+    | 201000     | doscientos un mil                                                 |
+    | 300021     | trescientos mil veintiuno                                         |
+    | 999999     | novecientos noventa y nueve mil novecientos noventa y nueve       |
+    | 1000000    | un millón                                                         |
+    | 1000001    | un millón uno                                                     |
+    | 1000100    | un millón cien                                                    |
+    | 1001000    | un millón mil                                                     |
+    | 2000000    | dos millones                                                      |
+    | 21000000   | veintiún millones                                                 |
+    | 31000000   | treinta y un millones                                             |
+    | 101000000  | ciento un millones                                                |
+    | 100000000  | cien millones                                                     |
+    | 1000000000 | mil millones                                                      |
+    | 2000000000 | dos mil millones                                                  |
+    | 21000000000 | veintiún mil millones                                            |
+    | -21000     | menos veintiún mil                                                |
+    | -1000000   | menos un millón                                                   |
+
+# DPD "cardinales" §3 and "uno" §2.3: before mil the feminine concord of uno is optional (veintiún mil
+# or veintiuna mil toneladas); the hundreds always agree (doscientas mil). The apocopated form is kept.
+Scenario Outline: NTS-27 Spanish feminine cardinals before mil
+    Given I use the variants "gender=femenino"
+    When I convert the cardinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number  | expected              |
+    | 1001    | mil una               |
+    | 21000   | veintiún mil          |
+    | 101     | ciento una            |
+    | 201000  | doscientas un mil     |
+    | 200000  | doscientas mil        |
+    | 1000001 | un millón una         |
 
 Scenario Outline: Feminine caller-defined currency wording
     Given I use the variants "gender=femenino"

@@ -54,7 +54,8 @@
              startIndex=2 maps scale 4 (10^12) to Conway index 3. Above 10^30 the Cyrillic Conway
              tables apply: дециллион (10^33), ундециллион (10^36), вигинтиллион (10^63),
              центиллион (10^303), миллиниллион (n = 1000).
-             Russian plural (миллиона/миллионов for 2-4/5+) is not handled — accepted limitation. -->
+             NTS-27: тысяча, миллион and миллиард agree with their multiplier (ScaleForm below); the
+             generated names from триллион up keep the bare singular (not handled, NTS-30). -->
         <NumberScale firstLetterUpperCase="false" groupSeparator="лли" startIndex="2">
             <StaticNames>
                 <Scale value="0" string="" />
@@ -65,9 +66,37 @@
             <Suffixes>
                 <Suffix>он</Suffix>
             </Suffixes>
+            <!-- NTS-27: singular after 1 (not 11), genitive singular after 2-4 (not 12-14), genitive plural
+                 otherwise (Unicode CLDR plural rules, ru; ru.wiktionary "тысяча": две тысячи, пять тысяч).
+                 RussianPluralLexicalFormSelector returns the key, the words are here. -->
+            <ScaleForm scale="1" formSelector="RussianPluralLexicalFormSelector">
+                <Forms>
+                    <Form key="one" value="тысяча" />
+                    <Form key="few" value="тысячи" />
+                    <Form key="many" value="тысяч" />
+                </Forms>
+            </ScaleForm>
+            <ScaleForm scale="2" formSelector="RussianPluralLexicalFormSelector">
+                <Forms>
+                    <Form key="one" value="миллион" />
+                    <Form key="few" value="миллиона" />
+                    <Form key="many" value="миллионов" />
+                </Forms>
+            </ScaleForm>
+            <ScaleForm scale="3" formSelector="RussianPluralLexicalFormSelector">
+                <Forms>
+                    <Form key="one" value="миллиард" />
+                    <Form key="few" value="миллиарда" />
+                    <Form key="many" value="миллиардов" />
+                </Forms>
+            </ScaleForm>
         </NumberScale>
         <Replacements>
             <Replacement oldValue="один тысяча" newValue="тысяча" onScale="1" onValue="1" />
+            <!-- NTS-27: тысяча is a feminine noun, so its multiplier ends in the feminine одна / две
+                 (двадцать одна тысяча, две тысячи); миллион and миллиард are masculine (два миллиона). -->
+            <Replacement oldValue="один тысяча" newValue="одна тысяча" scope="EndsWith" onScale="1" />
+            <Replacement oldValue="два тысячи" newValue="две тысячи" scope="EndsWith" onScale="1" />
         </Replacements>
         <Exceptions>
             <Number value="11" string="одиннадцать" />

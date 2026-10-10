@@ -57,7 +57,7 @@ namespace Utils.NumberToString
         /// <exception cref="ArgumentException">A rule is invalid or overlaps another one.</exception>
         private void CompileOrdinalCompositionRules(IReadOnlyList<OrdinalScaleRule>? scaleRules, IReadOnlyList<OrdinalCompositionRule>? compositionRules)
         {
-            _scaleGroupDigits = _defaultGroupTable.Digits.Keys.Max();
+            _scaleGroupDigits = _groupWidths[0];
             CompileOrdinalScaleRules(scaleRules);
 
             OrdinalCompositionRule[] snapshot = compositionRules is null ? [] : [.. compositionRules];
@@ -96,6 +96,10 @@ namespace Utils.NumberToString
             if (snapshot.Length == 0) return;
 
             const string parameterName = nameof(NumberToStringConverterOptions.OrdinalScaleRules);
+            if (HasMixedGroupWidths)
+                throw new ArgumentException(
+                    "OrdinalScale rules require groups of a single width: they locate a scale at 10^(index × width), which a mixed GroupPattern does not follow.",
+                    parameterName);
             // Above this index a scale unit exceeds 10^18, so no long value can be round there: its
             // highest group is always at a lower index (the next unit would exceed long.MaxValue).
             int maxIndex = (_decimalPowersOfTen.Length - 1) / _scaleGroupDigits;

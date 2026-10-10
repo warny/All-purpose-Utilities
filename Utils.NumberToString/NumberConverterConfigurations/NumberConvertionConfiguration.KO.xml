@@ -1,14 +1,19 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+    <!-- NTS-27: Sino-Korean numbers count by groups of four digits named 만, 억, 조 and are spaced by units of
+         만 only (한글 맞춤법 제44항: "십이억 삼천사백오십육만 칠천팔백구십팔"): no space inside a group nor before
+         its unit (the trigger below removes the separator the engine puts before the unit), one space between
+         groups. 일 is not written before 십, 백, 천, but the multiplier one of 만/억/조 is (일억 삼천만). The word
+         separator stays a space for the decimals and fractions ("일 점 오", "삼 나누기 이"). -->
     <Language
-        groupSize="3"
+        groupSize="4"
         separator=" "
         groupSeparator=""
         zero="영"
         minus="마이너스 *"
         decimalSeparator="점"
         fractionSeparator="나누기"
-        maxNumber="999999"
+        maxNumber="9999999999999999"
     >
         <Culture>KO</Culture>
         <Groups>
@@ -48,21 +53,32 @@
                 <Digit digit="8" string="팔백" buildString="팔백*" />
                 <Digit digit="9" string="구백" buildString="구백*" />
             </Group>
+            <Group level="4">
+                <Digit digit="0" string="" buildString="*" />
+                <Digit digit="1" string="천" buildString="천*" />
+                <Digit digit="2" string="이천" buildString="이천*" />
+                <Digit digit="3" string="삼천" buildString="삼천*" />
+                <Digit digit="4" string="사천" buildString="사천*" />
+                <Digit digit="5" string="오천" buildString="오천*" />
+                <Digit digit="6" string="육천" buildString="육천*" />
+                <Digit digit="7" string="칠천" buildString="칠천*" />
+                <Digit digit="8" string="팔천" buildString="팔천*" />
+                <Digit digit="9" string="구천" buildString="구천*" />
+            </Group>
         </Groups>
         <NumberScale firstLetterUpperCase="false">
             <StaticNames>
                 <Scale value="0" string="" />
-                <Scale value="1" string="천" />
+                <Scale value="1" string="만" />
+                <Scale value="2" string="억" />
+                <Scale value="3" string="조" />
             </StaticNames>
-            <Suffixes>
-                <Suffix>만</Suffix>
-            </Suffixes>
         </NumberScale>
-        <Replacements>
-            <!-- 1 000 is "천", not "일 천" (the multiplier 1 is elided before the thousands scale name). -->
-            <Replacement oldValue="일 천" newValue="천" onScale="1" onValue="1" />
-        </Replacements>
         <Exceptions />
+        <!-- NTS-27, 제44항: the unit of a group is attached to its multiplier (삼천사백오십육만, 일억). -->
+        <Trigger executeAt="groupWithScale">
+            <Replace from=" (만|억|조)$" to="$1" regex="true" />
+        </Trigger>
         <!-- NTS-08: ordinal domain guard; values outside the validated domain fail closed (see KoreanOrdinalLanguageSpecifics). -->
         <LanguageSpecifics>KoreanOrdinalLanguageSpecifics</LanguageSpecifics>
         <Ordinals prefix="제" />

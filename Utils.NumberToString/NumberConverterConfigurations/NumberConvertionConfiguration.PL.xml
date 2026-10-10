@@ -58,6 +58,16 @@
             <Suffixes>
                 <Suffix>milion</Suffix>
             </Suffixes>
+            <!-- NTS-27: tysiąc after one alone, tysiące after 2-4 except 12-14 (also at the end of a compound,
+                 dwadzieścia dwa tysiące), tysięcy otherwise (SJP PWN "tysiąc": trzy tysiące, sześć tysięcy;
+                 Unicode CLDR plural rules, pl). PolishPluralLexicalFormSelector returns the key. -->
+            <ScaleForm scale="1" formSelector="PolishPluralLexicalFormSelector">
+                <Forms>
+                    <Form key="one" value="tysiąc" />
+                    <Form key="few" value="tysiące" />
+                    <Form key="many" value="tysięcy" />
+                </Forms>
+            </ScaleForm>
         </NumberScale>
         <LanguageSpecifics>PolishOrdinalLanguageSpecifics</LanguageSpecifics>
         <Replacements>

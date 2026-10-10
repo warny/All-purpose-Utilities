@@ -19,17 +19,52 @@ Examples:
     | 19 | nitton |
     | 20 | tjugo |
     | 21 | tjugoett |
-    | 31 | trettio ett |
-    | 100 | ett hundra |
+    | 31 | trettioett |
+    | 100 | etthundra |
     | 1000 | tusen |
-    | 2000 | två tusen |
-    | 1000000 | ett miljon |
+    | 2000 | tvåtusen |
+    | 1000000 | en miljon |
     | 2000000 | två miljoner |
-    | 1000000000 | ett miljard |
+    | 1000000000 | en miljard |
     | 3000000000 | tre miljarder |
-    | 1000000000000 | ett biljon |
-    | 1000000000000000 | ett biljard |
-    | 1000000000000000000000000 | ett kvadriljon |
+    | 1000000000000 | en biljon |
+    | 1000000000000000 | en biljard |
+    | 1000000000000000000000000 | en kvadriljon |
+
+# NTS-27: Språkrådet (Isof), Frågelådan 27138: numbers are written as one word ("tjugofem",
+# "femtusentrettio", "trehundranittiofemtusen"), but above a million miljon, miljard … stand apart
+# ("tjugosex miljarder femhundraåttiosju miljoner"); 21216: after the tens "en" is used before a counted
+# word ("tjugoen kilo", "etthundratjugoen tallrikar"), "tjugoett" only for the number itself ("Han är
+# tjugoett"); 31080: of three identical consonants one is dropped (ett + tusen = ettusen).
+Scenario Outline: NTS-27 Swedish cardinals are written as one word below a million
+    When I convert the cardinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 1 | ett |
+    | 21 | tjugoett |
+    | 101 | etthundraett |
+    | 121 | etthundratjugoett |
+    | 1000 | tusen |
+    | 1001 | tusenett |
+    | 1100 | tusenetthundra |
+    | 2000 | tvåtusen |
+    | 5030 | femtusentrettio |
+    | 21000 | tjugoentusen |
+    | 21001 | tjugoentusenett |
+    | 101000 | etthundraettusen |
+    | 121000 | etthundratjugoentusen |
+    | 395000 | trehundranittiofemtusen |
+    | 999999 | niohundranittioniotusenniohundranittionio |
+    | 1000000 | en miljon |
+    | 1000001 | en miljon ett |
+    | 2000000 | två miljoner |
+    | 2005030 | två miljoner femtusentrettio |
+    | 21000000 | tjugoen miljoner |
+    | 26587000000 | tjugosex miljarder femhundraåttiosju miljoner |
+    | 1000000000 | en miljard |
+    | -21000 | minus tjugoentusen |
 
 Scenario: Ordinal conversion is supported
     Then the converter supports ordinal conversion

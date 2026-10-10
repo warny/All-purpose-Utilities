@@ -8,8 +8,8 @@ Scenario Outline: Decimal numbers
 
 Examples:
     | number | expected |
-    | 1.5 | 一 点 五 |
-    | 12.34 | 十二 点 三 四 |
+    | 1.5 | 一点五 |
+    | 12.34 | 十二点三四 |
 
 Scenario Outline: Thousands
     Given I use the "JA" number converter
@@ -19,7 +19,41 @@ Scenario Outline: Thousands
 Examples:
     | number | expected |
     | 1000 | 千 |
-    | 2000 | 二 千 |
+    | 2000 | 二千 |
+
+# NTS-27: Japanese counts by groups of four digits named 万, 億, 兆 (ja.wikipedia "漢数字": "数を下位
+# … から 4 桁ごとに区切り、各 4 桁の組に「万」、「億」などの単位を付けて、上位から読む"); inside a group
+# 一 is not said before 百 and 十 and is optional before 千 ("百位または十位が 1 のとき、「一」を言わず
+# … 千位は「一」を読んでも読まなくても良い"; the configuration keeps 千). No 零 and no spaces.
+Scenario Outline: NTS-27 Japanese cardinals count by 万
+    Given I use the "JA" number converter
+    When I convert the cardinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 1 | 一 |
+    | 10 | 十 |
+    | 11 | 十一 |
+    | 20 | 二十 |
+    | 100 | 百 |
+    | 101 | 百一 |
+    | 110 | 百十 |
+    | 1000 | 千 |
+    | 1001 | 千一 |
+    | 2005 | 二千五 |
+    | 10000 | 一万 |
+    | 10001 | 一万一 |
+    | 11000 | 一万千 |
+    | 100000 | 十万 |
+    | 1000000 | 百万 |
+    | 10000000 | 千万 |
+    | 100000000 | 一億 |
+    | 100010000 | 一億一万 |
+    | 123456789 | 一億二千三百四十五万六千七百八十九 |
+    | 1000000000000 | 一兆 |
+    | 9999999999999999 | 九千九百九十九兆九千九百九十九億九千九百九十九万九千九百九十九 |
+    | -2005 | マイナス 二千五 |
 
 Scenario Outline: Hundreds without a leading one
     Given I use the "JA" number converter
@@ -41,9 +75,9 @@ Examples:
     | 1 |  | 第一 |
     | 3 |  | 第三 |
 
-# NTS-08 validation: デジタル大辞泉, 第: "数を表す語に付いて、ものの順序を表す" (第一, 第五巻). Above 1000 the
-# configured cardinal splits the thousands with spaces and does not count by 万 ("十 千" for 10000):
-# those ordinals fail closed.
+# NTS-08 validation: デジタル大辞泉, 第: "数を表す語に付いて、ものの順序を表す" (第一, 第五巻). NTS-27 rebuilt the
+# cardinals above 1000 (counting by 万), but the ordinals there are not validated yet: they still fail
+# closed (NTS-28).
 Scenario Outline: Japanese ordinals in the validated domain
     Given I use the "JA" number converter
     When I convert the ordinal number <number>
@@ -73,7 +107,7 @@ Scenario: Ordinal conversion is supported
 Scenario: Fraction connector wording
     Given I use the "JA" number converter
     When I convert the fraction 3/2 through both public fraction APIs
-    Then both fraction results are "三 割る 二"
+    Then both fraction results are "三割る二"
 
 Scenario: Idiomatic clock-time conversion is supported
     Given I use the "JA" number converter

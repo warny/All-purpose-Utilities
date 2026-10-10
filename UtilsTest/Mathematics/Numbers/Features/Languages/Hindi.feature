@@ -65,6 +65,54 @@ Examples:
     | 121 |  | एक सौ इक्कीसवाँ |
     | 21 | gender=strī | इक्कीसवीं |
 
+# NTS-27: Indian grouping (Kamta Prasad Guru, हिंदी व्याकरण §173: "१०००= हजार … १०० हजार= लाख । १०० लाख =
+# करोड़ । १०० करोड़= अरब । १०० अरब = खरब"; beyond, नील, पद्म, शंख "बहुधा असंख्यता का बोध" — the domain stops
+# below 100 खरब): three digits for the units, then two digits per name. The multiplier one is written
+# before लाख, करोड़, अरब, खरब (एक लाख); the bare हज़ार is kept for 1000-1999 only (एक लाख एक हज़ार).
+# Spelling पाँच with chandrabindu, as Guru writes it throughout (पाँच, पाँचवाँ).
+Scenario Outline: NTS-27 Hindi cardinals follow the Indian grouping
+    Given I use the "HI" number converter
+    When I convert the cardinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 5 | पाँच |
+    | 500 | पाँच सौ |
+    | 1000 | हज़ार |
+    | 1005 | हज़ार पाँच |
+    | 10000 | दस हज़ार |
+    | 99999 | निन्यानवे हज़ार नौ सौ निन्यानवे |
+    | 100000 | एक लाख |
+    | 100001 | एक लाख एक |
+    | 101000 | एक लाख एक हज़ार |
+    | 110000 | एक लाख दस हज़ार |
+    | 150000 | एक लाख पचास हज़ार |
+    | 999999 | नौ लाख निन्यानवे हज़ार नौ सौ निन्यानवे |
+    | 1000000 | दस लाख |
+    | 10000000 | एक करोड़ |
+    | 12345678 | एक करोड़ तेईस लाख पैंतालीस हज़ार छह सौ अठहत्तर |
+    | 1000000000 | एक अरब |
+    | 100000000000 | एक खरब |
+    | 9999999999999 | निन्यानवे खरब निन्यानवे अरब निन्यानवे करोड़ निन्यानवे लाख निन्यानवे हज़ार नौ सौ निन्यानवे |
+    | -100000 | माइनस एक लाख |
+
+Scenario: NTS-27 Hindi values from 100 खरब are out of range
+    Given I use the "HI" number converter
+    When I attempt to convert the cardinal number 10000000000000
+    Then conversion is rejected because the value is out of range
+
+Scenario Outline: NTS-27 Hindi clock hours use the chandrabindu spelling
+    Given I use the "HI" number converter
+    When I convert the clock time "<time>"
+    Then the result is "<expected>"
+
+Examples:
+    | time | expected |
+    | 05:00 | पाँच |
+    | 05:30 | साढ़े पाँच |
+    | 04:45 | पौने पाँच |
+
 Scenario Outline: Decimal numbers
     Given I use the "HI" number converter
     When I convert the decimal number <number>
@@ -72,7 +120,7 @@ Scenario Outline: Decimal numbers
 
 Examples:
     | number | expected |
-    | 1.5 | एक दशमलव पांच |
+    | 1.5 | एक दशमलव पाँच |
     | 12.34 | बारह दशमलव तीन चार |
 
 Scenario Outline: Irregular and suffixed ordinal numbers
@@ -87,7 +135,7 @@ Examples:
     | 2 |  | दूसरा |
     | 3 |  | तीसरा |
     | 4 |  | चौथा |
-    | 5 |  | पांचवाँ |
+    | 5 |  | पाँचवाँ |
     | 6 |  | छठा |
     | 7 |  | सातवाँ |
     | 11 |  | ग्यारहवाँ |
@@ -115,12 +163,12 @@ Scenario Outline: Feminine suffixed ordinal numbers
 Examples:
     | number | variants | expected |
     | 6 | gender=strī | छठी |
-    | 5 | gender=strī | पांचवीं |
+    | 5 | gender=strī | पाँचवीं |
     | 7 | gender=strī | सातवीं |
 
 # NTS-08 validation: Kamta Prasad Guru, हिंदी व्याकरण, §180: पहला, दूसरा, तीसरा, चौथा, छठा, otherwise -वाँ on the
-# last word, also above a hundred ("एक सौ तीनवाँ", "दो सौ आठवाँ"). From 100000 the configured cardinal is
-# wrong ("एक सौ हज़ार" instead of "एक लाख"): those ordinals fail closed.
+# last word, also above a hundred ("एक सौ तीनवाँ", "दो सौ आठवाँ"). NTS-27 rebuilt the cardinals from 100000
+# (लाख, करोड़), but their ordinals are not validated yet: they still fail closed (NTS-28).
 Scenario Outline: Hindi ordinals in the validated domain
     Given I use the "HI" number converter
     When I convert the ordinal number <number>

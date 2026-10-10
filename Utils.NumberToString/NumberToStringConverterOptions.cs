@@ -20,6 +20,14 @@ public sealed class NumberToStringConverterOptions
     /// <summary>Number of digits per group (e.g. 3 for thousands).</summary>
     public int Group { get; set; } = 3;
 
+    /// <summary>
+    /// Digit widths of the successive groups from the units upward, the last width repeating (e.g.
+    /// <c>[3, 2]</c> for the Indian grouping 12,34,56,789: units 0-999, then thousand, lakh, crore … by two
+    /// digits). Empty by default: every group has the width of the digit tables (their highest level).
+    /// Each width must be between 1 and that highest level. The converter keeps its own copy.
+    /// </summary>
+    public IReadOnlyList<int> GroupPattern { get; set; } = [];
+
     /// <summary>Word separator inserted between sub-parts of a number name.</summary>
     public string Separator { get; set; } = " ";
 
@@ -320,6 +328,7 @@ public sealed class NumberToStringConverterOptions
     {
         ArgumentNullException.ThrowIfNull(source);
         Group = source.Group;
+        GroupPattern = [.. source.GroupPattern];
         Separator = source.Separator;
         GroupSeparator = source.GroupSeparator;
         Zero = source.Zero;

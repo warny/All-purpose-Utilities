@@ -11,6 +11,37 @@ Examples:
     | 1.5 | jeden przecinek pięć |
     | 12.34 | dwanaście przecinek trzy cztery |
 
+# NTS-27: tysiąc agrees with its multiplier: tysiąc after one alone, tysiące after 2-4 except 12-14
+# (also at the end of a compound: dwadzieścia dwa tysiące), tysięcy otherwise (SJP PWN "tysiąc": trzy
+# tysiące, sześć tysięcy; PWN Poradnia 16446: osiemnaście tysięcy, dwadzieścia sześć tysięcy; Unicode
+# CLDR plural rules, pl: one/few/many).
+Scenario Outline: NTS-27 Polish thousands agree with their multiplier
+    Given I use the "PL" number converter
+    When I convert the cardinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 1000 | tysiąc |
+    | 1001 | tysiąc jeden |
+    | 2000 | dwa tysiące |
+    | 2001 | dwa tysiące jeden |
+    | 3000 | trzy tysiące |
+    | 4000 | cztery tysiące |
+    | 5000 | pięć tysięcy |
+    | 11000 | jedenaście tysięcy |
+    | 12000 | dwanaście tysięcy |
+    | 21000 | dwadzieścia jeden tysięcy |
+    | 22000 | dwadzieścia dwa tysiące |
+    | 22001 | dwadzieścia dwa tysiące jeden |
+    | 24000 | dwadzieścia cztery tysiące |
+    | 25000 | dwadzieścia pięć tysięcy |
+    | 101000 | sto jeden tysięcy |
+    | 102000 | sto dwa tysiące |
+    | 105000 | sto pięć tysięcy |
+    | 112000 | sto dwanaście tysięcy |
+    | 122000 | sto dwadzieścia dwa tysiące |
+    | -2000 | minus dwa tysiące |
 Scenario Outline: Additional ordinal numbers
     Given I use the "PL" number converter
     And I use the variants "<variants>"

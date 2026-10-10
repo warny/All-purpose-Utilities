@@ -372,6 +372,23 @@ public class DigitType
     public string BuildString { get; set; }
 
     /// <summary>
+    /// Gets or sets the optional literal used instead of <see cref="StringValue"/> when a higher digit of the
+    /// number (of the same group or of a higher group) is non-zero. <see langword="null"/> keeps
+    /// <see cref="StringValue"/> in every position.
+    /// </summary>
+    [XmlAttribute("innerString")]
+    public string? InnerString { get; set; }
+
+    /// <summary>
+    /// Gets or sets the optional template used instead of <see cref="BuildString"/> when a higher digit of the
+    /// number (of the same group or of a higher group) is non-zero, e.g. the zero hundreds of a group that
+    /// follows the thousands (Vietnamese <c>không trăm *</c>) or a skipped position marked by a zero word
+    /// (Chinese <c>零*</c>). <see langword="null"/> keeps <see cref="BuildString"/> in every position.
+    /// </summary>
+    [XmlAttribute("innerBuildString")]
+    public string? InnerBuildString { get; set; }
+
+    /// <summary>
     /// Gets or sets the morphological fusion rules applied when this digit is composed with the
     /// text of its lower sub-group (see <see cref="FusionType"/>). <see langword="null"/> or empty
     /// means the digit always composes through <see cref="BuildString"/>.
@@ -1047,6 +1064,14 @@ public class LanguageType
     /// </summary>
     [XmlAttribute("groupSize")]
     public int GroupSize { get; set; }
+
+    /// <summary>
+    /// Gets or sets the optional group pattern: the digit widths of the successive groups from the units
+    /// upward, comma-separated, the last width repeating (e.g. <c>"3,2"</c> for the Indian grouping
+    /// 12,34,56,789). <see langword="null"/> means every group has the width of the digit tables.
+    /// </summary>
+    [XmlAttribute("groupPattern")]
+    public string? GroupPattern { get; set; }
 
     /// <summary>
     /// Gets or sets the separator used between groups.

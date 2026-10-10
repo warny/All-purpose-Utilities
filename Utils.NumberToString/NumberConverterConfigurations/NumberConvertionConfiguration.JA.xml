@@ -1,14 +1,17 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+	<!-- NTS-27: groups of four digits named 万, 億, 兆 (ja.wikipedia "漢数字": 4 桁ごとに区切り、各 4 桁の組に
+	     「万」、「億」などの単位を付けて、上位から読む), written without spaces. 一 is not said before 百 and 十 and
+	     is optional before 千 (kept as 千), but the multiplier one of 万/億/兆 is written (一万, 一億). -->
 	<Language
-        groupSize="3"
-        separator=" "
+        groupSize="4"
+        separator=""
         groupSeparator=""
         zero="零"
         minus="マイナス *"
         decimalSeparator="点"
         fractionSeparator="割る"
-        maxNumber="999999"
+        maxNumber="9999999999999999"
     >
 		<Culture>JA</Culture>
 		<Groups>
@@ -48,20 +51,27 @@
 				<Digit digit="8" string="八百" buildString="八百*" />
 				<Digit digit="9" string="九百" buildString="九百*" />
 			</Group>
+			<Group level="4">
+				<Digit digit="0" string="" buildString="*" />
+				<Digit digit="1" string="千" buildString="千*" />
+				<Digit digit="2" string="二千" buildString="二千*" />
+				<Digit digit="3" string="三千" buildString="三千*" />
+				<Digit digit="4" string="四千" buildString="四千*" />
+				<Digit digit="5" string="五千" buildString="五千*" />
+				<Digit digit="6" string="六千" buildString="六千*" />
+				<Digit digit="7" string="七千" buildString="七千*" />
+				<Digit digit="8" string="八千" buildString="八千*" />
+				<Digit digit="9" string="九千" buildString="九千*" />
+			</Group>
 		</Groups>
 		<NumberScale firstLetterUpperCase="false">
 			<StaticNames>
 				<Scale value="0" string="" />
-				<Scale value="1" string="千" />
+				<Scale value="1" string="万" />
+				<Scale value="2" string="億" />
+				<Scale value="3" string="兆" />
 			</StaticNames>
-			<Suffixes>
-				<Suffix>万</Suffix>
-			</Suffixes>
 		</NumberScale>
-		<Replacements>
-			<!-- 1 000 is "千", not "一 千" (unlike Chinese, which keeps "一千") -->
-			<Replacement oldValue="一 千" newValue="千" onScale="1" onValue="1" />
-		</Replacements>
 		<Exceptions />
 		<!-- NTS-08: ordinal domain guard; values outside the validated domain fail closed (see JapaneseOrdinalLanguageSpecifics). -->
 		<LanguageSpecifics>JapaneseOrdinalLanguageSpecifics</LanguageSpecifics>

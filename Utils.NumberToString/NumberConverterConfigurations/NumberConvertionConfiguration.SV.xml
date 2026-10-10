@@ -31,25 +31,27 @@
                 <Digit digit="1" string="tio" buildString="tio*" />
                 <!-- 20s fuse without space: tjugoett, tjugotvå, etc. -->
                 <Digit digit="2" string="tjugo" buildString="tjugo*" />
-                <Digit digit="3" string="trettio" buildString="trettio *" />
-                <Digit digit="4" string="fyrtio" buildString="fyrtio *" />
-                <Digit digit="5" string="femtio" buildString="femtio *" />
-                <Digit digit="6" string="sextio" buildString="sextio *" />
-                <Digit digit="7" string="sjuttio" buildString="sjuttio *" />
-                <Digit digit="8" string="åttio" buildString="åttio *" />
-                <Digit digit="9" string="nittio" buildString="nittio *" />
+                <Digit digit="3" string="trettio" buildString="trettio*" />
+                <Digit digit="4" string="fyrtio" buildString="fyrtio*" />
+                <Digit digit="5" string="femtio" buildString="femtio*" />
+                <Digit digit="6" string="sextio" buildString="sextio*" />
+                <Digit digit="7" string="sjuttio" buildString="sjuttio*" />
+                <Digit digit="8" string="åttio" buildString="åttio*" />
+                <Digit digit="9" string="nittio" buildString="nittio*" />
             </Group>
+            <!-- NTS-27: Språkrådet, Frågelådan 27138: numbers below a million are one word (tjugofem,
+                 femhundra, femtusentrettio); 21216: "etthundratjugoen". -->
             <Group level="3">
                 <Digit digit="0" string="" buildString="*" />
-                <Digit digit="1" string="ett hundra" buildString="ett hundra *" />
-                <Digit digit="2" string="två hundra" buildString="två hundra *" />
-                <Digit digit="3" string="tre hundra" buildString="tre hundra *" />
-                <Digit digit="4" string="fyra hundra" buildString="fyra hundra *" />
-                <Digit digit="5" string="fem hundra" buildString="fem hundra *" />
-                <Digit digit="6" string="sex hundra" buildString="sex hundra *" />
-                <Digit digit="7" string="sju hundra" buildString="sju hundra *" />
-                <Digit digit="8" string="åtta hundra" buildString="åtta hundra *" />
-                <Digit digit="9" string="nio hundra" buildString="nio hundra *" />
+                <Digit digit="1" string="etthundra" buildString="etthundra*" />
+                <Digit digit="2" string="tvåhundra" buildString="tvåhundra*" />
+                <Digit digit="3" string="trehundra" buildString="trehundra*" />
+                <Digit digit="4" string="fyrahundra" buildString="fyrahundra*" />
+                <Digit digit="5" string="femhundra" buildString="femhundra*" />
+                <Digit digit="6" string="sexhundra" buildString="sexhundra*" />
+                <Digit digit="7" string="sjuhundra" buildString="sjuhundra*" />
+                <Digit digit="8" string="åttahundra" buildString="åttahundra*" />
+                <Digit digit="9" string="niohundra" buildString="niohundra*" />
             </Group>
         </Groups>
         <!-- Long scale with groupSeparator="l": mi+l+jon(er)=miljon(er), mi+l+jard(er)=miljard(er),
@@ -93,6 +95,22 @@
             <Number value="18" string="arton" />
             <Number value="19" string="nitton" />
         </Exceptions>
+        <!-- NTS-27 (Språkrådet, Frågelådan 27138, 21216, 31080). Below a million the number is one word: the
+             thousands are soldered to their multiplier and to the units group (femtusentrettio); after the tens
+             the multiplier ends in "en" (tjugoentusen, like "tjugoen kilo"); ett + tusen drops one t
+             (etthundraettusen). From a million, miljon, miljard … stand apart and take "en" for one and after
+             the tens (en miljon, tjugoen miljoner). A standalone number keeps "ett" (tjugoett, "Han är tjugoett"). -->
+        <Trigger executeAt="groupWithScale(1)">
+            <Replace from="(tjugo|trettio|fyrtio|femtio|sextio|sjuttio|åttio|nittio)ett tusen$" to="${1}en tusen" regex="true" />
+            <Replace from=" tusen$" to="tusen" regex="true" />
+            <Replace from="etttusen$" to="ettusen" regex="true" />
+        </Trigger>
+        <Trigger executeAt="groupWithScale">
+            <Replace from="^((?:\S*(?:tjugo|trettio|fyrtio|femtio|sextio|sjuttio|åttio|nittio))?)ett (\S*l(?:jon|jard)(?:er)?)$" to="${1}en ${2}" regex="true" />
+        </Trigger>
+        <Trigger executeAt="end">
+            <Replace from="tusen (?=\S)" to="tusen" regex="true" />
+        </Trigger>
         <!-- Productive ordinals (första, tjugoförsta, hundraförsta, tusende): see
              SwedishOrdinalLanguageSpecifics. -->
         <LanguageSpecifics>SwedishOrdinalLanguageSpecifics</LanguageSpecifics>

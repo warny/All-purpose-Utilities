@@ -140,6 +140,7 @@ namespace Utils.NumberToString
             // Conversions read private deep copies (see CompileGroupTables); the exposed Groups is another
             // copy, so neither the source options nor the exposed digits can alter this converter.
             CompileGroupTables(options);
+            CompileGroupPattern(options.GroupPattern);
             Groups = _defaultGroupTable.Digits.ToImmutableDictionary(
                 kv => kv.Key,
                 kv => (IReadOnlyDictionary<long, DigitType>)kv.Value.ToImmutableDictionary(d => d.Key, d => CopyDigit(d.Value)));
@@ -355,6 +356,13 @@ namespace Utils.NumberToString
         /// Default grouping size (e.g., thousands)
         /// </summary>
         public int Group { get; } = 3;
+
+        /// <summary>
+        /// Gets the configured digit widths of the successive groups from the units upward, the last width
+        /// repeating (see <see cref="NumberToStringConverterOptions.GroupPattern"/>); empty when every group
+        /// has the width of the digit tables.
+        /// </summary>
+        public IReadOnlyList<int> GroupPattern => _groupPattern;
         /// <summary>
         /// Separator between groups of digits
         /// </summary>
@@ -1219,19 +1227,22 @@ namespace Utils.NumberToString
             if (abs.Between(long.MinValue, long.MaxValue) && Exceptions.TryGetValue((long)abs, out var exValue))
                 return exValue;
 
-            var maxGroup = _defaultGroupTable.Digits.Keys.Max();
-            var groupValue = BigInteger.Pow(10, maxGroup);
             int groupNumber = 0;
             var groupsValues = new Stack<(string text, long numericValue)>();
 
             BigInteger remaining = abs;
             while (remaining != 0)
             {
+                int width = GetGroupWidth(groupNumber);
+                BigInteger groupValue = _groupDivisors[Math.Min(groupNumber, _groupDivisors.Length - 1)];
                 var group = (long)(remaining % groupValue);
                 if (group != 0)
                 {
+                    // A group preceded by a higher non-zero group renders its leading positions with the
+                    // inner forms of the digits (innerString/innerBuildString), when the tables declare any.
+                    bool hasHigherGroup = remaining >= groupValue;
                     // The multiplier of a scale covered by a scoped Groups uses that table.
-                    string digits = ConvertGroup(GetGroupTable(groupNumber), maxGroup, group);
+                    string digits = ConvertGroup(GetGroupTable(groupNumber), width, group, hasHigherGroup);
                     digits = ApplyTriggers(digits, TriggerAt.Group, groupNumber, variantQuery);
 
                     string scaleName = GetScaleWord(groupNumber, group, variantQuery);
@@ -1952,8 +1963,14 @@ namespace Utils.NumberToString
         /// <param name="table">The default or scale-scoped table.</param>
         /// <param name="groupNumber">The group level (1 = units, 2 = tens …).</param>
         /// <param name="number">The value of the group, below 10^<paramref name="groupNumber"/>.</param>
+        /// <param name="afterNonZero">
+        /// Whether a higher digit of the whole number (of this group or of a higher group) is non-zero. The
+        /// digit of this position then uses its <see cref="DigitType.InnerString"/> and
+        /// <see cref="DigitType.InnerBuildString"/> when they are configured (e.g. Vietnamese "không trăm" for
+        /// the zero hundreds of a group after the thousands, Chinese 零 for a skipped position).
+        /// </param>
         /// <returns>The group text (empty for level 0).</returns>
-        private string ConvertGroup(GroupTable table, int groupNumber, long number)
+        private string ConvertGroup(GroupTable table, int groupNumber, long number, bool afterNonZero = false)
         {
             var groups = table.Digits;
             if (groupNumber < 0)
@@ -1990,23 +2007,69 @@ namespace Utils.NumberToString
             }
             var (groupValue, remainder) = long.DivRem(number, group);
 
-            var leftText = ConvertGroup(table, groupNumber - 1, remainder);
+            // The lower positions follow a non-zero digit as soon as this one or a higher one is non-zero.
+            var leftText = ConvertGroup(table, groupNumber - 1, remainder, afterNonZero || groupValue != 0);
             var valueText = groups[groupNumber][groupValue];
+            string stringValue = afterNonZero && valueText.InnerString != null ? valueText.InnerString : valueText.StringValue;
+            string buildString = afterNonZero && valueText.InnerBuildString != null ? valueText.InnerBuildString : valueText.BuildString;
 
-            if (string.IsNullOrEmpty(leftText)) return valueText.StringValue;
+            if (string.IsNullOrEmpty(leftText)) return stringValue;
 
             // A configured <Fusion> replaces buildString for this junction (validated at load to
             // never overlap the intra-group connector below). "leftText" is the lower sub-group,
             // i.e. the fusion's right constituent.
             if (table.FusionPlans != null && TryGetFusionPlan(table, groupNumber, groupValue, remainder, out var fusion))
-                return ComposeFusion(fusion, valueText.StringValue, leftText);
+                return ComposeFusion(fusion, stringValue, leftText);
 
             // Inject intra-group connector at the hundreds level when there are hundreds AND remainder < threshold
             if (groupNumber == 3 && _intraGroupConnector != null && groupValue > 0 && remainder > 0 && remainder < _intraGroupConnectorThreshold)
-                return valueText.BuildString.Replace("*", _intraGroupConnector + Separator + leftText);
+                return buildString.Replace("*", _intraGroupConnector + Separator + leftText);
 
-            return valueText.BuildString.Replace("*", leftText);
+            return buildString.Replace("*", leftText);
         }
+
+        /// <summary>The configured group pattern (snapshot); empty for uniform groups.</summary>
+        private ImmutableArray<int> _groupPattern = [];
+
+        /// <summary>
+        /// Width of each group up to the last explicit width of <see cref="_groupPattern"/> (the uniform width
+        /// alone when no pattern is configured); groups beyond the array repeat its last entry.
+        /// </summary>
+        private int[] _groupWidths = [];
+
+        /// <summary>10^width of each entry of <see cref="_groupWidths"/>, precomputed for <see cref="ConvertRaw"/>.</summary>
+        private BigInteger[] _groupDivisors = [];
+
+        /// <summary>
+        /// Validates and snapshots the group pattern against the default digit tables: every width must be
+        /// renderable by those tables (between 1 and their highest level). Without a pattern, every group has
+        /// the width of the highest level, which is the historical decomposition.
+        /// </summary>
+        /// <param name="pattern">The configured pattern, or <see langword="null"/>/empty for uniform groups.</param>
+        /// <exception cref="ArgumentException">A width is not between 1 and the highest digit level.</exception>
+        private void CompileGroupPattern(IReadOnlyList<int>? pattern)
+        {
+            int maxLevel = _defaultGroupTable.Digits.Keys.Max();
+            int[] snapshot = pattern is null ? [] : [.. pattern];
+            for (int i = 0; i < snapshot.Length; i++)
+            {
+                if (snapshot[i] < 1 || snapshot[i] > maxLevel)
+                    throw new ArgumentException(
+                        $"GroupPattern[{i}] = {snapshot[i]}: every group width must be between 1 and the highest digit level ({maxLevel}).",
+                        nameof(NumberToStringConverterOptions.GroupPattern));
+            }
+            _groupPattern = [.. snapshot];
+            _groupWidths = snapshot.Length == 0 ? [maxLevel] : snapshot;
+            _groupDivisors = [.. _groupWidths.Select(width => BigInteger.Pow(10, width))];
+        }
+
+        /// <summary>Returns the digit width of the group at <paramref name="groupNumber"/> (0 = units).</summary>
+        /// <param name="groupNumber">The group index.</param>
+        /// <returns>The number of digits of that group.</returns>
+        private int GetGroupWidth(int groupNumber) => _groupWidths[Math.Min(groupNumber, _groupWidths.Length - 1)];
+
+        /// <summary>Whether the groups do not all have the same width (a pattern such as 3,2).</summary>
+        private bool HasMixedGroupWidths => _groupWidths.Distinct().Count() > 1;
 
         /// <summary>
         /// Builds the textual representation of a fraction using existing conversion helpers.

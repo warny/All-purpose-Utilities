@@ -75,6 +75,13 @@ namespace Utils.NumberToString
         [XmlIgnore]
         public bool GroupSizeSpecified { get; set; }
 
+        /// <summary>
+        /// Gets or sets the <c>groupPattern</c> attribute: the digit widths of the successive groups from the
+        /// units upward, comma-separated, the last width repeating (e.g. <c>"3,2"</c>); absent for uniform groups.
+        /// </summary>
+        [XmlAttribute("groupPattern")]
+        public string? GroupPattern { get; set; }
+
         /// <summary>Gets or sets the separator used between groups.</summary>
         [XmlAttribute("separator")]
         public string? Separator { get; set; }
@@ -288,6 +295,7 @@ namespace Utils.NumberToString
         public IReadOnlyList<string> Cultures { get; init; } = [];
         public string? BaseOn { get; init; }
         public Optional<int> GroupSize { get; init; }
+        public string? GroupPattern { get; init; }
         public string? Separator { get; init; }
         public string? GroupSeparator { get; init; }
         public string? Zero { get; init; }
