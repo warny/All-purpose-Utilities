@@ -98,6 +98,32 @@ Examples:
     | 100 |  | сотый |
     | 1000 |  | тысячный |
 
+# NTS-08 validation: Правила русской орфографии и пунктуации (2006), §132-133: one-word ordinals in
+# -сотый/-тысячный (четырёхсотый), composite ordinals separate with only the last word ordinal
+# ("тысяча девятьсот девяносто четвёртый", "две тысячи первый"). From 2000 the configured cardinal
+# does not agree the thousands ("два тысяча") and the one-word round ordinals (двухтысячный,
+# миллионный) are not built: those ordinals fail closed.
+Scenario Outline: Russian composite ordinals below 2000
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 200 | двухсотый |
+    | 1001 | тысяча первый |
+    | 1994 | тысяча девятьсот девяносто четвёртый |
+
+Scenario Outline: Russian ordinals from 2000 are not supported
+    When I attempt to convert the ordinal number <number>
+    Then conversion is rejected because no ordinal form is available
+
+Examples:
+    | number |
+    | 2000 |
+    | 2001 |
+    | 10000 |
+    | 1000000 |
+
 Scenario: Ordinal conversion is supported
     Given I use the "RU" number converter
     Then the converter supports ordinal conversion

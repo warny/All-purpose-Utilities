@@ -59,6 +59,8 @@
             </Suffixes>
         </NumberScale>
         <Exceptions />
+        <!-- NTS-08: ordinal domain guard; values outside the validated domain fail closed (see ChineseOrdinalLanguageSpecifics). -->
+        <LanguageSpecifics>ChineseOrdinalLanguageSpecifics</LanguageSpecifics>
         <Ordinals prefix="第" />
         <!-- "两点" is the clock form of two; the counting cardinal stays "二". Quarter-hour 12-hour
              clock without day-part wording. -->

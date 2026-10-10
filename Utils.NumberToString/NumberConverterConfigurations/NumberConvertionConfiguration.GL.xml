@@ -84,6 +84,8 @@
 		  OrdinalVariants covers only the feminized cardinal forms ("un→unha", "dous→dúas")
 		  which have no corresponding masculine ordinal word rule.
 		-->
+		<!-- NTS-08: ordinal domain guard; values outside the validated domain fail closed (see GalicianOrdinalLanguageSpecifics). -->
+		<LanguageSpecifics>GalicianOrdinalLanguageSpecifics</LanguageSpecifics>
 		<Ordinals>
 			<!-- Ordinals 1-12 — forms: masculino, feminino -->
 			<OrdinalException value="1">   <Variant type="gender" forms="primeiro,primeira"   /></OrdinalException>
@@ -98,6 +100,15 @@
 			<OrdinalException value="10">  <Variant type="gender" forms="décimo,décima"       /></OrdinalException>
 			<OrdinalException value="11">  <Variant type="gender" forms="undécimo,undécima"   /></OrdinalException>
 			<OrdinalException value="12">  <Variant type="gender" forms="duodécimo,duodécima" /></OrdinalException>
+			<!-- NTS-08, RAG/ILG Normas ortográficas e morfolóxicas (2003), §16.2: décimo terceiro … décimo noveno;
+			     in compounds gender is marked only on the last element ("décimo primeira"). -->
+			<OrdinalException value="13">  <Variant type="gender" forms="décimo terceiro,décimo terceira" /></OrdinalException>
+			<OrdinalException value="14">  <Variant type="gender" forms="décimo cuarto,décimo cuarta" /></OrdinalException>
+			<OrdinalException value="15">  <Variant type="gender" forms="décimo quinto,décimo quinta" /></OrdinalException>
+			<OrdinalException value="16">  <Variant type="gender" forms="décimo sexto,décimo sexta" /></OrdinalException>
+			<OrdinalException value="17">  <Variant type="gender" forms="décimo sétimo,décimo sétima" /></OrdinalException>
+			<OrdinalException value="18">  <Variant type="gender" forms="décimo oitavo,décimo oitava" /></OrdinalException>
+			<OrdinalException value="19">  <Variant type="gender" forms="décimo noveno,décimo novena" /></OrdinalException>
 			<!-- Word rules for units in compounds -->
 			<Ordinal from="un">    <Variant type="gender" forms="primeiro,primeira" /></Ordinal>
 			<Ordinal from="dous">  <Variant type="gender" forms="segundo,segunda"   /></Ordinal>
@@ -109,14 +120,14 @@
 			<Ordinal from="oito">  <Variant type="gender" forms="oitavo,oitava"     /></Ordinal>
 			<Ordinal from="nove">  <Variant type="gender" forms="noveno,novena"     /></Ordinal>
 			<Ordinal from="dez">   <Variant type="gender" forms="décimo,décima"     /></Ordinal>
-			<!-- Round tens -->
+			<!-- Round tens (NTS-08: NOMIG §16.2 cuadraxésimo, quincuaxésimo, sesaxésimo, septuaxésimo, octoxésimo) -->
 			<Ordinal from="vinte">     <Variant type="gender" forms="vixésimo,vixésima"         /></Ordinal>
 			<Ordinal from="trinta">    <Variant type="gender" forms="trixésimo,trixésima"         /></Ordinal>
-			<Ordinal from="corenta">   <Variant type="gender" forms="cuadragésimo,cuadragésima"   /></Ordinal>
-			<Ordinal from="cincuenta"> <Variant type="gender" forms="quincuagésimo,quincuagésima" /></Ordinal>
-			<Ordinal from="sesenta">   <Variant type="gender" forms="sexagésimo,sexagésima"       /></Ordinal>
-			<Ordinal from="setenta">   <Variant type="gender" forms="septuagésimo,septuagésima"   /></Ordinal>
-			<Ordinal from="oitenta">   <Variant type="gender" forms="octogésimo,octogésima"       /></Ordinal>
+			<Ordinal from="corenta">   <Variant type="gender" forms="cuadraxésimo,cuadraxésima"   /></Ordinal>
+			<Ordinal from="cincuenta"> <Variant type="gender" forms="quincuaxésimo,quincuaxésima" /></Ordinal>
+			<Ordinal from="sesenta">   <Variant type="gender" forms="sesaxésimo,sesaxésima"       /></Ordinal>
+			<Ordinal from="setenta">   <Variant type="gender" forms="septuaxésimo,septuaxésima"   /></Ordinal>
+			<Ordinal from="oitenta">   <Variant type="gender" forms="octoxésimo,octoxésima"       /></Ordinal>
 			<Ordinal from="noventa">   <Variant type="gender" forms="nonaxésimo,nonaxésima"       /></Ordinal>
 			<!-- Scale words -->
 			<Ordinal from="cen"> <Variant type="gender" forms="centésimo,centésima" /></Ordinal>

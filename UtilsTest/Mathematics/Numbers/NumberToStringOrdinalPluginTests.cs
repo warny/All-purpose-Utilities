@@ -14,11 +14,10 @@ namespace UtilsTest.NumberToString;
 [TestClass]
 public class NumberToStringOrdinalPluginTests
 {
-    /// <summary>Ensures the Scandinavian plugins cover the whole <see cref="int"/> range with productive compounds.</summary>
+    /// <summary>Ensures the Danish and Norwegian plugins cover the whole <see cref="int"/> range with productive compounds.</summary>
     [TestMethod]
     [DataRow("DA", "to milliarder hundrede og syvogfyrre millioner fire hundrede og treogfirs tusind seks hundrede og syvogfyrretyvende")]
     [DataRow("NO", "to milliarder hundre og førtisju millioner fire hundre og åttitre tusen seks hundre og førtisjuende")]
-    [DataRow("SV", "två miljarder hundrafyrtiosju miljoner fyrahundraåttiotretusensexhundrafyrtiosjunde")]
     public void ScandinavianOrdinals_IntMaxValue_IsProductive(string culture, string expected)
     {
         NumberToStringConverter converter = NumberToStringConverter.GetConverter(culture);
@@ -35,9 +34,10 @@ public class NumberToStringOrdinalPluginTests
     [DataRow("DA", 1_000_001, "en million og første")]
     [DataRow("NO", 21_000, "tjueen tusende")]
     [DataRow("NO", 1_000_000_000, "milliardte")]
-    [DataRow("SV", 21_000, "tjugoetttusende")]
+    [DataRow("SV", 21_000, "tjugoentusende")]
+    [DataRow("SV", 101_000, "hundraettusende")]
     [DataRow("SV", 1_100, "tusenhundrade")]
-    [DataRow("SV", 1_000_000_000, "miljardte")]
+    [DataRow("SV", 1_000_000, "miljonte")]
     public void ScandinavianOrdinals_RoundScales_OrdinalizeLastScaleWord(string culture, int number, string expected)
         => Assert.AreEqual(expected, NumberToStringConverter.GetConverter(culture).ConvertOrdinal(number));
 
@@ -56,6 +56,23 @@ public class NumberToStringOrdinalPluginTests
 
         Assert.ThrowsExactly<NotSupportedException>(() => converter.ConvertOrdinal((long)int.MaxValue + 1));
         Assert.ThrowsExactly<NotSupportedException>(() => converter.ConvertOrdinal(0));
+    }
+
+    /// <summary>
+    /// Ensures the Swedish plugin stops at one million (NTS-08): above it miljon and miljard stand apart
+    /// and no consulted source settles the compound ordinal, so every larger value fails closed.
+    /// </summary>
+    [TestMethod]
+    [DataRow(1_000_001)]
+    [DataRow(2_000_000)]
+    [DataRow(1_000_000_000)]
+    [DataRow(int.MaxValue)]
+    public void SwedishOrdinals_AboveOneMillion_FailClosed(int number)
+    {
+        NumberToStringConverter converter = NumberToStringConverter.GetConverter("SV");
+
+        Assert.ThrowsExactly<NotSupportedException>(() => converter.ConvertOrdinal(number));
+        Assert.AreEqual("miljonte", converter.ConvertOrdinal(1_000_000));
     }
 
     /// <summary>Ensures the Bulgarian plugin keeps "и" before the last element up to <see cref="int.MaxValue"/>.</summary>
@@ -94,7 +111,7 @@ public class NumberToStringOrdinalPluginTests
     [DataRow(int.MaxValue, "kétmilliárd-száznegyvenhétmillió-négyszáznyolcvanháromezer-hatszáznegyvenhetedik")]
     [DataRow(21_000, "huszonegyezredik")]
     [DataRow(2_000_000, "kétmilliomodik")]
-    [DataRow(1_000_000_000, "milliárdodik")]
+    [DataRow(1_000_000_000, "egymilliárdodik")]
     [DataRow(1_999, "ezerkilencszázkilencvenkilencedik")]
     [DataRow(2_002, "kétezer-kettedik")]
     public void HungarianOrdinals_AreProductive(int number, string expected)
@@ -203,22 +220,39 @@ public class NumberToStringOrdinalPluginTests
 
     /// <summary>
     /// Ensures the Greek feminine cardinal variant (added for clock hours) never leaks a feminine
-    /// cardinal word into a feminine ordinal: every cardinal word must be ordinalized.
+    /// cardinal word into a feminine ordinal: every cardinal word must be ordinalized. Since NTS-08
+    /// the values outside the validated ordinal domain (compounds above twenty, whose ordinal is made
+    /// of agreeing ordinals such as "εκατοστή πρώτη") fail closed instead of mixing a cardinal and an
+    /// ordinal ("διακόσια πρώτη").
     /// </summary>
     [TestMethod]
     public void GreekFeminineOrdinals_DoNotLeakFeminineCardinalWords()
     {
         NumberToStringConverter converter = NumberToStringConverter.GetConverter("EL");
         string[] cardinalWords = ["μία", "τρεις", "τέσσερις", "χίλιες", "διακόσιες", "εννιακόσιες"];
+        int supported = 0;
 
         for (int value = 1; value <= 1_100; value++)
         {
-            string ordinal = converter.ConvertOrdinal(value, "gender=θηλυκό");
+            string ordinal;
+            try
+            {
+                ordinal = converter.ConvertOrdinal(value, "gender=θηλυκό");
+            }
+            catch (NotSupportedException)
+            {
+                continue;
+            }
+            supported++;
             foreach (string word in ordinal.Split(' '))
                 CollectionAssert.DoesNotContain(cardinalWords, word, $"{value}: {ordinal}");
         }
+        Assert.AreEqual(37, supported, "1-20, the round tens 30-90, the nine round hundreds and 1000.");
         Assert.AreEqual("πρώτη", converter.ConvertOrdinal(1, "gender=θηλυκό"));
-        Assert.AreEqual("διακόσια πρώτη", converter.ConvertOrdinal(201, "gender=θηλυκό"));
+        Assert.AreEqual("δέκατη τρίτη", converter.ConvertOrdinal(13, "gender=θηλυκό"));
+        Assert.AreEqual("διακοσιοστή", converter.ConvertOrdinal(200, "gender=θηλυκό"));
+        Assert.AreEqual("χιλιοστή", converter.ConvertOrdinal(1000, "gender=θηλυκό"));
+        Assert.ThrowsExactly<NotSupportedException>(() => converter.ConvertOrdinal(201, "gender=θηλυκό"));
     }
 
     /// <summary>Ensures the Romanian plugin changes only the last word, in both genders, up to its range limit.</summary>

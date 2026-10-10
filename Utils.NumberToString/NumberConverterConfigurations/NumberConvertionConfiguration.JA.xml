@@ -63,6 +63,8 @@
 			<Replacement oldValue="一 千" newValue="千" onScale="1" onValue="1" />
 		</Replacements>
 		<Exceptions />
+		<!-- NTS-08: ordinal domain guard; values outside the validated domain fail closed (see JapaneseOrdinalLanguageSpecifics). -->
+		<LanguageSpecifics>JapaneseOrdinalLanguageSpecifics</LanguageSpecifics>
 		<Ordinals prefix="第" />
 		<!-- Neutral 12-hour clock without 午前/午後: "<hour>時", "<hour>時<minutes>分", "<hour>時半". -->
 		<ClockTime step="5" hourCycle="12">

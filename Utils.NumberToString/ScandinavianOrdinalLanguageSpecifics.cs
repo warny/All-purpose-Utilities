@@ -72,6 +72,21 @@ public abstract class ScandinavianOrdinalLanguageSpecifics : INumberToStringLang
     /// <returns>The joined text.</returns>
     protected abstract string Join(string head, bool headEndsWithFusedScale, string remainder, bool remainderBelowHundred);
 
+    /// <summary>
+    /// Gets the largest ordinal whose wording is established for the language; larger values fail closed
+    /// with <see cref="System.NotSupportedException"/>. Defaults to the whole <see cref="int"/> range.
+    /// </summary>
+    protected virtual int MaxSupportedOrdinal => int.MaxValue;
+
+    /// <summary>
+    /// Writes two parts of a number as one word. The default concatenates them; a language may adjust
+    /// the junction (Swedish drops one of three identical consonants).
+    /// </summary>
+    /// <param name="left">The first part.</param>
+    /// <param name="right">The second part.</param>
+    /// <returns>The fused word.</returns>
+    protected virtual string Fuse(string left, string right) => left + right;
+
     /// <inheritdoc />
     public string FinalizeWriting(string languageIdentifier, string text) => text;
 
@@ -83,6 +98,10 @@ public abstract class ScandinavianOrdinalLanguageSpecifics : INumberToStringLang
             result = null;
             return false;
         }
+
+        if (number > MaxSupportedOrdinal)
+            throw new System.NotSupportedException(
+                $"The ordinal of {number} is not established for this language (largest supported ordinal: {MaxSupportedOrdinal}).");
 
         result = BuildOrdinal(number);
         return true;
@@ -217,8 +236,8 @@ public abstract class ScandinavianOrdinalLanguageSpecifics : INumberToStringLang
     /// <param name="word">The scale word.</param>
     /// <param name="fused">Whether the two are written as one word.</param>
     /// <returns>The combined text.</returns>
-    private static string Concat(string multiplier, string word, bool fused)
-        => fused ? multiplier + word : multiplier + " " + word;
+    private string Concat(string multiplier, string word, bool fused)
+        => fused ? Fuse(multiplier, word) : multiplier + " " + word;
 
     /// <summary>Computes 1000 raised to the given power.</summary>
     /// <param name="power">An exponent between 0 and 3.</param>
@@ -358,6 +377,12 @@ public sealed class NorwegianOrdinalLanguageSpecifics : ScandinavianOrdinalLangu
 }
 
 /// <summary>Produces Swedish ordinals (<c>första</c>, <c>tjugoförsta</c>, <c>hundraförsta</c>, <c>tusende</c>).</summary>
+/// <remarks>
+/// NTS-08: numbers below a million are written as one word and three identical consonants are
+/// reduced to two (Språkrådet: <c>tjugoentusende</c>, <c>hundraettusende</c>); after the tens the unit
+/// one is <c>en</c> whatever the gender (<c>tjugoentusen</c>). Ordinals above one million fail closed:
+/// <c>miljon</c>/<c>miljard</c> stand apart and no consulted source settles their compound ordinals.
+/// </remarks>
 public sealed class SwedishOrdinalLanguageSpecifics : ScandinavianOrdinalLanguageSpecifics
 {
     private static readonly string[] s_cardinals =
@@ -409,12 +434,29 @@ public sealed class SwedishOrdinalLanguageSpecifics : ScandinavianOrdinalLanguag
     protected override IReadOnlyList<ScaleWords> Scales => s_scales;
 
     /// <inheritdoc />
-    protected override string ComposeCardinal(int tens, int unit) => s_tens[tens] + s_cardinals[unit];
+    protected override int MaxSupportedOrdinal => 1_000_000;
+
+    /// <inheritdoc />
+    /// <remarks>After the tens the unit one is <c>en</c> (Språkrådet: <c>tjugoen kilo</c>).</remarks>
+    protected override string ComposeCardinal(int tens, int unit) => s_tens[tens] + (unit == 1 ? "en" : s_cardinals[unit]);
 
     /// <inheritdoc />
     protected override string ComposeOrdinal(int tens, int unit) => s_tens[tens] + s_ordinals[unit];
 
     /// <inheritdoc />
     protected override string Join(string head, bool headEndsWithFusedScale, string remainder, bool remainderBelowHundred)
-        => headEndsWithFusedScale ? head + remainder : head + " " + remainder;
+        => headEndsWithFusedScale ? Fuse(head, remainder) : head + " " + remainder;
+
+    /// <inheritdoc />
+    /// <remarks>Three identical consonants meeting at the junction are reduced to two (<c>hundraett</c> + <c>tusende</c>).</remarks>
+    protected override string Fuse(string left, string right)
+        => left.Length >= 2 && right.Length >= 1
+           && left[^1] == right[0] && left[^2] == right[0] && !IsVowel(right[0])
+            ? left + right[1..]
+            : left + right;
+
+    /// <summary>Tells whether a character is a Swedish vowel letter.</summary>
+    /// <param name="c">The character to test.</param>
+    /// <returns><see langword="true"/> for a vowel.</returns>
+    private static bool IsVowel(char c) => "aeiouyåäö".Contains(c);
 }

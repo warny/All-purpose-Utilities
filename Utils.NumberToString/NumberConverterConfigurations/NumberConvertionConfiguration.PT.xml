@@ -82,6 +82,8 @@
 		  OrdinalVariants covers only "uma"/"duas" (feminized by the cardinal variant)
 		  which have no corresponding masculine ordinal word rule.
 		-->
+		<!-- NTS-08: ordinal domain guard; values outside the validated domain fail closed (see PortugueseOrdinalLanguageSpecifics). -->
+		<LanguageSpecifics>PortugueseOrdinalLanguageSpecifics</LanguageSpecifics>
 		<Ordinals>
 			<!-- Ordinals 1-10 (irregular) — forms: masculino, feminino -->
 			<OrdinalException value="1">   <Variant type="gender" forms="primeiro,primeira"   /></OrdinalException>
@@ -170,15 +172,20 @@
 			<Unit name="minute" singular="minuto"  plural="minutos" />
 			<Unit name="second" singular="segundo" plural="segundos" />
 		</TimeUnits>
-		<!-- Deliberate direct numeric reading: the feminine "hora" time unit followed by the minutes,
-			 "e meia" for the half hour. Portuguese also uses "um quarto para as dez", "dez para as
-			 três" and "três menos dez" after the half hour (Ciberdúvidas); this configuration does not
-			 produce them. Neutral 12-hour clock without day-part wording. If PT-PT and PT-BR regional
-			 children are ever split, each must own its ClockTime section (baseOn parent/child rule). -->
+		<!-- NTS-08, European Portuguese (culture PT). Ciberdúvidas, "Minutos para a hora" (2025): after the half
+			 hour, current usage in Portugal is "[minutos] para [hora]" or "[hora] menos [minutos]" ("são três menos
+			 dez", "são três menos um quarto"); the second is used. Priberam, "quarto": "são três e um quarto".
+			 The whole hour keeps the "hora"/"horas" time unit ("Eram duas horas"); the fractions use the bare
+			 feminine numeral. The former direct reading ("uma hora e quarenta e cinco") was not the documented
+			 convention. Neutral 12-hour clock without day-part wording. If PT-PT and PT-BR regional children are
+			 ever split, each must own its ClockTime section (baseOn parent/child rule). -->
 		<ClockTime step="5" hourCycle="12">
 			<Rule range="0" hourOffset="0" hourForm="timeUnit" pattern="{hour}" />
-			<Rule range="5,10,15,20,25,35,40,45,50,55" hourOffset="0" hourForm="timeUnit" amountReference="0" amountDirection="after" pattern="{hour} e {amount}" />
-			<Rule range="30" hourOffset="0" hourForm="timeUnit" pattern="{hour} e meia" />
+			<Rule range="5,10,20,25" hourOffset="0" hourForm="cardinal" hourForceVariants="gender=feminino" amountReference="0" amountDirection="after" pattern="{hour} e {amount}" />
+			<Rule range="15" hourOffset="0" hourForm="cardinal" hourForceVariants="gender=feminino" pattern="{hour} e um quarto" />
+			<Rule range="30" hourOffset="0" hourForm="cardinal" hourForceVariants="gender=feminino" pattern="{hour} e meia" />
+			<Rule range="35,40,50,55" hourOffset="1" hourForm="cardinal" hourForceVariants="gender=feminino" amountReference="60" amountDirection="before" pattern="{hour} menos {amount}" />
+			<Rule range="45" hourOffset="1" hourForm="cardinal" hourForceVariants="gender=feminino" pattern="{hour} menos um quarto" />
 		</ClockTime>
 	</Language>
 </Numbers>

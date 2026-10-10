@@ -71,6 +71,11 @@
 			<Number value="14" string="catorce" />
 			<Number value="15" string="quince" />
 			<Number value="16" string="dieciséis" />
+			<!-- NTS-08: RAE accentuation of the fused twenties (veintidós, veintitrés, veintiséis); the ordinal
+			     word rules below are keyed on these accented cardinals. -->
+			<Number value="22" string="veintidós" />
+			<Number value="23" string="veintitrés" />
+			<Number value="26" string="veintiséis" />
 		</Exceptions>
 		<Variants>
 			<!--
@@ -134,6 +139,8 @@
 		  Forms are listed in Dimension order: masculino, femenino.
 		  The first form also serves as the default when no variant is specified.
 		-->
+		<!-- NTS-08: ordinal domain guard; values outside the validated domain fail closed (see SpanishOrdinalLanguageSpecifics). -->
+		<LanguageSpecifics>SpanishOrdinalLanguageSpecifics</LanguageSpecifics>
 		<Ordinals>
 			<!--
 			  NTS-05 note: every entry below now carries an explicit top-level string=/to= value
@@ -177,16 +184,20 @@
 			<Ordinal from="setenta"   to="septuagésimo">  <Variant type="gender" forms="septuagésimo,septuagésima"   /></Ordinal>
 			<Ordinal from="ochenta"   to="octogésimo">    <Variant type="gender" forms="octogésimo,octogésima"       /></Ordinal>
 			<Ordinal from="noventa"   to="nonagésimo">    <Variant type="gender" forms="nonagésimo,nonagésima"       /></Ordinal>
-			<!-- Fused 21-29 (config produces "veintiuno", "veintidós"…) -->
+			<!-- Fused 21-29 (config produces "veintiuno", "veintidós"…). NTS-08, RAE DPD "ordinales": one word,
+			     accent on the last component (vigesimoséptimo), vigesimoctavo preferred to vigesimooctavo, and only
+			     the last component varies in gender (vigesimoprimera, vigesimotercera). -->
 			<Ordinal from="veintiuno"    to="vigesimoprimero"> <Variant type="gender" forms="vigesimoprimero,vigesimoprimera" /></Ordinal>
+			<!-- The feminine cardinal variant (veintiuno -> veintiuna) is applied before the ordinal word rules. -->
+			<Ordinal from="veintiuna"    to="vigesimoprimero"> <Variant type="gender" forms="vigesimoprimero,vigesimoprimera" /></Ordinal>
 			<Ordinal from="veintidós"    to="vigesimosegundo"> <Variant type="gender" forms="vigesimosegundo,vigesimosegunda" /></Ordinal>
-			<Ordinal from="veintitrés"   to="vigesimotercero"> <Variant type="gender" forms="vigesimotercero,vigesimatercera" /></Ordinal>
-			<Ordinal from="veinticuatro" to="vigesimocuarto">  <Variant type="gender" forms="vigesimocuarto,vigesimacuarta"   /></Ordinal>
-			<Ordinal from="veinticinco"  to="vigesimoquinto">  <Variant type="gender" forms="vigesimoquinto,vigesimaquinta"   /></Ordinal>
-			<Ordinal from="veintiséis"   to="vigesimosexto">   <Variant type="gender" forms="vigesimosexto,vigesemasexta"     /></Ordinal>
-			<Ordinal from="veintisiete"  to="vigesimoseptimo"> <Variant type="gender" forms="vigesimoseptimo,vigesimoseptima" /></Ordinal>
-			<Ordinal from="veintiocho"   to="vigesimooctavo">  <Variant type="gender" forms="vigesimooctavo,vigesimaoctava"   /></Ordinal>
-			<Ordinal from="veintinueve"  to="vigesimonoveno">  <Variant type="gender" forms="vigesimonoveno,vigesimanovena"   /></Ordinal>
+			<Ordinal from="veintitrés"   to="vigesimotercero"> <Variant type="gender" forms="vigesimotercero,vigesimotercera" /></Ordinal>
+			<Ordinal from="veinticuatro" to="vigesimocuarto">  <Variant type="gender" forms="vigesimocuarto,vigesimocuarta"   /></Ordinal>
+			<Ordinal from="veinticinco"  to="vigesimoquinto">  <Variant type="gender" forms="vigesimoquinto,vigesimoquinta"   /></Ordinal>
+			<Ordinal from="veintiséis"   to="vigesimosexto">   <Variant type="gender" forms="vigesimosexto,vigesimosexta"     /></Ordinal>
+			<Ordinal from="veintisiete"  to="vigesimoséptimo"> <Variant type="gender" forms="vigesimoséptimo,vigesimoséptima" /></Ordinal>
+			<Ordinal from="veintiocho"   to="vigesimoctavo">   <Variant type="gender" forms="vigesimoctavo,vigesimoctava"     /></Ordinal>
+			<Ordinal from="veintinueve"  to="vigesimonoveno">  <Variant type="gender" forms="vigesimonoveno,vigesimonovena"   /></Ordinal>
 			<!-- Compound last-word units (covers 31-99 when last word is separated by space in the config) -->
 			<Ordinal from="uno"    to="primero">  <Variant type="gender" forms="primero,primera" /></Ordinal>
 			<Ordinal from="dos"    to="segundo">  <Variant type="gender" forms="segundo,segunda" /></Ordinal>

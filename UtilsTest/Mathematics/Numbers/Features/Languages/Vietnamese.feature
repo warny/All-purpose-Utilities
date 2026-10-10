@@ -85,6 +85,22 @@ Examples:
     | 4 | thứ tư |
     | 14 | thứ mười bốn |
     | 21 | thứ hai mươi mốt |
+    | 100 | thứ một trăm |
+    | 101 | thứ một trăm linh một |
+    | 999 | thứ chín trăm chín mươi chín |
+
+# NTS-08 validation: Vietnamese dictionaries (vtudien, Việt-Việt): "tư … Bốn: xếp thứ tư"; "thứ … chỗ
+# trong trật tự sắp xếp: hàng thứ nhất". From 1000 the configured cardinal is wrong ("nghìn" instead
+# of "một nghìn", "hai nghìn năm" instead of "hai nghìn không trăm linh năm"): the ordinals fail closed.
+Scenario Outline: Vietnamese ordinals from a thousand are not supported
+    When I attempt to convert the ordinal number <number>
+    Then conversion is rejected because no ordinal form is available
+
+Examples:
+    | number |
+    | 1000 |
+    | 2005 |
+    | 1000000 |
 
 Scenario: Idiomatic clock-time conversion is supported
     Then the converter supports clock-time conversion

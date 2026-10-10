@@ -33,18 +33,60 @@ Examples:
     | 700 | setecientas |
     | 800 | ochocientas |
     | 900 | novecientas |
-    | 22 | veintidos |
+    | 22 | veintidós |
+    | 23 | veintitrés |
+    | 26 | veintiséis |
     | 29 | veintinueve |
 
-Scenario Outline: Compound ordinal numbers
+# NTS-08 validation: RAE/ASALE, Diccionario panhispánico de dudas, "ordinales": the ordinals of the
+# second decade are preferably written as one word (vigesimoprimero, vigesimosegundo, vigesimoctavo
+# rather than vigesimooctavo), the accent falls on the last component (vigesimoséptimo) and only the
+# last component varies in gender (vigesimoprimera). The cardinals 22, 23 and 26 carry their accent
+# (veintidós, veintitrés, veintiséis), so the ordinal word rules keyed on them apply.
+Scenario Outline: Ordinals of the second decade
+    Given I use the variants "<variants>"
     When I convert the ordinal number <number>
     Then the result is "<expected>"
 
 Examples:
-    | number | expected          |
-    |     31 | treinta y primero |
-    |     45 | cuarenta y quinto |
-    |     99 | noventa y noveno  |
+    | number | variants | expected |
+    | 21 |  | vigesimoprimero |
+    | 22 |  | vigesimosegundo |
+    | 23 |  | vigesimotercero |
+    | 24 |  | vigesimocuarto |
+    | 25 |  | vigesimoquinto |
+    | 26 |  | vigesimosexto |
+    | 27 |  | vigesimoséptimo |
+    | 28 |  | vigesimoctavo |
+    | 29 |  | vigesimonoveno |
+    | 21 | gender=femenino | vigesimoprimera |
+    | 23 | gender=femenino | vigesimotercera |
+    | 26 | gender=femenino | vigesimosexta |
+    | 27 | gender=femenino | vigesimoséptima |
+    | 28 | gender=femenino | vigesimoctava |
+    | 13 |  | decimotercero |
+    | 30 |  | trigésimo |
+    | 50 |  | quincuagésimo |
+    | 90 |  | nonagésimo |
+    | 100 |  | centésimo |
+    | 1000 |  | milésimo |
+
+# NTS-08: from the third decade the DPD juxtaposes ordinals (trigésimo primero, centésimo primero,
+# ducentésimo, dosmilésimo); the declarative pipeline only rewrites the last word of the cardinal
+# ("treinta y primero", "doscientos"), so these values fail closed instead of returning a wrong form.
+Scenario Outline: Spanish ordinals outside the validated domain are not supported
+    When I attempt to convert the ordinal number <number>
+    Then conversion is rejected because no ordinal form is available
+
+Examples:
+    | number |
+    | 31 |
+    | 45 |
+    | 99 |
+    | 101 |
+    | 200 |
+    | 2000 |
+    | 1000000 |
 
 Scenario Outline: Decimal numbers
     When I convert the decimal number <number>

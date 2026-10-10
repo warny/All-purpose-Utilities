@@ -168,6 +168,8 @@
                 <Replacement oldValue="kuusitoista" newValue="kuudentoista" scope="Anywhere" />
             </Variant>
         </Variants>
+        <!-- NTS-08: ordinal domain guard; values outside the validated domain fail closed (see FinnishOrdinalLanguageSpecifics). -->
+        <LanguageSpecifics>FinnishOrdinalLanguageSpecifics</LanguageSpecifics>
         <Ordinals>
             <!-- Zéro : "nollas" (Wiktionary citant le Kielitoimiston sanakirja ; kieli.net), NTS-12 -->
             <OrdinalException value="0" string="nollas" />

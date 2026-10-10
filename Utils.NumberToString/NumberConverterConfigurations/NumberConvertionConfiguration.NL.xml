@@ -39,15 +39,15 @@
             </Group>
             <Group level="3">
                 <Digit digit="0" string="" buildString="*" />
-                <Digit digit="1" string="honderd" buildString="honderd *" />
-                <Digit digit="2" string="tweehonderd" buildString="tweehonderd *" />
-                <Digit digit="3" string="driehonderd" buildString="driehonderd *" />
-                <Digit digit="4" string="vierhonderd" buildString="vierhonderd *" />
-                <Digit digit="5" string="vijfhonderd" buildString="vijfhonderd *" />
-                <Digit digit="6" string="zeshonderd" buildString="zeshonderd *" />
-                <Digit digit="7" string="zevenhonderd" buildString="zevenhonderd *" />
-                <Digit digit="8" string="achthonderd" buildString="achthonderd *" />
-                <Digit digit="9" string="negenhonderd" buildString="negenhonderd *" />
+                <Digit digit="1" string="honderd" buildString="honderd*" />
+                <Digit digit="2" string="tweehonderd" buildString="tweehonderd*" />
+                <Digit digit="3" string="driehonderd" buildString="driehonderd*" />
+                <Digit digit="4" string="vierhonderd" buildString="vierhonderd*" />
+                <Digit digit="5" string="vijfhonderd" buildString="vijfhonderd*" />
+                <Digit digit="6" string="zeshonderd" buildString="zeshonderd*" />
+                <Digit digit="7" string="zevenhonderd" buildString="zevenhonderd*" />
+                <Digit digit="8" string="achthonderd" buildString="achthonderd*" />
+                <Digit digit="9" string="negenhonderd" buildString="negenhonderd*" />
             </Group>
         </Groups>
         <NumberScale firstLetterUpperCase="false">
@@ -59,8 +59,15 @@
                 <Suffix>miljoen</Suffix>
             </Suffixes>
         </NumberScale>
+        <!-- NTS-08, Taaladvies (Taalunie) "Aaneenschrijven van telwoorden (algemeen)": numbers are written as
+             one word up to and including duizend (honderdeen, tweeduizend, achtentwintigduizend), with a space
+             after duizend (vierduizend twee); a diaeresis separates twee/drie from -en- (tweeëntwintig,
+             drieënveertig). -->
         <Replacements>
             <Replacement oldValue="een duizend" newValue="duizend" onScale="1" onValue="1" />
+            <Replacement oldValue=" duizend" newValue="duizend" onScale="1" scope="Anywhere" />
+            <Replacement oldValue="tweeen" newValue="tweeën" scope="Anywhere" />
+            <Replacement oldValue="drieen" newValue="drieën" scope="Anywhere" />
         </Replacements>
         <Exceptions>
             <Number value="11" string="elf" />
@@ -74,34 +81,34 @@
             <Number value="19" string="negentien" />
         </Exceptions>
         <!--
-          Dutch ordinal suffix is -de for most words and -ste for words ending
-          in a vowel or when the stem already ends in -t. In practice all round
-          tens (twintig, dertig, …), compounds fused with them (eenentwintig,
-          tweeëndertig, …), and scale words (honderd, duizend) take -ste, while
-          units 2-7, 9 and teens 10-19 need -de. We model this with suffix "ste"
-          and explicit Ordinal rules for every word that takes -de instead.
-          "acht" correctly gets "achtste" from the suffix alone.
+          NTS-08: an ordinal keeps the spelling of its cardinal and adds -ste, -de or -e (Taaladvies:
+          honderdste, honderdvijfendertigste, honderdentweede, drieduizend tweehonderdtwintigste; Woordenlijst:
+          nulde, tweeëntwintigste, tweeduizendste, honderdeerste). Because the cardinals are written as one word
+          up to duizend, the ending of the last word decides the suffix: the stem rules rewrite that ending and
+          the suffix "e" completes it (een -> eerste, twee -> tweede, drie -> derde, acht -> achtste,
+          -tig -> -tigste, honderd -> honderdste, duizend -> duizendste, nul -> nulde).
         -->
-        <Ordinals suffix="ste">
+        <!-- NTS-08 (PR #629 review): ordinal domain guard bounded by maxNumber; from a million the scale lookup
+             threw InvalidOperationException (Scale0Prefixes), those ordinals fail closed (see DutchOrdinalLanguageSpecifics). -->
+        <LanguageSpecifics>DutchOrdinalLanguageSpecifics</LanguageSpecifics>
+        <Ordinals suffix="e">
             <OrdinalException value="1" string="eerste" />
-            <Ordinal from="een"       to="eerste" />
-            <Ordinal from="twee"      to="tweede" />
-            <Ordinal from="drie"      to="derde" />
-            <Ordinal from="vier"      to="vierde" />
-            <Ordinal from="vijf"      to="vijfde" />
-            <Ordinal from="zes"       to="zesde" />
-            <Ordinal from="zeven"     to="zevende" />
-            <Ordinal from="negen"     to="negende" />
-            <Ordinal from="tien"      to="tiende" />
-            <Ordinal from="elf"       to="elfde" />
-            <Ordinal from="twaalf"    to="twaalfde" />
-            <Ordinal from="dertien"   to="dertiende" />
-            <Ordinal from="veertien"  to="veertiende" />
-            <Ordinal from="vijftien"  to="vijftiende" />
-            <Ordinal from="zestien"   to="zestiende" />
-            <Ordinal from="zeventien" to="zeventiende" />
-            <Ordinal from="achttien"  to="achttiende" />
-            <Ordinal from="negentien" to="negentiende" />
+            <OrdinalStem from="nul"     to="nuld" />
+            <OrdinalStem from="een"     to="eerst" />
+            <OrdinalStem from="twee"    to="tweed" />
+            <OrdinalStem from="drie"    to="derd" />
+            <OrdinalStem from="vier"    to="vierd" />
+            <OrdinalStem from="vijf"    to="vijfd" />
+            <OrdinalStem from="zes"     to="zesd" />
+            <OrdinalStem from="zeven"   to="zevend" />
+            <OrdinalStem from="acht"    to="achtst" />
+            <OrdinalStem from="negen"   to="negend" />
+            <OrdinalStem from="tien"    to="tiend" />
+            <OrdinalStem from="elf"     to="elfd" />
+            <OrdinalStem from="twaalf"  to="twaalfd" />
+            <OrdinalStem from="tig"     to="tigst" />
+            <OrdinalStem from="honderd" to="honderdst" />
+            <OrdinalStem from="duizend" to="duizendst" />
         </Ordinals>
         <YearFormat hundredWord="honderd">
             <SplitRange from="1100" to="1999" />

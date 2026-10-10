@@ -153,6 +153,8 @@
             <!-- Grammatical gender dimension used by OrdinalVariants. -->
             <Dimension name="gender" values="puṃ,strī" />
         </Variants>
+        <!-- NTS-08: ordinal domain guard; values outside the validated domain fail closed (see HindiOrdinalLanguageSpecifics). -->
+        <LanguageSpecifics>HindiOrdinalLanguageSpecifics</LanguageSpecifics>
         <Ordinals suffix="वाँ">
             <!-- 1-4 : formes entièrement irrégulières -->
             <OrdinalException value="1" string="पहला" />

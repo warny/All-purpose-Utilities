@@ -84,6 +84,47 @@ Examples:
     | 101 | rodzaj=feminin | sto pierwsza |
     | 221 |  | dwieście dwudziesty pierwszy |
 
+# NTS-08 validation: Zintegrowana Platforma Edukacyjna (MEN), "Odmiana liczebnika i zaimka": ordinals
+# decline like adjectives (table of "drugi"); in multiword ordinals only the last two words are
+# ordinal ("tysiąc pięćset dwudziesty piąty", "w roku tysiąc pięćset dwudziestym piątym"), the last
+# word when there are no tens ("tysiąc osiemset pierwszy") or no tens and units ("tysiąc
+# osiemsetny"); "tysięczny", "dwutysięczny", "dwa tysiące pierwszy".
+Scenario Outline: Polish ordinals from a thousand to 1999
+    Given I use the "PL" number converter
+    And I use the variants "<variants>"
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | variants | expected |
+    | 1000 |  | tysięczny |
+    | 1000 | rodzaj=feminin | tysięczna |
+    | 1000 | przypadek=dopełniacz | tysięcznego |
+    | 1001 |  | tysiąc pierwszy |
+    | 1012 |  | tysiąc dwunasty |
+    | 1100 |  | tysiąc setny |
+    | 1100 | rodzaj=feminin | tysiąc setna |
+    | 1525 |  | tysiąc pięćset dwudziesty piąty |
+    | 1525 | przypadek=miejscownik | tysiąc pięćset dwudziestym piątym |
+    | 1800 |  | tysiąc osiemsetny |
+    | 1801 |  | tysiąc osiemset pierwszy |
+    | 1999 |  | tysiąc dziewięćset dziewięćdziesiąty dziewiąty |
+
+# NTS-08: from 2000 the configured cardinal does not inflect the thousands ("dwa tysiąc" instead of
+# "dwa tysiące") and the plugin does not build the one-word round ordinals ("dwutysięczny"); these
+# values fail closed.
+Scenario Outline: Polish ordinals from 2000 are not supported
+    Given I use the "PL" number converter
+    When I attempt to convert the ordinal number <number>
+    Then conversion is rejected because no ordinal form is available
+
+Examples:
+    | number |
+    | 2000 |
+    | 2001 |
+    | 21000 |
+    | 999999 |
+
 Scenario: Ordinal conversion is supported
     Given I use the "PL" number converter
     Then the converter supports ordinal conversion
