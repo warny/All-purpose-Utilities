@@ -1333,7 +1333,8 @@ Each `<Digit digit="N" string="…" buildString="…"/>`:
 - `innerString` / `innerBuildString` (optional, NTS-27) — used instead of `string` / `buildString` when a
   higher digit of the whole number is non-zero, in the same group or in a higher group. In the most
   significant group the leading zeros keep `buildString`, so the inner forms render only *skipped*
-  positions:
+  positions. A digit's `<Fusion>` rules are validated against its `string` and, when declared, its
+  `innerString` (both must accept a `removeLeft`):
 
 ```xml
 <!-- Vietnamese: zero hundreds of a class that follows a higher class, "linh" before a lone unit -->

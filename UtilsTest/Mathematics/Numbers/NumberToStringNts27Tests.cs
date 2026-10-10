@@ -321,6 +321,50 @@ public class NumberToStringNts27Tests
         Assert.AreEqual("two thousand zero hundred five", C(converter, 2005));
     }
 
+    /// <summary>
+    /// A fusion of a non-zero digit is also composed with its innerString (after a higher non-zero digit):
+    /// a removeLeft that is a suffix of string but not of innerString is rejected at construction instead of
+    /// silently leaving the junction unfused at conversion time.
+    /// </summary>
+    [TestMethod]
+    public void InnerString_FusionEdgesAreValidatedForNonZeroDigits()
+    {
+        var options = Options(WesternScales, groups: Table((level, digit) =>
+        {
+            if (level != 2 || digit.Digit != 2) return;
+            digit.InnerString = "twentie";
+            digit.Fusions = [new FusionType { For = "1", RemoveLeft = "y" }];
+        }));
+
+        var exception = Assert.Throws<ArgumentException>(() => new NumberToStringConverter(options));
+        StringAssert.Contains(exception.Message, "removeLeft=\"y\" is not a suffix of the left constituent 'twentie'");
+    }
+
+    /// <summary>The same fusion with a compatible innerString composes in both contexts.</summary>
+    [TestMethod]
+    public void InnerString_FusionComposesInBothContexts()
+    {
+        var converter = new NumberToStringConverter(Options(WesternScales, groups: Table((level, digit) =>
+        {
+            if (level != 2 || digit.Digit != 2) return;
+            digit.InnerString = "score-twenty";
+            digit.Fusions = [new FusionType { For = "1", RemoveLeft = "y" }];
+        })));
+
+        // Most significant position: string + fusion.
+        Assert.AreEqual("twentone", C(converter, 21));
+        Assert.AreEqual("twentone thousand", C(converter, 21000));
+        // After a non-zero hundreds digit: innerString + fusion.
+        Assert.AreEqual("one hundred score-twentone", C(converter, 121));
+        // After a higher non-zero group: the tens are not after a non-zero digit of their own group, but the
+        // group follows the thousands, so the inner form is used as well.
+        Assert.AreEqual("one thousand score-twentone", C(converter, 1021));
+        // Without fusion (remainder 0 or 2) the plain forms apply.
+        Assert.AreEqual("twenty", C(converter, 20));
+        Assert.AreEqual("one hundred score-twenty", C(converter, 120));
+        Assert.AreEqual("one hundred twenty two", C(converter, 122));
+    }
+
     /// <summary>XML: innerString and innerBuildString are schema-valid and honoured.</summary>
     [TestMethod]
     public void Xml_InnerFormsAreRead()

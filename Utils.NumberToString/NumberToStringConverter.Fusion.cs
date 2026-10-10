@@ -118,18 +118,22 @@ namespace Utils.NumberToString
                                 $"{where}: value {value} is also joined by the intra-group connector '{_intraGroupConnector}'; a junction cannot be both fused and connected.",
                                 paramName);
 
-                        // The lower constituent follows a non-zero digit when this digit is non-zero; after a zero
-                        // digit it may be rendered in both contexts (leading group or group after a higher one).
+                        // ConvertGroup composes this junction in two contexts, and every one it can meet is
+                        // validated: in the most significant position the digit uses its string and the lower
+                        // constituent follows a non-zero digit only when this digit is non-zero; after a higher
+                        // non-zero digit (same or higher group) the digit uses its innerString, when configured,
+                        // whatever its value, and the lower constituent is always rendered in that inner context.
                         string right = ConvertGroup(table, level - 1, value, digit.Digit != 0);
-                        // An empty lower constituent never reaches the composition step: the rule is inert.
-                        if (string.IsNullOrEmpty(right)) continue;
-                        ValidateFusionEdges(plan, digit.StringValue ?? string.Empty, right, value, where, paramName);
-                        if (digit.Digit == 0)
-                        {
-                            string innerRight = ConvertGroup(table, level - 1, value, afterNonZero: true);
-                            if (!string.IsNullOrEmpty(innerRight))
-                                ValidateFusionEdges(plan, digit.InnerString ?? digit.StringValue ?? string.Empty, innerRight, value, where, paramName);
-                        }
+                        string innerRight = digit.Digit != 0 ? right : ConvertGroup(table, level - 1, value, afterNonZero: true);
+                        // An empty lower constituent never reaches the composition step: the rule is inert there.
+                        if (string.IsNullOrEmpty(right) && string.IsNullOrEmpty(innerRight)) continue;
+                        if (!string.IsNullOrEmpty(right))
+                            ValidateFusionEdges(plan, digit.StringValue ?? string.Empty, right, value, where, paramName);
+                        // The inner context differs from the leading one by the left constituent (innerString) or,
+                        // for a zero digit, by the rendering of the lower constituent.
+                        bool innerContextDiffers = digit.InnerString != null || digit.Digit == 0;
+                        if (innerContextDiffers && !string.IsNullOrEmpty(innerRight))
+                            ValidateFusionEdges(plan, digit.InnerString ?? digit.StringValue ?? string.Empty, innerRight, value, where, paramName);
                         byRemainder[value] = plan;
                     }
 
