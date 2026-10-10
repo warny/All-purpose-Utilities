@@ -62044,6 +62044,32 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.DigitType.Fusions
   nameWithType: DigitType.Fusions
+- uid: Utils.NumberToString.DigitType.InnerBuildString
+  name: InnerBuildString
+  href: api/Utils.NumberToString.DigitType.html#Utils_NumberToString_DigitType_InnerBuildString
+  commentId: P:Utils.NumberToString.DigitType.InnerBuildString
+  fullName: Utils.NumberToString.DigitType.InnerBuildString
+  nameWithType: DigitType.InnerBuildString
+- uid: Utils.NumberToString.DigitType.InnerBuildString*
+  name: InnerBuildString
+  href: api/Utils.NumberToString.DigitType.html#Utils_NumberToString_DigitType_InnerBuildString_
+  commentId: Overload:Utils.NumberToString.DigitType.InnerBuildString
+  isSpec: "True"
+  fullName: Utils.NumberToString.DigitType.InnerBuildString
+  nameWithType: DigitType.InnerBuildString
+- uid: Utils.NumberToString.DigitType.InnerString
+  name: InnerString
+  href: api/Utils.NumberToString.DigitType.html#Utils_NumberToString_DigitType_InnerString
+  commentId: P:Utils.NumberToString.DigitType.InnerString
+  fullName: Utils.NumberToString.DigitType.InnerString
+  nameWithType: DigitType.InnerString
+- uid: Utils.NumberToString.DigitType.InnerString*
+  name: InnerString
+  href: api/Utils.NumberToString.DigitType.html#Utils_NumberToString_DigitType_InnerString_
+  commentId: Overload:Utils.NumberToString.DigitType.InnerString
+  isSpec: "True"
+  fullName: Utils.NumberToString.DigitType.InnerString
+  nameWithType: DigitType.InnerString
 - uid: Utils.NumberToString.DigitType.StringValue
   name: StringValue
   href: api/Utils.NumberToString.DigitType.html#Utils_NumberToString_DigitType_StringValue
@@ -63789,6 +63815,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.LanguageType.GroupConnectorThresholdString
   nameWithType: LanguageType.GroupConnectorThresholdString
+- uid: Utils.NumberToString.LanguageType.GroupPattern
+  name: GroupPattern
+  href: api/Utils.NumberToString.LanguageType.html#Utils_NumberToString_LanguageType_GroupPattern
+  commentId: P:Utils.NumberToString.LanguageType.GroupPattern
+  fullName: Utils.NumberToString.LanguageType.GroupPattern
+  nameWithType: LanguageType.GroupPattern
+- uid: Utils.NumberToString.LanguageType.GroupPattern*
+  name: GroupPattern
+  href: api/Utils.NumberToString.LanguageType.html#Utils_NumberToString_LanguageType_GroupPattern_
+  commentId: Overload:Utils.NumberToString.LanguageType.GroupPattern
+  isSpec: "True"
+  fullName: Utils.NumberToString.LanguageType.GroupPattern
+  nameWithType: LanguageType.GroupPattern
 - uid: Utils.NumberToString.LanguageType.GroupSeparator
   name: GroupSeparator
   href: api/Utils.NumberToString.LanguageType.html#Utils_NumberToString_LanguageType_GroupSeparator
@@ -64237,6 +64276,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.LanguageXmlModel.GroupConnectorThresholdString
   nameWithType: LanguageXmlModel.GroupConnectorThresholdString
+- uid: Utils.NumberToString.LanguageXmlModel.GroupPattern
+  name: GroupPattern
+  href: api/Utils.NumberToString.LanguageXmlModel.html#Utils_NumberToString_LanguageXmlModel_GroupPattern
+  commentId: P:Utils.NumberToString.LanguageXmlModel.GroupPattern
+  fullName: Utils.NumberToString.LanguageXmlModel.GroupPattern
+  nameWithType: LanguageXmlModel.GroupPattern
+- uid: Utils.NumberToString.LanguageXmlModel.GroupPattern*
+  name: GroupPattern
+  href: api/Utils.NumberToString.LanguageXmlModel.html#Utils_NumberToString_LanguageXmlModel_GroupPattern_
+  commentId: Overload:Utils.NumberToString.LanguageXmlModel.GroupPattern
+  isSpec: "True"
+  fullName: Utils.NumberToString.LanguageXmlModel.GroupPattern
+  nameWithType: LanguageXmlModel.GroupPattern
 - uid: Utils.NumberToString.LanguageXmlModel.GroupSeparator
   name: GroupSeparator
   href: api/Utils.NumberToString.LanguageXmlModel.html#Utils_NumberToString_LanguageXmlModel_GroupSeparator
@@ -66384,6 +66436,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberToStringConverter.GroupConnectorThreshold
   nameWithType: NumberToStringConverter.GroupConnectorThreshold
+- uid: Utils.NumberToString.NumberToStringConverter.GroupPattern
+  name: GroupPattern
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_GroupPattern
+  commentId: P:Utils.NumberToString.NumberToStringConverter.GroupPattern
+  fullName: Utils.NumberToString.NumberToStringConverter.GroupPattern
+  nameWithType: NumberToStringConverter.GroupPattern
+- uid: Utils.NumberToString.NumberToStringConverter.GroupPattern*
+  name: GroupPattern
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_GroupPattern_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverter.GroupPattern
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverter.GroupPattern
+  nameWithType: NumberToStringConverter.GroupPattern
 - uid: Utils.NumberToString.NumberToStringConverter.GroupSeparator
   name: GroupSeparator
   href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_GroupSeparator
@@ -67997,6 +68062,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberToStringConverterOptions.GroupConnectorThreshold
   nameWithType: NumberToStringConverterOptions.GroupConnectorThreshold
+- uid: Utils.NumberToString.NumberToStringConverterOptions.GroupPattern
+  name: GroupPattern
+  href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_GroupPattern
+  commentId: P:Utils.NumberToString.NumberToStringConverterOptions.GroupPattern
+  fullName: Utils.NumberToString.NumberToStringConverterOptions.GroupPattern
+  nameWithType: NumberToStringConverterOptions.GroupPattern
+- uid: Utils.NumberToString.NumberToStringConverterOptions.GroupPattern*
+  name: GroupPattern
+  href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_GroupPattern_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverterOptions.GroupPattern
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverterOptions.GroupPattern
+  nameWithType: NumberToStringConverterOptions.GroupPattern
 - uid: Utils.NumberToString.NumberToStringConverterOptions.GroupSeparator
   name: GroupSeparator
   href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_GroupSeparator
@@ -69411,6 +69489,25 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.PolishOrdinalLanguageSpecifics.TryConvertOrdinal
   nameWithType: PolishOrdinalLanguageSpecifics.TryConvertOrdinal
+- uid: Utils.NumberToString.PolishPluralLexicalFormSelector
+  name: PolishPluralLexicalFormSelector
+  href: api/Utils.NumberToString.PolishPluralLexicalFormSelector.html
+  commentId: T:Utils.NumberToString.PolishPluralLexicalFormSelector
+  fullName: Utils.NumberToString.PolishPluralLexicalFormSelector
+  nameWithType: PolishPluralLexicalFormSelector
+- uid: Utils.NumberToString.PolishPluralLexicalFormSelector.SelectForm(Utils.NumberToString.LexicalFormContext)
+  name: SelectForm(LexicalFormContext)
+  href: api/Utils.NumberToString.PolishPluralLexicalFormSelector.html#Utils_NumberToString_PolishPluralLexicalFormSelector_SelectForm_Utils_NumberToString_LexicalFormContext_
+  commentId: M:Utils.NumberToString.PolishPluralLexicalFormSelector.SelectForm(Utils.NumberToString.LexicalFormContext)
+  fullName: Utils.NumberToString.PolishPluralLexicalFormSelector.SelectForm(Utils.NumberToString.LexicalFormContext)
+  nameWithType: PolishPluralLexicalFormSelector.SelectForm(LexicalFormContext)
+- uid: Utils.NumberToString.PolishPluralLexicalFormSelector.SelectForm*
+  name: SelectForm
+  href: api/Utils.NumberToString.PolishPluralLexicalFormSelector.html#Utils_NumberToString_PolishPluralLexicalFormSelector_SelectForm_
+  commentId: Overload:Utils.NumberToString.PolishPluralLexicalFormSelector.SelectForm
+  isSpec: "True"
+  fullName: Utils.NumberToString.PolishPluralLexicalFormSelector.SelectForm
+  nameWithType: PolishPluralLexicalFormSelector.SelectForm
 - uid: Utils.NumberToString.PortugueseOrdinalLanguageSpecifics
   name: PortugueseOrdinalLanguageSpecifics
   href: api/Utils.NumberToString.PortugueseOrdinalLanguageSpecifics.html
@@ -69723,6 +69820,25 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.RussianOrdinalLanguageSpecifics.SupportedDomain
   nameWithType: RussianOrdinalLanguageSpecifics.SupportedDomain
+- uid: Utils.NumberToString.RussianPluralLexicalFormSelector
+  name: RussianPluralLexicalFormSelector
+  href: api/Utils.NumberToString.RussianPluralLexicalFormSelector.html
+  commentId: T:Utils.NumberToString.RussianPluralLexicalFormSelector
+  fullName: Utils.NumberToString.RussianPluralLexicalFormSelector
+  nameWithType: RussianPluralLexicalFormSelector
+- uid: Utils.NumberToString.RussianPluralLexicalFormSelector.SelectForm(Utils.NumberToString.LexicalFormContext)
+  name: SelectForm(LexicalFormContext)
+  href: api/Utils.NumberToString.RussianPluralLexicalFormSelector.html#Utils_NumberToString_RussianPluralLexicalFormSelector_SelectForm_Utils_NumberToString_LexicalFormContext_
+  commentId: M:Utils.NumberToString.RussianPluralLexicalFormSelector.SelectForm(Utils.NumberToString.LexicalFormContext)
+  fullName: Utils.NumberToString.RussianPluralLexicalFormSelector.SelectForm(Utils.NumberToString.LexicalFormContext)
+  nameWithType: RussianPluralLexicalFormSelector.SelectForm(LexicalFormContext)
+- uid: Utils.NumberToString.RussianPluralLexicalFormSelector.SelectForm*
+  name: SelectForm
+  href: api/Utils.NumberToString.RussianPluralLexicalFormSelector.html#Utils_NumberToString_RussianPluralLexicalFormSelector_SelectForm_
+  commentId: Overload:Utils.NumberToString.RussianPluralLexicalFormSelector.SelectForm
+  isSpec: "True"
+  fullName: Utils.NumberToString.RussianPluralLexicalFormSelector.SelectForm
+  nameWithType: RussianPluralLexicalFormSelector.SelectForm
 - uid: Utils.NumberToString.ScaleFormEntry
   name: ScaleFormEntry
   href: api/Utils.NumberToString.ScaleFormEntry.html
