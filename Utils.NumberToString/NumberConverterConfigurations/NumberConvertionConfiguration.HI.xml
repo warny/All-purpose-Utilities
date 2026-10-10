@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+    <!-- NTS-27: Indian grouping (Kamta Prasad Guru, हिंदी व्याकरण §173): three digits for the units, then two
+         digits per name — हज़ार (10^3), लाख (10^5), करोड़ (10^7), अरब (10^9), खरब (10^11). Guru describes the
+         higher names (नील, पद्म, शंख) as expressing innumerability, so the domain stops below 100 खरब. -->
     <Language
         groupSize="3"
+        groupPattern="3,2"
         separator=" "
         groupSeparator=""
         zero="शून्य"
@@ -9,7 +13,7 @@
         decimalSeparator="दशमलव"
         fractionSeparator="बटे"
 
-                maxNumber="999999"
+                maxNumber="9999999999999"
         >
         <Culture>HI</Culture>
         <Groups>
@@ -19,7 +23,7 @@
                 <Digit digit="2" string="दो" />
                 <Digit digit="3" string="तीन" />
                 <Digit digit="4" string="चार" />
-                <Digit digit="5" string="पांच" />
+                <Digit digit="5" string="पाँच" />
                 <Digit digit="6" string="छह" />
                 <Digit digit="7" string="सात" />
                 <Digit digit="8" string="आठ" />
@@ -43,7 +47,7 @@
                 <Digit digit="2" string="दो सौ" buildString="दो सौ *" />
                 <Digit digit="3" string="तीन सौ" buildString="तीन सौ *" />
                 <Digit digit="4" string="चार सौ" buildString="चार सौ *" />
-                <Digit digit="5" string="पांच सौ" buildString="पांच सौ *" />
+                <Digit digit="5" string="पाँच सौ" buildString="पाँच सौ *" />
                 <Digit digit="6" string="छह सौ" buildString="छह सौ *" />
                 <Digit digit="7" string="सात सौ" buildString="सात सौ *" />
                 <Digit digit="8" string="आठ सौ" buildString="आठ सौ *" />
@@ -54,13 +58,16 @@
             <StaticNames>
                 <Scale value="0" string="" />
                 <Scale value="1" string="हज़ार" />
+                <Scale value="2" string="लाख" />
+                <Scale value="3" string="करोड़" />
+                <Scale value="4" string="अरब" />
+                <Scale value="5" string="खरब" />
             </StaticNames>
-            <Suffixes>
-                <Suffix>मिलियन</Suffix>
-            </Suffixes>
         </NumberScale>
         <Replacements>
-            <Replacement oldValue="एक हज़ार" newValue="हज़ार" onScale="1" onValue="1" />
+            <!-- The configuration writes the bare हज़ार for one thousand (1000-1999 only); inside a larger number
+                 the thousand keeps its multiplier (एक लाख एक हज़ार), like एक लाख and एक करोड़ (NTS-27). -->
+            <Replacement oldValue="एक हज़ार" newValue="हज़ार" scope="StartsWith" onValue="1000..1999" />
         </Replacements>
         <Exceptions>
             <Number value="11" string="ग्यारह" />

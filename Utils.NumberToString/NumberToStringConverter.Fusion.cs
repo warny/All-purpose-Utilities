@@ -118,10 +118,18 @@ namespace Utils.NumberToString
                                 $"{where}: value {value} is also joined by the intra-group connector '{_intraGroupConnector}'; a junction cannot be both fused and connected.",
                                 paramName);
 
-                        string right = ConvertGroup(table, level - 1, value);
+                        // The lower constituent follows a non-zero digit when this digit is non-zero; after a zero
+                        // digit it may be rendered in both contexts (leading group or group after a higher one).
+                        string right = ConvertGroup(table, level - 1, value, digit.Digit != 0);
                         // An empty lower constituent never reaches the composition step: the rule is inert.
                         if (string.IsNullOrEmpty(right)) continue;
                         ValidateFusionEdges(plan, digit.StringValue ?? string.Empty, right, value, where, paramName);
+                        if (digit.Digit == 0)
+                        {
+                            string innerRight = ConvertGroup(table, level - 1, value, afterNonZero: true);
+                            if (!string.IsNullOrEmpty(innerRight))
+                                ValidateFusionEdges(plan, digit.InnerString ?? digit.StringValue ?? string.Empty, innerRight, value, where, paramName);
+                        }
                         byRemainder[value] = plan;
                     }
 

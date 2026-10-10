@@ -126,6 +126,27 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="innerString" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    NTS-27. Text used instead of "string" when a higher digit of the whole number (in the
+                    same group or in a higher group) is non-zero. Absent: "string" is used everywhere.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="innerBuildString" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    NTS-27. Template used instead of "buildString" when a higher digit of the whole number
+                    (in the same group or in a higher group) is non-zero. Typical use: the leading zero
+                    positions of a group that follows a higher group (Vietnamese
+                    &lt;Digit digit="0" string="" buildString="*" innerBuildString="không trăm *" /&gt;:
+                    2005 "hai nghìn không trăm linh năm") or a skipped position marked by a zero word
+                    (Chinese innerBuildString="零*": 1005 "一千零五"). In the most significant group the
+                    leading zeros keep "buildString". Absent: "buildString" is used everywhere.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
 
     <xs:simpleType name="FusionTextType">
@@ -2100,6 +2121,25 @@
                                     effective language after baseOn resolution by semantic validation.
                                 </xs:documentation>
                             </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="groupPattern" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    NTS-27. Digit widths of the successive chunks from the units upward,
+                                    comma-separated, the last width repeating. Absent: every chunk has the
+                                    width of the highest level defined in Groups (historical behaviour).
+                                    Example, Indian grouping (Hindi): groupPattern="3,2" splits 12,34,56,789
+                                    into 789 (units), 56 (scale 1, हज़ार), 34 (scale 2, लाख), 12 (scale 3,
+                                    करोड़). Each width must be between 1 and the highest level of Groups;
+                                    inherited through baseOn like any attribute. OrdinalScale rules cannot be
+                                    combined with mixed widths.
+                                </xs:documentation>
+                            </xs:annotation>
+                            <xs:simpleType>
+                                <xs:restriction base="xs:string">
+                                    <xs:pattern value="[1-9][0-9]*(,[1-9][0-9]*)*"/>
+                                </xs:restriction>
+                            </xs:simpleType>
                         </xs:attribute>
                         <xs:attribute name="separator" type="xs:string" use="optional">
                             <xs:annotation>

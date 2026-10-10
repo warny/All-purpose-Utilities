@@ -1,14 +1,19 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+    <!-- NTS-27: groups of four digits named 万 and 亿, written without spaces (AllSet Learning, Chinese Grammar
+         Wiki, "Zeros in numbers"). A skipped position after a non-zero digit is read 零 (innerBuildString on the
+         zero digits; consecutive skipped positions collapse to one 零 below); zeros at the end of a group are
+         not read. 十 keeps its 一 except at the head of the number (一百一十, but 十, 十万). The domain stops
+         below 万亿 (10^12), which would need a multiplier counted by 万 itself. -->
     <Language
-        groupSize="3"
-        separator=" "
+        groupSize="4"
+        separator=""
         groupSeparator=""
         zero="零"
         minus="负 *"
         decimalSeparator="点"
         fractionSeparator="除以"
-        maxNumber="999999"
+        maxNumber="999999999999"
     >
         <Culture>ZH</Culture>
         <Groups>
@@ -25,8 +30,8 @@
                 <Digit digit="9" string="九" />
             </Group>
             <Group level="2">
-                <Digit digit="0" string="" buildString="*" />
-                <Digit digit="1" string="十" buildString="十*" />
+                <Digit digit="0" string="" buildString="*" innerBuildString="零*" />
+                <Digit digit="1" string="一十" buildString="一十*" />
                 <Digit digit="2" string="二十" buildString="二十*" />
                 <Digit digit="3" string="三十" buildString="三十*" />
                 <Digit digit="4" string="四十" buildString="四十*" />
@@ -37,7 +42,7 @@
                 <Digit digit="9" string="九十" buildString="九十*" />
             </Group>
             <Group level="3">
-                <Digit digit="0" string="" buildString="*" />
+                <Digit digit="0" string="" buildString="*" innerBuildString="零*" />
                 <Digit digit="1" string="一百" buildString="一百*" />
                 <Digit digit="2" string="二百" buildString="二百*" />
                 <Digit digit="3" string="三百" buildString="三百*" />
@@ -48,16 +53,33 @@
                 <Digit digit="8" string="八百" buildString="八百*" />
                 <Digit digit="9" string="九百" buildString="九百*" />
             </Group>
+            <Group level="4">
+                <Digit digit="0" string="" buildString="*" innerBuildString="零*" />
+                <Digit digit="1" string="一千" buildString="一千*" />
+                <Digit digit="2" string="二千" buildString="二千*" />
+                <Digit digit="3" string="三千" buildString="三千*" />
+                <Digit digit="4" string="四千" buildString="四千*" />
+                <Digit digit="5" string="五千" buildString="五千*" />
+                <Digit digit="6" string="六千" buildString="六千*" />
+                <Digit digit="7" string="七千" buildString="七千*" />
+                <Digit digit="8" string="八千" buildString="八千*" />
+                <Digit digit="9" string="九千" buildString="九千*" />
+            </Group>
         </Groups>
         <NumberScale firstLetterUpperCase="false">
             <StaticNames>
                 <Scale value="0" string="" />
-                <Scale value="1" string="千" />
+                <Scale value="1" string="万" />
+                <Scale value="2" string="亿" />
             </StaticNames>
-            <Suffixes>
-                <Suffix>万</Suffix>
-            </Suffixes>
         </NumberScale>
+        <Replacements>
+            <!-- One 零 for a run of skipped positions (一万零五, not 一万零零零五): a group skips at most three. -->
+            <Replacement oldValue="零零零" newValue="零" scope="Anywhere" />
+            <Replacement oldValue="零零" newValue="零" scope="Anywhere" />
+            <!-- 十 without 一 at the head of the number only (十, 十五, 十万; but 一百一十). -->
+            <Replacement oldValue="一十" newValue="十" scope="StartsWith" />
+        </Replacements>
         <Exceptions />
         <!-- NTS-08: ordinal domain guard; values outside the validated domain fail closed (see ChineseOrdinalLanguageSpecifics). -->
         <LanguageSpecifics>ChineseOrdinalLanguageSpecifics</LanguageSpecifics>

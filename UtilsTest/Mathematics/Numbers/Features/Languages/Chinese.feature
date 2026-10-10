@@ -8,8 +8,8 @@ Scenario Outline: Decimal numbers
 
 Examples:
     | number | expected |
-    | 1.5 | 一 点 五 |
-    | 12.34 | 十二 点 三 四 |
+    | 1.5 | 一点五 |
+    | 12.34 | 十二点三四 |
 
 Scenario Outline: Basic cardinal numbers
     Given I use the "ZH" number converter
@@ -22,7 +22,42 @@ Examples:
     | 10 | 十 |
     | 20 | 二十 |
     | 100 | 一百 |
-    | 1000 | 一 千 |
+    | 1000 | 一千 |
+
+# NTS-27: Chinese counts by 万 and 亿; a skipped position inside the number is read 零 once, however many
+# zeros it spans, zeros at the end of a group are not read (AllSet Learning, Chinese Grammar Wiki, "Zeros in
+# numbers": 一百零一, 一千零一, 一千一百, 一万零一, 一万零一百零一); 十 keeps its 一 except at the head of the number
+# (一百一十, "Chinese simply says 一百一十"; 十, 十万). 两 stays limited to the clock.
+Scenario Outline: NTS-27 Chinese cardinals count by 万 with 零
+    Given I use the "ZH" number converter
+    When I convert the cardinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 10 | 十 |
+    | 11 | 十一 |
+    | 20 | 二十 |
+    | 101 | 一百零一 |
+    | 105 | 一百零五 |
+    | 110 | 一百一十 |
+    | 115 | 一百一十五 |
+    | 1001 | 一千零一 |
+    | 1010 | 一千零一十 |
+    | 1100 | 一千一百 |
+    | 2005 | 二千零五 |
+    | 10000 | 一万 |
+    | 10001 | 一万零一 |
+    | 10010 | 一万零一十 |
+    | 10101 | 一万零一百零一 |
+    | 100000 | 十万 |
+    | 101000 | 十万一千 |
+    | 1000000 | 一百万 |
+    | 100000000 | 一亿 |
+    | 100000001 | 一亿零一 |
+    | 100100000 | 一亿零一十万 |
+    | 999999999999 | 九千九百九十九亿九千九百九十九万九千九百九十九 |
+    | -10001 | 负 一万零一 |
 
 Scenario Outline: Prefixed ordinal numbers
     Given I use the "ZH" number converter
@@ -36,9 +71,9 @@ Examples:
     | 10 | 第十 |
     | 100 | 第一百 |
 
-# NTS-08 validation: 國語辭典 (汉典), 第: "用於整數數詞之前。表事物的順序或等級" (第一, 第二). Above 100 the configured
-# cardinal omits 零 and 一十 ("一百一" for 101, "一百十" for 110) and splits the thousands ("一 千"): only the
-# round hundreds stay supported, the other ordinals fail closed.
+# NTS-08 validation: 國語辭典 (汉典), 第: "用於整數數詞之前。表事物的順序或等級" (第一, 第二). NTS-27 added 零 and 一十 to
+# the cardinals and counts by 万, but the ordinals above 100 are not validated yet: only the round hundreds stay
+# supported, the other ordinals still fail closed (NTS-28).
 Scenario Outline: Chinese ordinals in the validated domain
     Given I use the "ZH" number converter
     When I convert the ordinal number <number>
@@ -71,7 +106,7 @@ Scenario: Ordinal conversion is supported
 Scenario: Fraction connector wording
     Given I use the "ZH" number converter
     When I convert the fraction 3/2 through both public fraction APIs
-    Then both fraction results are "三 除以 二"
+    Then both fraction results are "三除以二"
 
 Scenario: Idiomatic clock-time conversion is supported
     Given I use the "ZH" number converter

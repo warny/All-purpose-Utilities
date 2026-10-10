@@ -29,16 +29,16 @@ dotnet add package omy.Utils.NumberToString --version 2.0.0-rc.2
 | NL | Dutch | ✓ declarative | ✓ 5 min, 12 h | — | local | No day-part wording |
 | DA, DA-DK | Danish | ✓ plugin (int range) | ✓ 5 min, 12 h | gender (fælleskøn/intetkøn) | local | Ordinals above `int.MaxValue` fail closed |
 | NO, NB, NB-NO | Norwegian Bokmål | ✓ plugin (int range) | ✓ 5 min, 12 h | gender (hankjønn/hunkjønn/intetkjønn) | local | Ordinals above `int.MaxValue` fail closed |
-| SV, SV-SE | Swedish | ✓ plugin (int range) | ✓ 5 min, 12 h | — | local | Ordinals above `int.MaxValue` fail closed |
+| SV, SV-SE | Swedish | ✓ plugin (to one million) | ✓ 5 min, 12 h | — | local | One word below a million (tjugoentusen), en miljon (Språkrådet; NTS-27); ordinals above a million fail closed |
 | BG, BG-BG | Bulgarian | ✓ plugin, gendered | ✓ 15 min, 12 h | gender (standalone/masculine/feminine/neuter) | local | Unverified compound round thousands/millions fail closed. Short scale with `милиард`; Cyrillic Conway names above (`SCALE-SHORT-CYRILLIC`, `кватуор`), unbounded |
 | HR, HR-HR | Croatian | ✓ declarative (last word) + range plugin | ✓ 15 min, 12 h | — | local | Masculine nominative ordinals only; round scale ordinals other than tisućiti (1 000), milijunti (1 000 000) and milijarditi (1 000 000 000) fail closed, including 10^12 and above |
 | HU, HU-HU | Hungarian | ✓ plugin (int range) | ✓ 15 min, 12 h | — | local | — |
 | CS, CS-CZ | Czech | ✓ plugin, gender × case | ✓ 15 min, 12 h | gender × case | local | Ordinals verified up to 9 999 (round millions/milliards: one only) |
 | SK, SK-SK | Slovak | ✓ plugin, gender × case | ✓ 15 min, 12 h | gender × case | local | Ordinals verified up to 9 999 and one million |
-| PL | Polish | ✓ plugin + declarative | ✓ 5 min, 12 h | rodzaj × przypadek | local | No ordinal of zero |
-| RU | Russian | ✓ declarative (zero: `нулевой`) | ✓ 15 min, 12 h | gender × case | local | Short scale with `миллиард`; Cyrillic Conway names above (`SCALE-SHORT-CYRILLIC`), unbounded |
+| PL | Polish | ✓ plugin + declarative (1–1999) | ✓ 5 min, 12 h | rodzaj × przypadek | local | tysiąc/tysiące/tysięcy agree with their multiplier (NTS-27); cardinals to 999 999; no ordinal of zero |
+| RU | Russian | ✓ declarative (zero: `нулевой`; 0–1999) | ✓ 15 min, 12 h | gender × case | local | тысяча, миллион, миллиард agree with their multiplier (две тысячи, пять миллионов; NTS-27). Short scale with `миллиард`; Cyrillic Conway names above (`SCALE-SHORT-CYRILLIC`), unbounded, without plural agreement (NTS-30) |
 | UK, UK-UA | Ukrainian | ✓ plugin, gender × case | ✓ 15 min, 12 h | gender × case | local | Round thousands verified up to 10 000. Short scale with `мільярд`; Ukrainian-spelled Conway names above (`вігінтильйон`), unbounded |
-| ES | Spanish | ✓ declarative | ✓ 5 min, 12 h | gender × form | local | No ordinal of zero |
+| ES | Spanish | ✓ declarative | ✓ 5 min, 12 h | gender × form | local | Apocope before mil/millón (veintiún mil, un millón; NTS-27); `mil millones` followed by millions is not composed (NTS-30); no ordinal of zero |
 | IT | Italian | ✓ validated productive forms through round trilione: 1–1999 except 1110–1910, round thousands to 999000, round multiples of milione/miliardo/bilione/biliardo/trilione; selected sourced analytic compounds (1010, 100001–100009) (`<OrdinalStem>`, `<OrdinalComposition>`, `<OrdinalScale>`, domain-guard plugin) | ✓ 5 min, 12 h | gender | local | Unsourced ordinals fail closed by design: zero, 1110–1910, the other non-round thousands above 1999 and the non-round values from a million (no canonical form established); millions are separate nouns joined by `e` ("due milioni e centomila") |
 | PT | Portuguese | ✓ declarative | ✓ 5 min, 12 h (direct "e …") | gender | local | Deliberate direct numeric reading (no "para"/"menos" constructions); PT-PT/PT-BR not split; no ordinal of zero |
 | GL, gl-ES | Galician | ✓ declarative | ✓ 5 min, 12 h | gender | local | No ordinal of zero |
@@ -51,14 +51,14 @@ dotnet add package omy.Utils.NumberToString --version 2.0.0-rc.2
 | HE | Hebrew | ✓ 1–10 adjectives, above ten the agreeing cardinal (masculine by default, also for compounds ending in a teen) | ✓ 15 min, 12 h | gender (standalone/zachar/nekeva) | local | No ordinal of zero |
 | FA, FA-IR | Persian | ✓ declarative | ✓ 15 min, 12 h | — | local | — |
 | TR, TR-TR | Turkish | ✓ declarative (vowel harmony) | ✓ 15 min, 12 h | case (nominative/accusative/dative) | local | Static `milyon`/`milyar`, then Conway in Turkish spelling: `trilyon`, `katrilyon`, `sekstilyon`, `desilyon`, `dodesilyon`, `sentilyon` (`l` + `yon`, 10^3003 `milnilyon`), unbounded |
-| HI | Hindi | ✓ declarative | ✓ 15 min, 12 h | gender | local | No lakh/crore grouping |
-| JA | Japanese | ✓ prefix 第 | ✓ 5 min, 12 h | — | local | No 午前/午後 |
-| KO | Korean | ✓ prefix 제 | ✓ 5 min, 12 h | — | local | Native hour words only in ClockTime; no 오전/오후 |
-| ZH | Chinese | ✓ prefix 第 | ✓ 15 min, 12 h | — | local | `两` only in ClockTime; no 上午/下午 |
-| VN, VI, VI-VN | Vietnamese | ✓ prefix thứ | ✓ 15 min, 12 h | — | local | No sáng/chiều/tối |
+| HI | Hindi | ✓ declarative (0–99 999) | ✓ 15 min, 12 h | gender | local | Indian grouping `groupPattern="3,2"`: हज़ार, लाख, करोड़, अरब, खरब, cardinals to 99 खरब (NTS-27); ordinals from a lakh fail closed |
+| JA | Japanese | ✓ prefix 第 (0–1000) | ✓ 5 min, 12 h | — | local | Counts by 万, 億, 兆 without spaces, to 9999兆 (NTS-27); no 午前/午後 |
+| KO | Korean | ✓ prefix 제 (0–1000) | ✓ 5 min, 12 h | — | local | Counts by 만, 억, 조, spaced by units of 만 (한글 맞춤법 제44항), to 9999조 (NTS-27); native hour words only in ClockTime; no 오전/오후 |
+| ZH | Chinese | ✓ prefix 第 (0–100, round hundreds) | ✓ 15 min, 12 h | — | local | Counts by 万 and 亿 with 零 and 一十 (NTS-27), below 万亿; `两` only in ClockTime; no 上午/下午 |
+| VN, VI, VI-VN | Vietnamese | ✓ prefix thứ (0–999) | ✓ 15 min, 12 h | — | local | A class after a higher class is read in full ("hai nghìn không trăm linh năm", NTS-27); a whole zero class is skipped, not read "không nghìn" (NTS-30); no sáng/chiều/tối |
 | ID, ID-ID | Indonesian | ✓ plugin | ✓ 5 min, 12 h | — | local | No day-part wording. Conway in Indonesian spelling, `li` + `un` (`kuadriliun`, `desiliun`, 10^3003 `miliniliun`), unbounded |
 | MS, MS-MY | Malay (lapan, bilion, trilion) | ✓ plugin | ✓ 5 min, 12 h, own section | — | child of ID | No day-part wording. Indonesian Conway tables with suffix `on` (`kuadrilion`, `desilion`), unbounded |
-| EU, eu-ES | Basque | ✓ declarative | ✓ 15 min, 12 h | — | local | Clock-case forms only in ClockTime |
+| EU, eu-ES | Basque | ✓ declarative (1–1000) | ✓ 15 min, 12 h | — | local | Euskaltzaindia rule 7: mila eta bat, mila berrehun eta bat, milioi bat (NTS-27); `mila milioi` followed by millions is not composed (NTS-30); clock-case forms only in ClockTime |
 | SW, SW-KE, SW-TZ | Swahili | — deferred (noun-class concord) | ✓ 15 min, 12 h, six-hour offset | — | local | No asubuhi/mchana/jioni/usiku. Conway short scale in Swahili spelling, `li` + `oni` (`kwadrilioni`, `sekstilioni`, `desilioni`, 10^3003 `milinilioni`), unbounded |
 | ZU | Zulu | — deferred (noun-class policy) | ✓ 15 min, 12 h | — | local | Hour forms only in ClockTime |
 | EE | Ewe | ✓ declarative `-lia` on the last element, first `gbãtɔ` + zero guard | — deferred (no sourced minute convention) | — | local | Large scales: short Conway-Wechsler scale (`baseOn="SCALE-SHORT"`, unbounded); `akpe`/`miliɔn`/`biliɔn`/`triliɔn` sourced, higher `-liɔn` names (`quadriliɔn`, `quintiliɔn` …) productively generated, not individually attested. Scale noun first: `akpe eve` = 2000, `biliɔn alafa eve` = 200 000 000 000 (`multiplierPosition="afterScale"`); no ordinal of zero |
@@ -1265,7 +1265,8 @@ on the same language register the same converter under several codes.
 
 | Attribute | Required | Description |
 |-----------|----------|-------------|
-| `groupSize` | ✓ | Number of digits per group (always 3 for thousands). |
+| `groupSize` | ✓ | Number of digits per group (3 for thousands; 4 for the East Asian counting by 万/만, NTS-27). Must match the highest `<Group level>`. |
+| `groupPattern` | | Digit widths of the successive groups from the units upward, comma-separated, the last width repeating (NTS-27). Absent: every group has the `groupSize` width. Hindi uses `groupPattern="3,2"` (units 0–999, then हज़ार, लाख, करोड़, अरब, खरब by two digits: 1,23,45,678 → "एक करोड़ तेईस लाख पैंतालीस हज़ार छह सौ अठहत्तर"). Each width is between 1 and the highest `<Group level>`; `<OrdinalScale>` is rejected with mixed widths. Programmatic: `NumberToStringConverterOptions.GroupPattern`, exposed by `NumberToStringConverter.GroupPattern`. |
 | `separator` | ✓ | Word separator within a group (usually `" "`). |
 | `groupSeparator` | ✓ | Text between groups (e.g. `","` in English, `""` in French). |
 | `zero` | ✓ | Text for the value 0. |
@@ -1275,7 +1276,7 @@ on the same language register the same converter under several codes.
 | `maxNumber` | | Maximum accepted value; beyond this, `ArgumentOutOfRangeException` is thrown. |
 | `baseOn` | | Culture code of a base language to inherit from. All settings are inherited and can be selectively overridden. Chains (A → B → C) are supported; the base must appear earlier in the same file or in a previously loaded file. An empty element (e.g. `<Replacements />`) explicitly overrides the base with an empty list. |
 | `groupConnector` / `groupConnectorThreshold` | | Word inserted between the last two groups when the lowest group's value is below the threshold (e.g. English "one thousand **and** one" — `groupConnector="and" groupConnectorThreshold="100"`). |
-| `intraGroupConnector` / `intraGroupConnectorThreshold` | | Word inserted between the hundreds digit and the remainder within a group of 3, when hundreds are present and the remainder is below the threshold (e.g. Vietnamese 101 → "một trăm **linh** một" — `intraGroupConnector="linh" intraGroupConnectorThreshold="10"`). |
+| `intraGroupConnector` / `intraGroupConnectorThreshold` | | Word inserted between the hundreds digit and the remainder within a group of 3, when hundreds are present and the remainder is below the threshold (e.g. 101 → "một trăm **linh** một" with `intraGroupConnector="linh" intraGroupConnectorThreshold="10"`; since NTS-27 the Vietnamese configuration uses `innerBuildString="linh *"` instead, which also reaches the zero hundreds of a class after the thousands). |
 | `scaleConnector` / `scaleConnectorThreshold` | | Word inserted between a group's text and its scale name (thousand/million/…) when the group's value is at or above the threshold (e.g. Romanian 20 000 → "douăzeci **de** mii" — `scaleConnector="de" scaleConnectorThreshold="20"`). |
 | `multiplierPosition` | | `beforeScale` (default, "two thousand") or `afterScale`: the scale noun precedes its multiplier (Ewe 2000 → "akpe eve"). See [`<Groups onScale>` and `multiplierPosition`](#groups-onscale--multiplier-tables-and-multiplierposition). |
 
@@ -1311,7 +1312,7 @@ they are not globally registered converters and are not visible to `RegisterConf
 
 **Merge rules**:
 - `Culture`: not inherited. Every `<Language>` declares at least one `<Culture>` (XSD `minOccurs="1"`) and only those are registered for the child. A regional culture must be declared once, in the child only, never also in its general parent (a culture declared by two built-in documents is a retained initialization failure).
-- Scalar attributes (`groupSize`, `separator`, `groupSeparator`, `zero`, `minus`, `decimalSeparator`, `fractionSeparator`, `maxNumber`, `groupConnector`, `intraGroupConnector`, `scaleConnector` and their thresholds, `multiplierPosition`): child wins; absent child attributes inherit from the base.
+- Scalar attributes (`groupSize`, `groupPattern`, `separator`, `groupSeparator`, `zero`, `minus`, `decimalSeparator`, `fractionSeparator`, `maxNumber`, `groupConnector`, `intraGroupConnector`, `scaleConnector` and their thresholds, `multiplierPosition`): child wins; absent child attributes inherit from the base.
 - `<Groups onScale="…">` tables are merged by range: a child table whose range is identical to an inherited one (compared in canonical form) replaces it, a disjoint range is added, and any other overlap is rejected. The default `<Groups>` follows the rule below independently.
 - Sections replaced as a whole when the child declares them (`Groups`, `Exceptions`, `Replacements`, `Fractions`, `Variants`, `YearFormat`, `Multiplicatives`, `TimeUnits`, `ClockTime`, `DateFormat`, `LanguageSpecifics`): the child's section replaces the base's completely, nothing is merged inside it. Omitted sections are inherited. An empty element (e.g. `<Replacements />`) explicitly overrides with an empty list.
 - `Fusion` rules belong to their `<Digit>` and therefore follow the `Groups` rule: a child that omits `<Groups>` inherits the base's digits together with their fusions; a child that declares `<Groups>` replaces every digit, and the base's fusions are not merged into it.
@@ -1329,6 +1330,21 @@ in a group: `level="1"` = units, `level="2"` = tens, `level="3"` = hundreds.
 Each `<Digit digit="N" string="…" buildString="…"/>`:
 - `string` — text when this digit is alone in its position.
 - `buildString` — template with `*` replaced by the lower sub-group.
+- `innerString` / `innerBuildString` (optional, NTS-27) — used instead of `string` / `buildString` when a
+  higher digit of the whole number is non-zero, in the same group or in a higher group. In the most
+  significant group the leading zeros keep `buildString`, so the inner forms render only *skipped*
+  positions:
+
+```xml
+<!-- Vietnamese: zero hundreds of a class that follows a higher class, "linh" before a lone unit -->
+<Group level="2"><Digit digit="0" string="" buildString="*" innerBuildString="linh *" /> …</Group>
+<Group level="3"><Digit digit="0" string="" buildString="*" innerBuildString="không trăm *" /> …</Group>
+<!-- 105 "một trăm linh năm", 2005 "hai nghìn không trăm linh năm", 5 "năm" -->
+
+<!-- Chinese: a skipped position is read 零 (consecutive 零 collapse through a Replacement) -->
+<Group level="2"><Digit digit="0" string="" buildString="*" innerBuildString="零*" /> …</Group>
+<!-- 1005 "一千零五", 10001 "一万零一", 1100 "一千一百" -->
+```
 
 ```xml
 <Groups>
@@ -1620,6 +1636,11 @@ When a language needs more than singular/plural for a scale noun, `<ScaleForm>` 
   singular/plural names.
 - Changing the multiplier text itself (e.g. dropping "one"/"two" before Arabic ألف/ألفان) stays the
   job of `onScale` replacements.
+- Built-in count selectors (NTS-27), following the Unicode CLDR integer plural rules and returning
+  `one`/`few`/`many`: `RussianPluralLexicalFormSelector` (one: …1 but not …11; few: …2–4 but not …12–14)
+  for тысяча/тысячи/тысяч, миллион/миллиона/миллионов, миллиард…; `PolishPluralLexicalFormSelector`
+  (one: exactly 1; few: …2–4 but not …12–14) for tysiąc/tysiące/tysięcy (`dwadzieścia jeden tysięcy`,
+  `dwadzieścia dwa tysiące`).
 
 ```csharp
 var ar = NumberToStringConverter.GetConverter("AR");

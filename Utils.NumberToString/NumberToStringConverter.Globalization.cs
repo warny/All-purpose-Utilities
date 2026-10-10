@@ -793,6 +793,7 @@ namespace Utils.NumberToString
                 : (IReadOnlyList<string>)[],
             BaseOn = model.BaseOn,
             GroupSize = model.GroupSizeSpecified ? Optional<int>.Of(model.GroupSize) : Optional<int>.Unspecified,
+            GroupPattern = model.GroupPattern,
             Separator = model.Separator,
             GroupSeparator = model.GroupSeparator,
             Zero = model.Zero,
@@ -955,6 +956,7 @@ namespace Utils.NumberToString
                 Cultures = overriding.Cultures.Count > 0 ? overriding.Cultures : inherited.Cultures,
                 BaseOn = null,
                 GroupSize = MergeOptional(inherited.GroupSize, overriding.GroupSize),
+                GroupPattern = overriding.GroupPattern ?? inherited.GroupPattern,
                 Separator = overriding.Separator ?? inherited.Separator,
                 GroupSeparator = overriding.GroupSeparator ?? inherited.GroupSeparator,
                 Zero = overriding.Zero ?? inherited.Zero,
@@ -1106,6 +1108,7 @@ namespace Utils.NumberToString
             Cultures = definition.Cultures.ToList(),
             BaseOn = null,
             GroupSize = definition.GroupSize.GetValueOrDefault(3),
+            GroupPattern = definition.GroupPattern,
             Separator = definition.Separator,
             GroupSeparator = definition.GroupSeparator,
             Zero = definition.Zero,
@@ -1231,7 +1234,14 @@ namespace Utils.NumberToString
                 bool parsed = BigInteger.TryParse(language.MaxNumber, NumberStyles.Integer, CultureInfo.InvariantCulture, out var maximum);
                 Require(parsed, "MaxNumber", "is required when NumberScale is absent.");
                 if (parsed && language.GroupSize > 0)
-                    Require(maximum < BigInteger.Pow(10, language.GroupSize), "MaxNumber", "must be below the first value requiring a scale name.");
+                {
+                    // The units group is the first width of a group pattern, the uniform group size otherwise.
+                    int[] pattern = [];
+                    try { pattern = ParseGroupPattern(language.GroupPattern, languageIdentifier); }
+                    catch (InvalidOperationException exception) { errors.Add(exception.Message); }
+                    int unitsWidth = pattern.Length > 0 ? pattern[0] : language.GroupSize;
+                    Require(maximum < BigInteger.Pow(10, unitsWidth), "MaxNumber", "must be below the first value requiring a scale name.");
+                }
                 language.NumberScale = new NumberScaleType
                 {
                     StaticNames = new StaticNamesType
@@ -1265,6 +1275,51 @@ namespace Utils.NumberToString
 
             if (errors.Count > 0)
                 throw new InvalidOperationException("Resolved language configuration is invalid:" + Environment.NewLine + string.Join(Environment.NewLine, errors));
+        }
+
+        /// <summary>
+        /// Parses the <c>groupPattern</c> attribute: comma-separated positive digit widths of the successive
+        /// groups from the units upward, the last one repeating. The widths are checked against the digit
+        /// tables by the converter itself.
+        /// </summary>
+        /// <param name="pattern">The attribute value, or <see langword="null"/> when absent.</param>
+        /// <param name="languageIdentifier">The language identifier used in diagnostics.</param>
+        /// <returns>The widths, or an empty array when the attribute is absent (uniform groups).</returns>
+        /// <exception cref="InvalidOperationException">The attribute is blank or contains a non-positive or non-numeric width.</exception>
+        internal static int[] ParseGroupPattern(string? pattern, string languageIdentifier)
+        {
+            if (pattern is null) return [];
+            string[] parts = pattern.Split(',');
+            var widths = new int[parts.Length];
+            for (int i = 0; i < parts.Length; i++)
+            {
+                if (!int.TryParse(parts[i].Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out widths[i]) || widths[i] <= 0)
+                    throw new InvalidOperationException(
+                        $"[{languageIdentifier}] groupPattern \"{pattern}\": every width must be a positive integer (e.g. \"3,2\").");
+            }
+            return widths;
+        }
+
+        /// <summary>
+        /// Returns the index of the group that holds the digit at <paramref name="digitIndex"/> (0 = units digit)
+        /// for a group pattern, or for uniform groups of <paramref name="uniformWidth"/> digits when the
+        /// pattern is empty.
+        /// </summary>
+        /// <param name="pattern">The group widths from the units upward, the last repeating; empty for uniform groups.</param>
+        /// <param name="uniformWidth">The width of every group when <paramref name="pattern"/> is empty.</param>
+        /// <param name="digitIndex">The 0-based position of the digit, from the units.</param>
+        /// <returns>The 0-based group index (0 = units group).</returns>
+        internal static int GroupIndexOfDigit(IReadOnlyList<int> pattern, int uniformWidth, int digitIndex)
+        {
+            if (pattern.Count == 0) return digitIndex / uniformWidth;
+            int group = 0;
+            int covered = pattern[0];
+            while (digitIndex >= covered)
+            {
+                group++;
+                covered += pattern[Math.Min(group, pattern.Count - 1)];
+            }
+            return group;
         }
 
         /// <summary>
@@ -1344,7 +1399,8 @@ namespace Utils.NumberToString
                     throw new InvalidOperationException($"[{languageIdentifier}] MaxNumber is required for a bounded NumberScale.");
                 int maximumGroup = configuredMaximum.Value.IsZero
                     ? 0
-                    : (configuredMaximum.Value.ToString(CultureInfo.InvariantCulture).Length - 1) / language.GroupSize;
+                    : GroupIndexOfDigit(ParseGroupPattern(language.GroupPattern, languageIdentifier), language.GroupSize,
+                        configuredMaximum.Value.ToString(CultureInfo.InvariantCulture).Length - 1);
                 for (int groupIndex = 1; groupIndex <= maximumGroup; groupIndex++)
                     if (!scale.CanNameGroup(groupIndex))
                         throw new InvalidOperationException($"[{languageIdentifier}] NumberScale cannot name group {groupIndex} required by MaxNumber {configuredMaximum.Value}.");
@@ -1824,6 +1880,7 @@ namespace Utils.NumberToString
             var options = new NumberToStringConverterOptions
             {
                 Group = language.GroupSize,
+                GroupPattern = ParseGroupPattern(language.GroupPattern, languageIdentifier),
                 Separator = language.Separator,
                 GroupSeparator = language.GroupSeparator,
                 Zero = language.Zero,

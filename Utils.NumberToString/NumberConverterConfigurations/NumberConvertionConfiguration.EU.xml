@@ -8,6 +8,8 @@
                 minus="ken *"
                 decimalSeparator="koma"
                 fractionSeparator="zati"
+                groupConnector="eta"
+                groupConnectorThreshold="1000"
 
                 maxNumber="999999999999"
         >
@@ -45,7 +47,7 @@
                                 <Digit digit="3" string="hirurehun" buildString="hirurehun eta *" />
                                 <Digit digit="4" string="laurehun" buildString="laurehun eta *" />
                                 <Digit digit="5" string="bostehun" buildString="bostehun eta *" />
-                                <Digit digit="6" string="seirehun" buildString="seirehun eta *" />
+                                <Digit digit="6" string="seiehun" buildString="seiehun eta *" />
                                 <Digit digit="7" string="zazpiehun" buildString="zazpiehun eta *" />
                                 <Digit digit="8" string="zortziehun" buildString="zortziehun eta *" />
                                 <Digit digit="9" string="bederatziehun" buildString="bederatziehun eta *" />
@@ -62,6 +64,21 @@
                 <Replacements>
                         <Replacement oldValue="bat ehun" newValue="ehun" scope="Anywhere" />
                         <Replacement oldValue="bat mila" newValue="mila" onScale="1" onValue="1" />
+                        <!-- NTS-27: Euskaltzaindia rule 7: 1.000.000 "milioi bat" (multiplier one after the noun),
+                             1.000.000.000 "mila milioi"; from a thousand upwards "eta" joins the following part
+                             (groupConnector) and is dropped when the following hundreds carry their own "eta"
+                             ("mila eta berrehun" but "mila berrehun eta bi"). -->
+                        <Replacement oldValue="bat milioi" newValue="milioi bat" onScale="2" onValue="1" />
+                        <Replacement oldValue="bat mila milioi" newValue="mila milioi" onScale="3" onValue="1" />
+                        <Replacement oldValue="eta ehun eta" newValue="ehun eta" scope="Anywhere" />
+                        <Replacement oldValue="eta berrehun eta" newValue="berrehun eta" scope="Anywhere" />
+                        <Replacement oldValue="eta hirurehun eta" newValue="hirurehun eta" scope="Anywhere" />
+                        <Replacement oldValue="eta laurehun eta" newValue="laurehun eta" scope="Anywhere" />
+                        <Replacement oldValue="eta bostehun eta" newValue="bostehun eta" scope="Anywhere" />
+                        <Replacement oldValue="eta seiehun eta" newValue="seiehun eta" scope="Anywhere" />
+                        <Replacement oldValue="eta zazpiehun eta" newValue="zazpiehun eta" scope="Anywhere" />
+                        <Replacement oldValue="eta zortziehun eta" newValue="zortziehun eta" scope="Anywhere" />
+                        <Replacement oldValue="eta bederatziehun eta" newValue="bederatziehun eta" scope="Anywhere" />
                         <Replacement oldValue="hogei eta" newValue="hogeita" scope="Anywhere" />
                         <Replacement oldValue="berrogei eta" newValue="berrogeita" scope="Anywhere" />
                         <Replacement oldValue="hirurogei eta" newValue="hirurogeita" scope="Anywhere" />

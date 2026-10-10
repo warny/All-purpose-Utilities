@@ -44,6 +44,37 @@ Examples:
     | 30000 | hogeita hamar mila |
     | 21000 | hogeita bat mila |
 
+# NTS-27: Euskaltzaindia, rule 7 "Zenbakien idazkeraz" (1994): table (600 seiehun, 1200 mila eta berrehun,
+# 1201 mila berrehun eta bat, 1984 mila bederatziehun eta laurogeita lau, 1.000.000 milioi bat,
+# 10.000.000 hamar milioi, 1.000.000.000 mila milioi) and note 3: from a thousand upwards "eta" joins the
+# following part, and is dropped when the hundreds that follow carry their own "eta".
+Scenario Outline: NTS-27 Basque cardinals above a thousand follow rule 7
+    Given I use the "EU" number converter
+    When I convert the cardinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number     | expected                                   |
+    | 600        | seiehun                                    |
+    | 1000       | mila                                       |
+    | 1001       | mila eta bat                               |
+    | 1010       | mila eta hamar                             |
+    | 1021       | mila eta hogeita bat                       |
+    | 1100       | mila eta ehun                              |
+    | 1200       | mila eta berrehun                          |
+    | 1201       | mila berrehun eta bat                      |
+    | 1984       | mila bederatziehun eta laurogeita lau      |
+    | 2000       | bi mila                                    |
+    | 2001       | bi mila eta bat                            |
+    | 10000      | hamar mila                                 |
+    | 21000      | hogeita bat mila                           |
+    | 1000000    | milioi bat                                 |
+    | 1000001    | milioi bat eta bat                         |
+    | 2000000    | bi milioi                                  |
+    | 10000000   | hamar milioi                               |
+    | 1000000000 | mila milioi                                |
+    | -1001      | ken mila eta bat                           |
+
 Scenario Outline: Irregular first ordinal
     Given I use the "EU" number converter
     And I use the variants "<variants>"
@@ -76,13 +107,14 @@ Examples:
     | 100 |  | ehungarren |
     | 101 |  | ehun eta batgarren |
     | 500 |  | bostehungarren |
+    | 600 |  | seiehungarren |
 
 # NTS-08 validation: Euskaltzaindia, rule 18 "Ordinalen eta banatzaileen idazkera": bigarren,
 # hirugarren, laugarren, bosgarren (not bostgarren), hamabosgarren, hogeita batgarren, hogeita
 # bosgarren, hirurogeita hamabosgarren, ehungarren, milagarren. Rule 7 "Zenbakien idazkeraz" gives
-# only "zero"/"huts" for 0 (no ordinal is attested) and writes "mila eta bat", "mila berrehun eta
-# bat" and "milioi bat", which the configured cardinals above 1000 do not follow ("mila bat",
-# "bat milioi"): these ordinals fail closed.
+# only "zero"/"huts" for 0 (no ordinal is attested). Since NTS-27 the cardinals above 1000 follow rule 7
+# ("mila eta bat", "milioi bat"), but no source settles their ordinal ("mila eta batgarren"?): the guard
+# stays (NTS-28) and these ordinals fail closed.
 Scenario Outline: Basque ordinals outside the validated domain are not supported
     Given I use the "EU" number converter
     When I attempt to convert the ordinal number <number>

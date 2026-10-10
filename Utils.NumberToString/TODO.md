@@ -1,6 +1,7 @@
 # Utils.NumberToString — Current backlog
 
-Re-audited on 2026-10-09 after closing NTS-08 (final linguistic validation of the ordinals and ClockTime;
+Re-audited on 2026-10-10 after closing NTS-27 (cardinal defects found by NTS-08: SV, PL, RU, VN, JA/KO/ZH, HI,
+EU, ES; generic `groupPattern` and `innerString`/`innerBuildString` primitives; opened NTS-30), on 2026-10-09 after closing NTS-08 (final linguistic validation of the ordinals and ClockTime;
 opened NTS-27, NTS-28 and NTS-29), after closing NTS-21 (Wolof large scales: attested `milyoŋ`/`milyaar`, long-scale
 Conway-Wechsler extension in Wolof spelling, unbounded cardinals; `suffixSeparator` primitive) and NTS-09
 (`Trigger` inheritance through `baseOn`), on 2026-10-08 after closing NTS-25 (NTS-25B: ID/MS, SW and TR Conway tables localized to their
@@ -24,29 +25,39 @@ classification.
 
 ## Open items
 
-- **NTS-27 — cardinal defects found by the NTS-08 validation.** Each made an ordinal or clock wrong, so the
-  affected ordinals now fail closed (`DONE-2026-10-09(1).md`); the cardinals themselves are unchanged:
-  - SV: `ett miljon` (Språkrådet: *en miljon*), `tusen ett hundra`, `två tusen`, `tjugoett tusen` (one word below a
-    million, *en* after the tens: Frågelådan 27138, 21216).
-  - PL/RU: the thousands do not agree with the multiplier (`dwa tysiąc`, `два тысяча` for *dwa tysiące*, *две тысячи*).
-  - VN: `nghìn` for *một nghìn*, `hai nghìn năm` for *hai nghìn không trăm linh năm*.
-  - JA/KO/ZH: thousands split with spaces and no counting by 万/만 (`千 一`, `십 천`, `一 千`); ZH without 零 / 一十
-    (`一百一`, `一百十`).
-  - HI: `एक सौ हज़ार` for *एक लाख* (and the larger lakh/crore values); spelling `पांच` (anusvara) against the
-    chandrabindu of Kamta Prasad Guru (`पाँच`).
-  - EU: `mila bat` for *mila eta bat*, `bat milioi` for *milioi bat* (Euskaltzaindia rule 7).
-  - ES: `veintiuno mil` for *veintiún mil*.
 - **NTS-28 — compound ordinals the declarative pipeline does not build.** Sourced rules exist but need a plugin
   (the last-word transformation cannot produce them); the values fail closed today:
   - ES (DPD: *trigésimo primero*, *centésimo primero*, *ducentésimo*, *dosmilésimo*), PT (*vigésimo primeiro*,
     *ducentésimo*), GL (*vixésimo primeiro*), EL (*εικοστός πρώτος*, *εκατοστός πρώτος*, *δισχιλιοστός*), FI
     (*kahdeskymmenesensimmäinen*, and every inflected case: genitive *kolmannen*, partitive *kolmatta*).
-  - PL/RU from 2000 (*dwutysięczny*, *dwa tysiące pierwszy*; *двухтысячный*, *две тысячи первый*), after NTS-27.
+  - PL/RU from 2000 (*dwutysięczny*, *dwa tysiące pierwszy*; *двухтысячный*, *две тысячи первый*). Since NTS-27
+    the cardinals agree (*dwa tysiące*, *две тысячи*): no longer blocked by the cardinal.
+  - Guards kept by NTS-08 because the cardinal was wrong, no longer blocked since NTS-27 (the cardinal is now
+    correct; the ordinal still needs a source): VN from 1000 (*thứ một nghìn*?), HI from 100 000 (*एक लाखवाँ*?),
+    JA/KO above 1000 (第一万, 제일만?), ZH 101–999 non-round and from 1000 (第一百零一?), EU above 1000
+    (*mila eta batgarren*?), SV cardinals now one word (the plugin builds its own ordinals; unchanged).
   - UK round thousands with a multiplier above ten and round millions/milliards above one (Pravopys 2019 §38:
     *п'ятсоттридцятитисячний*, *чотирьохмільйонний*, *семимільярдний*).
   - SV above one million (no consulted source settles *två miljonte* vs *tvåmiljonte*; *miljardte* unattested
     in SAOB).
   - AR above 100 (*المئة والسابع والثلاثون*, after M. Bussey/EMSA), not enabled by NTS-08.
+- **NTS-30 — cardinal defects found by NTS-27 outside its list.** Recorded, not fixed (NTS-27 kept to its ticket):
+  - ES/EU long scale: a milliard followed by millions is not composed (`dos mil millones quinientos millones` for
+    DPD *dos mil quinientos millones*, "3500 millones (tres mil quinientos millones)"; `mil millones un millón`
+    for *mil un millones*; EU `bi mila milioi eta bostehun milioi`). The multiplier of millón/milioi spans six
+    digits and needs a recursive multiplier, which neither the uniform groups nor `groupPattern` express.
+  - UK, BG, CS, SK: the thousands and millions do not agree with their multiplier (`два тисяч`, `две хиляда`,
+    `dva tisíc`, `dva milion`); the NTS-27 `ScaleForm` + selector mechanism applies (CLDR uk = ru rule; cs/sk
+    have one/few/many with different ranges), with sources per language.
+  - RU above the milliard: the generated Conway names keep the bare singular (`два триллион`); `ScaleForm`
+    only covers named indices.
+  - VN: a whole zero class after a higher class is skipped (`một triệu không trăm linh một`), whereas the
+    SGK Toán 4 solution keys read it `không nghìn` (*năm mươi triệu không nghìn một trăm linh hai*); needs a
+    zero-group rendering and a normative source.
+  - All languages: zero digits after the decimal separator are dropped (`21.05` → `twenty-one point  five` in
+    most configurations, `二十一点五` in JA/ZH); the decimal path reads the level-1 digit text, empty for 0.
+  - ES currency: `uno euro` for DPD *un euro* (apocope before a noun); the caller-defined currency wording does
+    not force the attributive form.
 - **NTS-29 — attested ordinals of zero not enabled.** DA *nulte* (Retskrivningsordbogen since 1986, Dansk
   Sprognævn SV00001178) and HU *nulladik* (MTA "Számok" tool) still fail closed; enabling them is additive.
 
@@ -63,7 +74,7 @@ classification.
   byte-identical since NTS-19; a variant dimension would keep the default output.
 
 
-NTS-01 through NTS-05, NTS-08, NTS-09 and NTS-10 through NTS-25 are closed:
+NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-25 and NTS-27 are closed:
 
 - NTS-01 — XSD validation: `DONE-2026-08-21.md`.
 - NTS-02 — initialization isolation: `DONE-2026-08-21.md`.
@@ -112,13 +123,17 @@ NTS-01 through NTS-05, NTS-08, NTS-09 and NTS-10 through NTS-25 are closed:
 - NTS-08 (linguistic validation of every ordinal and ClockTime capability: validated, corrected or fail-closed;
   `OrdinalDomainGuardLanguageSpecifics`; NTS-27, NTS-28 and NTS-29 opened): `DONE-2026-10-09(1).md`, after the
   implementation passes of `DONE-2026-10-01(1).md`.
+- NTS-27 (cardinal defects found by NTS-08: SV one word and *en*, PL/RU agreement of the thousands, VN classes
+  read in full, JA/KO/ZH counting by 万/만 with 零/一十 and 제44항 spacing, HI lakh/crore and पाँच, EU rule 7,
+  ES apocope; generic `groupPattern` and `innerString`/`innerBuildString`, `RussianPluralLexicalFormSelector` and
+  `PolishPluralLexicalFormSelector`; NTS-30 opened): `DONE-2026-10-10.md`.
 
 Full multi-form plural systems (Russian/Slavic count-dependent noun forms,
-Arabic dual/paucal/plural categories) are deliberately out of scope — the
-`ILexicalFormSelector` architecture supports them without redesign, but no
-production language uses more than two forms yet. See the "Deliberately
-deferred" section of `DONE-2026-08-25(1).md`. This is design headroom, not an
-open backlog item.
+Arabic dual/paucal/plural categories) were long deliberately out of scope — the
+`ILexicalFormSelector` architecture supports them without redesign. Arabic (NTS-14)
+and Russian/Polish scale nouns (NTS-27) now use them; the other Slavic languages are
+NTS-30. See the "Deliberately deferred" section of `DONE-2026-08-25(1).md` for the
+original design decision.
 
 New findings should be appended here as they are identified, and archived to
 a dated `DONE-*.md` file once resolved, per the repository's `AGENTS.md`

@@ -31,8 +31,38 @@ Scenario Outline: Thousands
 Examples:
     | number | expected |
     | 1000 | 천 |
-    | 2000 | 이 천 |
-    | 10000 | 십 천 |
+    | 2000 | 이천 |
+    | 10000 | 일만 |
+
+# NTS-27: Sino-Korean numbers count by 만, 억, 조 and are spaced by units of 만 only (한글 맞춤법 제44항:
+# "십이억 삼천사백오십육만 칠천팔백구십팔"); 일 is not written before 십, 백, 천 inside a unit of 만, but the
+# multiplier one of 만, 억, 조 is written (일억 삼천만). Decimals and fractions keep their spacing.
+Scenario Outline: NTS-27 Korean cardinals count by 만
+    Given I use the "KO" number converter
+    When I convert the cardinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 1 | 일 |
+    | 10 | 십 |
+    | 11 | 십일 |
+    | 100 | 백 |
+    | 110 | 백십 |
+    | 1000 | 천 |
+    | 1001 | 천일 |
+    | 2005 | 이천오 |
+    | 10000 | 일만 |
+    | 10001 | 일만 일 |
+    | 100000 | 십만 |
+    | 1000000 | 백만 |
+    | 10000000 | 천만 |
+    | 100000000 | 일억 |
+    | 130000000 | 일억 삼천만 |
+    | 1234567898 | 십이억 삼천사백오십육만 칠천팔백구십팔 |
+    | 1000000000000 | 일조 |
+    | 1000000000001 | 일조 일 |
+    | -10001 | 마이너스 일만 일 |
 
 Scenario Outline: Prefixed ordinal numbers
     Given I use the "KO" number converter
@@ -58,9 +88,9 @@ Examples:
 Scenario: The converter is available
     Given I use the "KO" number converter
 
-# NTS-08 validation: 한글 맞춤법 제43항 ("제삼 항" / "제삼항"): 제 + Sino-Korean numeral. Korean numbers are
-# spaced by units of 만 ("십이억 삼천사백오십육만 칠천팔백구십팔"), whereas the configured cardinal spaces the
-# thousands ("천 일", "십 천"): the ordinals above 1000 fail closed.
+# NTS-08 validation: 한글 맞춤법 제43항 ("제삼 항" / "제삼항"): 제 + Sino-Korean numeral. NTS-27 rebuilt the
+# cardinals by units of 만 (제44항), but the ordinals above 1000 are not validated yet: they still fail
+# closed (NTS-28).
 Scenario Outline: Korean ordinals in the validated domain
     Given I use the "KO" number converter
     When I convert the ordinal number <number>
