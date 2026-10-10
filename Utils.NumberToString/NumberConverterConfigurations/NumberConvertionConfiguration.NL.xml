@@ -88,6 +88,9 @@
           the suffix "e" completes it (een -> eerste, twee -> tweede, drie -> derde, acht -> achtste,
           -tig -> -tigste, honderd -> honderdste, duizend -> duizendste, nul -> nulde).
         -->
+        <!-- NTS-08 (PR #629 review): ordinal domain guard bounded by maxNumber; from a million the scale lookup
+             threw InvalidOperationException (Scale0Prefixes), those ordinals fail closed (see DutchOrdinalLanguageSpecifics). -->
+        <LanguageSpecifics>DutchOrdinalLanguageSpecifics</LanguageSpecifics>
         <Ordinals suffix="e">
             <OrdinalException value="1" string="eerste" />
             <OrdinalStem from="nul"     to="nuld" />

@@ -31,6 +31,7 @@ public class NumberToStringOrdinalDomainGuardTests
     [DataRow("KO", 1000L, "제천")]
     [DataRow("ZH", 900L, "第九百")]
     [DataRow("EU", 1000L, "milagarren")]
+    [DataRow("NL", 999_999L, "negenhonderdnegenennegentigduizend negenhonderdnegenennegentigste")]
     [DataRow("PL", 1999L, "tysiąc dziewięćset dziewięćdziesiąty dziewiąty")]
     public void GuardedLanguages_LargestValidatedValue_IsConverted(string culture, long number, string expected)
         => Assert.AreEqual(expected, NumberToStringConverter.GetConverter(culture).ConvertOrdinal(number));
@@ -54,6 +55,7 @@ public class NumberToStringOrdinalDomainGuardTests
     [DataRow("KO", 1001L)]
     [DataRow("ZH", 101L)]
     [DataRow("EU", 1001L)]
+    [DataRow("NL", 1_000_000L)]
     [DataRow("PL", 2000L)]
     public void GuardedLanguages_OutsideValidatedDomain_FailClosed(string culture, long number)
     {

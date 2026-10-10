@@ -201,6 +201,25 @@ public sealed class VietnameseOrdinalLanguageSpecifics : OrdinalDomainGuardLangu
 }
 
 /// <summary>
+/// Dutch ordinal domain (NTS-08). Taaladvies "Aaneenschrijven van telwoorden" and the Woordenlijst
+/// Nederlandse Taal (<c>nulde</c>, <c>tweeduizendste</c>) validate the ordinals from 0 to 999 999, the
+/// domain of the configured cardinal (<c>maxNumber</c>). Ordinals are not bounded by <c>maxNumber</c>: from a
+/// million the scale lookup of the unvalidated cardinal threw an <see cref="InvalidOperationException"/>
+/// (configuration error) and no <c>-ste</c> rule exists for the scale nouns, so those values fail closed.
+/// </summary>
+public sealed class DutchOrdinalLanguageSpecifics : OrdinalDomainGuardLanguageSpecifics
+{
+    /// <inheritdoc />
+    protected override string LanguageName => "Dutch";
+
+    /// <inheritdoc />
+    protected override string SupportedDomain => "0–999999";
+
+    /// <inheritdoc />
+    protected override bool IsSupported(long number, IReadOnlyDictionary<string, string> activeVariants) => number < 1_000_000;
+}
+
+/// <summary>
 /// Hindi ordinal domain (NTS-08). Kamta Prasad Guru, <i>हिंदी व्याकरण</i> §180: पहला, दूसरा, तीसरा, चौथा, छठा,
 /// otherwise <c>-वाँ</c> on the last word, also above a hundred (<c>एक सौ तीनवाँ</c>). Validated from 0 to
 /// 99 999; from 100 000 the configured cardinal is wrong (<c>एक सौ हज़ार</c> instead of <c>एक लाख</c>), so
