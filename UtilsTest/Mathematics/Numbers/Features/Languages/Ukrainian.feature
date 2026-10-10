@@ -68,6 +68,45 @@ Examples:
     | 1000000000 | мільярдний |
     | 1000000001 | мільярд перший |
 
+# NTS-28: Український правопис 2019, §38.1.2 (slovnyk.ua): двохтисячний, десятитисячний, чотирьохмільйонний,
+# п'ятдесятимільйонний, шістдесятип'ятимільйонний, семимільярдний, трьохмільярдний — the multiplier in the
+# genitive, a compound multiplier with both parts in the genitive; note 1: мільйон трьохтисячний.
+Scenario Outline: NTS-28 Ukrainian round thousands, millions and milliards
+    Given I use the variants "<variants>"
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | variants | expected |
+    | 15000 |  | п'ятнадцятитисячний |
+    | 20000 |  | двадцятитисячний |
+    | 20000 | gender=жіночий,case=родовий | двадцятитисячної |
+    | 25000 |  | двадцятип'ятитисячний |
+    | 40000 |  | сорокатисячний |
+    | 2000000 |  | двохмільйонний |
+    | 4000000 |  | чотирьохмільйонний |
+    | 50000000 |  | п'ятдесятимільйонний |
+    | 65000000 |  | шістдесятип'ятимільйонний |
+    | 65000000 | gender=середній | шістдесятип'ятимільйонне |
+    | 2000000000 |  | двохмільярдний |
+    | 2003000 |  | два мільйони трьохтисячний |
+    | 1065000000 |  | мільярд шістдесятип'ятимільйонний |
+
+# NTS-28: §38 shows no multiplier ending in "один" after the tens, nor a multiplier from 90 (дев'яноста or
+# дев'яносто?), and its only hundreds example (п'ятсоттридцятитисячний) keeps the hundreds in the nominative,
+# which leaves the other hundreds open: those round values fail closed.
+Scenario Outline: Ukrainian ordinals outside the validated domain are not supported
+    When I attempt to convert the ordinal number <number>
+    Then conversion is rejected because no ordinal form is available
+
+Examples:
+    | number |
+    | 21000 |
+    | 90000 |
+    | 100000 |
+    | 530000 |
+    | 21000000 |
+
 Scenario Outline: Ukrainian ordinals agree in gender and case
     Given I use the variants "<variants>"
     When I convert the ordinal number <number>

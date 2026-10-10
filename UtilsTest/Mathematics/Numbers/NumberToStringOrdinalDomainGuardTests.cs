@@ -6,10 +6,11 @@ using Utils.NumberToString;
 namespace UtilsTest.NumberToString;
 
 /// <summary>
-/// Technical tests of the NTS-08 ordinal domain guards (<see cref="OrdinalDomainGuardLanguageSpecifics"/>
-/// and the Polish plugin limit): the edges of each validated domain, the fail-closed behaviour outside it
-/// (including negative values and values above <see cref="int"/>), and the absence of any unchanged cardinal
-/// returned as an ordinal. The linguistic forms themselves are pinned by the language <c>.feature</c> files.
+/// Technical tests of the ordinal domain guards (<see cref="OrdinalDomainGuardLanguageSpecifics"/> and the
+/// Polish plugin limit), as set by NTS-08 and widened by NTS-28: the edges of each validated domain, the
+/// fail-closed behaviour outside it (including negative values and <see cref="long.MaxValue"/>), and the absence
+/// of any unchanged cardinal returned as an ordinal. The linguistic forms themselves are pinned by the language
+/// <c>.feature</c> files.
 /// </summary>
 [TestClass]
 public class NumberToStringOrdinalDomainGuardTests
@@ -19,51 +20,55 @@ public class NumberToStringOrdinalDomainGuardTests
     /// <param name="number">The largest value inside the validated domain.</param>
     /// <param name="expected">The expected ordinal.</param>
     [TestMethod]
-    [DataRow("ES", 1000L, "milésimo")]
-    [DataRow("PT", 1000L, "milésimo")]
-    [DataRow("GL", 1000L, "milésimo")]
-    [DataRow("EL", 1000L, "χιλιοστός")]
-    [DataRow("FI", 1000L, "tuhannes")]
-    [DataRow("RU", 1999L, "тысяча девятьсот девяносто девятый")]
-    [DataRow("VN", 999L, "thứ chín trăm chín mươi chín")]
-    [DataRow("HI", 99_999L, "निन्यानवे हज़ार नौ सौ निन्यानवेवाँ")]
-    [DataRow("JA", 1000L, "第千")]
-    [DataRow("KO", 1000L, "제천")]
-    [DataRow("ZH", 900L, "第九百")]
-    [DataRow("EU", 1000L, "milagarren")]
+    [DataRow("ES", 900_000_000L, "novecientosmillonésimo")]
+    [DataRow("PT", 1999L, "milésimo nongentésimo nonagésimo nono")]
+    [DataRow("GL", 1999L, "milésimo noninxentésimo nonaxésimo noveno")]
+    [DataRow("EL", 1999L, "χιλιοστός εννιακοσιοστός ενενηκοστός ένατος")]
+    [DataRow("FI", 1999L, "tuhannesyhdeksässadasyhdeksäskymmenesyhdeksäs")]
+    [DataRow("RU", 999_999_999L, "девятьсот девяносто девять миллионов девятьсот девяносто девять тысяч девятьсот девяносто девятый")]
+    [DataRow("VN", 999_999_999_999L, "thứ chín trăm chín mươi chín tỷ chín trăm chín mươi chín triệu chín trăm chín mươi chín nghìn chín trăm chín mươi chín")]
+    [DataRow("HI", 9_999_999_999_999L, "निन्यानवे खरब निन्यानवे अरब निन्यानवे करोड़ निन्यानवे लाख निन्यानवे हज़ार नौ सौ निन्यानवेवाँ")]
+    [DataRow("JA", 9_999_999_999_999_999L, "第九千九百九十九兆九千九百九十九億九千九百九十九万九千九百九十九")]
+    [DataRow("KO", 9_999_999_999_999_999L, "제구천구백구십구조 구천구백구십구억 구천구백구십구만 구천구백구십구")]
+    [DataRow("ZH", 999_999_999_999L, "第九千九百九十九亿九千九百九十九万九千九百九十九")]
+    [DataRow("EU", 999_999_999L, "bederatziehun eta laurogeita hemeretzi milioi bederatziehun eta laurogeita hemeretzi mila bederatziehun eta laurogeita hemeretzigarren")]
     [DataRow("NL", 999_999L, "negenhonderdnegenennegentigduizend negenhonderdnegenennegentigste")]
-    [DataRow("PL", 1999L, "tysiąc dziewięćset dziewięćdziesiąty dziewiąty")]
+    [DataRow("PL", 999_999L, "dziewięćset dziewięćdziesiąt dziewięć tysięcy dziewięćset dziewięćdziesiąty dziewiąty")]
     public void GuardedLanguages_LargestValidatedValue_IsConverted(string culture, long number, string expected)
         => Assert.AreEqual(expected, NumberToStringConverter.GetConverter(culture).ConvertOrdinal(number));
 
     /// <summary>
-    /// Ensures the first value outside each validated domain, its negative, and a value above
-    /// <see cref="int"/> fail closed with <see cref="NotSupportedException"/>.
+    /// Ensures the first value outside each validated domain (or, where the domain has inner gaps, a value of
+    /// such a gap), its negative, and <see cref="long.MaxValue"/> fail closed with <see cref="NotSupportedException"/>.
     /// </summary>
     /// <param name="culture">The culture of the converter.</param>
-    /// <param name="number">The first value outside the validated domain.</param>
+    /// <param name="number">A value outside the validated domain.</param>
     [TestMethod]
-    [DataRow("ES", 31L)]
-    [DataRow("PT", 21L)]
-    [DataRow("GL", 21L)]
-    [DataRow("EL", 21L)]
-    [DataRow("FI", 21L)]
-    [DataRow("RU", 2000L)]
-    [DataRow("VN", 1000L)]
-    [DataRow("HI", 100_000L)]
-    [DataRow("JA", 1001L)]
-    [DataRow("KO", 1001L)]
-    [DataRow("ZH", 101L)]
-    [DataRow("EU", 1001L)]
+    [DataRow("ES", 1_000_000_000L)]
+    [DataRow("ES", 21_000L)]
+    [DataRow("PT", 2000L)]
+    [DataRow("GL", 2000L)]
+    [DataRow("EL", 2000L)]
+    [DataRow("FI", 2000L)]
+    [DataRow("RU", 1_000_000_000L)]
+    [DataRow("RU", 21_000L)]
+    [DataRow("VN", 1_000_000_000_000L)]
+    [DataRow("VN", 1_000_005L)]
+    [DataRow("HI", 10_000_000_000_000L)]
+    [DataRow("JA", 10_000_000_000_000_000L)]
+    [DataRow("KO", 10_000_000_000_000_000L)]
+    [DataRow("ZH", 1_000_000_000_000L)]
+    [DataRow("EU", 1_000_000_000L)]
     [DataRow("NL", 1_000_000L)]
-    [DataRow("PL", 2000L)]
+    [DataRow("PL", 1_000_000L)]
+    [DataRow("PL", 100_000L)]
     public void GuardedLanguages_OutsideValidatedDomain_FailClosed(string culture, long number)
     {
         NumberToStringConverter converter = NumberToStringConverter.GetConverter(culture);
 
         Assert.ThrowsExactly<NotSupportedException>(() => converter.ConvertOrdinal(number));
         Assert.ThrowsExactly<NotSupportedException>(() => converter.ConvertOrdinal(-number));
-        Assert.ThrowsExactly<NotSupportedException>(() => converter.ConvertOrdinal((long)int.MaxValue + 1));
+        Assert.ThrowsExactly<NotSupportedException>(() => converter.ConvertOrdinal(long.MaxValue));
     }
 
     /// <summary>

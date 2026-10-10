@@ -128,6 +128,29 @@
 			<!-- Scale words -->
 			<Ordinal from="cem"> <Variant type="gender" forms="centésimo,centésima" /></Ordinal>
 			<Ordinal from="mil"> <Variant type="gender" forms="milésimo,milésima"   /></Ordinal>
+			<!-- NTS-28: round hundreds, Ciberdúvidas after E. Bechara, Gramática Moderna do Português (first form given:
+			     trecentésimo, seiscentésimo, nongentésimo); the feminine cardinal (duzentas) is transformed first. -->			<Ordinal from="duzentos"> <Variant type="gender" forms="ducentésimo,ducentésima" /></Ordinal>
+			<Ordinal from="duzentas"> <Variant type="gender" forms="ducentésimo,ducentésima" /></Ordinal>
+			<Ordinal from="trezentos"> <Variant type="gender" forms="trecentésimo,trecentésima" /></Ordinal>
+			<Ordinal from="trezentas"> <Variant type="gender" forms="trecentésimo,trecentésima" /></Ordinal>
+			<Ordinal from="quatrocentos"> <Variant type="gender" forms="quadringentésimo,quadringentésima" /></Ordinal>
+			<Ordinal from="quatrocentas"> <Variant type="gender" forms="quadringentésimo,quadringentésima" /></Ordinal>
+			<Ordinal from="quinhentos"> <Variant type="gender" forms="quingentésimo,quingentésima" /></Ordinal>
+			<Ordinal from="quinhentas"> <Variant type="gender" forms="quingentésimo,quingentésima" /></Ordinal>
+			<Ordinal from="seiscentos"> <Variant type="gender" forms="seiscentésimo,seiscentésima" /></Ordinal>
+			<Ordinal from="seiscentas"> <Variant type="gender" forms="seiscentésimo,seiscentésima" /></Ordinal>
+			<Ordinal from="setecentos"> <Variant type="gender" forms="septingentésimo,septingentésima" /></Ordinal>
+			<Ordinal from="setecentas"> <Variant type="gender" forms="septingentésimo,septingentésima" /></Ordinal>
+			<Ordinal from="oitocentos"> <Variant type="gender" forms="octingentésimo,octingentésima" /></Ordinal>
+			<Ordinal from="oitocentas"> <Variant type="gender" forms="octingentésimo,octingentésima" /></Ordinal>
+			<Ordinal from="novecentos"> <Variant type="gender" forms="nongentésimo,nongentésima" /></Ordinal>
+			<Ordinal from="novecentas"> <Variant type="gender" forms="nongentésimo,nongentésima" /></Ordinal>
+			<!-- NTS-28: compounds juxtapose agreeing ordinals from the highest order down (Bechara: "duas milésima
+			     trecentésima quadragésima quinta"); the tail is composed recursively, a round value formed directly.
+			     11-19 stay whole-number exceptions. From 2000 the sources disagree (guard). -->
+			<OrdinalComposition for="21..99" divisor="10" separator=" " />
+			<OrdinalComposition for="101..999" divisor="100" separator=" " />
+			<OrdinalComposition for="1001..1999" divisor="1000" separator=" " />
 
 			<!-- Feminized cardinal forms not covered by the inline rules above -->
 			<OrdinalVariants>

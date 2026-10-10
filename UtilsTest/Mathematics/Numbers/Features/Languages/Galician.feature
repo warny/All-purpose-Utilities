@@ -125,8 +125,47 @@ Examples:
     | 90 |  | nonaxésimo |
     | 40 | gender=feminino | cuadraxésima |
 
-# NTS-08: other compounds juxtapose ordinals (vixésimo primeiro), whereas the declarative pipeline
-# only rewrites the last word of the cardinal ("vinte e primeiro", "douscentos"): they fail closed.
+# NTS-28: RAG/ILG, NOMIG (2003) §16.2: the compounds juxtapose the ordinals ("vixésimo primeiro, vixésimo
+# segundo, etc."), and gender and number "nas formas compostas só se unen ao último elemento" (décimo
+# primeira); simple ordinals centésimo, milésimo. Dicionario da Real Academia Galega: ducentésimo,
+# tricentésimo, cuadrinxentésimo, quinxentésimo, sexcentésimo, septinxentésimo, octinxentésimo, noninxentésimo.
+Scenario Outline: NTS-28 Galician compound ordinals agree on the last element only
+    Given I use the "GL" number converter
+    And I use the variants "<variants>"
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | variants | expected |
+    | 21 |  | vixésimo primeiro |
+    | 21 | gender=feminino | vixésimo primeira |
+    | 23 | gender=feminino | vixésimo terceira |
+    | 45 |  | cuadraxésimo quinto |
+    | 99 |  | nonaxésimo noveno |
+    | 101 |  | centésimo primeiro |
+    | 101 | gender=feminino | centésimo primeira |
+    | 110 |  | centésimo décimo |
+    | 113 |  | centésimo décimo terceiro |
+    | 113 | gender=feminino | centésimo décimo terceira |
+    | 120 | gender=feminino | centésimo vixésima |
+    | 200 |  | ducentésimo |
+    | 200 | gender=feminino | ducentésima |
+    | 202 | gender=feminino | ducentésimo segunda |
+    | 245 | gender=feminino | ducentésimo cuadraxésimo quinta |
+    | 300 |  | tricentésimo |
+    | 400 |  | cuadrinxentésimo |
+    | 500 |  | quinxentésimo |
+    | 600 |  | sexcentésimo |
+    | 700 |  | septinxentésimo |
+    | 800 |  | octinxentésimo |
+    | 900 |  | noninxentésimo |
+    | 999 |  | noninxentésimo nonaxésimo noveno |
+    | 1000 | gender=feminino | milésima |
+    | 1001 |  | milésimo primeiro |
+    | 1999 |  | milésimo noninxentésimo nonaxésimo noveno |
+
+# NTS-28: no consulted source gives the ordinals of the multiples of a thousand (2000) nor of the millions
+# compounds (NOMIG lists only the simple millonésimo): from 2000 they fail closed, as does zero.
 Scenario Outline: Galician ordinals outside the validated domain are not supported
     Given I use the "GL" number converter
     And I use the variants "<variants>"
@@ -135,13 +174,10 @@ Scenario Outline: Galician ordinals outside the validated domain are not support
 
 Examples:
     | number | variants |
-    | 21 |  |
-    | 21 | gender=feminino |
-    | 23 | gender=feminino |
-    | 99 |  |
-    | 101 |  |
-    | 200 |  |
+    | 0 |  |
     | 2000 |  |
+    | 2001 |  |
+    | 1000000 |  |
 
 Scenario: Time conversion is supported
     Given I use the "GL" number converter

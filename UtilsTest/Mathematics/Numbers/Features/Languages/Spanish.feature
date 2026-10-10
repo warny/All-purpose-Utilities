@@ -71,22 +71,73 @@ Examples:
     | 100 |  | centésimo |
     | 1000 |  | milésimo |
 
-# NTS-08: from the third decade the DPD juxtaposes ordinals (trigésimo primero, centésimo primero,
-# ducentésimo, dosmilésimo); the declarative pipeline only rewrites the last word of the cardinal
-# ("treinta y primero", "doscientos"), so these values fail closed instead of returning a wrong form.
+# NTS-28: RAE/ASALE, DPD "ordinales" §1 (table), §2b, §2d, §3: from the third decade the complex ordinals
+# juxtapose the simple ones from the highest order down, each varying in gender (trigésimo primero, trigésima
+# primera, centésimo trigésimo cuarto, milésimo ducentésimo cuadragésimo octavo); the round hundreds are
+# simple (ducentésimo … noningentésimo); the thousands and millions prefix the multiplying cardinal to the
+# simple ordinal (dosmilésimo, diezmilésimo, cienmilésimo, quinientosmilésimo, millonésimo,
+# tresmilésimo tricentésimo cuadragésimo quinto).
+Scenario Outline: NTS-28 Spanish complex ordinals
+    Given I use the variants "<variants>"
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | variants | expected |
+    | 31 |  | trigésimo primero |
+    | 31 | gender=femenino | trigésima primera |
+    | 42 |  | cuadragésimo segundo |
+    | 99 |  | nonagésimo noveno |
+    | 101 |  | centésimo primero |
+    | 101 | gender=femenino | centésima primera |
+    | 120 |  | centésimo vigésimo |
+    | 121 |  | centésimo vigesimoprimero |
+    | 134 |  | centésimo trigésimo cuarto |
+    | 134 | gender=femenino | centésima trigésima cuarta |
+    | 200 |  | ducentésimo |
+    | 200 | gender=femenino | ducentésima |
+    | 201 |  | ducentésimo primero |
+    | 300 |  | tricentésimo |
+    | 400 |  | cuadringentésimo |
+    | 500 |  | quingentésimo |
+    | 600 |  | sexcentésimo |
+    | 700 |  | septingentésimo |
+    | 800 |  | octingentésimo |
+    | 900 |  | noningentésimo |
+    | 999 |  | noningentésimo nonagésimo noveno |
+    | 1001 |  | milésimo primero |
+    | 1248 |  | milésimo ducentésimo cuadragésimo octavo |
+    | 2000 |  | dosmilésimo |
+    | 2000 | gender=femenino | dosmilésima |
+    | 2001 |  | dosmilésimo primero |
+    | 3000 |  | tresmilésimo |
+    | 3345 |  | tresmilésimo tricentésimo cuadragésimo quinto |
+    | 10000 |  | diezmilésimo |
+    | 100000 |  | cienmilésimo |
+    | 500000 |  | quinientosmilésimo |
+    | 1000000 |  | millonésimo |
+    | 2000000 |  | dosmillonésimo |
+    | 1000001 |  | millonésimo primero |
+    | -31 |  | menos trigésimo primero |
+
+# NTS-28: the DPD prefixes "the multiplying cardinal" without saying how a cardinal that varies (apocope of
+# uno, feminine -cientas) or is written in several words (ciento cincuenta) is soldered: those round
+# thousands and millions fail closed, as do zero (no ordinal) and the milliard and above (milmillonésimo is
+# attested, but the cardinal "mil millones" + millions is not composed, NTS-30).
 Scenario Outline: Spanish ordinals outside the validated domain are not supported
+    Given I use the variants "<variants>"
     When I attempt to convert the ordinal number <number>
     Then conversion is rejected because no ordinal form is available
 
 Examples:
-    | number |
-    | 31 |
-    | 45 |
-    | 99 |
-    | 101 |
-    | 200 |
-    | 2000 |
-    | 1000000 |
+    | number | variants |
+    | 21000 |  |
+    | 101000 |  |
+    | 150000 |  |
+    | 200000 | gender=femenino |
+    | 21000000 |  |
+    | 1000000000 |  |
+    | 2021000 |  |
 
 Scenario Outline: Decimal numbers
     When I convert the decimal number <number>

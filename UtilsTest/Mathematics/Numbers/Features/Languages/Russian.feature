@@ -136,9 +136,7 @@ Examples:
 
 # NTS-08 validation: Правила русской орфографии и пунктуации (2006), §132-133: one-word ordinals in
 # -сотый/-тысячный (четырёхсотый), composite ordinals separate with only the last word ordinal
-# ("тысяча девятьсот девяносто четвёртый", "две тысячи первый"). From 2000 the configured cardinal
-# does not agree the thousands ("два тысяча") and the one-word round ordinals (двухтысячный,
-# миллионный) are not built: those ordinals fail closed.
+# ("тысяча девятьсот девяносто четвёртый", "две тысячи первый"). From 2000 see NTS-28 below.
 Scenario Outline: Russian composite ordinals below 2000
     When I convert the ordinal number <number>
     Then the result is "<expected>"
@@ -149,16 +147,61 @@ Examples:
     | 1001 | тысяча первый |
     | 1994 | тысяча девятьсот девяносто четвёртый |
 
-Scenario Outline: Russian ordinals from 2000 are not supported
+# NTS-28: Правила (2006) §133б: composite ordinals are written separately and only their last part is ordinal
+# ("две тысячи первый", "миллион двести тысяч сто пятый", a single million without "один"); §132б: the ordinals
+# whose last part is -тысячный, -миллионный are one word, their first part in the genitive
+# (пятнадцатитысячный, шестисотмиллионный; двухтысячный); a round thousand after the millions keeps that form
+# (the analogue of Ukrainian "мільйон трьохтисячний").
+Scenario Outline: NTS-28 Russian ordinals from 2000
+    Given I use the variants "<variants>"
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | variants | expected |
+    | 2000 |  | двухтысячный |
+    | 2000 | gender=feminin,case=родительный | двухтысячной |
+    | 2000 | gender=plural,case=творительный | двухтысячными |
+    | 3000 |  | трёхтысячный |
+    | 4000 | gender=neutrum | четырёхтысячное |
+    | 5000 |  | пятитысячный |
+    | 10000 |  | десятитысячный |
+    | 15000 |  | пятнадцатитысячный |
+    | 25000 |  | двадцатипятитысячный |
+    | 40000 |  | сорокатысячный |
+    | 600000 |  | шестисоттысячный |
+    | 2001 |  | две тысячи первый |
+    | 2001 | gender=feminin | две тысячи первая |
+    | 2002 |  | две тысячи второй |
+    | 2010 |  | две тысячи десятый |
+    | 2021 |  | две тысячи двадцать первый |
+    | 5100 |  | пять тысяч сотый |
+    | 21001 |  | двадцать одна тысяча первый |
+    | 999999 |  | девятьсот девяносто девять тысяч девятьсот девяносто девятый |
+    | 1000000 |  | миллионный |
+    | 1000000 | case=предложный | миллионном |
+    | 2000000 |  | двухмиллионный |
+    | 600000000 |  | шестисотмиллионный |
+    | 1200105 |  | миллион двести тысяч сто пятый |
+    | 1003000 |  | миллион трёхтысячный |
+    | 2003000 |  | два миллиона трёхтысячный |
+    | 2000001 |  | два миллиона первый |
+    | -2000 |  | минус двухтысячный |
+
+# NTS-28: a multiplier whose genitive combining form is not shown by the rules (a final "один": 21 000; a
+# hundred: 100 000, 101 000) fails closed, as does the milliard and above (the generated scales do not agree,
+# NTS-30).
+Scenario Outline: Russian ordinals outside the validated domain are not supported
     When I attempt to convert the ordinal number <number>
     Then conversion is rejected because no ordinal form is available
 
 Examples:
     | number |
-    | 2000 |
-    | 2001 |
-    | 10000 |
-    | 1000000 |
+    | 21000 |
+    | 100000 |
+    | 101000 |
+    | 1000000000 |
+    | 2021000 |
 
 Scenario: Ordinal conversion is supported
     Given I use the "RU" number converter

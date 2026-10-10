@@ -341,8 +341,9 @@ public sealed class SlovakOrdinalLanguageSpecifics : SlavicAdjectivalOrdinalLang
 /// cardinal of the preceding part (<c>двадцять перший</c>, <c>сто перший</c>,
 /// <c>тисяча перший</c>); it is declined for gender (<c>чоловічий</c>, <c>жіночий</c>,
 /// <c>середній</c>) and case with the hard (<c>-ий</c>) and soft (<c>-ій</c>) adjective
-/// paradigms. Round thousands accept multipliers up to ten (<c>двохтисячний</c>); larger round
-/// multipliers and round millions or milliards other than one are declined.
+/// paradigms. Round thousands, millions and milliards are one word with the multiplier in the genitive
+/// (<c>двохтисячний</c>, <c>шістдесятип'ятимільйонний</c>, <c>двохмільярдний</c>; NTS-28, Правопис 2019 §38) for
+/// the multipliers 1–89 except a final <c>один</c> after the tens; the other round multipliers are declined.
 /// </summary>
 /// <remarks>The apostrophe is the ASCII one used by the Ukrainian cardinal configuration (<c>п'ять</c>).</remarks>
 public sealed class UkrainianOrdinalLanguageSpecifics : SlavicAdjectivalOrdinalLanguageSpecifics
@@ -359,7 +360,15 @@ public sealed class UkrainianOrdinalLanguageSpecifics : SlavicAdjectivalOrdinalL
         ["десятий", "одинадцятий", "дванадцятий", "тринадцятий", "чотирнадцятий", "п'ятнадцятий", "шістнадцятий", "сімнадцятий", "вісімнадцятий", "дев'ятнадцятий"];
     private static readonly string[] s_tens = ["", "", "двадцятий", "тридцятий", "сороковий", "п'ятдесятий", "шістдесятий", "сімдесятий", "вісімдесятий", "дев'яностий"];
     private static readonly string[] s_hundreds = ["", "сотий", "двохсотий", "трьохсотий", "чотирьохсотий", "п'ятисотий", "шестисотий", "семисотий", "восьмисотий", "дев'ятисотий"];
+    /// <summary>Genitive combining forms of 0–10 before -тисячний/-мільйонний/-мільярдний (0 and 1 have none).</summary>
     private static readonly string[] s_thousandPrefixes = ["", "", "двох", "трьох", "чотирьох", "п'яти", "шести", "семи", "восьми", "дев'яти", "десяти"];
+
+    /// <summary>Genitive combining forms of 11–19 (index = value − 10; index 0 unused).</summary>
+    private static readonly string[] s_teenPrefixes =
+        ["", "одинадцяти", "дванадцяти", "тринадцяти", "чотирнадцяти", "п'ятнадцяти", "шістнадцяти", "сімнадцяти", "вісімнадцяти", "дев'ятнадцяти"];
+
+    /// <summary>Genitive combining forms of the round tens 20–80 (index = tens digit); 90 is not established.</summary>
+    private static readonly string[] s_tensPrefixes = ["", "", "двадцяти", "тридцяти", "сорока", "п'ятдесяти", "шістдесяти", "сімдесяти", "вісімдесяти"];
     private static readonly string[] s_cases = ["називний", "родовий", "давальний", "знахідний", "орудний", "місцевий"];
 
     // [gender][nominative, genitive, dative, accusative, instrumental, locative]; masculine accusative is inanimate.
@@ -424,7 +433,7 @@ public sealed class UkrainianOrdinalLanguageSpecifics : SlavicAdjectivalOrdinalL
         }
         else if (thousands > 0)
         {
-            if (thousands > 10)
+            if (!TryCombining(thousands, out string combining))
             {
                 prefix = string.Empty;
                 components = [];
@@ -432,15 +441,15 @@ public sealed class UkrainianOrdinalLanguageSpecifics : SlavicAdjectivalOrdinalL
             }
             AppendCardinalChunk(words, milliards, "мільярд", "мільярди", "мільярдів", feminine: false);
             AppendCardinalChunk(words, millions, "мільйон", "мільйони", "мільйонів", feminine: false);
-            last = s_thousandPrefixes[thousands] + "тисячний";
+            last = combining + "тисячний";
         }
-        else if (millions > 0 && millions == 1)
+        else if (millions > 0 && TryCombining(millions, out string millionsCombining))
         {
             AppendCardinalChunk(words, milliards, "мільярд", "мільярди", "мільярдів", feminine: false);
-            last = "мільйонний";
+            last = millionsCombining + "мільйонний";
         }
-        else if (millions == 0 && milliards == 1)
-            last = "мільярдний";
+        else if (millions == 0 && TryCombining(milliards, out string milliardsCombining))
+            last = milliardsCombining + "мільярдний";
         else
         {
             prefix = string.Empty;
@@ -450,6 +459,30 @@ public sealed class UkrainianOrdinalLanguageSpecifics : SlavicAdjectivalOrdinalL
 
         prefix = string.Join(" ", words);
         components = [last];
+        return true;
+    }
+
+    /// <summary>
+    /// Writes the genitive combining form of the multiplier of a one-word round ordinal (Український правопис
+    /// 2019, §38.1.2: двохтисячний, десятитисячний, п'ятдесятимільйонний, шістдесятип'ятимільйонний,
+    /// семимільярдний). One gives the empty form (тисячний, мільйонний). Only the multipliers whose form the
+    /// paragraph establishes are accepted: 1–89 except a final один after the tens (21, 31 …); 90 and above
+    /// (дев'яноста or дев'яносто, and hundreds that §38 keeps in the nominative in п'ятсоттридцятитисячний)
+    /// are declined.
+    /// </summary>
+    /// <param name="multiplier">The multiplier, 1–999.</param>
+    /// <param name="combining">Receives the combining form.</param>
+    /// <returns><see langword="true"/> when the multiplier is accepted.</returns>
+    private static bool TryCombining(int multiplier, out string combining)
+    {
+        combining = string.Empty;
+        if (multiplier == 1) return true;
+        if (multiplier is < 2 or >= 90) return false;
+        if (multiplier <= 10) { combining = s_thousandPrefixes[multiplier]; return true; }
+        if (multiplier < 20) { combining = s_teenPrefixes[multiplier - 10]; return true; }
+        int units = multiplier % 10;
+        if (units == 1) return false;
+        combining = s_tensPrefixes[multiplier / 10] + (units == 0 ? string.Empty : s_thousandPrefixes[units]);
         return true;
     }
 

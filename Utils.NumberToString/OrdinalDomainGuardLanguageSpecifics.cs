@@ -10,9 +10,10 @@ namespace Utils.NumberToString;
 /// <see cref="NotSupportedException"/> instead of returning an unverified or known-wrong form.
 /// </summary>
 /// <remarks>
-/// The guard builds no text and finalizes nothing. It receives the absolute value of the number, so
-/// negative values are bounded the same way. Each derived class documents the sources that validate
-/// its domain and the reason why the rest is closed.
+/// The guard finalizes nothing. It receives the absolute value of the number, so negative values are
+/// bounded the same way. Inside the domain it builds no text unless a derived class overrides
+/// <see cref="TryBuildOrdinal"/> for the families the declarative pipeline cannot form (NTS-28). Each derived
+/// class documents the sources that validate its domain and the reason why the rest is closed.
 /// </remarks>
 public abstract class OrdinalDomainGuardLanguageSpecifics : INumberToStringLanguageSpecifics, IOrdinalLanguageSpecifics
 {
@@ -38,11 +39,25 @@ public abstract class OrdinalDomainGuardLanguageSpecifics : INumberToStringLangu
     /// <inheritdoc />
     public bool TryConvertOrdinal(long number, IReadOnlyDictionary<string, string> activeVariants, out string? result)
     {
-        result = null;
         if (!IsSupported(number, activeVariants))
             throw new NotSupportedException(
                 $"{LanguageName} ordinal {number} is not supported: the validated ordinal domain is {SupportedDomain}.");
-        // Inside the validated domain the declarative XML pipeline forms the ordinal.
+        // Inside the validated domain the declarative XML pipeline forms the ordinal, except for the values a
+        // derived class builds itself.
+        return TryBuildOrdinal(number, activeVariants, out result);
+    }
+
+    /// <summary>
+    /// Builds the ordinal of a supported value that the declarative pipeline cannot form. The default builds
+    /// nothing, so every supported value goes to the declarative pipeline.
+    /// </summary>
+    /// <param name="number">The absolute value of the number, inside the supported domain.</param>
+    /// <param name="activeVariants">The active dimension constraints.</param>
+    /// <param name="result">Receives the ordinal when the method returns <see langword="true"/>.</param>
+    /// <returns><see langword="true"/> when the ordinal was built here.</returns>
+    protected virtual bool TryBuildOrdinal(long number, IReadOnlyDictionary<string, string> activeVariants, out string? result)
+    {
+        result = null;
         return false;
     }
 
@@ -58,11 +73,16 @@ public abstract class OrdinalDomainGuardLanguageSpecifics : INumberToStringLangu
 }
 
 /// <summary>
-/// Spanish ordinal domain (NTS-08). Validated by the RAE/ASALE <i>Diccionario panhispánico de dudas</i>,
-/// "ordinales": 1–20, the univerbal 21–29 (<c>vigesimoprimero</c> … <c>vigesimonoveno</c>), the round tens
-/// (<c>trigésimo</c> … <c>nonagésimo</c>), <c>centésimo</c> and <c>milésimo</c>. From 31 the DPD ordinal
-/// juxtaposes ordinals (<c>trigésimo primero</c>, <c>ducentésimo</c>, <c>dosmilésimo</c>), which the
-/// declarative last-word pipeline cannot build from the cardinal; those values fail closed.
+/// Spanish ordinal domain. Validated by the RAE/ASALE <i>Diccionario panhispánico de dudas</i>, "ordinales"
+/// (NTS-08 for 1–29, the round tens, 100 and 1000; NTS-28 for the rest): §1 table and §2–§3, the complex
+/// ordinals juxtapose the simple ones (<c>trigésimo primero</c>, <c>centésimo trigésimo cuarto</c>), the
+/// round hundreds are simple (<c>ducentésimo</c>), the thousands and millions prefix the multiplying
+/// cardinal (<c>dosmilésimo</c>, <c>quinientosmilésimo</c>, <c>dosmillonésimo</c>). The configuration composes
+/// them; this guard admits 1–999 999 999 except the round thousands and millions whose multiplier the DPD does
+/// not show soldered: a multiplier ending in <c>uno</c> (21, 31, 101 …, apocope undetermined), a multiplier
+/// written in several words (150 <c>ciento cincuenta</c>) and, in the feminine, a hundreds multiplier
+/// (<c>doscientas</c>). Zero and the milliard and above (whose cardinal is not composed, NTS-30) fail closed.
+/// A composed value is checked part by part, so a rejected round part rejects the whole ordinal.
 /// </summary>
 public sealed class SpanishOrdinalLanguageSpecifics : OrdinalDomainGuardLanguageSpecifics
 {
@@ -70,18 +90,43 @@ public sealed class SpanishOrdinalLanguageSpecifics : OrdinalDomainGuardLanguage
     protected override string LanguageName => "Spanish";
 
     /// <inheritdoc />
-    protected override string SupportedDomain => "1–29, the round tens to 90, 100 and 1000";
+    protected override string SupportedDomain =>
+        "1–999999999, except round thousands and millions whose multiplier is not a one-word cardinal without " +
+        "apocope (and, in the feminine, not a hundreds multiplier)";
 
     /// <inheritdoc />
     protected override bool IsSupported(long number, IReadOnlyDictionary<string, string> activeVariants)
-        => number is >= 1 and <= 29 || IsRoundTen(number) || number is 100 or 1000;
+    {
+        if (number is < 1 or > 999_999_999) return false;
+        bool feminine = activeVariants.TryGetValue("gender", out string? gender) && gender == "femenino";
+        if (number % 1_000_000 == 0) return IsSolderableMultiplier(number / 1_000_000, feminine);
+        if (number >= 1_000_000) return true;
+        if (number % 1000 == 0) return IsSolderableMultiplier(number / 1000, feminine);
+        return true;
+    }
+
+    /// <summary>
+    /// Tells whether a multiplier of mil or millón is one of those the DPD shows soldered to the simple ordinal:
+    /// one (the noun alone), a one-word cardinal without a final <c>uno</c> (2–29 except 21, the round tens),
+    /// <c>cien</c>, and the round hundreds in the masculine.
+    /// </summary>
+    /// <param name="multiplier">The multiplier, between 1 and 999.</param>
+    /// <param name="feminine">Whether the feminine is requested.</param>
+    /// <returns><see langword="true"/> when the round ordinal is supported.</returns>
+    private static bool IsSolderableMultiplier(long multiplier, bool feminine)
+        => multiplier is >= 1 and <= 29 && multiplier != 21
+           || IsRoundTen(multiplier)
+           || multiplier == 100
+           || IsRoundHundred(multiplier) && !feminine;
 }
 
 /// <summary>
-/// Portuguese ordinal domain (NTS-08). Validated by the Priberam dictionary entries (<c>vigésimo</c> "depois
-/// do décimo nono", <c>trigésimo</c> … <c>nonagésimo</c> "após o octogésimo nono", <c>centésimo</c>,
-/// <c>milésimo</c>): 1–20, the round tens, 100 and 1000. Other compounds juxtapose ordinals
-/// (<c>vigésimo primeiro</c>), which the last-word pipeline cannot build; they fail closed.
+/// Portuguese ordinal domain: 1–1999. NTS-08 validated 1–20, the round tens, 100 and 1000 (Priberam). NTS-28
+/// added the compounds, composed from agreeing ordinals (<c>vigésimo primeiro</c>, <c>centésima quadragésima
+/// quinta</c>), and the round hundreds (<c>ducentésimo</c> … <c>nongentésimo</c>), after Ciberdúvidas, "A forma
+/// por extenso de 2000.º (e de outros ordinais)", citing E. Bechara. From 2000 the sources disagree (<c>dois
+/// milésimo</c>, <c>dois milésimos</c>, <c>segundo milésimo</c>; <c>décimo milésimo</c> for 10 000), so those
+/// values fail closed, as does zero.
 /// </summary>
 public sealed class PortugueseOrdinalLanguageSpecifics : OrdinalDomainGuardLanguageSpecifics
 {
@@ -89,18 +134,20 @@ public sealed class PortugueseOrdinalLanguageSpecifics : OrdinalDomainGuardLangu
     protected override string LanguageName => "Portuguese";
 
     /// <inheritdoc />
-    protected override string SupportedDomain => "1–20, the round tens to 90, 100 and 1000";
+    protected override string SupportedDomain => "1–1999";
 
     /// <inheritdoc />
     protected override bool IsSupported(long number, IReadOnlyDictionary<string, string> activeVariants)
-        => number is >= 1 and <= 20 || IsRoundTen(number) || number is 100 or 1000;
+        => number is >= 1 and <= 1999;
 }
 
 /// <summary>
-/// Galician ordinal domain (NTS-08). Validated by the RAG/ILG <i>Normas ortográficas e morfolóxicas do idioma
-/// galego</i> (2003), §16.2: 1–20 (<c>décimo terceiro</c> … <c>décimo noveno</c>), the round tens
-/// (<c>vixésimo</c> … <c>nonaxésimo</c>), <c>centésimo</c> and <c>milésimo</c>. Other compounds juxtapose
-/// ordinals (<c>vixésimo primeiro</c>) and fail closed.
+/// Galician ordinal domain: 1–1999. Validated by the RAG/ILG <i>Normas ortográficas e morfolóxicas do idioma
+/// galego</i> (2003), §16.2 (NTS-08 for 1–20, the round tens, <c>centésimo</c>, <c>milésimo</c>; NTS-28 for the
+/// compounds <c>vixésimo primeiro</c> …, juxtaposed with gender on the last element only, <c>centésimo
+/// primeira</c>) and the Dicionario da Real Academia Galega for the round hundreds (<c>ducentésimo</c> …
+/// <c>noninxentésimo</c>). No consulted source gives the multiples of a thousand nor the millions compounds, so
+/// 2000 and above fail closed, as does zero.
 /// </summary>
 public sealed class GalicianOrdinalLanguageSpecifics : OrdinalDomainGuardLanguageSpecifics
 {
@@ -108,18 +155,19 @@ public sealed class GalicianOrdinalLanguageSpecifics : OrdinalDomainGuardLanguag
     protected override string LanguageName => "Galician";
 
     /// <inheritdoc />
-    protected override string SupportedDomain => "1–20, the round tens to 90, 100 and 1000";
+    protected override string SupportedDomain => "1–1999";
 
     /// <inheritdoc />
     protected override bool IsSupported(long number, IReadOnlyDictionary<string, string> activeVariants)
-        => number is >= 1 and <= 20 || IsRoundTen(number) || number is 100 or 1000;
+        => number is >= 1 and <= 1999;
 }
 
 /// <summary>
-/// Greek ordinal domain (NTS-08). Validated by the <i>Λεξικό της Κοινής Νεοελληνικής</i> (Triantafyllides):
-/// 1–20, the round tens (<c>εικοστός</c> …), the round hundreds (<c>εκατοστός</c>, <c>διακοσιοστός</c> …)
-/// and <c>χιλιοστός</c>. Compounds are made of agreeing ordinals (<c>εικοστός πρώτος</c>,
-/// <c>εκατοστή πρώτη</c>), which the last-word pipeline cannot build from the cardinal; they fail closed.
+/// Greek ordinal domain: 1–1999. Validated by the <i>Λεξικό της Κοινής Νεοελληνικής</i> (Triantafyllides): NTS-08
+/// for 1–20, the round tens, the round hundreds and <c>χιλιοστός</c>; NTS-28 for the compounds, juxtaposed
+/// ordinals agreeing in gender (<c>εικοστή τρίτη</c>, <c>εκατοστή πρώτη</c>), composed by the configuration.
+/// The round thousands above one (<c>δισχιλιοστός</c> …) are not established by the dictionary, so 2000 and
+/// above fail closed, as does zero.
 /// </summary>
 public sealed class GreekOrdinalLanguageSpecifics : OrdinalDomainGuardLanguageSpecifics
 {
@@ -127,20 +175,21 @@ public sealed class GreekOrdinalLanguageSpecifics : OrdinalDomainGuardLanguageSp
     protected override string LanguageName => "Greek";
 
     /// <inheritdoc />
-    protected override string SupportedDomain => "1–20, the round tens to 90, the round hundreds to 900 and 1000";
+    protected override string SupportedDomain => "1–1999";
 
     /// <inheritdoc />
     protected override bool IsSupported(long number, IReadOnlyDictionary<string, string> activeVariants)
-        => number is >= 1 and <= 20 || IsRoundTen(number) || IsRoundHundred(number) || number == 1000;
+        => number is >= 1 and <= 1999;
 }
 
 /// <summary>
-/// Finnish ordinal domain (NTS-08). Validated in the nominative by the Aalto University course "Numeroiden
-/// taivutus" and the Kielitoimisto (<c>kahdeskymmenes</c>, <c>sadas</c>, <c>tuhannes</c>; <c>nollas</c>,
-/// NTS-12): 0–20, the round tens, the round hundreds and 1000. Compounds fuse every component
-/// (<c>kahdeskymmenesensimmäinen</c>) and the inflected ordinals change every stem (genitive
-/// <c>kolmannen</c>, partitive <c>kolmatta</c>), which the declarative pipeline does not build; those
-/// values and every non-nominative case fail closed.
+/// Finnish ordinal domain: the nominative of 0–1999. NTS-08 validated 0–20, the round tens and hundreds and 1000
+/// (Aalto University "Numeroiden taivutus", Kielitoimisto; <c>nollas</c>, NTS-12). NTS-28 added the compounds,
+/// one word with the ordinal marker in every part (Kielitoimiston ohjepankki: <c>viideskymmenesviides</c>,
+/// <c>kahdeskymmenesensimmäinen</c>), composed by the configuration. The inflected ordinals change every
+/// component (genitive <c>kolmannenkymmenennenkuudennen</c>), but the consulted sources give the paradigms of
+/// 1, 3, 5, 17, 20, 100 and 1000 only, so every non-nominative case fails closed; from 2000 the cardinal is wrong
+/// (<c>kaksi tuhat</c>, NTS-30) and the round thousands are not sourced, so those values fail closed too.
 /// </summary>
 public sealed class FinnishOrdinalLanguageSpecifics : OrdinalDomainGuardLanguageSpecifics
 {
@@ -151,7 +200,7 @@ public sealed class FinnishOrdinalLanguageSpecifics : OrdinalDomainGuardLanguage
     protected override string LanguageName => "Finnish";
 
     /// <inheritdoc />
-    protected override string SupportedDomain => "the nominative of 0–20, the round tens to 90, the round hundreds to 900 and 1000";
+    protected override string SupportedDomain => "the nominative of 0–1999";
 
     /// <inheritdoc />
     protected override bool IsSupported(long number, IReadOnlyDictionary<string, string> activeVariants)
@@ -159,34 +208,169 @@ public sealed class FinnishOrdinalLanguageSpecifics : OrdinalDomainGuardLanguage
         if ((activeVariants.TryGetValue("case", out string? caseValue) || activeVariants.TryGetValue("sijamuoto", out caseValue))
             && caseValue != Nominative)
             return false;
-        return number is >= 0 and <= 20 || IsRoundTen(number) || IsRoundHundred(number) || number == 1000;
+        return number is >= 0 and <= 1999;
     }
 }
 
 /// <summary>
-/// Russian ordinal domain (NTS-08). Validated by the <i>Правила русской орфографии и пунктуации</i>, §132–133
-/// (only the last word of a composite ordinal is ordinal: <c>тысяча девятьсот девяносто четвёртый</c>):
-/// 0 (<c>нулевой</c>, NTS-14) to 1999. From 2000 the configured cardinal is wrong (<c>два тысяча</c>
-/// instead of <c>две тысячи</c>) and the one-word round ordinals (<c>двухтысячный</c>,
-/// <c>десятитысячный</c>, <c>миллионный</c>) are not built; those values fail closed.
+/// Russian ordinal domain, after the <i>Правила русской орфографии и пунктуации</i> (2006). §133б: a composite
+/// ordinal is written separately and only its last part is ordinal (<c>тысяча девятьсот девяносто
+/// четвёртый</c>, <c>две тысячи первый</c>, <c>миллион двести тысяч сто пятый</c>); the declarative pipeline
+/// forms them on the NTS-27 cardinal (the configuration drops the <c>один</c> of a single million). §132б: an
+/// ordinal whose last part is <c>-тысячный</c> or <c>-миллионный</c> is one word with its first part in the
+/// genitive (<c>пятнадцатитысячный</c>, <c>шестисотмиллионный</c>); this class builds them, declined for
+/// gender and case, also after the millions (<c>два миллиона трёхтысячный</c>).
 /// </summary>
+/// <remarks>
+/// Domain: 0 (<c>нулевой</c>, NTS-14) to 999 999 999. A round thousand or million is supported when its
+/// multiplier is one or has a genitive combining form established by the examples (2–99 except a final
+/// <c>один</c> after the tens, and 200–999 whose hundreds take the genitive, <c>шестисот</c>); a final
+/// <c>один</c> (21 000) and the hundreds of <c>сто</c> (100 000 – 199 000) fail closed, as does the milliard and
+/// above, whose generated scale names do not agree yet (NTS-30).
+/// </remarks>
 public sealed class RussianOrdinalLanguageSpecifics : OrdinalDomainGuardLanguageSpecifics
 {
+    /// <summary>The genitive combining forms of 0–9 (index = value; 0 and 1 have none).</summary>
+    private static readonly string?[] s_unitsGenitive = [null, null, "двух", "трёх", "четырёх", "пяти", "шести", "семи", "восьми", "девяти"];
+
+    /// <summary>The genitive combining forms of 10–19.</summary>
+    private static readonly string[] s_teensGenitive =
+        ["десяти", "одиннадцати", "двенадцати", "тринадцати", "четырнадцати", "пятнадцати", "шестнадцати", "семнадцати", "восемнадцати", "девятнадцати"];
+
+    /// <summary>The genitive combining forms of the round tens (index = tens digit).</summary>
+    private static readonly string?[] s_tensGenitive = [null, null, "двадцати", "тридцати", "сорока", "пятидесяти", "шестидесяти", "семидесяти", "восьмидесяти", "девяноста"];
+
+    /// <summary>The genitive combining forms of the round hundreds from 200 (index = hundreds digit).</summary>
+    private static readonly string?[] s_hundredsGenitive = [null, null, "двухсот", "трёхсот", "четырёхсот", "пятисот", "шестисот", "семисот", "восьмисот", "девятисот"];
+
+    /// <summary>Masculine cardinal units (the gender of миллион).</summary>
+    private static readonly string[] s_units = ["", "один", "два", "три", "четыре", "пять", "шесть", "семь", "восемь", "девять"];
+
+    /// <summary>Cardinal 10–19.</summary>
+    private static readonly string[] s_teens =
+        ["десять", "одиннадцать", "двенадцать", "тринадцать", "четырнадцать", "пятнадцать", "шестнадцать", "семнадцать", "восемнадцать", "девятнадцать"];
+
+    /// <summary>Cardinal round tens (index = tens digit).</summary>
+    private static readonly string[] s_tens = ["", "", "двадцать", "тридцать", "сорок", "пятьдесят", "шестьдесят", "семьдесят", "восемьдесят", "девяносто"];
+
+    /// <summary>Cardinal round hundreds (index = hundreds digit).</summary>
+    private static readonly string[] s_hundreds = ["", "сто", "двести", "триста", "четыреста", "пятьсот", "шестьсот", "семьсот", "восемьсот", "девятьсот"];
+
+    /// <summary>The case values of the configuration, in the column order of <see cref="s_endings"/>.</summary>
+    private static readonly string[] s_cases = ["именительный", "родительный", "дательный", "винительный", "творительный", "предложный"];
+
+    /// <summary>The gender values of the configuration, in the row order of <see cref="s_endings"/>.</summary>
+    private static readonly string[] s_genders = ["maskulin", "feminin", "neutrum", "plural"];
+
+    /// <summary>
+    /// Hard adjective endings [gender][case], as configured for <c>тысячный</c> (inanimate accusative).
+    /// </summary>
+    private static readonly string[][] s_endings =
+    [
+        ["ый", "ого", "ому", "ый", "ым", "ом"],
+        ["ая", "ой", "ой", "ую", "ой", "ой"],
+        ["ое", "ого", "ому", "ое", "ым", "ом"],
+        ["ые", "ых", "ым", "ые", "ыми", "ых"],
+    ];
+
     /// <inheritdoc />
     protected override string LanguageName => "Russian";
 
     /// <inheritdoc />
-    protected override string SupportedDomain => "0–1999";
+    protected override string SupportedDomain =>
+        "0–999999999, except round thousands and millions whose multiplier ends in один after the tens or lies " +
+        "between 100 and 199";
 
     /// <inheritdoc />
-    protected override bool IsSupported(long number, IReadOnlyDictionary<string, string> activeVariants) => number < 2000;
+    protected override bool IsSupported(long number, IReadOnlyDictionary<string, string> activeVariants)
+    {
+        if (number < 2000) return true;
+        if (number > 999_999_999) return false;
+        if (number % 1000 != 0) return true;
+        long thousands = number / 1000 % 1000;
+        return thousands != 0 ? IsCombinable(thousands) : IsCombinable(number / 1_000_000);
+    }
+
+    /// <inheritdoc />
+    protected override bool TryBuildOrdinal(long number, IReadOnlyDictionary<string, string> activeVariants, out string? result)
+    {
+        result = null;
+        if (number < 2000 || number % 1000 != 0) return false;
+
+        int genderIndex = Math.Max(0, Array.IndexOf(s_genders, activeVariants.TryGetValue("gender", out string? gender) ? gender : null));
+        int caseIndex = Math.Max(0, Array.IndexOf(s_cases, activeVariants.TryGetValue("case", out string? caseValue) ? caseValue : null));
+        string ending = s_endings[genderIndex][caseIndex];
+
+        long millions = number / 1_000_000;
+        long thousands = number / 1000 % 1000;
+        if (thousands == 0)
+        {
+            result = Combining(millions) + "миллионн" + ending;
+            return true;
+        }
+        string word = Combining(thousands) + "тысячн" + ending;
+        result = millions == 0 ? word : MillionsCardinal(millions) + " " + word;
+        return true;
+    }
+
+    /// <summary>Tells whether a multiplier of тысяча or миллион has an established combining form.</summary>
+    /// <param name="multiplier">The multiplier, 1–999.</param>
+    /// <returns><see langword="true"/> for one and the multipliers <see cref="Combining"/> can write.</returns>
+    private static bool IsCombinable(long multiplier)
+    {
+        if (multiplier == 1) return true;
+        long hundreds = multiplier / 100;
+        long rest = multiplier % 100;
+        if (hundreds == 1) return false;
+        return rest is 0 or >= 2 and <= 19 || rest >= 20 && rest % 10 != 1;
+    }
+
+    /// <summary>Writes the genitive combining form of a multiplier accepted by <see cref="IsCombinable"/>.</summary>
+    /// <param name="multiplier">The multiplier, 1–999 (one gives the empty string: тысячный, миллионный).</param>
+    /// <returns>The combining form (e.g. <c>двадцатипяти</c>, <c>шестисот</c>).</returns>
+    private static string Combining(long multiplier)
+    {
+        if (multiplier == 1) return string.Empty;
+        string hundreds = s_hundredsGenitive[multiplier / 100] ?? string.Empty;
+        long rest = multiplier % 100;
+        string tail = rest switch
+        {
+            0 => string.Empty,
+            < 10 => s_unitsGenitive[rest]!,
+            < 20 => s_teensGenitive[rest - 10],
+            _ => s_tensGenitive[rest / 10] + (rest % 10 == 0 ? string.Empty : s_unitsGenitive[rest % 10]),
+        };
+        return hundreds + tail;
+    }
+
+    /// <summary>Writes the cardinal of a millions group with the agreeing noun (миллион, два миллиона, пять миллионов).</summary>
+    /// <param name="millions">The millions multiplier, 1–999.</param>
+    /// <returns>The cardinal words.</returns>
+    private static string MillionsCardinal(long millions)
+    {
+        if (millions == 1) return "миллион";
+        var words = new List<string>();
+        if (millions / 100 > 0) words.Add(s_hundreds[millions / 100]);
+        long rest = millions % 100;
+        if (rest is >= 10 and < 20) words.Add(s_teens[rest - 10]);
+        else
+        {
+            if (rest >= 20) words.Add(s_tens[rest / 10]);
+            if (rest % 10 > 0) words.Add(s_units[rest % 10]);
+        }
+        long last = rest % 10;
+        bool teen = rest is >= 10 and < 20;
+        words.Add(!teen && last == 1 ? "миллион" : !teen && last is >= 2 and <= 4 ? "миллиона" : "миллионов");
+        return string.Join(" ", words);
+    }
 }
 
 /// <summary>
-/// Vietnamese ordinal domain (NTS-08): <c>thứ</c> + cardinal with the forms <c>thứ nhất</c> and <c>thứ tư</c>
-/// (Vietnamese dictionaries via vtudien), validated from 0 to 999. From 1000 the configured cardinal is wrong
-/// (<c>nghìn</c> instead of <c>một nghìn</c>, <c>hai nghìn năm</c> instead of
-/// <c>hai nghìn không trăm linh năm</c>), so those ordinals fail closed.
+/// Vietnamese ordinal domain: <c>thứ</c> + cardinal, with the forms <c>thứ nhất</c> and <c>thứ tư</c> (vtudien,
+/// Việt-Việt: thứ "Đặt trước số từ để chỉ thứ tự", before any numeral). NTS-08 validated 0–999; NTS-28 extends the
+/// rule to the NTS-27 cardinal domain (to 999 999 999 999). A number with a whole zero class after a higher class
+/// (1 000 005) still has a cardinal defect (the class is skipped instead of read <c>không nghìn</c>, NTS-30), so
+/// its ordinal fails closed.
 /// </summary>
 public sealed class VietnameseOrdinalLanguageSpecifics : OrdinalDomainGuardLanguageSpecifics
 {
@@ -194,10 +378,23 @@ public sealed class VietnameseOrdinalLanguageSpecifics : OrdinalDomainGuardLangu
     protected override string LanguageName => "Vietnamese";
 
     /// <inheritdoc />
-    protected override string SupportedDomain => "0–999";
+    protected override string SupportedDomain => "0–999999999999 without a whole zero class after a higher class";
 
     /// <inheritdoc />
-    protected override bool IsSupported(long number, IReadOnlyDictionary<string, string> activeVariants) => number < 1000;
+    protected override bool IsSupported(long number, IReadOnlyDictionary<string, string> activeVariants)
+    {
+        if (number > 999_999_999_999) return false;
+        // Scan the classes from the units upward: a zero class is a defect when a lower class is non-zero and a
+        // higher class too (it is then an inner class the cardinal skips).
+        bool lowerNonZero = false;
+        for (long rest = number; rest >= 1000; rest /= 1000)
+        {
+            long group = rest % 1000;
+            if (group == 0 && lowerNonZero) return false;
+            lowerNonZero |= group != 0;
+        }
+        return true;
+    }
 }
 
 /// <summary>
@@ -220,10 +417,10 @@ public sealed class DutchOrdinalLanguageSpecifics : OrdinalDomainGuardLanguageSp
 }
 
 /// <summary>
-/// Hindi ordinal domain (NTS-08). Kamta Prasad Guru, <i>हिंदी व्याकरण</i> §180: पहला, दूसरा, तीसरा, चौथा, छठा,
-/// otherwise <c>-वाँ</c> on the last word, also above a hundred (<c>एक सौ तीनवाँ</c>). Validated from 0 to
-/// 99 999; from 100 000 the configured cardinal is wrong (<c>एक सौ हज़ार</c> instead of <c>एक लाख</c>), so
-/// those ordinals fail closed.
+/// Hindi ordinal domain. Kamta Prasad Guru, <i>हिंदी व्याकरण</i> §180: पहला, दूसरा, तीसरा, चौथा, छठा, otherwise
+/// <c>-वाँ</c>, and (इ) above a hundred <c>-वाँ</c> on the end of the last word, whatever the number (<c>एक सौ
+/// तीनवाँ</c>). NTS-08 validated 0–99 999; NTS-28 extends the rule to the NTS-27 cardinal domain with लाख and करोड़
+/// (<c>एक लाखवाँ</c>, <c>एक करोड़वाँ</c>), to 9 999 999 999 999.
 /// </summary>
 public sealed class HindiOrdinalLanguageSpecifics : OrdinalDomainGuardLanguageSpecifics
 {
@@ -231,16 +428,16 @@ public sealed class HindiOrdinalLanguageSpecifics : OrdinalDomainGuardLanguageSp
     protected override string LanguageName => "Hindi";
 
     /// <inheritdoc />
-    protected override string SupportedDomain => "0–99999";
+    protected override string SupportedDomain => "0–9999999999999";
 
     /// <inheritdoc />
-    protected override bool IsSupported(long number, IReadOnlyDictionary<string, string> activeVariants) => number < 100_000;
+    protected override bool IsSupported(long number, IReadOnlyDictionary<string, string> activeVariants) => number <= 9_999_999_999_999;
 }
 
 /// <summary>
-/// Japanese ordinal domain (NTS-08): the prefix <c>第</c> before the cardinal (デジタル大辞泉, 第: "数を表す語に付いて、
-/// ものの順序を表す"), validated from 0 to 1000. Above 1000 the configured cardinal splits the thousands with
-/// spaces and does not count by 万 (<c>十 千</c> for 10 000), so those ordinals fail closed.
+/// Japanese ordinal domain: the prefix <c>第</c> before the cardinal (デジタル大辞泉, 第: "数を表す語に付いて、ものの順序を
+/// 表す", before any numeral). NTS-08 validated 0–1000; NTS-28 extends it to the NTS-27 cardinal domain, counted by
+/// 万 (to 9999兆, 10^16 − 1).
 /// </summary>
 public sealed class JapaneseOrdinalLanguageSpecifics : OrdinalDomainGuardLanguageSpecifics
 {
@@ -248,16 +445,16 @@ public sealed class JapaneseOrdinalLanguageSpecifics : OrdinalDomainGuardLanguag
     protected override string LanguageName => "Japanese";
 
     /// <inheritdoc />
-    protected override string SupportedDomain => "0–1000";
+    protected override string SupportedDomain => "0–9999999999999999";
 
     /// <inheritdoc />
-    protected override bool IsSupported(long number, IReadOnlyDictionary<string, string> activeVariants) => number <= 1000;
+    protected override bool IsSupported(long number, IReadOnlyDictionary<string, string> activeVariants) => number <= 9_999_999_999_999_999;
 }
 
 /// <summary>
-/// Korean ordinal domain (NTS-08): the prefix <c>제</c> before the Sino-Korean numeral (한글 맞춤법 제43항:
-/// <c>제삼 항</c>), validated from 0 to 1000. Above 1000 the configured cardinal spaces the thousands
-/// (<c>천 일</c>, <c>십 천</c>), whereas Korean numbers are spaced by units of 만, so those ordinals fail closed.
+/// Korean ordinal domain: the prefix <c>제</c> before the Sino-Korean numeral (한글 맞춤법 제43항: <c>제삼 항</c>), with
+/// any numeral. NTS-08 validated 0–1000; NTS-28 extends it to the NTS-27 cardinal domain, spaced by units of 만 (to
+/// 9999조, 10^16 − 1).
 /// </summary>
 public sealed class KoreanOrdinalLanguageSpecifics : OrdinalDomainGuardLanguageSpecifics
 {
@@ -265,17 +462,16 @@ public sealed class KoreanOrdinalLanguageSpecifics : OrdinalDomainGuardLanguageS
     protected override string LanguageName => "Korean";
 
     /// <inheritdoc />
-    protected override string SupportedDomain => "0–1000";
+    protected override string SupportedDomain => "0–9999999999999999";
 
     /// <inheritdoc />
-    protected override bool IsSupported(long number, IReadOnlyDictionary<string, string> activeVariants) => number <= 1000;
+    protected override bool IsSupported(long number, IReadOnlyDictionary<string, string> activeVariants) => number <= 9_999_999_999_999_999;
 }
 
 /// <summary>
-/// Chinese ordinal domain (NTS-08): the prefix <c>第</c> before the cardinal (國語辭典: "用於整數數詞之前。表事物的
-/// 順序或等級"), validated from 0 to 100 and for the round hundreds to 900. Other values above 100 rely on a
-/// configured cardinal without <c>零</c> or <c>一十</c> (<c>一百一</c> for 101, <c>一百十</c> for 110,
-/// <c>一 千</c> for 1000), so their ordinals fail closed.
+/// Chinese ordinal domain: the prefix <c>第</c> before the cardinal (國語辭典: "用於整數數詞之前。表事物的順序或等級", before
+/// any integer numeral). NTS-08 validated 0–100 and the round hundreds; NTS-28 extends it to the NTS-27 cardinal
+/// domain with <c>零</c> and <c>一十</c>, counted by 万 (below 万亿, 10^12).
 /// </summary>
 public sealed class ChineseOrdinalLanguageSpecifics : OrdinalDomainGuardLanguageSpecifics
 {
@@ -283,19 +479,20 @@ public sealed class ChineseOrdinalLanguageSpecifics : OrdinalDomainGuardLanguage
     protected override string LanguageName => "Chinese";
 
     /// <inheritdoc />
-    protected override string SupportedDomain => "0–100 and the round hundreds to 900";
+    protected override string SupportedDomain => "0–999999999999";
 
     /// <inheritdoc />
     protected override bool IsSupported(long number, IReadOnlyDictionary<string, string> activeVariants)
-        => number <= 100 || IsRoundHundred(number);
+        => number <= 999_999_999_999;
 }
 
 /// <summary>
-/// Basque ordinal domain (NTS-08). Euskaltzaindia, rule 18 (<c>bigarren</c>, <c>bosgarren</c>,
-/// <c>hogeita batgarren</c>, <c>ehungarren</c>, <c>milagarren</c>) and rule 7 (cardinals), validated from 1 to
-/// 1000. Zero has no attested ordinal (rule 7 gives only <c>zero</c>/<c>huts</c>), and above 1000 the configured
-/// cardinal omits the <c>eta</c> required by rule 7 (<c>mila bat</c> instead of <c>mila eta bat</c>) or puts the
-/// multiplier of a million first (<c>bat milioi</c> instead of <c>milioi bat</c>); those values fail closed.
+/// Basque ordinal domain. Euskaltzaindia, rule 18: the ordinal is the cardinal written in letters followed by
+/// <c>-garren</c> (<c>bigarren</c>, <c>bosgarren</c>, <c>hogeita batgarren</c>, <c>ehungarren</c>, <c>milagarren</c>
+/// …). NTS-08 validated 1–1000; NTS-28 extends the rule to the NTS-27 cardinal (rule 7: <c>mila eta batgarren</c>,
+/// <c>milioi batgarren</c>), to 999 999 999. Zero has no attested ordinal (rule 7 gives only
+/// <c>zero</c>/<c>huts</c>), and from the milliard the cardinal does not compose <c>mila milioi</c> with the
+/// millions (NTS-30); those values fail closed.
 /// </summary>
 public sealed class BasqueOrdinalLanguageSpecifics : OrdinalDomainGuardLanguageSpecifics
 {
@@ -303,9 +500,9 @@ public sealed class BasqueOrdinalLanguageSpecifics : OrdinalDomainGuardLanguageS
     protected override string LanguageName => "Basque";
 
     /// <inheritdoc />
-    protected override string SupportedDomain => "1–1000";
+    protected override string SupportedDomain => "1–999999999";
 
     /// <inheritdoc />
     protected override bool IsSupported(long number, IReadOnlyDictionary<string, string> activeVariants)
-        => number is >= 1 and <= 1000;
+        => number is >= 1 and <= 999_999_999;
 }

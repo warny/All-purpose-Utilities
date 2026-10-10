@@ -7,7 +7,10 @@ namespace Utils.NumberToString;
 /// require both the tens and units components to carry ordinal endings — a transformation
 /// the XML word-rule engine cannot perform because it only rewrites the last word.
 /// Numbers 1–19 fall through to the XML pipeline (which carries full case/gender tables).
-/// Since NTS-08 the plugin also builds 1000–1999 and rejects every value from 2000.
+/// Since NTS-08 the plugin also builds 1000–1999; since NTS-28 it builds 2000–999 999 after PWN Poradnia
+/// 16446: the thousands stay cardinal with their agreeing noun (<c>dwa tysiące piętnasty</c>) and a round
+/// thousand with a multiplier of 2–99 is one word declined like <c>tysięczny</c>
+/// (<c>dwudziestojedentysięczny</c>). The round thousands from 100 000 and the millions fail closed.
 /// </summary>
 public sealed class PolishOrdinalLanguageSpecifics : INumberToStringLanguageSpecifics, IOrdinalLanguageSpecifics
 {
@@ -264,34 +267,133 @@ public sealed class PolishOrdinalLanguageSpecifics : INumberToStringLanguageSpec
     private static readonly string[] s_cardinalHundreds =
         ["sto", "dwieście", "trzysta", "czterysta", "pięćset", "sześćset", "siedemset", "osiemset", "dziewięćset"];
 
+    /// <summary>Cardinal units 1–9 (masculine non-personal form, used before tysiące/tysięcy).</summary>
+    private static readonly string[] s_cardinalUnits = ["", "jeden", "dwa", "trzy", "cztery", "pięć", "sześć", "siedem", "osiem", "dziewięć"];
+
+    /// <summary>Cardinal 10–19.</summary>
+    private static readonly string[] s_cardinalTeens =
+        ["dziesięć", "jedenaście", "dwanaście", "trzynaście", "czternaście", "piętnaście", "szesnaście", "siedemnaście", "osiemnaście", "dziewiętnaście"];
+
+    /// <summary>Cardinal round tens (index = tens digit).</summary>
+    private static readonly string[] s_cardinalTens =
+        ["", "", "dwadzieścia", "trzydzieści", "czterdzieści", "pięćdziesiąt", "sześćdziesiąt", "siedemdziesiąt", "osiemdziesiąt", "dziewięćdziesiąt"];
+
+    /// <summary>
+    /// Combining forms of 2–19 before <c>tysięczny</c> (index = value): PWN Poradnia 16446
+    /// (<c>dziewiętnastotysięczny</c>, <c>dwudziestodwutysięczny</c>).
+    /// </summary>
+    private static readonly string?[] s_combiningUnitsAndTeens =
+    [
+        null, null, "dwu", "trzy", "cztero", "pięcio", "sześcio", "siedmio", "ośmio", "dziewięcio",
+        "dziesięcio", "jedenasto", "dwunasto", "trzynasto", "czternasto", "piętnasto", "szesnasto", "siedemnasto", "osiemnasto", "dziewiętnasto",
+    ];
+
+    /// <summary>Combining forms of the round tens before <c>tysięczny</c> (index = tens digit): <c>dwudziesto</c>.</summary>
+    private static readonly string?[] s_combiningTens =
+        [null, null, "dwudziesto", "trzydziesto", "czterdziesto", "pięćdziesięcio", "sześćdziesięcio", "siedemdziesięcio", "osiemdziesięcio", "dziewięćdziesięcio"];
+
+    /// <summary>Stems of the ordinals 10–19, declined like <c>piąty</c> (index = value − 10).</summary>
+    private static readonly string[] s_teenStems =
+        ["dziesią", "jedenas", "dwunas", "trzynas", "czternas", "piętnas", "szesnas", "siedemnas", "osiemnas", "dziewiętnas"];
+
     /// <inheritdoc />
     public string FinalizeWriting(string languageIdentifier, string text) => text;
 
     /// <inheritdoc />
-    /// <remarks>Values above <see cref="int"/> are outside the validated domain (1–1999) and fail closed.</remarks>
+    /// <remarks>Values above <see cref="int"/> are outside the validated domain (1–999 999) and fail closed.</remarks>
     public bool TryConvertOrdinal(long number, IReadOnlyDictionary<string, string> activeVariants, out string? result)
     {
         if (number > int.MaxValue)
             throw new System.NotSupportedException(
-                $"Polish ordinal {number} is not supported: the validated ordinal domain is 1–1999.");
+                $"Polish ordinal {number} is not supported: the validated ordinal domain is 1–999999 except the round thousands from 100000.");
         return TryConvertOrdinal((int)number, activeVariants, out result);
     }
 
     /// <inheritdoc />
     public bool TryConvertOrdinal(int number, IReadOnlyDictionary<string, string> activeVariants, out string? result)
     {
-        // NTS-08: from 2000 the configured cardinal does not inflect the thousands ("dwa tysiąc") and the
-        // one-word round ordinals ("dwutysięczny") are not built, so those ordinals fail closed.
-        if (number >= 2000)
+        // NTS-28: 2000-999 999, except the round thousands from 100 000 (PWN Poradnia 16446 decomposes them
+        // in an unconfirmed way); the million is outside the cardinal domain.
+        if (number >= 1_000_000 || number >= 100_000 && number % 1000 == 0)
             throw new System.NotSupportedException(
-                $"Polish ordinal {number} is not supported: the validated ordinal domain is 1–1999.");
+                $"Polish ordinal {number} is not supported: the validated ordinal domain is 1–999999 except the round thousands from 100000.");
         if (number < 20) { result = null; return false; }
 
         int ri = RodzajIndex(activeVariants.TryGetValue("rodzaj", out var r) ? r : "maskulin");
         int pi = PrzypadekIndex(activeVariants.TryGetValue("przypadek", out var p) ? p : "mianownik");
 
-        result = GetForm(number, ri, pi);
+        result = number >= 2000 ? GetThousandsForm(number, ri, pi) : GetForm(number, ri, pi);
         return result is not null;
+    }
+
+    /// <summary>
+    /// Builds an ordinal from 2000 to 999 999 (NTS-28, PWN Poradnia 16446). A round thousand is one word, the
+    /// combining form of its multiplier (2–99) before <c>tysięczny</c>; otherwise the thousands stay cardinal
+    /// with their agreeing noun and the rest is ordinal as below 1000 (<c>dwa tysiące piętnasty</c>). A rest
+    /// whose hundreds precede 11–19 has no form here and goes to the XML pipeline, whose last-word rules give
+    /// the same text on the NTS-27 cardinal (<c>dwa tysiące sto piętnasty</c>).
+    /// </summary>
+    /// <param name="number">The value, 2000–999 999 (round thousands below 100 000 only).</param>
+    /// <param name="ri">The gender (rodzaj) index.</param>
+    /// <param name="pi">The case (przypadek) index.</param>
+    /// <returns>The ordinal, or <see langword="null"/> to let the XML pipeline form it.</returns>
+    private static string? GetThousandsForm(int number, int ri, int pi)
+    {
+        int thousands = number / 1000;
+        int lower = number % 1000;
+        if (lower == 0)
+            return CombiningForm(thousands) + ThousandForm(ri, pi);
+        string? lowerOrdinal = lower < 20 ? LowOrdinal(lower, ri, pi) : GetForm(lower, ri, pi);
+        return lowerOrdinal is null ? null : ThousandsCardinal(thousands) + " " + lowerOrdinal;
+    }
+
+    /// <summary>
+    /// Returns the ordinal of 1–19 for the requested form. Alone these values are formed by the XML pipeline;
+    /// after the thousands the plugin declines them itself: 1–9 from the unit table, 10–19 like the hard
+    /// adjective <c>piąty</c> (<c>dziesiąty</c>, <c>piętnasty</c>, virile plural <c>piętnaści</c>).
+    /// </summary>
+    /// <param name="value">The value, 1–19.</param>
+    /// <param name="ri">The gender (rodzaj) index.</param>
+    /// <param name="pi">The case (przypadek) index.</param>
+    /// <returns>The declined ordinal.</returns>
+    private static string LowOrdinal(int value, int ri, int pi)
+    {
+        if (value < 10) return s_units[value - 1][ri * 6 + pi];
+        // Every form of "piąty" starts with "pią"; the teens share its endings.
+        return s_teenStems[value - 10] + s_units[4][ri * 6 + pi][3..];
+    }
+
+    /// <summary>Writes the combining form of a multiplier of 2–99 before <c>tysięczny</c>.</summary>
+    /// <param name="multiplier">The multiplier, 2–99.</param>
+    /// <returns>The combining form (e.g. <c>dwudziestojeden</c>, <c>pięcio</c>).</returns>
+    private static string CombiningForm(int multiplier)
+    {
+        if (multiplier < 20) return s_combiningUnitsAndTeens[multiplier]!;
+        int units = multiplier % 10;
+        // PWN Poradnia 16446: dwudziestojedentysięczny, dwudziestodwutysięczny.
+        string unitsForm = units switch { 0 => string.Empty, 1 => "jeden", _ => s_combiningUnitsAndTeens[units]! };
+        return s_combiningTens[multiplier / 10] + unitsForm;
+    }
+
+    /// <summary>Writes the cardinal of a thousands group with its agreeing noun (dwa tysiące, pięć tysięcy).</summary>
+    /// <param name="thousands">The thousands multiplier, 2–999.</param>
+    /// <returns>The cardinal words.</returns>
+    private static string ThousandsCardinal(int thousands)
+    {
+        var words = new List<string>();
+        if (thousands / 100 > 0) words.Add(s_cardinalHundreds[thousands / 100 - 1]);
+        int rest = thousands % 100;
+        if (rest is >= 10 and < 20) words.Add(s_cardinalTeens[rest - 10]);
+        else
+        {
+            if (rest >= 20) words.Add(s_cardinalTens[rest / 10]);
+            if (rest % 10 > 0) words.Add(s_cardinalUnits[rest % 10]);
+        }
+        // Unicode CLDR pl / SJP PWN (NTS-27): tysiące after 2-4 except 12-14, tysięcy otherwise (never tysiąc).
+        int last = rest % 10;
+        bool few = last is >= 2 and <= 4 && rest is (< 12 or > 14);
+        words.Add(few ? "tysiące" : "tysięcy");
+        return string.Join(" ", words);
     }
 
     private static string? GetForm(int number, int ri, int pi)

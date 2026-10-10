@@ -122,15 +122,29 @@ Examples:
 # NTS-08 validation: Vietnamese dictionaries (vtudien, Việt-Việt): "tư … Bốn: xếp thứ tư"; "thứ … chỗ
 # trong trật tự sắp xếp: hàng thứ nhất". NTS-27 corrected the cardinals from 1000 ("một nghìn", "hai nghìn
 # không trăm linh năm"), but no source settles the ordinal of these values: they still fail closed (NTS-28).
-Scenario Outline: Vietnamese ordinals from a thousand are not supported
+# NTS-28: vtudien (Việt-Việt), thứ "Đặt trước số từ để chỉ thứ tự": before any numeral; since NTS-27 the cardinal
+# is right from 1000. A number with a whole zero class after a higher class keeps a cardinal defect (the class is
+# skipped instead of "không nghìn", NTS-30): those ordinals still fail closed.
+Scenario Outline: NTS-28 Vietnamese ordinals from a thousand
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 1000 | thứ một nghìn |
+    | 2005 | thứ hai nghìn không trăm linh năm |
+    | 1000000 | thứ một triệu |
+    | 1001001 | thứ một triệu không trăm linh một nghìn không trăm linh một |
+
+Scenario Outline: Vietnamese ordinals with a skipped zero class are not supported
     When I attempt to convert the ordinal number <number>
     Then conversion is rejected because no ordinal form is available
 
 Examples:
     | number |
-    | 1000 |
-    | 2005 |
-    | 1000000 |
+    | 1000005 |
+    | 1000000005 |
+    | 1000000000000 |
 
 Scenario: Idiomatic clock-time conversion is supported
     Then the converter supports clock-time conversion

@@ -86,18 +86,27 @@ Examples:
     | 200 | 第二百 |
     | 900 | 第九百 |
 
-Scenario Outline: Chinese ordinals outside the validated domain are not supported
+# NTS-28: 國語辭典 (汉典) 第 "用於整數數詞之前": before any integer numeral; since NTS-27 the cardinal has 零 and 一十
+# and counts by 万, so the ordinal covers the whole cardinal domain (below 万亿).
+Scenario Outline: NTS-28 Chinese ordinals of the whole cardinal domain
     Given I use the "ZH" number converter
-    When I attempt to convert the ordinal number <number>
-    Then conversion is rejected because no ordinal form is available
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
 
 Examples:
-    | number |
-    | 101 |
-    | 110 |
-    | 111 |
-    | 1000 |
-    | 10000 |
+    | number | expected |
+    | 101 | 第一百零一 |
+    | 110 | 第一百一十 |
+    | 111 | 第一百一十一 |
+    | 1000 | 第一千 |
+    | 10000 | 第一万 |
+    | 10001 | 第一万零一 |
+    | 999999999999 | 第九千九百九十九亿九千九百九十九万九千九百九十九 |
+
+Scenario: Chinese ordinals beyond the cardinal domain are not supported
+    Given I use the "ZH" number converter
+    When I attempt to convert the ordinal number 1000000000000
+    Then conversion is rejected because no ordinal form is available
 
 Scenario: Ordinal conversion is supported
     Given I use the "ZH" number converter

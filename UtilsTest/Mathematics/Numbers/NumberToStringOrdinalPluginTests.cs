@@ -212,18 +212,17 @@ public class NumberToStringOrdinalPluginTests
     [DataRow("SK", 10_000L)]
     [DataRow("SK", 2_000L)]
     [DataRow("SK", 2_000_000L)]
-    [DataRow("UK", 11_000L)]
-    [DataRow("UK", 2_000_000L)]
+    [DataRow("UK", 21_000L)]
+    [DataRow("UK", 90_000_000L)]
     [DataRow("UK", 2_147_483_648L)]
     public void SlavicAdjectivalOrdinals_UnverifiedOrOutOfRange_FailClosed(string culture, long number)
         => Assert.ThrowsExactly<NotSupportedException>(() => NumberToStringConverter.GetConverter(culture).ConvertOrdinal(number));
 
     /// <summary>
     /// Ensures the Greek feminine cardinal variant (added for clock hours) never leaks a feminine
-    /// cardinal word into a feminine ordinal: every cardinal word must be ordinalized. Since NTS-08
-    /// the values outside the validated ordinal domain (compounds above twenty, whose ordinal is made
-    /// of agreeing ordinals such as "εκατοστή πρώτη") fail closed instead of mixing a cardinal and an
-    /// ordinal ("διακόσια πρώτη").
+    /// cardinal word into a feminine ordinal: every cardinal word must be ordinalized. Since NTS-28 the
+    /// compounds are composed of agreeing ordinals ("εκατοστή πρώτη", never "διακόσια πρώτη"), so every value
+    /// of 1-1100 is supported and none contains a cardinal word.
     /// </summary>
     [TestMethod]
     public void GreekFeminineOrdinals_DoNotLeakFeminineCardinalWords()
@@ -247,12 +246,12 @@ public class NumberToStringOrdinalPluginTests
             foreach (string word in ordinal.Split(' '))
                 CollectionAssert.DoesNotContain(cardinalWords, word, $"{value}: {ordinal}");
         }
-        Assert.AreEqual(37, supported, "1-20, the round tens 30-90, the nine round hundreds and 1000.");
+        Assert.AreEqual(1100, supported, "1-1100 are all supported since NTS-28.");
         Assert.AreEqual("πρώτη", converter.ConvertOrdinal(1, "gender=θηλυκό"));
         Assert.AreEqual("δέκατη τρίτη", converter.ConvertOrdinal(13, "gender=θηλυκό"));
         Assert.AreEqual("διακοσιοστή", converter.ConvertOrdinal(200, "gender=θηλυκό"));
         Assert.AreEqual("χιλιοστή", converter.ConvertOrdinal(1000, "gender=θηλυκό"));
-        Assert.ThrowsExactly<NotSupportedException>(() => converter.ConvertOrdinal(201, "gender=θηλυκό"));
+        Assert.AreEqual("διακοσιοστή πρώτη", converter.ConvertOrdinal(201, "gender=θηλυκό"));
     }
 
     /// <summary>Ensures the Romanian plugin changes only the last word, in both genders, up to its range limit.</summary>

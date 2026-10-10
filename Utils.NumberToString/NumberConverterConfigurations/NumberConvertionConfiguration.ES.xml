@@ -154,7 +154,10 @@
 		-->
 		<!-- NTS-08: ordinal domain guard; values outside the validated domain fail closed (see SpanishOrdinalLanguageSpecifics). -->
 		<LanguageSpecifics>SpanishOrdinalLanguageSpecifics</LanguageSpecifics>
-		<Ordinals>
+		<!-- NTS-28: the suffix "o" (feminine "a", OrdinalVariants below) only forms the round thousands and
+		     millions, whose scale noun is rewritten by an OrdinalStem (dosmil → dosmilésimo); every other
+		     supported value is formed by an exception or a word rule. -->
+		<Ordinals suffix="o">
 			<!--
 			  NTS-05 note: every entry below now carries an explicit top-level string=/to= value
 			  (equal to the masculine/first-declared form the nested Variant already provides).
@@ -203,6 +206,8 @@
 			<Ordinal from="veintiuno"    to="vigesimoprimero"> <Variant type="gender" forms="vigesimoprimero,vigesimoprimera" /></Ordinal>
 			<!-- The feminine cardinal variant (veintiuno -> veintiuna) is applied before the ordinal word rules. -->
 			<Ordinal from="veintiuna"    to="vigesimoprimero"> <Variant type="gender" forms="vigesimoprimero,vigesimoprimera" /></Ordinal>
+			<!-- NTS-28: the attributive apocope (veintiún, form=attributive) is a cardinal form; its ordinal is the same. -->
+			<Ordinal from="veintiún"     to="vigesimoprimero"> <Variant type="gender" forms="vigesimoprimero,vigesimoprimera" /></Ordinal>
 			<Ordinal from="veintidós"    to="vigesimosegundo"> <Variant type="gender" forms="vigesimosegundo,vigesimosegunda" /></Ordinal>
 			<Ordinal from="veintitrés"   to="vigesimotercero"> <Variant type="gender" forms="vigesimotercero,vigesimotercera" /></Ordinal>
 			<Ordinal from="veinticuatro" to="vigesimocuarto">  <Variant type="gender" forms="vigesimocuarto,vigesimocuarta"   /></Ordinal>
@@ -224,6 +229,43 @@
 			<!-- Round scale words -->
 			<Ordinal from="cien" to="centésimo"> <Variant type="gender" forms="centésimo,centésima" /></Ordinal>
 			<Ordinal from="mil"  to="milésimo">  <Variant type="gender" forms="milésimo,milésima"   /></Ordinal>
+			<!-- NTS-28, DPD "ordinales" §1, §2a: the round hundreds are simple ordinals; the feminine cardinal
+			     (doscientas) is transformed before the word rules, hence both keys. -->
+			<Ordinal from="doscientos"    to="ducentésimo">       <Variant type="gender" forms="ducentésimo,ducentésima" /></Ordinal>
+			<Ordinal from="doscientas"    to="ducentésimo">       <Variant type="gender" forms="ducentésimo,ducentésima" /></Ordinal>
+			<Ordinal from="trescientos"   to="tricentésimo">      <Variant type="gender" forms="tricentésimo,tricentésima" /></Ordinal>
+			<Ordinal from="trescientas"   to="tricentésimo">      <Variant type="gender" forms="tricentésimo,tricentésima" /></Ordinal>
+			<Ordinal from="cuatrocientos" to="cuadringentésimo">  <Variant type="gender" forms="cuadringentésimo,cuadringentésima" /></Ordinal>
+			<Ordinal from="cuatrocientas" to="cuadringentésimo">  <Variant type="gender" forms="cuadringentésimo,cuadringentésima" /></Ordinal>
+			<Ordinal from="quinientos"    to="quingentésimo">     <Variant type="gender" forms="quingentésimo,quingentésima" /></Ordinal>
+			<Ordinal from="quinientas"    to="quingentésimo">     <Variant type="gender" forms="quingentésimo,quingentésima" /></Ordinal>
+			<Ordinal from="seiscientos"   to="sexcentésimo">      <Variant type="gender" forms="sexcentésimo,sexcentésima" /></Ordinal>
+			<Ordinal from="seiscientas"   to="sexcentésimo">      <Variant type="gender" forms="sexcentésimo,sexcentésima" /></Ordinal>
+			<Ordinal from="setecientos"   to="septingentésimo">   <Variant type="gender" forms="septingentésimo,septingentésima" /></Ordinal>
+			<Ordinal from="setecientas"   to="septingentésimo">   <Variant type="gender" forms="septingentésimo,septingentésima" /></Ordinal>
+			<Ordinal from="ochocientos"   to="octingentésimo">    <Variant type="gender" forms="octingentésimo,octingentésima" /></Ordinal>
+			<Ordinal from="ochocientas"   to="octingentésimo">    <Variant type="gender" forms="octingentésimo,octingentésima" /></Ordinal>
+			<Ordinal from="novecientos"   to="noningentésimo">    <Variant type="gender" forms="noningentésimo,noningentésima" /></Ordinal>
+			<Ordinal from="novecientas"   to="noningentésimo">    <Variant type="gender" forms="noningentésimo,noningentésima" /></Ordinal>
+			<!-- NTS-28, DPD §2a: 1 000 000 is the simple ordinal millonésimo (the scale noun alone, OrdinalScale). -->
+			<Ordinal from="millón" to="millonésimo"> <Variant type="gender" forms="millonésimo,millonésima" /></Ordinal>
+			<!-- NTS-28, DPD §2d: the thousands and millions prefix the multiplying cardinal to the simple ordinal
+			     (dosmilésimo, quinientosmilésimo, dosmillonésimo); OrdinalScale solders the multiplier to the
+			     noun and the stems rewrite the noun before the suffix. -->
+			<OrdinalScale scales="1..2" multiplierSeparator="" />
+			<OrdinalStem from="mil" to="milésim" />
+			<OrdinalStem from="millón" to="millonésim" />
+			<!-- NTS-28, DPD §2b, §3: the complex ordinals juxtapose the simple ones from the highest order down,
+			     in two words from the third decade (trigésimo primero, centésimo trigésimo cuarto, milésimo
+			     ducentésimo cuadragésimo octavo, tresmilésimo tricentésimo cuadragésimo quinto); the tail is
+			     itself composed recursively. A round value (tail 0) is formed directly. -->
+			<OrdinalComposition for="31..99" divisor="10" separator=" " />
+			<OrdinalComposition for="101..999" divisor="100" separator=" " />
+			<OrdinalComposition for="1001..999999" divisor="1000" separator=" " />
+			<OrdinalComposition for="1000001..999999999" divisor="1000000" separator=" " />
+			<OrdinalVariants>
+				<Variant type="gender" variant="femenino" suffix="a" />
+			</OrdinalVariants>
 		</Ordinals>
 		<TimeUnits>
 			<!-- NTS-05: "hora" is feminine; "minuto"/"segundo" are masculine (the language default,

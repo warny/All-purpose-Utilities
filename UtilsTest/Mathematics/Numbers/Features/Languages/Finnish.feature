@@ -220,9 +220,34 @@ Examples:
     | 3 | case=genetiivi |
     | 1 | case=partitiivi |
     | 20 | sijamuoto=genetiivi |
-    | 21 |  |
-    | 101 |  |
+    | 21 | case=genetiivi |
     | 2000 |  |
+    | 2001 |  |
+
+# NTS-28: Kielitoimiston ohjepankki, "Luvut ja numerot: järjestysluvut": the ordinal marker recurs in every
+# part of a multi-part ordinal, written as one word (viideskymmenesviides); ensimmäinen and toinen are more
+# common than yhdes and kahdes as the last part (kahdeskymmenesensimmäinen, kolmaskymmenestoinen); in 11-19
+# only the first part is ordinal (yhdestoista). Nominative only: the inflected compounds (genitive
+# kolmannenkymmenennenkuudennen) need paradigms of every component that the consulted sources give for 1,
+# 3, 5, 17, 20, 100 and 1000 only, so they still fail closed. From 2000 the cardinal itself is wrong
+# ("kaksi tuhat", NTS-30), and no source gives the round thousands: they fail closed.
+Scenario Outline: NTS-28 Finnish compound ordinals in the nominative
+    Given I use the "FI" number converter
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 21 | kahdeskymmenesensimmäinen |
+    | 22 | kahdeskymmenestoinen |
+    | 32 | kolmaskymmenestoinen |
+    | 55 | viideskymmenesviides |
+    | 101 | sadasensimmäinen |
+    | 111 | sadasyhdestoista |
+    | 121 | sadaskahdeskymmenesensimmäinen |
+    | 999 | yhdeksässadasyhdeksäskymmenesyhdeksäs |
+    | 1001 | tuhannesensimmäinen |
+    | 1999 | tuhannesyhdeksässadasyhdeksäskymmenesyhdeksäs |
 
 Scenario: Ordinal conversion is supported
     Given I use the "FI" number converter
