@@ -79,6 +79,12 @@ public abstract class ScandinavianOrdinalLanguageSpecifics : INumberToStringLang
     protected virtual int MaxSupportedOrdinal => int.MaxValue;
 
     /// <summary>
+    /// Gets the attested ordinal of zero, or <see langword="null"/> when the language has none and zero
+    /// fails closed. Defaults to <see langword="null"/>.
+    /// </summary>
+    protected virtual string? ZeroOrdinal => null;
+
+    /// <summary>
     /// Writes two parts of a number as one word. The default concatenates them; a language may adjust
     /// the junction (Swedish drops one of three identical consonants).
     /// </summary>
@@ -95,8 +101,8 @@ public abstract class ScandinavianOrdinalLanguageSpecifics : INumberToStringLang
     {
         if (number <= 0)
         {
-            result = null;
-            return false;
+            result = number == 0 ? ZeroOrdinal : null;
+            return result is not null;
         }
 
         if (number > MaxSupportedOrdinal)
@@ -302,6 +308,12 @@ public sealed class DanishOrdinalLanguageSpecifics : ScandinavianOrdinalLanguage
 
     /// <inheritdoc />
     protected override IReadOnlyList<ScaleWords> Scales => s_scales;
+
+    /// <summary>
+    /// Gets the Danish ordinal of zero: <c>nulte</c> (Den Danske Ordbog, "ordenstal"; Retskrivningsordbogen since
+    /// 1986, Dansk Sprognævn SV00001178).
+    /// </summary>
+    protected override string? ZeroOrdinal => "nulte";
 
     /// <inheritdoc />
     protected override string ComposeCardinal(int tens, int unit) => s_cardinals[unit] + "og" + s_tens[tens];

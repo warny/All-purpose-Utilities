@@ -83,6 +83,19 @@ Examples:
     | 2000 | to tusinde |
     | 1000000 | millionte |
 
+# NTS-29: Den Danske Ordbog, "nulte" (talord, ordenstal: "som er nr. 0 i en rækkefølge", "I nulte C på
+# Katrinebjergskolen"); Retskrivningsordbogen since 1986 (Dansk Sprognævn SV00001178). Zero is enabled for
+# Danish only: Norwegian and Swedish still fail closed.
+Scenario Outline: NTS-29 Danish ordinal of zero
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 0 | nulte |
+    | 1 | første |
+    | 10 | tiende |
+
 Scenario: Idiomatic clock-time conversion is supported
     Then the converter supports clock-time conversion
 

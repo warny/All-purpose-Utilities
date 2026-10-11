@@ -1,6 +1,7 @@
 # Utils.NumberToString — Current backlog
 
-Re-audited on 2026-10-11 after closing NTS-28 (compound and large-scale ordinals in ES, PT, GL, EL, FI, PL, RU, UK; guards
+Re-audited on 2026-10-11 after closing NTS-29 (attested ordinals of zero: DA `nulte`, HU `nulladik`) and NTS-32
+(Polish ordinal of 400: `czterechsetny`), after closing NTS-28 (compound and large-scale ordinals in ES, PT, GL, EL, FI, PL, RU, UK; guards
 widened for JA, KO, ZH, VN, HI, EU; SV, AR deliberately fail-closed; NL blocked by the new NTS-31; NTS-32 opened),
 on 2026-10-10 after closing NTS-27 (cardinal defects found by NTS-08: SV, PL, RU, VN, JA/KO/ZH, HI,
 EU, ES; generic `groupPattern` and `innerString`/`innerBuildString` primitives; opened NTS-30), on 2026-10-09 after closing NTS-08 (final linguistic validation of the ordinals and ClockTime;
@@ -35,10 +36,6 @@ classification.
   above biljard, for `een miljoen` vs `miljoen`, nor for the ordinals (`miljoenste`, `een miljoenste`?). To do:
   source the scale and its spelling, configure it on the Conway machinery (`baseOn="SCALE-LONG"`, `-joen`/`-jard`),
   remove the cap, then source and enable the ordinals.
-- **NTS-32 — Polish ordinal of 400 (`czterosetny`).** The plugin (validated by NTS-08 on ZPE) writes
-  `czterosetny`, whereas PWN Poradnia 16446 (read for NTS-28) writes `osiem tysięcy czterechsetny`. Check SJP PWN
-  and the Wielki słownik ortograficzny for the standard form (and 300 `trzechsetny`, already in that pattern)
-  before changing an NTS-08-validated output.
 - **NTS-30 — cardinal defects found by NTS-27 and NTS-28 outside their lists.** Recorded, not fixed:
   - FI (found by NTS-28): the thousands do not take the partitive after a multiplier (`kaksi tuhat` for
     *kaksituhatta*) and the compounds are spaced (`kaksikymmentä yksi`, Kielitoimiston ohjepankki writes numbers
@@ -59,9 +56,6 @@ classification.
     most configurations, `二十一点五` in JA/ZH); the decimal path reads the level-1 digit text, empty for 0.
   - ES currency: `uno euro` for DPD *un euro* (apocope before a noun); the caller-defined currency wording does
     not force the attributive form.
-- **NTS-29 — attested ordinals of zero not enabled.** DA *nulte* (Retskrivningsordbogen since 1986, Dansk
-  Sprognævn SV00001178) and HU *nulladik* (MTA "Számok" tool) still fail closed; enabling them is additive.
-
 - **NTS-26 — Wolof connective `-i` inside nested numeral multipliers.** Re-audited 2026-10-11:
   the evidence supports **real variation**, not a demonstrated defect in the current default. The current
   configuration writes the multiplier of `téeméer` with `-i` (`juróom ñenti téeméer` 900) and keeps that
@@ -81,7 +75,7 @@ classification.
   cardinals below and above a million.
 
 
-NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-25, NTS-27 and NTS-28 are closed:
+NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-25, NTS-27, NTS-28, NTS-29 and NTS-32 are closed:
 
 - NTS-01 — XSD validation: `DONE-2026-08-21.md`.
 - NTS-02 — initialization isolation: `DONE-2026-08-21.md`.
@@ -138,6 +132,9 @@ NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-25, NTS-27 and NTS-28 
   replacements, PL, RU, UK round values in their plugins, JA/KO/ZH/VN/HI/EU guards widened to the cardinal domain,
   SV/AR deliberately fail-closed, NL blocked by NTS-31; guard extension point `TryBuildOrdinal`; NTS-31, NTS-32
   opened): `DONE-2026-10-11.md`.
+- NTS-29 (attested ordinals of zero: DA *nulte* through a Danish-only hook of the Scandinavian base, HU
+  *nulladik*; NO, SV and PL still fail closed) and NTS-32 (Polish ordinal of 400 *czterechsetny* in its 30
+  forms, after WSJP PAN and SJP PWN): `DONE-2026-10-11(1).md`.
 
 Full multi-form plural systems (Russian/Slavic count-dependent noun forms,
 Arabic dual/paucal/plural categories) were long deliberately out of scope — the

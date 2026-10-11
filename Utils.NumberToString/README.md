@@ -27,12 +27,12 @@ dotnet add package omy.Utils.NumberToString --version 2.0.0-rc.2
 | DE, de-DE, de-AT | German | ✓ declarative (zero: `nullte`, Duden) | ✓ 5 min, 12 h | genus × kasus | local | — |
 | de-CH, de-LI | Swiss German | ✓ merged | ✓ inherited | genus × kasus | child of DE | — |
 | NL | Dutch | ✓ declarative | ✓ 5 min, 12 h | — | local | No day-part wording |
-| DA, DA-DK | Danish | ✓ plugin (int range) | ✓ 5 min, 12 h | gender (fælleskøn/intetkøn) | local | Ordinals above `int.MaxValue` fail closed |
-| NO, NB, NB-NO | Norwegian Bokmål | ✓ plugin (int range) | ✓ 5 min, 12 h | gender (hankjønn/hunkjønn/intetkjønn) | local | Ordinals above `int.MaxValue` fail closed |
+| DA, DA-DK | Danish | ✓ plugin (int range) | ✓ 5 min, 12 h | gender (fælleskøn/intetkøn) | local | Ordinal of zero *nulte* (NTS-29); ordinals above `int.MaxValue` fail closed |
+| NO, NB, NB-NO | Norwegian Bokmål | ✓ plugin (int range) | ✓ 5 min, 12 h | gender (hankjønn/hunkjønn/intetkjønn) | local | Ordinals above `int.MaxValue` fail closed; no ordinal of zero |
 | SV, SV-SE | Swedish | ✓ plugin (to one million) | ✓ 5 min, 12 h | — | local | One word below a million (tjugoentusen), en miljon (Språkrådet; NTS-27); ordinals above a million fail closed |
 | BG, BG-BG | Bulgarian | ✓ plugin, gendered | ✓ 15 min, 12 h | gender (standalone/masculine/feminine/neuter) | local | Unverified compound round thousands/millions fail closed. Short scale with `милиард`; Cyrillic Conway names above (`SCALE-SHORT-CYRILLIC`, `кватуор`), unbounded |
 | HR, HR-HR | Croatian | ✓ declarative (last word) + range plugin | ✓ 15 min, 12 h | — | local | Masculine nominative ordinals only; round scale ordinals other than tisućiti (1 000), milijunti (1 000 000) and milijarditi (1 000 000 000) fail closed, including 10^12 and above |
-| HU, HU-HU | Hungarian | ✓ plugin (int range) | ✓ 15 min, 12 h | — | local | — |
+| HU, HU-HU | Hungarian | ✓ plugin (int range) | ✓ 15 min, 12 h | — | local | Ordinal of zero *nulladik* (NTS-29) |
 | CS, CS-CZ | Czech | ✓ plugin, gender × case | ✓ 15 min, 12 h | gender × case | local | Ordinals verified up to 9 999 (round millions/milliards: one only) |
 | SK, SK-SK | Slovak | ✓ plugin, gender × case | ✓ 15 min, 12 h | gender × case | local | Ordinals verified up to 9 999 and one million |
 | PL | Polish | ✓ plugin + declarative (1–999 999; round thousands to 99 000, NTS-28) | ✓ 5 min, 12 h | rodzaj × przypadek | local | tysiąc/tysiące/tysięcy agree with their multiplier (NTS-27); cardinals to 999 999; no ordinal of zero |

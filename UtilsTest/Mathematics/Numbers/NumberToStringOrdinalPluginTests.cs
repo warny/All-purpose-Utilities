@@ -44,18 +44,21 @@ public class NumberToStringOrdinalPluginTests
     /// <summary>
     /// Ensures values outside the implemented range fail closed instead of returning a cardinal:
     /// the Scandinavian plugins only implement the <see cref="int"/> range and have no declarative
-    /// fallback, and zero has no ordinal.
+    /// fallback, and zero has no ordinal except the attested Danish <c>nulte</c> (NTS-29).
     /// </summary>
     [TestMethod]
-    [DataRow("DA")]
-    [DataRow("NO")]
-    [DataRow("SV")]
-    public void ScandinavianOrdinals_OutsideImplementedRange_FailClosed(string culture)
+    [DataRow("DA", false)]
+    [DataRow("NO", true)]
+    [DataRow("SV", true)]
+    public void ScandinavianOrdinals_OutsideImplementedRange_FailClosed(string culture, bool zeroFailsClosed)
     {
         NumberToStringConverter converter = NumberToStringConverter.GetConverter(culture);
 
         Assert.ThrowsExactly<NotSupportedException>(() => converter.ConvertOrdinal((long)int.MaxValue + 1));
-        Assert.ThrowsExactly<NotSupportedException>(() => converter.ConvertOrdinal(0));
+        if (zeroFailsClosed)
+            Assert.ThrowsExactly<NotSupportedException>(() => converter.ConvertOrdinal(0));
+        else
+            Assert.AreEqual("nulte", converter.ConvertOrdinal(0));
     }
 
     /// <summary>
@@ -117,9 +120,11 @@ public class NumberToStringOrdinalPluginTests
     public void HungarianOrdinals_AreProductive(int number, string expected)
         => Assert.AreEqual(expected, NumberToStringConverter.GetConverter("HU").ConvertOrdinal(number));
 
-    /// <summary>Ensures Hungarian values outside the implemented range fail closed.</summary>
+    /// <summary>
+    /// Ensures Hungarian values outside the implemented range fail closed (zero is inside it since NTS-29:
+    /// <c>nulladik</c>).
+    /// </summary>
     [TestMethod]
-    [DataRow(0L)]
     [DataRow(2_147_483_648L)]
     public void HungarianOrdinals_OutsideImplementedRange_FailClosed(long number)
         => Assert.ThrowsExactly<NotSupportedException>(() => NumberToStringConverter.GetConverter("HU").ConvertOrdinal(number));

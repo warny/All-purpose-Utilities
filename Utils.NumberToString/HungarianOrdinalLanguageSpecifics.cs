@@ -38,7 +38,9 @@ public sealed class HungarianOrdinalLanguageSpecifics : INumberToStringLanguageS
     {
         result = number switch
         {
-            <= 0 => null,
+            < 0 => null,
+            // MTA "Számok" tool: "0." written in letters is "nulladik" [AkH11-290, AkH12-292] (NTS-29).
+            0 => "nulladik",
             1 => "első",
             2 => "második",
             _ => BuildOrdinal(number),

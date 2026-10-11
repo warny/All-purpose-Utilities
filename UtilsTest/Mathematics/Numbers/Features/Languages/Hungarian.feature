@@ -105,6 +105,22 @@ Examples:
     | 1000000001 | egymilliárd-egyedik |
     | 2000000000 | kétmilliárdodik |
 
+# NTS-29: MTA Nyelvtudományi Intézet "Számok" tool (helyesiras.mta.hu): "0." written in letters is
+# "nulladik" [AkH11-290, AkH12-292]; the cardinal stays "nulla" [AkH12-291a].
+Scenario Outline: NTS-29 Hungarian ordinal of zero
+    Given I use the "HU" number converter
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 0 | nulladik |
+    | 1 | első |
+    | 2 | második |
+    | 11 | tizenegyedik |
+    | 21 | huszonegyedik |
+    | 2001 | kétezer-egyedik |
+
 Scenario: Ordinal conversion is supported
     Given I use the "HU" number converter
     Then the converter supports ordinal conversion
