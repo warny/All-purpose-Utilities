@@ -67,6 +67,11 @@ Examples:
     | 1001 | tusen og første |
     | 1000000 | millionte |
 
+# NTS-29 enables the attested Danish "nulte" only: the Norwegian ordinal of zero stays unsupported.
+Scenario: Norwegian ordinal of zero is not supported
+    When I attempt to convert the ordinal number 0
+    Then conversion is rejected because no ordinal form is available
+
 Scenario: Idiomatic clock-time conversion is supported
     Then the converter supports clock-time conversion
 

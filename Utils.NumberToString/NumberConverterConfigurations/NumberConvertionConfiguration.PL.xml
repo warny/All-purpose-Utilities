@@ -448,7 +448,7 @@
             <Ordinal from="sto"         to="setny" />
             <Ordinal from="dwieście"    to="dwusetny" />
             <Ordinal from="trzysta"     to="trzechsetny" />
-            <Ordinal from="czterysta"   to="czterosetny" />
+            <Ordinal from="czterysta"   to="czterechsetny" />
             <Ordinal from="pięćset"     to="pięćsetny" />
             <Ordinal from="sześćset"    to="sześćsetny" />
             <Ordinal from="siedemset"   to="siedemsetny" />

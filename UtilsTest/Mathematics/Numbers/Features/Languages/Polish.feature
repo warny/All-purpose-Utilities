@@ -141,6 +141,60 @@ Examples:
     | 1801 |  | tysiąc osiemset pierwszy |
     | 1999 |  | tysiąc dziewięćset dziewięćdziesiąty dziewiąty |
 
+# NTS-32: the ordinal of 400 is czterechsetny (Wielki słownik języka polskiego PAN, hasło 39657, with its full
+# adjectival declension; SJP PWN, KJP "czterechsetna rocznica"; PWN Poradnia 16446 "osiem tysięcy
+# czterechsetny"); SJP PWN has no entry czterosetny. Only the round 400 changes: 401 and 415 keep the cardinal
+# czterysta, and the round thousand 4000 stays czterotysięczny.
+Scenario Outline: NTS-32 Polish ordinal of 400
+    Given I use the "PL" number converter
+    And I use the variants "<variants>"
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | variants | expected |
+    | 400 | rodzaj=maskulin,przypadek=mianownik | czterechsetny |
+    | 400 | rodzaj=maskulin,przypadek=dopełniacz | czterechsetnego |
+    | 400 | rodzaj=maskulin,przypadek=celownik | czterechsetnemu |
+    | 400 | rodzaj=maskulin,przypadek=biernik | czterechsetny |
+    | 400 | rodzaj=maskulin,przypadek=narzędnik | czterechsetnym |
+    | 400 | rodzaj=maskulin,przypadek=miejscownik | czterechsetnym |
+    | 400 | rodzaj=feminin,przypadek=mianownik | czterechsetna |
+    | 400 | rodzaj=feminin,przypadek=dopełniacz | czterechsetnej |
+    | 400 | rodzaj=feminin,przypadek=celownik | czterechsetnej |
+    | 400 | rodzaj=feminin,przypadek=biernik | czterechsetną |
+    | 400 | rodzaj=feminin,przypadek=narzędnik | czterechsetną |
+    | 400 | rodzaj=feminin,przypadek=miejscownik | czterechsetnej |
+    | 400 | rodzaj=nijaki,przypadek=mianownik | czterechsetne |
+    | 400 | rodzaj=nijaki,przypadek=dopełniacz | czterechsetnego |
+    | 400 | rodzaj=nijaki,przypadek=celownik | czterechsetnemu |
+    | 400 | rodzaj=nijaki,przypadek=biernik | czterechsetne |
+    | 400 | rodzaj=nijaki,przypadek=narzędnik | czterechsetnym |
+    | 400 | rodzaj=nijaki,przypadek=miejscownik | czterechsetnym |
+    | 400 | rodzaj=plural_mos,przypadek=mianownik | czterechsetni |
+    | 400 | rodzaj=plural_mos,przypadek=dopełniacz | czterechsetnych |
+    | 400 | rodzaj=plural_mos,przypadek=celownik | czterechsetnym |
+    | 400 | rodzaj=plural_mos,przypadek=biernik | czterechsetnych |
+    | 400 | rodzaj=plural_mos,przypadek=narzędnik | czterechsetnymi |
+    | 400 | rodzaj=plural_mos,przypadek=miejscownik | czterechsetnych |
+    | 400 | rodzaj=plural,przypadek=mianownik | czterechsetne |
+    | 400 | rodzaj=plural,przypadek=dopełniacz | czterechsetnych |
+    | 400 | rodzaj=plural,przypadek=celownik | czterechsetnym |
+    | 400 | rodzaj=plural,przypadek=biernik | czterechsetne |
+    | 400 | rodzaj=plural,przypadek=narzędnik | czterechsetnymi |
+    | 400 | rodzaj=plural,przypadek=miejscownik | czterechsetnych |
+    | 400 |  | czterechsetny |
+    | 401 |  | czterysta pierwszy |
+    | 415 |  | czterysta piętnasty |
+    | 1400 |  | tysiąc czterechsetny |
+    | 1400 | rodzaj=feminin,przypadek=biernik | tysiąc czterechsetną |
+    | 2400 |  | dwa tysiące czterechsetny |
+    | 5400 |  | pięć tysięcy czterechsetny |
+    | 8400 |  | osiem tysięcy czterechsetny |
+    | 4000 |  | czterotysięczny |
+    | 300 |  | trzechsetny |
+    | 500 |  | pięćsetny |
+
 # NTS-28: PWN Poradnia 16446 (K. Kłosińska): in a multi-word ordinal only the tens and units are ordinal
 # ("dwa tysiące piętnasty", "osiemnaście tysięcy sto czterdziesty drugi"), only the last part when the lower
 # orders are zero; the round thousands are one word (19 000 dziewiętnastotysięczny, 21 000

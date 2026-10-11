@@ -127,6 +127,11 @@ Examples:
     | 1000000000 |
     | 2147483647 |
 
+# NTS-29 enables the attested Danish "nulte" only: the Swedish ordinal of zero stays unsupported.
+Scenario: Swedish ordinal of zero is not supported
+    When I attempt to convert the ordinal number 0
+    Then conversion is rejected because no ordinal form is available
+
 Scenario: Idiomatic clock-time conversion is supported
     Then the converter supports clock-time conversion
 

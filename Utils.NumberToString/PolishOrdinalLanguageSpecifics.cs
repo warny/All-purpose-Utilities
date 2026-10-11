@@ -213,13 +213,13 @@ public sealed class PolishOrdinalLanguageSpecifics : INumberToStringLanguageSpec
             "trzechsetni","trzechsetnych","trzechsetnym","trzechsetnych","trzechsetnymi","trzechsetnych",
             "trzechsetne","trzechsetnych","trzechsetnym","trzechsetne","trzechsetnymi","trzechsetnych",
         ],
-        // 400: czterosetny
+        // 400: czterechsetny (NTS-32: WSJP PAN, hasło 39657, full declension; SJP PWN; SJP PWN has no czterosetny)
         [
-            "czterosetny","czterosetnego","czterosetnemu","czterosetny","czterosetnym","czterosetnym",
-            "czterosetna","czterosetnej","czterosetnej","czterosetną","czterosetną","czterosetnej",
-            "czterosetne","czterosetnego","czterosetnemu","czterosetne","czterosetnym","czterosetnym",
-            "czterosetni","czterosetnych","czterosetnym","czterosetnych","czterosetnymi","czterosetnych",
-            "czterosetne","czterosetnych","czterosetnym","czterosetne","czterosetnymi","czterosetnych",
+            "czterechsetny","czterechsetnego","czterechsetnemu","czterechsetny","czterechsetnym","czterechsetnym",
+            "czterechsetna","czterechsetnej","czterechsetnej","czterechsetną","czterechsetną","czterechsetnej",
+            "czterechsetne","czterechsetnego","czterechsetnemu","czterechsetne","czterechsetnym","czterechsetnym",
+            "czterechsetni","czterechsetnych","czterechsetnym","czterechsetnych","czterechsetnymi","czterechsetnych",
+            "czterechsetne","czterechsetnych","czterechsetnym","czterechsetne","czterechsetnymi","czterechsetnych",
         ],
         // 500: pięćsetny
         [
