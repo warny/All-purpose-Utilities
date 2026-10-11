@@ -26,7 +26,7 @@ dotnet add package omy.Utils.NumberToString --version 2.0.0-rc.2
 | FR-ch | Swiss French (septante / huitante / nonante) | ✓ inherited | ✓ inherited | gender | child of FR | No cantonal `octante` |
 | DE, de-DE, de-AT | German | ✓ declarative (zero: `nullte`, Duden) | ✓ 5 min, 12 h | genus × kasus | local | — |
 | de-CH, de-LI | Swiss German | ✓ merged | ✓ inherited | genus × kasus | child of DE | — |
-| NL | Dutch | ✓ declarative | ✓ 5 min, 12 h | — | local | No day-part wording |
+| NL | Dutch | ✓ declarative (0–999 999) | ✓ 5 min, 12 h | — | local | Long Conway scale (NTS-31): miljoen/miljard, biljoen/biljard, triljoen/triljard, quadriljoen …, then productive Conway with Dutch -joen/-jard and the l junction; unbounded cardinals (een miljoen, twee miljard); ordinals from a million fail closed; no day-part wording |
 | DA, DA-DK | Danish | ✓ plugin (int range) | ✓ 5 min, 12 h | gender (fælleskøn/intetkøn) | local | Ordinal of zero *nulte* (NTS-29); ordinals above `int.MaxValue` fail closed |
 | NO, NB, NB-NO | Norwegian Bokmål | ✓ plugin (int range) | ✓ 5 min, 12 h | gender (hankjønn/hunkjønn/intetkjønn) | local | Ordinals above `int.MaxValue` fail closed; no ordinal of zero |
 | SV, SV-SE | Swedish | ✓ plugin (to one million) | ✓ 5 min, 12 h | — | local | One word below a million (tjugoentusen), en miljon (Språkrådet; NTS-27); ordinals above a million fail closed |

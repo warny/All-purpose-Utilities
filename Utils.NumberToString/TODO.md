@@ -1,6 +1,8 @@
 # Utils.NumberToString — Current backlog
 
-Re-audited on 2026-10-11 after closing NTS-29 (attested ordinals of zero: DA `nulte`, HU `nulladik`) and NTS-32
+Re-audited on 2026-10-11 after closing the cardinal part of NTS-31 (Dutch long scale on `SCALE-LONG`: `miljoen`,
+`miljard`, `biljoen` … with `-joen`/`-jard` and the `l` junction, Conway tables inherited, unbounded cardinals; the
+ordinals from a million remain open under NTS-31), after closing NTS-29 (attested ordinals of zero: DA `nulte`, HU `nulladik`) and NTS-32
 (Polish ordinal of 400: `czterechsetny`), after closing NTS-28 (compound and large-scale ordinals in ES, PT, GL, EL, FI, PL, RU, UK; guards
 widened for JA, KO, ZH, VN, HI, EU; SV, AR deliberately fail-closed; NL blocked by the new NTS-31; NTS-32 opened),
 on 2026-10-10 after closing NTS-27 (cardinal defects found by NTS-08: SV, PL, RU, VN, JA/KO/ZH, HI,
@@ -28,14 +30,12 @@ classification.
 
 ## Open items
 
-- **NTS-31 — Dutch long-scale cardinal names (prerequisite of the Dutch ordinals from a million).** NL stops at
-  `maxNumber="999999"` with only `duizend` and an unused `miljoen` suffix, so its ordinals stop below a million
-  (NTS-28 left the guard at 999 999 on purpose). The long scale is described by secondary sources (Onze Taal,
-  "Een miljard of een biljoen?" via DBNL: duizend miljoen is een miljard, duizend miljard een biljoen, a million
-  biljoen a triljoen; webwoordenboek.nl) but no normative source (Taalunie, Woordenlijst) was found for the names
-  above biljard, for `een miljoen` vs `miljoen`, nor for the ordinals (`miljoenste`, `een miljoenste`?). To do:
-  source the scale and its spelling, configure it on the Conway machinery (`baseOn="SCALE-LONG"`, `-joen`/`-jard`),
-  remove the cap, then source and enable the ordinals.
+- **NTS-31 (remaining) — Dutch ordinals from a million.** The cardinal part of NTS-31 is closed
+  (`DONE-2026-10-11(2).md`: NL on `SCALE-LONG`, unbounded long-scale cardinals). The ordinal guard
+  `DutchOrdinalLanguageSpecifics` still stops at 999 999, explicitly and independently of the cardinal domain. To
+  do: source the ordinals of the scale nouns (`miljoenste` vs `een miljoenste`, `tweemiljoenste` vs `twee
+  miljoenste`, `miljardste`; whether the ordinal of a composite value keeps the cardinal groups, e.g. `een miljoen
+  eerste`), add the `-ste` stems for `joen`/`jard`, then widen the guard.
 - **NTS-30 — cardinal defects found by NTS-27 and NTS-28 outside their lists.** Recorded, not fixed:
   - FI (found by NTS-28): the thousands do not take the partitive after a multiplier (`kaksi tuhat` for
     *kaksituhatta*) and the compounds are spaced (`kaksikymmentä yksi`, Kielitoimiston ohjepankki writes numbers
@@ -75,7 +75,7 @@ classification.
   cardinals below and above a million.
 
 
-NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-25, NTS-27, NTS-28, NTS-29 and NTS-32 are closed:
+NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-25, NTS-27, NTS-28, NTS-29, NTS-32 and the cardinal part of NTS-31 are closed:
 
 - NTS-01 — XSD validation: `DONE-2026-08-21.md`.
 - NTS-02 — initialization isolation: `DONE-2026-08-21.md`.
@@ -135,6 +135,10 @@ NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-25, NTS-27, NTS-28, NT
 - NTS-29 (attested ordinals of zero: DA *nulte* through a Danish-only hook of the Scandinavian base, HU
   *nulladik*; NO, SV and PL still fail closed) and NTS-32 (Polish ordinal of 400 *czterechsetny* in its 30
   forms, after WSJP PAN and SJP PWN): `DONE-2026-10-11(1).md`.
+- NTS-31, cardinal part (Dutch long scale: `baseOn="SCALE-LONG"`, `maxNumber` removed, suffixes `joen`/`jard` with
+  `suffixSeparator="l"`, Conway tables inherited with the Latin `quadri`/`quinti`/`sexti`/`octi`, `een` kept from
+  `miljoen` upward, singular scale nouns, spaced groups without `en`; ordinals still guarded at 999 999):
+  `DONE-2026-10-11(2).md`.
 
 Full multi-form plural systems (Russian/Slavic count-dependent noun forms,
 Arabic dual/paucal/plural categories) were long deliberately out of scope — the

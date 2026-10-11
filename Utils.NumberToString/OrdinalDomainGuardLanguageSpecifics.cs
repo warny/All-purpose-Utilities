@@ -399,10 +399,10 @@ public sealed class VietnameseOrdinalLanguageSpecifics : OrdinalDomainGuardLangu
 
 /// <summary>
 /// Dutch ordinal domain (NTS-08). Taaladvies "Aaneenschrijven van telwoorden" and the Woordenlijst
-/// Nederlandse Taal (<c>nulde</c>, <c>tweeduizendste</c>) validate the ordinals from 0 to 999 999, the
-/// domain of the configured cardinal (<c>maxNumber</c>). Ordinals are not bounded by <c>maxNumber</c>: from a
-/// million the scale lookup of the unvalidated cardinal threw an <see cref="InvalidOperationException"/>
-/// (configuration error) and no <c>-ste</c> rule exists for the scale nouns, so those values fail closed.
+/// Nederlandse Taal (<c>nulde</c>, <c>tweeduizendste</c>) validate the ordinals from 0 to 999 999. Since NTS-31
+/// the cardinals are unbounded (long scale, <c>een miljoen</c>), but no source settles the ordinals of the scale
+/// nouns (<c>miljoenste</c>, <c>een miljoenste</c>?) and no <c>-ste</c> rule exists for them: this explicit
+/// guard, independent of the cardinal domain, keeps every ordinal from a million fail-closed.
 /// </summary>
 public sealed class DutchOrdinalLanguageSpecifics : OrdinalDomainGuardLanguageSpecifics
 {

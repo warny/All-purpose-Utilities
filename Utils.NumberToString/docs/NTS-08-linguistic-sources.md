@@ -21,7 +21,7 @@ describes any capability.
 | FR-ch | FR-ch | FR | Inherited (`huitantième`) | Declarative | Inherited (no own section) | 5 / 24 (inherited) | inherited gender | Dictionnaire suisse romand; TERMDAT | Project convention `huitante` (no cantonal `octante`) |
 | DE | DE (and parent fallbacks) | SCALE-LONG | Yes | Declarative (German finalization hook) | Yes | 5 / 12 | genus × kasus | Existing configuration; Duden `nullte` | Ordinal of zero `nullte` (NTS-14) |
 | DE-ch | de-CH, de-LI | DE | Merged | Declarative | Inherited (no own section) | 5 / 12 (inherited) | inherited | Existing configuration | — |
-| NL | NL | none | Yes | Declarative + `DutchOrdinalLanguageSpecifics` (NTS-08 domain guard) | Yes | 5 / 12 | none | **Corrected** (NTS-08 final): Taaladvies "Aaneenschrijven van telwoorden", "Kloktijden", "Klemtoonteken"; Woordenlijst | No day-part wording; `half twee` written in two words; NTS-08: Cardinals one word up to *duizend*; ordinals by ending; *nulde*; ordinals 0–999 999, from a million fail closed |
+| NL | NL | SCALE-LONG (NTS-31) | Yes | Declarative + `DutchOrdinalLanguageSpecifics` (NTS-08 domain guard) | Yes | 5 / 12 | none | **Corrected** (NTS-08 final): Taaladvies "Aaneenschrijven van telwoorden", "Kloktijden", "Klemtoonteken"; Woordenlijst; NTS-31: Onze Taal 70 (2001), nl.wikipedia "Lijst van machten van tien" | No day-part wording; `half twee` written in two words; NTS-08: Cardinals one word up to *duizend*; ordinals by ending; *nulde*; ordinals 0–999 999, from a million fail closed. NTS-31: cardinals unbounded on the long scale (*een miljoen*, *twee miljard*, *biljoen* … *quadriljoen*, then productive Conway with *-joen/-jard*) |
 | DA | DA, DA-DK | SCALE-LONG | Yes | `DanishOrdinalLanguageSpecifics` (int range) | Yes | 5 / 12 | `gender` (fælleskøn/intetkøn): neuter `et` for the clock hour | **Validated** (NTS-08 final): Dansk Sprognævn SV00000084, SV00017853; DSL "Den 101. dalmatiner"; Den Danske Ordbog (*tusinde²*, *millionte*, *milliardte*, *kvart¹*, *halv*); Systime; Langenscheidt (clock) | Ordinals above `int.MaxValue` fail closed |
 | NO | NO, NB, NB-NO | SCALE-LONG | Yes | `NorwegianOrdinalLanguageSpecifics` (int range) | Yes | 5 / 12 | `gender` (hankjønn/hunkjønn/intetkjønn): neuter `ett` for the clock hour | **Consulted**: Riksmålsforbundet, *Grammatikk*, ch. 7 “Tallord” (`tjueførste`, `hundrede`, `tusende`, `millionte`, compounds written together); Språkrådet, “Tall, tid og dato” (no word forms) | Bokmål `andre` retained (Riksmål prefers `annen`) |
 | SV | SV, SV-SE | SCALE-LONG | Yes | `SwedishOrdinalLanguageSpecifics` (int range) | Yes | 5 / 12 | none | **Corrected** (NTS-08 final): SAOB (TJUGO, TJUGONDE, HUNDRADE, TUSENDE, MILJONTE, KVART, HALV); Språkrådet Frågelådan 27138, 31080, 21216, 22011 | Ordinals above `int.MaxValue` fail closed; NTS-08: Ordinals above one million fail closed; three identical consonants reduced (*tjugoentusende*) |
@@ -59,6 +59,23 @@ describes any capability.
 | EE | EE | SCALE-SHORT (scale tables only, NTS-23) | Yes (NTS-20): cardinal + `-lia` on the last element, `gbãtɔ` for 1 | Declarative + `ZeroOrdinalUnsupportedLanguageSpecifics` | **Deferred** | — | none | **Consulted** (NTS-20): Dzablu-Kumah, *Basic Ewe for Foreign Students*; Biblica Open Ewe Contemporary Scriptures; *Ewe Basic Course* 1968; Peace Corps Togo 2010; Wiktionary | Cardinals unbounded (NTS-23): static `akpe`, then the Conway-Wechsler short scale `miliɔn`, `biliɔn`, `triliɔn` (sourced anchors), `quadriliɔn` … (project extrapolation), each before its standalone multiplier (`multiplierPosition="afterScale"`); zero ordinal unsupported |
 | WO | WO | none | Yes (`-éel`, NTS-16, NTS-19) | Declarative + `WolofOrdinalLanguageSpecifics` | **Deferred** | — | none | No consistent source found | Cardinals unbounded (NTS-21): static `junni`, then the long-scale Conway-Wechsler names `milyoŋ`, `milyaar` (attested anchors), `bilyoŋ`, `bilyaar` … (project extrapolation in Wolof spelling); ordinals 1–999 999 only, no ordinal of zero nor of the round thousands |
 
+## NTS-31 — Dutch long-scale cardinals (2026-10-11)
+
+Sources read during the pass. Old/new outputs: `DONE-2026-10-11(2).md`. Under the repository's Conway rule
+(`AGENTS.md`, root `README.md`), the audit establishes the Dutch base pattern and its orthography; the higher names
+are the productive Conway-Guy-Wechsler continuation of that pattern.
+
+| Point | Rule established | Sources | Status |
+|---|---|---|---|
+| Long scale | -iljoen every factor one million, -iljard in between: *een miljoen miljoen is een biljoen; een miljoen biljoen is een triljoen*, *duizend miljoen is een miljard; duizend biljoen is een biljard* | Onze Taal 70 (2001), "Een miljard of een biljoen?" (DBNL) | **Attested base** |
+| Names to the centiljoen | *miljoen, miljard, biljoen, biljard, triljoen, triljard, quadriljoen, quadriljard, quintiljoen … octiljoen, noniljoen, deciljoen, vigintiljoen, centiljoen*, *milliljoen* (10^6000) | nl.wikipedia "Lijst van machten van tien" (secondary) | **Attested base**: Latin *quadri/quinti/sexti/octi* (not the Swedish *kvadri/kvinti/okti*) |
+| Scale nouns separate, singular after the numeral, no *en* | "Miljoen en miljard zijn altijd aparte woorden": *drie miljoen*, *vijf miljard tweehonderd miljoen*, *driehonderdzevenenveertig miljard zeshonderdvijfentwintig miljoen zevenhonderdachtentwintigduizend tweehonderdeenentwintig* | Taaladvies.net (Taalunie), "Aaneenschrijven van telwoorden (algemeen)" | **Implemented**: invariant suffixes `joen`/`jard`, space between groups |
+| *een* before miljoen | *een miljoen*, *een biljoen* (unlike *duizend*, which drops it: existing NTS-08 replacement) | Onze Taal 70 (2001) | **Implemented** (no replacement added) |
+| Junction | *mi + l + joen* (*miljoen*, *biljard*) before the suffix; the inherited Conway joint *-illi-* between the groups of an index from 1000 (*milliniljoen*, keeping the Latin *milli-* of *milliljoen*) | derived from the attested names | **Implemented**: `suffixSeparator="l"`, `groupSeparator` inherited |
+| Higher names | *undeciljoen*, *septendeciljoen*, *trigintacentiljoen*, *milliniljoen* … with the strict NTS-24 tables | Conway-Guy-Wechsler (inherited SCALE-LONG) | **Productive project extension**, not individually attested |
+
+Ordinals are unchanged: `DutchOrdinalLanguageSpecifics` keeps 0–999 999 (NTS-31, remaining part).
+
 ## NTS-29 and NTS-32 — attested zero ordinals and the Polish 400th (2026-10-11)
 
 Sources read in a browser during the pass. Old/new outputs and the exact changed set: `DONE-2026-10-11(1).md`.
@@ -87,7 +104,7 @@ dispositions: `DONE-2026-10-11.md`. The guards still bound every unsourced famil
 | UK | §38.1.2: *двохтисячний, десятитисячний, п'ятсоттридцятитисячний; чотирьохмільйонний, п'ятдесятимільйонний, шістдесятип'ятимільйонний; семимільярдний, трьохмільярдний*; note 1: *мільйон трьохтисячний* | Український правопис 2019 §38 (slovnyk.ua) | **Implemented** round multipliers 1–89 (not …1 after the tens); ≥ 90 and hundreds fail closed |
 | SV | — | SAOL/Språkrådet searched; nothing settles *två miljonte* / *tvåmiljonte* nor *miljardte* | **Deliberately fail-closed** above a million (unchanged) |
 | AR | — | Contract is the indefinite short form; the only form above 100 found (*المئة والسابع والثلاثون*) is definite | **Deliberately fail-closed** above 100 (unchanged) |
-| NL | Long scale (*duizend miljoen is een miljard*, *duizend miljard een biljoen*) | Onze Taal "Een miljard of een biljoen?" (DBNL); webwoordenboek.nl (secondary) | **Blocked by NTS-31** (the cardinal stops at 999 999) |
+| NL | Long scale (*duizend miljoen is een miljard*, *duizend miljard een biljoen*) | Onze Taal "Een miljard of een biljoen?" (DBNL); webwoordenboek.nl (secondary) | **Blocked by NTS-31** (the cardinal stopped at 999 999; cardinal part closed 2026-10-11, the ordinals from a million remain open) |
 | JA | 第 "数を表す語に付いて、ものの順序を表す" (any numeral) | デジタル大辞泉 (NTS-08) | **Widened** to the cardinal domain (10^16 − 1) |
 | KO | 제 + Sino-Korean numeral (제삼 항) | 한글 맞춤법 제43항 (NTS-08) | **Widened** to the cardinal domain (10^16 − 1) |
 | ZH | 第 "用於整數數詞之前" (any integer numeral) | 國語辭典 via 汉典 (NTS-08) | **Widened** to the cardinal domain (10^12 − 1) |

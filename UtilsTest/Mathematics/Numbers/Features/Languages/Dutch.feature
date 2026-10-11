@@ -98,6 +98,68 @@ Examples:
     | 271850 | tweehonderdeenenzeventigduizend achthonderdvijftig |
     | 381000 | driehonderdeenentachtigduizend |
 
+# NTS-31: the long scale. Taaladvies.net (Taalunie), "Aaneenschrijven van telwoorden (algemeen)": "Miljoen en
+# miljard zijn altijd aparte woorden" (drie miljoen, vijf miljard tweehonderd miljoen, driehonderdzevenenveertig
+# miljard zeshonderdvijfentwintig miljoen zevenhonderdachtentwintigduizend tweehonderdeenentwintig): the scale noun
+# stays singular after the numeral, the groups are separated by a space without "en". Onze Taal 70 (2001), "Een
+# miljard of een biljoen?": "Een miljoen miljoen is een biljoen; een miljoen biljoen is een triljoen", "duizend
+# miljoen is een miljard; duizend biljoen is een biljard" (-iljoen/-iljard; "een" kept before miljoen, unlike
+# duizend). nl.wikipedia "Lijst van machten van tien": quadriljoen, quintiljoen, sextiljoen, octiljoen (Latin
+# spelling). Higher names are the productive Conway-Guy-Wechsler continuation (repository rule).
+Scenario Outline: NTS-31 Dutch long-scale cardinals
+    Given I use the "NL" number converter
+    When I convert the cardinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 1000 | duizend |
+    | 2000 | tweeduizend |
+    | 999999 | negenhonderdnegenennegentigduizend negenhonderdnegenennegentig |
+    | 1000000 | een miljoen |
+    | 2000000 | twee miljoen |
+    | 21000000 | eenentwintig miljoen |
+    | 1001000 | een miljoen duizend |
+    | 1000001 | een miljoen een |
+    | 1234567 | een miljoen tweehonderdvierendertigduizend vijfhonderdzevenenzestig |
+    | 3400000 | drie miljoen vierhonderdduizend |
+    | 3004000 | drie miljoen vierduizend |
+    | 3000400 | drie miljoen vierhonderd |
+    | 3000004 | drie miljoen vier |
+    | 17053980 | zeventien miljoen drieënvijftigduizend negenhonderdtachtig |
+    | 100000000 | honderd miljoen |
+    | 1000000000 | een miljard |
+    | 2001000000 | twee miljard een miljoen |
+    | 4000000000 | vier miljard |
+    | 5200000000 | vijf miljard tweehonderd miljoen |
+    | 347625728221 | driehonderdzevenenveertig miljard zeshonderdvijfentwintig miljoen zevenhonderdachtentwintigduizend tweehonderdeenentwintig |
+    | 1000000000000 | een biljoen |
+    | 3000000000000 | drie biljoen |
+    | 1000000000000000 | een biljard |
+    | 1000000000000000000 | een triljoen |
+    | 1000000000000000000000 | een triljard |
+    | 1000000000000000000000000 | een quadriljoen |
+    | 1000000000000000000000000000 | een quadriljard |
+    | 1000000000000000000000000000000 | een quintiljoen |
+    | 1000000000000000000000000000000000000 | een sextiljoen |
+    | 1000000000000000000000000000000000000000000000000 | een octiljoen |
+    | 1000000000000000000000000000000000000000000000000000000000000 | een deciljoen |
+    | -2000000 | min twee miljoen |
+
+# NTS-31: widening the cardinals leaves the Dutch ordinal domain at 0–999 999 (no source settles the ordinals of
+# miljoen and above: miljoenste, een miljoenste?).
+Scenario Outline: Dutch ordinals from a million are not supported
+    Given I use the "NL" number converter
+    When I attempt to convert the ordinal number <number>
+    Then conversion is rejected because no ordinal form is available
+
+Examples:
+    | number |
+    | 1000000 |
+    | 1000001 |
+    | 2000000 |
+    | 1000000000 |
+
 Scenario Outline: Dutch ordinals keep the spelling of the cardinal
     Given I use the "NL" number converter
     When I convert the ordinal number <number>
