@@ -95,6 +95,30 @@ Reqnroll `.feature` files and their step bindings live exclusively in **UtilsTes
 
 ---
 
+## NumberToString — Conway scale names
+
+When implementing productive large-number scale names in `Utils.NumberToString`, use the shared Conway-Guy-Wechsler
+machinery according to the following rule:
+
+- Do **not** require a normative or dictionary source that explicitly defines every Conway-generated scale name in the
+  target language. Conway-Guy-Wechsler is a mathematical naming construction and higher generated names are allowed as a
+  project-level productive extension.
+- Do require linguistic evidence for the language's **base scale system**: its scale-0 / initial named scales and the
+  established prefix/suffix pattern that makes the Conway continuation plausible (for example `mi-`, `bi-`, `tri-`
+  with the language's own million/milliard endings).
+- Audit and preserve all language-specific formation details: suffixes, alternating long-/short-scale endings, linking
+  consonants, separators, orthographic contractions, transliteration, spelling changes and inflection.
+- Check the Conway-Guy-Wechsler construction itself for any prescribed junction/linking rule that applies to the target
+  sequence, and combine that rule with the target language's established spelling conventions.
+- Higher Conway names must be generated as a **continuous extension of the target language's existing scale pattern**.
+  Never introduce a foreign spelling or morphology merely because it appears in an English Conway table.
+- Tests must pin the attested base scales and representative generated higher scales, including at least one boundary where
+  the productive Conway construction begins.
+
+The absence of a language authority listing high Conway names is therefore **not** by itself a reason to fail closed.
+Fail closed only when the language-specific base pattern or the required orthographic/morphological continuation is not
+sufficiently established.
+
 ## Coding Standards  
 - Arrays must use **bracket syntax** (`[]`).  
 - For numeric math calls, prefer static methods on floating-point types (for example `double.Sin`) over `System.Math` when available through `IFloatingPoint<T>` and related interfaces.  
