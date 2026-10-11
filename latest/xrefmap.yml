@@ -61808,6 +61808,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.DanishOrdinalLanguageSpecifics.Scales
   nameWithType: DanishOrdinalLanguageSpecifics.Scales
+- uid: Utils.NumberToString.DanishOrdinalLanguageSpecifics.ZeroOrdinal
+  name: ZeroOrdinal
+  href: api/Utils.NumberToString.DanishOrdinalLanguageSpecifics.html#Utils_NumberToString_DanishOrdinalLanguageSpecifics_ZeroOrdinal
+  commentId: P:Utils.NumberToString.DanishOrdinalLanguageSpecifics.ZeroOrdinal
+  fullName: Utils.NumberToString.DanishOrdinalLanguageSpecifics.ZeroOrdinal
+  nameWithType: DanishOrdinalLanguageSpecifics.ZeroOrdinal
+- uid: Utils.NumberToString.DanishOrdinalLanguageSpecifics.ZeroOrdinal*
+  name: ZeroOrdinal
+  href: api/Utils.NumberToString.DanishOrdinalLanguageSpecifics.html#Utils_NumberToString_DanishOrdinalLanguageSpecifics_ZeroOrdinal_
+  commentId: Overload:Utils.NumberToString.DanishOrdinalLanguageSpecifics.ZeroOrdinal
+  isSpec: "True"
+  fullName: Utils.NumberToString.DanishOrdinalLanguageSpecifics.ZeroOrdinal
+  nameWithType: DanishOrdinalLanguageSpecifics.ZeroOrdinal
 - uid: Utils.NumberToString.DateFormatType
   name: DateFormatType
   href: api/Utils.NumberToString.DateFormatType.html
@@ -70307,6 +70320,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.TryConvertOrdinal
   nameWithType: ScandinavianOrdinalLanguageSpecifics.TryConvertOrdinal
+- uid: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ZeroOrdinal
+  name: ZeroOrdinal
+  href: api/Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.html#Utils_NumberToString_ScandinavianOrdinalLanguageSpecifics_ZeroOrdinal
+  commentId: P:Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ZeroOrdinal
+  fullName: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ZeroOrdinal
+  nameWithType: ScandinavianOrdinalLanguageSpecifics.ZeroOrdinal
+- uid: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ZeroOrdinal*
+  name: ZeroOrdinal
+  href: api/Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.html#Utils_NumberToString_ScandinavianOrdinalLanguageSpecifics_ZeroOrdinal_
+  commentId: Overload:Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ZeroOrdinal
+  isSpec: "True"
+  fullName: Utils.NumberToString.ScandinavianOrdinalLanguageSpecifics.ZeroOrdinal
+  nameWithType: ScandinavianOrdinalLanguageSpecifics.ZeroOrdinal
 - uid: Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics
   name: SlavicAdjectivalOrdinalLanguageSpecifics
   href: api/Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.html
