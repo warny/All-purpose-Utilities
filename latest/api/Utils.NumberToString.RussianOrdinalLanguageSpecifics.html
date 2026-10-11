@@ -6,7 +6,7 @@
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <meta name="title" content="Class RussianOrdinalLanguageSpecifics | omy.Utils Documentation ">
       
-      <meta name="description" content="Russian ordinal domain (NTS-08). Validated by the Правила русской орфографии и пунктуации, &#167;132–133 (only the last word of a composite ordinal is ordinal: тысяча девятьсот девяносто четвёртый): 0 (нулевой, NTS-14) to 1999. From 2000 the configured cardinal is wrong (два тысяча instead of две тысячи) and the one-word round ordinals (двухтысячный, десятитысячный, миллионный) are not built; those values fail closed.">
+      <meta name="description" content="Russian ordinal domain, after the Правила русской орфографии и пунктуации (2006). &#167;133б: a composite ordinal is written separately and only its last part is ordinal (тысяча девятьсот девяносто четвёртый, две тысячи первый, миллион двести тысяч сто пятый); the declarative pipeline forms them on the NTS-27 cardinal (the configuration drops the один of a single million). &#167;132б: an ordinal whose last part is -тысячный or -миллионный is one word with its first part in the genitive (пятнадцатитысячный, шестисотмиллионный); this class builds them, declined for gender and case, also after the millions (два миллиона трёхтысячный).">
       <link rel="icon" href="../favicon.ico">
       <link rel="stylesheet" href="../public/docfx.min.css">
       <link rel="stylesheet" href="../public/main.css">
@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_NumberToString_RussianOrdinalLanguageSpecifics" data-uid="Utils.NumberToString.RussianOrdinalLanguageSpecifics" class="text-break">
-Class RussianOrdinalLanguageSpecifics  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L173"><i class="bi bi-code-slash"></i></a>
+Class RussianOrdinalLanguageSpecifics  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L231"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -97,11 +97,13 @@ Class RussianOrdinalLanguageSpecifics  <a class="header-action link-secondary" t
   <dl><dt>Assembly</dt><dd>Utils.NumberToString.dll</dd></dl>
   </div>
 
-  <div class="markdown summary"><p>Russian ordinal domain (NTS-08). Validated by the <i>Правила русской орфографии и пунктуации</i>, §132–133
-(only the last word of a composite ordinal is ordinal: <code>тысяча девятьсот девяносто четвёртый</code>):
-0 (<code>нулевой</code>, NTS-14) to 1999. From 2000 the configured cardinal is wrong (<code>два тысяча</code>
-instead of <code>две тысячи</code>) and the one-word round ordinals (<code>двухтысячный</code>,
-<code>десятитысячный</code>, <code>миллионный</code>) are not built; those values fail closed.</p>
+  <div class="markdown summary"><p>Russian ordinal domain, after the <i>Правила русской орфографии и пунктуации</i> (2006). §133б: a composite
+ordinal is written separately and only its last part is ordinal (<code>тысяча девятьсот девяносто
+четвёртый</code>, <code>две тысячи первый</code>, <code>миллион двести тысяч сто пятый</code>); the declarative pipeline
+forms them on the NTS-27 cardinal (the configuration drops the <code>один</code> of a single million). §132б: an
+ordinal whose last part is <code>-тысячный</code> or <code>-миллионный</code> is one word with its first part in the
+genitive (<code>пятнадцатитысячный</code>, <code>шестисотмиллионный</code>); this class builds them, declined for
+gender and case, also after the millions (<code>два миллиона трёхтысячный</code>).</p>
 </div>
   <div class="markdown conceptual"></div>
 
@@ -256,6 +258,13 @@ instead of <code>две тысячи</code>) and the one-word round ordinals (<c
 
 
 
+  <h2 id="Utils_NumberToString_RussianOrdinalLanguageSpecifics_remarks">Remarks</h2>
+  <div class="markdown level0 remarks"><p>Domain: 0 (<code>нулевой</code>, NTS-14) to 999 999 999. A round thousand or million is supported when its
+multiplier is one or has a genitive combining form established by the examples (2–99 except a final
+<code>один</code> after the tens, and 200–999 whose hundreds take the genitive, <code>шестисот</code>); a final
+<code>один</code> (21 000) and the hundreds of <code>сто</code> (100 000 – 199 000) fail closed, as does the milliard and
+above, whose generated scale names do not agree yet (NTS-30).</p>
+</div>
 
 
   <h2 class="section" id="properties">Properties
@@ -266,7 +275,7 @@ instead of <code>две тысячи</code>) and the one-word round ordinals (<c
 
   <h3 id="Utils_NumberToString_RussianOrdinalLanguageSpecifics_LanguageName" data-uid="Utils.NumberToString.RussianOrdinalLanguageSpecifics.LanguageName">
   LanguageName
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L176"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L277"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the English name of the language, used in the rejection message.</p>
@@ -298,7 +307,7 @@ instead of <code>две тысячи</code>) and the one-word round ordinals (<c
 
   <h3 id="Utils_NumberToString_RussianOrdinalLanguageSpecifics_SupportedDomain" data-uid="Utils.NumberToString.RussianOrdinalLanguageSpecifics.SupportedDomain">
   SupportedDomain
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L179"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L280"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets a short description of the validated domain, used in the rejection message.</p>
@@ -334,7 +343,7 @@ instead of <code>две тысячи</code>) and the one-word round ordinals (<c
 
   <h3 id="Utils_NumberToString_RussianOrdinalLanguageSpecifics_IsSupported_System_Int64_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__" data-uid="Utils.NumberToString.RussianOrdinalLanguageSpecifics.IsSupported(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String})">
   IsSupported(long, IReadOnlyDictionary&lt;string, string&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L182"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L285"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Tells whether the ordinal of a value belongs to the validated domain.</p>
@@ -372,11 +381,57 @@ instead of <code>две тысячи</code>) and the one-word round ordinals (<c
 
 
 
+  <a id="Utils_NumberToString_RussianOrdinalLanguageSpecifics_TryBuildOrdinal_" data-uid="Utils.NumberToString.RussianOrdinalLanguageSpecifics.TryBuildOrdinal*"></a>
+
+  <h3 id="Utils_NumberToString_RussianOrdinalLanguageSpecifics_TryBuildOrdinal_System_Int64_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__System_String__" data-uid="Utils.NumberToString.RussianOrdinalLanguageSpecifics.TryBuildOrdinal(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String@)">
+  TryBuildOrdinal(long, IReadOnlyDictionary&lt;string, string&gt;, out string?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L295"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Builds the ordinal of a supported value that the declarative pipeline cannot form. The default builds
+nothing, so every supported value goes to the declarative pipeline.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected override bool TryBuildOrdinal(long number, IReadOnlyDictionary&lt;string, string&gt; activeVariants, out string? result)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>number</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int64">long</a></dt>
+    <dd><p>The absolute value of the number, inside the supported domain.</p>
+</dd>
+    <dt><code>activeVariants</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlydictionary-2">IReadOnlyDictionary</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>&gt;</dt>
+    <dd><p>The active dimension constraints.</p>
+</dd>
+    <dt><code>result</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>Receives the ordinal when the method returns <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a>.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> when the ordinal was built here.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
 
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L173" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L231" class="edit-link">Edit this page</a>
         </div>
 
 

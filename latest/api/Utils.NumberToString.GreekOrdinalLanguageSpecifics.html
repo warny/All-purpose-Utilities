@@ -6,7 +6,7 @@
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <meta name="title" content="Class GreekOrdinalLanguageSpecifics | omy.Utils Documentation ">
       
-      <meta name="description" content="Greek ordinal domain (NTS-08). Validated by the Λεξικό της Κοινής Νεοελληνικής (Triantafyllides): 1–20, the round tens (εικοστός …), the round hundreds (εκατοστός, διακοσιοστός …) and χιλιοστός. Compounds are made of agreeing ordinals (εικοστός πρώτος, εκατοστή πρώτη), which the last-word pipeline cannot build from the cardinal; they fail closed.">
+      <meta name="description" content="Greek ordinal domain: 1–1999. Validated by the Λεξικό της Κοινής Νεοελληνικής (Triantafyllides): NTS-08 for 1–20, the round tens, the round hundreds and χιλιοστός; NTS-28 for the compounds, juxtaposed ordinals agreeing in gender (εικοστή τρίτη, εκατοστή πρώτη), composed by the configuration. The round thousands above one (δισχιλιοστός …) are not established by the dictionary, so 2000 and above fail closed, as does zero.">
       <link rel="icon" href="../favicon.ico">
       <link rel="stylesheet" href="../public/docfx.min.css">
       <link rel="stylesheet" href="../public/main.css">
@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_NumberToString_GreekOrdinalLanguageSpecifics" data-uid="Utils.NumberToString.GreekOrdinalLanguageSpecifics" class="text-break">
-Class GreekOrdinalLanguageSpecifics  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L124"><i class="bi bi-code-slash"></i></a>
+Class GreekOrdinalLanguageSpecifics  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L172"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -97,10 +97,11 @@ Class GreekOrdinalLanguageSpecifics  <a class="header-action link-secondary" tit
   <dl><dt>Assembly</dt><dd>Utils.NumberToString.dll</dd></dl>
   </div>
 
-  <div class="markdown summary"><p>Greek ordinal domain (NTS-08). Validated by the <i>Λεξικό της Κοινής Νεοελληνικής</i> (Triantafyllides):
-1–20, the round tens (<code>εικοστός</code> …), the round hundreds (<code>εκατοστός</code>, <code>διακοσιοστός</code> …)
-and <code>χιλιοστός</code>. Compounds are made of agreeing ordinals (<code>εικοστός πρώτος</code>,
-<code>εκατοστή πρώτη</code>), which the last-word pipeline cannot build from the cardinal; they fail closed.</p>
+  <div class="markdown summary"><p>Greek ordinal domain: 1–1999. Validated by the <i>Λεξικό της Κοινής Νεοελληνικής</i> (Triantafyllides): NTS-08
+for 1–20, the round tens, the round hundreds and <code>χιλιοστός</code>; NTS-28 for the compounds, juxtaposed
+ordinals agreeing in gender (<code>εικοστή τρίτη</code>, <code>εκατοστή πρώτη</code>), composed by the configuration.
+The round thousands above one (<code>δισχιλιοστός</code> …) are not established by the dictionary, so 2000 and
+above fail closed, as does zero.</p>
 </div>
   <div class="markdown conceptual"></div>
 
@@ -265,7 +266,7 @@ and <code>χιλιοστός</code>. Compounds are made of agreeing ordinals (<c
 
   <h3 id="Utils_NumberToString_GreekOrdinalLanguageSpecifics_LanguageName" data-uid="Utils.NumberToString.GreekOrdinalLanguageSpecifics.LanguageName">
   LanguageName
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L127"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L175"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the English name of the language, used in the rejection message.</p>
@@ -297,7 +298,7 @@ and <code>χιλιοστός</code>. Compounds are made of agreeing ordinals (<c
 
   <h3 id="Utils_NumberToString_GreekOrdinalLanguageSpecifics_SupportedDomain" data-uid="Utils.NumberToString.GreekOrdinalLanguageSpecifics.SupportedDomain">
   SupportedDomain
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L130"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L178"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets a short description of the validated domain, used in the rejection message.</p>
@@ -333,7 +334,7 @@ and <code>χιλιοστός</code>. Compounds are made of agreeing ordinals (<c
 
   <h3 id="Utils_NumberToString_GreekOrdinalLanguageSpecifics_IsSupported_System_Int64_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__" data-uid="Utils.NumberToString.GreekOrdinalLanguageSpecifics.IsSupported(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String})">
   IsSupported(long, IReadOnlyDictionary&lt;string, string&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L133"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L181"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Tells whether the ordinal of a value belongs to the validated domain.</p>
@@ -375,7 +376,7 @@ and <code>χιλιοστός</code>. Compounds are made of agreeing ordinals (<c
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L124" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L172" class="edit-link">Edit this page</a>
         </div>
 
 

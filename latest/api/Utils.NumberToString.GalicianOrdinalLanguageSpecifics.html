@@ -6,7 +6,7 @@
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <meta name="title" content="Class GalicianOrdinalLanguageSpecifics | omy.Utils Documentation ">
       
-      <meta name="description" content="Galician ordinal domain (NTS-08). Validated by the RAG/ILG Normas ortogr&#225;ficas e morfol&#243;xicas do idioma galego (2003), &#167;16.2: 1–20 (d&#233;cimo terceiro … d&#233;cimo noveno), the round tens (vix&#233;simo … nonax&#233;simo), cent&#233;simo and mil&#233;simo. Other compounds juxtapose ordinals (vix&#233;simo primeiro) and fail closed.">
+      <meta name="description" content="Galician ordinal domain: 1–1999. Validated by the RAG/ILG Normas ortogr&#225;ficas e morfol&#243;xicas do idioma galego (2003), &#167;16.2 (NTS-08 for 1–20, the round tens, cent&#233;simo, mil&#233;simo; NTS-28 for the compounds vix&#233;simo primeiro …, juxtaposed with gender on the last element only, cent&#233;simo primeira) and the Dicionario da Real Academia Galega for the round hundreds (ducent&#233;simo … noninxent&#233;simo). No consulted source gives the multiples of a thousand nor the millions compounds, so 2000 and above fail closed, as does zero.">
       <link rel="icon" href="../favicon.ico">
       <link rel="stylesheet" href="../public/docfx.min.css">
       <link rel="stylesheet" href="../public/main.css">
@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_NumberToString_GalicianOrdinalLanguageSpecifics" data-uid="Utils.NumberToString.GalicianOrdinalLanguageSpecifics" class="text-break">
-Class GalicianOrdinalLanguageSpecifics  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L105"><i class="bi bi-code-slash"></i></a>
+Class GalicianOrdinalLanguageSpecifics  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L152"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -97,10 +97,12 @@ Class GalicianOrdinalLanguageSpecifics  <a class="header-action link-secondary" 
   <dl><dt>Assembly</dt><dd>Utils.NumberToString.dll</dd></dl>
   </div>
 
-  <div class="markdown summary"><p>Galician ordinal domain (NTS-08). Validated by the RAG/ILG <i>Normas ortográficas e morfolóxicas do idioma
-galego</i> (2003), §16.2: 1–20 (<code>décimo terceiro</code> … <code>décimo noveno</code>), the round tens
-(<code>vixésimo</code> … <code>nonaxésimo</code>), <code>centésimo</code> and <code>milésimo</code>. Other compounds juxtapose
-ordinals (<code>vixésimo primeiro</code>) and fail closed.</p>
+  <div class="markdown summary"><p>Galician ordinal domain: 1–1999. Validated by the RAG/ILG <i>Normas ortográficas e morfolóxicas do idioma
+galego</i> (2003), §16.2 (NTS-08 for 1–20, the round tens, <code>centésimo</code>, <code>milésimo</code>; NTS-28 for the
+compounds <code>vixésimo primeiro</code> …, juxtaposed with gender on the last element only, <code>centésimo
+primeira</code>) and the Dicionario da Real Academia Galega for the round hundreds (<code>ducentésimo</code> …
+<code>noninxentésimo</code>). No consulted source gives the multiples of a thousand nor the millions compounds, so
+2000 and above fail closed, as does zero.</p>
 </div>
   <div class="markdown conceptual"></div>
 
@@ -265,7 +267,7 @@ ordinals (<code>vixésimo primeiro</code>) and fail closed.</p>
 
   <h3 id="Utils_NumberToString_GalicianOrdinalLanguageSpecifics_LanguageName" data-uid="Utils.NumberToString.GalicianOrdinalLanguageSpecifics.LanguageName">
   LanguageName
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L108"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L155"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the English name of the language, used in the rejection message.</p>
@@ -297,7 +299,7 @@ ordinals (<code>vixésimo primeiro</code>) and fail closed.</p>
 
   <h3 id="Utils_NumberToString_GalicianOrdinalLanguageSpecifics_SupportedDomain" data-uid="Utils.NumberToString.GalicianOrdinalLanguageSpecifics.SupportedDomain">
   SupportedDomain
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L111"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L158"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets a short description of the validated domain, used in the rejection message.</p>
@@ -333,7 +335,7 @@ ordinals (<code>vixésimo primeiro</code>) and fail closed.</p>
 
   <h3 id="Utils_NumberToString_GalicianOrdinalLanguageSpecifics_IsSupported_System_Int64_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__" data-uid="Utils.NumberToString.GalicianOrdinalLanguageSpecifics.IsSupported(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String})">
   IsSupported(long, IReadOnlyDictionary&lt;string, string&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L114"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L161"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Tells whether the ordinal of a value belongs to the validated domain.</p>
@@ -375,7 +377,7 @@ ordinals (<code>vixésimo primeiro</code>) and fail closed.</p>
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L105" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L152" class="edit-link">Edit this page</a>
         </div>
 
 

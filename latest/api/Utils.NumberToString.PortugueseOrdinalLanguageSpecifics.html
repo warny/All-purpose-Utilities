@@ -6,7 +6,7 @@
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <meta name="title" content="Class PortugueseOrdinalLanguageSpecifics | omy.Utils Documentation ">
       
-      <meta name="description" content="Portuguese ordinal domain (NTS-08). Validated by the Priberam dictionary entries (vig&#233;simo &amp;quot;depois do d&#233;cimo nono&amp;quot;, trig&#233;simo … nonag&#233;simo &amp;quot;ap&#243;s o octog&#233;simo nono&amp;quot;, cent&#233;simo, mil&#233;simo): 1–20, the round tens, 100 and 1000. Other compounds juxtapose ordinals (vig&#233;simo primeiro), which the last-word pipeline cannot build; they fail closed.">
+      <meta name="description" content="Portuguese ordinal domain: 1–1999. NTS-08 validated 1–20, the round tens, 100 and 1000 (Priberam). NTS-28 added the compounds, composed from agreeing ordinals (vig&#233;simo primeiro, cent&#233;sima quadrag&#233;sima quinta), and the round hundreds (ducent&#233;simo … nongent&#233;simo), after Ciberd&#250;vidas, &amp;quot;A forma por extenso de 2000.&#186; (e de outros ordinais)&amp;quot;, citing E. Bechara. From 2000 the sources disagree (dois mil&#233;simo, dois mil&#233;simos, segundo mil&#233;simo; d&#233;cimo mil&#233;simo for 10 000), so those values fail closed, as does zero.">
       <link rel="icon" href="../favicon.ico">
       <link rel="stylesheet" href="../public/docfx.min.css">
       <link rel="stylesheet" href="../public/main.css">
@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_NumberToString_PortugueseOrdinalLanguageSpecifics" data-uid="Utils.NumberToString.PortugueseOrdinalLanguageSpecifics" class="text-break">
-Class PortugueseOrdinalLanguageSpecifics  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L86"><i class="bi bi-code-slash"></i></a>
+Class PortugueseOrdinalLanguageSpecifics  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L131"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -97,10 +97,12 @@ Class PortugueseOrdinalLanguageSpecifics  <a class="header-action link-secondary
   <dl><dt>Assembly</dt><dd>Utils.NumberToString.dll</dd></dl>
   </div>
 
-  <div class="markdown summary"><p>Portuguese ordinal domain (NTS-08). Validated by the Priberam dictionary entries (<code>vigésimo</code> &quot;depois
-do décimo nono&quot;, <code>trigésimo</code> … <code>nonagésimo</code> &quot;após o octogésimo nono&quot;, <code>centésimo</code>,
-<code>milésimo</code>): 1–20, the round tens, 100 and 1000. Other compounds juxtapose ordinals
-(<code>vigésimo primeiro</code>), which the last-word pipeline cannot build; they fail closed.</p>
+  <div class="markdown summary"><p>Portuguese ordinal domain: 1–1999. NTS-08 validated 1–20, the round tens, 100 and 1000 (Priberam). NTS-28
+added the compounds, composed from agreeing ordinals (<code>vigésimo primeiro</code>, <code>centésima quadragésima
+quinta</code>), and the round hundreds (<code>ducentésimo</code> … <code>nongentésimo</code>), after Ciberdúvidas, &quot;A forma
+por extenso de 2000.º (e de outros ordinais)&quot;, citing E. Bechara. From 2000 the sources disagree (<code>dois
+milésimo</code>, <code>dois milésimos</code>, <code>segundo milésimo</code>; <code>décimo milésimo</code> for 10 000), so those
+values fail closed, as does zero.</p>
 </div>
   <div class="markdown conceptual"></div>
 
@@ -265,7 +267,7 @@ do décimo nono&quot;, <code>trigésimo</code> … <code>nonagésimo</code> &quo
 
   <h3 id="Utils_NumberToString_PortugueseOrdinalLanguageSpecifics_LanguageName" data-uid="Utils.NumberToString.PortugueseOrdinalLanguageSpecifics.LanguageName">
   LanguageName
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L89"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L134"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the English name of the language, used in the rejection message.</p>
@@ -297,7 +299,7 @@ do décimo nono&quot;, <code>trigésimo</code> … <code>nonagésimo</code> &quo
 
   <h3 id="Utils_NumberToString_PortugueseOrdinalLanguageSpecifics_SupportedDomain" data-uid="Utils.NumberToString.PortugueseOrdinalLanguageSpecifics.SupportedDomain">
   SupportedDomain
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L92"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L137"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets a short description of the validated domain, used in the rejection message.</p>
@@ -333,7 +335,7 @@ do décimo nono&quot;, <code>trigésimo</code> … <code>nonagésimo</code> &quo
 
   <h3 id="Utils_NumberToString_PortugueseOrdinalLanguageSpecifics_IsSupported_System_Int64_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__" data-uid="Utils.NumberToString.PortugueseOrdinalLanguageSpecifics.IsSupported(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String})">
   IsSupported(long, IReadOnlyDictionary&lt;string, string&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L95"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L140"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Tells whether the ordinal of a value belongs to the validated domain.</p>
@@ -375,7 +377,7 @@ do décimo nono&quot;, <code>trigésimo</code> … <code>nonagésimo</code> &quo
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L86" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L131" class="edit-link">Edit this page</a>
         </div>
 
 

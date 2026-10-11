@@ -6,7 +6,7 @@
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <meta name="title" content="Class HindiOrdinalLanguageSpecifics | omy.Utils Documentation ">
       
-      <meta name="description" content="Hindi ordinal domain (NTS-08). Kamta Prasad Guru, हिंदी व्याकरण &#167;180: पहला, दूसरा, तीसरा, चौथा, छठा, otherwise -वाँ on the last word, also above a hundred (एक सौ तीनवाँ). Validated from 0 to 99 999; from 100 000 the configured cardinal is wrong (एक सौ हज़ार instead of एक लाख), so those ordinals fail closed.">
+      <meta name="description" content="Hindi ordinal domain. Kamta Prasad Guru, हिंदी व्याकरण &#167;180: पहला, दूसरा, तीसरा, चौथा, छठा, otherwise -वाँ, and (इ) above a hundred -वाँ on the end of the last word, whatever the number (एक सौ तीनवाँ). NTS-08 validated 0–99 999; NTS-28 extends the rule to the NTS-27 cardinal domain with लाख and करोड़ (एक लाखवाँ, एक करोड़वाँ), to 9 999 999 999 999.">
       <link rel="icon" href="../favicon.ico">
       <link rel="stylesheet" href="../public/docfx.min.css">
       <link rel="stylesheet" href="../public/main.css">
@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_NumberToString_HindiOrdinalLanguageSpecifics" data-uid="Utils.NumberToString.HindiOrdinalLanguageSpecifics" class="text-break">
-Class HindiOrdinalLanguageSpecifics  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L228"><i class="bi bi-code-slash"></i></a>
+Class HindiOrdinalLanguageSpecifics  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L425"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -97,10 +97,10 @@ Class HindiOrdinalLanguageSpecifics  <a class="header-action link-secondary" tit
   <dl><dt>Assembly</dt><dd>Utils.NumberToString.dll</dd></dl>
   </div>
 
-  <div class="markdown summary"><p>Hindi ordinal domain (NTS-08). Kamta Prasad Guru, <i>हिंदी व्याकरण</i> §180: पहला, दूसरा, तीसरा, चौथा, छठा,
-otherwise <code>-वाँ</code> on the last word, also above a hundred (<code>एक सौ तीनवाँ</code>). Validated from 0 to
-99 999; from 100 000 the configured cardinal is wrong (<code>एक सौ हज़ार</code> instead of <code>एक लाख</code>), so
-those ordinals fail closed.</p>
+  <div class="markdown summary"><p>Hindi ordinal domain. Kamta Prasad Guru, <i>हिंदी व्याकरण</i> §180: पहला, दूसरा, तीसरा, चौथा, छठा, otherwise
+<code>-वाँ</code>, and (इ) above a hundred <code>-वाँ</code> on the end of the last word, whatever the number (<code>एक सौ
+तीनवाँ</code>). NTS-08 validated 0–99 999; NTS-28 extends the rule to the NTS-27 cardinal domain with लाख and करोड़
+(<code>एक लाखवाँ</code>, <code>एक करोड़वाँ</code>), to 9 999 999 999 999.</p>
 </div>
   <div class="markdown conceptual"></div>
 
@@ -265,7 +265,7 @@ those ordinals fail closed.</p>
 
   <h3 id="Utils_NumberToString_HindiOrdinalLanguageSpecifics_LanguageName" data-uid="Utils.NumberToString.HindiOrdinalLanguageSpecifics.LanguageName">
   LanguageName
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L231"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L428"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the English name of the language, used in the rejection message.</p>
@@ -297,7 +297,7 @@ those ordinals fail closed.</p>
 
   <h3 id="Utils_NumberToString_HindiOrdinalLanguageSpecifics_SupportedDomain" data-uid="Utils.NumberToString.HindiOrdinalLanguageSpecifics.SupportedDomain">
   SupportedDomain
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L234"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L431"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets a short description of the validated domain, used in the rejection message.</p>
@@ -333,7 +333,7 @@ those ordinals fail closed.</p>
 
   <h3 id="Utils_NumberToString_HindiOrdinalLanguageSpecifics_IsSupported_System_Int64_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__" data-uid="Utils.NumberToString.HindiOrdinalLanguageSpecifics.IsSupported(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String})">
   IsSupported(long, IReadOnlyDictionary&lt;string, string&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L237"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L434"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Tells whether the ordinal of a value belongs to the validated domain.</p>
@@ -375,7 +375,7 @@ those ordinals fail closed.</p>
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L228" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L425" class="edit-link">Edit this page</a>
         </div>
 
 

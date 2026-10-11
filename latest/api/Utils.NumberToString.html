@@ -112,11 +112,12 @@ the rule of the counted noun (تمييز العدد): the noun agrees with the l
     </dl>
     <dl class="jumplist">
       <dt><a class="xref" href="Utils.NumberToString.BasqueOrdinalLanguageSpecifics.html">BasqueOrdinalLanguageSpecifics</a></dt>
-      <dd><p>Basque ordinal domain (NTS-08). Euskaltzaindia, rule 18 (<code>bigarren</code>, <code>bosgarren</code>,
-<code>hogeita batgarren</code>, <code>ehungarren</code>, <code>milagarren</code>) and rule 7 (cardinals), validated from 1 to
-1000. Zero has no attested ordinal (rule 7 gives only <code>zero</code>/<code>huts</code>), and above 1000 the configured
-cardinal omits the <code>eta</code> required by rule 7 (<code>mila bat</code> instead of <code>mila eta bat</code>) or puts the
-multiplier of a million first (<code>bat milioi</code> instead of <code>milioi bat</code>); those values fail closed.</p>
+      <dd><p>Basque ordinal domain. Euskaltzaindia, rule 18: the ordinal is the cardinal written in letters followed by
+<code>-garren</code> (<code>bigarren</code>, <code>bosgarren</code>, <code>hogeita batgarren</code>, <code>ehungarren</code>, <code>milagarren</code>
+…). NTS-08 validated 1–1000; NTS-28 extends the rule to the NTS-27 cardinal (rule 7: <code>mila eta batgarren</code>,
+<code>milioi batgarren</code>), to 999 999 999. Zero has no attested ordinal (rule 7 gives only
+<code>zero</code>/<code>huts</code>), and from the milliard the cardinal does not compose <code>mila milioi</code> with the
+millions (NTS-30); those values fail closed.</p>
 </dd>
     </dl>
     <dl class="jumplist">
@@ -131,10 +132,9 @@ for <code>masculine</code>; <code>feminine</code> and <code>neuter</code> derive
     </dl>
     <dl class="jumplist">
       <dt><a class="xref" href="Utils.NumberToString.ChineseOrdinalLanguageSpecifics.html">ChineseOrdinalLanguageSpecifics</a></dt>
-      <dd><p>Chinese ordinal domain (NTS-08): the prefix <code>第</code> before the cardinal (國語辭典: &quot;用於整數數詞之前。表事物的
-順序或等級&quot;), validated from 0 to 100 and for the round hundreds to 900. Other values above 100 rely on a
-configured cardinal without <code>零</code> or <code>一十</code> (<code>一百一</code> for 101, <code>一百十</code> for 110,
-<code>一 千</code> for 1000), so their ordinals fail closed.</p>
+      <dd><p>Chinese ordinal domain: the prefix <code>第</code> before the cardinal (國語辭典: &quot;用於整數數詞之前。表事物的順序或等級&quot;, before
+any integer numeral). NTS-08 validated 0–100 and the round hundreds; NTS-28 extends it to the NTS-27 cardinal
+domain with <code>零</code> and <code>一十</code>, counted by 万 (below 万亿, 10^12).</p>
 </dd>
     </dl>
     <dl class="jumplist">
@@ -239,12 +239,13 @@ million the scale lookup of the unvalidated cardinal threw an <a class="xref" hr
     </dl>
     <dl class="jumplist">
       <dt><a class="xref" href="Utils.NumberToString.FinnishOrdinalLanguageSpecifics.html">FinnishOrdinalLanguageSpecifics</a></dt>
-      <dd><p>Finnish ordinal domain (NTS-08). Validated in the nominative by the Aalto University course &quot;Numeroiden
-taivutus&quot; and the Kielitoimisto (<code>kahdeskymmenes</code>, <code>sadas</code>, <code>tuhannes</code>; <code>nollas</code>,
-NTS-12): 0–20, the round tens, the round hundreds and 1000. Compounds fuse every component
-(<code>kahdeskymmenesensimmäinen</code>) and the inflected ordinals change every stem (genitive
-<code>kolmannen</code>, partitive <code>kolmatta</code>), which the declarative pipeline does not build; those
-values and every non-nominative case fail closed.</p>
+      <dd><p>Finnish ordinal domain: the nominative of 0–1999. NTS-08 validated 0–20, the round tens and hundreds and 1000
+(Aalto University &quot;Numeroiden taivutus&quot;, Kielitoimisto; <code>nollas</code>, NTS-12). NTS-28 added the compounds,
+one word with the ordinal marker in every part (Kielitoimiston ohjepankki: <code>viideskymmenesviides</code>,
+<code>kahdeskymmenesensimmäinen</code>), composed by the configuration. The inflected ordinals change every
+component (genitive <code>kolmannenkymmenennenkuudennen</code>), but the consulted sources give the paradigms of
+1, 3, 5, 17, 20, 100 and 1000 only, so every non-nominative case fails closed; from 2000 the cardinal is wrong
+(<code>kaksi tuhat</code>, NTS-30) and the round thousands are not sourced, so those values fail closed too.</p>
 </dd>
     </dl>
     <dl class="jumplist">
@@ -290,10 +291,12 @@ built text of its lower sub-group (the <em>right</em> constituent), e.g. Italian
     </dl>
     <dl class="jumplist">
       <dt><a class="xref" href="Utils.NumberToString.GalicianOrdinalLanguageSpecifics.html">GalicianOrdinalLanguageSpecifics</a></dt>
-      <dd><p>Galician ordinal domain (NTS-08). Validated by the RAG/ILG <i>Normas ortográficas e morfolóxicas do idioma
-galego</i> (2003), §16.2: 1–20 (<code>décimo terceiro</code> … <code>décimo noveno</code>), the round tens
-(<code>vixésimo</code> … <code>nonaxésimo</code>), <code>centésimo</code> and <code>milésimo</code>. Other compounds juxtapose
-ordinals (<code>vixésimo primeiro</code>) and fail closed.</p>
+      <dd><p>Galician ordinal domain: 1–1999. Validated by the RAG/ILG <i>Normas ortográficas e morfolóxicas do idioma
+galego</i> (2003), §16.2 (NTS-08 for 1–20, the round tens, <code>centésimo</code>, <code>milésimo</code>; NTS-28 for the
+compounds <code>vixésimo primeiro</code> …, juxtaposed with gender on the last element only, <code>centésimo
+primeira</code>) and the Dicionario da Real Academia Galega for the round hundreds (<code>ducentésimo</code> …
+<code>noninxentésimo</code>). No consulted source gives the multiples of a thousand nor the millions compounds, so
+2000 and above fail closed, as does zero.</p>
 </dd>
     </dl>
     <dl class="jumplist">
@@ -303,10 +306,11 @@ ordinals (<code>vixésimo primeiro</code>) and fail closed.</p>
     </dl>
     <dl class="jumplist">
       <dt><a class="xref" href="Utils.NumberToString.GreekOrdinalLanguageSpecifics.html">GreekOrdinalLanguageSpecifics</a></dt>
-      <dd><p>Greek ordinal domain (NTS-08). Validated by the <i>Λεξικό της Κοινής Νεοελληνικής</i> (Triantafyllides):
-1–20, the round tens (<code>εικοστός</code> …), the round hundreds (<code>εκατοστός</code>, <code>διακοσιοστός</code> …)
-and <code>χιλιοστός</code>. Compounds are made of agreeing ordinals (<code>εικοστός πρώτος</code>,
-<code>εκατοστή πρώτη</code>), which the last-word pipeline cannot build from the cardinal; they fail closed.</p>
+      <dd><p>Greek ordinal domain: 1–1999. Validated by the <i>Λεξικό της Κοινής Νεοελληνικής</i> (Triantafyllides): NTS-08
+for 1–20, the round tens, the round hundreds and <code>χιλιοστός</code>; NTS-28 for the compounds, juxtaposed
+ordinals agreeing in gender (<code>εικοστή τρίτη</code>, <code>εκατοστή πρώτη</code>), composed by the configuration.
+The round thousands above one (<code>δισχιλιοστός</code> …) are not established by the dictionary, so 2000 and
+above fail closed, as does zero.</p>
 </dd>
     </dl>
     <dl class="jumplist">
@@ -321,10 +325,10 @@ and <code>χιλιοστός</code>. Compounds are made of agreeing ordinals (<c
     </dl>
     <dl class="jumplist">
       <dt><a class="xref" href="Utils.NumberToString.HindiOrdinalLanguageSpecifics.html">HindiOrdinalLanguageSpecifics</a></dt>
-      <dd><p>Hindi ordinal domain (NTS-08). Kamta Prasad Guru, <i>हिंदी व्याकरण</i> §180: पहला, दूसरा, तीसरा, चौथा, छठा,
-otherwise <code>-वाँ</code> on the last word, also above a hundred (<code>एक सौ तीनवाँ</code>). Validated from 0 to
-99 999; from 100 000 the configured cardinal is wrong (<code>एक सौ हज़ार</code> instead of <code>एक लाख</code>), so
-those ordinals fail closed.</p>
+      <dd><p>Hindi ordinal domain. Kamta Prasad Guru, <i>हिंदी व्याकरण</i> §180: पहला, दूसरा, तीसरा, चौथा, छठा, otherwise
+<code>-वाँ</code>, and (इ) above a hundred <code>-वाँ</code> on the end of the last word, whatever the number (<code>एक सौ
+तीनवाँ</code>). NTS-08 validated 0–99 999; NTS-28 extends the rule to the NTS-27 cardinal domain with लाख and करोड़
+(<code>एक लाखवाँ</code>, <code>एक करोड़वाँ</code>), to 9 999 999 999 999.</p>
 </dd>
     </dl>
     <dl class="jumplist">
@@ -355,16 +359,16 @@ whose ordinal is not established.</p>
     </dl>
     <dl class="jumplist">
       <dt><a class="xref" href="Utils.NumberToString.JapaneseOrdinalLanguageSpecifics.html">JapaneseOrdinalLanguageSpecifics</a></dt>
-      <dd><p>Japanese ordinal domain (NTS-08): the prefix <code>第</code> before the cardinal (デジタル大辞泉, 第: &quot;数を表す語に付いて、
-ものの順序を表す&quot;), validated from 0 to 1000. Above 1000 the configured cardinal splits the thousands with
-spaces and does not count by 万 (<code>十 千</code> for 10 000), so those ordinals fail closed.</p>
+      <dd><p>Japanese ordinal domain: the prefix <code>第</code> before the cardinal (デジタル大辞泉, 第: &quot;数を表す語に付いて、ものの順序を
+表す&quot;, before any numeral). NTS-08 validated 0–1000; NTS-28 extends it to the NTS-27 cardinal domain, counted by
+万 (to 9999兆, 10^16 − 1).</p>
 </dd>
     </dl>
     <dl class="jumplist">
       <dt><a class="xref" href="Utils.NumberToString.KoreanOrdinalLanguageSpecifics.html">KoreanOrdinalLanguageSpecifics</a></dt>
-      <dd><p>Korean ordinal domain (NTS-08): the prefix <code>제</code> before the Sino-Korean numeral (한글 맞춤법 제43항:
-<code>제삼 항</code>), validated from 0 to 1000. Above 1000 the configured cardinal spaces the thousands
-(<code>천 일</code>, <code>십 천</code>), whereas Korean numbers are spaced by units of 만, so those ordinals fail closed.</p>
+      <dd><p>Korean ordinal domain: the prefix <code>제</code> before the Sino-Korean numeral (한글 맞춤법 제43항: <code>제삼 항</code>), with
+any numeral. NTS-08 validated 0–1000; NTS-28 extends it to the NTS-27 cardinal domain, spaced by units of 만 (to
+9999조, 10^16 − 1).</p>
 </dd>
     </dl>
     <dl class="jumplist">
@@ -614,7 +618,10 @@ word-level transformation rules, and a default suffix.</p>
 require both the tens and units components to carry ordinal endings — a transformation
 the XML word-rule engine cannot perform because it only rewrites the last word.
 Numbers 1–19 fall through to the XML pipeline (which carries full case/gender tables).
-Since NTS-08 the plugin also builds 1000–1999 and rejects every value from 2000.</p>
+Since NTS-08 the plugin also builds 1000–1999; since NTS-28 it builds 2000–999 999 after PWN Poradnia
+16446: the thousands stay cardinal with their agreeing noun (<code>dwa tysiące piętnasty</code>) and a round
+thousand with a multiplier of 2–99 is one word declined like <code>tysięczny</code>
+(<code>dwudziestojedentysięczny</code>). The round thousands from 100 000 and the millions fail closed.</p>
 </dd>
     </dl>
     <dl class="jumplist">
@@ -625,10 +632,12 @@ multiplier) following the Unicode CLDR cardinal plural rules of <code>pl</code> 
     </dl>
     <dl class="jumplist">
       <dt><a class="xref" href="Utils.NumberToString.PortugueseOrdinalLanguageSpecifics.html">PortugueseOrdinalLanguageSpecifics</a></dt>
-      <dd><p>Portuguese ordinal domain (NTS-08). Validated by the Priberam dictionary entries (<code>vigésimo</code> &quot;depois
-do décimo nono&quot;, <code>trigésimo</code> … <code>nonagésimo</code> &quot;após o octogésimo nono&quot;, <code>centésimo</code>,
-<code>milésimo</code>): 1–20, the round tens, 100 and 1000. Other compounds juxtapose ordinals
-(<code>vigésimo primeiro</code>), which the last-word pipeline cannot build; they fail closed.</p>
+      <dd><p>Portuguese ordinal domain: 1–1999. NTS-08 validated 1–20, the round tens, 100 and 1000 (Priberam). NTS-28
+added the compounds, composed from agreeing ordinals (<code>vigésimo primeiro</code>, <code>centésima quadragésima
+quinta</code>), and the round hundreds (<code>ducentésimo</code> … <code>nongentésimo</code>), after Ciberdúvidas, &quot;A forma
+por extenso de 2000.º (e de outros ordinais)&quot;, citing E. Bechara. From 2000 the sources disagree (<code>dois
+milésimo</code>, <code>dois milésimos</code>, <code>segundo milésimo</code>; <code>décimo milésimo</code> for 10 000), so those
+values fail closed, as does zero.</p>
 </dd>
     </dl>
     <dl class="jumplist">
@@ -652,11 +661,13 @@ cardinal, and <code>-a</code> on its last word (<code>a doua</code>, <code>a dou
     </dl>
     <dl class="jumplist">
       <dt><a class="xref" href="Utils.NumberToString.RussianOrdinalLanguageSpecifics.html">RussianOrdinalLanguageSpecifics</a></dt>
-      <dd><p>Russian ordinal domain (NTS-08). Validated by the <i>Правила русской орфографии и пунктуации</i>, §132–133
-(only the last word of a composite ordinal is ordinal: <code>тысяча девятьсот девяносто четвёртый</code>):
-0 (<code>нулевой</code>, NTS-14) to 1999. From 2000 the configured cardinal is wrong (<code>два тысяча</code>
-instead of <code>две тысячи</code>) and the one-word round ordinals (<code>двухтысячный</code>,
-<code>десятитысячный</code>, <code>миллионный</code>) are not built; those values fail closed.</p>
+      <dd><p>Russian ordinal domain, after the <i>Правила русской орфографии и пунктуации</i> (2006). §133б: a composite
+ordinal is written separately and only its last part is ordinal (<code>тысяча девятьсот девяносто
+четвёртый</code>, <code>две тысячи первый</code>, <code>миллион двести тысяч сто пятый</code>); the declarative pipeline
+forms them on the NTS-27 cardinal (the configuration drops the <code>один</code> of a single million). §132б: an
+ordinal whose last part is <code>-тысячный</code> or <code>-миллионный</code> is one word with its first part in the
+genitive (<code>пятнадцатитысячный</code>, <code>шестисотмиллионный</code>); this class builds them, declined for
+gender and case, also after the millions (<code>два миллиона трёхтысячный</code>).</p>
 </dd>
     </dl>
     <dl class="jumplist">
@@ -717,11 +728,16 @@ compound thousands above 9999 are declined because their written forms were not 
     </dl>
     <dl class="jumplist">
       <dt><a class="xref" href="Utils.NumberToString.SpanishOrdinalLanguageSpecifics.html">SpanishOrdinalLanguageSpecifics</a></dt>
-      <dd><p>Spanish ordinal domain (NTS-08). Validated by the RAE/ASALE <i>Diccionario panhispánico de dudas</i>,
-&quot;ordinales&quot;: 1–20, the univerbal 21–29 (<code>vigesimoprimero</code> … <code>vigesimonoveno</code>), the round tens
-(<code>trigésimo</code> … <code>nonagésimo</code>), <code>centésimo</code> and <code>milésimo</code>. From 31 the DPD ordinal
-juxtaposes ordinals (<code>trigésimo primero</code>, <code>ducentésimo</code>, <code>dosmilésimo</code>), which the
-declarative last-word pipeline cannot build from the cardinal; those values fail closed.</p>
+      <dd><p>Spanish ordinal domain. Validated by the RAE/ASALE <i>Diccionario panhispánico de dudas</i>, &quot;ordinales&quot;
+(NTS-08 for 1–29, the round tens, 100 and 1000; NTS-28 for the rest): §1 table and §2–§3, the complex
+ordinals juxtapose the simple ones (<code>trigésimo primero</code>, <code>centésimo trigésimo cuarto</code>), the
+round hundreds are simple (<code>ducentésimo</code>), the thousands and millions prefix the multiplying
+cardinal (<code>dosmilésimo</code>, <code>quinientosmilésimo</code>, <code>dosmillonésimo</code>). The configuration composes
+them; this guard admits 1–999 999 999 except the round thousands and millions whose multiplier the DPD does
+not show soldered: a multiplier ending in <code>uno</code> (21, 31, 101 …, apocope undetermined), a multiplier
+written in several words (150 <code>ciento cincuenta</code>) and, in the feminine, a hundreds multiplier
+(<code>doscientas</code>). Zero and the milliard and above (whose cardinal is not composed, NTS-30) fail closed.
+A composed value is checked part by part, so a rejected round part rejects the whole ordinal.</p>
 </dd>
     </dl>
     <dl class="jumplist">
@@ -787,8 +803,9 @@ text replacements, each optionally selecting a form based on active variant valu
 cardinal of the preceding part (<code>двадцять перший</code>, <code>сто перший</code>,
 <code>тисяча перший</code>); it is declined for gender (<code>чоловічий</code>, <code>жіночий</code>,
 <code>середній</code>) and case with the hard (<code>-ий</code>) and soft (<code>-ій</code>) adjective
-paradigms. Round thousands accept multipliers up to ten (<code>двохтисячний</code>); larger round
-multipliers and round millions or milliards other than one are declined.</p>
+paradigms. Round thousands, millions and milliards are one word with the multiplier in the genitive
+(<code>двохтисячний</code>, <code>шістдесятип'ятимільйонний</code>, <code>двохмільярдний</code>; NTS-28, Правопис 2019 §38) for
+the multipliers 1–89 except a final <code>один</code> after the tens; the other round multipliers are declined.</p>
 </dd>
     </dl>
     <dl class="jumplist">
@@ -813,10 +830,11 @@ and the list of variant rules.</p>
     </dl>
     <dl class="jumplist">
       <dt><a class="xref" href="Utils.NumberToString.VietnameseOrdinalLanguageSpecifics.html">VietnameseOrdinalLanguageSpecifics</a></dt>
-      <dd><p>Vietnamese ordinal domain (NTS-08): <code>thứ</code> + cardinal with the forms <code>thứ nhất</code> and <code>thứ tư</code>
-(Vietnamese dictionaries via vtudien), validated from 0 to 999. From 1000 the configured cardinal is wrong
-(<code>nghìn</code> instead of <code>một nghìn</code>, <code>hai nghìn năm</code> instead of
-<code>hai nghìn không trăm linh năm</code>), so those ordinals fail closed.</p>
+      <dd><p>Vietnamese ordinal domain: <code>thứ</code> + cardinal, with the forms <code>thứ nhất</code> and <code>thứ tư</code> (vtudien,
+Việt-Việt: thứ &quot;Đặt trước số từ để chỉ thứ tự&quot;, before any numeral). NTS-08 validated 0–999; NTS-28 extends the
+rule to the NTS-27 cardinal domain (to 999 999 999 999). A number with a whole zero class after a higher class
+(1 000 005) still has a cardinal defect (the class is skipped instead of read <code>không nghìn</code>, NTS-30), so
+its ordinal fails closed.</p>
 </dd>
     </dl>
     <dl class="jumplist">

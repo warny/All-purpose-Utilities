@@ -6,7 +6,7 @@
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <meta name="title" content="Class FinnishOrdinalLanguageSpecifics | omy.Utils Documentation ">
       
-      <meta name="description" content="Finnish ordinal domain (NTS-08). Validated in the nominative by the Aalto University course &amp;quot;Numeroiden taivutus&amp;quot; and the Kielitoimisto (kahdeskymmenes, sadas, tuhannes; nollas, NTS-12): 0–20, the round tens, the round hundreds and 1000. Compounds fuse every component (kahdeskymmenesensimm&#228;inen) and the inflected ordinals change every stem (genitive kolmannen, partitive kolmatta), which the declarative pipeline does not build; those values and every non-nominative case fail closed.">
+      <meta name="description" content="Finnish ordinal domain: the nominative of 0–1999. NTS-08 validated 0–20, the round tens and hundreds and 1000 (Aalto University &amp;quot;Numeroiden taivutus&amp;quot;, Kielitoimisto; nollas, NTS-12). NTS-28 added the compounds, one word with the ordinal marker in every part (Kielitoimiston ohjepankki: viideskymmenesviides, kahdeskymmenesensimm&#228;inen), composed by the configuration. The inflected ordinals change every component (genitive kolmannenkymmenennenkuudennen), but the consulted sources give the paradigms of 1, 3, 5, 17, 20, 100 and 1000 only, so every non-nominative case fails closed; from 2000 the cardinal is wrong (kaksi tuhat, NTS-30) and the round thousands are not sourced, so those values fail closed too.">
       <link rel="icon" href="../favicon.ico">
       <link rel="stylesheet" href="../public/docfx.min.css">
       <link rel="stylesheet" href="../public/main.css">
@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_NumberToString_FinnishOrdinalLanguageSpecifics" data-uid="Utils.NumberToString.FinnishOrdinalLanguageSpecifics" class="text-break">
-Class FinnishOrdinalLanguageSpecifics  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L145"><i class="bi bi-code-slash"></i></a>
+Class FinnishOrdinalLanguageSpecifics  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L194"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -97,12 +97,13 @@ Class FinnishOrdinalLanguageSpecifics  <a class="header-action link-secondary" t
   <dl><dt>Assembly</dt><dd>Utils.NumberToString.dll</dd></dl>
   </div>
 
-  <div class="markdown summary"><p>Finnish ordinal domain (NTS-08). Validated in the nominative by the Aalto University course &quot;Numeroiden
-taivutus&quot; and the Kielitoimisto (<code>kahdeskymmenes</code>, <code>sadas</code>, <code>tuhannes</code>; <code>nollas</code>,
-NTS-12): 0–20, the round tens, the round hundreds and 1000. Compounds fuse every component
-(<code>kahdeskymmenesensimmäinen</code>) and the inflected ordinals change every stem (genitive
-<code>kolmannen</code>, partitive <code>kolmatta</code>), which the declarative pipeline does not build; those
-values and every non-nominative case fail closed.</p>
+  <div class="markdown summary"><p>Finnish ordinal domain: the nominative of 0–1999. NTS-08 validated 0–20, the round tens and hundreds and 1000
+(Aalto University &quot;Numeroiden taivutus&quot;, Kielitoimisto; <code>nollas</code>, NTS-12). NTS-28 added the compounds,
+one word with the ordinal marker in every part (Kielitoimiston ohjepankki: <code>viideskymmenesviides</code>,
+<code>kahdeskymmenesensimmäinen</code>), composed by the configuration. The inflected ordinals change every
+component (genitive <code>kolmannenkymmenennenkuudennen</code>), but the consulted sources give the paradigms of
+1, 3, 5, 17, 20, 100 and 1000 only, so every non-nominative case fails closed; from 2000 the cardinal is wrong
+(<code>kaksi tuhat</code>, NTS-30) and the round thousands are not sourced, so those values fail closed too.</p>
 </div>
   <div class="markdown conceptual"></div>
 
@@ -267,7 +268,7 @@ values and every non-nominative case fail closed.</p>
 
   <h3 id="Utils_NumberToString_FinnishOrdinalLanguageSpecifics_LanguageName" data-uid="Utils.NumberToString.FinnishOrdinalLanguageSpecifics.LanguageName">
   LanguageName
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L151"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L200"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the English name of the language, used in the rejection message.</p>
@@ -299,7 +300,7 @@ values and every non-nominative case fail closed.</p>
 
   <h3 id="Utils_NumberToString_FinnishOrdinalLanguageSpecifics_SupportedDomain" data-uid="Utils.NumberToString.FinnishOrdinalLanguageSpecifics.SupportedDomain">
   SupportedDomain
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L154"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L203"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets a short description of the validated domain, used in the rejection message.</p>
@@ -335,7 +336,7 @@ values and every non-nominative case fail closed.</p>
 
   <h3 id="Utils_NumberToString_FinnishOrdinalLanguageSpecifics_IsSupported_System_Int64_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__" data-uid="Utils.NumberToString.FinnishOrdinalLanguageSpecifics.IsSupported(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String})">
   IsSupported(long, IReadOnlyDictionary&lt;string, string&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L157"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L206"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Tells whether the ordinal of a value belongs to the validated domain.</p>
@@ -377,7 +378,7 @@ values and every non-nominative case fail closed.</p>
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L145" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L194" class="edit-link">Edit this page</a>
         </div>
 
 

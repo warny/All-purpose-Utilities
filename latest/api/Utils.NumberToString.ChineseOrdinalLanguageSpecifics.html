@@ -6,7 +6,7 @@
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <meta name="title" content="Class ChineseOrdinalLanguageSpecifics | omy.Utils Documentation ">
       
-      <meta name="description" content="Chinese ordinal domain (NTS-08): the prefix 第 before the cardinal (國語辭典: &amp;quot;用於整數數詞之前。表事物的 順序或等級&amp;quot;), validated from 0 to 100 and for the round hundreds to 900. Other values above 100 rely on a configured cardinal without 零 or 一十 (一百一 for 101, 一百十 for 110, 一 千 for 1000), so their ordinals fail closed.">
+      <meta name="description" content="Chinese ordinal domain: the prefix 第 before the cardinal (國語辭典: &amp;quot;用於整數數詞之前。表事物的順序或等級&amp;quot;, before any integer numeral). NTS-08 validated 0–100 and the round hundreds; NTS-28 extends it to the NTS-27 cardinal domain with 零 and 一十, counted by 万 (below 万亿, 10^12).">
       <link rel="icon" href="../favicon.ico">
       <link rel="stylesheet" href="../public/docfx.min.css">
       <link rel="stylesheet" href="../public/main.css">
@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_NumberToString_ChineseOrdinalLanguageSpecifics" data-uid="Utils.NumberToString.ChineseOrdinalLanguageSpecifics" class="text-break">
-Class ChineseOrdinalLanguageSpecifics  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L280"><i class="bi bi-code-slash"></i></a>
+Class ChineseOrdinalLanguageSpecifics  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L476"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -97,10 +97,9 @@ Class ChineseOrdinalLanguageSpecifics  <a class="header-action link-secondary" t
   <dl><dt>Assembly</dt><dd>Utils.NumberToString.dll</dd></dl>
   </div>
 
-  <div class="markdown summary"><p>Chinese ordinal domain (NTS-08): the prefix <code>第</code> before the cardinal (國語辭典: &quot;用於整數數詞之前。表事物的
-順序或等級&quot;), validated from 0 to 100 and for the round hundreds to 900. Other values above 100 rely on a
-configured cardinal without <code>零</code> or <code>一十</code> (<code>一百一</code> for 101, <code>一百十</code> for 110,
-<code>一 千</code> for 1000), so their ordinals fail closed.</p>
+  <div class="markdown summary"><p>Chinese ordinal domain: the prefix <code>第</code> before the cardinal (國語辭典: &quot;用於整數數詞之前。表事物的順序或等級&quot;, before
+any integer numeral). NTS-08 validated 0–100 and the round hundreds; NTS-28 extends it to the NTS-27 cardinal
+domain with <code>零</code> and <code>一十</code>, counted by 万 (below 万亿, 10^12).</p>
 </div>
   <div class="markdown conceptual"></div>
 
@@ -265,7 +264,7 @@ configured cardinal without <code>零</code> or <code>一十</code> (<code>一�
 
   <h3 id="Utils_NumberToString_ChineseOrdinalLanguageSpecifics_LanguageName" data-uid="Utils.NumberToString.ChineseOrdinalLanguageSpecifics.LanguageName">
   LanguageName
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L283"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L479"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the English name of the language, used in the rejection message.</p>
@@ -297,7 +296,7 @@ configured cardinal without <code>零</code> or <code>一十</code> (<code>一�
 
   <h3 id="Utils_NumberToString_ChineseOrdinalLanguageSpecifics_SupportedDomain" data-uid="Utils.NumberToString.ChineseOrdinalLanguageSpecifics.SupportedDomain">
   SupportedDomain
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L286"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L482"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets a short description of the validated domain, used in the rejection message.</p>
@@ -333,7 +332,7 @@ configured cardinal without <code>零</code> or <code>一十</code> (<code>一�
 
   <h3 id="Utils_NumberToString_ChineseOrdinalLanguageSpecifics_IsSupported_System_Int64_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__" data-uid="Utils.NumberToString.ChineseOrdinalLanguageSpecifics.IsSupported(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String})">
   IsSupported(long, IReadOnlyDictionary&lt;string, string&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L289"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L485"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Tells whether the ordinal of a value belongs to the validated domain.</p>
@@ -375,7 +374,7 @@ configured cardinal without <code>零</code> or <code>一十</code> (<code>一�
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L280" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L476" class="edit-link">Edit this page</a>
         </div>
 
 

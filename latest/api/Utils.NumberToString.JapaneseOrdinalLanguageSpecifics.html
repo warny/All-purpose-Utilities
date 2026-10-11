@@ -6,7 +6,7 @@
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <meta name="title" content="Class JapaneseOrdinalLanguageSpecifics | omy.Utils Documentation ">
       
-      <meta name="description" content="Japanese ordinal domain (NTS-08): the prefix 第 before the cardinal (デジタル大辞泉, 第: &amp;quot;数を表す語に付いて、 ものの順序を表す&amp;quot;), validated from 0 to 1000. Above 1000 the configured cardinal splits the thousands with spaces and does not count by 万 (十 千 for 10 000), so those ordinals fail closed.">
+      <meta name="description" content="Japanese ordinal domain: the prefix 第 before the cardinal (デジタル大辞泉, 第: &amp;quot;数を表す語に付いて、ものの順序を 表す&amp;quot;, before any numeral). NTS-08 validated 0–1000; NTS-28 extends it to the NTS-27 cardinal domain, counted by 万 (to 9999兆, 10^16 − 1).">
       <link rel="icon" href="../favicon.ico">
       <link rel="stylesheet" href="../public/docfx.min.css">
       <link rel="stylesheet" href="../public/main.css">
@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_NumberToString_JapaneseOrdinalLanguageSpecifics" data-uid="Utils.NumberToString.JapaneseOrdinalLanguageSpecifics" class="text-break">
-Class JapaneseOrdinalLanguageSpecifics  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L245"><i class="bi bi-code-slash"></i></a>
+Class JapaneseOrdinalLanguageSpecifics  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L442"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -97,9 +97,9 @@ Class JapaneseOrdinalLanguageSpecifics  <a class="header-action link-secondary" 
   <dl><dt>Assembly</dt><dd>Utils.NumberToString.dll</dd></dl>
   </div>
 
-  <div class="markdown summary"><p>Japanese ordinal domain (NTS-08): the prefix <code>第</code> before the cardinal (デジタル大辞泉, 第: &quot;数を表す語に付いて、
-ものの順序を表す&quot;), validated from 0 to 1000. Above 1000 the configured cardinal splits the thousands with
-spaces and does not count by 万 (<code>十 千</code> for 10 000), so those ordinals fail closed.</p>
+  <div class="markdown summary"><p>Japanese ordinal domain: the prefix <code>第</code> before the cardinal (デジタル大辞泉, 第: &quot;数を表す語に付いて、ものの順序を
+表す&quot;, before any numeral). NTS-08 validated 0–1000; NTS-28 extends it to the NTS-27 cardinal domain, counted by
+万 (to 9999兆, 10^16 − 1).</p>
 </div>
   <div class="markdown conceptual"></div>
 
@@ -264,7 +264,7 @@ spaces and does not count by 万 (<code>十 千</code> for 10 000), so those ord
 
   <h3 id="Utils_NumberToString_JapaneseOrdinalLanguageSpecifics_LanguageName" data-uid="Utils.NumberToString.JapaneseOrdinalLanguageSpecifics.LanguageName">
   LanguageName
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L248"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L445"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the English name of the language, used in the rejection message.</p>
@@ -296,7 +296,7 @@ spaces and does not count by 万 (<code>十 千</code> for 10 000), so those ord
 
   <h3 id="Utils_NumberToString_JapaneseOrdinalLanguageSpecifics_SupportedDomain" data-uid="Utils.NumberToString.JapaneseOrdinalLanguageSpecifics.SupportedDomain">
   SupportedDomain
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L251"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L448"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets a short description of the validated domain, used in the rejection message.</p>
@@ -332,7 +332,7 @@ spaces and does not count by 万 (<code>十 千</code> for 10 000), so those ord
 
   <h3 id="Utils_NumberToString_JapaneseOrdinalLanguageSpecifics_IsSupported_System_Int64_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__" data-uid="Utils.NumberToString.JapaneseOrdinalLanguageSpecifics.IsSupported(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String})">
   IsSupported(long, IReadOnlyDictionary&lt;string, string&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L254"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L451"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Tells whether the ordinal of a value belongs to the validated domain.</p>
@@ -374,7 +374,7 @@ spaces and does not count by 万 (<code>十 千</code> for 10 000), so those ord
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L245" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L442" class="edit-link">Edit this page</a>
         </div>
 
 

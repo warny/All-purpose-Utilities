@@ -6,7 +6,7 @@
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <meta name="title" content="Class SpanishOrdinalLanguageSpecifics | omy.Utils Documentation ">
       
-      <meta name="description" content="Spanish ordinal domain (NTS-08). Validated by the RAE/ASALE Diccionario panhisp&#225;nico de dudas, &amp;quot;ordinales&amp;quot;: 1–20, the univerbal 21–29 (vigesimoprimero … vigesimonoveno), the round tens (trig&#233;simo … nonag&#233;simo), cent&#233;simo and mil&#233;simo. From 31 the DPD ordinal juxtaposes ordinals (trig&#233;simo primero, ducent&#233;simo, dosmil&#233;simo), which the declarative last-word pipeline cannot build from the cardinal; those values fail closed.">
+      <meta name="description" content="Spanish ordinal domain. Validated by the RAE/ASALE Diccionario panhisp&#225;nico de dudas, &amp;quot;ordinales&amp;quot; (NTS-08 for 1–29, the round tens, 100 and 1000; NTS-28 for the rest): &#167;1 table and &#167;2–&#167;3, the complex ordinals juxtapose the simple ones (trig&#233;simo primero, cent&#233;simo trig&#233;simo cuarto), the round hundreds are simple (ducent&#233;simo), the thousands and millions prefix the multiplying cardinal (dosmil&#233;simo, quinientosmil&#233;simo, dosmillon&#233;simo). The configuration composes them; this guard admits 1–999 999 999 except the round thousands and millions whose multiplier the DPD does not show soldered: a multiplier ending in uno (21, 31, 101 …, apocope undetermined), a multiplier written in several words (150 ciento cincuenta) and, in the feminine, a hundreds multiplier (doscientas). Zero and the milliard and above (whose cardinal is not composed, NTS-30) fail closed. A composed value is checked part by part, so a rejected round part rejects the whole ordinal.">
       <link rel="icon" href="../favicon.ico">
       <link rel="stylesheet" href="../public/docfx.min.css">
       <link rel="stylesheet" href="../public/main.css">
@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_NumberToString_SpanishOrdinalLanguageSpecifics" data-uid="Utils.NumberToString.SpanishOrdinalLanguageSpecifics" class="text-break">
-Class SpanishOrdinalLanguageSpecifics  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L67"><i class="bi bi-code-slash"></i></a>
+Class SpanishOrdinalLanguageSpecifics  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L87"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -97,11 +97,16 @@ Class SpanishOrdinalLanguageSpecifics  <a class="header-action link-secondary" t
   <dl><dt>Assembly</dt><dd>Utils.NumberToString.dll</dd></dl>
   </div>
 
-  <div class="markdown summary"><p>Spanish ordinal domain (NTS-08). Validated by the RAE/ASALE <i>Diccionario panhispánico de dudas</i>,
-&quot;ordinales&quot;: 1–20, the univerbal 21–29 (<code>vigesimoprimero</code> … <code>vigesimonoveno</code>), the round tens
-(<code>trigésimo</code> … <code>nonagésimo</code>), <code>centésimo</code> and <code>milésimo</code>. From 31 the DPD ordinal
-juxtaposes ordinals (<code>trigésimo primero</code>, <code>ducentésimo</code>, <code>dosmilésimo</code>), which the
-declarative last-word pipeline cannot build from the cardinal; those values fail closed.</p>
+  <div class="markdown summary"><p>Spanish ordinal domain. Validated by the RAE/ASALE <i>Diccionario panhispánico de dudas</i>, &quot;ordinales&quot;
+(NTS-08 for 1–29, the round tens, 100 and 1000; NTS-28 for the rest): §1 table and §2–§3, the complex
+ordinals juxtapose the simple ones (<code>trigésimo primero</code>, <code>centésimo trigésimo cuarto</code>), the
+round hundreds are simple (<code>ducentésimo</code>), the thousands and millions prefix the multiplying
+cardinal (<code>dosmilésimo</code>, <code>quinientosmilésimo</code>, <code>dosmillonésimo</code>). The configuration composes
+them; this guard admits 1–999 999 999 except the round thousands and millions whose multiplier the DPD does
+not show soldered: a multiplier ending in <code>uno</code> (21, 31, 101 …, apocope undetermined), a multiplier
+written in several words (150 <code>ciento cincuenta</code>) and, in the feminine, a hundreds multiplier
+(<code>doscientas</code>). Zero and the milliard and above (whose cardinal is not composed, NTS-30) fail closed.
+A composed value is checked part by part, so a rejected round part rejects the whole ordinal.</p>
 </div>
   <div class="markdown conceptual"></div>
 
@@ -266,7 +271,7 @@ declarative last-word pipeline cannot build from the cardinal; those values fail
 
   <h3 id="Utils_NumberToString_SpanishOrdinalLanguageSpecifics_LanguageName" data-uid="Utils.NumberToString.SpanishOrdinalLanguageSpecifics.LanguageName">
   LanguageName
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L70"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L90"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the English name of the language, used in the rejection message.</p>
@@ -298,7 +303,7 @@ declarative last-word pipeline cannot build from the cardinal; those values fail
 
   <h3 id="Utils_NumberToString_SpanishOrdinalLanguageSpecifics_SupportedDomain" data-uid="Utils.NumberToString.SpanishOrdinalLanguageSpecifics.SupportedDomain">
   SupportedDomain
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L73"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L93"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets a short description of the validated domain, used in the rejection message.</p>
@@ -334,7 +339,7 @@ declarative last-word pipeline cannot build from the cardinal; those values fail
 
   <h3 id="Utils_NumberToString_SpanishOrdinalLanguageSpecifics_IsSupported_System_Int64_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__" data-uid="Utils.NumberToString.SpanishOrdinalLanguageSpecifics.IsSupported(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String})">
   IsSupported(long, IReadOnlyDictionary&lt;string, string&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L76"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L98"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Tells whether the ordinal of a value belongs to the validated domain.</p>
@@ -376,7 +381,7 @@ declarative last-word pipeline cannot build from the cardinal; those values fail
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L67" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L87" class="edit-link">Edit this page</a>
         </div>
 
 

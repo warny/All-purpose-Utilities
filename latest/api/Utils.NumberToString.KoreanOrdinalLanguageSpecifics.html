@@ -6,7 +6,7 @@
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <meta name="title" content="Class KoreanOrdinalLanguageSpecifics | omy.Utils Documentation ">
       
-      <meta name="description" content="Korean ordinal domain (NTS-08): the prefix 제 before the Sino-Korean numeral (한글 맞춤법 제43항: 제삼 항), validated from 0 to 1000. Above 1000 the configured cardinal spaces the thousands (천 일, 십 천), whereas Korean numbers are spaced by units of 만, so those ordinals fail closed.">
+      <meta name="description" content="Korean ordinal domain: the prefix 제 before the Sino-Korean numeral (한글 맞춤법 제43항: 제삼 항), with any numeral. NTS-08 validated 0–1000; NTS-28 extends it to the NTS-27 cardinal domain, spaced by units of 만 (to 9999조, 10^16 − 1).">
       <link rel="icon" href="../favicon.ico">
       <link rel="stylesheet" href="../public/docfx.min.css">
       <link rel="stylesheet" href="../public/main.css">
@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_NumberToString_KoreanOrdinalLanguageSpecifics" data-uid="Utils.NumberToString.KoreanOrdinalLanguageSpecifics" class="text-break">
-Class KoreanOrdinalLanguageSpecifics  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L262"><i class="bi bi-code-slash"></i></a>
+Class KoreanOrdinalLanguageSpecifics  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L459"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -97,9 +97,9 @@ Class KoreanOrdinalLanguageSpecifics  <a class="header-action link-secondary" ti
   <dl><dt>Assembly</dt><dd>Utils.NumberToString.dll</dd></dl>
   </div>
 
-  <div class="markdown summary"><p>Korean ordinal domain (NTS-08): the prefix <code>제</code> before the Sino-Korean numeral (한글 맞춤법 제43항:
-<code>제삼 항</code>), validated from 0 to 1000. Above 1000 the configured cardinal spaces the thousands
-(<code>천 일</code>, <code>십 천</code>), whereas Korean numbers are spaced by units of 만, so those ordinals fail closed.</p>
+  <div class="markdown summary"><p>Korean ordinal domain: the prefix <code>제</code> before the Sino-Korean numeral (한글 맞춤법 제43항: <code>제삼 항</code>), with
+any numeral. NTS-08 validated 0–1000; NTS-28 extends it to the NTS-27 cardinal domain, spaced by units of 만 (to
+9999조, 10^16 − 1).</p>
 </div>
   <div class="markdown conceptual"></div>
 
@@ -264,7 +264,7 @@ Class KoreanOrdinalLanguageSpecifics  <a class="header-action link-secondary" ti
 
   <h3 id="Utils_NumberToString_KoreanOrdinalLanguageSpecifics_LanguageName" data-uid="Utils.NumberToString.KoreanOrdinalLanguageSpecifics.LanguageName">
   LanguageName
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L265"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L462"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the English name of the language, used in the rejection message.</p>
@@ -296,7 +296,7 @@ Class KoreanOrdinalLanguageSpecifics  <a class="header-action link-secondary" ti
 
   <h3 id="Utils_NumberToString_KoreanOrdinalLanguageSpecifics_SupportedDomain" data-uid="Utils.NumberToString.KoreanOrdinalLanguageSpecifics.SupportedDomain">
   SupportedDomain
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L268"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L465"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets a short description of the validated domain, used in the rejection message.</p>
@@ -332,7 +332,7 @@ Class KoreanOrdinalLanguageSpecifics  <a class="header-action link-secondary" ti
 
   <h3 id="Utils_NumberToString_KoreanOrdinalLanguageSpecifics_IsSupported_System_Int64_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__" data-uid="Utils.NumberToString.KoreanOrdinalLanguageSpecifics.IsSupported(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String})">
   IsSupported(long, IReadOnlyDictionary&lt;string, string&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L271"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L468"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Tells whether the ordinal of a value belongs to the validated domain.</p>
@@ -374,7 +374,7 @@ Class KoreanOrdinalLanguageSpecifics  <a class="header-action link-secondary" ti
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L262" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L459" class="edit-link">Edit this page</a>
         </div>
 
 

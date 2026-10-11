@@ -6,7 +6,7 @@
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <meta name="title" content="Class BasqueOrdinalLanguageSpecifics | omy.Utils Documentation ">
       
-      <meta name="description" content="Basque ordinal domain (NTS-08). Euskaltzaindia, rule 18 (bigarren, bosgarren, hogeita batgarren, ehungarren, milagarren) and rule 7 (cardinals), validated from 1 to 1000. Zero has no attested ordinal (rule 7 gives only zero/huts), and above 1000 the configured cardinal omits the eta required by rule 7 (mila bat instead of mila eta bat) or puts the multiplier of a million first (bat milioi instead of milioi bat); those values fail closed.">
+      <meta name="description" content="Basque ordinal domain. Euskaltzaindia, rule 18: the ordinal is the cardinal written in letters followed by -garren (bigarren, bosgarren, hogeita batgarren, ehungarren, milagarren …). NTS-08 validated 1–1000; NTS-28 extends the rule to the NTS-27 cardinal (rule 7: mila eta batgarren, milioi batgarren), to 999 999 999. Zero has no attested ordinal (rule 7 gives only zero/huts), and from the milliard the cardinal does not compose mila milioi with the millions (NTS-30); those values fail closed.">
       <link rel="icon" href="../favicon.ico">
       <link rel="stylesheet" href="../public/docfx.min.css">
       <link rel="stylesheet" href="../public/main.css">
@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_NumberToString_BasqueOrdinalLanguageSpecifics" data-uid="Utils.NumberToString.BasqueOrdinalLanguageSpecifics" class="text-break">
-Class BasqueOrdinalLanguageSpecifics  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L300"><i class="bi bi-code-slash"></i></a>
+Class BasqueOrdinalLanguageSpecifics  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L497"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -97,11 +97,12 @@ Class BasqueOrdinalLanguageSpecifics  <a class="header-action link-secondary" ti
   <dl><dt>Assembly</dt><dd>Utils.NumberToString.dll</dd></dl>
   </div>
 
-  <div class="markdown summary"><p>Basque ordinal domain (NTS-08). Euskaltzaindia, rule 18 (<code>bigarren</code>, <code>bosgarren</code>,
-<code>hogeita batgarren</code>, <code>ehungarren</code>, <code>milagarren</code>) and rule 7 (cardinals), validated from 1 to
-1000. Zero has no attested ordinal (rule 7 gives only <code>zero</code>/<code>huts</code>), and above 1000 the configured
-cardinal omits the <code>eta</code> required by rule 7 (<code>mila bat</code> instead of <code>mila eta bat</code>) or puts the
-multiplier of a million first (<code>bat milioi</code> instead of <code>milioi bat</code>); those values fail closed.</p>
+  <div class="markdown summary"><p>Basque ordinal domain. Euskaltzaindia, rule 18: the ordinal is the cardinal written in letters followed by
+<code>-garren</code> (<code>bigarren</code>, <code>bosgarren</code>, <code>hogeita batgarren</code>, <code>ehungarren</code>, <code>milagarren</code>
+…). NTS-08 validated 1–1000; NTS-28 extends the rule to the NTS-27 cardinal (rule 7: <code>mila eta batgarren</code>,
+<code>milioi batgarren</code>), to 999 999 999. Zero has no attested ordinal (rule 7 gives only
+<code>zero</code>/<code>huts</code>), and from the milliard the cardinal does not compose <code>mila milioi</code> with the
+millions (NTS-30); those values fail closed.</p>
 </div>
   <div class="markdown conceptual"></div>
 
@@ -266,7 +267,7 @@ multiplier of a million first (<code>bat milioi</code> instead of <code>milioi b
 
   <h3 id="Utils_NumberToString_BasqueOrdinalLanguageSpecifics_LanguageName" data-uid="Utils.NumberToString.BasqueOrdinalLanguageSpecifics.LanguageName">
   LanguageName
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L303"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L500"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the English name of the language, used in the rejection message.</p>
@@ -298,7 +299,7 @@ multiplier of a million first (<code>bat milioi</code> instead of <code>milioi b
 
   <h3 id="Utils_NumberToString_BasqueOrdinalLanguageSpecifics_SupportedDomain" data-uid="Utils.NumberToString.BasqueOrdinalLanguageSpecifics.SupportedDomain">
   SupportedDomain
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L306"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L503"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets a short description of the validated domain, used in the rejection message.</p>
@@ -334,7 +335,7 @@ multiplier of a million first (<code>bat milioi</code> instead of <code>milioi b
 
   <h3 id="Utils_NumberToString_BasqueOrdinalLanguageSpecifics_IsSupported_System_Int64_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__" data-uid="Utils.NumberToString.BasqueOrdinalLanguageSpecifics.IsSupported(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String})">
   IsSupported(long, IReadOnlyDictionary&lt;string, string&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L309"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L506"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Tells whether the ordinal of a value belongs to the validated domain.</p>
@@ -376,7 +377,7 @@ multiplier of a million first (<code>bat milioi</code> instead of <code>milioi b
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L300" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L497" class="edit-link">Edit this page</a>
         </div>
 
 

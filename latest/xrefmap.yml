@@ -68870,6 +68870,22 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.SupportedDomain
   nameWithType: OrdinalDomainGuardLanguageSpecifics.SupportedDomain
+- uid: Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.TryBuildOrdinal(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String@)
+  name: TryBuildOrdinal(long, IReadOnlyDictionary<string, string>, out string?)
+  href: api/Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.html#Utils_NumberToString_OrdinalDomainGuardLanguageSpecifics_TryBuildOrdinal_System_Int64_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__System_String__
+  commentId: M:Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.TryBuildOrdinal(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String@)
+  name.vb: TryBuildOrdinal(Long, IReadOnlyDictionary(Of String, String), String)
+  fullName: Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.TryBuildOrdinal(long, System.Collections.Generic.IReadOnlyDictionary<string, string>, out string?)
+  fullName.vb: Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.TryBuildOrdinal(Long, System.Collections.Generic.IReadOnlyDictionary(Of String, String), String)
+  nameWithType: OrdinalDomainGuardLanguageSpecifics.TryBuildOrdinal(long, IReadOnlyDictionary<string, string>, out string?)
+  nameWithType.vb: OrdinalDomainGuardLanguageSpecifics.TryBuildOrdinal(Long, IReadOnlyDictionary(Of String, String), String)
+- uid: Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.TryBuildOrdinal*
+  name: TryBuildOrdinal
+  href: api/Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.html#Utils_NumberToString_OrdinalDomainGuardLanguageSpecifics_TryBuildOrdinal_
+  commentId: Overload:Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.TryBuildOrdinal
+  isSpec: "True"
+  fullName: Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.TryBuildOrdinal
+  nameWithType: OrdinalDomainGuardLanguageSpecifics.TryBuildOrdinal
 - uid: Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.TryConvertOrdinal(System.Int32,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String@)
   name: TryConvertOrdinal(int, IReadOnlyDictionary<string, string>, out string?)
   href: api/Utils.NumberToString.OrdinalDomainGuardLanguageSpecifics.html#Utils_NumberToString_OrdinalDomainGuardLanguageSpecifics_TryConvertOrdinal_System_Int32_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__System_String__
@@ -69820,6 +69836,22 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.RussianOrdinalLanguageSpecifics.SupportedDomain
   nameWithType: RussianOrdinalLanguageSpecifics.SupportedDomain
+- uid: Utils.NumberToString.RussianOrdinalLanguageSpecifics.TryBuildOrdinal(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String@)
+  name: TryBuildOrdinal(long, IReadOnlyDictionary<string, string>, out string?)
+  href: api/Utils.NumberToString.RussianOrdinalLanguageSpecifics.html#Utils_NumberToString_RussianOrdinalLanguageSpecifics_TryBuildOrdinal_System_Int64_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__System_String__
+  commentId: M:Utils.NumberToString.RussianOrdinalLanguageSpecifics.TryBuildOrdinal(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String@)
+  name.vb: TryBuildOrdinal(Long, IReadOnlyDictionary(Of String, String), String)
+  fullName: Utils.NumberToString.RussianOrdinalLanguageSpecifics.TryBuildOrdinal(long, System.Collections.Generic.IReadOnlyDictionary<string, string>, out string?)
+  fullName.vb: Utils.NumberToString.RussianOrdinalLanguageSpecifics.TryBuildOrdinal(Long, System.Collections.Generic.IReadOnlyDictionary(Of String, String), String)
+  nameWithType: RussianOrdinalLanguageSpecifics.TryBuildOrdinal(long, IReadOnlyDictionary<string, string>, out string?)
+  nameWithType.vb: RussianOrdinalLanguageSpecifics.TryBuildOrdinal(Long, IReadOnlyDictionary(Of String, String), String)
+- uid: Utils.NumberToString.RussianOrdinalLanguageSpecifics.TryBuildOrdinal*
+  name: TryBuildOrdinal
+  href: api/Utils.NumberToString.RussianOrdinalLanguageSpecifics.html#Utils_NumberToString_RussianOrdinalLanguageSpecifics_TryBuildOrdinal_
+  commentId: Overload:Utils.NumberToString.RussianOrdinalLanguageSpecifics.TryBuildOrdinal
+  isSpec: "True"
+  fullName: Utils.NumberToString.RussianOrdinalLanguageSpecifics.TryBuildOrdinal
+  nameWithType: RussianOrdinalLanguageSpecifics.TryBuildOrdinal
 - uid: Utils.NumberToString.RussianPluralLexicalFormSelector
   name: RussianPluralLexicalFormSelector
   href: api/Utils.NumberToString.RussianPluralLexicalFormSelector.html
