@@ -231,10 +231,10 @@ by the lexical-form mechanism.</p>
     <dl class="jumplist">
       <dt><a class="xref" href="Utils.NumberToString.DutchOrdinalLanguageSpecifics.html">DutchOrdinalLanguageSpecifics</a></dt>
       <dd><p>Dutch ordinal domain (NTS-08). Taaladvies &quot;Aaneenschrijven van telwoorden&quot; and the Woordenlijst
-Nederlandse Taal (<code>nulde</code>, <code>tweeduizendste</code>) validate the ordinals from 0 to 999 999, the
-domain of the configured cardinal (<code>maxNumber</code>). Ordinals are not bounded by <code>maxNumber</code>: from a
-million the scale lookup of the unvalidated cardinal threw an <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.invalidoperationexception">InvalidOperationException</a>
-(configuration error) and no <code>-ste</code> rule exists for the scale nouns, so those values fail closed.</p>
+Nederlandse Taal (<code>nulde</code>, <code>tweeduizendste</code>) validate the ordinals from 0 to 999 999. Since NTS-31
+the cardinals are unbounded (long scale, <code>een miljoen</code>), but no source settles the ordinals of the scale
+nouns (<code>miljoenste</code>, <code>een miljoenste</code>?) and no <code>-ste</code> rule exists for them: this explicit
+guard, independent of the cardinal domain, keeps every ordinal from a million fail-closed.</p>
 </dd>
     </dl>
     <dl class="jumplist">

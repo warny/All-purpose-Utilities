@@ -8843,7 +8843,7 @@
       "Uid": null,
       "IsMRef": true,
       "Title": "Utils.NumberToString.DutchOrdinalLanguageSpecifics",
-      "Summary": "<p sourcefile=\"api/Utils.NumberToString.DutchOrdinalLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Dutch ordinal domain (NTS-08). Taaladvies &quot;Aaneenschrijven van telwoorden&quot; and the Woordenlijst\nNederlandse Taal (<code>nulde</code>, <code>tweeduizendste</code>) validate the ordinals from 0 to 999 999, the\ndomain of the configured cardinal (<code>maxNumber</code>). Ordinals are not bounded by <code>maxNumber</code>: from a\nmillion the scale lookup of the unvalidated cardinal threw an <xref href=\"System.InvalidOperationException\" data-throw-if-not-resolved=\"false\"></xref>\n(configuration error) and no <code>-ste</code> rule exists for the scale nouns, so those values fail closed.</p>\n"
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.DutchOrdinalLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Dutch ordinal domain (NTS-08). Taaladvies &quot;Aaneenschrijven van telwoorden&quot; and the Woordenlijst\nNederlandse Taal (<code>nulde</code>, <code>tweeduizendste</code>) validate the ordinals from 0 to 999 999. Since NTS-31\nthe cardinals are unbounded (long scale, <code>een miljoen</code>), but no source settles the ordinals of the scale\nnouns (<code>miljoenste</code>, <code>een miljoenste</code>?) and no <code>-ste</code> rule exists for them: this explicit\nguard, independent of the cardinal domain, keeps every ordinal from a million fail-closed.</p>\n"
     },
     {
       "type": "ManagedReference",
