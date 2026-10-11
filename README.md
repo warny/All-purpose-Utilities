@@ -131,6 +131,26 @@ Still intentionally out of scope: adaptive prediction, recursive FIRST-set analy
 - `Utils.Expressions.CSyntax` supports forward-referenced function declarations with shared context usage.
 - Generic symbolic math APIs are available through `ExpressionDerivation<T>`, `ExpressionIntegration<T>`, and `MathExpressionExtensions` (`Derivate<T>` / `Integrate<T>`).
 
+## Conway scale-name implementation rule
+
+`Utils.NumberToString` uses the Conway-Guy-Wechsler construction as the productive extension mechanism for large-scale names.
+When a language already exposes the corresponding scale pattern (for example the million-series prefixes `mi-`, `bi-`,
+`tri-`), implementations do **not** need a language authority to attest every generated Conway name individually.
+Conway names are a mathematical naming construction rather than a language-specific normative vocabulary.
+
+For each language, contributors must instead establish the **language-specific base of the system** and preserve its own
+orthography and morphology:
+
+- verify the scale-0 / initial named scales and the language's established million/milliard-style pattern;
+- verify the language-specific suffixes, linking consonants, separators, spelling changes, transliteration or inflection
+  needed to continue that pattern;
+- check whether Conway-Guy-Wechsler itself prescribes a special junction or formation rule relevant to that pattern;
+- once those points are established, extend higher names productively with the shared Conway machinery, even when no
+  dictionary or language authority lists the generated higher names individually.
+
+Do not replace an established local scale pattern with a foreign one merely to fit Conway. The generated sequence must be
+continuous with the forms actually used by the language.
+
 ## Documentation
 
 - [Getting started](docs/getting-started.md)
