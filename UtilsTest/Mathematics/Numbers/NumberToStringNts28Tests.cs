@@ -119,6 +119,47 @@ public class NumberToStringNts28Tests
         }
     }
 
+    /// <summary>
+    /// The Polish ordinals 10–19 after the thousands (built by the plugin) take the same virile plural nominative
+    /// as alone (built by the XML pipeline): -naści with ś (piętnaści), not a concatenation of the stem with the
+    /// ending of piąci (piętnasci).
+    /// </summary>
+    [TestMethod]
+    [DataRow(10, "dziesiąci")]
+    [DataRow(11, "jedenaści")]
+    [DataRow(12, "dwunaści")]
+    [DataRow(13, "trzynaści")]
+    [DataRow(14, "czternaści")]
+    [DataRow(15, "piętnaści")]
+    [DataRow(16, "szesnaści")]
+    [DataRow(17, "siedemnaści")]
+    [DataRow(18, "osiemnaści")]
+    [DataRow(19, "dziewiętnaści")]
+    public void Polish_TeensAfterThousands_HaveTheVirilePluralNominative(int value, string expected)
+    {
+        NumberToStringConverter converter = NumberToStringConverter.GetConverter("PL");
+        string[] variants = ["rodzaj=plural_mos", "przypadek=mianownik"];
+
+        Assert.AreEqual(expected, converter.ConvertOrdinal(value, variants));
+        Assert.AreEqual("dwa tysiące " + expected, converter.ConvertOrdinal(2000 + value, variants));
+        Assert.AreEqual("dwanaście tysięcy " + expected, converter.ConvertOrdinal(12_000 + value, variants));
+    }
+
+    /// <summary>Every form of the Polish teens after the thousands equals the form the XML pipeline gives alone.</summary>
+    [TestMethod]
+    public void Polish_TeensAfterThousands_MatchTheirStandaloneForms()
+    {
+        NumberToStringConverter converter = NumberToStringConverter.GetConverter("PL");
+        foreach (string rodzaj in new[] { "maskulin", "feminin", "nijaki", "plural_mos", "plural" })
+            foreach (string przypadek in new[] { "mianownik", "dopełniacz", "celownik", "biernik", "narzędnik", "miejscownik" })
+                for (int value = 1; value <= 19; value++)
+                {
+                    string[] variants = [$"rodzaj={rodzaj}", $"przypadek={przypadek}"];
+                    Assert.AreEqual("pięć tysięcy " + converter.ConvertOrdinal(value, variants),
+                        converter.ConvertOrdinal(5000 + value, variants), $"{value} {rodzaj} {przypadek}");
+                }
+    }
+
     /// <summary>The Ukrainian combining forms stop at 89 and skip a final один after the tens.</summary>
     [TestMethod]
     public void Ukrainian_CombiningForms_HaveTheirDomain()

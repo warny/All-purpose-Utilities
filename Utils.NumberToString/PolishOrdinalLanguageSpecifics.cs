@@ -296,6 +296,14 @@ public sealed class PolishOrdinalLanguageSpecifics : INumberToStringLanguageSpec
     private static readonly string[] s_teenStems =
         ["dziesią", "jedenas", "dwunas", "trzynas", "czternas", "piętnas", "szesnas", "siedemnas", "osiemnas", "dziewiętnas"];
 
+    /// <summary>
+    /// Virile plural nominatives of the ordinals 10–19 (index = value − 10), as configured in the XML: the consonant
+    /// alternates before <c>-i</c> (<c>piętnasty</c> → <c>piętnaści</c>), so they are not the stem plus the ending of
+    /// <c>piąci</c> (which would give <c>piętnasci</c>).
+    /// </summary>
+    private static readonly string[] s_teenVirileNominatives =
+        ["dziesiąci", "jedenaści", "dwunaści", "trzynaści", "czternaści", "piętnaści", "szesnaści", "siedemnaści", "osiemnaści", "dziewiętnaści"];
+
     /// <inheritdoc />
     public string FinalizeWriting(string languageIdentifier, string text) => text;
 
@@ -350,7 +358,8 @@ public sealed class PolishOrdinalLanguageSpecifics : INumberToStringLanguageSpec
     /// <summary>
     /// Returns the ordinal of 1–19 for the requested form. Alone these values are formed by the XML pipeline;
     /// after the thousands the plugin declines them itself: 1–9 from the unit table, 10–19 like the hard
-    /// adjective <c>piąty</c> (<c>dziesiąty</c>, <c>piętnasty</c>, virile plural <c>piętnaści</c>).
+    /// adjective <c>piąty</c> (<c>dziesiąty</c>, <c>piętnastego</c>), except the virile plural nominative, whose
+    /// consonant alternates and which is taken whole (<c>piętnaści</c>).
     /// </summary>
     /// <param name="value">The value, 1–19.</param>
     /// <param name="ri">The gender (rodzaj) index.</param>
@@ -359,7 +368,9 @@ public sealed class PolishOrdinalLanguageSpecifics : INumberToStringLanguageSpec
     private static string LowOrdinal(int value, int ri, int pi)
     {
         if (value < 10) return s_units[value - 1][ri * 6 + pi];
-        // Every form of "piąty" starts with "pią"; the teens share its endings.
+        const int virilePlural = 3, nominative = 0;
+        if (ri == virilePlural && pi == nominative) return s_teenVirileNominatives[value - 10];
+        // Every other form of "piąty" starts with "pią" and ends with the hard-adjective ending the teens share.
         return s_teenStems[value - 10] + s_units[4][ri * 6 + pi][3..];
     }
 
