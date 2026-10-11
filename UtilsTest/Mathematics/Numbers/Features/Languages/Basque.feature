@@ -123,9 +123,24 @@ Scenario Outline: Basque ordinals outside the validated domain are not supported
 Examples:
     | number |
     | 0 |
-    | 1001 |
-    | 2000 |
-    | 1000000 |
+    | 1000000000 |
+
+# NTS-28: Euskaltzaindia rule 18: the ordinal is the cardinal written in letters followed by -garren ("…
+# ehungarren, milagarren …"), batgarren separate from the preceding part; on the NTS-27 cardinal (rule 7) the
+# ordinal covers 1-999 999 999. The milliard and above wait for the composition of mila milioi (NTS-30).
+Scenario Outline: NTS-28 Basque ordinals above a thousand
+    Given I use the "EU" number converter
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 1001 | mila eta batgarren |
+    | 1201 | mila berrehun eta batgarren |
+    | 2000 | bi milagarren |
+    | 2005 | bi mila eta bosgarren |
+    | 1000000 | milioi batgarren |
+    | 2000000 | bi milioigarren |
 
 Scenario: Ordinal conversion is supported
     Given I use the "EU" number converter

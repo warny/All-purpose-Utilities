@@ -218,6 +218,13 @@
             <Ordinal from="yhdeksänsataa"  to="yhdeksässadas" />
             <!-- Millier -->
             <Ordinal from="tuhat" to="tuhannes" />
+            <!-- NTS-28, Kielitoimiston ohjepankki "Luvut ja numerot: järjestysluvut": the ordinal marker recurs in
+                 every part, written as one word (viideskymmenesviides, kahdeskymmenesensimmäinen,
+                 kolmaskymmenestoinen); each part is built through the whole pipeline (11-19 keep the marker on the
+                 first part only: sadasyhdestoista). Nominative only; from 2000 the guard fails closed. -->
+            <OrdinalComposition for="21..99" divisor="10" separator="" />
+            <OrdinalComposition for="101..999" divisor="100" separator="" />
+            <OrdinalComposition for="1001..1999" divisor="1000" separator="" />
         </Ordinals>
         <!-- Kielitoimisto: "varttia yli yksi", "puoli kaksi" (the half refers to the following hour),
              "varttia vaille kaksi". Quarter-hour 12-hour clock without day-part wording. -->

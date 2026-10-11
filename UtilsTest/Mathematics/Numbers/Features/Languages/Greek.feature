@@ -101,9 +101,31 @@ Examples:
     | 200 |  | διακοσιοστός |
     | 1000 |  | χιλιοστός |
 
-# NTS-08: compounds above twenty are made of agreeing ordinals (εικοστός πρώτος, εκατοστός πρώτος,
-# δισχιλιοστός), whereas the declarative pipeline only rewrites the last word of the cardinal
-# ("είκοσι πρώτος", "εκατό πρώτος"): they fail closed.
+# NTS-28: Λεξικό της Κοινής Νεοελληνικής: compounds juxtapose ordinals that all agree in gender (εικοστός:
+# "Tην εικοστή τρίτη του μηνός"; εκατοστός: "Η εκατοστή πρώτη μέρα"), from the highest order down.
+Scenario Outline: NTS-28 Greek compound ordinals agree in every part
+    Given I use the "EL" number converter
+    And I use the variants "<variants>"
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | variants | expected |
+    | 21 |  | εικοστός πρώτος |
+    | 21 | gender=θηλυκό | εικοστή πρώτη |
+    | 23 | gender=θηλυκό | εικοστή τρίτη |
+    | 23 | gender=ουδέτερο | εικοστό τρίτο |
+    | 99 |  | ενενηκοστός ένατος |
+    | 101 |  | εκατοστός πρώτος |
+    | 101 | gender=θηλυκό | εκατοστή πρώτη |
+    | 113 |  | εκατοστός δέκατος τρίτος |
+    | 245 | gender=θηλυκό | διακοσιοστή τεσσαρακοστή πέμπτη |
+    | 999 |  | εννιακοσιοστός ενενηκοστός ένατος |
+    | 1001 |  | χιλιοστός πρώτος |
+    | 1999 | gender=ουδέτερο | χιλιοστό εννιακοσιοστό ενενηκοστό ένατο |
+
+# NTS-28: the round thousands above one (δισχιλιοστός, τρισχιλιοστός …) are not entries of the dictionary and
+# no other consulted source establishes them: 2000 and above fail closed (deliberate limitation).
 Scenario Outline: Greek ordinals outside the validated domain are not supported
     Given I use the "EL" number converter
     When I attempt to convert the ordinal number <number>
@@ -111,10 +133,9 @@ Scenario Outline: Greek ordinals outside the validated domain are not supported
 
 Examples:
     | number |
-    | 21 |
-    | 99 |
-    | 101 |
     | 2000 |
+    | 2001 |
+    | 10000 |
 
 Scenario: Ordinal conversion is supported
     Given I use the "EL" number converter

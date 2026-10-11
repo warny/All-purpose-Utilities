@@ -181,15 +181,26 @@ Examples:
     | 1000 | हज़ारवाँ |
     | 99999 | निन्यानवे हज़ार नौ सौ निन्यानवेवाँ |
 
-Scenario Outline: Hindi ordinals outside the validated domain are not supported
+# NTS-28: Kamta Prasad Guru §180 (इ): "सौ से ऊपर की संख्याओं में पिछले शब्द के अंत में वाँ लगाते हैं" — above a hundred
+# वाँ goes on the end of the last word, whatever the number; since NTS-27 the cardinal has लाख and करोड़.
+Scenario Outline: NTS-28 Hindi ordinals of the lakh and crore
     Given I use the "HI" number converter
-    When I attempt to convert the ordinal number <number>
-    Then conversion is rejected because no ordinal form is available
+    And I use the variants "<variants>"
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
 
 Examples:
-    | number |
-    | 100000 |
-    | 1000000 |
+    | number | variants | expected |
+    | 100000 |  | एक लाखवाँ |
+    | 100000 | gender=strī | एक लाखवीं |
+    | 100005 |  | एक लाख पाँचवाँ |
+    | 1000000 |  | दस लाखवाँ |
+    | 10000000 |  | एक करोड़वाँ |
+
+Scenario: Hindi ordinals beyond the cardinal domain are not supported
+    Given I use the "HI" number converter
+    When I attempt to convert the ordinal number 10000000000000
+    Then conversion is rejected because no ordinal form is available
 
 Scenario: Ordinal conversion is supported
     Given I use the "HI" number converter

@@ -132,6 +132,51 @@
 			<!-- Scale words -->
 			<Ordinal from="cen"> <Variant type="gender" forms="centésimo,centésima" /></Ordinal>
 			<Ordinal from="mil"> <Variant type="gender" forms="milésimo,milésima"   /></Ordinal>
+			<!-- NTS-28, NOMIG §16.2: the compounds juxtapose the ordinals (vixésimo primeiro) and only the last
+			     element takes gender and number (décimo primeira, centésimo vixésima). The ordinal-only
+			     replacements below turn every element but the last into its masculine ordinal; the last word then
+			     takes the agreeing form through the word rules. The feminine cardinal (douscentas) is transformed
+			     first, so both hundreds keys are replaced. Domain 1-1999 (guard). -->
+			<Replacement oldValue="douscentos" newValue="ducentésimo" scope="Anywhere" />
+			<Replacement oldValue="douscentas" newValue="ducentésimo" scope="Anywhere" />
+			<Replacement oldValue="trescentos" newValue="tricentésimo" scope="Anywhere" />
+			<Replacement oldValue="catrocentos" newValue="cuadrinxentésimo" scope="Anywhere" />
+			<Replacement oldValue="cincocentos" newValue="quinxentésimo" scope="Anywhere" />
+			<Replacement oldValue="seiscentos" newValue="sexcentésimo" scope="Anywhere" />
+			<Replacement oldValue="setecentos" newValue="septinxentésimo" scope="Anywhere" />
+			<Replacement oldValue="oitocentos" newValue="octinxentésimo" scope="Anywhere" />
+			<Replacement oldValue="novecentos" newValue="noninxentésimo" scope="Anywhere" />
+			<Replacement oldValue="cento" newValue="centésimo" scope="Anywhere" />
+			<Replacement oldValue="mil" newValue="milésimo" scope="Anywhere" />
+			<Replacement oldValue="vinte e" newValue="vixésimo" scope="Anywhere" />
+			<Replacement oldValue="trinta e" newValue="trixésimo" scope="Anywhere" />
+			<Replacement oldValue="corenta e" newValue="cuadraxésimo" scope="Anywhere" />
+			<Replacement oldValue="cincuenta e" newValue="quincuaxésimo" scope="Anywhere" />
+			<Replacement oldValue="sesenta e" newValue="sesaxésimo" scope="Anywhere" />
+			<Replacement oldValue="setenta e" newValue="septuaxésimo" scope="Anywhere" />
+			<Replacement oldValue="oitenta e" newValue="octoxésimo" scope="Anywhere" />
+			<Replacement oldValue="noventa e" newValue="nonaxésimo" scope="Anywhere" />
+			<!-- NTS-28: the last element when it is a round hundred or the thousand (RAG dictionary entries). -->
+			<Ordinal from="ducentésimo">      <Variant type="gender" forms="ducentésimo,ducentésima" /></Ordinal>
+			<Ordinal from="tricentésimo">     <Variant type="gender" forms="tricentésimo,tricentésima" /></Ordinal>
+			<Ordinal from="cuadrinxentésimo"> <Variant type="gender" forms="cuadrinxentésimo,cuadrinxentésima" /></Ordinal>
+			<Ordinal from="quinxentésimo">    <Variant type="gender" forms="quinxentésimo,quinxentésima" /></Ordinal>
+			<Ordinal from="sexcentésimo">     <Variant type="gender" forms="sexcentésimo,sexcentésima" /></Ordinal>
+			<Ordinal from="septinxentésimo">  <Variant type="gender" forms="septinxentésimo,septinxentésima" /></Ordinal>
+			<Ordinal from="octinxentésimo">   <Variant type="gender" forms="octinxentésimo,octinxentésima" /></Ordinal>
+			<Ordinal from="noninxentésimo">   <Variant type="gender" forms="noninxentésimo,noninxentésima" /></Ordinal>
+			<Ordinal from="milésimo">         <Variant type="gender" forms="milésimo,milésima" /></Ordinal>
+			<!-- NTS-28: 11-19 as the last element of a compound (NOMIG §16.2: undécimo, décimo terceiro …;
+			     gender on the last element only). -->
+			<Ordinal from="once">     <Variant type="gender" forms="undécimo,undécima" /></Ordinal>
+			<Ordinal from="doce">     <Variant type="gender" forms="duodécimo,duodécima" /></Ordinal>
+			<Ordinal from="trece">    <Variant type="gender" forms="décimo terceiro,décimo terceira" /></Ordinal>
+			<Ordinal from="catorce">  <Variant type="gender" forms="décimo cuarto,décimo cuarta" /></Ordinal>
+			<Ordinal from="quince">   <Variant type="gender" forms="décimo quinto,décimo quinta" /></Ordinal>
+			<Ordinal from="dezaseis"> <Variant type="gender" forms="décimo sexto,décimo sexta" /></Ordinal>
+			<Ordinal from="dezasete"> <Variant type="gender" forms="décimo sétimo,décimo sétima" /></Ordinal>
+			<Ordinal from="dezaoito"> <Variant type="gender" forms="décimo oitavo,décimo oitava" /></Ordinal>
+			<Ordinal from="dezanove"> <Variant type="gender" forms="décimo noveno,décimo novena" /></Ordinal>
 
 			<!-- Feminized cardinal forms not covered by the inline rules above -->
 			<OrdinalVariants>

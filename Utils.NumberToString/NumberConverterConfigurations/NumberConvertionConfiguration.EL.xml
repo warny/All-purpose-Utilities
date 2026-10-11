@@ -140,6 +140,13 @@
 			<Ordinal from="επτακόσιες"> <Variant type="gender" forms="επτακοσιοστός,επτακοσιοστή,επτακοσιοστό" /></Ordinal>
 			<Ordinal from="οκτακόσιες"> <Variant type="gender" forms="οκτακοσιοστός,οκτακοσιοστή,οκτακοσιοστό" /></Ordinal>
 			<Ordinal from="εννιακόσιες"> <Variant type="gender" forms="εννιακοσιοστός,εννιακοσιοστή,εννιακοσιοστό" /></Ordinal>
+			<!-- NTS-28, Λεξικό της Κοινής Νεοελληνικής (εικοστός: "Tην εικοστή τρίτη του μηνός"; εκατοστός: "Η εκατοστή
+			     πρώτη μέρα"): compounds juxtapose ordinals agreeing in gender, from the highest order down. Each part
+			     goes through the whole pipeline (the tail recursively); a round value is formed directly. 13-19 stay
+			     exceptions. From 2000 the guard fails closed (δισχιλιοστός … not established). -->
+			<OrdinalComposition for="21..99" divisor="10" separator=" " />
+			<OrdinalComposition for="101..999" divisor="100" separator=" " />
+			<OrdinalComposition for="1001..1999" divisor="1000" separator=" " />
 		</Ordinals>
 		<Variants>
 			<!-- Dimension declared for ordinal forms= expansion. Cardinals keep their default (neuter) forms;

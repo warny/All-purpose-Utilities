@@ -1,6 +1,8 @@
 # Utils.NumberToString — Current backlog
 
-Re-audited on 2026-10-10 after closing NTS-27 (cardinal defects found by NTS-08: SV, PL, RU, VN, JA/KO/ZH, HI,
+Re-audited on 2026-10-11 after closing NTS-28 (compound and large-scale ordinals in ES, PT, GL, EL, FI, PL, RU, UK; guards
+widened for JA, KO, ZH, VN, HI, EU; SV, AR deliberately fail-closed; NL blocked by the new NTS-31; NTS-32 opened),
+on 2026-10-10 after closing NTS-27 (cardinal defects found by NTS-08: SV, PL, RU, VN, JA/KO/ZH, HI,
 EU, ES; generic `groupPattern` and `innerString`/`innerBuildString` primitives; opened NTS-30), on 2026-10-09 after closing NTS-08 (final linguistic validation of the ordinals and ClockTime;
 opened NTS-27, NTS-28 and NTS-29), after closing NTS-21 (Wolof large scales: attested `milyoŋ`/`milyaar`, long-scale
 Conway-Wechsler extension in Wolof spelling, unbounded cardinals; `suffixSeparator` primitive) and NTS-09
@@ -25,23 +27,22 @@ classification.
 
 ## Open items
 
-- **NTS-28 — compound ordinals the declarative pipeline does not build.** Sourced rules exist but need a plugin
-  (the last-word transformation cannot produce them); the values fail closed today:
-  - ES (DPD: *trigésimo primero*, *centésimo primero*, *ducentésimo*, *dosmilésimo*), PT (*vigésimo primeiro*,
-    *ducentésimo*), GL (*vixésimo primeiro*), EL (*εικοστός πρώτος*, *εκατοστός πρώτος*, *δισχιλιοστός*), FI
-    (*kahdeskymmenesensimmäinen*, and every inflected case: genitive *kolmannen*, partitive *kolmatta*).
-  - PL/RU from 2000 (*dwutysięczny*, *dwa tysiące pierwszy*; *двухтысячный*, *две тысячи первый*). Since NTS-27
-    the cardinals agree (*dwa tysiące*, *две тысячи*): no longer blocked by the cardinal.
-  - Guards kept by NTS-08 because the cardinal was wrong, no longer blocked since NTS-27 (the cardinal is now
-    correct; the ordinal still needs a source): VN from 1000 (*thứ một nghìn*?), HI from 100 000 (*एक लाखवाँ*?),
-    JA/KO above 1000 (第一万, 제일만?), ZH 101–999 non-round and from 1000 (第一百零一?), EU above 1000
-    (*mila eta batgarren*?), SV cardinals now one word (the plugin builds its own ordinals; unchanged).
-  - UK round thousands with a multiplier above ten and round millions/milliards above one (Pravopys 2019 §38:
-    *п'ятсоттридцятитисячний*, *чотирьохмільйонний*, *семимільярдний*).
-  - SV above one million (no consulted source settles *två miljonte* vs *tvåmiljonte*; *miljardte* unattested
-    in SAOB).
-  - AR above 100 (*المئة والسابع والثلاثون*, after M. Bussey/EMSA), not enabled by NTS-08.
-- **NTS-30 — cardinal defects found by NTS-27 outside its list.** Recorded, not fixed (NTS-27 kept to its ticket):
+- **NTS-31 — Dutch long-scale cardinal names (prerequisite of the Dutch ordinals from a million).** NL stops at
+  `maxNumber="999999"` with only `duizend` and an unused `miljoen` suffix, so its ordinals stop below a million
+  (NTS-28 left the guard at 999 999 on purpose). The long scale is described by secondary sources (Onze Taal,
+  "Een miljard of een biljoen?" via DBNL: duizend miljoen is een miljard, duizend miljard een biljoen, a million
+  biljoen a triljoen; webwoordenboek.nl) but no normative source (Taalunie, Woordenlijst) was found for the names
+  above biljard, for `een miljoen` vs `miljoen`, nor for the ordinals (`miljoenste`, `een miljoenste`?). To do:
+  source the scale and its spelling, configure it on the Conway machinery (`baseOn="SCALE-LONG"`, `-joen`/`-jard`),
+  remove the cap, then source and enable the ordinals.
+- **NTS-32 — Polish ordinal of 400 (`czterosetny`).** The plugin (validated by NTS-08 on ZPE) writes
+  `czterosetny`, whereas PWN Poradnia 16446 (read for NTS-28) writes `osiem tysięcy czterechsetny`. Check SJP PWN
+  and the Wielki słownik ortograficzny for the standard form (and 300 `trzechsetny`, already in that pattern)
+  before changing an NTS-08-validated output.
+- **NTS-30 — cardinal defects found by NTS-27 and NTS-28 outside their lists.** Recorded, not fixed:
+  - FI (found by NTS-28): the thousands do not take the partitive after a multiplier (`kaksi tuhat` for
+    *kaksituhatta*) and the compounds are spaced (`kaksikymmentä yksi`, Kielitoimiston ohjepankki writes numbers
+    as one word); the Finnish ordinals from 2000 wait for this cardinal and a source for the round thousands.
   - ES/EU long scale: a milliard followed by millions is not composed (`dos mil millones quinientos millones` for
     DPD *dos mil quinientos millones*, "3500 millones (tres mil quinientos millones)"; `mil millones un millón`
     for *mil un millones*; EU `bi mila milioi eta bostehun milioi`). The multiplier of millón/milioi spans six
@@ -74,7 +75,7 @@ classification.
   byte-identical since NTS-19; a variant dimension would keep the default output.
 
 
-NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-25 and NTS-27 are closed:
+NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-25, NTS-27 and NTS-28 are closed:
 
 - NTS-01 — XSD validation: `DONE-2026-08-21.md`.
 - NTS-02 — initialization isolation: `DONE-2026-08-21.md`.
@@ -127,6 +128,10 @@ NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-25 and NTS-27 are clos
   read in full, JA/KO/ZH counting by 万/만 with 零/一十 and 제44항 spacing, HI lakh/crore and पाँच, EU rule 7,
   ES apocope; generic `groupPattern` and `innerString`/`innerBuildString`, `RussianPluralLexicalFormSelector` and
   `PolishPluralLexicalFormSelector`; NTS-30 opened): `DONE-2026-10-10.md`.
+- NTS-28 (compound and large-scale ordinals: ES, PT, GL, EL, FI composed by `<OrdinalComposition>`/ordinal
+  replacements, PL, RU, UK round values in their plugins, JA/KO/ZH/VN/HI/EU guards widened to the cardinal domain,
+  SV/AR deliberately fail-closed, NL blocked by NTS-31; guard extension point `TryBuildOrdinal`; NTS-31, NTS-32
+  opened): `DONE-2026-10-11.md`.
 
 Full multi-form plural systems (Russian/Slavic count-dependent noun forms,
 Arabic dual/paucal/plural categories) were long deliberately out of scope — the

@@ -89,16 +89,25 @@ Examples:
     | 101 | 第百一 |
     | 1000 | 第千 |
 
-Scenario Outline: Japanese ordinals outside the validated domain are not supported
+# NTS-28: デジタル大辞泉 第 "数を表す語に付いて、ものの順序を表す": 第 before any numeral; since NTS-27 the cardinal
+# counts by 万, so the ordinal covers the whole cardinal domain (to 9999兆).
+Scenario Outline: NTS-28 Japanese ordinals of the whole cardinal domain
     Given I use the "JA" number converter
-    When I attempt to convert the ordinal number <number>
-    Then conversion is rejected because no ordinal form is available
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
 
 Examples:
-    | number |
-    | 1001 |
-    | 2000 |
-    | 10000 |
+    | number | expected |
+    | 1001 | 第千一 |
+    | 2005 | 第二千五 |
+    | 10000 | 第一万 |
+    | 123456789 | 第一億二千三百四十五万六千七百八十九 |
+    | 9999999999999999 | 第九千九百九十九兆九千九百九十九億九千九百九十九万九千九百九十九 |
+
+Scenario: Japanese ordinals beyond the cardinal domain are not supported
+    Given I use the "JA" number converter
+    When I attempt to convert the ordinal number 10000000000000000
+    Then conversion is rejected because no ordinal form is available
 
 Scenario: Ordinal conversion is supported
     Given I use the "JA" number converter

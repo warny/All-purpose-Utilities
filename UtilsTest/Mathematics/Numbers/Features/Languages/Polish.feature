@@ -141,20 +141,56 @@ Examples:
     | 1801 |  | tysiąc osiemset pierwszy |
     | 1999 |  | tysiąc dziewięćset dziewięćdziesiąty dziewiąty |
 
-# NTS-08: from 2000 the configured cardinal does not inflect the thousands ("dwa tysiąc" instead of
-# "dwa tysiące") and the plugin does not build the one-word round ordinals ("dwutysięczny"); these
-# values fail closed.
-Scenario Outline: Polish ordinals from 2000 are not supported
+# NTS-28: PWN Poradnia 16446 (K. Kłosińska): in a multi-word ordinal only the tens and units are ordinal
+# ("dwa tysiące piętnasty", "osiemnaście tysięcy sto czterdziesty drugi"), only the last part when the lower
+# orders are zero; the round thousands are one word (19 000 dziewiętnastotysięczny, 21 000
+# dwudziestojedentysięczny, 22 000 dwudziestodwutysięczny), declined like tysięczny; the thousands keep their
+# NTS-27 agreement (dwa tysiące, pięć tysięcy).
+Scenario Outline: NTS-28 Polish ordinals from 2000
+    Given I use the "PL" number converter
+    And I use the variants "<variants>"
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | variants | expected |
+    | 2000 |  | dwutysięczny |
+    | 2000 | rodzaj=feminin | dwutysięczna |
+    | 2000 | rodzaj=plural_mos | dwutysięczni |
+    | 2000 | rodzaj=feminin,przypadek=dopełniacz | dwutysięcznej |
+    | 3000 |  | trzytysięczny |
+    | 5000 |  | pięciotysięczny |
+    | 10000 |  | dziesięciotysięczny |
+    | 19000 |  | dziewiętnastotysięczny |
+    | 21000 |  | dwudziestojedentysięczny |
+    | 22000 |  | dwudziestodwutysięczny |
+    | 2001 |  | dwa tysiące pierwszy |
+    | 2001 | rodzaj=feminin | dwa tysiące pierwsza |
+    | 2002 |  | dwa tysiące drugi |
+    | 2010 |  | dwa tysiące dziesiąty |
+    | 2015 |  | dwa tysiące piętnasty |
+    | 2021 |  | dwa tysiące dwudziesty pierwszy |
+    | 2100 |  | dwa tysiące setny |
+    | 5001 |  | pięć tysięcy pierwszy |
+    | 18142 |  | osiemnaście tysięcy sto czterdziesty drugi |
+    | 21001 |  | dwadzieścia jeden tysięcy pierwszy |
+    | 999999 |  | dziewięćset dziewięćdziesiąt dziewięć tysięcy dziewięćset dziewięćdziesiąty dziewiąty |
+    | -2000 |  | minus dwutysięczny |
+
+# NTS-28: the same answer decomposes a round thousand with a multiplier from 100 unexpectedly (101 000 "sto
+# tysięcy tysięczny", 122 000 "sto dwadzieścia tysięcy dwutysięczny") and no other consulted source confirms
+# it: from 100 000 the round thousands fail closed, as does the million (outside the cardinal domain).
+Scenario Outline: Polish ordinals outside the validated domain are not supported
     Given I use the "PL" number converter
     When I attempt to convert the ordinal number <number>
     Then conversion is rejected because no ordinal form is available
 
 Examples:
     | number |
-    | 2000 |
-    | 2001 |
-    | 21000 |
-    | 999999 |
+    | 100000 |
+    | 101000 |
+    | 122000 |
+    | 1000000 |
 
 Scenario: Ordinal conversion is supported
     Given I use the "PL" number converter

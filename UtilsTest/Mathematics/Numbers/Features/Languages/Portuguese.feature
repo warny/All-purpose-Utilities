@@ -133,10 +133,45 @@ Examples:
     | 100 | gender=feminino | centésima |
     | 1000 | gender=feminino | milésima |
 
-# NTS-08 validation: Priberam (vigésimo "depois do décimo nono", septuagésimo "depois do septuagésimo
-# nono", nonagésimo "após o octogésimo nono", centésimo, milésimo): 1-20, the round tens, 100 and 1000.
-# Other compounds juxtapose ordinals (vigésimo primeiro), whereas the declarative pipeline only
-# rewrites the last word of the cardinal ("vinte e primeiro", "duzentos"): they fail closed.
+# NTS-28: Ciberdúvidas, "A forma por extenso de 2000.º (e de outros ordinais)" (after E. Bechara, Gramática
+# Moderna do Português, pp. 208-209): the round hundreds ducentésimo, trecentésimo (or tricentésimo),
+# quadringentésimo, quingentésimo, seiscentésimo (or sexcentésimo), septingentésimo, octingentésimo,
+# nongentésimo (or noningentésimo); the compounds juxtapose agreeing ordinals ("duas milésima trecentésima
+# quadragésima quinta"). The first form given is used.
+Scenario Outline: NTS-28 Portuguese compound ordinals
+    Given I use the "PT" number converter
+    And I use the variants "<variants>"
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | variants | expected |
+    | 21 |  | vigésimo primeiro |
+    | 21 | gender=feminino | vigésima primeira |
+    | 22 | gender=feminino | vigésima segunda |
+    | 31 |  | trigésimo primeiro |
+    | 99 |  | nonagésimo nono |
+    | 101 |  | centésimo primeiro |
+    | 111 |  | centésimo décimo primeiro |
+    | 145 | gender=feminino | centésima quadragésima quinta |
+    | 200 |  | ducentésimo |
+    | 200 | gender=feminino | ducentésima |
+    | 201 |  | ducentésimo primeiro |
+    | 300 |  | trecentésimo |
+    | 400 |  | quadringentésimo |
+    | 500 |  | quingentésimo |
+    | 600 |  | seiscentésimo |
+    | 700 |  | septingentésimo |
+    | 800 |  | octingentésimo |
+    | 900 |  | nongentésimo |
+    | 999 |  | nongentésimo nonagésimo nono |
+    | 1001 |  | milésimo primeiro |
+    | 1345 | gender=feminino | milésima trecentésima quadragésima quinta |
+    | 1999 |  | milésimo nongentésimo nonagésimo nono |
+
+# NTS-28: from 2000 the sources disagree: Bechara and Teyssier "dois milésimo" (feminine "duas milésima"),
+# Ciberdúvidas also "dois milésimos" and "segundo milésimo", Bechara "décimo milésimo" for 10 000. No form is
+# established, so 2000 and above fail closed (deliberate limitation), as does zero.
 Scenario Outline: Portuguese ordinals outside the validated domain are not supported
     Given I use the "PT" number converter
     And I use the variants "<variants>"
@@ -145,13 +180,11 @@ Scenario Outline: Portuguese ordinals outside the validated domain are not suppo
 
 Examples:
     | number | variants |
-    | 21 |  |
-    | 21 | gender=feminino |
-    | 22 | gender=feminino |
-    | 99 |  |
-    | 101 |  |
-    | 200 |  |
+    | 0 |  |
     | 2000 |  |
+    | 2001 |  |
+    | 2345 | gender=feminino |
+    | 10000 |  |
 
 Scenario: Time conversion is supported
     Given I use the "PT" number converter
