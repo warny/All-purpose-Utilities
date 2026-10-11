@@ -62,17 +62,23 @@ classification.
 - **NTS-29 — attested ordinals of zero not enabled.** DA *nulte* (Retskrivningsordbogen since 1986, Dansk
   Sprognævn SV00001178) and HU *nulladik* (MTA "Számok" tool) still fail closed; enabling them is additive.
 
-- **NTS-26 — Wolof connective `-i` inside the multiplier of `téeméer` (`juróom ñent téeméeri milyoŋ`).**
-  Found by NTS-21 (`DONE-2026-10-09.md`). The configuration follows the NTS-19 rule: the multiplier of
-  `téeméer` takes `-i` on its last element (`juróom ñenti téeméer` 900, `juróom ñaari téeméer` 700), also when
-  the hundreds are themselves a multiplier (`juróom ñenti téeméeri milyoŋ`). The Wolof Ajami Reader (Ngom et
-  al., Boston University, 2025, p. 192) writes `juróomi milyaar ak juróom ñent téeméeri milyoŋ ak ñaar fukk ak
-  juróom` and `juróom ñaar téeméeri milyoŋ`: no `-i` before `téeméer`, `-i` only before the scale noun.
-  Kosogorova 2023 (`ñaar tééméér`) and Gaye 1980 (`-i` optional with `ñaar`) already record forms without the
-  inner `-i`. Decide whether the inner `-i` is obligatory, optional (variant) or absent, possibly depending on
-  the following scale noun, from more sources (Bible corpus counts, decree 2005-992, grammars). Any change
-  alters cardinals below a million (every value with 200–999 in a hundreds position, e.g. 200, 900, 900 000),
-  byte-identical since NTS-19; a variant dimension would keep the default output.
+- **NTS-26 — Wolof connective `-i` inside nested numeral multipliers.** Re-audited 2026-10-11:
+  the evidence supports **real variation**, not a demonstrated defect in the current default. The current
+  configuration writes the multiplier of `téeméer` with `-i` (`juróom ñenti téeméer` 900) and keeps that
+  connective when the hundreds phrase is itself the multiplier of a higher scale
+  (`juróom ñenti téeméeri milyoŋ`). This analysis is supported by Guérin (CNRS/LLACAN), who describes the
+  multiples of hundreds and thousands as genitive constructions and gives nested forms such as
+  `ñaar-i téeméer-i dërëm`; pedagogical sources also attest forms such as `juróom ñaari téeméer`,
+  `ñenti téeméer` and `ñaari junni`. Conversely, the Wolof Ajami Reader (Ngom et al., Boston University,
+  2025, p. 192) writes `juróom ñent téeméeri milyoŋ` and `juróom ñaar téeméeri milyoŋ`, i.e. without the
+  inner `-i` before `téeméer`; Kosogorova 2023 and Gaye 1980 also record forms without that connective
+  (Gaye treats `-i` as optional with `ñaar`). The decree 2005-992 establishes the general attached
+  `-u/-i` genitive linker but does not settle these nested numeral chains. **Do not change the default output
+  from NTS-19/NTS-21 on the present evidence.** Next step, if pursued: targeted corpus work on
+  `... téeméeri milyoŋ/milyaar` and comparable nested hundreds, to determine whether the two patterns are
+  dialectal/register variants, context-dependent, or freely optional. Only if that evidence justifies it,
+  consider a variant dimension; avoid a silent default change because it would affect many byte-stable Wolof
+  cardinals below and above a million.
 
 
 NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-25, NTS-27 and NTS-28 are closed:
