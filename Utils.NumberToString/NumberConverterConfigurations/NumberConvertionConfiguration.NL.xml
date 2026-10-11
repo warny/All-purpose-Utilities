@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
     <Language
+        baseOn="SCALE-LONG"
         groupSize="3"
         separator=" "
         groupSeparator=""
@@ -8,8 +9,6 @@
         minus="min *"
         decimalSeparator="komma"
         fractionSeparator="op"
-
-                maxNumber="999999"
         >
         <Culture>NL</Culture>
         <Groups>
@@ -50,13 +49,23 @@
                 <Digit digit="9" string="negenhonderd" buildString="negenhonderd*" />
             </Group>
         </Groups>
-        <NumberScale firstLetterUpperCase="false">
+        <!-- NTS-31: long scale inherited from SCALE-LONG (Onze Taal 70, 2001, "Een miljard of een biljoen?":
+             -iljoen/-iljard, "een miljoen miljoen is een biljoen", "duizend miljoen is een miljard"). The
+             Conway-Guy-Wechsler tables are inherited unchanged: Dutch keeps the Latin quadri/quinti/sexti/octi
+             (nl.wikipedia "Lijst van machten van tien": quadriljoen ... centiljoen). Only the junction before
+             the suffix is Dutch: mi + l + joen (miljoen, biljard); the strict Conway -illi- joint between the
+             groups of an index from 1000 stays inherited, so 10^6000 is milliniljoen (milli + ni + l + joen).
+             The traditional milliljoen listed at 10^6000 by the same secondary table belongs to a different
+             extension system: recorded in the sources, deliberately not used as an exception. The scale
+             nouns are invariable after an exact numeral (twee miljoen, vijf miljard: Taaladvies). -->
+        <NumberScale firstLetterUpperCase="false" suffixSeparator="l">
             <StaticNames>
                 <Scale value="0" string="" />
                 <Scale value="1" string="duizend" />
             </StaticNames>
             <Suffixes>
-                <Suffix>miljoen</Suffix>
+                <Suffix>joen</Suffix>
+                <Suffix>jard</Suffix>
             </Suffixes>
         </NumberScale>
         <!-- NTS-08, Taaladvies (Taalunie) "Aaneenschrijven van telwoorden (algemeen)": numbers are written as
@@ -88,8 +97,9 @@
           the suffix "e" completes it (een -> eerste, twee -> tweede, drie -> derde, acht -> achtste,
           -tig -> -tigste, honderd -> honderdste, duizend -> duizendste, nul -> nulde).
         -->
-        <!-- NTS-08 (PR #629 review): ordinal domain guard bounded by maxNumber; from a million the scale lookup
-             threw InvalidOperationException (Scale0Prefixes), those ordinals fail closed (see DutchOrdinalLanguageSpecifics). -->
+        <!-- NTS-08 / NTS-31: the ordinal domain is guarded explicitly at 0-999 999 by DutchOrdinalLanguageSpecifics,
+             independently of the (unbounded) cardinal domain: the ordinals of miljoen and above are unsourced and
+             fail closed. -->
         <LanguageSpecifics>DutchOrdinalLanguageSpecifics</LanguageSpecifics>
         <Ordinals suffix="e">
             <OrdinalException value="1" string="eerste" />
