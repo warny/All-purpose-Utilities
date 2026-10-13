@@ -231,10 +231,12 @@ by the lexical-form mechanism.</p>
     <dl class="jumplist">
       <dt><a class="xref" href="Utils.NumberToString.DutchOrdinalLanguageSpecifics.html">DutchOrdinalLanguageSpecifics</a></dt>
       <dd><p>Dutch ordinal domain (NTS-08). Taaladvies &quot;Aaneenschrijven van telwoorden&quot; and the Woordenlijst
-Nederlandse Taal (<code>nulde</code>, <code>tweeduizendste</code>) validate the ordinals from 0 to 999 999. Since NTS-31
-the cardinals are unbounded (long scale, <code>een miljoen</code>), but no source settles the ordinals of the scale
-nouns (<code>miljoenste</code>, <code>een miljoenste</code>?) and no <code>-ste</code> rule exists for them: this explicit
-guard, independent of the cardinal domain, keeps every ordinal from a million fail-closed.</p>
+Nederlandse Taal (<code>nulde</code>, <code>tweeduizendste</code>) validate the ordinals from 0 to 999 999. NTS-31 extends
+them to the whole <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int64">long</a> range: the e-ANS (rangtelwoorden) gives the scale ordinals
+(<code>miljoenste</code>, <code>miljardste</code>) and the Besluit bekendmaking spellingvoorschriften 2005, rule 6.N, the
+compounds (<code>twee miljoenste</code>, <code>twee miljoen tweehonderdduizendste</code>): the cardinal keeps its spelling and
+only its final element becomes ordinal, which the declarative pipeline forms on every value. The guard therefore
+rejects nothing; it keeps the validated domain explicit.</p>
 </dd>
     </dl>
     <dl class="jumplist">
