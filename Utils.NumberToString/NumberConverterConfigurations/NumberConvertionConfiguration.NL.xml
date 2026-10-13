@@ -97,9 +97,8 @@
           the suffix "e" completes it (een -> eerste, twee -> tweede, drie -> derde, acht -> achtste,
           -tig -> -tigste, honderd -> honderdste, duizend -> duizendste, nul -> nulde).
         -->
-        <!-- NTS-08 / NTS-31: the ordinal domain is guarded explicitly at 0-999 999 by DutchOrdinalLanguageSpecifics,
-             independently of the (unbounded) cardinal domain: the ordinals of miljoen and above are unsourced and
-             fail closed. -->
+        <!-- NTS-31: the ordinal rule is productive over the whole long range; DutchOrdinalLanguageSpecifics keeps the
+             explicit domain declaration (0 to long.MaxValue) and rejects nothing inside it. -->
         <LanguageSpecifics>DutchOrdinalLanguageSpecifics</LanguageSpecifics>
         <Ordinals suffix="e">
             <OrdinalException value="1" string="eerste" />
@@ -119,6 +118,17 @@
             <OrdinalStem from="tig"     to="tigst" />
             <OrdinalStem from="honderd" to="honderdst" />
             <OrdinalStem from="duizend" to="duizendst" />
+            <!-- NTS-31. e-ANS (Algemene Nederlandse Spraakkunst), rangtelwoorden: the scale nouns take -ste (miljoen ->
+                 miljoenste, miljard -> miljardste), productive on every -joen/-jard noun. Besluit bekendmaking
+                 spellingvoorschriften 2005, rule 6.N: "de twee miljoenste", "de twee miljoen tweehonderdduizendste",
+                 "de twee miljoen tweehonderdduizend tweehonderdtweeëntwintigste": the earlier groups stay cardinal and
+                 only the final element becomes ordinal (the usual last-word path, no OrdinalComposition), the multiplier
+                 stays a separate cardinal word. OrdinalScale only drops "een" before a round scale noun (miljoenste,
+                 miljardste); 2..6 = miljoen .. triljoen, the highest scale a long reaches. duizend (scale 1) is left
+                 to the cardinal, which already drops "een" (duizendste, tweeduizendste). -->
+            <OrdinalStem from="joen"    to="joenst" />
+            <OrdinalStem from="jard"    to="jardst" />
+            <OrdinalScale scales="2..6" multiplierSeparator=" " />
         </Ordinals>
         <YearFormat hundredWord="honderd">
             <SplitRange from="1100" to="1999" />

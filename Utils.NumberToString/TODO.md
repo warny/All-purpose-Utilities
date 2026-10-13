@@ -1,8 +1,10 @@
 # Utils.NumberToString — Current backlog
 
-Re-audited on 2026-10-11 after closing the cardinal part of NTS-31 (Dutch long scale on `SCALE-LONG`: `miljoen`,
-`miljard`, `biljoen` … with `-joen`/`-jard` and the `l` junction, Conway tables inherited, unbounded cardinals; the
-ordinals from a million remain open under NTS-31), after closing NTS-29 (attested ordinals of zero: DA `nulte`, HU `nulladik`) and NTS-32
+Re-audited on 2026-10-13 after closing NTS-31 (Dutch ordinals from a million: `miljoenste`, `twee miljoenste`,
+`twee miljoen tweehonderdduizendste` after the e-ANS and the Besluit bekendmaking spellingvoorschriften 2005, rule
+6.N; NL ordinals over the whole `long` range), on 2026-10-11 after closing the cardinal part of NTS-31 (Dutch long
+scale on `SCALE-LONG`: `miljoen`, `miljard`, `biljoen` … with `-joen`/`-jard` and the `l` junction, Conway tables
+inherited, unbounded cardinals), after closing NTS-29 (attested ordinals of zero: DA `nulte`, HU `nulladik`) and NTS-32
 (Polish ordinal of 400: `czterechsetny`), after closing NTS-28 (compound and large-scale ordinals in ES, PT, GL, EL, FI, PL, RU, UK; guards
 widened for JA, KO, ZH, VN, HI, EU; SV, AR deliberately fail-closed; NL blocked by the new NTS-31; NTS-32 opened),
 on 2026-10-10 after closing NTS-27 (cardinal defects found by NTS-08: SV, PL, RU, VN, JA/KO/ZH, HI,
@@ -30,12 +32,6 @@ classification.
 
 ## Open items
 
-- **NTS-31 (remaining) — Dutch ordinals from a million.** The cardinal part of NTS-31 is closed
-  (`DONE-2026-10-11(2).md`: NL on `SCALE-LONG`, unbounded long-scale cardinals). The ordinal guard
-  `DutchOrdinalLanguageSpecifics` still stops at 999 999, explicitly and independently of the cardinal domain. To
-  do: source the ordinals of the scale nouns (`miljoenste` vs `een miljoenste`, `tweemiljoenste` vs `twee
-  miljoenste`, `miljardste`; whether the ordinal of a composite value keeps the cardinal groups, e.g. `een miljoen
-  eerste`), add the `-ste` stems for `joen`/`jard`, then widen the guard.
 - **NTS-30 — cardinal defects found by NTS-27 and NTS-28 outside their lists.** Recorded, not fixed:
   - FI (found by NTS-28): the thousands do not take the partitive after a multiplier (`kaksi tuhat` for
     *kaksituhatta*) and the compounds are spaced (`kaksikymmentä yksi`, Kielitoimiston ohjepankki writes numbers
@@ -75,7 +71,7 @@ classification.
   cardinals below and above a million.
 
 
-NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-25, NTS-27, NTS-28, NTS-29, NTS-32 and the cardinal part of NTS-31 are closed:
+NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-25, NTS-27, NTS-28, NTS-29, NTS-31 and NTS-32 are closed:
 
 - NTS-01 — XSD validation: `DONE-2026-08-21.md`.
 - NTS-02 — initialization isolation: `DONE-2026-08-21.md`.
@@ -139,6 +135,15 @@ NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-25, NTS-27, NTS-28, NT
   `suffixSeparator="l"`, Conway tables inherited with the Latin `quadri`/`quinti`/`sexti`/`octi`, `een` kept from
   `miljoen` upward, singular scale nouns, spaced groups without `en`; ordinals still guarded at 999 999):
   `DONE-2026-10-11(2).md`.
+- NTS-31, ordinal part — **NTS-31 fully closed** (Dutch ordinals from a million over the whole `long` range). e-ANS
+  (rangtelwoorden): the scale nouns take `-ste` (`miljoenste`, `miljardste`) and the ordinal keeps the spelling of
+  the cardinal, ordinalizing only its final element. Besluit bekendmaking spellingvoorschriften 2005, rule 6.N:
+  `de twee miljoenste`, `de twee miljoen tweehonderdduizendste`, `de twee miljoen tweehonderdduizend
+  tweehonderdtweeëntwintigste`. Hence a round value with the multiplier one is the scale noun alone (`miljoenste`,
+  not `een miljoenste`), a larger multiplier stays a separate cardinal word (`twee miljoenste`, not
+  `tweemiljoenste`), the earlier groups of a compound stay cardinal (`een miljoen eerste`). Declarative only:
+  `<OrdinalScale scales="2..6" multiplierSeparator=" " />`, stems `joen → joenst` and `jard → jardst`,
+  `DutchOrdinalLanguageSpecifics` widened to 0–`long.MaxValue`: `DONE-2026-10-13.md`.
 
 Full multi-form plural systems (Russian/Slavic count-dependent noun forms,
 Arabic dual/paucal/plural categories) were long deliberately out of scope — the

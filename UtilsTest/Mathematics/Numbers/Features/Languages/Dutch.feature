@@ -146,19 +146,45 @@ Examples:
     | 1000000000000000000000000000000000000000000000000000000000000 | een deciljoen |
     | -2000000 | min twee miljoen |
 
-# NTS-31: widening the cardinals leaves the Dutch ordinal domain at 0–999 999 (no source settles the ordinals of
-# miljoen and above: miljoenste, een miljoenste?).
-Scenario Outline: Dutch ordinals from a million are not supported
+# NTS-31: ordinals from a million. e-ANS (Algemene Nederlandse Spraakkunst), rangtelwoorden: the ordinal keeps the
+# spelling structure of the cardinal and only its final element becomes ordinal; the scale nouns take -ste
+# (miljoen → miljoenste, miljard → miljardste). Besluit bekendmaking spellingvoorschriften 2005, rule 6.N: "de twee
+# miljoenste", "de twee miljoen tweehonderdduizendste", "de twee miljoen tweehonderdduizend tweehonderdtweeëntwintigste":
+# the multiplier stays a separate cardinal, the earlier groups stay cardinal, no "en" between the groups. A round
+# value with the multiplier one is the scale noun alone (miljoenste, not een miljoenste).
+Scenario Outline: NTS-31 Dutch round scale ordinals
     Given I use the "NL" number converter
-    When I attempt to convert the ordinal number <number>
-    Then conversion is rejected because no ordinal form is available
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
 
 Examples:
-    | number |
-    | 1000000 |
-    | 1000001 |
-    | 2000000 |
-    | 1000000000 |
+    | number | expected |
+    | 1000000 | miljoenste |
+    | 2000000 | twee miljoenste |
+    | 21000000 | eenentwintig miljoenste |
+    | 100000000 | honderd miljoenste |
+    | 1000000000 | miljardste |
+    | 2000000000 | twee miljardste |
+    | 1000000000000 | biljoenste |
+    | 1000000000000000 | biljardste |
+    | 1000000000000000000 | triljoenste |
+    | 2000000000000000000 | twee triljoenste |
+    | -1000000 | min miljoenste |
+
+Scenario Outline: NTS-31 Dutch compound ordinals keep the cardinal groups and ordinalize the final element
+    Given I use the "NL" number converter
+    When I convert the ordinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 1001000 | een miljoen duizendste |
+    | 1000001 | een miljoen eerste |
+    | 2200000 | twee miljoen tweehonderdduizendste |
+    | 2200022 | twee miljoen tweehonderdduizend tweeëntwintigste |
+    | 2200222 | twee miljoen tweehonderdduizend tweehonderdtweeëntwintigste |
+    | 2001000000 | twee miljard een miljoenste |
+    | 9223372036854775807 | negen triljoen tweehonderddrieëntwintig biljard driehonderdtweeënzeventig biljoen zesendertig miljard achthonderdvierenvijftig miljoen zevenhonderdvijfenzeventigduizend achthonderdzevende |
 
 Scenario Outline: Dutch ordinals keep the spelling of the cardinal
     Given I use the "NL" number converter
