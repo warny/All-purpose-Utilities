@@ -286,11 +286,11 @@ When <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywo
 
   <div class="markdown level1 summary"><p>Overrides the denomination suffix appended after the decimal value
 (e.g. <code>&quot;centime(s)&quot;</code> instead of <code>&quot;centième(s)&quot;</code> from the language configuration).
-When set, the decimal value is always converted as a whole number regardless of whether
-a <code>&lt;Fraction&gt;</code> entry is configured for that digit count.
+When set, the decimal value is always converted as a whole number after the decimal separator word,
+regardless of whether a <code>&lt;Fraction&gt;</code> entry is configured for that digit count and regardless of
+<a class="xref" href="Utils.NumberToString.DecimalFormatOptions.html#Utils_NumberToString_DecimalFormatOptions_ReadingMode">ReadingMode</a>, which it takes precedence over.
 The <code>&quot;(s)&quot;</code> marker is pluralized against the decimal value.
-When <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>, the configured <code>&lt;Fraction&gt;</code> entry is used when available;
-otherwise the decimal part is read digit by digit.</p>
+When <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>, <a class="xref" href="Utils.NumberToString.DecimalFormatOptions.html#Utils_NumberToString_DecimalFormatOptions_ReadingMode">ReadingMode</a> decides how the decimal part is read.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -319,7 +319,7 @@ otherwise the decimal part is read digit by digit.</p>
 
   <h3 id="Utils_NumberToString_DecimalFormatOptions_OmitZeroDecimals" data-uid="Utils.NumberToString.DecimalFormatOptions.OmitZeroDecimals">
   OmitZeroDecimals
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/DecimalFormatOptions.cs/#L33"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/DecimalFormatOptions.cs/#L44"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>When <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a>, the decimal part is suppressed when it rounds to zero.
@@ -339,6 +339,44 @@ Useful with a positive <code>mandatoryDecimalDigits</code> to avoid producing
   <h4 class="section">Property Value</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_NumberToString_DecimalFormatOptions_ReadingMode_" data-uid="Utils.NumberToString.DecimalFormatOptions.ReadingMode*"></a>
+
+  <h3 id="Utils_NumberToString_DecimalFormatOptions_ReadingMode" data-uid="Utils.NumberToString.DecimalFormatOptions.ReadingMode">
+  ReadingMode
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/DecimalFormatOptions.cs/#L37"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Selects how the decimal part is read when no <a class="xref" href="Utils.NumberToString.DecimalFormatOptions.html#Utils_NumberToString_DecimalFormatOptions_DecimalSuffix">DecimalSuffix</a> is given:
+<a class="xref" href="Utils.NumberToString.DecimalReadingMode.html#Utils_NumberToString_DecimalReadingMode_LanguageDefault">LanguageDefault</a> (default: the configured fraction, else the digits within the
+language's fallback limit, else <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.notsupportedexception">NotSupportedException</a>),
+<a class="xref" href="Utils.NumberToString.DecimalReadingMode.html#Utils_NumberToString_DecimalReadingMode_DigitByDigit">DigitByDigit</a> (every digit, a 0 read as the language's zero) or
+<a class="xref" href="Utils.NumberToString.DecimalReadingMode.html#Utils_NumberToString_DecimalReadingMode_MathematicalFraction">MathematicalFraction</a> (a numerator over the named denominator 10^n, joined to a
+non-zero integer part by the language's mixed-number connector; <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.notsupportedexception">NotSupportedException</a> when
+the denominator or the needed connector is not configured).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public DecimalReadingMode ReadingMode { get; init; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.NumberToString.DecimalReadingMode.html">DecimalReadingMode</a></dt>
     <dd></dd>
   </dl>
 

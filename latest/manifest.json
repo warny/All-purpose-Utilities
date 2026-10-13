@@ -8749,6 +8749,34 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.DecimalDigitListType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.DecimalDigitListType.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.DecimalDigitListType",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.DecimalDigitListType.yml\" sourcestartlinenumber=\"1\">Represents the forms of the pronounced decimal digits that differ from the default (the language's zero for 0,\nthe standalone cardinal fragment for 1–9).</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.DecimalDigitType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.DecimalDigitType.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.DecimalDigitType",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.DecimalDigitType.yml\" sourcestartlinenumber=\"1\">Gives the form of one pronounced decimal digit read digit by digit (e.g. German <code>eins</code>, where the level-1\ncomposition text is <code>ein</code>).</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.NumberToString.DecimalFormatOptions.yml",
       "output": {
         ".html": {
@@ -8760,6 +8788,20 @@
       "IsMRef": true,
       "Title": "Utils.NumberToString.DecimalFormatOptions",
       "Summary": "<p sourcefile=\"api/Utils.NumberToString.DecimalFormatOptions.yml\" sourcestartlinenumber=\"1\">Formatting options for the decimal part produced by\n<xref href=\"Utils.NumberToString.INumberToStringConverter.Convert(System.Decimal%2cSystem.Int32%2cUtils.NumberToString.DecimalFormatOptions%2cSystem.String%5b%5d)\" data-throw-if-not-resolved=\"false\"></xref>.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.DecimalReadingMode.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.DecimalReadingMode.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.DecimalReadingMode",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.DecimalReadingMode.yml\" sourcestartlinenumber=\"1\">Selects how <xref href=\"Utils.NumberToString.INumberToStringConverter.Convert(System.Decimal%2cSystem.Int32%2cUtils.NumberToString.DecimalFormatOptions%2cSystem.String%5b%5d)\" data-throw-if-not-resolved=\"false\"></xref> reads the\ndecimal part of a number. A caller <xref href=\"Utils.NumberToString.DecimalFormatOptions.DecimalSuffix\" data-throw-if-not-resolved=\"false\"></xref> takes precedence over every mode.</p>\n"
     },
     {
       "type": "ManagedReference",

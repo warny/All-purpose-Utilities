@@ -61879,6 +61879,57 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.DateFormatType.Pattern
   nameWithType: DateFormatType.Pattern
+- uid: Utils.NumberToString.DecimalDigitListType
+  name: DecimalDigitListType
+  href: api/Utils.NumberToString.DecimalDigitListType.html
+  commentId: T:Utils.NumberToString.DecimalDigitListType
+  fullName: Utils.NumberToString.DecimalDigitListType
+  nameWithType: DecimalDigitListType
+- uid: Utils.NumberToString.DecimalDigitListType.DecimalDigits
+  name: DecimalDigits
+  href: api/Utils.NumberToString.DecimalDigitListType.html#Utils_NumberToString_DecimalDigitListType_DecimalDigits
+  commentId: P:Utils.NumberToString.DecimalDigitListType.DecimalDigits
+  fullName: Utils.NumberToString.DecimalDigitListType.DecimalDigits
+  nameWithType: DecimalDigitListType.DecimalDigits
+- uid: Utils.NumberToString.DecimalDigitListType.DecimalDigits*
+  name: DecimalDigits
+  href: api/Utils.NumberToString.DecimalDigitListType.html#Utils_NumberToString_DecimalDigitListType_DecimalDigits_
+  commentId: Overload:Utils.NumberToString.DecimalDigitListType.DecimalDigits
+  isSpec: "True"
+  fullName: Utils.NumberToString.DecimalDigitListType.DecimalDigits
+  nameWithType: DecimalDigitListType.DecimalDigits
+- uid: Utils.NumberToString.DecimalDigitType
+  name: DecimalDigitType
+  href: api/Utils.NumberToString.DecimalDigitType.html
+  commentId: T:Utils.NumberToString.DecimalDigitType
+  fullName: Utils.NumberToString.DecimalDigitType
+  nameWithType: DecimalDigitType
+- uid: Utils.NumberToString.DecimalDigitType.Digit
+  name: Digit
+  href: api/Utils.NumberToString.DecimalDigitType.html#Utils_NumberToString_DecimalDigitType_Digit
+  commentId: P:Utils.NumberToString.DecimalDigitType.Digit
+  fullName: Utils.NumberToString.DecimalDigitType.Digit
+  nameWithType: DecimalDigitType.Digit
+- uid: Utils.NumberToString.DecimalDigitType.Digit*
+  name: Digit
+  href: api/Utils.NumberToString.DecimalDigitType.html#Utils_NumberToString_DecimalDigitType_Digit_
+  commentId: Overload:Utils.NumberToString.DecimalDigitType.Digit
+  isSpec: "True"
+  fullName: Utils.NumberToString.DecimalDigitType.Digit
+  nameWithType: DecimalDigitType.Digit
+- uid: Utils.NumberToString.DecimalDigitType.StringValue
+  name: StringValue
+  href: api/Utils.NumberToString.DecimalDigitType.html#Utils_NumberToString_DecimalDigitType_StringValue
+  commentId: P:Utils.NumberToString.DecimalDigitType.StringValue
+  fullName: Utils.NumberToString.DecimalDigitType.StringValue
+  nameWithType: DecimalDigitType.StringValue
+- uid: Utils.NumberToString.DecimalDigitType.StringValue*
+  name: StringValue
+  href: api/Utils.NumberToString.DecimalDigitType.html#Utils_NumberToString_DecimalDigitType_StringValue_
+  commentId: Overload:Utils.NumberToString.DecimalDigitType.StringValue
+  isSpec: "True"
+  fullName: Utils.NumberToString.DecimalDigitType.StringValue
+  nameWithType: DecimalDigitType.StringValue
 - uid: Utils.NumberToString.DecimalFormatOptions
   name: DecimalFormatOptions
   href: api/Utils.NumberToString.DecimalFormatOptions.html
@@ -61924,6 +61975,43 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.DecimalFormatOptions.OmitZeroDecimals
   nameWithType: DecimalFormatOptions.OmitZeroDecimals
+- uid: Utils.NumberToString.DecimalFormatOptions.ReadingMode
+  name: ReadingMode
+  href: api/Utils.NumberToString.DecimalFormatOptions.html#Utils_NumberToString_DecimalFormatOptions_ReadingMode
+  commentId: P:Utils.NumberToString.DecimalFormatOptions.ReadingMode
+  fullName: Utils.NumberToString.DecimalFormatOptions.ReadingMode
+  nameWithType: DecimalFormatOptions.ReadingMode
+- uid: Utils.NumberToString.DecimalFormatOptions.ReadingMode*
+  name: ReadingMode
+  href: api/Utils.NumberToString.DecimalFormatOptions.html#Utils_NumberToString_DecimalFormatOptions_ReadingMode_
+  commentId: Overload:Utils.NumberToString.DecimalFormatOptions.ReadingMode
+  isSpec: "True"
+  fullName: Utils.NumberToString.DecimalFormatOptions.ReadingMode
+  nameWithType: DecimalFormatOptions.ReadingMode
+- uid: Utils.NumberToString.DecimalReadingMode
+  name: DecimalReadingMode
+  href: api/Utils.NumberToString.DecimalReadingMode.html
+  commentId: T:Utils.NumberToString.DecimalReadingMode
+  fullName: Utils.NumberToString.DecimalReadingMode
+  nameWithType: DecimalReadingMode
+- uid: Utils.NumberToString.DecimalReadingMode.DigitByDigit
+  name: DigitByDigit
+  href: api/Utils.NumberToString.DecimalReadingMode.html#Utils_NumberToString_DecimalReadingMode_DigitByDigit
+  commentId: F:Utils.NumberToString.DecimalReadingMode.DigitByDigit
+  fullName: Utils.NumberToString.DecimalReadingMode.DigitByDigit
+  nameWithType: DecimalReadingMode.DigitByDigit
+- uid: Utils.NumberToString.DecimalReadingMode.LanguageDefault
+  name: LanguageDefault
+  href: api/Utils.NumberToString.DecimalReadingMode.html#Utils_NumberToString_DecimalReadingMode_LanguageDefault
+  commentId: F:Utils.NumberToString.DecimalReadingMode.LanguageDefault
+  fullName: Utils.NumberToString.DecimalReadingMode.LanguageDefault
+  nameWithType: DecimalReadingMode.LanguageDefault
+- uid: Utils.NumberToString.DecimalReadingMode.MathematicalFraction
+  name: MathematicalFraction
+  href: api/Utils.NumberToString.DecimalReadingMode.html#Utils_NumberToString_DecimalReadingMode_MathematicalFraction
+  commentId: F:Utils.NumberToString.DecimalReadingMode.MathematicalFraction
+  fullName: Utils.NumberToString.DecimalReadingMode.MathematicalFraction
+  nameWithType: DecimalReadingMode.MathematicalFraction
 - uid: Utils.NumberToString.DefaultLexicalFormSelector
   name: DefaultLexicalFormSelector
   href: api/Utils.NumberToString.DefaultLexicalFormSelector.html
@@ -63737,6 +63825,32 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.LanguageType.DateFormat
   nameWithType: LanguageType.DateFormat
+- uid: Utils.NumberToString.LanguageType.DecimalDigitByDigitMaxDigits
+  name: DecimalDigitByDigitMaxDigits
+  href: api/Utils.NumberToString.LanguageType.html#Utils_NumberToString_LanguageType_DecimalDigitByDigitMaxDigits
+  commentId: P:Utils.NumberToString.LanguageType.DecimalDigitByDigitMaxDigits
+  fullName: Utils.NumberToString.LanguageType.DecimalDigitByDigitMaxDigits
+  nameWithType: LanguageType.DecimalDigitByDigitMaxDigits
+- uid: Utils.NumberToString.LanguageType.DecimalDigitByDigitMaxDigits*
+  name: DecimalDigitByDigitMaxDigits
+  href: api/Utils.NumberToString.LanguageType.html#Utils_NumberToString_LanguageType_DecimalDigitByDigitMaxDigits_
+  commentId: Overload:Utils.NumberToString.LanguageType.DecimalDigitByDigitMaxDigits
+  isSpec: "True"
+  fullName: Utils.NumberToString.LanguageType.DecimalDigitByDigitMaxDigits
+  nameWithType: LanguageType.DecimalDigitByDigitMaxDigits
+- uid: Utils.NumberToString.LanguageType.DecimalDigits
+  name: DecimalDigits
+  href: api/Utils.NumberToString.LanguageType.html#Utils_NumberToString_LanguageType_DecimalDigits
+  commentId: P:Utils.NumberToString.LanguageType.DecimalDigits
+  fullName: Utils.NumberToString.LanguageType.DecimalDigits
+  nameWithType: LanguageType.DecimalDigits
+- uid: Utils.NumberToString.LanguageType.DecimalDigits*
+  name: DecimalDigits
+  href: api/Utils.NumberToString.LanguageType.html#Utils_NumberToString_LanguageType_DecimalDigits_
+  commentId: Overload:Utils.NumberToString.LanguageType.DecimalDigits
+  isSpec: "True"
+  fullName: Utils.NumberToString.LanguageType.DecimalDigits
+  nameWithType: LanguageType.DecimalDigits
 - uid: Utils.NumberToString.LanguageType.DecimalSeparator
   name: DecimalSeparator
   href: api/Utils.NumberToString.LanguageType.html#Utils_NumberToString_LanguageType_DecimalSeparator
@@ -63958,6 +64072,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.LanguageType.Minus
   nameWithType: LanguageType.Minus
+- uid: Utils.NumberToString.LanguageType.MixedFractionSeparator
+  name: MixedFractionSeparator
+  href: api/Utils.NumberToString.LanguageType.html#Utils_NumberToString_LanguageType_MixedFractionSeparator
+  commentId: P:Utils.NumberToString.LanguageType.MixedFractionSeparator
+  fullName: Utils.NumberToString.LanguageType.MixedFractionSeparator
+  nameWithType: LanguageType.MixedFractionSeparator
+- uid: Utils.NumberToString.LanguageType.MixedFractionSeparator*
+  name: MixedFractionSeparator
+  href: api/Utils.NumberToString.LanguageType.html#Utils_NumberToString_LanguageType_MixedFractionSeparator_
+  commentId: Overload:Utils.NumberToString.LanguageType.MixedFractionSeparator
+  isSpec: "True"
+  fullName: Utils.NumberToString.LanguageType.MixedFractionSeparator
+  nameWithType: LanguageType.MixedFractionSeparator
 - uid: Utils.NumberToString.LanguageType.Multiplicatives
   name: Multiplicatives
   href: api/Utils.NumberToString.LanguageType.html#Utils_NumberToString_LanguageType_Multiplicatives
@@ -64211,6 +64338,32 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.LanguageXmlModel.DateFormat
   nameWithType: LanguageXmlModel.DateFormat
+- uid: Utils.NumberToString.LanguageXmlModel.DecimalDigitByDigitMaxDigits
+  name: DecimalDigitByDigitMaxDigits
+  href: api/Utils.NumberToString.LanguageXmlModel.html#Utils_NumberToString_LanguageXmlModel_DecimalDigitByDigitMaxDigits
+  commentId: P:Utils.NumberToString.LanguageXmlModel.DecimalDigitByDigitMaxDigits
+  fullName: Utils.NumberToString.LanguageXmlModel.DecimalDigitByDigitMaxDigits
+  nameWithType: LanguageXmlModel.DecimalDigitByDigitMaxDigits
+- uid: Utils.NumberToString.LanguageXmlModel.DecimalDigitByDigitMaxDigits*
+  name: DecimalDigitByDigitMaxDigits
+  href: api/Utils.NumberToString.LanguageXmlModel.html#Utils_NumberToString_LanguageXmlModel_DecimalDigitByDigitMaxDigits_
+  commentId: Overload:Utils.NumberToString.LanguageXmlModel.DecimalDigitByDigitMaxDigits
+  isSpec: "True"
+  fullName: Utils.NumberToString.LanguageXmlModel.DecimalDigitByDigitMaxDigits
+  nameWithType: LanguageXmlModel.DecimalDigitByDigitMaxDigits
+- uid: Utils.NumberToString.LanguageXmlModel.DecimalDigits
+  name: DecimalDigits
+  href: api/Utils.NumberToString.LanguageXmlModel.html#Utils_NumberToString_LanguageXmlModel_DecimalDigits
+  commentId: P:Utils.NumberToString.LanguageXmlModel.DecimalDigits
+  fullName: Utils.NumberToString.LanguageXmlModel.DecimalDigits
+  nameWithType: LanguageXmlModel.DecimalDigits
+- uid: Utils.NumberToString.LanguageXmlModel.DecimalDigits*
+  name: DecimalDigits
+  href: api/Utils.NumberToString.LanguageXmlModel.html#Utils_NumberToString_LanguageXmlModel_DecimalDigits_
+  commentId: Overload:Utils.NumberToString.LanguageXmlModel.DecimalDigits
+  isSpec: "True"
+  fullName: Utils.NumberToString.LanguageXmlModel.DecimalDigits
+  nameWithType: LanguageXmlModel.DecimalDigits
 - uid: Utils.NumberToString.LanguageXmlModel.DecimalSeparator
   name: DecimalSeparator
   href: api/Utils.NumberToString.LanguageXmlModel.html#Utils_NumberToString_LanguageXmlModel_DecimalSeparator
@@ -64432,6 +64585,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.LanguageXmlModel.Minus
   nameWithType: LanguageXmlModel.Minus
+- uid: Utils.NumberToString.LanguageXmlModel.MixedFractionSeparator
+  name: MixedFractionSeparator
+  href: api/Utils.NumberToString.LanguageXmlModel.html#Utils_NumberToString_LanguageXmlModel_MixedFractionSeparator
+  commentId: P:Utils.NumberToString.LanguageXmlModel.MixedFractionSeparator
+  fullName: Utils.NumberToString.LanguageXmlModel.MixedFractionSeparator
+  nameWithType: LanguageXmlModel.MixedFractionSeparator
+- uid: Utils.NumberToString.LanguageXmlModel.MixedFractionSeparator*
+  name: MixedFractionSeparator
+  href: api/Utils.NumberToString.LanguageXmlModel.html#Utils_NumberToString_LanguageXmlModel_MixedFractionSeparator_
+  commentId: Overload:Utils.NumberToString.LanguageXmlModel.MixedFractionSeparator
+  isSpec: "True"
+  fullName: Utils.NumberToString.LanguageXmlModel.MixedFractionSeparator
+  nameWithType: LanguageXmlModel.MixedFractionSeparator
 - uid: Utils.NumberToString.LanguageXmlModel.Multiplicatives
   name: Multiplicatives
   href: api/Utils.NumberToString.LanguageXmlModel.html#Utils_NumberToString_LanguageXmlModel_Multiplicatives
@@ -66323,6 +66489,32 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberToStringConverter.DateTimeConnector
   nameWithType: NumberToStringConverter.DateTimeConnector
+- uid: Utils.NumberToString.NumberToStringConverter.DecimalDigitByDigitMaxDigits
+  name: DecimalDigitByDigitMaxDigits
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_DecimalDigitByDigitMaxDigits
+  commentId: P:Utils.NumberToString.NumberToStringConverter.DecimalDigitByDigitMaxDigits
+  fullName: Utils.NumberToString.NumberToStringConverter.DecimalDigitByDigitMaxDigits
+  nameWithType: NumberToStringConverter.DecimalDigitByDigitMaxDigits
+- uid: Utils.NumberToString.NumberToStringConverter.DecimalDigitByDigitMaxDigits*
+  name: DecimalDigitByDigitMaxDigits
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_DecimalDigitByDigitMaxDigits_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverter.DecimalDigitByDigitMaxDigits
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverter.DecimalDigitByDigitMaxDigits
+  nameWithType: NumberToStringConverter.DecimalDigitByDigitMaxDigits
+- uid: Utils.NumberToString.NumberToStringConverter.DecimalDigitForms
+  name: DecimalDigitForms
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_DecimalDigitForms
+  commentId: P:Utils.NumberToString.NumberToStringConverter.DecimalDigitForms
+  fullName: Utils.NumberToString.NumberToStringConverter.DecimalDigitForms
+  nameWithType: NumberToStringConverter.DecimalDigitForms
+- uid: Utils.NumberToString.NumberToStringConverter.DecimalDigitForms*
+  name: DecimalDigitForms
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_DecimalDigitForms_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverter.DecimalDigitForms
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverter.DecimalDigitForms
+  nameWithType: NumberToStringConverter.DecimalDigitForms
 - uid: Utils.NumberToString.NumberToStringConverter.DecimalSeparator
   name: DecimalSeparator
   href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_DecimalSeparator
@@ -66582,6 +66774,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberToStringConverter.Minus
   nameWithType: NumberToStringConverter.Minus
+- uid: Utils.NumberToString.NumberToStringConverter.MixedFractionSeparator
+  name: MixedFractionSeparator
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_MixedFractionSeparator
+  commentId: P:Utils.NumberToString.NumberToStringConverter.MixedFractionSeparator
+  fullName: Utils.NumberToString.NumberToStringConverter.MixedFractionSeparator
+  nameWithType: NumberToStringConverter.MixedFractionSeparator
+- uid: Utils.NumberToString.NumberToStringConverter.MixedFractionSeparator*
+  name: MixedFractionSeparator
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_MixedFractionSeparator_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverter.MixedFractionSeparator
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverter.MixedFractionSeparator
+  nameWithType: NumberToStringConverter.MixedFractionSeparator
 - uid: Utils.NumberToString.NumberToStringConverter.MultiplicativeSuffix
   name: MultiplicativeSuffix
   href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_MultiplicativeSuffix
@@ -67949,6 +68154,32 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberToStringConverterOptions.DateTimeConnector
   nameWithType: NumberToStringConverterOptions.DateTimeConnector
+- uid: Utils.NumberToString.NumberToStringConverterOptions.DecimalDigitByDigitMaxDigits
+  name: DecimalDigitByDigitMaxDigits
+  href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_DecimalDigitByDigitMaxDigits
+  commentId: P:Utils.NumberToString.NumberToStringConverterOptions.DecimalDigitByDigitMaxDigits
+  fullName: Utils.NumberToString.NumberToStringConverterOptions.DecimalDigitByDigitMaxDigits
+  nameWithType: NumberToStringConverterOptions.DecimalDigitByDigitMaxDigits
+- uid: Utils.NumberToString.NumberToStringConverterOptions.DecimalDigitByDigitMaxDigits*
+  name: DecimalDigitByDigitMaxDigits
+  href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_DecimalDigitByDigitMaxDigits_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverterOptions.DecimalDigitByDigitMaxDigits
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverterOptions.DecimalDigitByDigitMaxDigits
+  nameWithType: NumberToStringConverterOptions.DecimalDigitByDigitMaxDigits
+- uid: Utils.NumberToString.NumberToStringConverterOptions.DecimalDigitForms
+  name: DecimalDigitForms
+  href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_DecimalDigitForms
+  commentId: P:Utils.NumberToString.NumberToStringConverterOptions.DecimalDigitForms
+  fullName: Utils.NumberToString.NumberToStringConverterOptions.DecimalDigitForms
+  nameWithType: NumberToStringConverterOptions.DecimalDigitForms
+- uid: Utils.NumberToString.NumberToStringConverterOptions.DecimalDigitForms*
+  name: DecimalDigitForms
+  href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_DecimalDigitForms_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverterOptions.DecimalDigitForms
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverterOptions.DecimalDigitForms
+  nameWithType: NumberToStringConverterOptions.DecimalDigitForms
 - uid: Utils.NumberToString.NumberToStringConverterOptions.DecimalSeparator
   name: DecimalSeparator
   href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_DecimalSeparator
@@ -68192,6 +68423,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberToStringConverterOptions.Minus
   nameWithType: NumberToStringConverterOptions.Minus
+- uid: Utils.NumberToString.NumberToStringConverterOptions.MixedFractionSeparator
+  name: MixedFractionSeparator
+  href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_MixedFractionSeparator
+  commentId: P:Utils.NumberToString.NumberToStringConverterOptions.MixedFractionSeparator
+  fullName: Utils.NumberToString.NumberToStringConverterOptions.MixedFractionSeparator
+  nameWithType: NumberToStringConverterOptions.MixedFractionSeparator
+- uid: Utils.NumberToString.NumberToStringConverterOptions.MixedFractionSeparator*
+  name: MixedFractionSeparator
+  href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_MixedFractionSeparator_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverterOptions.MixedFractionSeparator
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverterOptions.MixedFractionSeparator
+  nameWithType: NumberToStringConverterOptions.MixedFractionSeparator
 - uid: Utils.NumberToString.NumberToStringConverterOptions.MultiplicativeSuffix
   name: MultiplicativeSuffix
   href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_MultiplicativeSuffix
