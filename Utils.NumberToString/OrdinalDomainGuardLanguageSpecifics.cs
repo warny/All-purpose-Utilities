@@ -400,7 +400,8 @@ public sealed class VietnameseOrdinalLanguageSpecifics : OrdinalDomainGuardLangu
 /// <summary>
 /// Dutch ordinal domain (NTS-08). Taaladvies "Aaneenschrijven van telwoorden" and the Woordenlijst
 /// Nederlandse Taal (<c>nulde</c>, <c>tweeduizendste</c>) validate the ordinals from 0 to 999 999. NTS-31 extends
-/// them to the whole <see cref="long"/> range: the e-ANS (rangtelwoorden) gives the scale ordinals
+/// them to every magnitude up to <see cref="long.MaxValue"/> (<see cref="long.MinValue"/> is rejected by the
+/// engine, its absolute value not being representable): the e-ANS (rangtelwoorden) gives the scale ordinals
 /// (<c>miljoenste</c>, <c>miljardste</c>) and the Besluit bekendmaking spellingvoorschriften 2005, rule 6.N, the
 /// compounds (<c>twee miljoenste</c>, <c>twee miljoen tweehonderdduizendste</c>): the cardinal keeps its spelling and
 /// only its final element becomes ordinal, which the declarative pipeline forms on every value. The guard therefore

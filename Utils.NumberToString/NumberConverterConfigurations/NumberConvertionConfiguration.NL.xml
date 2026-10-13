@@ -97,8 +97,9 @@
           the suffix "e" completes it (een -> eerste, twee -> tweede, drie -> derde, acht -> achtste,
           -tig -> -tigste, honderd -> honderdste, duizend -> duizendste, nul -> nulde).
         -->
-        <!-- NTS-31: the ordinal rule is productive over the whole long range; DutchOrdinalLanguageSpecifics keeps the
-             explicit domain declaration (0 to long.MaxValue) and rejects nothing inside it. -->
+        <!-- NTS-31: the ordinal rule is productive over the whole ordinal domain of the engine (-long.MaxValue to
+             long.MaxValue; long.MinValue is rejected by the engine); DutchOrdinalLanguageSpecifics keeps the
+             explicit domain declaration (magnitudes 0 to long.MaxValue) and rejects nothing inside it. -->
         <LanguageSpecifics>DutchOrdinalLanguageSpecifics</LanguageSpecifics>
         <Ordinals suffix="e">
             <OrdinalException value="1" string="eerste" />

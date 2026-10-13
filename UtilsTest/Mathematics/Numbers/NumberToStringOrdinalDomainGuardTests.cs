@@ -7,8 +7,8 @@ namespace UtilsTest.NumberToString;
 
 /// <summary>
 /// Technical tests of the ordinal domain guards (<see cref="OrdinalDomainGuardLanguageSpecifics"/> and the
-/// Polish plugin limit), as set by NTS-08 and widened by NTS-28 and NTS-31 (Dutch: the whole <see cref="long"/>
-/// range, so no Dutch value fails closed): the edges of each validated domain, the
+/// Polish plugin limit), as set by NTS-08 and widened by NTS-28 and NTS-31 (Dutch: every magnitude up to
+/// <see cref="long.MaxValue"/>, so no Dutch value fails closed): the edges of each validated domain, the
 /// fail-closed behaviour outside it (including negative values and <see cref="long.MaxValue"/>), and the absence
 /// of any unchanged cardinal returned as an ordinal. The linguistic forms themselves are pinned by the language
 /// <c>.feature</c> files.

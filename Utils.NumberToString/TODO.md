@@ -2,7 +2,8 @@
 
 Re-audited on 2026-10-13 after closing NTS-31 (Dutch ordinals from a million: `miljoenste`, `twee miljoenste`,
 `twee miljoen tweehonderdduizendste` after the e-ANS and the Besluit bekendmaking spellingvoorschriften 2005, rule
-6.N; NL ordinals over the whole `long` range), on 2026-10-11 after closing the cardinal part of NTS-31 (Dutch long
+6.N; NL ordinals over `-long.MaxValue`..`long.MaxValue`, `long.MinValue` being rejected by the engine), on
+2026-10-11 after closing the cardinal part of NTS-31 (Dutch long
 scale on `SCALE-LONG`: `miljoen`, `miljard`, `biljoen` … with `-joen`/`-jard` and the `l` junction, Conway tables
 inherited, unbounded cardinals), after closing NTS-29 (attested ordinals of zero: DA `nulte`, HU `nulladik`) and NTS-32
 (Polish ordinal of 400: `czterechsetny`), after closing NTS-28 (compound and large-scale ordinals in ES, PT, GL, EL, FI, PL, RU, UK; guards
@@ -135,7 +136,8 @@ NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-25, NTS-27, NTS-28, NT
   `suffixSeparator="l"`, Conway tables inherited with the Latin `quadri`/`quinti`/`sexti`/`octi`, `een` kept from
   `miljoen` upward, singular scale nouns, spaced groups without `en`; ordinals still guarded at 999 999):
   `DONE-2026-10-11(2).md`.
-- NTS-31, ordinal part — **NTS-31 fully closed** (Dutch ordinals from a million over the whole `long` range). e-ANS
+- NTS-31, ordinal part — **NTS-31 fully closed** (Dutch ordinals from a million over the full supported ordinal
+  domain `-long.MaxValue`..`long.MaxValue`; `long.MinValue` is rejected by the engine). e-ANS
   (rangtelwoorden): the scale nouns take `-ste` (`miljoenste`, `miljardste`) and the ordinal keeps the spelling of
   the cardinal, ordinalizing only its final element. Besluit bekendmaking spellingvoorschriften 2005, rule 6.N:
   `de twee miljoenste`, `de twee miljoen tweehonderdduizendste`, `de twee miljoen tweehonderdduizend
