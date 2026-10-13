@@ -9,6 +9,7 @@
                         minus="minus *"
                         decimalSeparator="point"
                         fractionSeparator="over"
+                        mixedFractionSeparator="and"
         >
 		<Culture>EN</Culture>
 		<Culture>EN-us</Culture>
@@ -65,6 +66,10 @@
 			<Fraction digits="1" string="tenth(s)" />
 			<Fraction digits="2" string="hundredth(s)" />
 			<Fraction digits="3" string="thousandth(s)" />
+			<!-- NTS-30A: OpenStax Prealgebra 2e, 5.1 "Decimals": place values ten-thousandths and hundred-thousandths;
+			     "Write 'and' for the decimal point" (5.24 = five and twenty-four hundredths, 0.05 = five hundredths). -->
+			<Fraction digits="4" string="ten-thousandth(s)" />
+			<Fraction digits="5" string="hundred-thousandth(s)" />
 		</Fractions>
 		<Ordinals suffix="th">
 			<Ordinal from="one" to="first" />

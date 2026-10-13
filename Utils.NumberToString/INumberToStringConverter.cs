@@ -111,12 +111,26 @@ namespace Utils.NumberToString
         /// </param>
         /// <param name="options">
         /// Optional overrides for the decimal separator word (<see cref="DecimalFormatOptions.DecimalSeparator"/>),
-        /// the denomination suffix (<see cref="DecimalFormatOptions.DecimalSuffix"/>), and zero-decimal
-        /// suppression (<see cref="DecimalFormatOptions.OmitZeroDecimals"/>).
+        /// the denomination suffix (<see cref="DecimalFormatOptions.DecimalSuffix"/>), zero-decimal
+        /// suppression (<see cref="DecimalFormatOptions.OmitZeroDecimals"/>) and the reading mode of the
+        /// decimal part (<see cref="DecimalFormatOptions.ReadingMode"/>).
         /// Both <c>"(s)"</c> markers are pluralized: the separator against the integer part,
         /// the suffix against the decimal value.
+        /// <para>
+        /// Precedence: a caller <see cref="DecimalFormatOptions.DecimalSuffix"/> first; then the
+        /// <see cref="DecimalFormatOptions.ReadingMode"/>: <see cref="DecimalReadingMode.LanguageDefault"/> uses the
+        /// configured fraction for the digit count, else reads the digits within the language's fallback limit;
+        /// <see cref="DecimalReadingMode.DigitByDigit"/> always reads the digits;
+        /// <see cref="DecimalReadingMode.MathematicalFraction"/> always reads a named fraction.
+        /// </para>
         /// </param>
         /// <param name="variants">Zero or more <c>"dimension=value"</c> strings.</param>
+        /// <exception cref="System.NotSupportedException">
+        /// <see cref="DecimalReadingMode.LanguageDefault"/> with no configured fraction for the digit count beyond the
+        /// language's digit-by-digit limit; <see cref="DecimalReadingMode.MathematicalFraction"/> with no configured
+        /// fraction for the digit count, or with a non-zero integer part in a language without a mixed-number
+        /// connector.
+        /// </exception>
         string Convert(decimal number, int mandatoryDecimalDigits, DecimalFormatOptions? options, params string[] variants) => Convert(number);
 
         /// <summary>

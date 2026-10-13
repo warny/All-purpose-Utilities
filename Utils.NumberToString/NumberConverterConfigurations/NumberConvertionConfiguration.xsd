@@ -2207,6 +2207,28 @@
                                 </xs:documentation>
                             </xs:annotation>
                         </xs:attribute>
+                        <xs:attribute name="decimalDigitByDigitMaxDigits" type="xs:nonNegativeInteger" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Largest number of decimal digits that the language-default decimal reading may
+                                    read digit by digit when no Fraction entry matches the digit count. 0 disables
+                                    that fallback (such a decimal then throws NotSupportedException). Omit for
+                                    unlimited (inherited through baseOn; an explicit 0 overrides the base). Never
+                                    limits the DigitByDigit reading mode requested by the caller.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="mixedFractionSeparator" type="xs:string" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Connector joining a non-zero integer part to a named decimal fraction in the
+                                    MathematicalFraction reading mode. Examples: "et" (FR: deux et quatre dixièmes),
+                                    "and" (EN: five and twenty-four hundredths). Not the decimalSeparator word.
+                                    Omit when unsourced: that mode then reads a zero integer part only and throws
+                                    NotSupportedException for a non-zero one.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
                         <xs:attribute name="groupConnector" type="xs:string" use="optional">
                             <xs:annotation>
                                 <xs:documentation>

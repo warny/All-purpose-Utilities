@@ -111,6 +111,17 @@ namespace Utils.NumberToString
         public string? MaxNumber { get; set; }
 
         /// <summary>
+        /// Gets or sets the largest number of decimal digits read digit by digit by the language default, as a string
+        /// (<see langword="null"/> when absent, so that an explicit <c>0</c> stays distinct from absence).
+        /// </summary>
+        [XmlAttribute("decimalDigitByDigitMaxDigits")]
+        public string? DecimalDigitByDigitMaxDigits { get; set; }
+
+        /// <summary>Gets or sets the connector between a non-zero integer part and a named decimal fraction.</summary>
+        [XmlAttribute("mixedFractionSeparator")]
+        public string? MixedFractionSeparator { get; set; }
+
+        /// <summary>
         /// Gets or sets the default group definitions: the first <c>&lt;Groups&gt;</c> element without
         /// <c>onScale</c> in <see cref="GroupsElements"/>. Kept with its historical signature; setting
         /// it replaces the default elements of <see cref="GroupsElements"/> and keeps the scoped ones.
@@ -303,6 +314,8 @@ namespace Utils.NumberToString
         public string? DecimalSeparator { get; init; }
         public string? FractionSeparator { get; init; }
         public string? MaxNumber { get; init; }
+        public string? DecimalDigitByDigitMaxDigits { get; init; }
+        public string? MixedFractionSeparator { get; init; }
         public GroupsListType? Groups { get; init; }
         public List<GroupsListType>? ScaleScopedGroups { get; init; }
         public string? MultiplierPosition { get; init; }

@@ -1116,6 +1116,22 @@ public class LanguageType
     public string MaxNumber { get; set; }
 
     /// <summary>
+    /// Gets or sets the largest number of decimal digits that <c>LanguageDefault</c> may read digit by digit when no
+    /// fraction is configured for that count (a non-negative integer as a string; <c>0</c> disables the automatic
+    /// fallback). <see langword="null"/> when absent: unlimited, or inherited through <c>baseOn</c>.
+    /// </summary>
+    [XmlAttribute("decimalDigitByDigitMaxDigits")]
+    public string DecimalDigitByDigitMaxDigits { get; set; }
+
+    /// <summary>
+    /// Gets or sets the connector joining a non-zero integer part to a named decimal fraction in
+    /// <c>MathematicalFraction</c> mode (e.g. "et": <c>deux et quatre dixièmes</c>). <see langword="null"/> when absent:
+    /// that mode then supports a zero integer part only.
+    /// </summary>
+    [XmlAttribute("mixedFractionSeparator")]
+    public string MixedFractionSeparator { get; set; }
+
+    /// <summary>
     /// Gets or sets the group definitions used when splitting large numbers (the default tables,
     /// declared by the <c>&lt;Groups&gt;</c> element without <c>onScale</c>).
     /// </summary>

@@ -99,6 +99,20 @@ public sealed class NumberToStringConverterOptions
     public string? FractionSeparator { get; set; }
 
     /// <summary>
+    /// Largest number of decimal digits that <see cref="DecimalReadingMode.LanguageDefault"/> reads digit by digit when
+    /// no <see cref="Fractions"/> entry matches the digit count; <c>0</c> disables that fallback. <see langword="null"/>
+    /// (the default) leaves it unlimited. Must be non-negative. Never limits <see cref="DecimalReadingMode.DigitByDigit"/>.
+    /// </summary>
+    public int? DecimalDigitByDigitMaxDigits { get; set; }
+
+    /// <summary>
+    /// Connector joining a non-zero integer part to a named decimal fraction in
+    /// <see cref="DecimalReadingMode.MathematicalFraction"/> (e.g. <c>"et"</c>, <c>"and"</c>). <see langword="null"/>
+    /// (the default): that mode supports a zero integer part only.
+    /// </summary>
+    public string? MixedFractionSeparator { get; set; }
+
+    /// <summary>
     /// Ordinal suffix appended to the last word of a cardinal when no word-level rule matches
     /// (e.g. "th" for English, "ième" for French).
     /// </summary>
@@ -353,6 +367,8 @@ public sealed class NumberToStringConverterOptions
         FractionForcedVariants = source.FractionForcedVariants;
         MaxNumber = source.MaxNumber;
         FractionSeparator = source.FractionSeparator;
+        DecimalDigitByDigitMaxDigits = source.DecimalDigitByDigitMaxDigits;
+        MixedFractionSeparator = source.MixedFractionSeparator;
         OrdinalSuffix = source.OrdinalSuffix;
         OrdinalRemoveTrailing = source.OrdinalRemoveTrailing;
         OrdinalExceptions = source.OrdinalExceptions;

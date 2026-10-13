@@ -801,6 +801,8 @@ namespace Utils.NumberToString
             DecimalSeparator = model.DecimalSeparator,
             FractionSeparator = model.FractionSeparator,
             MaxNumber = model.MaxNumber,
+            DecimalDigitByDigitMaxDigits = model.DecimalDigitByDigitMaxDigits,
+            MixedFractionSeparator = model.MixedFractionSeparator,
             Exceptions = model.Exceptions,
             NumberScale = ToNumberScaleDefinition(model.NumberScale),
             Replacements = model.Replacements,
@@ -964,6 +966,8 @@ namespace Utils.NumberToString
                 DecimalSeparator = overriding.DecimalSeparator ?? inherited.DecimalSeparator,
                 FractionSeparator = overriding.FractionSeparator ?? inherited.FractionSeparator,
                 MaxNumber = overriding.MaxNumber ?? inherited.MaxNumber,
+                DecimalDigitByDigitMaxDigits = overriding.DecimalDigitByDigitMaxDigits ?? inherited.DecimalDigitByDigitMaxDigits,
+                MixedFractionSeparator = overriding.MixedFractionSeparator ?? inherited.MixedFractionSeparator,
                 Groups = overriding.Groups ?? inherited.Groups,
                 ScaleScopedGroups = MergeScaleScopedGroups(inherited.ScaleScopedGroups, overriding.ScaleScopedGroups),
                 MultiplierPosition = overriding.MultiplierPosition ?? inherited.MultiplierPosition,
@@ -1116,6 +1120,8 @@ namespace Utils.NumberToString
             DecimalSeparator = definition.DecimalSeparator,
             FractionSeparator = definition.FractionSeparator,
             MaxNumber = definition.MaxNumber,
+            DecimalDigitByDigitMaxDigits = definition.DecimalDigitByDigitMaxDigits,
+            MixedFractionSeparator = definition.MixedFractionSeparator,
             Groups = definition.Groups,
             ScaleScopedGroups = definition.ScaleScopedGroups,
             MultiplierPosition = definition.MultiplierPosition,
@@ -1227,6 +1233,12 @@ namespace Utils.NumberToString
                 }
                 foreach (string required in new[] { "hour", "minute", "second" })
                     Require(names.Contains(required), $"TimeUnits[{required}]", "canonical unit is required.");
+            }
+
+            if (language.DecimalDigitByDigitMaxDigits != null)
+            {
+                bool parsedLimit = int.TryParse(language.DecimalDigitByDigitMaxDigits, NumberStyles.Integer, CultureInfo.InvariantCulture, out int limit);
+                Require(parsedLimit && limit >= 0, "DecimalDigitByDigitMaxDigits", "must be a non-negative integer.");
             }
 
             if (language.NumberScale == null)
@@ -1908,6 +1920,12 @@ namespace Utils.NumberToString
                     ? null
                     : BigInteger.Parse(language.MaxNumber, CultureInfo.InvariantCulture),
                 FractionSeparator = language.FractionSeparator,
+                DecimalDigitByDigitMaxDigits = string.IsNullOrWhiteSpace(language.DecimalDigitByDigitMaxDigits)
+                    ? null
+                    : int.Parse(language.DecimalDigitByDigitMaxDigits, NumberStyles.Integer, CultureInfo.InvariantCulture),
+                MixedFractionSeparator = string.IsNullOrWhiteSpace(language.MixedFractionSeparator)
+                    ? null
+                    : language.MixedFractionSeparator,
                 OrdinalSuffix = language.Ordinals?.Suffix,
                 OrdinalRemoveTrailing = language.Ordinals?.RemoveTrailing,
                 OrdinalExceptions = language.Ordinals?.Exceptions?

@@ -96,6 +96,49 @@ de.Convert(1_000_000);  // "eine Million"   ← GermanNumberToStringLanguageSpec
 
 ---
 
+## Decimals — reading modes
+
+`Convert(decimal, mandatoryDecimalDigits, DecimalFormatOptions?, …)` reads the decimal part in one of three
+`DecimalReadingMode`s, set by `DecimalFormatOptions.ReadingMode` (NTS-30A):
+
+```csharp
+var fr = NumberToStringConverter.GetConverter("FR");
+var nl = NumberToStringConverter.GetConverter("NL");
+
+// LanguageDefault (default): the configured <Fraction>, otherwise the digits one by one.
+fr.Convert(0.05m);      // "zéro virgule cinq centièmes"
+fr.Convert(0.0001m);    // "zéro virgule un dix-millième"
+nl.Convert(21.05m);     // "eenentwintig komma nul vijf"   ← a decimal 0 is read with the language's zero
+
+// DigitByDigit: every digit, even where a fraction is configured.
+fr.Convert(0.0001m, -1, new DecimalFormatOptions { ReadingMode = DecimalReadingMode.DigitByDigit });
+// "zéro virgule zéro zéro zéro un"
+
+// MathematicalFraction: numerator over the named denominator 10^n, no decimal separator word.
+var math = new DecimalFormatOptions { ReadingMode = DecimalReadingMode.MathematicalFraction };
+fr.Convert(0.0002m, -1, math);  // "deux dix-millièmes"
+fr.Convert(2.4m, -1, math);     // "deux et quatre dixièmes"   ← mixedFractionSeparator="et"
+fr.Convert(21.5m, 3, math);     // "vingt et un et cinq cents millièmes" (the requested precision is kept)
+```
+
+| Mode | Reads | Fails with `NotSupportedException` when |
+|---|---|---|
+| `LanguageDefault` | the configured `<Fraction>` for the digit count; otherwise the digits, within the language's `decimalDigitByDigitMaxDigits` (unlimited when absent) | no fraction is configured and the digit count exceeds `decimalDigitByDigitMaxDigits` |
+| `DigitByDigit` | every digit after the decimal separator word: 0 is the language's `zero`, 1–9 their standalone cardinals (FR `un`, DE `eins`, HU `kettő`) | never |
+| `MathematicalFraction` | the fraction alone for a zero integer part (`un dix-millième`), joined by `mixedFractionSeparator` otherwise (`deux et un dix-millième`); a zero decimal part is not read (`deux`) | no fraction is configured for the digit count, or the integer part is not zero and the language declares no `mixedFractionSeparator` |
+
+Precedence: a caller `DecimalSuffix` first (the digits as one numerator after the decimal separator word, whatever
+the mode), then the reading mode. `OmitZeroDecimals` suppresses a zero decimal part in every mode, and negative
+values take the language's `minus` template around the whole phrase (`moins un dix-millième`).
+
+Named fractions shipped: FR 1–11 digits (`dixième` … `dix-millième`, `cent-millième`, `millionième`,
+`dix-millionième`, `cent-millionième`, `milliardième`, `dix-milliardième`, `cent-milliardième`), EN 1–5 digits
+(`tenth` … `ten-thousandth`, `hundred-thousandth`); every other language reads its decimals digit by digit. No
+shipped language declares `decimalDigitByDigitMaxDigits` (no source justified a limit), and only FR (`et`) and EN
+(`and`) declare `mixedFractionSeparator`. Sources: `docs/NTS-08-linguistic-sources.md`, section NTS-30A.
+
+---
+
 ## Ordinals
 
 ```csharp
@@ -1274,6 +1317,8 @@ on the same language register the same converter under several codes.
 | `decimalSeparator` | | Word between the integer and decimal parts (e.g. `"point"`, `"virgule"`). |
 | `fractionSeparator` | | Connector for fractions (e.g. `"sur"`, `"over"`). |
 | `maxNumber` | | Maximum accepted value; beyond this, `ArgumentOutOfRangeException` is thrown. |
+| `decimalDigitByDigitMaxDigits` | | Largest number of decimal digits that `DecimalReadingMode.LanguageDefault` reads digit by digit when no `<Fraction>` matches the digit count (non-negative; `0` disables that fallback, absent = unlimited). Beyond it the decimal throws `NotSupportedException`; the caller-selected `DigitByDigit` mode is never limited. Inherited through `baseOn`; an explicit `0` overrides the base. Programmatic: `NumberToStringConverterOptions.DecimalDigitByDigitMaxDigits`, exposed by `NumberToStringConverter.DecimalDigitByDigitMaxDigits`. |
+| `mixedFractionSeparator` | | Connector between a non-zero integer part and a named decimal fraction in `DecimalReadingMode.MathematicalFraction` (FR `et`: *deux et quatre dixièmes*; EN `and`: *five and twenty-four hundredths*). Distinct from `decimalSeparator`. Absent: that mode reads a zero integer part only and throws `NotSupportedException` otherwise. Programmatic: `NumberToStringConverterOptions.MixedFractionSeparator`. |
 | `baseOn` | | Culture code of a base language to inherit from. All settings are inherited and can be selectively overridden. Chains (A → B → C) are supported; the base must appear earlier in the same file or in a previously loaded file. An empty element (e.g. `<Replacements />`) explicitly overrides the base with an empty list. |
 | `groupConnector` / `groupConnectorThreshold` | | Word inserted between the last two groups when the lowest group's value is below the threshold (e.g. English "one thousand **and** one" — `groupConnector="and" groupConnectorThreshold="100"`). |
 | `intraGroupConnector` / `intraGroupConnectorThreshold` | | Word inserted between the hundreds digit and the remainder within a group of 3, when hundreds are present and the remainder is below the threshold (e.g. 101 → "một trăm **linh** một" with `intraGroupConnector="linh" intraGroupConnectorThreshold="10"`; since NTS-27 the Vietnamese configuration uses `innerBuildString="linh *"` instead, which also reaches the zero hundreds of a class after the thousands). |
@@ -1312,7 +1357,7 @@ they are not globally registered converters and are not visible to `RegisterConf
 
 **Merge rules**:
 - `Culture`: not inherited. Every `<Language>` declares at least one `<Culture>` (XSD `minOccurs="1"`) and only those are registered for the child. A regional culture must be declared once, in the child only, never also in its general parent (a culture declared by two built-in documents is a retained initialization failure).
-- Scalar attributes (`groupSize`, `groupPattern`, `separator`, `groupSeparator`, `zero`, `minus`, `decimalSeparator`, `fractionSeparator`, `maxNumber`, `groupConnector`, `intraGroupConnector`, `scaleConnector` and their thresholds, `multiplierPosition`): child wins; absent child attributes inherit from the base.
+- Scalar attributes (`groupSize`, `groupPattern`, `separator`, `groupSeparator`, `zero`, `minus`, `decimalSeparator`, `fractionSeparator`, `maxNumber`, `decimalDigitByDigitMaxDigits`, `mixedFractionSeparator`, `groupConnector`, `intraGroupConnector`, `scaleConnector` and their thresholds, `multiplierPosition`): child wins; absent child attributes inherit from the base.
 - `<Groups onScale="…">` tables are merged by range: a child table whose range is identical to an inherited one (compared in canonical form) replaces it, a disjoint range is added, and any other overlap is rejected. The default `<Groups>` follows the rule below independently.
 - Sections replaced as a whole when the child declares them (`Groups`, `Exceptions`, `Replacements`, `Fractions`, `Variants`, `YearFormat`, `Multiplicatives`, `TimeUnits`, `ClockTime`, `DateFormat`, `LanguageSpecifics`): the child's section replaces the base's completely, nothing is merged inside it. Omitted sections are inherited. An empty element (e.g. `<Replacements />`) explicitly overrides with an empty list.
 - `Fusion` rules belong to their `<Digit>` and therefore follow the `Groups` rule: a child that omits `<Groups>` inherits the base's digits together with their fusions; a child that declares `<Groups>` replaces every digit, and the base's fusions are not merged into it.
@@ -1763,8 +1808,13 @@ Allow the decimal part of a number to be expressed with a named denominator.
     <Fraction digits="1" string="dixième(s)" />    <!-- 0.5 → "cinq dixièmes" -->
     <Fraction digits="2" string="centième(s)" />   <!-- 0.25 → "vingt-cinq centièmes" -->
     <Fraction digits="3" string="millième(s)" />
+    <Fraction digits="4" string="dix-millième(s)" /> <!-- 0.0001 → "un dix-millième" -->
 </Fractions>
 ```
+
+The same entries serve `DecimalReadingMode.LanguageDefault` (before the digit-by-digit fallback), the
+`MathematicalFraction` mode (which requires one) and the power-of-ten denominators of `ConvertFraction`
+(`2005/10000` → "deux mille cinq dix-millièmes"). See [Decimals — reading modes](#decimals--reading-modes).
 
 ---
 

@@ -149,8 +149,8 @@ Examples:
     |  12.34 | douze virgule trente quatre centièmes   |
     |  12.74 | douze virgule septante quatre centièmes |
     # Beyond the thousandths the denominator is still named; the zeros are not read.
-    | 0.0001 | zéro virgule un dix millième            |
-    | 0.00071 | zéro virgule septante et un cent millièmes |
+    | 0.0001 | zéro virgule un dix-millième            |
+    | 0.00071 | zéro virgule septante et un cent-millièmes |
 
 @HugeNumber
 Scenario: A very large cardinal number follows the shipped scale vocabulary

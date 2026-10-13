@@ -214,6 +214,11 @@ namespace Utils.NumberToString
                 throw new ArgumentOutOfRangeException(nameof(options.MaxNumber),
                     $"MaxNumber must be non-negative when specified; got {MaxNumber.Value}.");
             FractionSeparator = string.IsNullOrWhiteSpace(options.FractionSeparator) ? "/" : options.FractionSeparator;
+            DecimalDigitByDigitMaxDigits = options.DecimalDigitByDigitMaxDigits;
+            if (DecimalDigitByDigitMaxDigits < 0)
+                throw new ArgumentOutOfRangeException(nameof(options.DecimalDigitByDigitMaxDigits),
+                    $"DecimalDigitByDigitMaxDigits must be non-negative when specified; got {DecimalDigitByDigitMaxDigits}.");
+            MixedFractionSeparator = string.IsNullOrWhiteSpace(options.MixedFractionSeparator) ? null : options.MixedFractionSeparator;
 
             OrdinalSuffix = options.OrdinalSuffix;
             OrdinalRemoveTrailing = options.OrdinalRemoveTrailing;
@@ -417,6 +422,18 @@ namespace Utils.NumberToString
         /// Gets the connector used when expressing non-decimal fractions.
         /// </summary>
         public string FractionSeparator { get; }
+        /// <summary>
+        /// Gets the largest number of decimal digits that <see cref="DecimalReadingMode.LanguageDefault"/> reads digit
+        /// by digit when no <see cref="Fractions"/> entry matches the digit count (<c>0</c>: never), or
+        /// <see langword="null"/> when that fallback is unlimited.
+        /// </summary>
+        public int? DecimalDigitByDigitMaxDigits { get; }
+        /// <summary>
+        /// Gets the connector joining a non-zero integer part to a named decimal fraction in
+        /// <see cref="DecimalReadingMode.MathematicalFraction"/>, or <see langword="null"/> when the language declares
+        /// none (that mode then supports a zero integer part only).
+        /// </summary>
+        public string? MixedFractionSeparator { get; }
         /// <summary>
         /// Maximum absolute value that may be passed to <see cref="Convert(BigInteger, string[])"/>,
         /// or <see langword="null"/> when unlimited.
@@ -706,6 +723,8 @@ namespace Utils.NumberToString
         private readonly string? _scaleConnector;
         private readonly long _scaleConnectorThreshold;
         private readonly ImmutableDictionary<int, ForcedVariantSet> _fractionForcedVariants;
+        /// <summary>Lazily computed text of each pronounced decimal digit (see <see cref="DecimalDigitTexts"/>).</summary>
+        private string[]? _decimalDigitTexts;
         private readonly ImmutableDictionary<string, TimeUnitDefinition> _timeUnits;
         private readonly ImmutableDictionary<int, SpecialHourRule> _specialHours;
         private readonly ClockTimeFormatOptions? _clockTime;
@@ -956,10 +975,13 @@ namespace Utils.NumberToString
         /// Positive: round to N decimal places and always show exactly N digits (zero-padded).
         /// </param>
         /// <param name="options">
-        /// Optional overrides for the decimal separator word, the denomination suffix, and
-        /// zero-decimal suppression. When <see langword="null"/>, the language defaults apply.
+        /// Optional overrides for the decimal separator word, the denomination suffix, zero-decimal suppression and
+        /// the reading mode of the decimal part. When <see langword="null"/>, the language defaults apply.
         /// </param>
         /// <param name="variants">Zero or more <c>"dimension=value"</c> strings.</param>
+        /// <exception cref="NotSupportedException">
+        /// The reading mode cannot read the decimal part in this language (see <see cref="DecimalReadingMode"/>).
+        /// </exception>
         public string Convert(decimal number, int mandatoryDecimalDigits, DecimalFormatOptions? options, params string[] variants)
         {
             if (mandatoryDecimalDigits > 28)
@@ -979,7 +1001,12 @@ namespace Utils.NumberToString
             if (MaxNumber.HasValue && (BigInteger)integerPart > MaxNumber.Value)
                 throw new ArgumentOutOfRangeException(nameof(number), $"The integer part exceeds the maximum supported number ({MaxNumber.Value}).");
 
-            var result = new StringBuilder(BuildCardinalFragment((BigInteger)integerPart, variants));
+            DecimalReadingMode mode = options?.ReadingMode ?? DecimalReadingMode.LanguageDefault;
+            if (!Enum.IsDefined(mode))
+                throw new ArgumentOutOfRangeException(nameof(options), $"Unknown decimal reading mode {mode}.");
+
+            BigInteger integerBig = (BigInteger)integerPart;
+            string integerText = BuildCardinalFragment(integerBig, variants);
 
             string digits = fraction != 0
                 ? fraction.ToString(System.Globalization.CultureInfo.InvariantCulture).Split('.')[1]
@@ -992,49 +1019,148 @@ namespace Utils.NumberToString
             if (isZeroDecimal && (options?.OmitZeroDecimals ?? false))
                 digits = string.Empty;
 
-            if (digits.Length > 0)
+            string text;
+            if (digits.Length == 0)
+                text = integerText;
+            else if (options?.DecimalSuffix is { } callerSuffix)
+                // A caller suffix takes precedence over every reading mode (NTS-30A keeps its contract).
+                text = AppendDecimalSeparatorWord(integerText, integerBig, options)
+                    + BuildNamedDecimalFraction(digits, callerSuffix, usingConfiguredSuffix: false, variants);
+            else
+                text = mode switch
+                {
+                    DecimalReadingMode.DigitByDigit => AppendDecimalSeparatorWord(integerText, integerBig, options) + BuildDecimalDigits(digits),
+                    DecimalReadingMode.MathematicalFraction => BuildMixedDecimalFraction(integerText, integerBig, digits, isZeroDecimal, variants),
+                    _ => BuildLanguageDefaultDecimal(integerText, integerBig, digits, options, variants),
+                };
+
+            return FinalizePhrase(ApplyRawAdjustment(text.Trim()), isNegative);
+        }
+
+        /// <summary>
+        /// Appends the decimal separator word (pluralized against the integer part) after the integer part, followed
+        /// by the word separator that precedes the decimal part.
+        /// </summary>
+        /// <param name="integerText">The rendered integer part.</param>
+        /// <param name="integerPart">The integer part, as the plural proxy of the separator word.</param>
+        /// <param name="options">The caller options, whose <see cref="DecimalFormatOptions.DecimalSeparator"/> overrides the language word.</param>
+        /// <returns>The integer part followed by the separator word and a word separator.</returns>
+        private string AppendDecimalSeparatorWord(string integerText, BigInteger integerPart, DecimalFormatOptions? options)
+        {
+            string separatorWord = options?.DecimalSeparator ?? DecimalSeparator;
+            // Use BigInteger to avoid long overflow when the integer part exceeds long.MaxValue.
+            long separatorPluralProxy = BigInteger.Abs(integerPart) <= 1 ? (long)integerPart : 2L;
+            return integerText + Separator + separatorWord.ToPlural(separatorPluralProxy) + Separator;
+        }
+
+        /// <summary>
+        /// Reads the decimal digits as one numerator followed by a denominator suffix (<c>cinq centièmes</c>).
+        /// </summary>
+        /// <param name="digits">The decimal digits; their count is the power of ten of the denominator.</param>
+        /// <param name="suffix">The denominator suffix, whose <c>"(s)"</c> marker is pluralized against the numerator.</param>
+        /// <param name="usingConfiguredSuffix">
+        /// <see langword="true"/> for the configured <c>&lt;Fraction&gt;</c>, whose forced variants then apply;
+        /// <see langword="false"/> for a caller-supplied literal suffix.
+        /// </param>
+        /// <param name="variants">Caller variants.</param>
+        /// <returns>The numerator and its suffix.</returns>
+        private string BuildNamedDecimalFraction(string digits, string suffix, bool usingConfiguredSuffix, string[] variants)
+        {
+            BigInteger numerator = BigInteger.Parse(digits);
+            // ForcedVariants belong to the configured fraction term, not to a caller-supplied literal suffix.
+            var query = usingConfiguredSuffix && _fractionForcedVariants.TryGetValue(digits.Length, out var forced)
+                ? forced.Overlay(BuildVariantQuery(variants))
+                : BuildVariantQuery(variants);
+            // The numerator is a sub-expression; do not check MaxNumber for it.
+            string numeratorText = BuildCardinalFragment(numerator, query);
+            // Use BigInteger to avoid long overflow when fractional digits exceed 18.
+            long pluralProxy = numerator <= 1 ? (long)numerator : 2L;
+            return numeratorText + Separator + suffix.ToPlural(pluralProxy);
+        }
+
+        /// <summary>
+        /// Reads every decimal digit: a 0 is the standalone <see cref="Zero"/> (the level-1 digit 0 is an empty
+        /// cardinal position), 1–9 their standalone cardinals (NTS-30A).
+        /// </summary>
+        /// <param name="digits">The decimal digits.</param>
+        /// <returns>The digits, each followed by the word separator.</returns>
+        private string BuildDecimalDigits(string digits)
+        {
+            string[] digitTexts = DecimalDigitTexts;
+            var builder = new StringBuilder();
+            foreach (char c in digits)
+                builder.Append(digitTexts[c - '0']).Append(Separator);
+            return builder.ToString();
+        }
+
+        /// <summary>
+        /// Gets the text of each pronounced decimal digit, computed once: <see cref="Zero"/> for 0 and the standalone
+        /// cardinal of 1–9 (finalized as a phrase of its own, like <c>Convert(d)</c>), which differs from the level-1
+        /// table text where that text is a composition form (FR <c>et un</c>, DE <c>ein</c>, HU <c>két</c>).
+        /// </summary>
+        private string[] DecimalDigitTexts
+        {
+            get
             {
-                string separatorWord = options?.DecimalSeparator ?? DecimalSeparator;
-                // Use BigInteger to avoid long overflow when the integer part exceeds long.MaxValue.
-                BigInteger integerBig = (BigInteger)integerPart;
-                long separatorPluralProxy = BigInteger.Abs(integerBig) <= 1 ? (long)integerBig : 2L;
-                result.Append(Separator).Append(separatorWord.ToPlural(separatorPluralProxy)).Append(Separator);
-
-                Fractions.TryGetValue(digits.Length, out var configuredSuffix);
-                string? activeSuffix = options?.DecimalSuffix ?? configuredSuffix;
-
-                if (activeSuffix != null)
-                {
-                    BigInteger fracNumerator = BigInteger.Parse(digits);
-                    // ForcedVariants belong to the *configured* fraction term, not to a caller-
-                    // supplied literal suffix override, so they only apply when the configured
-                    // suffix is the one actually being used.
-                    bool usingConfiguredSuffix = options?.DecimalSuffix is null && configuredSuffix != null;
-                    var query = usingConfiguredSuffix && _fractionForcedVariants.TryGetValue(digits.Length, out var forced)
-                        ? forced.Overlay(BuildVariantQuery(variants))
-                        : BuildVariantQuery(variants);
-                    // Fractional numerator is a sub-expression; do not check MaxNumber for it.
-                    var valueText = BuildCardinalFragment(fracNumerator, query);
-                    // Use BigInteger to avoid long overflow when fractional digits exceed 18.
-                    long fracPluralProxy = fracNumerator <= 1 ? (long)fracNumerator : 2L;
-                    result.Append(valueText).Append(Separator).Append(activeSuffix.ToPlural(fracPluralProxy));
-                }
-                else
-                {
-                    // Each decimal digit is pronounced: the level-1 digit 0 is an empty cardinal position, so a
-                    // decimal 0 is read with the standalone Zero instead (NTS-30A).
-                    foreach (char c in digits)
-                    {
-                        int d = c - '0';
-                        string digitText = d == 0
-                            ? Zero
-                            : _defaultGroupTable.Digits[1][d].StringValue;
-                        result.Append(digitText).Append(Separator);
-                    }
-                }
+                // A concurrent first access computes the same array twice; the assignment is atomic.
+                return _decimalDigitTexts ??= [.. Enumerable.Range(0, 10)
+                    .Select(d => d == 0
+                        ? Zero
+                        : LanguageSpecifics.FinalizeWriting(LanguageIdentifier, BuildCardinalFragment(d, BuildVariantQuery([]))))];
             }
+        }
 
-            return FinalizePhrase(ApplyRawAdjustment(result.ToString().Trim()), isNegative);
+        /// <summary>
+        /// Reads the decimal part as the language decides: the configured fraction for the digit count, otherwise the
+        /// digits when <see cref="DecimalDigitByDigitMaxDigits"/> allows that many.
+        /// </summary>
+        /// <param name="integerText">The rendered integer part.</param>
+        /// <param name="integerPart">The integer part.</param>
+        /// <param name="digits">The decimal digits.</param>
+        /// <param name="options">The caller options.</param>
+        /// <param name="variants">Caller variants.</param>
+        /// <returns>The integer part, the decimal separator word and the decimal part.</returns>
+        /// <exception cref="NotSupportedException">No fraction is configured and the digit count exceeds the fallback limit.</exception>
+        private string BuildLanguageDefaultDecimal(string integerText, BigInteger integerPart, string digits, DecimalFormatOptions? options, string[] variants)
+        {
+            if (Fractions.TryGetValue(digits.Length, out var configuredSuffix))
+                return AppendDecimalSeparatorWord(integerText, integerPart, options)
+                    + BuildNamedDecimalFraction(digits, configuredSuffix, usingConfiguredSuffix: true, variants);
+            if (DecimalDigitByDigitMaxDigits is int limit && digits.Length > limit)
+                throw new NotSupportedException(
+                    $"[{LanguageIdentifier}] {digits.Length} decimal digits have no configured fraction and exceed the digit-by-digit limit ({limit}).");
+            return AppendDecimalSeparatorWord(integerText, integerPart, options) + BuildDecimalDigits(digits);
+        }
+
+        /// <summary>
+        /// Reads the decimal part as a mathematical fraction: the named fraction alone for a zero integer part, joined
+        /// to a non-zero integer part by <see cref="MixedFractionSeparator"/>. A zero decimal part is not read.
+        /// </summary>
+        /// <param name="integerText">The rendered integer part.</param>
+        /// <param name="integerPart">The integer part.</param>
+        /// <param name="digits">The decimal digits.</param>
+        /// <param name="isZeroDecimal">Whether the decimal digits are all zeros.</param>
+        /// <param name="variants">Caller variants.</param>
+        /// <returns>The mixed number.</returns>
+        /// <exception cref="NotSupportedException">
+        /// No fraction is configured for the digit count, or the integer part is not zero and the language declares no
+        /// mixed-number connector.
+        /// </exception>
+        private string BuildMixedDecimalFraction(string integerText, BigInteger integerPart, string digits, bool isZeroDecimal, string[] variants)
+        {
+            // "deux et zéro dix-millième" is not a form: a zero fraction leaves the integer part alone.
+            if (isZeroDecimal)
+                return integerText;
+            if (!Fractions.TryGetValue(digits.Length, out var configuredSuffix))
+                throw new NotSupportedException(
+                    $"[{LanguageIdentifier}] No named fraction is configured for {digits.Length} decimal digits.");
+            string fractionText = BuildNamedDecimalFraction(digits, configuredSuffix, usingConfiguredSuffix: true, variants);
+            if (integerPart.IsZero)
+                return fractionText;
+            if (MixedFractionSeparator == null)
+                throw new NotSupportedException(
+                    $"[{LanguageIdentifier}] No mixed-number connector is configured to join an integer part to a fraction.");
+            return integerText + Separator + MixedFractionSeparator + Separator + fractionText;
         }
 
         /// <summary>

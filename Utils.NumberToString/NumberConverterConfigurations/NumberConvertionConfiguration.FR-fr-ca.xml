@@ -9,6 +9,7 @@
             minus="moins *"
             decimalSeparator="virgule"
             fractionSeparator="sur"
+            mixedFractionSeparator="et"
         >
 		<Culture>FR</Culture>
 		<Culture>FR-fr</Culture>
@@ -95,34 +96,21 @@
 			<Fraction digits="1" string="dixième(s)" />
 			<Fraction digits="2" string="centième(s)" />
 			<Fraction digits="3" string="millième(s)" />
-			<!-- Beyond the thousandths French still names the denominator (0,0001 = un dix-millième) instead of
-			     reading the zeros: the long-scale ordinals up to the 28-digit decimal precision, spaced like the
-			     rest of this configuration (dix millième, as ConvertOrdinal(10000)). -->
-			<Fraction digits="4" string="dix millième(s)" />
-			<Fraction digits="5" string="cent millième(s)" />
+			<!-- NTS-30A: beyond the thousandths French still names the denominator (0,0001 = un dix-millième).
+			     OQLF BDL "Écriture des fractions": dix-millièmes (80/10 000), cent-millièmes (5/100 000), a compound
+			     denominator hyphenated (Académie, "Vingt-cinq millièmes ou vingt cinq-millièmes ?", 2022: the hyphen
+			     carries the value). Académie 9e éd.: millionième ("Un millionième ou 1/1 000 000", "Trois
+			     millionièmes"), milliardième ("Un milliardième"). dix-/cent- before millionième and milliardième follow
+			     the same hyphenation rule. No billionième in the Académie dictionary: the range stops at 10^11 and
+			     longer decimals are read digit by digit. -->
+			<Fraction digits="4" string="dix-millième(s)" />
+			<Fraction digits="5" string="cent-millième(s)" />
 			<Fraction digits="6" string="millionième(s)" />
-			<Fraction digits="7" string="dix millionième(s)" />
-			<Fraction digits="8" string="cent millionième(s)" />
+			<Fraction digits="7" string="dix-millionième(s)" />
+			<Fraction digits="8" string="cent-millionième(s)" />
 			<Fraction digits="9" string="milliardième(s)" />
-			<Fraction digits="10" string="dix milliardième(s)" />
-			<Fraction digits="11" string="cent milliardième(s)" />
-			<Fraction digits="12" string="billionième(s)" />
-			<Fraction digits="13" string="dix billionième(s)" />
-			<Fraction digits="14" string="cent billionième(s)" />
-			<Fraction digits="15" string="billiardième(s)" />
-			<Fraction digits="16" string="dix billiardième(s)" />
-			<Fraction digits="17" string="cent billiardième(s)" />
-			<Fraction digits="18" string="trillionième(s)" />
-			<Fraction digits="19" string="dix trillionième(s)" />
-			<Fraction digits="20" string="cent trillionième(s)" />
-			<Fraction digits="21" string="trilliardième(s)" />
-			<Fraction digits="22" string="dix trilliardième(s)" />
-			<Fraction digits="23" string="cent trilliardième(s)" />
-			<Fraction digits="24" string="quadrillionième(s)" />
-			<Fraction digits="25" string="dix quadrillionième(s)" />
-			<Fraction digits="26" string="cent quadrillionième(s)" />
-			<Fraction digits="27" string="quadrilliardième(s)" />
-			<Fraction digits="28" string="dix quadrilliardième(s)" />
+			<Fraction digits="10" string="dix-milliardième(s)" />
+			<Fraction digits="11" string="cent-milliardième(s)" />
 		</Fractions>
 		<Ordinals suffix="ième" removeTrailing="e">
 			<OrdinalException value="1">
