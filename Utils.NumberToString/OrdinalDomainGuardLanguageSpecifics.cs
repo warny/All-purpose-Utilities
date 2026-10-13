@@ -399,10 +399,12 @@ public sealed class VietnameseOrdinalLanguageSpecifics : OrdinalDomainGuardLangu
 
 /// <summary>
 /// Dutch ordinal domain (NTS-08). Taaladvies "Aaneenschrijven van telwoorden" and the Woordenlijst
-/// Nederlandse Taal (<c>nulde</c>, <c>tweeduizendste</c>) validate the ordinals from 0 to 999 999. Since NTS-31
-/// the cardinals are unbounded (long scale, <c>een miljoen</c>), but no source settles the ordinals of the scale
-/// nouns (<c>miljoenste</c>, <c>een miljoenste</c>?) and no <c>-ste</c> rule exists for them: this explicit
-/// guard, independent of the cardinal domain, keeps every ordinal from a million fail-closed.
+/// Nederlandse Taal (<c>nulde</c>, <c>tweeduizendste</c>) validate the ordinals from 0 to 999 999. NTS-31 extends
+/// them to the whole <see cref="long"/> range: the e-ANS (rangtelwoorden) gives the scale ordinals
+/// (<c>miljoenste</c>, <c>miljardste</c>) and the Besluit bekendmaking spellingvoorschriften 2005, rule 6.N, the
+/// compounds (<c>twee miljoenste</c>, <c>twee miljoen tweehonderdduizendste</c>): the cardinal keeps its spelling and
+/// only its final element becomes ordinal, which the declarative pipeline forms on every value. The guard therefore
+/// rejects nothing; it keeps the validated domain explicit.
 /// </summary>
 public sealed class DutchOrdinalLanguageSpecifics : OrdinalDomainGuardLanguageSpecifics
 {
@@ -410,10 +412,10 @@ public sealed class DutchOrdinalLanguageSpecifics : OrdinalDomainGuardLanguageSp
     protected override string LanguageName => "Dutch";
 
     /// <inheritdoc />
-    protected override string SupportedDomain => "0–999999";
+    protected override string SupportedDomain => "0–9223372036854775807";
 
     /// <inheritdoc />
-    protected override bool IsSupported(long number, IReadOnlyDictionary<string, string> activeVariants) => number < 1_000_000;
+    protected override bool IsSupported(long number, IReadOnlyDictionary<string, string> activeVariants) => true;
 }
 
 /// <summary>

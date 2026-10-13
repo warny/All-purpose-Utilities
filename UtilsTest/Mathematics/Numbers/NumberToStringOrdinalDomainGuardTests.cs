@@ -7,7 +7,8 @@ namespace UtilsTest.NumberToString;
 
 /// <summary>
 /// Technical tests of the ordinal domain guards (<see cref="OrdinalDomainGuardLanguageSpecifics"/> and the
-/// Polish plugin limit), as set by NTS-08 and widened by NTS-28: the edges of each validated domain, the
+/// Polish plugin limit), as set by NTS-08 and widened by NTS-28 and NTS-31 (Dutch: the whole <see cref="long"/>
+/// range, so no Dutch value fails closed): the edges of each validated domain, the
 /// fail-closed behaviour outside it (including negative values and <see cref="long.MaxValue"/>), and the absence
 /// of any unchanged cardinal returned as an ordinal. The linguistic forms themselves are pinned by the language
 /// <c>.feature</c> files.
@@ -32,7 +33,7 @@ public class NumberToStringOrdinalDomainGuardTests
     [DataRow("KO", 9_999_999_999_999_999L, "제구천구백구십구조 구천구백구십구억 구천구백구십구만 구천구백구십구")]
     [DataRow("ZH", 999_999_999_999L, "第九千九百九十九亿九千九百九十九万九千九百九十九")]
     [DataRow("EU", 999_999_999L, "bederatziehun eta laurogeita hemeretzi milioi bederatziehun eta laurogeita hemeretzi mila bederatziehun eta laurogeita hemeretzigarren")]
-    [DataRow("NL", 999_999L, "negenhonderdnegenennegentigduizend negenhonderdnegenennegentigste")]
+    [DataRow("NL", long.MaxValue, "negen triljoen tweehonderddrieëntwintig biljard driehonderdtweeënzeventig biljoen zesendertig miljard achthonderdvierenvijftig miljoen zevenhonderdvijfenzeventigduizend achthonderdzevende")]
     [DataRow("PL", 999_999L, "dziewięćset dziewięćdziesiąt dziewięć tysięcy dziewięćset dziewięćdziesiąty dziewiąty")]
     public void GuardedLanguages_LargestValidatedValue_IsConverted(string culture, long number, string expected)
         => Assert.AreEqual(expected, NumberToStringConverter.GetConverter(culture).ConvertOrdinal(number));
@@ -59,7 +60,6 @@ public class NumberToStringOrdinalDomainGuardTests
     [DataRow("KO", 10_000_000_000_000_000L)]
     [DataRow("ZH", 1_000_000_000_000L)]
     [DataRow("EU", 1_000_000_000L)]
-    [DataRow("NL", 1_000_000L)]
     [DataRow("PL", 1_000_000L)]
     [DataRow("PL", 100_000L)]
     public void GuardedLanguages_OutsideValidatedDomain_FailClosed(string culture, long number)

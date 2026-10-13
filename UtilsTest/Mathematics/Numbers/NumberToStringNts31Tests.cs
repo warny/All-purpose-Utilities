@@ -1,5 +1,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using System.Collections.Generic;
 using System.Numerics;
 using Utils.NumberToString;
 
@@ -8,7 +9,9 @@ namespace UtilsTest.NumberToString;
 /// <summary>
 /// Technical tests of NTS-31 (Dutch long scale): NL inherits the strict Conway-Guy-Wechsler tables of SCALE-LONG,
 /// with the Dutch suffixes <c>-joen</c>/<c>-jard</c> joined by <c>l</c>; the scale nouns stay singular after an exact
-/// numeral, the groups are separated by a space, and widening the cardinals leaves the ordinal domain unchanged.
+/// numeral and the groups are separated by a space. The ordinals cover the whole <see cref="long"/> range: a round
+/// scale value ordinalizes its scale noun (<c>miljoenste</c>, <c>twee miljoenste</c>), a compound value only its
+/// final element.
 /// The linguistic forms are pinned by <c>Dutch.feature</c>.
 /// </summary>
 [TestClass]
@@ -143,17 +146,135 @@ public class NumberToStringNts31Tests
         Assert.AreEqual("een milliniljoen", converter.Convert(BigInteger.Pow(10, 6000)));
     }
 
-    /// <summary>Widening the cardinals does not widen the ordinals: 999 999 stays the largest supported ordinal.</summary>
+    /// <summary>
+    /// Round scale ordinals (e-ANS: <c>miljoenste</c>, <c>miljardste</c>): the scale noun takes <c>-ste</c> on every scale
+    /// reachable by <see cref="long"/>, from <c>miljoen</c> (index 2) to <c>triljoen</c> (index 6).
+    /// </summary>
     [TestMethod]
-    public void Ordinals_KeepTheirDomain()
+    [DataRow(1_000_000L, "miljoenste")]
+    [DataRow(2_000_000L, "twee miljoenste")]
+    [DataRow(100_000_000L, "honderd miljoenste")]
+    [DataRow(1_000_000_000L, "miljardste")]
+    [DataRow(2_000_000_000L, "twee miljardste")]
+    [DataRow(1_000_000_000_000L, "biljoenste")]
+    [DataRow(1_000_000_000_000_000L, "biljardste")]
+    [DataRow(1_000_000_000_000_000_000L, "triljoenste")]
+    [DataRow(9_000_000_000_000_000_000L, "negen triljoenste")]
+    public void Ordinals_RoundScaleValues(long number, string expected)
+        => Assert.AreEqual(expected, NumberToStringConverter.GetConverter("NL").ConvertOrdinal(number));
+
+    /// <summary>A round value with the multiplier one is the scale noun alone: <c>een</c> disappears.</summary>
+    [TestMethod]
+    [DataRow(1_000_000L, "een miljoenste")]
+    [DataRow(1_000_000_000L, "een miljardste")]
+    [DataRow(1_000_000_000_000L, "een biljoenste")]
+    public void Ordinals_MultiplierOne_DropsEen(long number, string rejected)
+    {
+        string ordinal = NumberToStringConverter.GetConverter("NL").ConvertOrdinal(number);
+        Assert.AreNotEqual(rejected, ordinal);
+        Assert.IsFalse(ordinal.StartsWith("een ", StringComparison.Ordinal), ordinal);
+    }
+
+    /// <summary>
+    /// A multiplier above one stays its own cardinal, separated from the ordinal scale noun by a space (Besluit
+    /// bekendmaking spellingvoorschriften 2005, rule 6.N: <c>de twee miljoenste</c>), never soldered.
+    /// </summary>
+    [TestMethod]
+    public void Ordinals_LargerMultipliers_StaySpaced()
     {
         NumberToStringConverter converter = NumberToStringConverter.GetConverter("NL");
 
-        Assert.AreEqual("negenhonderdnegenennegentigduizend negenhonderdnegenennegentigste", converter.ConvertOrdinal(999_999L));
-        Assert.AreEqual("min negenhonderdnegenennegentigduizend negenhonderdnegenennegentigste", converter.ConvertOrdinal(-999_999L));
-        foreach (long value in new[] { 1_000_000L, 1_000_001L, 2_000_000L, 1_000_000_000L, long.MaxValue })
-            Assert.ThrowsExactly<NotSupportedException>(() => converter.ConvertOrdinal(value), $"{value}");
-        // Beyond long the general ordinal contract of the engine rejects the argument, as for every language.
-        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => converter.ConvertOrdinal(BigInteger.Pow(10, 24)));
+        Assert.AreEqual("twee miljoenste", converter.ConvertOrdinal(2_000_000L));
+        Assert.AreNotEqual("tweemiljoenste", converter.ConvertOrdinal(2_000_000L));
+        Assert.AreEqual("eenentwintig miljoenste", converter.ConvertOrdinal(21_000_000L));
+        Assert.AreEqual("negenhonderdnegenennegentig miljardste", converter.ConvertOrdinal(999_000_000_000L));
     }
+
+    /// <summary>
+    /// Compound values keep every earlier group cardinal and ordinalize only the final element (Besluit bekendmaking
+    /// spellingvoorschriften 2005, rule 6.N), without <c>en</c> between the groups.
+    /// </summary>
+    [TestMethod]
+    [DataRow(1_001_000L, "een miljoen duizendste")]
+    [DataRow(1_000_001L, "een miljoen eerste")]
+    [DataRow(2_200_000L, "twee miljoen tweehonderdduizendste")]
+    [DataRow(2_200_022L, "twee miljoen tweehonderdduizend tweeëntwintigste")]
+    [DataRow(2_200_222L, "twee miljoen tweehonderdduizend tweehonderdtweeëntwintigste")]
+    [DataRow(2_001_000_000L, "twee miljard een miljoenste")]
+    public void Ordinals_CompoundValues(long number, string expected)
+        => Assert.AreEqual(expected, NumberToStringConverter.GetConverter("NL").ConvertOrdinal(number));
+
+    /// <summary>
+    /// Over a broad sample of the <see cref="long"/> range from a million, every word but the last is the cardinal
+    /// unchanged; only a round value with the multiplier one also drops its leading <c>een</c>.
+    /// </summary>
+    [TestMethod]
+    public void Ordinals_OnlyTheFinalElementIsOrdinal()
+    {
+        NumberToStringConverter converter = NumberToStringConverter.GetConverter("NL");
+        var samples = new List<long> { long.MaxValue };
+        for (long value = 1_000_000; value < long.MaxValue / 7; value = value * 7 + 13)
+            samples.Add(value);
+        long power = 1_000_000;
+        for (int exponent = 6; exponent <= 18; exponent++, power *= 10)
+            samples.AddRange([power, power + 1, power * 3 + 1000, power * 7 + 222]);
+
+        foreach (long value in samples)
+        {
+            string cardinal = converter.Convert(value);
+            string ordinal = converter.ConvertOrdinal(value);
+            string[] cardinalWords = cardinal.Split(' ');
+            string[] ordinalWords = ordinal.Split(' ');
+            bool droppedEen = cardinalWords.Length == 2 && ordinalWords.Length == 1 && cardinalWords[0] == "een";
+            string[] cardinalHead = droppedEen ? [] : cardinalWords[..^1];
+            Assert.AreEqual(cardinalWords.Length - (droppedEen ? 1 : 0), ordinalWords.Length, $"{value}: {cardinal} / {ordinal}");
+            CollectionAssert.AreEqual(cardinalHead, ordinalWords[..^1], $"{value}: {cardinal} / {ordinal}");
+            Assert.IsTrue(ordinal.EndsWith("ste", StringComparison.Ordinal) || ordinal.EndsWith("de", StringComparison.Ordinal), $"{value}: {ordinal}");
+        }
+    }
+
+    /// <summary>The largest <see cref="long"/> converts: the cardinal groups stay, the final <c>zeven</c> becomes <c>zevende</c>.</summary>
+    [TestMethod]
+    public void Ordinals_ReachLongMaxValue()
+    {
+        NumberToStringConverter converter = NumberToStringConverter.GetConverter("NL");
+
+        Assert.AreEqual(
+            "negen triljoen tweehonderddrieëntwintig biljard driehonderdtweeënzeventig biljoen zesendertig miljard achthonderdvierenvijftig miljoen zevenhonderdvijfenzeventigduizend achthonderdzevende",
+            converter.ConvertOrdinal(long.MaxValue));
+        Assert.AreEqual(converter.Convert(long.MaxValue) + "de", converter.ConvertOrdinal(long.MaxValue));
+    }
+
+    /// <summary>Negative ordinals from a million take the generic <c>min</c> prefix of the Dutch configuration.</summary>
+    [TestMethod]
+    public void Ordinals_Negative()
+    {
+        NumberToStringConverter converter = NumberToStringConverter.GetConverter("NL");
+
+        Assert.AreEqual("min miljoenste", converter.ConvertOrdinal(-1_000_000L));
+        Assert.AreEqual("min twee miljoen tweehonderdduizend tweehonderdtweeëntwintigste", converter.ConvertOrdinal(-2_200_222L));
+        Assert.AreEqual("min negenhonderdnegenennegentigduizend negenhonderdnegenennegentigste", converter.ConvertOrdinal(-999_999L));
+    }
+
+    /// <summary>The ordinals below a million are unchanged by the scale ordinals.</summary>
+    [TestMethod]
+    [DataRow(0L, "nulde")]
+    [DataRow(1L, "eerste")]
+    [DataRow(2L, "tweede")]
+    [DataRow(8L, "achtste")]
+    [DataRow(11L, "elfde")]
+    [DataRow(20L, "twintigste")]
+    [DataRow(21L, "eenentwintigste")]
+    [DataRow(101L, "honderdeerste")]
+    [DataRow(1000L, "duizendste")]
+    [DataRow(2000L, "tweeduizendste")]
+    [DataRow(999_999L, "negenhonderdnegenennegentigduizend negenhonderdnegenennegentigste")]
+    public void Ordinals_BelowAMillion_AreUnchanged(long number, string expected)
+        => Assert.AreEqual(expected, NumberToStringConverter.GetConverter("NL").ConvertOrdinal(number));
+
+    /// <summary>Beyond <see cref="long"/> the general ordinal contract of the engine rejects the argument, as for every language.</summary>
+    [TestMethod]
+    public void Ordinals_BeyondLong_AreRejectedByTheEngine()
+        => Assert.ThrowsExactly<ArgumentOutOfRangeException>(
+            () => NumberToStringConverter.GetConverter("NL").ConvertOrdinal(BigInteger.Pow(10, 24)));
 }
