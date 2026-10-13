@@ -6,7 +6,7 @@
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <meta name="title" content="Class DutchOrdinalLanguageSpecifics | omy.Utils Documentation ">
       
-      <meta name="description" content="Dutch ordinal domain (NTS-08). Taaladvies &amp;quot;Aaneenschrijven van telwoorden&amp;quot; and the Woordenlijst Nederlandse Taal (nulde, tweeduizendste) validate the ordinals from 0 to 999 999. NTS-31 extends them to the whole  range: the e-ANS (rangtelwoorden) gives the scale ordinals (miljoenste, miljardste) and the Besluit bekendmaking spellingvoorschriften 2005, rule 6.N, the compounds (twee miljoenste, twee miljoen tweehonderdduizendste): the cardinal keeps its spelling and only its final element becomes ordinal, which the declarative pipeline forms on every value. The guard therefore rejects nothing; it keeps the validated domain explicit.">
+      <meta name="description" content="Dutch ordinal domain (NTS-08). Taaladvies &amp;quot;Aaneenschrijven van telwoorden&amp;quot; and the Woordenlijst Nederlandse Taal (nulde, tweeduizendste) validate the ordinals from 0 to 999 999. NTS-31 extends them to every magnitude up to  ( is rejected by the engine, its absolute value not being representable): the e-ANS (rangtelwoorden) gives the scale ordinals (miljoenste, miljardste) and the Besluit bekendmaking spellingvoorschriften 2005, rule 6.N, the compounds (twee miljoenste, twee miljoen tweehonderdduizendste): the cardinal keeps its spelling and only its final element becomes ordinal, which the declarative pipeline forms on every value. The guard therefore rejects nothing; it keeps the validated domain explicit.">
       <link rel="icon" href="../favicon.ico">
       <link rel="stylesheet" href="../public/docfx.min.css">
       <link rel="stylesheet" href="../public/main.css">
@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_NumberToString_DutchOrdinalLanguageSpecifics" data-uid="Utils.NumberToString.DutchOrdinalLanguageSpecifics" class="text-break">
-Class DutchOrdinalLanguageSpecifics  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L409"><i class="bi bi-code-slash"></i></a>
+Class DutchOrdinalLanguageSpecifics  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L410"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -99,7 +99,8 @@ Class DutchOrdinalLanguageSpecifics  <a class="header-action link-secondary" tit
 
   <div class="markdown summary"><p>Dutch ordinal domain (NTS-08). Taaladvies &quot;Aaneenschrijven van telwoorden&quot; and the Woordenlijst
 Nederlandse Taal (<code>nulde</code>, <code>tweeduizendste</code>) validate the ordinals from 0 to 999 999. NTS-31 extends
-them to the whole <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int64">long</a> range: the e-ANS (rangtelwoorden) gives the scale ordinals
+them to every magnitude up to <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int64.maxvalue">MaxValue</a> (<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int64.minvalue">MinValue</a> is rejected by the
+engine, its absolute value not being representable): the e-ANS (rangtelwoorden) gives the scale ordinals
 (<code>miljoenste</code>, <code>miljardste</code>) and the Besluit bekendmaking spellingvoorschriften 2005, rule 6.N, the
 compounds (<code>twee miljoenste</code>, <code>twee miljoen tweehonderdduizendste</code>): the cardinal keeps its spelling and
 only its final element becomes ordinal, which the declarative pipeline forms on every value. The guard therefore
@@ -268,7 +269,7 @@ rejects nothing; it keeps the validated domain explicit.</p>
 
   <h3 id="Utils_NumberToString_DutchOrdinalLanguageSpecifics_LanguageName" data-uid="Utils.NumberToString.DutchOrdinalLanguageSpecifics.LanguageName">
   LanguageName
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L412"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L413"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the English name of the language, used in the rejection message.</p>
@@ -300,7 +301,7 @@ rejects nothing; it keeps the validated domain explicit.</p>
 
   <h3 id="Utils_NumberToString_DutchOrdinalLanguageSpecifics_SupportedDomain" data-uid="Utils.NumberToString.DutchOrdinalLanguageSpecifics.SupportedDomain">
   SupportedDomain
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L415"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L416"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets a short description of the validated domain, used in the rejection message.</p>
@@ -336,7 +337,7 @@ rejects nothing; it keeps the validated domain explicit.</p>
 
   <h3 id="Utils_NumberToString_DutchOrdinalLanguageSpecifics_IsSupported_System_Int64_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__" data-uid="Utils.NumberToString.DutchOrdinalLanguageSpecifics.IsSupported(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String})">
   IsSupported(long, IReadOnlyDictionary&lt;string, string&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L418"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L419"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Tells whether the ordinal of a value belongs to the validated domain.</p>
@@ -378,7 +379,7 @@ rejects nothing; it keeps the validated domain explicit.</p>
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L409" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L410" class="edit-link">Edit this page</a>
         </div>
 
 

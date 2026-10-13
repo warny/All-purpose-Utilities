@@ -232,7 +232,8 @@ by the lexical-form mechanism.</p>
       <dt><a class="xref" href="Utils.NumberToString.DutchOrdinalLanguageSpecifics.html">DutchOrdinalLanguageSpecifics</a></dt>
       <dd><p>Dutch ordinal domain (NTS-08). Taaladvies &quot;Aaneenschrijven van telwoorden&quot; and the Woordenlijst
 Nederlandse Taal (<code>nulde</code>, <code>tweeduizendste</code>) validate the ordinals from 0 to 999 999. NTS-31 extends
-them to the whole <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int64">long</a> range: the e-ANS (rangtelwoorden) gives the scale ordinals
+them to every magnitude up to <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int64.maxvalue">MaxValue</a> (<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int64.minvalue">MinValue</a> is rejected by the
+engine, its absolute value not being representable): the e-ANS (rangtelwoorden) gives the scale ordinals
 (<code>miljoenste</code>, <code>miljardste</code>) and the Besluit bekendmaking spellingvoorschriften 2005, rule 6.N, the
 compounds (<code>twee miljoenste</code>, <code>twee miljoen tweehonderdduizendste</code>): the cardinal keeps its spelling and
 only its final element becomes ordinal, which the declarative pipeline forms on every value. The guard therefore
