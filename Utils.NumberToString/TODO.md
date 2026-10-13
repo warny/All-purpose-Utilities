@@ -1,7 +1,8 @@
 # Utils.NumberToString — Current backlog
 
 Re-audited on 2026-10-13 after closing NTS-30A (decimal zero digits read digit by digit with the standalone
-`zero`: `21.05` → `eenentwintig komma nul vijf`, `二十一点零五`; configured fraction suffixes unchanged), after
+`zero`: `21.05` → `eenentwintig komma nul vijf`, `二十一点零五`; French denominators named up to 28 digits:
+`un dix millième`; NTS-33 opened), after
 closing NTS-31 (Dutch ordinals from a million: `miljoenste`, `twee miljoenste`,
 `twee miljoen tweehonderdduizendste` after the e-ANS and the Besluit bekendmaking spellingvoorschriften 2005, rule
 6.N; NL ordinals over `-long.MaxValue`..`long.MaxValue`, `long.MinValue` being rejected by the engine), on
@@ -53,10 +54,14 @@ classification.
     zero-group rendering and a normative source.
   - ~~All languages: zero digits after the decimal separator are dropped~~ — **closed as NTS-30A** (a decimal
     digit 0 read digit by digit is the standalone `zero`): `DONE-2026-10-13(1).md`.
-  - FR (found by NTS-30A, not fixed): the digit-by-digit fallback beyond the configured fraction digits (more
-    than three decimals) reads the digit 1 with its level-1 text `et un` (`cent virgule zéro zéro zéro et un`).
   - ES currency: `uno euro` for DPD *un euro* (apocope before a noun); the caller-defined currency wording does
     not force the attributive form.
+- **NTS-33 — French ordinals keep the plural `-s` of a multiplied scale noun.** Found by NTS-30A, not fixed:
+  `ConvertOrdinal` gives `deux centsième` (200), `trois cents millionsième` (300 000 000), `deux millionsième`,
+  `dix milliardsième`, `deux billionsième` for *deux centième*, *trois cent millionième*, *deux millionième*,
+  *dix milliardième*, *deux billionième*: the ordinal suffix is appended to the plural cardinal form (`cents`,
+  `millions`, `milliards`), and the plural `cents` before a scale noun is kept as well. The decimal fraction
+  names (`dix millième(s)`, `millionième(s)` …) are separate strings and are not affected.
 - **NTS-26 — Wolof connective `-i` inside nested numeral multipliers.** Re-audited 2026-10-11:
   the evidence supports **real variation**, not a demonstrated defect in the current default. The current
   configuration writes the multiplier of `téeméer` with `-i` (`juróom ñenti téeméer` 900) and keeps that
@@ -152,8 +157,9 @@ NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-25, NTS-27, NTS-28, NT
   `DutchOrdinalLanguageSpecifics` widened to 0–`long.MaxValue`: `DONE-2026-10-13.md`.
 - NTS-30A (decimal zero digits): in the digit-by-digit decimal branch (no `<Fraction>` suffix for the digit
   count and no caller `DecimalSuffix`), a digit 0 is read with the standalone `zero` instead of the empty level-1
-  cardinal digit; the numerator/suffix branch is unchanged. The other NTS-30 items stay open:
-  `DONE-2026-10-13(1).md`.
+  cardinal digit; the numerator/suffix branch is unchanged. French names the denominator beyond the thousandths
+  too (`0,0001` → `zéro virgule un dix millième`): FR fractions for 4 to 28 digits. The other NTS-30 items stay
+  open: `DONE-2026-10-13(1).md`.
 
 Full multi-form plural systems (Russian/Slavic count-dependent noun forms,
 Arabic dual/paucal/plural categories) were long deliberately out of scope — the

@@ -115,14 +115,62 @@ public class NumberToStringNts30Tests
     }
 
     /// <summary>
-    /// Beyond the configured fraction digits, EN and FR fall back to the digit-by-digit branch, whose zeros are now
-    /// read (the non-zero digits keep their level-1 text).
+    /// Beyond its configured fraction digits, EN falls back to the digit-by-digit branch, whose zeros are now read
+    /// (the non-zero digits keep their level-1 text).
     /// </summary>
     [TestMethod]
     public void NamedFractionLanguages_DigitByDigitFallback_ReadsZeros()
+        => Assert.AreEqual("one hundred point zero zero zero one", Get("EN").Convert(100.0001m));
+
+    /// <summary>
+    /// French names the denominator beyond the thousandths too (<c>0,0001</c> is <i>un dix millième</i>, the zeros
+    /// are not read): every digit count up to the 28-digit decimal precision has a fraction suffix, built from the
+    /// long-scale ordinals and spaced like the rest of the FR configuration (<c>dix millième</c>).
+    /// </summary>
+    /// <param name="language">Language key (FR and its regional children, which inherit the fractions).</param>
+    /// <param name="number">Invariant decimal literal.</param>
+    /// <param name="expected">Expected text.</param>
+    [TestMethod]
+    [DataRow("FR", "0.0001", "zéro virgule un dix millième")]
+    [DataRow("FR", "100.0001", "cent virgule un dix millième")]
+    [DataRow("FR", "21.0005", "vingt et un virgule cinq dix millièmes")]
+    [DataRow("FR", "0.00001", "zéro virgule un cent millième")]
+    [DataRow("FR", "0.000001", "zéro virgule un millionième")]
+    [DataRow("FR", "0.000025", "zéro virgule vingt cinq millionièmes")]
+    [DataRow("FR", "0.0000001", "zéro virgule un dix millionième")]
+    [DataRow("FR", "0.00000001", "zéro virgule un cent millionième")]
+    [DataRow("FR", "0.000000001", "zéro virgule un milliardième")]
+    [DataRow("FR", "0.000000000001", "zéro virgule un billionième")]
+    [DataRow("FR", "0.000000000000001", "zéro virgule un billiardième")]
+    [DataRow("FR", "0.000000000000000001", "zéro virgule un trillionième")]
+    [DataRow("FR", "0.000000000000000000001", "zéro virgule un trilliardième")]
+    [DataRow("FR", "0.000000000000000000000001", "zéro virgule un quadrillionième")]
+    [DataRow("FR", "0.000000000000000000000000001", "zéro virgule un quadrilliardième")]
+    [DataRow("FR", "0.0000000000000000000000000001", "zéro virgule un dix quadrilliardième")]
+    [DataRow("FR", "-3.1416", "moins trois virgule mille quatre cent seize dix millièmes")]
+    [DataRow("FR-be", "0.0001", "zéro virgule un dix millième")]
+    [DataRow("FR-ch", "0.00071", "zéro virgule septante et un cent millièmes")]
+    [DataRow("FR-ca", "0.000001", "zéro virgule un millionième")]
+    public void French_NamesTheDenominatorBeyondTheThousandths(string language, string number, string expected)
+        => Assert.AreEqual(expected, Get(language).Convert(decimal.Parse(number, System.Globalization.CultureInfo.InvariantCulture)));
+
+    /// <summary>Every French decimal digit count (1–28) has a fraction suffix, so FR never reads digits one by one.</summary>
+    [TestMethod]
+    public void French_EveryDecimalDigitCountHasASuffix()
     {
-        Assert.AreEqual("one hundred point zero zero zero one", Get("EN").Convert(100.0001m));
-        Assert.AreEqual("cent virgule zéro zéro zéro et un", Get("FR").Convert(100.0001m));
+        var converter = Get("FR");
+        for (int digits = 1; digits <= 28; digits++)
+            Assert.IsTrue(converter.Fractions.ContainsKey(digits), $"FR has no fraction suffix for {digits} digits.");
+    }
+
+    /// <summary>French zero padding and power-of-ten fractions use the same denominators.</summary>
+    [TestMethod]
+    public void French_PaddingAndPowerOfTenFractions_UseTheNamedDenominators()
+    {
+        Assert.AreEqual("vingt et un virgule zéro dix millième", Get("FR").Convert(21m, 4));
+        Assert.AreEqual("vingt et un virgule cinq mille dix millièmes", Get("FR").Convert(21.5m, 4));
+        Assert.AreEqual("deux mille cinq dix millièmes", Get("FR").ConvertFraction(2005, 10000));
+        Assert.AreEqual("un millionième", Get("FR").ConvertFraction(1, 1000000));
     }
 
     /// <summary>

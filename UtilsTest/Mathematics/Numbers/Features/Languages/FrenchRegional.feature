@@ -117,6 +117,11 @@ Examples:
     | number | expected |
     | 1.5 | un virgule cinq dixièmes |
     | 12.34 | douze virgule trente quatre centièmes |
+    # Beyond the thousandths the denominator is still named; the zeros are not read.
+    | 0.0001 | zéro virgule un dix millième |
+    | 21.0005 | vingt et un virgule cinq dix millièmes |
+    | 0.000001 | zéro virgule un millionième |
+    | 0.000000001 | zéro virgule un milliardième |
 
 Scenario Outline: French ordinal numbers
     Given I use the "FR" number converter
