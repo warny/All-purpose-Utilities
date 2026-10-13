@@ -9,9 +9,9 @@ namespace UtilsTest.NumberToString;
 /// <summary>
 /// Technical tests of NTS-31 (Dutch long scale): NL inherits the strict Conway-Guy-Wechsler tables of SCALE-LONG,
 /// with the Dutch suffixes <c>-joen</c>/<c>-jard</c> joined by <c>l</c>; the scale nouns stay singular after an exact
-/// numeral and the groups are separated by a space. The ordinals cover the whole <see cref="long"/> range: a round
-/// scale value ordinalizes its scale noun (<c>miljoenste</c>, <c>twee miljoenste</c>), a compound value only its
-/// final element.
+/// numeral and the groups are separated by a space. The ordinals cover -<see cref="long.MaxValue"/> to
+/// <see cref="long.MaxValue"/> (<see cref="long.MinValue"/> is rejected by the engine): a round scale value
+/// ordinalizes its scale noun (<c>miljoenste</c>, <c>twee miljoenste</c>), a compound value only its final element.
 /// The linguistic forms are pinned by <c>Dutch.feature</c>.
 /// </summary>
 [TestClass]
@@ -272,9 +272,18 @@ public class NumberToStringNts31Tests
     public void Ordinals_BelowAMillion_AreUnchanged(long number, string expected)
         => Assert.AreEqual(expected, NumberToStringConverter.GetConverter("NL").ConvertOrdinal(number));
 
-    /// <summary>Beyond <see cref="long"/> the general ordinal contract of the engine rejects the argument, as for every language.</summary>
+    /// <summary>
+    /// Beyond <see cref="long"/>, and at <see cref="long.MinValue"/> (whose absolute value is not representable), the
+    /// general ordinal contract of the engine rejects the argument, as for every language; <c>-long.MaxValue</c> is the
+    /// lowest supported ordinal.
+    /// </summary>
     [TestMethod]
     public void Ordinals_BeyondLong_AreRejectedByTheEngine()
-        => Assert.ThrowsExactly<ArgumentOutOfRangeException>(
-            () => NumberToStringConverter.GetConverter("NL").ConvertOrdinal(BigInteger.Pow(10, 24)));
+    {
+        NumberToStringConverter converter = NumberToStringConverter.GetConverter("NL");
+
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => converter.ConvertOrdinal(BigInteger.Pow(10, 24)));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => converter.ConvertOrdinal(long.MinValue));
+        Assert.AreEqual("min " + converter.ConvertOrdinal(long.MaxValue), converter.ConvertOrdinal(-long.MaxValue));
+    }
 }
