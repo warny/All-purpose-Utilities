@@ -59,6 +59,69 @@ describes any capability.
 | EE | EE | SCALE-SHORT (scale tables only, NTS-23) | Yes (NTS-20): cardinal + `-lia` on the last element, `gbãtɔ` for 1 | Declarative + `ZeroOrdinalUnsupportedLanguageSpecifics` | **Deferred** | — | none | **Consulted** (NTS-20): Dzablu-Kumah, *Basic Ewe for Foreign Students*; Biblica Open Ewe Contemporary Scriptures; *Ewe Basic Course* 1968; Peace Corps Togo 2010; Wiktionary | Cardinals unbounded (NTS-23): static `akpe`, then the Conway-Wechsler short scale `miliɔn`, `biliɔn`, `triliɔn` (sourced anchors), `quadriliɔn` … (project extrapolation), each before its standalone multiplier (`multiplierPosition="afterScale"`); zero ordinal unsupported |
 | WO | WO | none | Yes (`-éel`, NTS-16, NTS-19) | Declarative + `WolofOrdinalLanguageSpecifics` | **Deferred** | — | none | No consistent source found | Cardinals unbounded (NTS-21): static `junni`, then the long-scale Conway-Wechsler names `milyoŋ`, `milyaar` (attested anchors), `bilyoŋ`, `bilyaar` … (project extrapolation in Wolof spelling); ordinals 1–999 999 only, no ordinal of zero nor of the round thousands |
 
+## NTS-30A — decimal fractions and decimal reading (2026-10-13)
+
+Sources read during the pass (pages fetched on 2026-10-13). Old/new outputs: `DONE-2026-10-13(1).md`. Only French
+and English were audited; every other language keeps its digit-by-digit reading, unaudited for named decimal
+fractions and for a fallback limit.
+
+### French
+
+| Digits | Denominator | Source and the claim it supports | Status |
+|---|---|---|---|
+| 1–3 | *dixième*, *centième*, *millième* | OQLF, Banque de dépannage linguistique, "Écriture des fractions": *sept dixièmes (7/10)*, *trente-cinq millièmes (35/1000)*, *les trois centièmes (3/100)* | Already configured, unchanged |
+| 4 | *dix-millième* | OQLF BDL, "Écriture des fractions": *quatre-vingts dix-millièmes (80/10 000)* | **Configured** `dix-millième(s)` |
+| 5 | *cent-millième* | OQLF BDL, "Écriture des fractions": *cinq cent-millièmes (5/100 000)* | **Configured** `cent-millième(s)` |
+| 6 | *millionième* | Dictionnaire de l'Académie française, 9e éd., *millionième*: "Qui équivaut à une unité d'un tout divisé en un million de parties égales", *Un millionième ou 1/1 000 000*, *Trois millionièmes* | **Configured** `millionième(s)` |
+| 7, 8 | *dix-millionième*, *cent-millionième* | Rule, not attestation: a compound denominator is hyphenated (OQLF BDL: *trois-centième*, *dix-millièmes*, *cent-millièmes*; Académie, "« Vingt-cinq millièmes » ou « vingt cinq-millièmes » ?", 2022: the hyphen carries the value, *vingt cinq-millièmes* = 20/5000), applied to the attested *millionième* | **Configured** (productive rule on an attested base) |
+| 9 | *milliardième* | Dictionnaire de l'Académie française, 9e éd., *milliardième*: "Qui équivaut à une unité d'un tout divisé en un milliard de parties égales", *Un milliardième* | **Configured** `milliardième(s)` |
+| 10, 11 | *dix-milliardième*, *cent-milliardième* | Same hyphenation rule applied to the attested *milliardième* | **Configured** (productive rule on an attested base) |
+| 12+ | (*billionième* …) | No Académie entry for *billionième* or higher (dictionary aggregators only) | **Not configured**: `LanguageDefault` reads 12+ digits one by one, `MathematicalFraction` throws |
+
+Answers to the audit questions:
+
+1. The denominator of 10^n is the ordinal noun of 10^n (*dixième* … *milliardième*), agreeing in number with the
+   numerator (OQLF BDL: "le nom dénominateur s'accorde avec le nom numérateur").
+2. A compound denominator is hyphenated (*dix-millième*, *cent-millième*); the numerator stays a separate cardinal
+   (*quatre-vingts dix-millièmes*, *cinq cent-millièmes*), and the hyphen distinguishes *vingt-cinq millièmes* (25/1000)
+   from *vingt cinq-millièmes* (20/5000).
+3. Around the scale nouns the ordinal is formed on *million*/*milliard* (*millionième*, *milliardième*), with *dix-*/
+   *cent-* hyphenated before it; no authoritative attestation was found from the billion (10^12) up.
+4. The existing ordinal machinery cannot generate them: `ConvertOrdinal(10000)` writes `dix millième` (the FR
+   configuration spells numerals without hyphens) and keeps the plural of a multiplied scale noun (`deux millionsième`,
+   NTS-33).
+5. Hence a static `<Fractions>` table, which is also what `ConvertFraction` uses for powers of ten.
+6. Range configured: 1–11 digits.
+
+Mixed numbers and reading modes:
+
+| Point | Source and claim | Status |
+|---|---|---|
+| Integer + fraction joined by *et* | Éduscol (ministère de l'Éducation nationale), *Fractions et nombres décimaux au cycle 3*, p. 13: "2,4 se lira « deux et quatre dixièmes » plutôt que systématiquement « 2 virgule 4 »"; p. 3: *trois unités et dix-huit centièmes* (3,18). OQLF BDL, "Nom singulier après un nombre fractionnaire inférieur à deux": *un mètre et demi* | **Configured** `mixedFractionSeparator="et"` (*deux et un dix-millième*) |
+| Digit-by-digit reading is in use | Same Éduscol page: *2 virgule 4* is a current formulation (discouraged in teaching, not wrong) | No fallback limit configured for FR |
+| A pronounced digit 1 is *un* | Standalone cardinal (the level-1 text *et un* belongs to *vingt et un*) | `DigitByDigit` reads `zéro virgule zéro zéro zéro un` |
+
+### English
+
+| Point | Source and claim | Status |
+|---|---|---|
+| Denominators of 10^4, 10^5 | OpenStax, *Prealgebra 2e*, §5.1 "Decimals", place values: tenths, hundredths, thousandths, *ten-thousandths*, *hundred-thousandths* | **Configured** `ten-thousandth(s)`, `hundred-thousandth(s)`; 6+ digits not configured (millionths not checked in the source) |
+| Integer + fraction joined by *and* | OpenStax §5.1, "Name a decimal number": "Write 'and' for the decimal point"; *5.24 = five and twenty-four hundredths*, *13.461 = thirteen and four hundred sixty-one thousandths*, *-2.074 = negative two and seventy-four thousandths* | **Configured** `mixedFractionSeparator="and"` |
+| A zero integer part is not read | OpenStax §5.1: *0.05 = five hundredths* | `MathematicalFraction` reads the fraction alone |
+
+### Pronounced digits in other languages
+
+A digit read one by one is a standalone numeral, which differs from the level-1 composition text in three shipped
+languages (checked over all 74 keys):
+
+| Language | Pronounced digit | Composition text | Source | Obtained from |
+|---|---|---|---|---|
+| FR | *un* | *et un* (*vingt et un*) | standalone cardinal | existing `<Exceptions>` (`1 → un`), through the cardinal fragment |
+| HU | *kettő* | *két* (attributive) | configuration comment "standalone 2 = kettő" | existing `<Exceptions>` (`2 → kettő`), through the cardinal fragment |
+| DE | *eins* | *ein* (*einundzwanzig*) | PH Niederösterreich, G. Egger, *Dezimalzahlen* (2022): "Wie liest man Dezimalzahlen? … 5,01 „fünf Komma null eins“" | `<DecimalDigits><DecimalDigit digit="1" string="eins" />`: the fragment is *ein*, the standalone *eins* was only produced by the German finalizer, which must run once on the whole phrase |
+
+No source was consulted for the zero word of the other languages: each reads its configured `zero` (NTS-34).
+
 ## NTS-31 — Dutch long-scale cardinals (2026-10-11)
 
 Sources read during the pass. Old/new outputs: `DONE-2026-10-11(2).md`. Under the repository's Conway rule
@@ -998,3 +1061,10 @@ supported value, round scales, fail-closed range) and by the language `.feature`
   - Euskaltzaindia: <https://www.euskaltzaindia.eus/dok/arauak/Araua_0018.pdf>, <https://www.euskaltzaindia.eus/dok/arauak/Araua_0007.pdf>
   - Речник на българския език (ИБЕ БАН): <https://ibl.bas.bg/rbe/>; Školski rječnik hrvatskoga jezika: <https://rjecnik.hr/>; lets-learn.eu: <https://www.lets-learn.eu/croatian/guide/time-in-croatian>
   - Department of Basic Education, isiZulu Grade 4–5 Mathematics Terminology: <https://www.education.gov.za/Portals/0/Documents/MTbBE/mttbe%20terminology/IsiZulu%20%20Grade%204%20and%205%20Mathematics%20Terminology.pdf>
+- OQLF, Banque de dépannage linguistique, "Écriture des fractions": <https://vitrinelinguistique.oqlf.gouv.qc.ca/25138/la-typographie/nombres/ecriture-des-fractions>
+- OQLF, Banque de dépannage linguistique, "Nom singulier après un nombre fractionnaire inférieur à deux": <https://vitrinelinguistique.oqlf.gouv.qc.ca/21582/la-grammaire/le-nom/nombre-des-noms-dans-certains-emplois/cas-particuliers-du-nombre-du-nom/nom-singulier-apres-un-nombre-fractionnaire-inferieur-a-deux>
+- Académie française, "« Vingt-cinq millièmes » ou « vingt cinq-millièmes » ?" (2022): <https://www.academie-francaise.fr/vingt-cinq-milliemes-ou-vingt-cinq-milliemes>
+- Dictionnaire de l'Académie française, 9e éd., "millionième": <https://www.dictionnaire-academie.fr/article/A9M2188>; "milliardième": <https://www.dictionnaire-academie.fr/article/A9M2177>
+- Éduscol, *Fractions et nombres décimaux au cycle 3*: <https://eduscol.education.fr/document/16510/download>
+- OpenStax, *Prealgebra 2e*, §5.1 "Decimals": <https://openstax.org/books/prealgebra-2e/pages/5-1-decimals>
+- PH Niederösterreich, G. Egger, *Dezimalzahlen* (2022): <https://noegi.ph-noe.ac.at/fileadmin/noegi_files/GeoGebra-Books_und_-Arbeitsbl%C3%A4tter/kl1-dezimalzahlen.pdf>

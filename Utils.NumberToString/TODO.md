@@ -1,6 +1,11 @@
 # Utils.NumberToString — Current backlog
 
-Re-audited on 2026-10-13 after closing NTS-31 (Dutch ordinals from a million: `miljoenste`, `twee miljoenste`,
+Re-audited on 2026-10-13 after closing NTS-30A (decimal reading modes `LanguageDefault`/`DigitByDigit`/
+`MathematicalFraction`; decimal zeros read with the language's `zero`: `21.05` → `eenentwintig komma nul vijf`,
+`二十一点零五`; `decimalDigitByDigitMaxDigits` and `mixedFractionSeparator`; sourced French denominators to the
+`cent-milliardième` and English to the `hundred-thousandth`: `un dix-millième`, `deux et un dix-millième`; NTS-33
+and NTS-34 opened), after
+closing NTS-31 (Dutch ordinals from a million: `miljoenste`, `twee miljoenste`,
 `twee miljoen tweehonderdduizendste` after the e-ANS and the Besluit bekendmaking spellingvoorschriften 2005, rule
 6.N; NL ordinals over `-long.MaxValue`..`long.MaxValue`, `long.MinValue` being rejected by the engine), on
 2026-10-11 after closing the cardinal part of NTS-31 (Dutch long
@@ -49,10 +54,23 @@ classification.
   - VN: a whole zero class after a higher class is skipped (`một triệu không trăm linh một`), whereas the
     SGK Toán 4 solution keys read it `không nghìn` (*năm mươi triệu không nghìn một trăm linh hai*); needs a
     zero-group rendering and a normative source.
-  - All languages: zero digits after the decimal separator are dropped (`21.05` → `twenty-one point  five` in
-    most configurations, `二十一点五` in JA/ZH); the decimal path reads the level-1 digit text, empty for 0.
   - ES currency: `uno euro` for DPD *un euro* (apocope before a noun); the caller-defined currency wording does
     not force the attributive form.
+- **NTS-33 — French ordinals keep the plural `-s` of a multiplied scale noun.** Found by NTS-30A, not fixed:
+  `ConvertOrdinal` gives `deux centsième` (200), `trois cents millionsième` (300 000 000), `deux millionsième`,
+  `dix milliardsième`, `deux billionsième` for *deux centième*, *trois cent millionième*, *deux millionième*,
+  *dix milliardième*, *deux billionième*: the ordinal suffix is appended to the plural cardinal form (`cents`,
+  `millions`, `milliards`), and the plural `cents` before a scale noun is kept as well. The decimal fraction
+  names (`dix-millième(s)`, `millionième(s)` …) are separate strings and are not affected.
+- **NTS-34 — decimal reading audit of the other languages.** Opened by NTS-30A, which audited FR and EN only.
+  Every other language reads its decimals digit by digit with no limit, no named fraction and no mixed-number
+  connector, none of which is linguistically validated: per language, whether named decimal fractions exist
+  (`<Fractions>`, then `MathematicalFraction`), the mixed-number connector (`mixedFractionSeparator`), whether the
+  automatic digit-by-digit reading needs a limit (`decimalDigitByDigitMaxDigits`), and the word for a pronounced
+  decimal 0 (the configured `zero`, e.g. EE `naneke o`). Also: HU writes the decimal digits without a separator
+  (`egyegészkettőöt`); FR beyond 11 digits and EN beyond 5 have no sourced denominator (*billionième*,
+  *millionth*); the FR numerators are written without hyphens (`vingt cinq millièmes`), which the Académie
+  (2022) shows to be ambiguous with *vingt cinq-millièmes*.
 - **NTS-26 — Wolof connective `-i` inside nested numeral multipliers.** Re-audited 2026-10-11:
   the evidence supports **real variation**, not a demonstrated defect in the current default. The current
   configuration writes the multiplier of `téeméer` with `-i` (`juróom ñenti téeméer` 900) and keeps that
@@ -72,7 +90,7 @@ classification.
   cardinals below and above a million.
 
 
-NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-25, NTS-27, NTS-28, NTS-29, NTS-31 and NTS-32 are closed:
+NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-25, NTS-27, NTS-28, NTS-29, NTS-30A, NTS-31 and NTS-32 are closed:
 
 - NTS-01 — XSD validation: `DONE-2026-08-21.md`.
 - NTS-02 — initialization isolation: `DONE-2026-08-21.md`.
@@ -146,6 +164,13 @@ NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-25, NTS-27, NTS-28, NT
   `tweemiljoenste`), the earlier groups of a compound stay cardinal (`een miljoen eerste`). Declarative only:
   `<OrdinalScale scales="2..6" multiplierSeparator=" " />`, stems `joen → joenst` and `jard → jardst`,
   `DutchOrdinalLanguageSpecifics` widened to 0–`long.MaxValue`: `DONE-2026-10-13.md`.
+- NTS-30A (split out of NTS-30; its other items stay open): decimal zero digits no longer dropped (a pronounced
+  decimal digit is the standalone `zero` or cardinal, not the level-1 composition text); `DecimalReadingMode`
+  (`LanguageDefault`, `DigitByDigit`, `MathematicalFraction`) on `DecimalFormatOptions.ReadingMode`, a caller
+  `DecimalSuffix` taking precedence; the language fallback limit `decimalDigitByDigitMaxDigits` (absent =
+  unlimited, `0` = none, inherited through `baseOn`) and the mixed-number connector `mixedFractionSeparator`; French
+  named fractions to 11 digits (`dix-millième` … `cent-milliardième`, OQLF, Académie) with `et` (Éduscol), English
+  to 5 digits (`ten-thousandth`, `hundred-thousandth`) with `and` (OpenStax): `DONE-2026-10-13(1).md`.
 
 Full multi-form plural systems (Russian/Slavic count-dependent noun forms,
 Arabic dual/paucal/plural categories) were long deliberately out of scope — the

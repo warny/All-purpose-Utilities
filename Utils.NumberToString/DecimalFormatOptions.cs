@@ -17,13 +17,24 @@ public sealed class DecimalFormatOptions
     /// <summary>
     /// Overrides the denomination suffix appended after the decimal value
     /// (e.g. <c>"centime(s)"</c> instead of <c>"centième(s)"</c> from the language configuration).
-    /// When set, the decimal value is always converted as a whole number regardless of whether
-    /// a <c>&lt;Fraction&gt;</c> entry is configured for that digit count.
+    /// When set, the decimal value is always converted as a whole number after the decimal separator word,
+    /// regardless of whether a <c>&lt;Fraction&gt;</c> entry is configured for that digit count and regardless of
+    /// <see cref="ReadingMode"/>, which it takes precedence over.
     /// The <c>"(s)"</c> marker is pluralized against the decimal value.
-    /// When <see langword="null"/>, the configured <c>&lt;Fraction&gt;</c> entry is used when available;
-    /// otherwise the decimal part is read digit by digit.
+    /// When <see langword="null"/>, <see cref="ReadingMode"/> decides how the decimal part is read.
     /// </summary>
     public string? DecimalSuffix { get; init; }
+
+    /// <summary>
+    /// Selects how the decimal part is read when no <see cref="DecimalSuffix"/> is given:
+    /// <see cref="DecimalReadingMode.LanguageDefault"/> (default: the configured fraction, else the digits within the
+    /// language's fallback limit, else <see cref="System.NotSupportedException"/>),
+    /// <see cref="DecimalReadingMode.DigitByDigit"/> (every digit, a 0 read as the language's zero) or
+    /// <see cref="DecimalReadingMode.MathematicalFraction"/> (a numerator over the named denominator 10^n, joined to a
+    /// non-zero integer part by the language's mixed-number connector; <see cref="System.NotSupportedException"/> when
+    /// the denominator or the needed connector is not configured).
+    /// </summary>
+    public DecimalReadingMode ReadingMode { get; init; } = DecimalReadingMode.LanguageDefault;
 
     /// <summary>
     /// When <see langword="true"/>, the decimal part is suppressed when it rounds to zero.

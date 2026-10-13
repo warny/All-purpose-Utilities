@@ -340,6 +340,43 @@
         </xs:sequence>
     </xs:complexType>
 
+    <xs:complexType name="DecimalDigitType">
+        <xs:annotation>
+            <xs:documentation>
+                Form of one decimal digit read digit by digit, when it differs from the default: the language's
+                zero for 0, the standalone cardinal fragment for 1-9 (which already uses an Exceptions entry, e.g.
+                FR "un", HU "kettő"). Example (German): digit="1" string="eins", whose fragment is "ein".
+                The language finalizer never runs on these forms, only on the complete phrase.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="digit" use="required">
+            <xs:simpleType>
+                <xs:restriction base="xs:int">
+                    <xs:minInclusive value="0"/>
+                    <xs:maxInclusive value="9"/>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+        <xs:attribute name="string" use="required">
+            <xs:simpleType>
+                <xs:restriction base="xs:string">
+                    <xs:minLength value="1"/>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="DecimalDigitListType">
+        <xs:annotation>
+            <xs:documentation>
+                Forms of the pronounced decimal digits that differ from the default, each digit at most once.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="DecimalDigit" type="DecimalDigitType" minOccurs="0" maxOccurs="10"/>
+        </xs:sequence>
+    </xs:complexType>
+
     <xs:complexType name="ReplacementType">
         <xs:annotation>
             <xs:documentation>
@@ -1709,6 +1746,18 @@
                                 </xs:annotation>
                             </xs:element>
 
+                            <xs:element name="DecimalDigits" type="DecimalDigitListType"
+                                        minOccurs="0" maxOccurs="1">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        Forms of the decimal digits read one by one (DigitByDigit, or the
+                                        LanguageDefault fallback) that differ from the default: zero for 0, the
+                                        standalone cardinal fragment for 1-9. Replaced as a whole by a baseOn child
+                                        that declares it, inherited otherwise.
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:element>
+
                             <xs:element name="Ordinals" type="OrdinalsType"
                                         minOccurs="0" maxOccurs="1">
                                 <xs:annotation>
@@ -2081,7 +2130,7 @@
                                       - Scalar attributes (groupSize, separator, zero, etc.): child
                                         value wins; omitted child attributes inherit from the base.
                                       - Sections replaced as a whole when the child declares them
-                                        (Groups, Exceptions, Replacements, Fractions, Variants,
+                                        (Groups, Exceptions, Replacements, Fractions, DecimalDigits, Variants,
                                         YearFormat, Multiplicatives, TimeUnits, ClockTime, DateFormat,
                                         LanguageSpecifics); omitted sections are inherited. An empty
                                         element (e.g. &lt;Replacements /&gt;) explicitly overrides the
@@ -2204,6 +2253,28 @@
                                     Maximum integer value the converter accepts (absolute value).
                                     Attempts to convert a larger value throw ArgumentOutOfRangeException.
                                     Omit for unlimited.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="decimalDigitByDigitMaxDigits" type="xs:nonNegativeInteger" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Largest number of decimal digits that the language-default decimal reading may
+                                    read digit by digit when no Fraction entry matches the digit count. 0 disables
+                                    that fallback (such a decimal then throws NotSupportedException). Omit for
+                                    unlimited (inherited through baseOn; an explicit 0 overrides the base). Never
+                                    limits the DigitByDigit reading mode requested by the caller.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="mixedFractionSeparator" type="xs:string" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Connector joining a non-zero integer part to a named decimal fraction in the
+                                    MathematicalFraction reading mode. Examples: "et" (FR: deux et quatre dixièmes),
+                                    "and" (EN: five and twenty-four hundredths). Not the decimalSeparator word.
+                                    Omit when unsourced: that mode then reads a zero integer part only and throws
+                                    NotSupportedException for a non-zero one.
                                 </xs:documentation>
                             </xs:annotation>
                         </xs:attribute>

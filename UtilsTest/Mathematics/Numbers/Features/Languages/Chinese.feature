@@ -10,6 +10,12 @@ Examples:
     | number | expected |
     | 1.5 | 一点五 |
     | 12.34 | 十二点三四 |
+    # NTS-30A: a decimal digit 0 is read 零 (leading, trailing, internal).
+    | 21.05 | 二十一点零五 |
+    | 21.50 | 二十一点五零 |
+    | 21.505 | 二十一点五零五 |
+    | 21.005 | 二十一点零零五 |
+    | 0.05 | 零点零五 |
 
 Scenario Outline: Basic cardinal numbers
     Given I use the "ZH" number converter

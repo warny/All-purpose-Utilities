@@ -18,6 +18,31 @@ public class NumberToStringCompositeFinalizationTests
         AssertSingleFinalization(converter => converter.Convert(2.25m));
     }
 
+    /// <summary>
+    /// Verifies the digit-by-digit decimal reading (NTS-30A) finalizes the complete phrase once: the pronounced digit
+    /// forms are fragments and never go through the language finalizer, on the first call (when the digit forms are
+    /// built) as on later ones.
+    /// </summary>
+    [TestMethod]
+    public void Convert_DigitByDigitDecimal_FinalizesCompletePhraseOnce()
+    {
+        var digitByDigit = new DecimalFormatOptions { ReadingMode = DecimalReadingMode.DigitByDigit };
+        AssertSingleFinalization(converter => converter.Convert(21.0507m, -1, digitByDigit));
+        AssertSingleFinalization(converter => converter.Convert(0.123456789m, -1, digitByDigit));
+        // LanguageDefault beyond the EN fractions (6 digits) reaches the same digit reading.
+        AssertSingleFinalization(converter => converter.Convert(0.102034m));
+        AssertSingleFinalization(converter => converter.Convert(21.5m, 3, digitByDigit));
+    }
+
+    /// <summary>Verifies the mathematical-fraction decimal reading (NTS-30A) finalizes the complete phrase once.</summary>
+    [TestMethod]
+    public void Convert_MathematicalFractionDecimal_FinalizesCompletePhraseOnce()
+    {
+        var fraction = new DecimalFormatOptions { ReadingMode = DecimalReadingMode.MathematicalFraction };
+        AssertSingleFinalization(converter => converter.Convert(2.0001m, -1, fraction));
+        AssertSingleFinalization(converter => converter.Convert(0.25m, -1, fraction));
+    }
+
     /// <summary>Verifies both fraction entry points use the same single phrase boundary.</summary>
     [TestMethod]
     public void Convert_FractionSurfaces_FinalizeCompletePhraseOnce()

@@ -746,6 +746,32 @@ public class FractionListType
 }
 
 /// <summary>
+/// Gives the form of one pronounced decimal digit read digit by digit (e.g. German <c>eins</c>, where the level-1
+/// composition text is <c>ein</c>).
+/// </summary>
+public class DecimalDigitType
+{
+    /// <summary>Gets or sets the digit, 0 to 9.</summary>
+    [XmlAttribute("digit")]
+    public int Digit { get; set; }
+
+    /// <summary>Gets or sets the text read for the digit after the decimal separator.</summary>
+    [XmlAttribute("string")]
+    public string StringValue { get; set; }
+}
+
+/// <summary>
+/// Represents the forms of the pronounced decimal digits that differ from the default (the language's zero for 0,
+/// the standalone cardinal fragment for 1–9).
+/// </summary>
+public class DecimalDigitListType
+{
+    /// <summary>Gets or sets the digit forms.</summary>
+    [XmlElement("DecimalDigit")]
+    public List<DecimalDigitType> DecimalDigits { get; set; }
+}
+
+/// <summary>
 /// Describes a single time unit (hour, minute, second) with its singular and plural forms.
 /// </summary>
 public class TimeUnitEntry
@@ -1116,6 +1142,22 @@ public class LanguageType
     public string MaxNumber { get; set; }
 
     /// <summary>
+    /// Gets or sets the largest number of decimal digits that <c>LanguageDefault</c> may read digit by digit when no
+    /// fraction is configured for that count (a non-negative integer as a string; <c>0</c> disables the automatic
+    /// fallback). <see langword="null"/> when absent: unlimited, or inherited through <c>baseOn</c>.
+    /// </summary>
+    [XmlAttribute("decimalDigitByDigitMaxDigits")]
+    public string DecimalDigitByDigitMaxDigits { get; set; }
+
+    /// <summary>
+    /// Gets or sets the connector joining a non-zero integer part to a named decimal fraction in
+    /// <c>MathematicalFraction</c> mode (e.g. "et": <c>deux et quatre dixièmes</c>). <see langword="null"/> when absent:
+    /// that mode then supports a zero integer part only.
+    /// </summary>
+    [XmlAttribute("mixedFractionSeparator")]
+    public string MixedFractionSeparator { get; set; }
+
+    /// <summary>
     /// Gets or sets the group definitions used when splitting large numbers (the default tables,
     /// declared by the <c>&lt;Groups&gt;</c> element without <c>onScale</c>).
     /// </summary>
@@ -1166,6 +1208,12 @@ public class LanguageType
     /// </summary>
     [XmlElement(ElementName = "Fractions")]
     public FractionListType Fractions { get; set; }
+
+    /// <summary>
+    /// Gets or sets the forms of the pronounced decimal digits that differ from the default (NTS-30A).
+    /// </summary>
+    [XmlElement(ElementName = "DecimalDigits")]
+    public DecimalDigitListType DecimalDigits { get; set; }
 
     /// <summary>
     /// Gets or sets the ordinal configuration for this language.

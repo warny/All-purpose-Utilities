@@ -81,6 +81,12 @@
 			<Number value="17" string="siebzehn" />
 		</Exceptions>
 		<LanguageSpecifics>GermanNumberToStringLanguageSpecifics</LanguageSpecifics>
+		<!-- NTS-30A: each digit after the comma is read in its counting form, "5,01 fünf Komma null eins"
+		     (PH Niederösterreich, G. Egger, "Dezimalzahlen", 2022). The fragment of 1 is the composition form "ein"
+		     (einundzwanzig); the standalone "eins" was only produced by the finalizer, which must not run on a digit. -->
+		<DecimalDigits>
+			<DecimalDigit digit="1" string="eins" />
+		</DecimalDigits>
 		<!--
 		  German ordinals: 1, 3, 7, 8 are fully irregular; 2, 4-6, 9-19 follow a
 		  "-te" pattern with minor stem changes; 20+ take "-ste" (default suffix).
