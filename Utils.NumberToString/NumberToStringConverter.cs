@@ -219,6 +219,15 @@ namespace Utils.NumberToString
                 throw new ArgumentOutOfRangeException(nameof(options.DecimalDigitByDigitMaxDigits),
                     $"DecimalDigitByDigitMaxDigits must be non-negative when specified; got {DecimalDigitByDigitMaxDigits}.");
             MixedFractionSeparator = string.IsNullOrWhiteSpace(options.MixedFractionSeparator) ? null : options.MixedFractionSeparator;
+            var decimalDigitForms = options.DecimalDigitForms ?? new Dictionary<int, string>();
+            foreach (var (digit, form) in decimalDigitForms)
+            {
+                if (digit is < 0 or > 9)
+                    throw new ArgumentOutOfRangeException(nameof(options.DecimalDigitForms), $"DecimalDigitForms key must be a digit 0-9; got {digit}.");
+                if (string.IsNullOrWhiteSpace(form))
+                    throw new ArgumentException($"DecimalDigitForms[{digit}] must be non-empty.", nameof(options.DecimalDigitForms));
+            }
+            DecimalDigitForms = decimalDigitForms.ToImmutableDictionary();
 
             OrdinalSuffix = options.OrdinalSuffix;
             OrdinalRemoveTrailing = options.OrdinalRemoveTrailing;
@@ -434,6 +443,11 @@ namespace Utils.NumberToString
         /// none (that mode then supports a zero integer part only).
         /// </summary>
         public string? MixedFractionSeparator { get; }
+        /// <summary>
+        /// Gets the forms of the pronounced decimal digits that differ from the default (<see cref="Zero"/> for 0, the
+        /// standalone cardinal fragment for 1–9), keyed by digit.
+        /// </summary>
+        public IReadOnlyDictionary<int, string> DecimalDigitForms { get; }
         /// <summary>
         /// Maximum absolute value that may be passed to <see cref="Convert(BigInteger, string[])"/>,
         /// or <see langword="null"/> when unlimited.
@@ -1094,9 +1108,11 @@ namespace Utils.NumberToString
         }
 
         /// <summary>
-        /// Gets the text of each pronounced decimal digit, computed once: <see cref="Zero"/> for 0 and the standalone
-        /// cardinal of 1–9 (finalized as a phrase of its own, like <c>Convert(d)</c>), which differs from the level-1
-        /// table text where that text is a composition form (FR <c>et un</c>, DE <c>ein</c>, HU <c>két</c>).
+        /// Gets the text of each pronounced decimal digit, computed once: the configured
+        /// <see cref="DecimalDigitForms"/> entry when there is one, otherwise <see cref="Zero"/> for 0 and the standalone
+        /// cardinal fragment of 1–9. The fragment is not the level-1 table text, which is a composition form where an
+        /// exception gives the standalone one (FR <c>et un</c> → <c>un</c>, HU <c>két</c> → <c>kettő</c>). These are
+        /// fragments: the language finalizer runs once, on the complete phrase, never on a digit.
         /// </summary>
         private string[] DecimalDigitTexts
         {
@@ -1104,9 +1120,9 @@ namespace Utils.NumberToString
             {
                 // A concurrent first access computes the same array twice; the assignment is atomic.
                 return _decimalDigitTexts ??= [.. Enumerable.Range(0, 10)
-                    .Select(d => d == 0
-                        ? Zero
-                        : LanguageSpecifics.FinalizeWriting(LanguageIdentifier, BuildCardinalFragment(d, BuildVariantQuery([]))))];
+                    .Select(d => DecimalDigitForms.TryGetValue(d, out var form)
+                        ? form
+                        : d == 0 ? Zero : BuildCardinalFragment(d, BuildVariantQuery([])))];
             }
         }
 

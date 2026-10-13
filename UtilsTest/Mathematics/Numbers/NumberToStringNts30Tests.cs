@@ -356,10 +356,10 @@ public class NumberToStringNts30Tests
     /// <summary>Creates a synthetic one-digit-group language (0–9) with optional decimal attributes and fractions.</summary>
     /// <param name="culture">Culture identifier.</param>
     /// <param name="attributes">Extra attributes of the Language element.</param>
-    /// <param name="fractions">An optional <c>&lt;Fractions&gt;</c> element.</param>
+    /// <param name="sections">Optional <c>&lt;Fractions&gt;</c> / <c>&lt;DecimalDigits&gt;</c> elements.</param>
     /// <param name="extraLanguages">Additional Language elements appended to the document.</param>
     /// <returns>The configuration document.</returns>
-    private static string Document(string culture, string attributes = "", string fractions = "", string extraLanguages = "")
+    private static string Document(string culture, string attributes = "", string sections = "", string extraLanguages = "")
     {
         string[] units = ["", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"];
         string digits = string.Concat(units.Select((u, i) => $"""<Digit digit="{i}" string="{u}" />"""));
@@ -369,7 +369,7 @@ public class NumberToStringNts30Tests
               <Language groupSize="1" separator=" " groupSeparator="" zero="zero" minus="minus *" decimalSeparator="point" maxNumber="9" {attributes}>
                 <Culture>{culture}</Culture>
                 <Groups><Group level="1">{digits}</Group></Groups>
-                {fractions}
+                {sections}
               </Language>
               {extraLanguages}
             </Numbers>
@@ -378,12 +378,12 @@ public class NumberToStringNts30Tests
 
     /// <summary>Builds a synthetic converter.</summary>
     /// <param name="attributes">Extra attributes of the Language element.</param>
-    /// <param name="fractions">An optional <c>&lt;Fractions&gt;</c> element.</param>
+    /// <param name="sections">Optional <c>&lt;Fractions&gt;</c> / <c>&lt;DecimalDigits&gt;</c> elements.</param>
     /// <returns>The converter.</returns>
-    private static NumberToStringConverter Build(string attributes = "", string fractions = "")
+    private static NumberToStringConverter Build(string attributes = "", string sections = "")
     {
         string culture = NewCulture();
-        return NumberToStringConverter.ReadConfiguration(Document(culture, attributes, fractions))[culture];
+        return NumberToStringConverter.ReadConfiguration(Document(culture, attributes, sections))[culture];
     }
 
     /// <summary>Without the attribute the automatic digit-by-digit fallback stays unlimited (backward compatible).</summary>
@@ -486,7 +486,7 @@ public class NumberToStringNts30Tests
     [TestMethod]
     public void MathematicalFraction_WithoutMixedConnector_FailsClosedForANonZeroIntegerPart()
     {
-        var converter = Build(fractions: """<Fractions><Fraction digits="1" string="tenth(s)" /></Fractions>""");
+        var converter = Build(sections: """<Fractions><Fraction digits="1" string="tenth(s)" /></Fractions>""");
         Assert.IsNull(converter.MixedFractionSeparator);
         var options = Mode(DecimalReadingMode.MathematicalFraction);
         Assert.AreEqual("five tenths", converter.Convert(0.5m, -1, options));
@@ -505,6 +505,78 @@ public class NumberToStringNts30Tests
         Assert.AreEqual("and", Get("EN-GB").MixedFractionSeparator);
         Assert.IsNull(Get("NL").MixedFractionSeparator);
         Assert.IsNull(Get("DE").MixedFractionSeparator);
+    }
+
+    /// <summary>
+    /// The pronounced digit forms are configured lexically, never obtained through the finalizer: German declares
+    /// <c>eins</c> (its fragment is the composition form <c>ein</c>), inherited by de-CH and de-LI; FR <c>un</c> and
+    /// HU <c>kettő</c> come from their existing <c>&lt;Exceptions&gt;</c> through the standalone fragment.
+    /// </summary>
+    [TestMethod]
+    public void DecimalDigitForms_BuiltInLanguages()
+    {
+        CollectionAssert.AreEquivalent(new[] { 1 }, Get("DE").DecimalDigitForms.Keys.ToArray());
+        Assert.AreEqual("eins", Get("DE").DecimalDigitForms[1]);
+        Assert.AreEqual("eins", Get("de-CH").DecimalDigitForms[1]);
+        Assert.AreEqual(0, Get("FR").DecimalDigitForms.Count);
+        Assert.AreEqual(0, Get("HU").DecimalDigitForms.Count);
+        Assert.AreEqual("einundzwanzig komma eins null eins",
+            Get("DE").Convert(21.101m, -1, Mode(DecimalReadingMode.DigitByDigit)));
+    }
+
+    /// <summary>A configured form replaces the default of its digit only; the others keep zero and the fragments.</summary>
+    [TestMethod]
+    public void DecimalDigitForms_ReplaceTheirDigitOnly()
+    {
+        var converter = Build(sections: """<DecimalDigits><DecimalDigit digit="0" string="nought" /><DecimalDigit digit="1" string="wun" /></DecimalDigits>""");
+        Assert.AreEqual("one point nought wun two", converter.Convert(1.012m));
+        Assert.AreEqual("one", converter.Convert(1m), "the cardinal path is untouched");
+    }
+
+    /// <summary>A child inherits the parent's digit forms, and a child's section replaces them as a whole.</summary>
+    [TestMethod]
+    public void DecimalDigitForms_BaseOn_InheritedOrReplaced()
+    {
+        string parent = NewCulture();
+        string inheriting = NewCulture();
+        string replacing = NewCulture();
+        string document = Document(parent,
+            sections: """<DecimalDigits><DecimalDigit digit="1" string="wun" /></DecimalDigits>""",
+            extraLanguages: $"""
+            <Language baseOn="{parent}"><Culture>{inheriting}</Culture></Language>
+            <Language baseOn="{parent}"><Culture>{replacing}</Culture><DecimalDigits><DecimalDigit digit="2" string="too" /></DecimalDigits></Language>
+            """);
+        var converters = NumberToStringConverter.ReadConfiguration(document);
+
+        Assert.AreEqual("one point wun two", converters[inheriting].Convert(1.12m));
+        Assert.AreEqual("one point one too", converters[replacing].Convert(1.12m));
+    }
+
+    /// <summary>The schema rejects a digit outside 0–9 and an empty form; the loader rejects a duplicated digit.</summary>
+    [TestMethod]
+    public void DecimalDigitForms_InvalidConfiguration_IsRejected()
+    {
+        Assert.ThrowsExactly<XmlSchemaValidationException>(
+            () => Build(sections: """<DecimalDigits><DecimalDigit digit="10" string="ten" /></DecimalDigits>"""));
+        Assert.ThrowsExactly<XmlSchemaValidationException>(
+            () => Build(sections: """<DecimalDigits><DecimalDigit digit="1" string="" /></DecimalDigits>"""));
+        var duplicate = Assert.ThrowsExactly<InvalidOperationException>(
+            () => Build(sections: """<DecimalDigits><DecimalDigit digit="1" string="a" /><DecimalDigit digit="1" string="b" /></DecimalDigits>"""));
+        StringAssert.Contains(duplicate.Message, "DecimalDigits[1]");
+    }
+
+    /// <summary>Programmatic forms are validated and copied by the cloning constructor.</summary>
+    [TestMethod]
+    public void DecimalDigitForms_Programmatic_ValidatedAndCloned()
+    {
+        var source = Build(sections: """<DecimalDigits><DecimalDigit digit="1" string="wun" /></DecimalDigits>""");
+        var clone = new NumberToStringConverter(new NumberToStringConverterOptions(source));
+        Assert.AreEqual("wun", clone.DecimalDigitForms[1]);
+
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => new NumberToStringConverter(
+            new NumberToStringConverterOptions(source) { DecimalDigitForms = new System.Collections.Generic.Dictionary<int, string> { [10] = "ten" } }));
+        Assert.ThrowsExactly<ArgumentException>(() => new NumberToStringConverter(
+            new NumberToStringConverterOptions(source) { DecimalDigitForms = new System.Collections.Generic.Dictionary<int, string> { [1] = " " } }));
     }
 
     /// <summary>No built-in language declares a fallback limit: none was justified by the audit.</summary>

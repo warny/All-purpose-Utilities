@@ -170,6 +170,10 @@ namespace Utils.NumberToString
         [XmlElement(ElementName = "Fractions")]
         public FractionListType? Fractions { get; set; }
 
+        /// <summary>Gets or sets the forms of the pronounced decimal digits that differ from the default.</summary>
+        [XmlElement(ElementName = "DecimalDigits")]
+        public DecimalDigitListType? DecimalDigits { get; set; }
+
         /// <summary>Gets or sets the ordinal configuration for this language.</summary>
         [XmlElement(ElementName = "Ordinals")]
         public OrdinalsType? Ordinals { get; set; }
@@ -324,6 +328,7 @@ namespace Utils.NumberToString
         public ReplacementsListType? Replacements { get; init; }
         public string? LanguageSpecificsTypeName { get; init; }
         public FractionListType? Fractions { get; init; }
+        public DecimalDigitListType? DecimalDigits { get; init; }
         public OrdinalsType? Ordinals { get; init; }
         public VariantsType? Variants { get; init; }
         public YearFormatType? YearFormat { get; init; }

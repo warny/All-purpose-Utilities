@@ -124,7 +124,7 @@ fr.Convert(21.5m, 3, math);     // "vingt et un et cinq cents millièmes" (the r
 | Mode | Reads | Fails with `NotSupportedException` when |
 |---|---|---|
 | `LanguageDefault` | the configured `<Fraction>` for the digit count; otherwise the digits, within the language's `decimalDigitByDigitMaxDigits` (unlimited when absent) | no fraction is configured and the digit count exceeds `decimalDigitByDigitMaxDigits` |
-| `DigitByDigit` | every digit after the decimal separator word: 0 is the language's `zero`, 1–9 their standalone cardinals (FR `un`, DE `eins`, HU `kettő`) | never |
+| `DigitByDigit` | every digit after the decimal separator word: 0 is the language's `zero`, 1–9 their standalone cardinal fragments (FR `un`, HU `kettő` through `<Exceptions>`), unless `<DecimalDigits>` gives another form (DE `eins`) | never |
 | `MathematicalFraction` | the fraction alone for a zero integer part (`un dix-millième`), joined by `mixedFractionSeparator` otherwise (`deux et un dix-millième`); a zero decimal part is not read (`deux`) | no fraction is configured for the digit count, or the integer part is not zero and the language declares no `mixedFractionSeparator` |
 
 Precedence: a caller `DecimalSuffix` first (the digits as one numerator after the decimal separator word, whatever
@@ -1359,7 +1359,7 @@ they are not globally registered converters and are not visible to `RegisterConf
 - `Culture`: not inherited. Every `<Language>` declares at least one `<Culture>` (XSD `minOccurs="1"`) and only those are registered for the child. A regional culture must be declared once, in the child only, never also in its general parent (a culture declared by two built-in documents is a retained initialization failure).
 - Scalar attributes (`groupSize`, `groupPattern`, `separator`, `groupSeparator`, `zero`, `minus`, `decimalSeparator`, `fractionSeparator`, `maxNumber`, `decimalDigitByDigitMaxDigits`, `mixedFractionSeparator`, `groupConnector`, `intraGroupConnector`, `scaleConnector` and their thresholds, `multiplierPosition`): child wins; absent child attributes inherit from the base.
 - `<Groups onScale="…">` tables are merged by range: a child table whose range is identical to an inherited one (compared in canonical form) replaces it, a disjoint range is added, and any other overlap is rejected. The default `<Groups>` follows the rule below independently.
-- Sections replaced as a whole when the child declares them (`Groups`, `Exceptions`, `Replacements`, `Fractions`, `Variants`, `YearFormat`, `Multiplicatives`, `TimeUnits`, `ClockTime`, `DateFormat`, `LanguageSpecifics`): the child's section replaces the base's completely, nothing is merged inside it. Omitted sections are inherited. An empty element (e.g. `<Replacements />`) explicitly overrides with an empty list.
+- Sections replaced as a whole when the child declares them (`Groups`, `Exceptions`, `Replacements`, `Fractions`, `DecimalDigits`, `Variants`, `YearFormat`, `Multiplicatives`, `TimeUnits`, `ClockTime`, `DateFormat`, `LanguageSpecifics`): the child's section replaces the base's completely, nothing is merged inside it. Omitted sections are inherited. An empty element (e.g. `<Replacements />`) explicitly overrides with an empty list.
 - `Fusion` rules belong to their `<Digit>` and therefore follow the `Groups` rule: a child that omits `<Groups>` inherits the base's digits together with their fusions; a child that declares `<Groups>` replaces every digit, and the base's fusions are not merged into it.
 - `Trigger` elements: a child that declares no `<Trigger>` inherits the base's triggers; a child that declares at least one replaces the base's whole list (NTS-09). Wolof uses a trigger for the connective `-i` of the multipliers of `milyoŋ` and higher (NTS-21), so a `baseOn="WO"` child keeps `ñaari milyoŋ`.
 - `NumberScale`: merged field by field, not replaced wholesale. A child may declare only the sub-elements it needs to override (e.g. `StaticNames`, `Suffixes`) while `startIndex`, `firstLetterUpperCase`, `groupSeparator`, `suffixSeparator`, `voidGroup`, and the `Scale0Prefixes`/`UnitsPrefixes`/`TensPrefixes`/`HundredsPrefixes` prefix tables independently fall back to the base when absent in the child. For example, `MS` (Malay) declares only `StaticNames`/`Suffixes` and still inherits `ID`'s `startIndex` and prefix tables unchanged.
@@ -1815,6 +1815,27 @@ Allow the decimal part of a number to be expressed with a named denominator.
 The same entries serve `DecimalReadingMode.LanguageDefault` (before the digit-by-digit fallback), the
 `MathematicalFraction` mode (which requires one) and the power-of-ten denominators of `ConvertFraction`
 (`2005/10000` → "deux mille cinq dix-millièmes"). See [Decimals — reading modes](#decimals--reading-modes).
+
+---
+
+### `<DecimalDigits>` — pronounced decimal digits
+
+A decimal digit read one by one (`DigitByDigit`, or the `LanguageDefault` fallback) is a standalone numeral: by
+default the language's `zero` for 0 and the standalone cardinal fragment for 1–9 (which already applies
+`<Exceptions>`: FR `un`, not the composition text `et un`; HU `kettő`, not `két`). `<DecimalDigits>` declares the
+digits whose form differs from that default:
+
+```xml
+<!-- German: the fragment of 1 is the composition form "ein" (einundzwanzig); 5,01 = "fünf Komma null eins" -->
+<DecimalDigits>
+    <DecimalDigit digit="1" string="eins" />
+</DecimalDigits>
+```
+
+`digit` is 0–9 and appears at most once; `string` is non-empty. These forms are lexical fragments: the language
+finalizer (`INumberToStringLanguageSpecifics.FinalizeWriting`) runs once, on the complete phrase, never on a digit.
+A `baseOn` child inherits the section or replaces it as a whole. Programmatic:
+`NumberToStringConverterOptions.DecimalDigitForms`, exposed by `NumberToStringConverter.DecimalDigitForms`.
 
 ---
 

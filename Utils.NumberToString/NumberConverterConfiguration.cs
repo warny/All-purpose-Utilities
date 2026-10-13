@@ -746,6 +746,32 @@ public class FractionListType
 }
 
 /// <summary>
+/// Gives the form of one pronounced decimal digit read digit by digit (e.g. German <c>eins</c>, where the level-1
+/// composition text is <c>ein</c>).
+/// </summary>
+public class DecimalDigitType
+{
+    /// <summary>Gets or sets the digit, 0 to 9.</summary>
+    [XmlAttribute("digit")]
+    public int Digit { get; set; }
+
+    /// <summary>Gets or sets the text read for the digit after the decimal separator.</summary>
+    [XmlAttribute("string")]
+    public string StringValue { get; set; }
+}
+
+/// <summary>
+/// Represents the forms of the pronounced decimal digits that differ from the default (the language's zero for 0,
+/// the standalone cardinal fragment for 1–9).
+/// </summary>
+public class DecimalDigitListType
+{
+    /// <summary>Gets or sets the digit forms.</summary>
+    [XmlElement("DecimalDigit")]
+    public List<DecimalDigitType> DecimalDigits { get; set; }
+}
+
+/// <summary>
 /// Describes a single time unit (hour, minute, second) with its singular and plural forms.
 /// </summary>
 public class TimeUnitEntry
@@ -1182,6 +1208,12 @@ public class LanguageType
     /// </summary>
     [XmlElement(ElementName = "Fractions")]
     public FractionListType Fractions { get; set; }
+
+    /// <summary>
+    /// Gets or sets the forms of the pronounced decimal digits that differ from the default (NTS-30A).
+    /// </summary>
+    [XmlElement(ElementName = "DecimalDigits")]
+    public DecimalDigitListType DecimalDigits { get; set; }
 
     /// <summary>
     /// Gets or sets the ordinal configuration for this language.

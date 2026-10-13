@@ -113,6 +113,13 @@ public sealed class NumberToStringConverterOptions
     public string? MixedFractionSeparator { get; set; }
 
     /// <summary>
+    /// Forms of the pronounced decimal digits (0–9) that differ from the default, which is <see cref="Zero"/> for 0 and
+    /// the standalone cardinal fragment for 1–9 (e.g. German <c>{ 1: "eins" }</c>, whose fragment is the composition
+    /// form <c>ein</c>). <see langword="null"/> or empty: every digit takes its default. The converter keeps its own copy.
+    /// </summary>
+    public IReadOnlyDictionary<int, string>? DecimalDigitForms { get; set; }
+
+    /// <summary>
     /// Ordinal suffix appended to the last word of a cardinal when no word-level rule matches
     /// (e.g. "th" for English, "ième" for French).
     /// </summary>
@@ -369,6 +376,7 @@ public sealed class NumberToStringConverterOptions
         FractionSeparator = source.FractionSeparator;
         DecimalDigitByDigitMaxDigits = source.DecimalDigitByDigitMaxDigits;
         MixedFractionSeparator = source.MixedFractionSeparator;
+        DecimalDigitForms = source.DecimalDigitForms;
         OrdinalSuffix = source.OrdinalSuffix;
         OrdinalRemoveTrailing = source.OrdinalRemoveTrailing;
         OrdinalExceptions = source.OrdinalExceptions;

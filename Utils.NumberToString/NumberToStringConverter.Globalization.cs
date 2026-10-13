@@ -502,7 +502,7 @@ namespace Utils.NumberToString
         {
             HashSet<string> orderIndependentSections =
             [
-                "Replacements", "Exceptions", "LanguageSpecifics", "Fractions", "Ordinals",
+                "Replacements", "Exceptions", "LanguageSpecifics", "Fractions", "DecimalDigits", "Ordinals",
                 "Variants", "YearFormat", "Multiplicatives", "TimeUnits", "ClockTime", "DateFormat"
             ];
             HashSet<string>? seenSections = null;
@@ -808,6 +808,7 @@ namespace Utils.NumberToString
             Replacements = model.Replacements,
             LanguageSpecificsTypeName = model.LanguageSpecificsTypeName,
             Fractions = model.Fractions,
+            DecimalDigits = model.DecimalDigits,
             Ordinals = model.Ordinals,
             Variants = model.Variants,
             YearFormat = model.YearFormat,
@@ -977,6 +978,7 @@ namespace Utils.NumberToString
                 LanguageSpecificsTypeName = overriding.LanguageSpecificsTypeName != null
                     ? overriding.LanguageSpecificsTypeName : inherited.LanguageSpecificsTypeName,
                 Fractions = overriding.Fractions ?? inherited.Fractions,
+                DecimalDigits = overriding.DecimalDigits ?? inherited.DecimalDigits,
                 Ordinals = MergeOrdinalsType(inherited.Ordinals, overriding.Ordinals),
                 Variants = overriding.Variants ?? inherited.Variants,
                 YearFormat = overriding.YearFormat ?? inherited.YearFormat,
@@ -1130,6 +1132,7 @@ namespace Utils.NumberToString
             Replacements = definition.Replacements,
             LanguageSpecificsTypeName = definition.LanguageSpecificsTypeName,
             Fractions = definition.Fractions,
+            DecimalDigits = definition.DecimalDigits,
             Ordinals = definition.Ordinals,
             Variants = definition.Variants,
             YearFormat = definition.YearFormat,
@@ -1239,6 +1242,19 @@ namespace Utils.NumberToString
             {
                 bool parsedLimit = int.TryParse(language.DecimalDigitByDigitMaxDigits, NumberStyles.Integer, CultureInfo.InvariantCulture, out int limit);
                 Require(parsedLimit && limit >= 0, "DecimalDigitByDigitMaxDigits", "must be a non-negative integer.");
+            }
+
+            if (language.DecimalDigits?.DecimalDigits != null)
+            {
+                var decimalDigits = new HashSet<int>();
+                foreach (var decimalDigit in language.DecimalDigits.DecimalDigits)
+                {
+                    Require(decimalDigit != null, "DecimalDigits", "entry must not be null.");
+                    if (decimalDigit == null) continue;
+                    Require(decimalDigit.Digit is >= 0 and <= 9, $"DecimalDigits[{decimalDigit.Digit}]", "digit must be between 0 and 9.");
+                    Require(decimalDigits.Add(decimalDigit.Digit), $"DecimalDigits[{decimalDigit.Digit}]", "digit is duplicated.");
+                    Require(!string.IsNullOrWhiteSpace(decimalDigit.StringValue), $"DecimalDigits[{decimalDigit.Digit}]", "string must be non-empty.");
+                }
             }
 
             if (language.NumberScale == null)
@@ -1926,6 +1942,8 @@ namespace Utils.NumberToString
                 MixedFractionSeparator = string.IsNullOrWhiteSpace(language.MixedFractionSeparator)
                     ? null
                     : language.MixedFractionSeparator,
+                DecimalDigitForms = language.DecimalDigits?.DecimalDigits?.ToDictionary(d => d.Digit, d => d.StringValue)
+                    ?? new Dictionary<int, string>(),
                 OrdinalSuffix = language.Ordinals?.Suffix,
                 OrdinalRemoveTrailing = language.Ordinals?.RemoveTrailing,
                 OrdinalExceptions = language.Ordinals?.Exceptions?

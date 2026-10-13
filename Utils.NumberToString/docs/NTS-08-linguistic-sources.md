@@ -111,9 +111,16 @@ Mixed numbers and reading modes:
 
 ### Pronounced digits in other languages
 
-The digit-by-digit reading uses each digit's standalone cardinal. It differs from the level-1 composition text in
-DE (*eins*, not *ein* as in *einundzwanzig*) and HU (*kettő*, not the attributive *két*); no other shipped language
-has such a difference. No source was consulted for the zero word itself: each language reads its configured `zero`.
+A digit read one by one is a standalone numeral, which differs from the level-1 composition text in three shipped
+languages (checked over all 74 keys):
+
+| Language | Pronounced digit | Composition text | Source | Obtained from |
+|---|---|---|---|---|
+| FR | *un* | *et un* (*vingt et un*) | standalone cardinal | existing `<Exceptions>` (`1 → un`), through the cardinal fragment |
+| HU | *kettő* | *két* (attributive) | configuration comment "standalone 2 = kettő" | existing `<Exceptions>` (`2 → kettő`), through the cardinal fragment |
+| DE | *eins* | *ein* (*einundzwanzig*) | PH Niederösterreich, G. Egger, *Dezimalzahlen* (2022): "Wie liest man Dezimalzahlen? … 5,01 „fünf Komma null eins“" | `<DecimalDigits><DecimalDigit digit="1" string="eins" />`: the fragment is *ein*, the standalone *eins* was only produced by the German finalizer, which must run once on the whole phrase |
+
+No source was consulted for the zero word of the other languages: each reads its configured `zero` (NTS-34).
 
 ## NTS-31 — Dutch long-scale cardinals (2026-10-11)
 
@@ -1060,3 +1067,4 @@ supported value, round scales, fail-closed range) and by the language `.feature`
 - Dictionnaire de l'Académie française, 9e éd., "millionième": <https://www.dictionnaire-academie.fr/article/A9M2188>; "milliardième": <https://www.dictionnaire-academie.fr/article/A9M2177>
 - Éduscol, *Fractions et nombres décimaux au cycle 3*: <https://eduscol.education.fr/document/16510/download>
 - OpenStax, *Prealgebra 2e*, §5.1 "Decimals": <https://openstax.org/books/prealgebra-2e/pages/5-1-decimals>
+- PH Niederösterreich, G. Egger, *Dezimalzahlen* (2022): <https://noegi.ph-noe.ac.at/fileadmin/noegi_files/GeoGebra-Books_und_-Arbeitsbl%C3%A4tter/kl1-dezimalzahlen.pdf>
