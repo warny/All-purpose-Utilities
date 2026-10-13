@@ -1021,10 +1021,15 @@ namespace Utils.NumberToString
                 }
                 else
                 {
+                    // Each decimal digit is pronounced: the level-1 digit 0 is an empty cardinal position, so a
+                    // decimal 0 is read with the standalone Zero instead (NTS-30A).
                     foreach (char c in digits)
                     {
                         int d = c - '0';
-                        result.Append(_defaultGroupTable.Digits[1][d].StringValue).Append(Separator);
+                        string digitText = d == 0
+                            ? Zero
+                            : _defaultGroupTable.Digits[1][d].StringValue;
+                        result.Append(digitText).Append(Separator);
                     }
                 }
             }

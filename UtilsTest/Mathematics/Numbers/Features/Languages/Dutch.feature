@@ -10,6 +10,13 @@ Examples:
     | number | expected |
     | 1.5 | een komma vijf |
     | 12.34 | twaalf komma drie vier |
+    # NTS-30A: a decimal digit 0 is read "nul" (leading, trailing, internal).
+    | 21.05 | eenentwintig komma nul vijf |
+    | 21.50 | eenentwintig komma vijf nul |
+    | 21.505 | eenentwintig komma vijf nul vijf |
+    | 21.005 | eenentwintig komma nul nul vijf |
+    | 0.05 | nul komma nul vijf |
+    | -21.05 | min eenentwintig komma nul vijf |
 
 Scenario Outline: Basic cardinal numbers
     Given I use the "NL" number converter

@@ -1,6 +1,8 @@
 # Utils.NumberToString — Current backlog
 
-Re-audited on 2026-10-13 after closing NTS-31 (Dutch ordinals from a million: `miljoenste`, `twee miljoenste`,
+Re-audited on 2026-10-13 after closing NTS-30A (decimal zero digits read digit by digit with the standalone
+`zero`: `21.05` → `eenentwintig komma nul vijf`, `二十一点零五`; configured fraction suffixes unchanged), after
+closing NTS-31 (Dutch ordinals from a million: `miljoenste`, `twee miljoenste`,
 `twee miljoen tweehonderdduizendste` after the e-ANS and the Besluit bekendmaking spellingvoorschriften 2005, rule
 6.N; NL ordinals over `-long.MaxValue`..`long.MaxValue`, `long.MinValue` being rejected by the engine), on
 2026-10-11 after closing the cardinal part of NTS-31 (Dutch long
@@ -49,8 +51,10 @@ classification.
   - VN: a whole zero class after a higher class is skipped (`một triệu không trăm linh một`), whereas the
     SGK Toán 4 solution keys read it `không nghìn` (*năm mươi triệu không nghìn một trăm linh hai*); needs a
     zero-group rendering and a normative source.
-  - All languages: zero digits after the decimal separator are dropped (`21.05` → `twenty-one point  five` in
-    most configurations, `二十一点五` in JA/ZH); the decimal path reads the level-1 digit text, empty for 0.
+  - ~~All languages: zero digits after the decimal separator are dropped~~ — **closed as NTS-30A** (a decimal
+    digit 0 read digit by digit is the standalone `zero`): `DONE-2026-10-13(1).md`.
+  - FR (found by NTS-30A, not fixed): the digit-by-digit fallback beyond the configured fraction digits (more
+    than three decimals) reads the digit 1 with its level-1 text `et un` (`cent virgule zéro zéro zéro et un`).
   - ES currency: `uno euro` for DPD *un euro* (apocope before a noun); the caller-defined currency wording does
     not force the attributive form.
 - **NTS-26 — Wolof connective `-i` inside nested numeral multipliers.** Re-audited 2026-10-11:
@@ -146,6 +150,10 @@ NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-25, NTS-27, NTS-28, NT
   `tweemiljoenste`), the earlier groups of a compound stay cardinal (`een miljoen eerste`). Declarative only:
   `<OrdinalScale scales="2..6" multiplierSeparator=" " />`, stems `joen → joenst` and `jard → jardst`,
   `DutchOrdinalLanguageSpecifics` widened to 0–`long.MaxValue`: `DONE-2026-10-13.md`.
+- NTS-30A (decimal zero digits): in the digit-by-digit decimal branch (no `<Fraction>` suffix for the digit
+  count and no caller `DecimalSuffix`), a digit 0 is read with the standalone `zero` instead of the empty level-1
+  cardinal digit; the numerator/suffix branch is unchanged. The other NTS-30 items stay open:
+  `DONE-2026-10-13(1).md`.
 
 Full multi-form plural systems (Russian/Slavic count-dependent noun forms,
 Arabic dual/paucal/plural categories) were long deliberately out of scope — the
