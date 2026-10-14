@@ -188,8 +188,9 @@ public sealed class GreekOrdinalLanguageSpecifics : OrdinalDomainGuardLanguageSp
 /// one word with the ordinal marker in every part (Kielitoimiston ohjepankki: <c>viideskymmenesviides</c>,
 /// <c>kahdeskymmenesensimmäinen</c>), composed by the configuration. The inflected ordinals change every
 /// component (genitive <c>kolmannenkymmenennenkuudennen</c>), but the consulted sources give the paradigms of
-/// 1, 3, 5, 17, 20, 100 and 1000 only, so every non-nominative case fails closed; from 2000 the cardinal is wrong
-/// (<c>kaksi tuhat</c>, NTS-30) and the round thousands are not sourced, so those values fail closed too.
+/// 1, 3, 5, 17, 20, 100 and 1000 only, so every non-nominative case fails closed. From 2000 the cardinal is
+/// correct since NTS-30E (<c>kaksituhatta</c>), but no consulted source gives the round-thousand ordinals
+/// (2000th, 3000th, 21 000th): those values stay deliberately unsupported until they are sourced.
 /// </summary>
 public sealed class FinnishOrdinalLanguageSpecifics : OrdinalDomainGuardLanguageSpecifics
 {

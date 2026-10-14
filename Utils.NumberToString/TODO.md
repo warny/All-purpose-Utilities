@@ -1,6 +1,10 @@
 # Utils.NumberToString — Current backlog
 
-Re-audited on 2026-10-14 after closing NTS-30D (Bulgarian *и* before the last component of every numeral phrase,
+Re-audited on 2026-10-14 after closing NTS-30E (Finnish cardinals: one word inside a group, multiplier and
+*tuhat/tuhatta* joined, one space between groups: `kaksikymmentäyksi`, `kaksituhatta`,
+`kaksikymmentäyksituhatta satakaksikymmentäyksi`; every component inflected in the partitive and genitive:
+`kahtakymmentäyhtä`, `kahdenkymmenenyhden`; generic `multiplierSeparator` on `NumberScale` and `<ScaleForm>`;
+NTS-37 opened), after closing NTS-30D (Bulgarian *и* before the last component of every numeral phrase,
 a multiplier included: `двадесет и едно`, `сто двадесет и едно`, `хиляда и сто`, `двадесет и една хиляди`, `двадесет и
 един милиона`, through the generic `finalComponentConnector` primitive), after closing NTS-30C (the generated Conway scale nouns of RU, UK, BG, CS and SK agree
 with their multiplier through one `<GeneratedScaleForm>` per suffix family: `два триллиона`, `два трильйони`,
@@ -48,9 +52,6 @@ classification.
 ## Open items
 
 - **NTS-30 — cardinal defects found by NTS-27 and NTS-28 outside their lists.** Recorded, not fixed:
-  - FI (found by NTS-28): the thousands do not take the partitive after a multiplier (`kaksi tuhat` for
-    *kaksituhatta*) and the compounds are spaced (`kaksikymmentä yksi`, Kielitoimiston ohjepankki writes numbers
-    as one word); the Finnish ordinals from 2000 wait for this cardinal and a source for the round thousands.
   - ES/EU long scale: a milliard followed by millions is not composed (`dos mil millones quinientos millones` for
     DPD *dos mil quinientos millones*, "3500 millones (tres mil quinientos millones)"; `mil millones un millón`
     for *mil un millones*; EU `bi mila milioi eta bostehun milioi`). The multiplier of millón/milioi spans six
@@ -62,6 +63,13 @@ classification.
     zero-group rendering and a normative source.
   - ES currency: `uno euro` for DPD *un euro* (apocope before a noun); the caller-defined currency wording does
     not force the attributive form.
+- **NTS-37 — Finnish beyond NTS-30E: millions and the ordinals from 2000.** Opened by NTS-30E, which corrected
+  the cardinals 0–999 999 only. (1) FI declares `maxNumber="999999"`; opening the millions needs a source audit of
+  *miljoona*/*miljoonaa*, *miljardi* and the long-scale names, the spacing already configured
+  (`multiplierSeparator=" "`: *kaksi miljoonaa*, Kielitoimiston ohjepankki "numeroiden ryhmittely") and the case
+  forms of the dormant `miljoona` variant rules. (2) The ordinals from 2000 still fail closed: the cardinal is now
+  right (*kaksituhatta*), but no consulted source gives the round-thousand ordinals (2000th, 3000th, 21 000th).
+  (3) The zero keeps *nolla* in every case; its partitive and genitive need a source before being configured.
 - **NTS-35 — Polish cardinals above 999 999.** Excluded from NTS-30C: PL declares `maxNumber="999999"`, so no
   generated scale is part of its public domain and NTS-30C configured none. Opening the domain needs, together: the
   Polish long-scale names (*milion*, *miliard*, *bilion*, *biliard* …, not the current generated spelling), their
@@ -108,7 +116,7 @@ classification.
   cardinals below and above a million.
 
 
-NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-25, NTS-27, NTS-28, NTS-29, NTS-30A, NTS-30B, NTS-30C, NTS-30D, NTS-31 and NTS-32 are closed:
+NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-25, NTS-27, NTS-28, NTS-29, NTS-30A, NTS-30B, NTS-30C, NTS-30D, NTS-30E, NTS-31 and NTS-32 are closed:
 
 - NTS-01 — XSD validation: `DONE-2026-08-21.md`.
 - NTS-02 — initialization isolation: `DONE-2026-08-21.md`.
@@ -211,6 +219,16 @@ NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-25, NTS-27, NTS-28, NT
   (*хиляда и сто*, *двадесет и една хиляди и едно*). New generic `finalComponentConnector` (XML attribute,
   `NumberToStringConverterOptions.FinalComponentConnector`), rejected with `groupConnector`, `intraGroupConnector` or
   a `Fusion`; ordinals and clock byte-identical: `DONE-2026-10-14(2).md`.
+- NTS-30E (split out of NTS-30): Finnish cardinals follow Kielitoimiston ohjepankki ("numeroiden ryhmittely",
+  "peruslukujen taivuttaminen"): one word inside a group (*kaksikymmentäyksi*, *satakaksikymmentäyksi*), multiplier
+  and *tuhat/tuhatta* written together (*kaksituhatta*, *kaksikymmentäyksituhatta*), one space between groups;
+  partitive and genitive inflect every component (*kahtakymmentäyhtä*, *sadankahdenkymmenenviiden*,
+  *kolmeatuhatta*). New generic junction between a multiplier and its scale noun: `NumberScale multiplierSeparator`
+  (`NumberScale.MultiplierSeparator`), overridden per exact scale by `<ScaleForm multiplierSeparator>`
+  (`NumberToStringConverterOptions.ScaleFormMultiplierSeparators`); absent, the language separator applies, so every
+  other language is byte-identical. The built-in bases state it explicitly: `" "` on the `SCALE-*` bases, `""` on HU
+  (which inherits `SCALE-LONG` but writes `kétezer`). Ordinals and clock
+  byte-identical; domain unchanged; NTS-37 opened: `DONE-2026-10-14(3).md`.
 
 Full multi-form plural systems (Russian/Slavic count-dependent noun forms,
 Arabic dual/paucal/plural categories) were long deliberately out of scope — the

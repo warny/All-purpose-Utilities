@@ -984,6 +984,14 @@ public class ScaleFormEntry
     public LexicalFormSelectorElementType? LexicalFormSelector { get; set; }
 
     /// <summary>
+    /// Optional junction between the group multiplier and this scale noun, overriding the NumberScale default
+    /// whichever form is selected; <see langword="null"/> when absent. An empty string is kept (Finnish
+    /// <c>kaksituhatta</c>). Projected into <c>NumberToStringConverterOptions.ScaleFormMultiplierSeparators</c>.
+    /// </summary>
+    [XmlAttribute("multiplierSeparator")]
+    public string? MultiplierSeparator { get; set; }
+
+    /// <summary>
     /// Optional named forms, overriding or extending the "singular"/"plural" forms synthesized from
     /// the scale name.
     /// </summary>
@@ -1562,6 +1570,13 @@ public class NumberScaleType
     /// </summary>
     [XmlAttribute("suffixSeparator")]
     public string? SuffixSeparator { get; set; }
+
+    /// <summary>
+    /// Gets or sets the default junction between a group multiplier and its scale noun, or <see langword="null"/>
+    /// to use the language separator there (see <c>NumberScale.MultiplierSeparator</c>). An empty string is kept.
+    /// </summary>
+    [XmlAttribute("multiplierSeparator")]
+    public string? MultiplierSeparator { get; set; }
 
     /// <summary>
     /// Gets or sets the index offset applied when computing scale names.

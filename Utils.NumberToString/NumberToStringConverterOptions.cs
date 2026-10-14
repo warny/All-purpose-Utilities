@@ -326,6 +326,18 @@ public sealed class NumberToStringConverterOptions
     public IReadOnlyDictionary<int, ILexicalFormSelector>? ScaleFormSelectors { get; set; }
 
     /// <summary>
+    /// Optional per-scale junction between a group multiplier and the scale noun, keyed by scale index
+    /// (1 = thousands, 2 = millions, …), overriding <see cref="NumberScale.MultiplierSeparator"/> for that exact
+    /// scale whichever form its selector chooses. An empty string joins the multiplier and the noun directly
+    /// (Finnish <c>kaksituhatta</c>); values are never trimmed. A scale absent from this dictionary uses
+    /// <see cref="NumberScale.MultiplierSeparator"/>, or <see cref="Separator"/> when that is <see langword="null"/>.
+    /// Keys must be scale indices the <see cref="Scale"/> can name (≥ 1) and values must not be null; others are
+    /// rejected by the converter. The <see cref="ScaleConnector"/>, when its threshold is reached, keeps its own
+    /// formatting (<see cref="Separator"/>, connector, <see cref="Separator"/>).
+    /// </summary>
+    public IReadOnlyDictionary<int, string>? ScaleFormMultiplierSeparators { get; set; }
+
+    /// <summary>
     /// Optional lexical forms of the generated scale nouns, keyed by <see cref="NumberScale.ScaleSuffixes"/>
     /// index: every scale that <see cref="Scale"/> generates with that suffix, whatever its Conway prefix,
     /// uses the entry (Russian suffix 0: <c>он</c> / <c>она</c> / <c>онов</c> for триллион, квадриллион,
@@ -412,6 +424,8 @@ public sealed class NumberToStringConverterOptions
         // synthesized from source.Scale, which must not override the names of a replaced Scale.
         ScaleForms = source.ScaleFormOverrides;
         ScaleFormSelectors = source.ScaleFormSelectorOverrides;
+        // Configured overrides only (nothing is synthesized): the public view is safe to copy.
+        ScaleFormMultiplierSeparators = source.ScaleFormMultiplierSeparators;
         // Suffix fragments only, nothing synthesized from source.Scale: the effective view is safe to copy.
         GeneratedScaleForms = source.GeneratedScaleForms;
         OrdinalPrefix = source.OrdinalPrefix;

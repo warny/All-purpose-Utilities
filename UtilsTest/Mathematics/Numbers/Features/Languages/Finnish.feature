@@ -1,6 +1,9 @@
 @NumberToString @FI
 Feature: Finnish number conversion
 
+# NTS-30E, Kielitoimiston ohjepankki "Luvut ja numerot: numeroiden ryhmittely": the part below a thousand is one
+# word and so is the part counting the thousands (tuhat viisisataa, neljätoistatuhatta kuusisataa). The former
+# rows "kaksikymmentä yksi", "sata yksi" and "kaksi tuhat" were wrong.
 Scenario Outline: Basic cardinal numbers
     Given I use the "FI" number converter
     When I convert the cardinal number <number>
@@ -18,10 +21,10 @@ Examples:
     | 12 | kaksitoista |
     | 19 | yhdeksäntoista |
     | 20 | kaksikymmentä |
-    | 21 | kaksikymmentä yksi |
+    | 21 | kaksikymmentäyksi |
     | 100 | sata |
     | 200 | kaksisataa |
-    | 101 | sata yksi |
+    | 101 | satayksi |
 
 Scenario Outline: Thousands
     Given I use the "FI" number converter
@@ -31,7 +34,7 @@ Scenario Outline: Thousands
 Examples:
     | number | expected |
     | 1000 | tuhat |
-    | 2000 | kaksi tuhat |
+    | 2000 | kaksituhatta |
 
 Scenario Outline: Basic ordinal numbers
     Given I use the "FI" number converter
@@ -96,6 +99,9 @@ Examples:
     | 8 | sijamuoto=partitiivi | kahdeksaa |
     | 9 | sijamuoto=partitiivi | yhdeksää |
 
+# NTS-30E, Kielitoimiston ohjepankki "Luvut ja numerot: peruslukujen taivuttaminen": every component of an
+# inflected compound inflects, in one word (21:tä kahtakymmentäyhtä, 21:n kahdenkymmenenyhden). The former rows
+# "kaksikymmentä yhtä" and "kahdenkymmenen yhden" (spaces, uninflected multiplier) were wrong.
 Scenario Outline: Partitive scale and compound cardinal numbers
     Given I use the "FI" number converter
     And I use the variants "<variants>"
@@ -107,9 +113,9 @@ Examples:
     | 10 | sijamuoto=partitiivi | kymmentä |
     | 100 | sijamuoto=partitiivi | sataa |
     | 1000 | sijamuoto=partitiivi | tuhatta |
-    | 21 | sijamuoto=partitiivi | kaksikymmentä yhtä |
-    | 22 | sijamuoto=partitiivi | kaksikymmentä kahta |
-    | 201 | sijamuoto=partitiivi | kaksisataa yhtä |
+    | 21 | sijamuoto=partitiivi | kahtakymmentäyhtä |
+    | 22 | sijamuoto=partitiivi | kahtakymmentäkahta |
+    | 201 | sijamuoto=partitiivi | kahtasataayhtä |
 
 Scenario Outline: Partitive cardinal numbers from eleven through nineteen
     Given I use the "FI" number converter
@@ -124,7 +130,7 @@ Examples:
     | 17 | sijamuoto=partitiivi | seitsemäätoista |
     | 18 | sijamuoto=partitiivi | kahdeksaatoista |
     | 19 | sijamuoto=partitiivi | yhdeksäätoista |
-    | 211 | sijamuoto=partitiivi | kaksisataa yhtätoista |
+    | 211 | sijamuoto=partitiivi | kahtasataayhtätoista |
 
 Scenario Outline: Genitive unit cardinal numbers
     Given I use the "FI" number converter
@@ -155,13 +161,13 @@ Examples:
     | 20 | sijamuoto=genetiivi | kahdenkymmenen |
     | 30 | sijamuoto=genetiivi | kolmenkymmenen |
     | 70 | sijamuoto=genetiivi | seitsemänkymmenen |
-    | 21 | sijamuoto=genetiivi | kahdenkymmenen yhden |
-    | 22 | sijamuoto=genetiivi | kahdenkymmenen kahden |
+    | 21 | sijamuoto=genetiivi | kahdenkymmenenyhden |
+    | 22 | sijamuoto=genetiivi | kahdenkymmenenkahden |
     | 200 | sijamuoto=genetiivi | kahdensadan |
     | 300 | sijamuoto=genetiivi | kolmensadan |
     | 900 | sijamuoto=genetiivi | yhdeksänsadan |
-    | 221 | sijamuoto=genetiivi | kahdensadan kahdenkymmenen yhden |
-    | 222 | sijamuoto=genetiivi | kahdensadan kahdenkymmenen kahden |
+    | 221 | sijamuoto=genetiivi | kahdensadankahdenkymmenenyhden |
+    | 222 | sijamuoto=genetiivi | kahdensadankahdenkymmenenkahden |
 
 Scenario Outline: Genitive cardinal numbers from eleven through sixteen
     Given I use the "FI" number converter
@@ -230,7 +236,8 @@ Examples:
 # only the first part is ordinal (yhdestoista). Nominative only: the inflected compounds (genitive
 # kolmannenkymmenennenkuudennen) need paradigms of every component that the consulted sources give for 1,
 # 3, 5, 17, 20, 100 and 1000 only, so they still fail closed. From 2000 the cardinal itself is wrong
-# ("kaksi tuhat", NTS-30), and no source gives the round thousands: they fail closed.
+# ("kaksi tuhat") until NTS-30E; the cardinal is now correct (kaksituhatta) but no source gives the round
+# thousands: they still fail closed.
 Scenario Outline: NTS-28 Finnish compound ordinals in the nominative
     Given I use the "FI" number converter
     When I convert the ordinal number <number>
