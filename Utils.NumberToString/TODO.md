@@ -226,7 +226,8 @@ NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-25, NTS-27, NTS-28, NT
   *kolmeatuhatta*). New generic junction between a multiplier and its scale noun: `NumberScale multiplierSeparator`
   (`NumberScale.MultiplierSeparator`), overridden per exact scale by `<ScaleForm multiplierSeparator>`
   (`NumberToStringConverterOptions.ScaleFormMultiplierSeparators`); absent, the language separator applies, so every
-  other language is byte-identical (not set in `SCALE-*`: Hungarian would lose `kétezer`). Ordinals and clock
+  other language is byte-identical. The built-in bases state it explicitly: `" "` on the `SCALE-*` bases, `""` on HU
+  (which inherits `SCALE-LONG` but writes `kétezer`). Ordinals and clock
   byte-identical; domain unchanged; NTS-37 opened: `DONE-2026-10-14(3).md`.
 
 Full multi-form plural systems (Russian/Slavic count-dependent noun forms,

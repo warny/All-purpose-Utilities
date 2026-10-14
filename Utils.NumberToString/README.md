@@ -1755,8 +1755,10 @@ Inside a group, the digit `buildString` decides alone (`kaksikymmentä*` writes 
   else the language `separator` (the historical behaviour, kept byte for byte by every language that sets
   neither). A generated scale has no override of its own; an exact `<ScaleForm>` keyed by its index still wins.
 - An empty value is a real junction (the multiplier and the noun are written together); values are never
-  trimmed. The default is deliberately **not** set in the shared `SCALE-*` bases: Hungarian inherits
-  `SCALE-LONG` with `separator=""` (`kétezer`) and would become `kettő ezer`.
+  trimmed. The built-in configurations state their junction explicitly: `" "` on the `SCALE-SHORT`,
+  `SCALE-LONG` and `SCALE-SHORT-CYRILLIC` bases; `""` on Hungarian, which inherits `SCALE-LONG` but writes its
+  scale nouns together (`kétezer`, `kétmillió`); Finnish `" "` with `""` on the thousands. The fallback to
+  `separator` remains for programmatic and custom configurations that set neither.
 - `scaleConnector`, when its threshold is reached, keeps its own formatting (`separator` + connector +
   `separator`, Romanian `douăzeci de mii`); below the threshold the junction above applies.
 - `baseOn`: an absent attribute inherits, an explicit value — empty included — replaces. A child

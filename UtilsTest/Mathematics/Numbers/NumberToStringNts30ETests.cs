@@ -346,9 +346,34 @@ public class NumberToStringNts30ETests
         Assert.AreEqual(1, specifics.Calls);
     }
 
-    /// <summary>No built-in language but Finnish configures a multiplier separator: every other output is unchanged.</summary>
+    /// <summary>
+    /// The built-in configurations state their junction explicitly: the SCALE bases a space, Hungarian (which inherits
+    /// SCALE-LONG but glues its scale nouns) an empty string, Finnish a space overridden by "" for the thousands.
+    /// </summary>
     [TestMethod]
-    public void BuiltIn_OnlyFinnishConfiguresAMultiplierSeparator()
+    public void BuiltIn_ScaleBasesAndExceptionsAreExplicit()
+    {
+        Assert.AreEqual(" ", NumberToStringConverter.GetConverter("SCALE-LONG").Scale.MultiplierSeparator);
+        Assert.AreEqual(" ", NumberToStringConverter.GetConverter("SCALE-SHORT").Scale.MultiplierSeparator);
+        Assert.AreEqual(" ", NumberToStringConverter.GetConverter("SCALE-SHORT-CYRILLIC").Scale.MultiplierSeparator);
+        Assert.AreEqual("", NumberToStringConverter.GetConverter("HU").Scale.MultiplierSeparator);
+        Assert.AreEqual("", NumberToStringConverter.GetConverter("HU-HU").Scale.MultiplierSeparator);
+        Assert.AreEqual(" ", NumberToStringConverter.GetConverter("FI").Scale.MultiplierSeparator);
+        Assert.AreEqual("", NumberToStringConverter.GetConverter("FI").ScaleFormMultiplierSeparators[1]);
+
+        // Hungarian keeps its joined scale nouns.
+        var hu = NumberToStringConverter.GetConverter("HU");
+        Assert.AreEqual("ezer", hu.Convert(1000));
+        Assert.IsFalse(hu.Convert(2000).Contains(' '), hu.Convert(2000));
+        Assert.IsFalse(hu.Convert(2_000_000).Contains(' '), hu.Convert(2_000_000));
+    }
+
+    /// <summary>
+    /// Every built-in language but Finnish resolves the junction exactly as before NTS-30E (its language separator), and
+    /// configures no per-scale override: their outputs cannot change.
+    /// </summary>
+    [TestMethod]
+    public void BuiltIn_EffectiveJunctionIsTheHistoricalOneOutsideFinnish()
     {
         string[] cultures = ["AR", "BG", "CA", "ca-ES-valencia", "CS", "DA", "DE", "de-CH", "EE", "EL", "EN", "EN-GB", "ES", "EU", "FA",
             "FI", "FR", "FR-be", "FR-ca", "FR-ch", "GL", "HE", "HI", "HR", "HU", "ID", "IT", "JA", "KO", "MS", "NL", "NO", "PL", "PT",
@@ -356,9 +381,9 @@ public class NumberToStringNts30ETests
         foreach (string culture in cultures)
         {
             var converter = NumberToStringConverter.GetConverter(culture);
-            bool finnish = culture.StartsWith("FI", StringComparison.OrdinalIgnoreCase);
-            Assert.AreEqual(finnish ? " " : null, converter.Scale.MultiplierSeparator, culture);
-            Assert.AreEqual(finnish ? 1 : 0, converter.ScaleFormMultiplierSeparators.Count, culture);
+            if (culture.StartsWith("FI", StringComparison.OrdinalIgnoreCase)) continue;
+            Assert.AreEqual(converter.Separator, converter.Scale.MultiplierSeparator ?? converter.Separator, culture);
+            Assert.AreEqual(0, converter.ScaleFormMultiplierSeparators.Count, culture);
         }
     }
 

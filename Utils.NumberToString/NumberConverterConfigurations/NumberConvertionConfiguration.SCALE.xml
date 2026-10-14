@@ -19,6 +19,11 @@
     SCALE-SHORT-CYRILLIC  Short scale with the Conway tables transliterated into
                  Cyrillic (NTS-25), inherited by RU, BG and UK.
 
+    multiplierSeparator=" " (NTS-30E): the multiplier and its scale noun are separate words ("two
+    million"). This states explicitly what the language separator used to provide; a language that
+    joins them sets its own value (HU "": kétezer; FI keeps " " but overrides the thousands with ""
+    on <ScaleForm scale="1">: kaksituhatta, kaksi miljoonaa).
+
     Prefix tables follow the strict Conway-Guy-Wechsler system (NTS-24):
     - the prefix value (Conway index) is split into groups of three digits, each
       named on its own and joined by groupSeparator ("-illi-"): 0 → voidGroup
@@ -59,7 +64,7 @@
 				<Digit digit="9" string="nine" />
 			</Group>
 		</Groups>
-		<NumberScale firstLetterUpperCase="false">
+		<NumberScale firstLetterUpperCase="false" multiplierSeparator=" ">
 			<StaticNames>
 				<Scale value="0" string=""/>
 				<Scale value="1" string="thousand"/>
@@ -141,7 +146,7 @@
 				<Digit digit="9" string="nine" />
 			</Group>
 		</Groups>
-		<NumberScale firstLetterUpperCase="false">
+		<NumberScale firstLetterUpperCase="false" multiplierSeparator=" ">
 			<StaticNames>
 				<Scale value="0" string=""/>
 				<Scale value="1" string="thousand"/>
@@ -217,7 +222,7 @@
 	-->
 	<Language baseOn="SCALE-SHORT">
 		<Culture>SCALE-SHORT-CYRILLIC</Culture>
-		<NumberScale firstLetterUpperCase="false" voidGroup="ни" groupSeparator="лли">
+		<NumberScale firstLetterUpperCase="false" multiplierSeparator=" " voidGroup="ни" groupSeparator="лли">
 			<StaticNames>
 				<Scale value="0" string=""/>
 				<Scale value="1" string="тысяча"/>
