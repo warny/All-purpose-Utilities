@@ -59,17 +59,15 @@
              The engine uses the same junction between Conway groups and before the suffix, so
              n = 1000 is мі+ль+ні+ль+йон = мільнільйон (accepted limitation, NTS-25).
              Note: й (U+0439) starts suffix йон.
-             Plural (ів) fires for n≥2; 2–4 form (мільйони) is not handled — accepted limitation. -->
+             NTS-30B: тисяча, мільйон and мільярд agree with their multiplier (ScaleForm below); the
+             generated names from трильйон up keep the historical (ів) plural, wrong after …2–4
+             (два трильйонів for два трильйони, NTS-30C). -->
         <NumberScale firstLetterUpperCase="false" voidGroup="ні" groupSeparator="ль" startIndex="2">
             <StaticNames>
                 <Scale value="0" string="" />
-                <!--
-                    Simplified: "тисяч" is used as the invariant thousands word.
-                    Full Ukrainian inflection (тисяча/тисячі/тисяч) is not implemented.
-                -->
-                <Scale value="1" string="тисяч" />
-                <Scale value="2" string="мільйон(ів)" />
-                <Scale value="3" string="мільярд(ів)" />
+                <Scale value="1" string="тисяча" />
+                <Scale value="2" string="мільйон" />
+                <Scale value="3" string="мільярд" />
             </StaticNames>
             <Suffixes>
                 <Suffix>йон(ів)</Suffix>
@@ -122,10 +120,40 @@
                 <Digit digit="8" string="(м,кс,с)октингенти" />
                 <Digit digit="9" string="нонгенти" />
             </HundredsPrefixes>
+            <!-- NTS-30B: nominative singular after …1 (not …11), nominative plural after …2–4 (not …12–14),
+                 genitive plural otherwise (Unicode CLDR plural rules, uk; Український правопис 2019 § 70.11:
+                 тисяча, мільйон, мільярд decline as nouns; два/три/чотири govern the nominative plural,
+                 п'ять and above the genitive plural: три тисячі, п'ятсот п'ятдесят вісім тисяч).
+                 UkrainianPluralLexicalFormSelector returns the key, the words are here. -->
+            <ScaleForm scale="1" formSelector="UkrainianPluralLexicalFormSelector">
+                <Forms>
+                    <Form key="one" value="тисяча" />
+                    <Form key="few" value="тисячі" />
+                    <Form key="many" value="тисяч" />
+                </Forms>
+            </ScaleForm>
+            <ScaleForm scale="2" formSelector="UkrainianPluralLexicalFormSelector">
+                <Forms>
+                    <Form key="one" value="мільйон" />
+                    <Form key="few" value="мільйони" />
+                    <Form key="many" value="мільйонів" />
+                </Forms>
+            </ScaleForm>
+            <ScaleForm scale="3" formSelector="UkrainianPluralLexicalFormSelector">
+                <Forms>
+                    <Form key="one" value="мільярд" />
+                    <Form key="few" value="мільярди" />
+                    <Form key="many" value="мільярдів" />
+                </Forms>
+            </ScaleForm>
         </NumberScale>
         <Replacements>
-            <!-- Drop "один" before "тисяч": 1000 = "тисяч" not "один тисяч" -->
-            <Replacement oldValue="один тисяч" newValue="тисяч" onScale="1" onValue="1" />
+            <!-- Drop "один" before "тисяча": 1000 = "тисяча" not "один тисяча" -->
+            <Replacement oldValue="один тисяча" newValue="тисяча" onScale="1" onValue="1" />
+            <!-- NTS-30B: тисяча is feminine, so its multiplier ends in the feminine одна / дві
+                 (двадцять одна тисяча, дві тисячі); мільйон and мільярд are masculine (два мільйони). -->
+            <Replacement oldValue="один тисяча" newValue="одна тисяча" scope="EndsWith" onScale="1" />
+            <Replacement oldValue="два тисячі" newValue="дві тисячі" scope="EndsWith" onScale="1" />
         </Replacements>
         <Exceptions>
             <Number value="11" string="одинадцять" />

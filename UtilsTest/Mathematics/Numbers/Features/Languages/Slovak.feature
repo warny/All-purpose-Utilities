@@ -4,6 +4,10 @@ Feature: Slovak number conversion
 Background:
     Given I use the "SK" number converter
 
+# NTS-30B, Pravidlá slovenského pravopisu (JÚĽŠ SAV): tens with units, hundreds and thousands are one word
+# (dvadsaťsedem, päťsto, dvetisíc, dvadsaťsedemtisíc); the thousands, hundreds and tens-with-units are
+# written apart for readability (sedemtisíc dvesto osemdesiattri); millions and milliards are apart and agree
+# (štyri milióny, päť miliónov, tri miliardy; KSSJ: miliarda -y -iárd).
 Scenario Outline: Cardinal numbers
     When I convert the cardinal number <number>
     Then the result is "<expected>"
@@ -20,14 +24,29 @@ Examples:
     | 12 | dvanásť |
     | 19 | devätnásť |
     | 20 | dvadsať |
-    | 21 | dvadsať jeden |
+    | 21 | dvadsaťjeden |
+    | 22 | dvadsaťdva |
+    | 27 | dvadsaťsedem |
     | 100 | sto |
     | 101 | sto jeden |
     | 200 | dvesto |
     | 300 | tristo |
+    | 400 | štyristo |
+    | 500 | päťsto |
     | 1000 | tisíc |
-    | 2000 | dva tisíc |
-    | 10000 | desať tisíc |
+    | 2000 | dvetisíc |
+    | 3000 | tritisíc |
+    | 5000 | päťtisíc |
+    | 10000 | desaťtisíc |
+    | 27000 | dvadsaťsedemtisíc |
+    | 7283 | sedemtisíc dvesto osemdesiattri |
+    | 1000000 | jeden milión |
+    | 2000000 | dva milióny |
+    | 5000000 | päť miliónov |
+    | 22000000 | dvadsaťdva miliónov |
+    | 2000000000 | dve miliardy |
+    | 5000000000 | päť miliárd |
+    | 15348848 | pätnásť miliónov tristoštyridsaťosemtisíc osemsto štyridsaťosem |
     | -1 | mínus jeden |
 
 Scenario: The regional alias uses Slovak wording

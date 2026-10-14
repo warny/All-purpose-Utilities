@@ -4,6 +4,9 @@ Feature: Ukrainian number conversion
 Background:
     Given I use the "UK" number converter
 
+# NTS-30B: тисяча (feminine), мільйон, мільярд agree with their multiplier: singular after …1 (not …11),
+# nominative plural after …2-4 (not …12-14), genitive plural otherwise (Український правопис 2019 § 70.11;
+# Unicode CLDR plural rules, uk): дві тисячі, двадцять одна тисяча, два мільйони, п'ять мільйонів.
 Scenario Outline: Cardinal numbers
     When I convert the cardinal number <number>
     Then the result is "<expected>"
@@ -20,11 +23,18 @@ Examples:
     | 20 | двадцять |
     | 21 | двадцять один |
     | 100 | сто |
-    | 1000 | тисяч |
-    | 2000 | два тисяч |
+    | 1000 | тисяча |
+    | 2000 | дві тисячі |
+    | 5000 | п'ять тисяч |
+    | 21000 | двадцять одна тисяча |
+    | 22000 | двадцять дві тисячі |
     | 1000000 | один мільйон |
-    | 2000000 | два мільйонів |
+    | 2000000 | два мільйони |
+    | 5000000 | п'ять мільйонів |
+    | 22000000 | двадцять два мільйони |
     | 1000000000 | один мільярд |
+    | 2000000000 | два мільярди |
+    | 5000000000 | п'ять мільярдів |
     | 1000000000000 | один трильйон |
     | 1000000000000000000 | один квінтильйон |
 

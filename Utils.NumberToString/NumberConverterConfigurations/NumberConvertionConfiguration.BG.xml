@@ -57,7 +57,10 @@
              startIndex=2 maps scale 4 (10^12) to Conway index 3. The junction "ли" keeps the
              -i- between Conway groups: ми+ли+ни+ли+он = милинилион (n = 1000).
              Bulgarian simplifies the geminate of the Russian кваттуор (кватуордецилион), so
-             only UnitsPrefixes is overridden. -->
+             only UnitsPrefixes is overridden.
+             NTS-30B: хиляда, милион and милиард agree with their multiplier (ScaleForm below); the
+             generated names from трилион up keep the bare singular (две трилион for два трилиона,
+             NTS-30C). -->
         <NumberScale firstLetterUpperCase="false" groupSeparator="ли" startIndex="2">
             <StaticNames>
                 <Scale value="0" string="" />
@@ -81,10 +84,43 @@
                 <Digit digit="8" string="окто" />
                 <Digit digit="9" string="нове(мн)" />
             </UnitsPrefixes>
+            <!-- NTS-30B: the singular after exactly one, otherwise the plural of хиляда (feminine) and the
+                 count form (бройна форма) of the masculine non-person nouns милион and милиард, also after a
+                 compound ending in one (Официален правописен речник, ИБЕ-БАН 2012, pp. 26-27: десет хиляди
+                 километра, три милиона долара, пет милиарда лева, хиляда и една нощи; ИБЕ-БАН "Езикови
+                 справки": двайсетте и един апарата). DefaultLexicalFormSelector returns singular/plural. -->
+            <ScaleForm scale="1">
+                <Forms>
+                    <Form key="singular" value="хиляда" />
+                    <Form key="plural" value="хиляди" />
+                </Forms>
+            </ScaleForm>
+            <ScaleForm scale="2">
+                <Forms>
+                    <Form key="singular" value="милион" />
+                    <Form key="plural" value="милиона" />
+                </Forms>
+            </ScaleForm>
+            <ScaleForm scale="3">
+                <Forms>
+                    <Form key="singular" value="милиард" />
+                    <Form key="plural" value="милиарда" />
+                </Forms>
+            </ScaleForm>
         </NumberScale>
         <Replacements>
             <!-- Drop "едно" before "хиляда": 1000 = "хиляда" not "едно хиляда" -->
             <Replacement oldValue="едно хиляда" newValue="хиляда" onScale="1" onValue="1" />
+            <!-- NTS-30B: the default digits are the counting forms (едно, две). хиляда is feminine, so a
+                 compound multiplier ends in една (две is already feminine: две хиляди); милион and милиард are
+                 masculine, so their multiplier ends in един / два (един милион, два милиона). -->
+            <Replacement oldValue="едно хиляди" newValue="една хиляди" scope="EndsWith" onScale="1" />
+            <Replacement oldValue="едно милион" newValue="един милион" scope="EndsWith" onScale="2" />
+            <Replacement oldValue="едно милиона" newValue="един милиона" scope="EndsWith" onScale="2" />
+            <Replacement oldValue="две милиона" newValue="два милиона" scope="EndsWith" onScale="2" />
+            <Replacement oldValue="едно милиард" newValue="един милиард" scope="EndsWith" onScale="3" />
+            <Replacement oldValue="едно милиарда" newValue="един милиарда" scope="EndsWith" onScale="3" />
+            <Replacement oldValue="две милиарда" newValue="два милиарда" scope="EndsWith" onScale="3" />
         </Replacements>
         <Exceptions>
             <Number value="11" string="единадесет" />
