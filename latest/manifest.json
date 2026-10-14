@@ -9001,6 +9001,62 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.GeneratedScaleForm.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.GeneratedScaleForm.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.GeneratedScaleForm",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.GeneratedScaleForm.yml\" sourcestartlinenumber=\"1\">The lexical forms of one family of generated scale nouns: every scale that <xref href=\"Utils.NumberToString.NumberScale\" data-throw-if-not-resolved=\"false\"></xref>\nnames with the same suffix (<xref href=\"Utils.NumberToString.NumberScale.ScaleSuffixes\" data-throw-if-not-resolved=\"false\"></xref> index) shares it, whatever its\nConway prefix. Configured by <code>&lt;GeneratedScaleForm suffix=&quot;…&quot;&gt;</code> or\n<xref href=\"Utils.NumberToString.NumberToStringConverterOptions.GeneratedScaleForms\" data-throw-if-not-resolved=\"false\"></xref>.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.GeneratedScaleFormEntry.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.GeneratedScaleFormEntry.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.GeneratedScaleFormEntry",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.GeneratedScaleFormEntry.yml\" sourcestartlinenumber=\"1\">XML element <code>&lt;GeneratedScaleForm suffix=&quot;…&quot;&gt;</code> inside <code>&lt;NumberScale&gt;</code>: declares the\nsuffix fragments of every scale noun the NumberScale generates with one suffix (one index of\n<code>&lt;Suffixes&gt;</code>), the selector choosing the fragment from the group multiplier, and the\nvariants each fragment may force on that multiplier. Projected into\n<code>NumberToStringConverterOptions.GeneratedScaleForms</code>.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.GeneratedScaleFormValueEntry.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.GeneratedScaleFormValueEntry.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.GeneratedScaleFormValueEntry",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.GeneratedScaleFormValueEntry.yml\" sourcestartlinenumber=\"1\">Maps one form key of a generated scale family to its suffix fragment and to the variants it forces\non the multiplier when selected.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.GeneratedScaleFormsType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.GeneratedScaleFormsType.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.GeneratedScaleFormsType",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.GeneratedScaleFormsType.yml\" sourcestartlinenumber=\"1\">Holds the suffix fragments of a <xref href=\"Utils.NumberToString.GeneratedScaleFormEntry\" data-throw-if-not-resolved=\"false\"></xref>.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.NumberToString.GermanNumberToStringLanguageSpecifics.yml",
       "output": {
         ".html": {

@@ -322,6 +322,34 @@ primeira</code>) and the Dicionario da Real Academia Galega for the round hundre
 </dd>
     </dl>
     <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.GeneratedScaleForm.html">GeneratedScaleForm</a></dt>
+      <dd><p>The lexical forms of one family of generated scale nouns: every scale that <a class="xref" href="Utils.NumberToString.NumberScale.html">NumberScale</a>
+names with the same suffix (<a class="xref" href="Utils.NumberToString.NumberScale.html#Utils_NumberToString_NumberScale_ScaleSuffixes">ScaleSuffixes</a> index) shares it, whatever its
+Conway prefix. Configured by <code>&lt;GeneratedScaleForm suffix=&quot;…&quot;&gt;</code> or
+<a class="xref" href="Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_GeneratedScaleForms">GeneratedScaleForms</a>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.GeneratedScaleFormEntry.html">GeneratedScaleFormEntry</a></dt>
+      <dd><p>XML element <code>&lt;GeneratedScaleForm suffix=&quot;…&quot;&gt;</code> inside <code>&lt;NumberScale&gt;</code>: declares the
+suffix fragments of every scale noun the NumberScale generates with one suffix (one index of
+<code>&lt;Suffixes&gt;</code>), the selector choosing the fragment from the group multiplier, and the
+variants each fragment may force on that multiplier. Projected into
+<code>NumberToStringConverterOptions.GeneratedScaleForms</code>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.GeneratedScaleFormValueEntry.html">GeneratedScaleFormValueEntry</a></dt>
+      <dd><p>Maps one form key of a generated scale family to its suffix fragment and to the variants it forces
+on the multiplier when selected.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.GeneratedScaleFormsType.html">GeneratedScaleFormsType</a></dt>
+      <dd><p>Holds the suffix fragments of a <a class="xref" href="Utils.NumberToString.GeneratedScaleFormEntry.html">GeneratedScaleFormEntry</a>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
       <dt><a class="xref" href="Utils.NumberToString.GermanNumberToStringLanguageSpecifics.html">GermanNumberToStringLanguageSpecifics</a></dt>
       <dd><p>Applies German writing-specific finalization rules to converted numeric texts.</p>
 </dd>

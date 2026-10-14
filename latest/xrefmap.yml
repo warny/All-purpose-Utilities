@@ -62699,6 +62699,192 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.GalicianOrdinalLanguageSpecifics.SupportedDomain
   nameWithType: GalicianOrdinalLanguageSpecifics.SupportedDomain
+- uid: Utils.NumberToString.GeneratedScaleForm
+  name: GeneratedScaleForm
+  href: api/Utils.NumberToString.GeneratedScaleForm.html
+  commentId: T:Utils.NumberToString.GeneratedScaleForm
+  fullName: Utils.NumberToString.GeneratedScaleForm
+  nameWithType: GeneratedScaleForm
+- uid: Utils.NumberToString.GeneratedScaleForm.#ctor(Utils.NumberToString.LexicalFormSet,Utils.NumberToString.ILexicalFormSelector,System.Collections.Generic.IReadOnlyDictionary{System.String,Utils.NumberToString.ForcedVariantSet})
+  name: GeneratedScaleForm(LexicalFormSet, ILexicalFormSelector?, IReadOnlyDictionary<string, ForcedVariantSet>?)
+  href: api/Utils.NumberToString.GeneratedScaleForm.html#Utils_NumberToString_GeneratedScaleForm__ctor_Utils_NumberToString_LexicalFormSet_Utils_NumberToString_ILexicalFormSelector_System_Collections_Generic_IReadOnlyDictionary_System_String_Utils_NumberToString_ForcedVariantSet__
+  commentId: M:Utils.NumberToString.GeneratedScaleForm.#ctor(Utils.NumberToString.LexicalFormSet,Utils.NumberToString.ILexicalFormSelector,System.Collections.Generic.IReadOnlyDictionary{System.String,Utils.NumberToString.ForcedVariantSet})
+  name.vb: New(LexicalFormSet, ILexicalFormSelector, IReadOnlyDictionary(Of String, ForcedVariantSet))
+  fullName: Utils.NumberToString.GeneratedScaleForm.GeneratedScaleForm(Utils.NumberToString.LexicalFormSet, Utils.NumberToString.ILexicalFormSelector?, System.Collections.Generic.IReadOnlyDictionary<string, Utils.NumberToString.ForcedVariantSet>?)
+  fullName.vb: Utils.NumberToString.GeneratedScaleForm.New(Utils.NumberToString.LexicalFormSet, Utils.NumberToString.ILexicalFormSelector, System.Collections.Generic.IReadOnlyDictionary(Of String, Utils.NumberToString.ForcedVariantSet))
+  nameWithType: GeneratedScaleForm.GeneratedScaleForm(LexicalFormSet, ILexicalFormSelector?, IReadOnlyDictionary<string, ForcedVariantSet>?)
+  nameWithType.vb: GeneratedScaleForm.New(LexicalFormSet, ILexicalFormSelector, IReadOnlyDictionary(Of String, ForcedVariantSet))
+- uid: Utils.NumberToString.GeneratedScaleForm.#ctor*
+  name: GeneratedScaleForm
+  href: api/Utils.NumberToString.GeneratedScaleForm.html#Utils_NumberToString_GeneratedScaleForm__ctor_
+  commentId: Overload:Utils.NumberToString.GeneratedScaleForm.#ctor
+  isSpec: "True"
+  name.vb: New
+  fullName: Utils.NumberToString.GeneratedScaleForm.GeneratedScaleForm
+  fullName.vb: Utils.NumberToString.GeneratedScaleForm.New
+  nameWithType: GeneratedScaleForm.GeneratedScaleForm
+  nameWithType.vb: GeneratedScaleForm.New
+- uid: Utils.NumberToString.GeneratedScaleForm.Forms
+  name: Forms
+  href: api/Utils.NumberToString.GeneratedScaleForm.html#Utils_NumberToString_GeneratedScaleForm_Forms
+  commentId: P:Utils.NumberToString.GeneratedScaleForm.Forms
+  fullName: Utils.NumberToString.GeneratedScaleForm.Forms
+  nameWithType: GeneratedScaleForm.Forms
+- uid: Utils.NumberToString.GeneratedScaleForm.Forms*
+  name: Forms
+  href: api/Utils.NumberToString.GeneratedScaleForm.html#Utils_NumberToString_GeneratedScaleForm_Forms_
+  commentId: Overload:Utils.NumberToString.GeneratedScaleForm.Forms
+  isSpec: "True"
+  fullName: Utils.NumberToString.GeneratedScaleForm.Forms
+  nameWithType: GeneratedScaleForm.Forms
+- uid: Utils.NumberToString.GeneratedScaleForm.MultiplierForcedVariants
+  name: MultiplierForcedVariants
+  href: api/Utils.NumberToString.GeneratedScaleForm.html#Utils_NumberToString_GeneratedScaleForm_MultiplierForcedVariants
+  commentId: P:Utils.NumberToString.GeneratedScaleForm.MultiplierForcedVariants
+  fullName: Utils.NumberToString.GeneratedScaleForm.MultiplierForcedVariants
+  nameWithType: GeneratedScaleForm.MultiplierForcedVariants
+- uid: Utils.NumberToString.GeneratedScaleForm.MultiplierForcedVariants*
+  name: MultiplierForcedVariants
+  href: api/Utils.NumberToString.GeneratedScaleForm.html#Utils_NumberToString_GeneratedScaleForm_MultiplierForcedVariants_
+  commentId: Overload:Utils.NumberToString.GeneratedScaleForm.MultiplierForcedVariants
+  isSpec: "True"
+  fullName: Utils.NumberToString.GeneratedScaleForm.MultiplierForcedVariants
+  nameWithType: GeneratedScaleForm.MultiplierForcedVariants
+- uid: Utils.NumberToString.GeneratedScaleForm.Selector
+  name: Selector
+  href: api/Utils.NumberToString.GeneratedScaleForm.html#Utils_NumberToString_GeneratedScaleForm_Selector
+  commentId: P:Utils.NumberToString.GeneratedScaleForm.Selector
+  fullName: Utils.NumberToString.GeneratedScaleForm.Selector
+  nameWithType: GeneratedScaleForm.Selector
+- uid: Utils.NumberToString.GeneratedScaleForm.Selector*
+  name: Selector
+  href: api/Utils.NumberToString.GeneratedScaleForm.html#Utils_NumberToString_GeneratedScaleForm_Selector_
+  commentId: Overload:Utils.NumberToString.GeneratedScaleForm.Selector
+  isSpec: "True"
+  fullName: Utils.NumberToString.GeneratedScaleForm.Selector
+  nameWithType: GeneratedScaleForm.Selector
+- uid: Utils.NumberToString.GeneratedScaleFormEntry
+  name: GeneratedScaleFormEntry
+  href: api/Utils.NumberToString.GeneratedScaleFormEntry.html
+  commentId: T:Utils.NumberToString.GeneratedScaleFormEntry
+  fullName: Utils.NumberToString.GeneratedScaleFormEntry
+  nameWithType: GeneratedScaleFormEntry
+- uid: Utils.NumberToString.GeneratedScaleFormEntry.FormSelector
+  name: FormSelector
+  href: api/Utils.NumberToString.GeneratedScaleFormEntry.html#Utils_NumberToString_GeneratedScaleFormEntry_FormSelector
+  commentId: P:Utils.NumberToString.GeneratedScaleFormEntry.FormSelector
+  fullName: Utils.NumberToString.GeneratedScaleFormEntry.FormSelector
+  nameWithType: GeneratedScaleFormEntry.FormSelector
+- uid: Utils.NumberToString.GeneratedScaleFormEntry.FormSelector*
+  name: FormSelector
+  href: api/Utils.NumberToString.GeneratedScaleFormEntry.html#Utils_NumberToString_GeneratedScaleFormEntry_FormSelector_
+  commentId: Overload:Utils.NumberToString.GeneratedScaleFormEntry.FormSelector
+  isSpec: "True"
+  fullName: Utils.NumberToString.GeneratedScaleFormEntry.FormSelector
+  nameWithType: GeneratedScaleFormEntry.FormSelector
+- uid: Utils.NumberToString.GeneratedScaleFormEntry.Forms
+  name: Forms
+  href: api/Utils.NumberToString.GeneratedScaleFormEntry.html#Utils_NumberToString_GeneratedScaleFormEntry_Forms
+  commentId: P:Utils.NumberToString.GeneratedScaleFormEntry.Forms
+  fullName: Utils.NumberToString.GeneratedScaleFormEntry.Forms
+  nameWithType: GeneratedScaleFormEntry.Forms
+- uid: Utils.NumberToString.GeneratedScaleFormEntry.Forms*
+  name: Forms
+  href: api/Utils.NumberToString.GeneratedScaleFormEntry.html#Utils_NumberToString_GeneratedScaleFormEntry_Forms_
+  commentId: Overload:Utils.NumberToString.GeneratedScaleFormEntry.Forms
+  isSpec: "True"
+  fullName: Utils.NumberToString.GeneratedScaleFormEntry.Forms
+  nameWithType: GeneratedScaleFormEntry.Forms
+- uid: Utils.NumberToString.GeneratedScaleFormEntry.LexicalFormSelector
+  name: LexicalFormSelector
+  href: api/Utils.NumberToString.GeneratedScaleFormEntry.html#Utils_NumberToString_GeneratedScaleFormEntry_LexicalFormSelector
+  commentId: P:Utils.NumberToString.GeneratedScaleFormEntry.LexicalFormSelector
+  fullName: Utils.NumberToString.GeneratedScaleFormEntry.LexicalFormSelector
+  nameWithType: GeneratedScaleFormEntry.LexicalFormSelector
+- uid: Utils.NumberToString.GeneratedScaleFormEntry.LexicalFormSelector*
+  name: LexicalFormSelector
+  href: api/Utils.NumberToString.GeneratedScaleFormEntry.html#Utils_NumberToString_GeneratedScaleFormEntry_LexicalFormSelector_
+  commentId: Overload:Utils.NumberToString.GeneratedScaleFormEntry.LexicalFormSelector
+  isSpec: "True"
+  fullName: Utils.NumberToString.GeneratedScaleFormEntry.LexicalFormSelector
+  nameWithType: GeneratedScaleFormEntry.LexicalFormSelector
+- uid: Utils.NumberToString.GeneratedScaleFormEntry.Suffix
+  name: Suffix
+  href: api/Utils.NumberToString.GeneratedScaleFormEntry.html#Utils_NumberToString_GeneratedScaleFormEntry_Suffix
+  commentId: P:Utils.NumberToString.GeneratedScaleFormEntry.Suffix
+  fullName: Utils.NumberToString.GeneratedScaleFormEntry.Suffix
+  nameWithType: GeneratedScaleFormEntry.Suffix
+- uid: Utils.NumberToString.GeneratedScaleFormEntry.Suffix*
+  name: Suffix
+  href: api/Utils.NumberToString.GeneratedScaleFormEntry.html#Utils_NumberToString_GeneratedScaleFormEntry_Suffix_
+  commentId: Overload:Utils.NumberToString.GeneratedScaleFormEntry.Suffix
+  isSpec: "True"
+  fullName: Utils.NumberToString.GeneratedScaleFormEntry.Suffix
+  nameWithType: GeneratedScaleFormEntry.Suffix
+- uid: Utils.NumberToString.GeneratedScaleFormValueEntry
+  name: GeneratedScaleFormValueEntry
+  href: api/Utils.NumberToString.GeneratedScaleFormValueEntry.html
+  commentId: T:Utils.NumberToString.GeneratedScaleFormValueEntry
+  fullName: Utils.NumberToString.GeneratedScaleFormValueEntry
+  nameWithType: GeneratedScaleFormValueEntry
+- uid: Utils.NumberToString.GeneratedScaleFormValueEntry.ForceVariants
+  name: ForceVariants
+  href: api/Utils.NumberToString.GeneratedScaleFormValueEntry.html#Utils_NumberToString_GeneratedScaleFormValueEntry_ForceVariants
+  commentId: P:Utils.NumberToString.GeneratedScaleFormValueEntry.ForceVariants
+  fullName: Utils.NumberToString.GeneratedScaleFormValueEntry.ForceVariants
+  nameWithType: GeneratedScaleFormValueEntry.ForceVariants
+- uid: Utils.NumberToString.GeneratedScaleFormValueEntry.ForceVariants*
+  name: ForceVariants
+  href: api/Utils.NumberToString.GeneratedScaleFormValueEntry.html#Utils_NumberToString_GeneratedScaleFormValueEntry_ForceVariants_
+  commentId: Overload:Utils.NumberToString.GeneratedScaleFormValueEntry.ForceVariants
+  isSpec: "True"
+  fullName: Utils.NumberToString.GeneratedScaleFormValueEntry.ForceVariants
+  nameWithType: GeneratedScaleFormValueEntry.ForceVariants
+- uid: Utils.NumberToString.GeneratedScaleFormValueEntry.Key
+  name: Key
+  href: api/Utils.NumberToString.GeneratedScaleFormValueEntry.html#Utils_NumberToString_GeneratedScaleFormValueEntry_Key
+  commentId: P:Utils.NumberToString.GeneratedScaleFormValueEntry.Key
+  fullName: Utils.NumberToString.GeneratedScaleFormValueEntry.Key
+  nameWithType: GeneratedScaleFormValueEntry.Key
+- uid: Utils.NumberToString.GeneratedScaleFormValueEntry.Key*
+  name: Key
+  href: api/Utils.NumberToString.GeneratedScaleFormValueEntry.html#Utils_NumberToString_GeneratedScaleFormValueEntry_Key_
+  commentId: Overload:Utils.NumberToString.GeneratedScaleFormValueEntry.Key
+  isSpec: "True"
+  fullName: Utils.NumberToString.GeneratedScaleFormValueEntry.Key
+  nameWithType: GeneratedScaleFormValueEntry.Key
+- uid: Utils.NumberToString.GeneratedScaleFormValueEntry.Value
+  name: Value
+  href: api/Utils.NumberToString.GeneratedScaleFormValueEntry.html#Utils_NumberToString_GeneratedScaleFormValueEntry_Value
+  commentId: P:Utils.NumberToString.GeneratedScaleFormValueEntry.Value
+  fullName: Utils.NumberToString.GeneratedScaleFormValueEntry.Value
+  nameWithType: GeneratedScaleFormValueEntry.Value
+- uid: Utils.NumberToString.GeneratedScaleFormValueEntry.Value*
+  name: Value
+  href: api/Utils.NumberToString.GeneratedScaleFormValueEntry.html#Utils_NumberToString_GeneratedScaleFormValueEntry_Value_
+  commentId: Overload:Utils.NumberToString.GeneratedScaleFormValueEntry.Value
+  isSpec: "True"
+  fullName: Utils.NumberToString.GeneratedScaleFormValueEntry.Value
+  nameWithType: GeneratedScaleFormValueEntry.Value
+- uid: Utils.NumberToString.GeneratedScaleFormsType
+  name: GeneratedScaleFormsType
+  href: api/Utils.NumberToString.GeneratedScaleFormsType.html
+  commentId: T:Utils.NumberToString.GeneratedScaleFormsType
+  fullName: Utils.NumberToString.GeneratedScaleFormsType
+  nameWithType: GeneratedScaleFormsType
+- uid: Utils.NumberToString.GeneratedScaleFormsType.Entries
+  name: Entries
+  href: api/Utils.NumberToString.GeneratedScaleFormsType.html#Utils_NumberToString_GeneratedScaleFormsType_Entries
+  commentId: P:Utils.NumberToString.GeneratedScaleFormsType.Entries
+  fullName: Utils.NumberToString.GeneratedScaleFormsType.Entries
+  nameWithType: GeneratedScaleFormsType.Entries
+- uid: Utils.NumberToString.GeneratedScaleFormsType.Entries*
+  name: Entries
+  href: api/Utils.NumberToString.GeneratedScaleFormsType.html#Utils_NumberToString_GeneratedScaleFormsType_Entries_
+  commentId: Overload:Utils.NumberToString.GeneratedScaleFormsType.Entries
+  isSpec: "True"
+  fullName: Utils.NumberToString.GeneratedScaleFormsType.Entries
+  nameWithType: GeneratedScaleFormsType.Entries
 - uid: Utils.NumberToString.GermanNumberToStringLanguageSpecifics
   name: GermanNumberToStringLanguageSpecifics
   href: api/Utils.NumberToString.GermanNumberToStringLanguageSpecifics.html
@@ -65576,6 +65762,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberScaleType.FirstLetterUpperCase
   nameWithType: NumberScaleType.FirstLetterUpperCase
+- uid: Utils.NumberToString.NumberScaleType.GeneratedScaleForms
+  name: GeneratedScaleForms
+  href: api/Utils.NumberToString.NumberScaleType.html#Utils_NumberToString_NumberScaleType_GeneratedScaleForms
+  commentId: P:Utils.NumberToString.NumberScaleType.GeneratedScaleForms
+  fullName: Utils.NumberToString.NumberScaleType.GeneratedScaleForms
+  nameWithType: NumberScaleType.GeneratedScaleForms
+- uid: Utils.NumberToString.NumberScaleType.GeneratedScaleForms*
+  name: GeneratedScaleForms
+  href: api/Utils.NumberToString.NumberScaleType.html#Utils_NumberToString_NumberScaleType_GeneratedScaleForms_
+  commentId: Overload:Utils.NumberToString.NumberScaleType.GeneratedScaleForms
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberScaleType.GeneratedScaleForms
+  nameWithType: NumberScaleType.GeneratedScaleForms
 - uid: Utils.NumberToString.NumberScaleType.GroupSeparator
   name: GroupSeparator
   href: api/Utils.NumberToString.NumberScaleType.html#Utils_NumberToString_NumberScaleType_GroupSeparator
@@ -65751,6 +65950,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberScaleXmlModel.FirstLetterUpperCaseSpecified
   nameWithType: NumberScaleXmlModel.FirstLetterUpperCaseSpecified
+- uid: Utils.NumberToString.NumberScaleXmlModel.GeneratedScaleForms
+  name: GeneratedScaleForms
+  href: api/Utils.NumberToString.NumberScaleXmlModel.html#Utils_NumberToString_NumberScaleXmlModel_GeneratedScaleForms
+  commentId: P:Utils.NumberToString.NumberScaleXmlModel.GeneratedScaleForms
+  fullName: Utils.NumberToString.NumberScaleXmlModel.GeneratedScaleForms
+  nameWithType: NumberScaleXmlModel.GeneratedScaleForms
+- uid: Utils.NumberToString.NumberScaleXmlModel.GeneratedScaleForms*
+  name: GeneratedScaleForms
+  href: api/Utils.NumberToString.NumberScaleXmlModel.html#Utils_NumberToString_NumberScaleXmlModel_GeneratedScaleForms_
+  commentId: Overload:Utils.NumberToString.NumberScaleXmlModel.GeneratedScaleForms
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberScaleXmlModel.GeneratedScaleForms
+  nameWithType: NumberScaleXmlModel.GeneratedScaleForms
 - uid: Utils.NumberToString.NumberScaleXmlModel.GroupSeparator
   name: GroupSeparator
   href: api/Utils.NumberToString.NumberScaleXmlModel.html#Utils_NumberToString_NumberScaleXmlModel_GroupSeparator
@@ -66599,6 +66811,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberToStringConverter.Fractions
   nameWithType: NumberToStringConverter.Fractions
+- uid: Utils.NumberToString.NumberToStringConverter.GeneratedScaleForms
+  name: GeneratedScaleForms
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_GeneratedScaleForms
+  commentId: P:Utils.NumberToString.NumberToStringConverter.GeneratedScaleForms
+  fullName: Utils.NumberToString.NumberToStringConverter.GeneratedScaleForms
+  nameWithType: NumberToStringConverter.GeneratedScaleForms
+- uid: Utils.NumberToString.NumberToStringConverter.GeneratedScaleForms*
+  name: GeneratedScaleForms
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_GeneratedScaleForms_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverter.GeneratedScaleForms
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverter.GeneratedScaleForms
+  nameWithType: NumberToStringConverter.GeneratedScaleForms
 - uid: Utils.NumberToString.NumberToStringConverter.GetConverter(System.Globalization.CultureInfo)
   name: GetConverter(CultureInfo)
   href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_GetConverter_System_Globalization_CultureInfo_
@@ -68286,6 +68511,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberToStringConverterOptions.FromCulture
   nameWithType: NumberToStringConverterOptions.FromCulture
+- uid: Utils.NumberToString.NumberToStringConverterOptions.GeneratedScaleForms
+  name: GeneratedScaleForms
+  href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_GeneratedScaleForms
+  commentId: P:Utils.NumberToString.NumberToStringConverterOptions.GeneratedScaleForms
+  fullName: Utils.NumberToString.NumberToStringConverterOptions.GeneratedScaleForms
+  nameWithType: NumberToStringConverterOptions.GeneratedScaleForms
+- uid: Utils.NumberToString.NumberToStringConverterOptions.GeneratedScaleForms*
+  name: GeneratedScaleForms
+  href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_GeneratedScaleForms_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverterOptions.GeneratedScaleForms
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverterOptions.GeneratedScaleForms
+  nameWithType: NumberToStringConverterOptions.GeneratedScaleForms
 - uid: Utils.NumberToString.NumberToStringConverterOptions.Group
   name: Group
   href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_Group
