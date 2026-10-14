@@ -6,8 +6,9 @@ Background:
 
 # NTS-30B: tisíc, milion and miliarda (feminine) take the nominative after 1-4 only and the genitive after
 # every other multiplier, compounds included (Internetová jazyková příručka, ÚJČ AV ČR: dva tisíce,
-# jeden milion, dva miliony; dvacet dva žáků is the more natural form). The generated names from bilion up
-# are NTS-30C.
+# jeden milion, dva miliony; dvacet dva žáků is the more natural form). NTS-30C: the generated names agree
+# the same way by suffix family, masculine -on and feminine -arda (IJP: bilion, biliony, bilionů;
+# biliarda, biliardy, biliard).
 Scenario Outline: Cardinal numbers
     When I convert the cardinal number <number>
     Then the result is "<expected>"
@@ -40,9 +41,14 @@ Examples:
     | 1000000000 | jedna miliarda |
     | 2000000000 | dvě miliardy |
     | 5000000000 | pět miliard |
-    | 1000000000000 | jedna bilion |
-    | 1000000000000000 | jedna biliard |
-    | 1000000000000000000 | jedna trilion |
+    | 1000000000000 | jeden bilion |
+    | 1000000000000000 | jedna biliarda |
+    | 1000000000000000000 | jeden trilion |
+    | 2000000000000 | dva biliony |
+    | 5000000000000 | pět bilionů |
+    | 2000000000000000 | dvě biliardy |
+    | 5000000000000000 | pět biliard |
+    | 22000000000000000 | dvacet dva biliard |
 
 Scenario: The regional alias uses Czech wording
     Then the "CS" and "CS-CZ" converters produce the same cardinal wording for 2

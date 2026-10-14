@@ -920,6 +920,7 @@ namespace Utils.NumberToString
                 HundredsPrefixes = model.HundredsPrefixes,
                 Suffixes = model.Suffixes,
                 ScaleForms = model.ScaleForms,
+                GeneratedScaleForms = model.GeneratedScaleForms,
             };
         }
 
@@ -1083,7 +1084,25 @@ namespace Utils.NumberToString
                 HundredsPrefixes = overriding.HundredsPrefixes ?? inherited.HundredsPrefixes,
                 Suffixes = overriding.Suffixes ?? inherited.Suffixes,
                 ScaleForms = MergeScaleForms(inherited.ScaleForms, overriding.ScaleForms),
+                GeneratedScaleForms = MergeGeneratedScaleForms(inherited.GeneratedScaleForms, overriding.GeneratedScaleForms),
             };
+        }
+
+        /// <summary>
+        /// Merges inherited and overriding <c>&lt;GeneratedScaleForm&gt;</c> entries by suffix index, like
+        /// <see cref="MergeScaleForms"/> by scale index: an overriding entry replaces the inherited entry of
+        /// the same suffix, other inherited entries are kept, and every overriding entry is kept as-is so a
+        /// duplicate declared by the overriding language itself still reaches validation.
+        /// </summary>
+        /// <param name="inherited">The base language entries, or <see langword="null"/>.</param>
+        /// <param name="overriding">The derived language entries, or <see langword="null"/>.</param>
+        /// <returns>The merged entries, or <see langword="null"/> when neither side declares any.</returns>
+        private static List<GeneratedScaleFormEntry>? MergeGeneratedScaleForms(List<GeneratedScaleFormEntry>? inherited, List<GeneratedScaleFormEntry>? overriding)
+        {
+            if (overriding is not { Count: > 0 }) return inherited;
+            if (inherited is not { Count: > 0 }) return overriding;
+            var overridden = new HashSet<int>(overriding.Select(e => e.Suffix));
+            return [.. inherited.Where(e => !overridden.Contains(e.Suffix)), .. overriding];
         }
 
         /// <summary>
@@ -1170,6 +1189,7 @@ namespace Utils.NumberToString
                 TensPrefixes = definition.TensPrefixes,
                 HundredsPrefixes = definition.HundredsPrefixes,
                 ScaleForms = definition.ScaleForms,
+                GeneratedScaleForms = definition.GeneratedScaleForms,
                 Suffixes = definition.Suffixes,
             };
         }
@@ -1417,6 +1437,12 @@ namespace Utils.NumberToString
             if (duplicateScaleForm != null)
                 throw new ArgumentException(
                     $"[{languageIdentifier}] NumberScale declares more than one ScaleForm for scale {duplicateScaleForm.Key}.");
+
+            var generatedScaleFormEntries = confScale.GeneratedScaleForms ?? [];
+            var duplicateGeneratedForm = generatedScaleFormEntries.GroupBy(e => e.Suffix).FirstOrDefault(g => g.Count() > 1);
+            if (duplicateGeneratedForm != null)
+                throw new ArgumentException(
+                    $"[{languageIdentifier}] NumberScale declares more than one GeneratedScaleForm for suffix {duplicateGeneratedForm.Key}.");
 
             BigInteger? configuredMaximum = string.IsNullOrWhiteSpace(language.MaxNumber)
                 ? null
@@ -2000,6 +2026,22 @@ namespace Utils.NumberToString
                         !string.IsNullOrWhiteSpace(e.LexicalFormSelector?.Type) ? e.LexicalFormSelector!.Type : e.FormSelector,
                         languageIdentifier,
                         XmlElementToXElement(e.LexicalFormSelector?.Configuration))),
+                // Selectors are resolved here, once; forced variants are parsed here and validated
+                // against the language by the converter.
+                GeneratedScaleForms = generatedScaleFormEntries.ToDictionary(
+                    e => e.Suffix,
+                    e => new GeneratedScaleForm(
+                        LexicalFormSet.Create((e.Forms?.Entries ?? []).Select(f => (f.Key, f.Value))),
+                        !string.IsNullOrWhiteSpace(e.LexicalFormSelector?.Type) || !string.IsNullOrWhiteSpace(e.FormSelector)
+                            ? ResolveLexicalFormSelector(
+                                !string.IsNullOrWhiteSpace(e.LexicalFormSelector?.Type) ? e.LexicalFormSelector!.Type : e.FormSelector,
+                                languageIdentifier,
+                                XmlElementToXElement(e.LexicalFormSelector?.Configuration))
+                            : null,
+                        (e.Forms?.Entries ?? [])
+                            .Where(f => !string.IsNullOrWhiteSpace(f.ForceVariants))
+                            .ToDictionary(f => f.Key, f => ForcedVariantSet.Parse(f.ForceVariants, languageIdentifier,
+                                $"GeneratedScaleForms[{e.Suffix}].{f.Key}"), StringComparer.OrdinalIgnoreCase))),
                 TimeUnits = language.TimeUnits?.Units?
                     .ToDictionary(u => u.Name, u => (u.Singular, u.Plural, u.Count1Form)),
                 TimeUnitForcedVariants = language.TimeUnits?.Units?

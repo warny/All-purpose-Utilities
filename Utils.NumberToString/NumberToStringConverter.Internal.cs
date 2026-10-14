@@ -297,6 +297,10 @@ namespace Utils.NumberToString
         /// <summary>Gets or sets the per-scale lexical forms and selectors.</summary>
         [XmlElement(ElementName = "ScaleForm")]
         public List<ScaleFormEntry>? ScaleForms { get; set; }
+
+        /// <summary>Gets or sets the lexical forms of the generated scale families.</summary>
+        [XmlElement(ElementName = "GeneratedScaleForm")]
+        public List<GeneratedScaleFormEntry>? GeneratedScaleForms { get; set; }
     }
 
     /// <summary>
@@ -365,5 +369,6 @@ namespace Utils.NumberToString
         public DigitListType? HundredsPrefixes { get; init; }
         public SuffixesType? Suffixes { get; init; }
         public List<ScaleFormEntry>? ScaleForms { get; init; }
+        public List<GeneratedScaleFormEntry>? GeneratedScaleForms { get; init; }
     }
 }

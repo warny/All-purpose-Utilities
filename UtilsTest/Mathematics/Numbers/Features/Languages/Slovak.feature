@@ -7,7 +7,8 @@ Background:
 # NTS-30B, Pravidlá slovenského pravopisu (JÚĽŠ SAV): tens with units, hundreds and thousands are one word
 # (dvadsaťsedem, päťsto, dvetisíc, dvadsaťsedemtisíc); the thousands, hundreds and tens-with-units are
 # written apart for readability (sedemtisíc dvesto osemdesiattri); millions and milliards are apart and agree
-# (štyri milióny, päť miliónov, tri miliardy; KSSJ: miliarda -y -iárd).
+# (štyri milióny, päť miliónov, tri miliardy; KSSJ: miliarda -y -iárd). NTS-30C: the generated names agree
+# the same way by suffix family (sedem biliónov, PSP; jedna biliarda, dve biliardy, päť biliárd).
 Scenario Outline: Cardinal numbers
     When I convert the cardinal number <number>
     Then the result is "<expected>"
@@ -46,6 +47,12 @@ Examples:
     | 22000000 | dvadsaťdva miliónov |
     | 2000000000 | dve miliardy |
     | 5000000000 | päť miliárd |
+    | 1000000000000 | jeden bilión |
+    | 2000000000000 | dva bilióny |
+    | 5000000000000 | päť biliónov |
+    | 1000000000000000 | jedna biliarda |
+    | 2000000000000000 | dve biliardy |
+    | 5000000000000000 | päť biliárd |
     | 15348848 | pätnásť miliónov tristoštyridsaťosemtisíc osemsto štyridsaťosem |
     | -1 | mínus jeden |
 

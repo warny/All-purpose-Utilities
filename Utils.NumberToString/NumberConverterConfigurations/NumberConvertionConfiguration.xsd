@@ -1622,6 +1622,69 @@
                                                 </xs:attribute>
                                             </xs:complexType>
                                         </xs:element>
+                                        <xs:element name="GeneratedScaleForm" minOccurs="0" maxOccurs="unbounded">
+                                            <xs:annotation>
+                                                <xs:documentation>
+                                                    Lexical forms of every scale noun generated with one suffix (the
+                                                    index of a Suffix in Suffixes), whatever its Conway prefix: the
+                                                    values are suffix fragments (Russian он / она / онов), joined to
+                                                    the generated prefix of the scale (три + лли + она = триллиона).
+                                                    The selector receives the multiplier and the effective variants
+                                                    and returns a form key; a Form may force variants on the
+                                                    multiplier when it is selected (forceVariants="gender=ženský":
+                                                    dvě biliardy): the forced values overlay the caller's for the
+                                                    group triggers, variant rules (onScale ones included) and
+                                                    group-with-scale triggers of that group, which the whole-number
+                                                    caller passes then leave untouched. A ScaleForm of the same scale keeps precedence; a
+                                                    generated scale without entry keeps the historical name. Under
+                                                    baseOn, entries are merged by suffix index.
+                                                </xs:documentation>
+                                            </xs:annotation>
+                                            <xs:complexType>
+                                                <xs:sequence>
+                                                    <xs:element name="LexicalFormSelector" minOccurs="0">
+                                                        <xs:annotation><xs:documentation>
+                                                            Structured alternative to the formSelector attribute (same contract
+                                                            as ScaleForm/LexicalFormSelector).
+                                                        </xs:documentation></xs:annotation>
+                                                        <xs:complexType>
+                                                            <xs:sequence>
+                                                                <xs:element name="Configuration" minOccurs="0">
+                                                                    <xs:complexType>
+                                                                        <xs:sequence>
+                                                                            <xs:any processContents="lax" minOccurs="0" maxOccurs="unbounded" />
+                                                                        </xs:sequence>
+                                                                        <xs:anyAttribute processContents="lax" />
+                                                                    </xs:complexType>
+                                                                </xs:element>
+                                                            </xs:sequence>
+                                                            <xs:attribute name="type" type="xs:string" use="required" />
+                                                        </xs:complexType>
+                                                    </xs:element>
+                                                    <xs:element name="Forms">
+                                                        <xs:complexType>
+                                                            <xs:sequence>
+                                                                <xs:element name="Form" minOccurs="1" maxOccurs="unbounded">
+                                                                    <xs:complexType>
+                                                                        <xs:attribute name="key" type="xs:string" use="required" />
+                                                                        <xs:attribute name="value" type="xs:string" use="required" />
+                                                                        <xs:attribute name="forceVariants" type="xs:string" use="optional">
+                                                                            <xs:annotation><xs:documentation>Comma-separated dimension=value pairs forced on the multiplier of this form.</xs:documentation></xs:annotation>
+                                                                        </xs:attribute>
+                                                                    </xs:complexType>
+                                                                </xs:element>
+                                                            </xs:sequence>
+                                                        </xs:complexType>
+                                                    </xs:element>
+                                                </xs:sequence>
+                                                <xs:attribute name="suffix" type="xs:nonNegativeInteger" use="required">
+                                                    <xs:annotation><xs:documentation>Index of the suffix in Suffixes (0 = first suffix).</xs:documentation></xs:annotation>
+                                                </xs:attribute>
+                                                <xs:attribute name="formSelector" type="xs:string" use="optional">
+                                                    <xs:annotation><xs:documentation>Selector type name or built-in alias ("default"), resolved once at load.</xs:documentation></xs:annotation>
+                                                </xs:attribute>
+                                            </xs:complexType>
+                                        </xs:element>
                                     </xs:sequence>
                                     <xs:attribute name="firstLetterUpperCase" type="xs:boolean" use="optional">
                                         <xs:annotation>

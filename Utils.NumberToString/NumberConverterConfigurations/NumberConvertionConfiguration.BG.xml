@@ -58,9 +58,8 @@
              -i- between Conway groups: ми+ли+ни+ли+он = милинилион (n = 1000).
              Bulgarian simplifies the geminate of the Russian кваттуор (кватуордецилион), so
              only UnitsPrefixes is overridden.
-             NTS-30B: хиляда, милион and милиард agree with their multiplier (ScaleForm below); the
-             generated names from трилион up keep the bare singular (две трилион for два трилиона,
-             NTS-30C). -->
+             NTS-30B: хиляда, милион and милиард agree with their multiplier (ScaleForm below); NTS-30C:
+             the generated names from трилион up agree too, through GeneratedScaleForm (два трилиона). -->
         <NumberScale firstLetterUpperCase="false" groupSeparator="ли" startIndex="2">
             <StaticNames>
                 <Scale value="0" string="" />
@@ -107,6 +106,17 @@
                     <Form key="plural" value="милиарда" />
                 </Forms>
             </ScaleForm>
+            <!-- NTS-30C: every generated scale (трилион, квадрилион, …) is a masculine non-person noun like
+                 милион: the singular after exactly one, otherwise its count form (бройна форма) трилиона
+                 (Речник на българския език, rechnik.chitanka.info "трилион": м.р., бройна форма трилиона;
+                 Официален правописен речник, ИБЕ-БАН 2012, pp. 26-27). The multiplier is masculine (един,
+                 два), compounds included; the conjunction и of the compounds is NTS-30D. -->
+            <GeneratedScaleForm suffix="0">
+                <Forms>
+                    <Form key="singular" value="он" forceVariants="gender=masculine" />
+                    <Form key="plural" value="она" forceVariants="gender=masculine" />
+                </Forms>
+            </GeneratedScaleForm>
         </NumberScale>
         <Replacements>
             <!-- Drop "едно" before "хиляда": 1000 = "хиляда" not "едно хиляда" -->

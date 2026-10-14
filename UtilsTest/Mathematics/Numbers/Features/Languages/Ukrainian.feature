@@ -7,6 +7,7 @@ Background:
 # NTS-30B: тисяча (feminine), мільйон, мільярд agree with their multiplier: singular after …1 (not …11),
 # nominative plural after …2-4 (not …12-14), genitive plural otherwise (Український правопис 2019 § 70.11;
 # Unicode CLDR plural rules, uk): дві тисячі, двадцять одна тисяча, два мільйони, п'ять мільйонів.
+# NTS-30C: the generated names agree the same way (два трильйони, п'ять трильйонів; Горох, "трильйон").
 Scenario Outline: Cardinal numbers
     When I convert the cardinal number <number>
     Then the result is "<expected>"
@@ -37,6 +38,9 @@ Examples:
     | 5000000000 | п'ять мільярдів |
     | 1000000000000 | один трильйон |
     | 1000000000000000000 | один квінтильйон |
+    | 2000000000000 | два трильйони |
+    | 5000000000000 | п'ять трильйонів |
+    | 22000000000000 | двадцять два трильйони |
 
 Scenario: Ordinal conversion is supported
     Then the converter supports ordinal conversion

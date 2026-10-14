@@ -363,6 +363,16 @@ namespace Utils.NumberToString
                 kv => kv.Key,
                 kv => CanonicalizeForcedVariants(kv.Value, $"Fractions[{kv.Key}]"));
 
+            // Needs the variant dimensions (forced-variant canonicalization, default query) and the group
+            // divisors (selector probe), all compiled above.
+            _defaultVariantQuery = BuildVariantQuery([]);
+            _generatedScaleForms = CompileGeneratedScaleForms(options.GeneratedScaleForms);
+            _generatedScaleFormBySuffix = _generatedScaleForms.Count == 0
+                ? []
+                : Enumerable.Range(0, Scale.ScaleSuffixes.Count)
+                    .Select(index => _generatedScaleForms.TryGetValue(index, out var form) ? form : null)
+                    .ToArray();
+
             CompileAndValidateRulePrecedence();
         }
 
@@ -505,6 +515,13 @@ namespace Utils.NumberToString
         /// <see cref="ScaleFormSelectors"/> (which fills in <see cref="DefaultLexicalFormSelector"/>).
         /// </summary>
         internal IReadOnlyDictionary<int, ILexicalFormSelector> ScaleFormSelectorOverrides => _scaleFormSelectorOverrides;
+
+        /// <summary>
+        /// Gets the lexical forms of the generated scale nouns, keyed by <see cref="NumberScale.ScaleSuffixes"/>
+        /// index (see <see cref="NumberToStringConverterOptions.GeneratedScaleForms"/>), with their forced
+        /// variants canonicalized for this language. Empty when none is configured.
+        /// </summary>
+        public IReadOnlyDictionary<int, GeneratedScaleForm> GeneratedScaleForms => _generatedScaleForms;
 
         /// <summary>
         /// Gets the default digit tables keyed by group level, then by digit (see also
@@ -718,6 +735,12 @@ namespace Utils.NumberToString
         private readonly ImmutableDictionary<int, LexicalFormSet> _scaleFormOverrides;
         /// <summary>Only the explicitly configured scale form selectors (no default filled in).</summary>
         private readonly ImmutableDictionary<int, ILexicalFormSelector> _scaleFormSelectorOverrides;
+        /// <summary>Validated generated scale forms by suffix index (forced variants canonicalized); the public view.</summary>
+        private readonly ImmutableDictionary<int, GeneratedScaleForm> _generatedScaleForms;
+        /// <summary>The same entries indexed by suffix index for the conversion path; empty when none is configured.</summary>
+        private readonly GeneratedScaleForm?[] _generatedScaleFormBySuffix;
+        /// <summary>The variant query of the language defaults, overlaid by the multiplier variants of a generated form.</summary>
+        private readonly IReadOnlyDictionary<string, string> _defaultVariantQuery;
         /// <summary>Base ordinal-only replacements, validated and snapshotted at construction.</summary>
         private readonly ImmutableArray<ReplacementRule> _ordinalReplacements;
         /// <summary>Ordinal stem rules validated and sorted once at construction, longest ending first.</summary>
@@ -1307,10 +1330,10 @@ namespace Utils.NumberToString
             var query = BuildVariantQuery(variants);
             // Zero goes through the same post-processing pipeline as non-zero values so that
             // variant rules, end triggers, and language finalization can be applied to "zero".
-            string raw = abs == BigInteger.Zero ? Zero : ConvertRaw(abs, query);
+            var shielded = NewShieldedGroups();
+            string raw = abs == BigInteger.Zero ? Zero : ConvertRaw(abs, query, shielded);
             if (_rawAdjustFunction != null) raw = _rawAdjustFunction(raw);
-            raw = ApplyVariantRules(raw, query, (BigInteger?)abs);
-            raw = ApplyTriggers(raw, TriggerAt.End, null, query);
+            raw = ApplyShielded(raw, shielded, text => ApplyTriggers(ApplyVariantRules(text, query, (BigInteger?)abs), TriggerAt.End, null, query));
             string final = LanguageSpecifics.FinalizeWriting(LanguageIdentifier, raw);
 
             return isNegative ? Minus.Replace("*", final) : final;
@@ -1342,10 +1365,10 @@ namespace Utils.NumberToString
             if (number.Sign < 0)
                 throw new ArgumentOutOfRangeException(nameof(number), "Cardinal fragments must be non-negative.");
 
-            string raw = number.IsZero ? Zero : ConvertRaw(number, query);
+            var shielded = NewShieldedGroups();
+            string raw = number.IsZero ? Zero : ConvertRaw(number, query, shielded);
             raw = ApplyRawAdjustment(raw);
-            raw = ApplyVariantRules(raw, query, number);
-            return ApplyTriggers(raw, TriggerAt.End, null, query);
+            return ApplyShielded(raw, shielded, text => ApplyTriggers(ApplyVariantRules(text, query, number), TriggerAt.End, null, query));
         }
 
         /// <summary>
@@ -1369,13 +1392,20 @@ namespace Utils.NumberToString
         /// <summary>
         /// Produces the raw text for a positive number without any adjustment or finalization.
         /// </summary>
-        private string ConvertRaw(BigInteger abs, IReadOnlyDictionary<string, string>? variantQuery = null)
+        /// <param name="abs">The positive value.</param>
+        /// <param name="variantQuery">The caller's effective variant query, or <see langword="null"/>.</param>
+        /// <param name="shieldedGroups">
+        /// When not <see langword="null"/>, receives, in assembly order, the text of every group whose
+        /// generated scale form forced variants on its multiplier, so that the whole-number passes run with
+        /// the caller's query can leave it untouched (see <see cref="ApplyShielded"/>).
+        /// </param>
+        private string ConvertRaw(BigInteger abs, IReadOnlyDictionary<string, string>? variantQuery = null, List<string>? shieldedGroups = null)
         {
             if (abs.Between(long.MinValue, long.MaxValue) && Exceptions.TryGetValue((long)abs, out var exValue))
                 return exValue;
 
             int groupNumber = 0;
-            var groupsValues = new Stack<(string text, long numericValue)>();
+            var groupsValues = new Stack<(string text, long numericValue, bool shielded)>();
 
             BigInteger remaining = abs;
             while (remaining != 0)
@@ -1390,9 +1420,18 @@ namespace Utils.NumberToString
                     bool hasHigherGroup = remaining >= groupValue;
                     // The multiplier of a scale covered by a scoped Groups uses that table.
                     string digits = ConvertGroup(GetGroupTable(groupNumber), width, group, hasHigherGroup);
-                    digits = ApplyTriggers(digits, TriggerAt.Group, groupNumber, variantQuery);
 
-                    string scaleName = GetScaleWord(groupNumber, group, variantQuery);
+                    // The scale noun's form is selected once, on the caller's variants. A generated form may
+                    // impose variants on its multiplier: the forced values overlay the caller's, and that one
+                    // query then drives every local pass of the group (group triggers, the variant rules of the
+                    // multiplier, the scale-scoped variant rules, the group-with-scale triggers). Without
+                    // forced variants the caller's query is used, exactly as before.
+                    var (scaleName, multiplierVariants) = ResolveScaleWord(groupNumber, group, variantQuery);
+                    bool forced = !multiplierVariants.IsEmpty;
+                    var groupQuery = forced ? multiplierVariants.Overlay(variantQuery ?? _defaultVariantQuery) : variantQuery;
+                    digits = ApplyTriggers(digits, TriggerAt.Group, groupNumber, groupQuery);
+                    if (forced)
+                        digits = ApplyVariantRules(digits, groupQuery!, group);
                     string scaleJoin = (_scaleConnector != null && groupNumber > 0 && group >= _scaleConnectorThreshold)
                         ? Separator + _scaleConnector + Separator
                         : Separator;
@@ -1406,11 +1445,11 @@ namespace Utils.NumberToString
                             ? scaleName + scaleJoin + digits
                             : digits + scaleJoin + scaleName;
                     resValue = ApplyReplacements(resValue, groupNumber, group);
-                    if (variantQuery != null && _hasScaleSpecificVariantRules)
-                        resValue = ApplyVariantRulesForScale(resValue, variantQuery, groupNumber, group);
-                    resValue = ApplyTriggers(resValue, TriggerAt.GroupWithScale, groupNumber, variantQuery);
+                    if (groupQuery != null && _hasScaleSpecificVariantRules)
+                        resValue = ApplyVariantRulesForScale(resValue, groupQuery, groupNumber, group);
+                    resValue = ApplyTriggers(resValue, TriggerAt.GroupWithScale, groupNumber, groupQuery);
 
-                    groupsValues.Push((resValue.Trim(), group));
+                    groupsValues.Push((resValue.Trim(), group, forced));
                 }
                 remaining /= groupValue;
                 groupNumber++;
@@ -1419,7 +1458,8 @@ namespace Utils.NumberToString
             var result = new StringBuilder();
             while (groupsValues.Count > 0)
             {
-                var (text, _) = groupsValues.Pop();
+                var (text, _, shielded) = groupsValues.Pop();
+                if (shielded) shieldedGroups?.Add(text);
                 result.Append(text);
                 if (groupsValues.Count > 0)
                 {
@@ -2359,8 +2399,9 @@ namespace Utils.NumberToString
                 // since they agree a cardinal, not the joined multiplier + noun text.
                 if (!TryBuildRoundScaleText(number, activeVariants, out raw))
                 {
-                    raw = number == 0 ? Zero : ConvertRaw((BigInteger)number, activeVariants);
-                    raw = ApplyVariantRules(raw, activeVariants, number);
+                    var shielded = NewShieldedGroups();
+                    raw = number == 0 ? Zero : ConvertRaw((BigInteger)number, activeVariants, shielded);
+                    raw = ApplyShielded(raw, shielded, text => ApplyVariantRules(text, activeVariants, number));
                 }
                 // Ordinal-only replacements see the assembled, variant-transformed cardinal and run
                 // before the ordinal transformation (word rules, stems, removeTrailing, suffix).
@@ -3619,19 +3660,45 @@ namespace Utils.NumberToString
         /// </summary>
         public string GetScaleName(int scale)
         {
+            if (TryGetDynamicScaleInfo(scale, out long prefix, out int suffixIndex))
+                return BuildDynamicName(prefix, ScaleSuffixes[suffixIndex]);
+            if (scale < StaticValues.Count) return StaticValues[scale];
+            throw new InvalidOperationException(
+                $"scale {scale} exceeds the {StaticValues.Count} static names and no scaleSuffixes are configured " +
+                "for dynamic generation. Either add more static names or provide at least one suffix.");
+        }
+
+        /// <summary>
+        /// Gets the generation metadata of a dynamically named scale: its prefix value (the value handed to
+        /// <see cref="BuildDynamicName"/>, 1 for the first generated scale) and the index of its suffix in
+        /// <see cref="ScaleSuffixes"/>. This is the single place where a scale index is mapped to its prefix
+        /// and suffix; <see cref="GetScaleName"/> and the generated scale forms of the converter both use it.
+        /// </summary>
+        /// <param name="scale">The scale index (0 = units).</param>
+        /// <param name="prefix">The prefix value of a generated scale, 0 otherwise.</param>
+        /// <param name="suffixIndex">The suffix index of a generated scale, -1 otherwise.</param>
+        /// <returns>
+        /// <see langword="true"/> for a generated scale; <see langword="false"/> for a static scale or when
+        /// no suffix is configured.
+        /// </returns>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="scale"/> is negative.</exception>
+        internal bool TryGetDynamicScaleInfo(int scale, out long prefix, out int suffixIndex)
+        {
             if (scale < 0)
                 throw new ArgumentOutOfRangeException(nameof(scale),
                     $"scale must be non-negative; got {scale}.");
-            if (scale < StaticValues.Count) return StaticValues[scale];
-            if (ScaleSuffixes.Count == 0)
-                throw new InvalidOperationException(
-                    $"scale {scale} exceeds the {StaticValues.Count} static names and no scaleSuffixes are configured " +
-                    "for dynamic generation. Either add more static names or provide at least one suffix.");
+            if (scale < StaticValues.Count || ScaleSuffixes.Count == 0)
+            {
+                prefix = 0;
+                suffixIndex = -1;
+                return false;
+            }
 
             long dynamicScale = (long)scale - StaticValues.Count + StartIndex;
             var (quotient, remainder) = long.DivRem(dynamicScale, ScaleSuffixes.Count);
-
-            return BuildDynamicName(quotient + 1, ScaleSuffixes[(int)remainder]);
+            prefix = quotient + 1;
+            suffixIndex = (int)remainder;
+            return true;
         }
 
         /// <summary>
