@@ -263,6 +263,8 @@ namespace Utils.NumberToString
             _intraGroupConnectorThreshold = options.IntraGroupConnectorThreshold;
             _scaleConnector = options.ScaleConnector;
             _scaleConnectorThreshold = options.ScaleConnectorThreshold;
+            _finalComponentConnector = string.IsNullOrWhiteSpace(options.FinalComponentConnector) ? null : options.FinalComponentConnector;
+            ValidateFinalComponentConnector();
             // Needs the group tables, Exceptions and the intra-group connector: edge validation renders
             // the actual lower constituents of each table through ConvertGroup.
             CompileAllFusions();
@@ -627,6 +629,13 @@ namespace Utils.NumberToString
         /// <summary>Gets the threshold at or above which <see cref="ScaleConnector"/> is inserted.</summary>
         public int ScaleConnectorThreshold => (int)_scaleConnectorThreshold;
 
+        /// <summary>
+        /// Gets the connector placed before the last additive component of every numeral phrase (e.g. "и" for
+        /// Bulgarian), or <see langword="null"/> when the language declares none
+        /// (see <see cref="NumberToStringConverterOptions.FinalComponentConnector"/>).
+        /// </summary>
+        public string? FinalComponentConnector => _finalComponentConnector;
+
         /// <inheritdoc/>
         public bool SupportsTimeConversion => _timeUnits.Count > 0;
 
@@ -759,6 +768,7 @@ namespace Utils.NumberToString
         private readonly long _intraGroupConnectorThreshold;
         private readonly string? _scaleConnector;
         private readonly long _scaleConnectorThreshold;
+        private readonly string? _finalComponentConnector;
         private readonly ImmutableDictionary<int, ForcedVariantSet> _fractionForcedVariants;
         /// <summary>Lazily computed text of each pronounced decimal digit (see <see cref="DecimalDigitTexts"/>).</summary>
         private string[]? _decimalDigitTexts;
@@ -1405,7 +1415,7 @@ namespace Utils.NumberToString
                 return exValue;
 
             int groupNumber = 0;
-            var groupsValues = new Stack<(string text, long numericValue, bool shielded)>();
+            var groupsValues = new Stack<(string text, long numericValue, bool shielded, bool hasFinalConnector)>();
 
             BigInteger remaining = abs;
             while (remaining != 0)
@@ -1419,7 +1429,7 @@ namespace Utils.NumberToString
                     // inner forms of the digits (innerString/innerBuildString), when the tables declare any.
                     bool hasHigherGroup = remaining >= groupValue;
                     // The multiplier of a scale covered by a scoped Groups uses that table.
-                    string digits = ConvertGroup(GetGroupTable(groupNumber), width, group, hasHigherGroup);
+                    string digits = ConvertGroup(GetGroupTable(groupNumber), width, group, hasHigherGroup, out bool hasFinalConnector);
 
                     // The scale noun's form is selected once, on the caller's variants. A generated form may
                     // impose variants on its multiplier: the forced values overlay the caller's, and that one
@@ -1449,7 +1459,7 @@ namespace Utils.NumberToString
                         resValue = ApplyVariantRulesForScale(resValue, groupQuery, groupNumber, group);
                     resValue = ApplyTriggers(resValue, TriggerAt.GroupWithScale, groupNumber, groupQuery);
 
-                    groupsValues.Push((resValue.Trim(), group, forced));
+                    groupsValues.Push((resValue.Trim(), group, forced, hasFinalConnector));
                 }
                 remaining /= groupValue;
                 groupNumber++;
@@ -1458,13 +1468,17 @@ namespace Utils.NumberToString
             var result = new StringBuilder();
             while (groupsValues.Count > 0)
             {
-                var (text, _, shielded) = groupsValues.Pop();
+                var (text, _, shielded, _) = groupsValues.Pop();
                 if (shielded) shieldedGroups?.Add(text);
                 result.Append(text);
                 if (groupsValues.Count > 0)
                 {
-                    long nextValue = groupsValues.Peek().numericValue;
-                    if (_groupConnector != null && nextValue < _groupConnectorThreshold)
+                    var (_, nextValue, _, nextHasFinalConnector) = groupsValues.Peek();
+                    // The whole number is a phrase whose components are its non-zero groups: the connector precedes
+                    // the last one when that group is a single component (its multiplier has no connector of its own).
+                    if (_finalComponentConnector != null && groupsValues.Count == 1 && !nextHasFinalConnector)
+                        result.Append(Separator).Append(_finalComponentConnector).Append(Separator);
+                    else if (_groupConnector != null && nextValue < _groupConnectorThreshold)
                         result.Append(Separator).Append(_groupConnector).Append(Separator);
                     else
                         result.Append(GroupSeparator).Append(Separator);
@@ -2158,7 +2172,26 @@ namespace Utils.NumberToString
         /// </param>
         /// <returns>The group text (empty for level 0).</returns>
         private string ConvertGroup(GroupTable table, int groupNumber, long number, bool afterNonZero = false)
+            => ConvertGroup(table, groupNumber, number, afterNonZero, out _);
+
+        /// <summary>
+        /// Converts a group of digits and reports whether its text already contains the
+        /// <see cref="FinalComponentConnector"/>.
+        /// </summary>
+        /// <param name="table">The default or scale-scoped table.</param>
+        /// <param name="groupNumber">The group level (1 = units, 2 = tens …).</param>
+        /// <param name="number">The value of the group, below 10^<paramref name="groupNumber"/>.</param>
+        /// <param name="afterNonZero">Whether a higher digit of the whole number is non-zero (see the overload above).</param>
+        /// <param name="hasFinalConnector">
+        /// <see langword="true"/> when the connector was placed inside this group: a group of two components or more.
+        /// Walking outward from the last component, the first junction joining a non-zero digit to a non-empty lower
+        /// part receives it; every outer junction then sees the flag and composes normally. An exception (e.g. 15)
+        /// or a single digit is one component and reports <see langword="false"/>.
+        /// </param>
+        /// <returns>The group text (empty for level 0).</returns>
+        private string ConvertGroup(GroupTable table, int groupNumber, long number, bool afterNonZero, out bool hasFinalConnector)
         {
+            hasFinalConnector = false;
             var groups = table.Digits;
             if (groupNumber < 0)
                 throw new ArgumentOutOfRangeException(nameof(groupNumber),
@@ -2195,7 +2228,7 @@ namespace Utils.NumberToString
             var (groupValue, remainder) = long.DivRem(number, group);
 
             // The lower positions follow a non-zero digit as soon as this one or a higher one is non-zero.
-            var leftText = ConvertGroup(table, groupNumber - 1, remainder, afterNonZero || groupValue != 0);
+            var leftText = ConvertGroup(table, groupNumber - 1, remainder, afterNonZero || groupValue != 0, out bool lowerHasFinalConnector);
             var valueText = groups[groupNumber][groupValue];
             string stringValue = afterNonZero && valueText.InnerString != null ? valueText.InnerString : valueText.StringValue;
             string buildString = afterNonZero && valueText.InnerBuildString != null ? valueText.InnerBuildString : valueText.BuildString;
@@ -2212,7 +2245,38 @@ namespace Utils.NumberToString
             if (groupNumber == 3 && _intraGroupConnector != null && groupValue > 0 && remainder > 0 && remainder < _intraGroupConnectorThreshold)
                 return buildString.Replace("*", _intraGroupConnector + Separator + leftText);
 
+            // The final-component connector (never combined with a fusion or the intra-group connector, rejected at
+            // load) joins a non-zero digit to a lower part that is still a single component; a zero digit only passes
+            // the lower part through.
+            if (_finalComponentConnector != null)
+            {
+                hasFinalConnector = lowerHasFinalConnector || groupValue != 0;
+                if (groupValue != 0 && !lowerHasFinalConnector)
+                    return buildString.Replace("*", _finalComponentConnector + Separator + leftText);
+            }
+
             return buildString.Replace("*", leftText);
+        }
+
+        /// <summary>
+        /// Rejects a <see cref="FinalComponentConnector"/> combined with a primitive that rewrites the same junctions:
+        /// the group connector (between groups), the intra-group connector (after the hundreds) and a <c>Fusion</c>
+        /// (inside a group, of the default or of a scale-scoped table). Their joint semantics are undefined.
+        /// </summary>
+        /// <exception cref="ArgumentException">The connector is combined with one of these primitives.</exception>
+        private void ValidateFinalComponentConnector()
+        {
+            if (_finalComponentConnector == null) return;
+            string? conflict = _groupConnector != null ? nameof(NumberToStringConverterOptions.GroupConnector)
+                : _intraGroupConnector != null ? nameof(NumberToStringConverterOptions.IntraGroupConnector)
+                : HasFusions(_defaultGroupTable) || _scopedGroupTables.Any(scoped => HasFusions(scoped.Table)) ? "Fusion"
+                : null;
+            if (conflict != null)
+                throw new ArgumentException(
+                    $"Language '{LanguageIdentifier}': FinalComponentConnector '{_finalComponentConnector}' cannot be combined with {conflict}, which rewrites the same junctions.",
+                    nameof(NumberToStringConverterOptions.FinalComponentConnector));
+
+            static bool HasFusions(GroupTable table) => table.Digits.Values.Any(g => g.Values.Any(d => d.Fusions is { Count: > 0 }));
         }
 
         /// <summary>The configured group pattern (snapshot); empty for uniform groups.</summary>

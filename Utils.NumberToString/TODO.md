@@ -1,6 +1,8 @@
 # Utils.NumberToString — Current backlog
 
-Re-audited on 2026-10-14 after closing NTS-30C (the generated Conway scale nouns of RU, UK, BG, CS and SK agree
+Re-audited on 2026-10-14 after closing NTS-30D (Bulgarian *и* before the last component of every numeral phrase,
+a multiplier included: `двадесет и едно`, `сто двадесет и едно`, `хиляда и сто`, `двадесет и една хиляди`, `двадесет и
+един милиона`, through the generic `finalComponentConnector` primitive), after closing NTS-30C (the generated Conway scale nouns of RU, UK, BG, CS and SK agree
 with their multiplier through one `<GeneratedScaleForm>` per suffix family: `два триллиона`, `два трильйони`,
 `два трилиона`, `dva biliony`, `dvě biliardy`, `päť biliárd`, up to grouped names such as `миллиниллион`;
 NTS-35 and NTS-36 opened), after closing NTS-30B (UK, BG, CS, SK thousands, millions and milliards agree with
@@ -53,14 +55,6 @@ classification.
     DPD *dos mil quinientos millones*, "3500 millones (tres mil quinientos millones)"; `mil millones un millón`
     for *mil un millones*; EU `bi mila milioi eta bostehun milioi`). The multiplier of millón/milioi spans six
     digits and needs a recursive multiplier, which neither the uniform groups nor `groupPattern` express.
-  - **NTS-30D — Bulgarian compound cardinals omit the conjunction *и*** before their last component:
-    `двадесет едно` (21), `сто едно` (101), `хиляда едно` (1001), `двадесет една хиляди` (21 000), `двадесет един
-    милиона` for *двадесет и едно*, *сто и едно*, *хиляда и едно*, *двадесет и една хиляди*, *двадесет и един
-    милиона* (ИБЕ-БАН "Езикови справки": *двайсет и петте, сто и деветте, триста двайсет и четирите*;
-    `BulgarianOrdinalLanguageSpecifics` already writes *сто и първи*, *хиляда сто и втори*). The *и* stands only
-    before the last component of the whole number (*триста двайсет и четири*, *хиляда и двеста*), across groups,
-    which neither the digit `buildString` nor `innerBuildString` expresses. Found by NTS-30B, which fixed only the
-    noun and gender of the scales.
   - UK, BG, CS, SK `ConvertFraction` (seen by NTS-30B): the denominator is the plain nominative cardinal after the
     connector (`один на тисяча`, `jedna ku tisíc`); the construction itself has not been validated.
   - VN: a whole zero class after a higher class is skipped (`một triệu không trăm linh một`), whereas the
@@ -114,7 +108,7 @@ classification.
   cardinals below and above a million.
 
 
-NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-25, NTS-27, NTS-28, NTS-29, NTS-30A, NTS-30B, NTS-30C, NTS-31 and NTS-32 are closed:
+NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-25, NTS-27, NTS-28, NTS-29, NTS-30A, NTS-30B, NTS-30C, NTS-30D, NTS-31 and NTS-32 are closed:
 
 - NTS-01 — XSD validation: `DONE-2026-08-21.md`.
 - NTS-02 — initialization isolation: `DONE-2026-08-21.md`.
@@ -210,6 +204,13 @@ NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-25, NTS-27, NTS-28, NT
   biliard*, *dvacet dva miliard*), decided on the IJP (*dvacet jedna žáků*, *dvacet dva korunám*), which closes the
   NTS-30B Czech gender note. PL excluded (NTS-35); HR left on its scale-specific replacements; CS/SK prefix spelling
   opened as NTS-36: `DONE-2026-10-14(1).md`.
+- NTS-30D (split out of NTS-30): Bulgarian compound cardinals take *и* before the last component of every numeral
+  phrase, independently in each multiplier of a scale noun (Речник на българския език, *и*, sense 3; ФСлФ СУ ezik.bg:
+  *един милиард двеста милиона шейсет и пет хиляди седемстотин осемдесет и пет*): inside a group before its last
+  non-zero position (*сто и петнадесет*, *сто двадесет и едно*), between groups before a one-component last group
+  (*хиляда и сто*, *двадесет и една хиляди и едно*). New generic `finalComponentConnector` (XML attribute,
+  `NumberToStringConverterOptions.FinalComponentConnector`), rejected with `groupConnector`, `intraGroupConnector` or
+  a `Fusion`; ordinals and clock byte-identical: `DONE-2026-10-14(2).md`.
 
 Full multi-form plural systems (Russian/Slavic count-dependent noun forms,
 Arabic dual/paucal/plural categories) were long deliberately out of scope — the

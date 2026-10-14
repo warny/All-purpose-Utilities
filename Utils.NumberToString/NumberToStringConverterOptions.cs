@@ -245,6 +245,17 @@ public sealed class NumberToStringConverterOptions
     public int ScaleConnectorThreshold { get; set; } = 20;
 
     /// <summary>
+    /// Connector placed before the last additive component of every numeral phrase (e.g. <c>"и"</c> for Bulgarian:
+    /// <c>двадесет и едно</c>, <c>сто двадесет и едно</c>, <c>хиляда и сто</c>, <c>двадесет и една хиляди</c>).
+    /// A phrase is the multiplier of a scale group, or the whole number whose components are its groups: inside a
+    /// group the connector precedes the last non-zero digit position (an exception such as 15 is one component), and
+    /// between groups it precedes the last non-zero group when that group is a single component. <see langword="null"/>
+    /// or white space (the default): no connector. Cannot be combined with <see cref="GroupConnector"/>,
+    /// <see cref="IntraGroupConnector"/> or a <c>Fusion</c>, which rewrite the same junctions.
+    /// </summary>
+    public string? FinalComponentConnector { get; set; }
+
+    /// <summary>
     /// Time units keyed by canonical name ("hour", "minute", "second"),
     /// each with singular, plural, and an optional count-1 override for grammatical gender.
     /// Required for Convert(TimeSpan/TimeOnly).
@@ -417,6 +428,7 @@ public sealed class NumberToStringConverterOptions
         IntraGroupConnectorThreshold = source.IntraGroupConnectorThreshold;
         ScaleConnector = source.ScaleConnector;
         ScaleConnectorThreshold = source.ScaleConnectorThreshold;
+        FinalComponentConnector = source.FinalComponentConnector;
         TimeUnits = source.TimeUnits;
         TimeUnitForcedVariants = source.TimeUnitForcedVariants;
         // Use the override-only internal snapshots, not the effective TimeUnitForms/

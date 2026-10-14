@@ -2376,6 +2376,22 @@
                                 </xs:documentation>
                             </xs:annotation>
                         </xs:attribute>
+                        <xs:attribute name="finalComponentConnector" type="xs:string" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Connector placed before the last additive component of every numeral phrase.
+                                    A phrase is the multiplier of a scale group, or the whole number whose
+                                    components are its non-zero groups. Inside a group the connector precedes the
+                                    last non-zero digit position, once (an Exception such as 15 is one component);
+                                    between groups it precedes the last non-zero group when that group is a single
+                                    component. Example: "и" for Bulgarian — 21 → "двадесет и едно", 121 → "сто
+                                    двадесет и едно", 1100 → "хиляда и сто", 21 000 → "двадесет и една хиляди".
+                                    Inherited through baseOn unless redeclared; an explicit empty value removes
+                                    it. Cannot be combined with groupConnector, intraGroupConnector or a Fusion,
+                                    which rewrite the same junctions (rejected at load).
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
 
                         <xs:attribute name="multiplierPosition" use="optional">
                             <xs:annotation>

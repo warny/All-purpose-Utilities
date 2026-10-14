@@ -161,8 +161,8 @@ public class NumberToStringNts30BTests
     /// <summary>
     /// хиляда (feminine) takes хиляди after any multiplier but one; милион and милиард take their count
     /// form (милиона, милиарда) with a masculine multiplier (един, два). The compounds pin only the
-    /// multiplier gender and the noun: the missing conjunction of the cardinal itself (двадесет и …) is
-    /// the separate NTS-30D.
+    /// multiplier gender and the noun; the conjunction of the compound (двадесет и …) is pinned by NTS-30D
+    /// (NumberToStringNts30DTests).
     /// </summary>
     [TestMethod]
     public void Bulgarian_LowScales()

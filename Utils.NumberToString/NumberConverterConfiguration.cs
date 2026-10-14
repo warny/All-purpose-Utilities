@@ -1348,6 +1348,15 @@ public class LanguageType
     public int ScaleConnectorThreshold =>
         int.TryParse(ScaleConnectorThresholdString, out var n) ? n : 20;
 
+    /// <summary>
+    /// Gets or sets the connector placed before the last additive component of every numeral phrase: the last
+    /// non-zero position of a group, or the last non-zero group of the whole number when it is a single component.
+    /// Example: "и" for Bulgarian (двадесет и едно, сто двадесет и едно, хиляда и сто). <see langword="null"/> when
+    /// absent: inherited through <c>baseOn</c>, otherwise no connector; an explicit empty value removes it.
+    /// </summary>
+    [XmlAttribute("finalComponentConnector")]
+    public string? FinalComponentConnector { get; set; }
+
     /// <summary>Gets or sets the time-unit configuration (hours, minutes, seconds).</summary>
     [XmlElement(ElementName = "TimeUnits")]
     public TimeUnitsType? TimeUnits { get; set; }
