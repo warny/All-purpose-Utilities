@@ -162,8 +162,10 @@ public class NumberToStringNts25Tests
     {
         var bg = NumberToStringConverter.GetConverter("BG");
 
-        Assert.AreEqual("едно милион", bg.Convert(Pow10(6)));
-        Assert.AreEqual("едно милиард", bg.Convert(Pow10(9)));
+        // NTS-30B: милион and милиард are masculine (един милион); the generated names keep the counting
+        // form едно until NTS-30C.
+        Assert.AreEqual("един милион", bg.Convert(Pow10(6)));
+        Assert.AreEqual("един милиард", bg.Convert(Pow10(9)));
         Assert.AreEqual("едно трилион", bg.Convert(Pow10(12)));
         Assert.AreEqual("едно квадрилион", bg.Convert(Pow10(15)));
         Assert.AreEqual("едно квинтилион", bg.Convert(Pow10(18)));

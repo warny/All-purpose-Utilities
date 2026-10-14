@@ -30,14 +30,14 @@ dotnet add package omy.Utils.NumberToString --version 2.0.0-rc.2
 | DA, DA-DK | Danish | ✓ plugin (int range) | ✓ 5 min, 12 h | gender (fælleskøn/intetkøn) | local | Ordinal of zero *nulte* (NTS-29); ordinals above `int.MaxValue` fail closed |
 | NO, NB, NB-NO | Norwegian Bokmål | ✓ plugin (int range) | ✓ 5 min, 12 h | gender (hankjønn/hunkjønn/intetkjønn) | local | Ordinals above `int.MaxValue` fail closed; no ordinal of zero |
 | SV, SV-SE | Swedish | ✓ plugin (to one million) | ✓ 5 min, 12 h | — | local | One word below a million (tjugoentusen), en miljon (Språkrådet; NTS-27); ordinals above a million fail closed |
-| BG, BG-BG | Bulgarian | ✓ plugin, gendered | ✓ 15 min, 12 h | gender (standalone/masculine/feminine/neuter) | local | Unverified compound round thousands/millions fail closed. Short scale with `милиард`; Cyrillic Conway names above (`SCALE-SHORT-CYRILLIC`, `кватуор`), unbounded |
+| BG, BG-BG | Bulgarian | ✓ plugin, gendered | ✓ 15 min, 12 h | gender (standalone/masculine/feminine/neuter) | local | Unverified compound round thousands/millions fail closed. Short scale with `милиард`; Cyrillic Conway names above (`SCALE-SHORT-CYRILLIC`, `кватуор`), unbounded. `хиляди`, count forms `милиона`/`милиарда` (NTS-30B); compound cardinals still lack `и` (NTS-30D) |
 | HR, HR-HR | Croatian | ✓ declarative (last word) + range plugin | ✓ 15 min, 12 h | — | local | Masculine nominative ordinals only; round scale ordinals other than tisućiti (1 000), milijunti (1 000 000) and milijarditi (1 000 000 000) fail closed, including 10^12 and above |
 | HU, HU-HU | Hungarian | ✓ plugin (int range) | ✓ 15 min, 12 h | — | local | Ordinal of zero *nulladik* (NTS-29) |
-| CS, CS-CZ | Czech | ✓ plugin, gender × case | ✓ 15 min, 12 h | gender × case | local | Ordinals verified up to 9 999 (round millions/milliards: one only) |
-| SK, SK-SK | Slovak | ✓ plugin, gender × case | ✓ 15 min, 12 h | gender × case | local | Ordinals verified up to 9 999 and one million |
+| CS, CS-CZ | Czech | ✓ plugin, gender × case | ✓ 15 min, 12 h | gender × case | local | Ordinals verified up to 9 999 (round millions/milliards: one only). `tisíc`/`milion`/`miliarda` agree with their multiplier (NTS-30B) |
+| SK, SK-SK | Slovak | ✓ plugin, gender × case | ✓ 15 min, 12 h | gender × case | local | Ordinals verified up to 9 999 and one million. Cardinals in the PSP one-word spelling (`dvadsaťdva`, `päťsto`, `dvetisíc`), `milión`/`miliarda` agree (NTS-30B) |
 | PL | Polish | ✓ plugin + declarative (1–999 999; round thousands to 99 000, NTS-28) | ✓ 5 min, 12 h | rodzaj × przypadek | local | tysiąc/tysiące/tysięcy agree with their multiplier (NTS-27); cardinals to 999 999; no ordinal of zero |
 | RU | Russian | ✓ declarative + plugin for the one-word round values (zero: `нулевой`; 0–999 999 999, NTS-28) | ✓ 15 min, 12 h | gender × case | local | тысяча, миллион, миллиард agree with their multiplier (две тысячи, пять миллионов; NTS-27). Short scale with `миллиард`; Cyrillic Conway names above (`SCALE-SHORT-CYRILLIC`), unbounded, without plural agreement (NTS-30) |
-| UK, UK-UA | Ukrainian | ✓ plugin, gender × case | ✓ 15 min, 12 h | gender × case | local | Round thousands, millions and milliards with a multiplier of 1–89 (NTS-28, §38). Short scale with `мільярд`; Ukrainian-spelled Conway names above (`вігінтильйон`), unbounded |
+| UK, UK-UA | Ukrainian | ✓ plugin, gender × case | ✓ 15 min, 12 h | gender × case | local | Round thousands, millions and milliards with a multiplier of 1–89 (NTS-28, §38). Short scale with `мільярд`; Ukrainian-spelled Conway names above (`вігінтильйон`), unbounded. `тисяча`/`мільйон`/`мільярд` agree with their multiplier (NTS-30B) |
 | ES | Spanish | ✓ declarative, composed (1–999 999 999, NTS-28) | ✓ 5 min, 12 h | gender × form | local | Apocope before mil/millón (veintiún mil, un millón; NTS-27); `mil millones` followed by millions is not composed (NTS-30); no ordinal of zero |
 | IT | Italian | ✓ validated productive forms through round trilione: 1–1999 except 1110–1910, round thousands to 999000, round multiples of milione/miliardo/bilione/biliardo/trilione; selected sourced analytic compounds (1010, 100001–100009) (`<OrdinalStem>`, `<OrdinalComposition>`, `<OrdinalScale>`, domain-guard plugin) | ✓ 5 min, 12 h | gender | local | Unsourced ordinals fail closed by design: zero, 1110–1910, the other non-round thousands above 1999 and the non-round values from a million (no canonical form established); millions are separate nouns joined by `e` ("due milioni e centomila") |
 | PT | Portuguese | ✓ declarative, composed (1–1999, NTS-28) | ✓ 5 min, 12 h (direct "e …") | gender | local | Deliberate direct numeric reading (no "para"/"menos" constructions); PT-PT/PT-BR not split; no ordinal of zero |
@@ -1687,6 +1687,19 @@ When a language needs more than singular/plural for a scale noun, `<ScaleForm>` 
   for тысяча/тысячи/тысяч, миллион/миллиона/миллионов, миллиард…; `PolishPluralLexicalFormSelector`
   (one: exactly 1; few: …2–4 but not …12–14) for tysiąc/tysiące/tysięcy (`dwadzieścia jeden tysięcy`,
   `dwadzieścia dwa tysiące`).
+- NTS-30B adds `UkrainianPluralLexicalFormSelector` (CLDR uk, the same integer rule as ru:
+  тисяча/тисячі/тисяч, мільйон/мільйони/мільйонів) and `CzechSlovakPluralLexicalFormSelector`
+  (`one`/`few`/`other`: one = exactly 1, few = exactly 2–4, other otherwise, 22–24 included:
+  CS `dva tisíce`, `pět milionů`, `dvacet dva milionů`; SK `dva milióny`, `päť miliárd`). Bulgarian uses
+  the default selector with the count form as its `plural` (`хиляда`/`хиляди`, `милион`/`милиона`).
+  Only the scales 1–3 are configured; the generated names from 10^12 are not inflected yet (NTS-30C).
+
+```csharp
+NumberToStringConverter.GetConverter("UK").Convert(22_000);         // "двадцять дві тисячі"
+NumberToStringConverter.GetConverter("BG").Convert(2_000_000);      // "два милиона"
+NumberToStringConverter.GetConverter("CS").Convert(2_000_000_000);  // "dvě miliardy"
+NumberToStringConverter.GetConverter("SK").Convert(7_283);          // "sedemtisíc dvesto osemdesiattri"
+```
 
 ```csharp
 var ar = NumberToStringConverter.GetConverter("AR");

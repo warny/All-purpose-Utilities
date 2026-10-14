@@ -16,7 +16,8 @@ namespace Utils.NumberToString;
 /// <para>
 /// Source: Unicode CLDR, "Language Plural Rules", ru (<c>i % 10 = 1 and i % 100 != 11</c>;
 /// <c>i % 10 = 2..4 and i % 100 != 12..14</c>). The rule only depends on the absolute value; the
-/// variants are ignored. Stateless and thread-safe.
+/// variants are ignored. Stateless and thread-safe. CLDR gives Ukrainian the same integer rule; see
+/// <see cref="UkrainianPluralLexicalFormSelector"/>, which shares this implementation.
 /// </para>
 /// </remarks>
 public sealed class RussianPluralLexicalFormSelector : ILexicalFormSelector
@@ -24,12 +25,5 @@ public sealed class RussianPluralLexicalFormSelector : ILexicalFormSelector
     /// <summary>Returns the CLDR plural category of the absolute value in <paramref name="context"/>.</summary>
     /// <param name="context">The governing value and the active variants (unused).</param>
     /// <returns><c>"one"</c>, <c>"few"</c> or <c>"many"</c>.</returns>
-    public string SelectForm(LexicalFormContext context)
-    {
-        int lastTwo = (int)(context.AbsoluteValue % 100);
-        int last = lastTwo % 10;
-        if (last == 1 && lastTwo != 11) return "one";
-        if (last is >= 2 and <= 4 && lastTwo is (< 12 or > 14)) return "few";
-        return "many";
-    }
+    public string SelectForm(LexicalFormContext context) => EastSlavicIntegerPluralRule.Select(context.AbsoluteValue);
 }

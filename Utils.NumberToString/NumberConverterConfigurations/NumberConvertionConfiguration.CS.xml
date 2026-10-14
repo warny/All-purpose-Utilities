@@ -54,18 +54,52 @@
         </Groups>
         <!-- Long scale with groupSeparator="li" (single l): mi+li+on=milion, mi+li+ard=miliard,
              bi+li+on=bilion, bi+li+ard=biliard, tri+li+on=trilion…
-             Note: Czech uses "miliarda" (feminine) for 10^9, but "miliard" is used as invariant
-             simplification since the engine does not support noun gender inflection here. -->
+             NTS-30B: tisíc, milion and miliarda (feminine) agree with their multiplier (ScaleForm
+             below). The generated names from bilion up keep the bare singular and the masculine
+             -ard (dva bilion for dva biliony, dva biliard for dvě biliardy, NTS-30C). -->
         <NumberScale firstLetterUpperCase="false" groupSeparator="li">
             <StaticNames>
                 <Scale value="0" string="" />
                 <!-- Czech: "tisíc" alone for 1000; "jedna tisíc" → "tisíc" via Replacement -->
                 <Scale value="1" string="tisíc" />
             </StaticNames>
+            <!-- NTS-30B: nominative singular after one, nominative plural after 2-4, genitive plural otherwise,
+                 including the compounds (Internetová jazyková příručka, ÚJČ AV ČR, "Počítaný předmět po
+                 číslovkách": after dvacet jeden / dvacet dva the genitive is "more common and more natural";
+                 "Členění čísel": dva tisíce dvě stě třicet jedna, jeden milion tři sta tisíc; entries tisíc,
+                 milion, miliarda; Unicode CLDR plural rules, cs). CzechSlovakPluralLexicalFormSelector
+                 returns the key, the words are here. -->
+            <ScaleForm scale="1" formSelector="CzechSlovakPluralLexicalFormSelector">
+                <Forms>
+                    <Form key="one" value="tisíc" />
+                    <Form key="few" value="tisíce" />
+                    <Form key="other" value="tisíc" />
+                </Forms>
+            </ScaleForm>
+            <ScaleForm scale="2" formSelector="CzechSlovakPluralLexicalFormSelector">
+                <Forms>
+                    <Form key="one" value="milion" />
+                    <Form key="few" value="miliony" />
+                    <Form key="other" value="milionů" />
+                </Forms>
+            </ScaleForm>
+            <ScaleForm scale="3" formSelector="CzechSlovakPluralLexicalFormSelector">
+                <Forms>
+                    <Form key="one" value="miliarda" />
+                    <Form key="few" value="miliardy" />
+                    <Form key="other" value="miliard" />
+                </Forms>
+            </ScaleForm>
         </NumberScale>
         <Replacements>
             <!-- Drop "jedna" before "tisíc": 1000 = "tisíc" not "jedna tisíc" -->
             <Replacement oldValue="jedna tisíc" newValue="tisíc" onScale="1" onValue="1" />
+            <!-- NTS-30B: the default digits are the counting forms (jedna, dva). milion is masculine (jeden
+                 milion), miliarda feminine (dvě miliardy). Only the multipliers 1 and 2 themselves agree:
+                 in the genitive construction of the compounds the counting form stays (dvacet jedna
+                 milionů, IJP: dvacet jedna žáků). -->
+            <Replacement oldValue="jedna milion" newValue="jeden milion" onScale="2" onValue="1" />
+            <Replacement oldValue="dva miliardy" newValue="dvě miliardy" onScale="3" onValue="2" />
         </Replacements>
         <Exceptions>
             <Number value="11" string="jedenáct" />

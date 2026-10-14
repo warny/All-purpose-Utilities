@@ -4,6 +4,10 @@ Feature: Czech number conversion
 Background:
     Given I use the "CS" number converter
 
+# NTS-30B: tisíc, milion and miliarda (feminine) take the nominative after 1-4 only and the genitive after
+# every other multiplier, compounds included (Internetová jazyková příručka, ÚJČ AV ČR: dva tisíce,
+# jeden milion, dva miliony; dvacet dva žáků is the more natural form). The generated names from bilion up
+# are NTS-30C.
 Scenario Outline: Cardinal numbers
     When I convert the cardinal number <number>
     Then the result is "<expected>"
@@ -26,11 +30,16 @@ Examples:
     | 300 | tři sta |
     | 500 | pět set |
     | 1000 | tisíc |
-    | 2000 | dva tisíc |
+    | 2000 | dva tisíce |
+    | 5000 | pět tisíc |
     | 10000 | deset tisíc |
-    | 1000000 | jedna milion |
-    | 2000000 | dva milion |
-    | 1000000000 | jedna miliard |
+    | 1000000 | jeden milion |
+    | 2000000 | dva miliony |
+    | 5000000 | pět milionů |
+    | 22000000 | dvacet dva milionů |
+    | 1000000000 | jedna miliarda |
+    | 2000000000 | dvě miliardy |
+    | 5000000000 | pět miliard |
     | 1000000000000 | jedna bilion |
     | 1000000000000000 | jedna biliard |
     | 1000000000000000000 | jedna trilion |

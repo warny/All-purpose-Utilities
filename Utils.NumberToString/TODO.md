@@ -1,6 +1,10 @@
 # Utils.NumberToString — Current backlog
 
-Re-audited on 2026-10-13 after closing NTS-30A (decimal reading modes `LanguageDefault`/`DigitByDigit`/
+Re-audited on 2026-10-14 after closing NTS-30B (UK, BG, CS, SK thousands, millions and milliards agree with
+their multiplier: `дві тисячі`, `два мільйони`, `две хиляди`, `два милиона`, `dva tisíce`, `pět milionů`,
+`dvě miliardy`, `dva milióny`, `päť miliárd`; Slovak cardinals in the PSP one-word spelling `dvadsaťdva`, `päťsto`,
+`dvetisíc`; `UkrainianPluralLexicalFormSelector`, `CzechSlovakPluralLexicalFormSelector`; NTS-30C broadened,
+NTS-30D opened), on 2026-10-13 after closing NTS-30A (decimal reading modes `LanguageDefault`/`DigitByDigit`/
 `MathematicalFraction`; decimal zeros read with the language's `zero`: `21.05` → `eenentwintig komma nul vijf`,
 `二十一点零五`; `decimalDigitByDigitMaxDigits` and `mixedFractionSeparator`; sourced French denominators to the
 `cent-milliardième` and English to the `hundred-thousandth`: `un dix-millième`, `deux et un dix-millième`; NTS-33
@@ -46,11 +50,29 @@ classification.
     DPD *dos mil quinientos millones*, "3500 millones (tres mil quinientos millones)"; `mil millones un millón`
     for *mil un millones*; EU `bi mila milioi eta bostehun milioi`). The multiplier of millón/milioi spans six
     digits and needs a recursive multiplier, which neither the uniform groups nor `groupPattern` express.
-  - UK, BG, CS, SK: the thousands and millions do not agree with their multiplier (`два тисяч`, `две хиляда`,
-    `dva tisíc`, `dva milion`); the NTS-27 `ScaleForm` + selector mechanism applies (CLDR uk = ru rule; cs/sk
-    have one/few/many with different ranges), with sources per language.
-  - RU above the milliard: the generated Conway names keep the bare singular (`два триллион`); `ScaleForm`
-    only covers named indices.
+  - **NTS-30C — productive agreement of the generated Conway scale nouns** in the Slavic configurations. The
+    exact low scales 1–3 are handled by NTS-27 (RU, PL) and NTS-30B (UK, BG, CS, SK); from scale 4 the generated
+    names have no inflection rule, because `ScaleForm` is indexed by an exact scale number and the engine falls
+    back to `GetScaleName(n).ToPlural(group)`. Demonstrated (NTS-30B audit): RU `два триллион` (*два триллиона*),
+    UK `два трильйонів` and `двісті двадцять три квадрильйонів` (*два трильйони*, *двісті двадцять три
+    квадрильйони*), BG `две трилион`, `едно трилион` (*два трилиона*, *един трилион*), CS `dva bilion`,
+    `jedna bilion`, `dva biliard` (*dva biliony*, *jeden bilion*, *dvě biliardy*: the *-iarda* names are feminine),
+    SK `dva bilión`, `dva biliard` (*dva bilióny*, *dve biliardy*). PL from *bilion* is to be checked the same way.
+    Needs a productive rule attached to the generated suffixes (forms and multiplier gender per suffix); not
+    designed yet.
+  - **NTS-30D — Bulgarian compound cardinals omit the conjunction *и*** before their last component:
+    `двадесет едно` (21), `сто едно` (101), `хиляда едно` (1001), `двадесет една хиляди` (21 000), `двадесет един
+    милиона` for *двадесет и едно*, *сто и едно*, *хиляда и едно*, *двадесет и една хиляди*, *двадесет и един
+    милиона* (ИБЕ-БАН "Езикови справки": *двайсет и петте, сто и деветте, триста двайсет и четирите*;
+    `BulgarianOrdinalLanguageSpecifics` already writes *сто и първи*, *хиляда сто и втори*). The *и* stands only
+    before the last component of the whole number (*триста двайсет и четири*, *хиляда и двеста*), across groups,
+    which neither the digit `buildString` nor `innerBuildString` expresses. Found by NTS-30B, which fixed only the
+    noun and gender of the scales.
+  - CS (found by NTS-30B): the multiplier gender of 22–24 before the feminine *miliarda* in the genitive
+    construction is not sourced; `dvacet dva miliard` keeps the counting form *dva* (the Slovak parallel
+    *dvadsaťdva žien* is sourced, the Czech one is not).
+  - UK, BG, CS, SK `ConvertFraction` (seen by NTS-30B): the denominator is the plain nominative cardinal after the
+    connector (`один на тисяча`, `jedna ku tisíc`); the construction itself has not been validated.
   - VN: a whole zero class after a higher class is skipped (`một triệu không trăm linh một`), whereas the
     SGK Toán 4 solution keys read it `không nghìn` (*năm mươi triệu không nghìn một trăm linh hai*); needs a
     zero-group rendering and a normative source.
@@ -90,7 +112,7 @@ classification.
   cardinals below and above a million.
 
 
-NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-25, NTS-27, NTS-28, NTS-29, NTS-30A, NTS-31 and NTS-32 are closed:
+NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-25, NTS-27, NTS-28, NTS-29, NTS-30A, NTS-30B, NTS-31 and NTS-32 are closed:
 
 - NTS-01 — XSD validation: `DONE-2026-08-21.md`.
 - NTS-02 — initialization isolation: `DONE-2026-08-21.md`.
@@ -171,12 +193,18 @@ NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-25, NTS-27, NTS-28, NT
   unlimited, `0` = none, inherited through `baseOn`) and the mixed-number connector `mixedFractionSeparator`; French
   named fractions to 11 digits (`dix-millième` … `cent-milliardième`, OQLF, Académie) with `et` (Éduscol), English
   to 5 digits (`ten-thousandth`, `hundred-thousandth`) with `and` (OpenStax): `DONE-2026-10-13(1).md`.
+- NTS-30B (split out of NTS-30): the scales 1–3 of UK, BG, CS and SK agree with their multiplier, by `<ScaleForm>`
+  and declarative multiplier-gender replacements, with the new `UkrainianPluralLexicalFormSelector` (CLDR uk, shared
+  with ru) and `CzechSlovakPluralLexicalFormSelector` (one = 1, few = 2–4, other; compounds take the genitive, IJP) and
+  the default selector for the Bulgarian count form (*два милиона*); Slovak cardinals written after the PSP (*dvadsaťdva*,
+  *päťsto*, *dvetisíc*, *dvadsaťsedemtisíc*, *sedemtisíc dvesto osemdesiattri*, Jarošová 2021); generated scales
+  deferred to NTS-30C, Bulgarian *и* to NTS-30D: `DONE-2026-10-14.md`.
 
 Full multi-form plural systems (Russian/Slavic count-dependent noun forms,
 Arabic dual/paucal/plural categories) were long deliberately out of scope — the
-`ILexicalFormSelector` architecture supports them without redesign. Arabic (NTS-14)
-and Russian/Polish scale nouns (NTS-27) now use them; the other Slavic languages are
-NTS-30. See the "Deliberately deferred" section of `DONE-2026-08-25(1).md` for the
+`ILexicalFormSelector` architecture supports them without redesign. Arabic (NTS-14),
+Russian/Polish scale nouns (NTS-27) and the Ukrainian, Bulgarian, Czech and Slovak scales
+1–3 (NTS-30B) now use them; the generated scale names are NTS-30C. See the "Deliberately deferred" section of `DONE-2026-08-25(1).md` for the
 original design decision.
 
 New findings should be appended here as they are identified, and archived to

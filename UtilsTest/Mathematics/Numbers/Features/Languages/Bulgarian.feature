@@ -4,6 +4,9 @@ Feature: Bulgarian number conversion
 Background:
     Given I use the "BG" number converter
 
+# NTS-30B: хиляда (feminine) takes хиляди after any multiplier but one; милион and милиард take the count
+# form with a masculine multiplier (Официален правописен речник, ИБЕ-БАН 2012: десет хиляди километра,
+# три милиона долара, пет милиарда лева). The generated names from трилион up are NTS-30C.
 Scenario Outline: Cardinal numbers
     When I convert the cardinal number <number>
     Then the result is "<expected>"
@@ -28,10 +31,15 @@ Examples:
     | 400 | четиристотин |
     | 999 | деветстотин деветдесет девет |
     | 1000 | хиляда |
-    | 2000 | две хиляда |
-    | 10000 | десет хиляда |
-    | 1000000 | едно милион |
-    | 1000000000 | едно милиард |
+    | 2000 | две хиляди |
+    | 5000 | пет хиляди |
+    | 10000 | десет хиляди |
+    | 1000000 | един милион |
+    | 2000000 | два милиона |
+    | 5000000 | пет милиона |
+    | 1000000000 | един милиард |
+    | 2000000000 | два милиарда |
+    | 5000000000 | пет милиарда |
     | 1000000000000 | едно трилион |
     | 1000000000000000 | едно квадрилион |
 
