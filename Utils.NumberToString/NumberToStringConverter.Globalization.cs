@@ -911,6 +911,7 @@ namespace Utils.NumberToString
                 VoidGroup = model.VoidGroup,
                 GroupSeparator = model.GroupSeparator,
                 SuffixSeparator = model.SuffixSeparator,
+                MultiplierSeparator = model.MultiplierSeparator,
                 StartIndex = model.StartIndexSpecified
                     ? Optional<int>.Of(model.StartIndex)
                     : Optional<int>.Unspecified,
@@ -1078,6 +1079,8 @@ namespace Utils.NumberToString
                 VoidGroup = overriding.VoidGroup ?? inherited.VoidGroup,
                 GroupSeparator = overriding.GroupSeparator ?? inherited.GroupSeparator,
                 SuffixSeparator = overriding.SuffixSeparator ?? inherited.SuffixSeparator,
+                // Presence-sensitive: an explicit "" is a valid junction and replaces the inherited value.
+                MultiplierSeparator = overriding.MultiplierSeparator ?? inherited.MultiplierSeparator,
                 StartIndex = MergeOptional(inherited.StartIndex, overriding.StartIndex),
                 StaticNames = overriding.StaticNames ?? inherited.StaticNames,
                 Scale0Prefixes = overriding.Scale0Prefixes ?? inherited.Scale0Prefixes,
@@ -1185,6 +1188,7 @@ namespace Utils.NumberToString
                 VoidGroup = definition.VoidGroup,
                 GroupSeparator = definition.GroupSeparator,
                 SuffixSeparator = definition.SuffixSeparator,
+                MultiplierSeparator = definition.MultiplierSeparator,
                 StartIndex = definition.StartIndex.GetValueOrDefault(0),
                 StaticNames = definition.StaticNames,
                 Scale0Prefixes = definition.Scale0Prefixes,
@@ -1433,6 +1437,7 @@ namespace Utils.NumberToString
             )
             {
                 SuffixSeparator = confScale.SuffixSeparator,
+                MultiplierSeparator = confScale.MultiplierSeparator,
             };
 
             var scaleFormEntries = confScale.ScaleForms ?? [];
@@ -2032,6 +2037,10 @@ namespace Utils.NumberToString
                         !string.IsNullOrWhiteSpace(e.LexicalFormSelector?.Type) ? e.LexicalFormSelector!.Type : e.FormSelector,
                         languageIdentifier,
                         XmlElementToXElement(e.LexicalFormSelector?.Configuration))),
+                // An absent attribute is null (the NumberScale default applies); an explicit "" is kept.
+                ScaleFormMultiplierSeparators = scaleFormEntries
+                    .Where(e => e.MultiplierSeparator != null)
+                    .ToDictionary(e => e.Scale, e => e.MultiplierSeparator!),
                 // Selectors are resolved here, once; forced variants are parsed here and validated
                 // against the language by the converter.
                 GeneratedScaleForms = generatedScaleFormEntries.ToDictionary(

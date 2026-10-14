@@ -266,6 +266,10 @@ namespace Utils.NumberToString
         [XmlAttribute("suffixSeparator")]
         public string? SuffixSeparator { get; set; }
 
+        /// <summary>Gets or sets the default multiplier/scale junction; the language separator when absent.</summary>
+        [XmlAttribute("multiplierSeparator")]
+        public string? MultiplierSeparator { get; set; }
+
         /// <summary>Gets or sets the index offset applied when computing scale names.</summary>
         [XmlAttribute("startIndex")]
         public int StartIndex { get; set; }
@@ -366,6 +370,8 @@ namespace Utils.NumberToString
         public string? VoidGroup { get; init; }
         public string? GroupSeparator { get; init; }
         public string? SuffixSeparator { get; init; }
+        /// <summary>Absent (<see langword="null"/>) inherits; an explicit value, empty included, replaces.</summary>
+        public string? MultiplierSeparator { get; init; }
         public Optional<int> StartIndex { get; init; }
         public StaticNamesType? StaticNames { get; init; }
         public DigitListType? Scale0Prefixes { get; init; }

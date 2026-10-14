@@ -46,7 +46,7 @@ dotnet add package omy.Utils.NumberToString --version 2.0.0-rc.2
 | CA, ca-ES | Catalan | ✓ declarative | ✓ 15 min, 12 h | gender | local | Traditional quarters only; no ordinal of zero |
 | ca-ES-valencia | Valencian | ✓ inherited | ✓ 5 min, 12 h, own section | gender | child of CA | Invariable `dos` in ClockTime only |
 | EL | Greek | ✓ declarative, composed (1–1999, NTS-28) | ✓ 15 min, 12 h | gender | local | Masculine cardinal forms (ένας) not modelled; no ordinal of zero |
-| FI | Finnish | ✓ declarative (zero: nollas; nominative 0–1999, NTS-28) | ✓ 15 min, 12 h | case | local | Inflected ordinals fail closed; cardinal thousands `kaksi tuhat` (NTS-30) |
+| FI | Finnish | ✓ declarative (zero: nollas; nominative 0–1999, NTS-28) | ✓ 15 min, 12 h | case | local | Inflected ordinals and ordinals from 2000 fail closed (round thousands unsourced); cardinals 0–999 999 (NTS-30E) |
 | AR | Arabic | ✓ 1–99, 100, 1000 | ✓ 15 min, 12 h | gender | local | Other ordinals above 99 fail closed; thousands take the form their multiplier governs (ألف, ألفان, ثلاثة آلاف, أحد عشر ألفًا) |
 | HE | Hebrew | ✓ 1–10 adjectives, above ten the agreeing cardinal (masculine by default, also for compounds ending in a teen) | ✓ 15 min, 12 h | gender (standalone/zachar/nekeva) | local | No ordinal of zero |
 | FA, FA-IR | Persian | ✓ declarative | ✓ 15 min, 12 h | — | local | — |
@@ -543,46 +543,45 @@ Finnish has no grammatical gender but has 15 cases. Three cases are
 implemented: nominative (default), partitive (`partitiivi`) and genitive
 (`genetiivi`).
 
-**Implementation notes:**
+**Implementation notes (NTS-30E, Kielitoimiston ohjepankki):**
 
-- Compound tens (`kaksikymmentä`…) and compound hundreds (`kaksisataa`…)
-  are already in a partitive-compatible form in the configuration:
-  only units and standalone scale words need `LastWord` rules.
-- In the genitive, compound tens and hundreds change entirely
-  (`kaksikymmentä` → `kahdenkymmenen`) via `Anywhere`.
-- `seitsemän`, `kahdeksan`, `yhdeksän` (7, 8, 9) are invariable in the genitive.
+- A group below a thousand is one word and so is the part counting the thousands
+  (`kaksikymmentäyksi`, `satakaksikymmentäyksi`, `kaksituhatta`); the groups are separated by
+  one space. See [`multiplierSeparator`](#multiplierscale-junction--multiplierseparator).
+- In the partitive and the genitive **every component** inflects and the compound stays one
+  word (`21:tä kahtakymmentäyhtä`, `125:n sadankahdenkymmenenviiden`, `3 000:ta kolmeatuhatta`).
+  The configuration replaces each nominative component wherever it occurs (`Anywhere`), the
+  components that contain their bare form (`sataa`, `tuhatta`) being brought back to it first.
+- `-toista` (11–19) never inflects; `seitsemän`, `kahdeksan`, `yhdeksän` (7, 8, 9) are
+  invariable in the genitive.
+- The cardinal domain is 0–999 999.
 
 ```csharp
 NumberToStringConverter fi = NumberToStringConverter.GetConverter("FI");
 
 // Nominative (default)
-fi.Convert(1);    // "yksi"
-fi.Convert(21);   // "kaksikymmentä yksi"
-fi.Convert(100);  // "sata"
+fi.Convert(1);       // "yksi"
+fi.Convert(21);      // "kaksikymmentäyksi"
+fi.Convert(100);     // "sata"
+fi.Convert(2000);    // "kaksituhatta"
+fi.Convert(21_121);  // "kaksikymmentäyksituhatta satakaksikymmentäyksi"
 
 // Partitive
-fi.Convert(1,   "sijamuoto=partitiivi"); // "yhtä"
-fi.Convert(2,   "sijamuoto=partitiivi"); // "kahta"
-fi.Convert(5,   "sijamuoto=partitiivi"); // "viittä"
-fi.Convert(10,  "sijamuoto=partitiivi"); // "kymmentä"
-fi.Convert(11,  "sijamuoto=partitiivi"); // "yhtätoista"
-fi.Convert(21,  "sijamuoto=partitiivi"); // "kaksikymmentä yhtä"
-fi.Convert(100, "sijamuoto=partitiivi"); // "sataa"
-fi.Convert(201, "sijamuoto=partitiivi"); // "kaksisataa yhtä"
+fi.Convert(1,    "sijamuoto=partitiivi"); // "yhtä"
+fi.Convert(10,   "sijamuoto=partitiivi"); // "kymmentä"
+fi.Convert(11,   "sijamuoto=partitiivi"); // "yhtätoista"
+fi.Convert(21,   "sijamuoto=partitiivi"); // "kahtakymmentäyhtä"
+fi.Convert(100,  "sijamuoto=partitiivi"); // "sataa"
+fi.Convert(201,  "sijamuoto=partitiivi"); // "kahtasataayhtä"
+fi.Convert(3000, "sijamuoto=partitiivi"); // "kolmeatuhatta"
 
 // Genitive
-fi.Convert(2,   "sijamuoto=genetiivi"); // "kahden"
-fi.Convert(20,  "sijamuoto=genetiivi"); // "kahdenkymmenen"
-fi.Convert(21,  "sijamuoto=genetiivi"); // "kahdenkymmenen yhden"
-fi.Convert(200, "sijamuoto=genetiivi"); // "kahdensadan"
-fi.Convert(221, "sijamuoto=genetiivi"); // "kahdensadan kahdenkymmenen yhden"
-fi.Convert(11,  "sijamuoto=genetiivi"); // "yhdentoista"
+fi.Convert(2,    "sijamuoto=genetiivi"); // "kahden"
+fi.Convert(21,   "sijamuoto=genetiivi"); // "kahdenkymmenenyhden"
+fi.Convert(221,  "sijamuoto=genetiivi"); // "kahdensadankahdenkymmenenyhden"
+fi.Convert(1000, "sijamuoto=genetiivi"); // "tuhannen"
+fi.Convert(11,   "sijamuoto=genetiivi"); // "yhdentoista"
 ```
-
-> **Limitation**: in a compound number like `sata yksi` (101), the word `sata` (hundred)
-> is not converted to `sadan` in the genitive, because it is neither the last word nor
-> alone in the text. An `Anywhere "sata"→"sadan"` rule would corrupt compound forms
-> like `kaksisataa`. Similarly, `yksi tuhat` (1000) produces `yksi tuhatta` in the partitive.
 
 ### Hebrew — gender paradox (zachar / nekeva)
 
@@ -1377,7 +1376,7 @@ they are not globally registered converters and are not visible to `RegisterConf
 - Sections replaced as a whole when the child declares them (`Groups`, `Exceptions`, `Replacements`, `Fractions`, `DecimalDigits`, `Variants`, `YearFormat`, `Multiplicatives`, `TimeUnits`, `ClockTime`, `DateFormat`, `LanguageSpecifics`): the child's section replaces the base's completely, nothing is merged inside it. Omitted sections are inherited. An empty element (e.g. `<Replacements />`) explicitly overrides with an empty list.
 - `Fusion` rules belong to their `<Digit>` and therefore follow the `Groups` rule: a child that omits `<Groups>` inherits the base's digits together with their fusions; a child that declares `<Groups>` replaces every digit, and the base's fusions are not merged into it.
 - `Trigger` elements: a child that declares no `<Trigger>` inherits the base's triggers; a child that declares at least one replaces the base's whole list (NTS-09). Wolof uses a trigger for the connective `-i` of the multipliers of `milyoŋ` and higher (NTS-21), so a `baseOn="WO"` child keeps `ñaari milyoŋ`.
-- `NumberScale`: merged field by field, not replaced wholesale. A child may declare only the sub-elements it needs to override (e.g. `StaticNames`, `Suffixes`) while `startIndex`, `firstLetterUpperCase`, `groupSeparator`, `suffixSeparator`, `voidGroup`, and the `Scale0Prefixes`/`UnitsPrefixes`/`TensPrefixes`/`HundredsPrefixes` prefix tables independently fall back to the base when absent in the child. For example, `MS` (Malay) declares only `StaticNames`/`Suffixes` and still inherits `ID`'s `startIndex` and prefix tables unchanged.
+- `NumberScale`: merged field by field, not replaced wholesale. A child may declare only the sub-elements it needs to override (e.g. `StaticNames`, `Suffixes`) while `startIndex`, `firstLetterUpperCase`, `groupSeparator`, `suffixSeparator`, `multiplierSeparator`, `voidGroup`, and the `Scale0Prefixes`/`UnitsPrefixes`/`TensPrefixes`/`HundredsPrefixes` prefix tables independently fall back to the base when absent in the child. For example, `MS` (Malay) declares only `StaticNames`/`Suffixes` and still inherits `ID`'s `startIndex` and prefix tables unchanged.
 - `Ordinals`: not replaced wholesale. `OrdinalException` entries are merged by `value`, and `OrdinalRule` and `OrdinalStem` entries by `from` (child wins on key conflicts, new keys are appended). `suffix`, `prefix`, `removeTrailing`, and `OrdinalVariants` fall back to the base when absent in the child (`OrdinalVariants`, when present, replaces the base's block). For example, `FR-be` declares only `<OrdinalException value="80" string="quatre-vingtième"/>` and keeps every other French ordinal rule.
 
 ---
@@ -1723,6 +1722,57 @@ ar.Convert(2000);    // "ألفان"
 ar.Convert(3000);    // "ثلاثة آلاف"
 ar.Convert(11000);   // "أحد عشر ألفًا"
 ar.Convert(101000);  // "مائة وألف"
+```
+
+#### Multiplier/scale junction — `multiplierSeparator`
+
+Three boundaries are separate settings (NTS-30E):
+
+| Setting | Boundary it controls | Example |
+|---|---|---|
+| `Language separator` | between the words of a group composed through the language (scale connectors, decimals, fractions, currencies, digit-by-digit readings); historically also multiplier ↔ scale noun | `kaksikymmentäyksi pilkku viisi` |
+| `Language groupSeparator` (+ `separator`) | between two scale groups | `kaksituhatta` ␣ `satakaksikymmentäyksi` |
+| `NumberScale multiplierSeparator` | multiplier ↔ scale noun, every scale (generated ones included) | Finnish `" "`: `kaksi miljoonaa` |
+| `ScaleForm multiplierSeparator` | multiplier ↔ scale noun, one exact scale, whichever form its selector picks | Finnish scale 1 `""`: `kaksituhatta` |
+
+Inside a group, the digit `buildString` decides alone (`kaksikymmentä*` writes `kaksikymmentäyksi`).
+
+```xml
+<Language separator=" " groupSeparator="" …>
+    <NumberScale firstLetterUpperCase="false" multiplierSeparator=" ">
+        <StaticNames>…<Scale value="1" string="tuhat" /></StaticNames>
+        <ScaleForm scale="1" multiplierSeparator="">
+            <Forms>
+                <Form key="singular" value="tuhat" />
+                <Form key="plural" value="tuhatta" />
+            </Forms>
+        </ScaleForm>
+    </NumberScale>
+</Language>
+```
+
+- Resolution: the exact `<ScaleForm multiplierSeparator>` of the scale, else `NumberScale multiplierSeparator`,
+  else the language `separator` (the historical behaviour, kept byte for byte by every language that sets
+  neither). A generated scale has no override of its own; an exact `<ScaleForm>` keyed by its index still wins.
+- An empty value is a real junction (the multiplier and the noun are written together); values are never
+  trimmed. The default is deliberately **not** set in the shared `SCALE-*` bases: Hungarian inherits
+  `SCALE-LONG` with `separator=""` (`kétezer`) and would become `kettő ezer`.
+- `scaleConnector`, when its threshold is reached, keeps its own formatting (`separator` + connector +
+  `separator`, Romanian `douăzeci de mii`); below the threshold the junction above applies.
+- `baseOn`: an absent attribute inherits, an explicit value — empty included — replaces. A child
+  `<ScaleForm scale="…">` replaces the inherited entry of its scale as a whole, its junction included.
+- Programmatic: `new NumberScale(…) { MultiplierSeparator = " " }` and
+  `NumberToStringConverterOptions.ScaleFormMultiplierSeparators` (`IReadOnlyDictionary<int, string>`, keys =
+  scale indices the scale can name, values non-null); the converter exposes the snapshot
+  `ScaleFormMultiplierSeparators`, which the options clone copies.
+
+```csharp
+var fi = NumberToStringConverter.GetConverter("FI");
+fi.Convert(21);        // "kaksikymmentäyksi"
+fi.Convert(2000);      // "kaksituhatta"
+fi.Convert(21_121);    // "kaksikymmentäyksituhatta satakaksikymmentäyksi"
+fi.Convert(21, "sijamuoto=partitiivi");     // "kahtakymmentäyhtä"
+fi.Convert(21_000, "sijamuoto=genetiivi");  // "kahdenkymmenenyhdentuhannen"
 ```
 
 #### Generated scale forms — `<GeneratedScaleForm>`

@@ -179,6 +179,7 @@ namespace Utils.NumberToString
             _scaleForms = CompileScaleForms(_scaleFormOverrides, _scaleFormSelectorOverrides);
             _scaleFormsPublic = _scaleForms.ToImmutableDictionary(kv => kv.Key, kv => kv.Value.Forms);
             _scaleFormSelectorsPublic = _scaleForms.ToImmutableDictionary(kv => kv.Key, kv => kv.Value.Selector);
+            _scaleFormMultiplierSeparators = CompileScaleFormMultiplierSeparators(options.ScaleFormMultiplierSeparators);
             LanguageSpecifics = options.LanguageSpecifics ?? new DefaultNumberToStringLanguageSpecifics();
             LanguageIdentifier = options.LanguageIdentifier ?? string.Empty;
             _rawAdjustFunction = options.AdjustFunction;
@@ -519,6 +520,13 @@ namespace Utils.NumberToString
         internal IReadOnlyDictionary<int, ILexicalFormSelector> ScaleFormSelectorOverrides => _scaleFormSelectorOverrides;
 
         /// <summary>
+        /// Gets the configured junction between a group multiplier and the scale noun of each exact scale, keyed by
+        /// scale index (see <see cref="NumberToStringConverterOptions.ScaleFormMultiplierSeparators"/>). A scale absent
+        /// from this dictionary uses <see cref="NumberScale.MultiplierSeparator"/>, or <see cref="Separator"/>.
+        /// </summary>
+        public IReadOnlyDictionary<int, string> ScaleFormMultiplierSeparators => _scaleFormMultiplierSeparators;
+
+        /// <summary>
         /// Gets the lexical forms of the generated scale nouns, keyed by <see cref="NumberScale.ScaleSuffixes"/>
         /// index (see <see cref="NumberToStringConverterOptions.GeneratedScaleForms"/>), with their forced
         /// variants canonicalized for this language. Empty when none is configured.
@@ -744,6 +752,8 @@ namespace Utils.NumberToString
         private readonly ImmutableDictionary<int, LexicalFormSet> _scaleFormOverrides;
         /// <summary>Only the explicitly configured scale form selectors (no default filled in).</summary>
         private readonly ImmutableDictionary<int, ILexicalFormSelector> _scaleFormSelectorOverrides;
+        /// <summary>Validated multiplier/scale junctions of the exact scales; empty when none is configured.</summary>
+        private readonly ImmutableDictionary<int, string> _scaleFormMultiplierSeparators;
         /// <summary>Validated generated scale forms by suffix index (forced variants canonicalized); the public view.</summary>
         private readonly ImmutableDictionary<int, GeneratedScaleForm> _generatedScaleForms;
         /// <summary>The same entries indexed by suffix index for the conversion path; empty when none is configured.</summary>
@@ -1442,9 +1452,10 @@ namespace Utils.NumberToString
                     digits = ApplyTriggers(digits, TriggerAt.Group, groupNumber, groupQuery);
                     if (forced)
                         digits = ApplyVariantRules(digits, groupQuery!, group);
+                    // The scale connector keeps its historical formatting; otherwise the multiplier/scale junction applies.
                     string scaleJoin = (_scaleConnector != null && groupNumber > 0 && group >= _scaleConnectorThreshold)
                         ? Separator + _scaleConnector + Separator
-                        : Separator;
+                        : GetMultiplierSeparator(groupNumber);
                     // Only append the separator+scale when there is actually a scale name.
                     // If scaleName is empty (group 0 / units), appending scaleJoin would leave a
                     // dangling separator that post-hoc trimming cannot remove safely (e.g. when
@@ -3627,6 +3638,16 @@ namespace Utils.NumberToString
         /// milinilyoŋ (mi + li + ni + l + yoŋ). An empty string joins the suffix directly.
         /// </summary>
         public string? SuffixSeparator { get; init; }
+
+        /// <summary>
+        /// Gets the default junction between a group multiplier and its scale noun, or <see langword="null"/> when the
+        /// language <see cref="NumberToStringConverter.Separator"/> is used there (the historical behaviour). An exact
+        /// scale may override it (<see cref="NumberToStringConverter.ScaleFormMultiplierSeparators"/>); a generated scale
+        /// always uses it. An empty string joins the multiplier and the noun directly; the value is never trimmed.
+        /// Finnish sets a space, overridden by an empty string for the thousands: <c>kaksituhatta</c> but
+        /// <c>kaksi miljoonaa</c>.
+        /// </summary>
+        public string? MultiplierSeparator { get; init; }
 
         private static readonly Regex PrefixParser = PrefixParserRegex();
 

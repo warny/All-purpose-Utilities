@@ -1620,6 +1620,15 @@
                                                 <xs:attribute name="formSelector" type="xs:string" use="optional">
                                                     <xs:annotation><xs:documentation>Selector type name or built-in alias ("default"), resolved once at load.</xs:documentation></xs:annotation>
                                                 </xs:attribute>
+                                                <xs:attribute name="multiplierSeparator" type="xs:string" use="optional">
+                                                    <xs:annotation><xs:documentation>
+                                                        Junction between the group multiplier and this scale noun, whichever
+                                                        form is selected; overrides the NumberScale multiplierSeparator for this
+                                                        exact scale. An empty value joins them (Finnish kaksi + tuhatta =
+                                                        kaksituhatta); the value is not trimmed. The scaleConnector, when its
+                                                        threshold is reached, keeps its own formatting.
+                                                    </xs:documentation></xs:annotation>
+                                                </xs:attribute>
                                             </xs:complexType>
                                         </xs:element>
                                         <xs:element name="GeneratedScaleForm" minOccurs="0" maxOccurs="unbounded">
@@ -1720,6 +1729,19 @@
                                                 suffix. Defaults to groupSeparator. Wolof: groupSeparator
                                                 "li" and suffixSeparator "l" give milyoŋ (mi + l + yoŋ)
                                                 and milinilyoŋ (mi + li + ni + l + yoŋ).
+                                            </xs:documentation>
+                                        </xs:annotation>
+                                    </xs:attribute>
+                                    <xs:attribute name="multiplierSeparator" type="xs:string">
+                                        <xs:annotation>
+                                            <xs:documentation>
+                                                Default junction between a group multiplier and its scale noun.
+                                                Absent: the language separator (historical behaviour); under
+                                                baseOn an absent attribute inherits and an explicit value, empty
+                                                included, replaces. An empty value joins them; the value is not
+                                                trimmed. A ScaleForm may override it for one exact scale; a
+                                                generated scale always uses it. Finnish: " " here and "" on
+                                                ScaleForm scale="1" (kaksituhatta, kaksi miljoonaa).
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:attribute>

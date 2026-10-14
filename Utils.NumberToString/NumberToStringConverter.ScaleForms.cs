@@ -71,6 +71,46 @@ namespace Utils.NumberToString
             return builder.ToImmutable();
         }
 
+        /// <summary>
+        /// Validates and snapshots the per-scale multiplier/scale junctions. Every index must be a scale the
+        /// <see cref="Scale"/> can name (≥ 1) and every value must be non-null; values are kept verbatim (an empty
+        /// string is a valid junction, whitespace is never trimmed). Called once from the constructor.
+        /// </summary>
+        /// <param name="separators">The configured junctions by scale index, or <see langword="null"/>.</param>
+        /// <returns>The validated junctions by scale index.</returns>
+        /// <exception cref="ArgumentException">An index cannot be named by the scale, or a value is null.</exception>
+        private ImmutableDictionary<int, string> CompileScaleFormMultiplierSeparators(IReadOnlyDictionary<int, string>? separators)
+        {
+            var snapshot = separators?.ToArray() ?? [];
+            if (snapshot.Length == 0) return ImmutableDictionary<int, string>.Empty;
+
+            foreach (var (index, value) in snapshot)
+            {
+                if (value is null)
+                    throw new ArgumentException($"ScaleFormMultiplierSeparators[{index}] must not be null.",
+                        nameof(NumberToStringConverterOptions.ScaleFormMultiplierSeparators));
+                if (index < 1 || !Scale.CanNameGroup(index))
+                    throw new ArgumentException(
+                        $"A multiplier separator is configured for scale {index}, which the NumberScale cannot name; " +
+                        "only scale indices from 1 (thousands) that the scale can name are allowed.",
+                        nameof(NumberToStringConverterOptions.ScaleFormMultiplierSeparators));
+            }
+            return snapshot.ToImmutableDictionary(kv => kv.Key, kv => kv.Value);
+        }
+
+        /// <summary>
+        /// Returns the junction between the multiplier and the noun of scale <paramref name="groupNumber"/>: the exact
+        /// <see cref="ScaleFormMultiplierSeparators"/> entry of the scale, else <see cref="NumberScale.MultiplierSeparator"/>,
+        /// else the historical <see cref="Separator"/>. Generated scales have no entry of their own (their index may
+        /// still carry an exact one).
+        /// </summary>
+        /// <param name="groupNumber">The scale index.</param>
+        /// <returns>The junction, possibly empty.</returns>
+        private string GetMultiplierSeparator(int groupNumber)
+            => _scaleFormMultiplierSeparators.Count != 0 && _scaleFormMultiplierSeparators.TryGetValue(groupNumber, out var exact)
+                ? exact
+                : Scale.MultiplierSeparator ?? Separator;
+
         /// <summary>The largest multiplier the selector of a generated form is probed with at construction.</summary>
         private const int GeneratedScaleFormProbeLimit = 9999;
 
