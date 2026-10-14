@@ -218,6 +218,10 @@ namespace Utils.NumberToString
         [XmlAttribute("scaleConnectorThreshold")]
         public string? ScaleConnectorThresholdString { get; set; }
 
+        /// <summary>Gets or sets the connector placed before the last additive component of every numeral phrase.</summary>
+        [XmlAttribute("finalComponentConnector")]
+        public string? FinalComponentConnector { get; set; }
+
         /// <summary>Gets or sets the time-unit configuration.</summary>
         [XmlElement(ElementName = "TimeUnits")]
         public TimeUnitsType? TimeUnits { get; set; }
@@ -344,6 +348,7 @@ namespace Utils.NumberToString
         public string? IntraGroupConnectorThresholdString { get; init; }
         public string? ScaleConnector { get; init; }
         public string? ScaleConnectorThresholdString { get; init; }
+        public string? FinalComponentConnector { get; init; }
         public TimeUnitsType? TimeUnits { get; init; }
         public ClockTimeType? ClockTime { get; init; }
         public DateFormatType? DateFormat { get; init; }

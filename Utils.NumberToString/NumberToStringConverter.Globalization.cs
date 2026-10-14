@@ -822,6 +822,7 @@ namespace Utils.NumberToString
             IntraGroupConnectorThresholdString = model.IntraGroupConnectorThresholdString,
             ScaleConnector = model.ScaleConnector,
             ScaleConnectorThresholdString = model.ScaleConnectorThresholdString,
+            FinalComponentConnector = model.FinalComponentConnector,
             TimeUnits = model.TimeUnits,
             ClockTime = model.ClockTime,
             DateFormat = model.DateFormat,
@@ -991,6 +992,7 @@ namespace Utils.NumberToString
                 IntraGroupConnectorThresholdString = overriding.IntraGroupConnectorThresholdString ?? inherited.IntraGroupConnectorThresholdString,
                 ScaleConnector = overriding.ScaleConnector ?? inherited.ScaleConnector,
                 ScaleConnectorThresholdString = overriding.ScaleConnectorThresholdString ?? inherited.ScaleConnectorThresholdString,
+                FinalComponentConnector = overriding.FinalComponentConnector ?? inherited.FinalComponentConnector,
                 TimeUnits = overriding.TimeUnits ?? inherited.TimeUnits,
                 ClockTime = overriding.ClockTime ?? inherited.ClockTime,
                 DateFormat = overriding.DateFormat ?? inherited.DateFormat,
@@ -1163,6 +1165,7 @@ namespace Utils.NumberToString
             IntraGroupConnectorThresholdString = definition.IntraGroupConnectorThresholdString,
             ScaleConnector = definition.ScaleConnector,
             ScaleConnectorThresholdString = definition.ScaleConnectorThresholdString,
+            FinalComponentConnector = definition.FinalComponentConnector,
             TimeUnits = definition.TimeUnits,
             ClockTime = definition.ClockTime,
             DateFormat = definition.DateFormat,
@@ -2013,6 +2016,9 @@ namespace Utils.NumberToString
                 IntraGroupConnectorThreshold = language.IntraGroupConnectorThreshold,
                 ScaleConnector = language.ScaleConnector,
                 ScaleConnectorThreshold = language.ScaleConnectorThreshold,
+                FinalComponentConnector = string.IsNullOrWhiteSpace(language.FinalComponentConnector)
+                    ? null
+                    : language.FinalComponentConnector,
                 // Every <ScaleForm> registers its scale (with empty forms when it only names a
                 // selector) so that its index is validated; selectors are resolved here, once.
                 ScaleForms = scaleFormEntries.ToDictionary(

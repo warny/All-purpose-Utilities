@@ -263,6 +263,7 @@ namespace Utils.NumberToString
             _intraGroupConnectorThreshold = options.IntraGroupConnectorThreshold;
             _scaleConnector = options.ScaleConnector;
             _scaleConnectorThreshold = options.ScaleConnectorThreshold;
+            _finalComponentConnector = string.IsNullOrWhiteSpace(options.FinalComponentConnector) ? null : options.FinalComponentConnector;
             // Needs the group tables, Exceptions and the intra-group connector: edge validation renders
             // the actual lower constituents of each table through ConvertGroup.
             CompileAllFusions();
@@ -627,6 +628,13 @@ namespace Utils.NumberToString
         /// <summary>Gets the threshold at or above which <see cref="ScaleConnector"/> is inserted.</summary>
         public int ScaleConnectorThreshold => (int)_scaleConnectorThreshold;
 
+        /// <summary>
+        /// Gets the connector placed before the last additive component of every numeral phrase (e.g. "и" for
+        /// Bulgarian), or <see langword="null"/> when the language declares none
+        /// (see <see cref="NumberToStringConverterOptions.FinalComponentConnector"/>).
+        /// </summary>
+        public string? FinalComponentConnector => _finalComponentConnector;
+
         /// <inheritdoc/>
         public bool SupportsTimeConversion => _timeUnits.Count > 0;
 
@@ -759,6 +767,7 @@ namespace Utils.NumberToString
         private readonly long _intraGroupConnectorThreshold;
         private readonly string? _scaleConnector;
         private readonly long _scaleConnectorThreshold;
+        private readonly string? _finalComponentConnector;
         private readonly ImmutableDictionary<int, ForcedVariantSet> _fractionForcedVariants;
         /// <summary>Lazily computed text of each pronounced decimal digit (see <see cref="DecimalDigitTexts"/>).</summary>
         private string[]? _decimalDigitTexts;
