@@ -8721,6 +8721,20 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.CzechSlovakPluralLexicalFormSelector.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.CzechSlovakPluralLexicalFormSelector.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.CzechSlovakPluralLexicalFormSelector",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.CzechSlovakPluralLexicalFormSelector.yml\" sourcestartlinenumber=\"1\">Chooses the form of a noun counted by a Czech or Slovak cardinal (e.g. a scale noun governed by\nits multiplier) following the Unicode CLDR cardinal plural rules of <code>cs</code> and <code>sk</code> for\nintegers.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.NumberToString.DanishOrdinalLanguageSpecifics.yml",
       "output": {
         ".html": {
@@ -10160,6 +10174,20 @@
       "IsMRef": true,
       "Title": "Utils.NumberToString.UkrainianOrdinalLanguageSpecifics",
       "Summary": "<p sourcefile=\"api/Utils.NumberToString.UkrainianOrdinalLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Produces Ukrainian ordinals. Only the last component of a compound is ordinal and follows the\ncardinal of the preceding part (<code>двадцять перший</code>, <code>сто перший</code>,\n<code>тисяча перший</code>); it is declined for gender (<code>чоловічий</code>, <code>жіночий</code>,\n<code>середній</code>) and case with the hard (<code>-ий</code>) and soft (<code>-ій</code>) adjective\nparadigms. Round thousands, millions and milliards are one word with the multiplier in the genitive\n(<code>двохтисячний</code>, <code>шістдесятип'ятимільйонний</code>, <code>двохмільярдний</code>; NTS-28, Правопис 2019 §38) for\nthe multipliers 1–89 except a final <code>один</code> after the tens; the other round multipliers are declined.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.UkrainianPluralLexicalFormSelector.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.UkrainianPluralLexicalFormSelector.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.UkrainianPluralLexicalFormSelector",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.UkrainianPluralLexicalFormSelector.yml\" sourcestartlinenumber=\"1\">Chooses the form of a noun counted by a Ukrainian cardinal (e.g. a scale noun governed by its\nmultiplier) following the Unicode CLDR cardinal plural rules of <code>uk</code> for integers.</p>\n"
     },
     {
       "type": "ManagedReference",

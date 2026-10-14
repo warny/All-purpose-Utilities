@@ -61637,6 +61637,25 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.CzechOrdinalLanguageSpecifics.TryDecompose
   nameWithType: CzechOrdinalLanguageSpecifics.TryDecompose
+- uid: Utils.NumberToString.CzechSlovakPluralLexicalFormSelector
+  name: CzechSlovakPluralLexicalFormSelector
+  href: api/Utils.NumberToString.CzechSlovakPluralLexicalFormSelector.html
+  commentId: T:Utils.NumberToString.CzechSlovakPluralLexicalFormSelector
+  fullName: Utils.NumberToString.CzechSlovakPluralLexicalFormSelector
+  nameWithType: CzechSlovakPluralLexicalFormSelector
+- uid: Utils.NumberToString.CzechSlovakPluralLexicalFormSelector.SelectForm(Utils.NumberToString.LexicalFormContext)
+  name: SelectForm(LexicalFormContext)
+  href: api/Utils.NumberToString.CzechSlovakPluralLexicalFormSelector.html#Utils_NumberToString_CzechSlovakPluralLexicalFormSelector_SelectForm_Utils_NumberToString_LexicalFormContext_
+  commentId: M:Utils.NumberToString.CzechSlovakPluralLexicalFormSelector.SelectForm(Utils.NumberToString.LexicalFormContext)
+  fullName: Utils.NumberToString.CzechSlovakPluralLexicalFormSelector.SelectForm(Utils.NumberToString.LexicalFormContext)
+  nameWithType: CzechSlovakPluralLexicalFormSelector.SelectForm(LexicalFormContext)
+- uid: Utils.NumberToString.CzechSlovakPluralLexicalFormSelector.SelectForm*
+  name: SelectForm
+  href: api/Utils.NumberToString.CzechSlovakPluralLexicalFormSelector.html#Utils_NumberToString_CzechSlovakPluralLexicalFormSelector_SelectForm_
+  commentId: Overload:Utils.NumberToString.CzechSlovakPluralLexicalFormSelector.SelectForm
+  isSpec: "True"
+  fullName: Utils.NumberToString.CzechSlovakPluralLexicalFormSelector.SelectForm
+  nameWithType: CzechSlovakPluralLexicalFormSelector.SelectForm
 - uid: Utils.NumberToString.DanishOrdinalLanguageSpecifics
   name: DanishOrdinalLanguageSpecifics
   href: api/Utils.NumberToString.DanishOrdinalLanguageSpecifics.html
@@ -71549,6 +71568,25 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.UkrainianOrdinalLanguageSpecifics.TryDecompose
   nameWithType: UkrainianOrdinalLanguageSpecifics.TryDecompose
+- uid: Utils.NumberToString.UkrainianPluralLexicalFormSelector
+  name: UkrainianPluralLexicalFormSelector
+  href: api/Utils.NumberToString.UkrainianPluralLexicalFormSelector.html
+  commentId: T:Utils.NumberToString.UkrainianPluralLexicalFormSelector
+  fullName: Utils.NumberToString.UkrainianPluralLexicalFormSelector
+  nameWithType: UkrainianPluralLexicalFormSelector
+- uid: Utils.NumberToString.UkrainianPluralLexicalFormSelector.SelectForm(Utils.NumberToString.LexicalFormContext)
+  name: SelectForm(LexicalFormContext)
+  href: api/Utils.NumberToString.UkrainianPluralLexicalFormSelector.html#Utils_NumberToString_UkrainianPluralLexicalFormSelector_SelectForm_Utils_NumberToString_LexicalFormContext_
+  commentId: M:Utils.NumberToString.UkrainianPluralLexicalFormSelector.SelectForm(Utils.NumberToString.LexicalFormContext)
+  fullName: Utils.NumberToString.UkrainianPluralLexicalFormSelector.SelectForm(Utils.NumberToString.LexicalFormContext)
+  nameWithType: UkrainianPluralLexicalFormSelector.SelectForm(LexicalFormContext)
+- uid: Utils.NumberToString.UkrainianPluralLexicalFormSelector.SelectForm*
+  name: SelectForm
+  href: api/Utils.NumberToString.UkrainianPluralLexicalFormSelector.html#Utils_NumberToString_UkrainianPluralLexicalFormSelector_SelectForm_
+  commentId: Overload:Utils.NumberToString.UkrainianPluralLexicalFormSelector.SelectForm
+  isSpec: "True"
+  fullName: Utils.NumberToString.UkrainianPluralLexicalFormSelector.SelectForm
+  nameWithType: UkrainianPluralLexicalFormSelector.SelectForm
 - uid: Utils.NumberToString.VariantDimensionType
   name: VariantDimensionType
   href: api/Utils.NumberToString.VariantDimensionType.html

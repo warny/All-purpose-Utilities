@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_NumberToString_RussianPluralLexicalFormSelector" data-uid="Utils.NumberToString.RussianPluralLexicalFormSelector" class="text-break">
-Class RussianPluralLexicalFormSelector  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/RussianPluralLexicalFormSelector.cs/#L22"><i class="bi bi-code-slash"></i></a>
+Class RussianPluralLexicalFormSelector  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/RussianPluralLexicalFormSelector.cs/#L23"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -250,7 +250,8 @@ Returns form keys only; the words are configured in XML (<code>&lt;ScaleForm&gt;
 <p>
 Source: Unicode CLDR, "Language Plural Rules", ru (<code>i % 10 = 1 and i % 100 != 11</code>;
 <code>i % 10 = 2..4 and i % 100 != 12..14</code>). The rule only depends on the absolute value; the
-variants are ignored. Stateless and thread-safe.
+variants are ignored. Stateless and thread-safe. CLDR gives Ukrainian the same integer rule; see
+<a class="xref" href="Utils.NumberToString.UkrainianPluralLexicalFormSelector.html">UkrainianPluralLexicalFormSelector</a>, which shares this implementation.
 </p>
 </div>
 
@@ -263,7 +264,7 @@ variants are ignored. Stateless and thread-safe.
 
   <h3 id="Utils_NumberToString_RussianPluralLexicalFormSelector_SelectForm_Utils_NumberToString_LexicalFormContext_" data-uid="Utils.NumberToString.RussianPluralLexicalFormSelector.SelectForm(Utils.NumberToString.LexicalFormContext)">
   SelectForm(LexicalFormContext)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/RussianPluralLexicalFormSelector.cs/#L27"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/RussianPluralLexicalFormSelector.cs/#L28"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns the CLDR plural category of the absolute value in <code class="paramref">context</code>.</p>
@@ -302,7 +303,7 @@ variants are ignored. Stateless and thread-safe.
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/RussianPluralLexicalFormSelector.cs/#L22" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/RussianPluralLexicalFormSelector.cs/#L23" class="edit-link">Edit this page</a>
         </div>
 
 
