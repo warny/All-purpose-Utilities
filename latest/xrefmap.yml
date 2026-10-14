@@ -65678,6 +65678,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberScale.IsUnbounded
   nameWithType: NumberScale.IsUnbounded
+- uid: Utils.NumberToString.NumberScale.MultiplierSeparator
+  name: MultiplierSeparator
+  href: api/Utils.NumberToString.NumberScale.html#Utils_NumberToString_NumberScale_MultiplierSeparator
+  commentId: P:Utils.NumberToString.NumberScale.MultiplierSeparator
+  fullName: Utils.NumberToString.NumberScale.MultiplierSeparator
+  nameWithType: NumberScale.MultiplierSeparator
+- uid: Utils.NumberToString.NumberScale.MultiplierSeparator*
+  name: MultiplierSeparator
+  href: api/Utils.NumberToString.NumberScale.html#Utils_NumberToString_NumberScale_MultiplierSeparator_
+  commentId: Overload:Utils.NumberToString.NumberScale.MultiplierSeparator
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberScale.MultiplierSeparator
+  nameWithType: NumberScale.MultiplierSeparator
 - uid: Utils.NumberToString.NumberScale.Scale0Prefixes
   name: Scale0Prefixes
   href: api/Utils.NumberToString.NumberScale.html#Utils_NumberToString_NumberScale_Scale0Prefixes
@@ -65827,6 +65840,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberScaleType.HundredsPrefixes
   nameWithType: NumberScaleType.HundredsPrefixes
+- uid: Utils.NumberToString.NumberScaleType.MultiplierSeparator
+  name: MultiplierSeparator
+  href: api/Utils.NumberToString.NumberScaleType.html#Utils_NumberToString_NumberScaleType_MultiplierSeparator
+  commentId: P:Utils.NumberToString.NumberScaleType.MultiplierSeparator
+  fullName: Utils.NumberToString.NumberScaleType.MultiplierSeparator
+  nameWithType: NumberScaleType.MultiplierSeparator
+- uid: Utils.NumberToString.NumberScaleType.MultiplierSeparator*
+  name: MultiplierSeparator
+  href: api/Utils.NumberToString.NumberScaleType.html#Utils_NumberToString_NumberScaleType_MultiplierSeparator_
+  commentId: Overload:Utils.NumberToString.NumberScaleType.MultiplierSeparator
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberScaleType.MultiplierSeparator
+  nameWithType: NumberScaleType.MultiplierSeparator
 - uid: Utils.NumberToString.NumberScaleType.Scale0Prefixes
   name: Scale0Prefixes
   href: api/Utils.NumberToString.NumberScaleType.html#Utils_NumberToString_NumberScaleType_Scale0Prefixes
@@ -66015,6 +66041,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberScaleXmlModel.HundredsPrefixes
   nameWithType: NumberScaleXmlModel.HundredsPrefixes
+- uid: Utils.NumberToString.NumberScaleXmlModel.MultiplierSeparator
+  name: MultiplierSeparator
+  href: api/Utils.NumberToString.NumberScaleXmlModel.html#Utils_NumberToString_NumberScaleXmlModel_MultiplierSeparator
+  commentId: P:Utils.NumberToString.NumberScaleXmlModel.MultiplierSeparator
+  fullName: Utils.NumberToString.NumberScaleXmlModel.MultiplierSeparator
+  nameWithType: NumberScaleXmlModel.MultiplierSeparator
+- uid: Utils.NumberToString.NumberScaleXmlModel.MultiplierSeparator*
+  name: MultiplierSeparator
+  href: api/Utils.NumberToString.NumberScaleXmlModel.html#Utils_NumberToString_NumberScaleXmlModel_MultiplierSeparator_
+  commentId: Overload:Utils.NumberToString.NumberScaleXmlModel.MultiplierSeparator
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberScaleXmlModel.MultiplierSeparator
+  nameWithType: NumberScaleXmlModel.MultiplierSeparator
 - uid: Utils.NumberToString.NumberScaleXmlModel.Scale0Prefixes
   name: Scale0Prefixes
   href: api/Utils.NumberToString.NumberScaleXmlModel.html#Utils_NumberToString_NumberScaleXmlModel_Scale0Prefixes
@@ -67644,6 +67683,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberToStringConverter.ScaleConnectorThreshold
   nameWithType: NumberToStringConverter.ScaleConnectorThreshold
+- uid: Utils.NumberToString.NumberToStringConverter.ScaleFormMultiplierSeparators
+  name: ScaleFormMultiplierSeparators
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_ScaleFormMultiplierSeparators
+  commentId: P:Utils.NumberToString.NumberToStringConverter.ScaleFormMultiplierSeparators
+  fullName: Utils.NumberToString.NumberToStringConverter.ScaleFormMultiplierSeparators
+  nameWithType: NumberToStringConverter.ScaleFormMultiplierSeparators
+- uid: Utils.NumberToString.NumberToStringConverter.ScaleFormMultiplierSeparators*
+  name: ScaleFormMultiplierSeparators
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_ScaleFormMultiplierSeparators_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverter.ScaleFormMultiplierSeparators
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverter.ScaleFormMultiplierSeparators
+  nameWithType: NumberToStringConverter.ScaleFormMultiplierSeparators
 - uid: Utils.NumberToString.NumberToStringConverter.ScaleFormSelectors
   name: ScaleFormSelectors
   href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_ScaleFormSelectors
@@ -68953,6 +69005,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberToStringConverterOptions.ScaleConnectorThreshold
   nameWithType: NumberToStringConverterOptions.ScaleConnectorThreshold
+- uid: Utils.NumberToString.NumberToStringConverterOptions.ScaleFormMultiplierSeparators
+  name: ScaleFormMultiplierSeparators
+  href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_ScaleFormMultiplierSeparators
+  commentId: P:Utils.NumberToString.NumberToStringConverterOptions.ScaleFormMultiplierSeparators
+  fullName: Utils.NumberToString.NumberToStringConverterOptions.ScaleFormMultiplierSeparators
+  nameWithType: NumberToStringConverterOptions.ScaleFormMultiplierSeparators
+- uid: Utils.NumberToString.NumberToStringConverterOptions.ScaleFormMultiplierSeparators*
+  name: ScaleFormMultiplierSeparators
+  href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_ScaleFormMultiplierSeparators_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverterOptions.ScaleFormMultiplierSeparators
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverterOptions.ScaleFormMultiplierSeparators
+  nameWithType: NumberToStringConverterOptions.ScaleFormMultiplierSeparators
 - uid: Utils.NumberToString.NumberToStringConverterOptions.ScaleFormSelectors
   name: ScaleFormSelectors
   href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_ScaleFormSelectors
@@ -70482,6 +70547,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.ScaleFormEntry.LexicalFormSelector
   nameWithType: ScaleFormEntry.LexicalFormSelector
+- uid: Utils.NumberToString.ScaleFormEntry.MultiplierSeparator
+  name: MultiplierSeparator
+  href: api/Utils.NumberToString.ScaleFormEntry.html#Utils_NumberToString_ScaleFormEntry_MultiplierSeparator
+  commentId: P:Utils.NumberToString.ScaleFormEntry.MultiplierSeparator
+  fullName: Utils.NumberToString.ScaleFormEntry.MultiplierSeparator
+  nameWithType: ScaleFormEntry.MultiplierSeparator
+- uid: Utils.NumberToString.ScaleFormEntry.MultiplierSeparator*
+  name: MultiplierSeparator
+  href: api/Utils.NumberToString.ScaleFormEntry.html#Utils_NumberToString_ScaleFormEntry_MultiplierSeparator_
+  commentId: Overload:Utils.NumberToString.ScaleFormEntry.MultiplierSeparator
+  isSpec: "True"
+  fullName: Utils.NumberToString.ScaleFormEntry.MultiplierSeparator
+  nameWithType: ScaleFormEntry.MultiplierSeparator
 - uid: Utils.NumberToString.ScaleFormEntry.Scale
   name: Scale
   href: api/Utils.NumberToString.ScaleFormEntry.html#Utils_NumberToString_ScaleFormEntry_Scale

@@ -283,7 +283,7 @@ the selector choosing which form the group multiplier governs. Projected into
 
   <h3 id="Utils_NumberToString_ScaleFormEntry_Forms" data-uid="Utils.NumberToString.ScaleFormEntry.Forms">
   Forms
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L990"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L998"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Optional named forms, overriding or extending the &quot;singular&quot;/&quot;plural&quot; forms synthesized from
@@ -334,6 +334,40 @@ the scale name.</p>
   <h4 class="section">Property Value</h4>
   <dl class="parameters">
     <dt><a class="xref" href="Utils.NumberToString.LexicalFormSelectorElementType.html">LexicalFormSelectorElementType</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_NumberToString_ScaleFormEntry_MultiplierSeparator_" data-uid="Utils.NumberToString.ScaleFormEntry.MultiplierSeparator*"></a>
+
+  <h3 id="Utils_NumberToString_ScaleFormEntry_MultiplierSeparator" data-uid="Utils.NumberToString.ScaleFormEntry.MultiplierSeparator">
+  MultiplierSeparator
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L991"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Optional junction between the group multiplier and this scale noun, overriding the NumberScale default
+whichever form is selected; <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> when absent. An empty string is kept (Finnish
+<code>kaksituhatta</code>). Projected into <code>NumberToStringConverterOptions.ScaleFormMultiplierSeparators</code>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string? MultiplierSeparator { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
     <dd></dd>
   </dl>
 
