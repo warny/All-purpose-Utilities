@@ -648,13 +648,13 @@ public class NumberToStringNts30CTests
 
     /// <summary>
     /// Bulgarian: the singular after exactly one, the count form трилиона otherwise, a masculine multiplier
-    /// (един, два), compounds included; the missing conjunction и of the compounds is NTS-30D.
+    /// (един, два), compounds included, each compound with its own и (NTS-30D).
     /// </summary>
     [TestMethod]
     public void Bulgarian_GeneratedScales_AgreeWithTheMultiplier()
         => AssertFamily("BG", BulgarianScales,
             [(1, "един", "singular"), (2, "два", "plural"), (5, "пет", "plural"), (10, "десет", "plural"),
-             (21, "двадесет един", "plural"), (22, "двадесет два", "plural"), (25, "двадесет пет", "plural")],
+             (21, "двадесет и един", "plural"), (22, "двадесет и два", "plural"), (25, "двадесет и пет", "plural")],
             new Dictionary<string, string> { ["singular"] = "он", ["plural"] = "она" });
 
     // ----- Czech ---------------------------------------------------------------------------------
@@ -750,8 +750,8 @@ public class NumberToStringNts30CTests
     [DataRow("UK", "22000000000000", "двадцять два трильйони")]
     [DataRow("BG", "1000000000000", "един трилион")]
     [DataRow("BG", "2000000000000", "два трилиона")]
-    [DataRow("BG", "21000000000000", "двадесет един трилиона")]
-    [DataRow("BG", "22000000000000", "двадесет два трилиона")]
+    [DataRow("BG", "21000000000000", "двадесет и един трилиона")]
+    [DataRow("BG", "22000000000000", "двадесет и два трилиона")]
     [DataRow("CS", "1000000000000", "jeden bilion")]
     [DataRow("CS", "2000000000000", "dva biliony")]
     [DataRow("CS", "5000000000000", "pět bilionů")]

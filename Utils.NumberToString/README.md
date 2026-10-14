@@ -30,7 +30,7 @@ dotnet add package omy.Utils.NumberToString --version 2.0.0-rc.2
 | DA, DA-DK | Danish | ✓ plugin (int range) | ✓ 5 min, 12 h | gender (fælleskøn/intetkøn) | local | Ordinal of zero *nulte* (NTS-29); ordinals above `int.MaxValue` fail closed |
 | NO, NB, NB-NO | Norwegian Bokmål | ✓ plugin (int range) | ✓ 5 min, 12 h | gender (hankjønn/hunkjønn/intetkjønn) | local | Ordinals above `int.MaxValue` fail closed; no ordinal of zero |
 | SV, SV-SE | Swedish | ✓ plugin (to one million) | ✓ 5 min, 12 h | — | local | One word below a million (tjugoentusen), en miljon (Språkrådet; NTS-27); ordinals above a million fail closed |
-| BG, BG-BG | Bulgarian | ✓ plugin, gendered | ✓ 15 min, 12 h | gender (standalone/masculine/feminine/neuter) | local | Unverified compound round thousands/millions fail closed. Short scale with `милиард`; Cyrillic Conway names above (`SCALE-SHORT-CYRILLIC`, `кватуор`), unbounded. `хиляди`, count forms `милиона`/`милиарда` (NTS-30B) and `трилиона`… (NTS-30C); compound cardinals still lack `и` (NTS-30D) |
+| BG, BG-BG | Bulgarian | ✓ plugin, gendered | ✓ 15 min, 12 h | gender (standalone/masculine/feminine/neuter) | local | Unverified compound round thousands/millions fail closed. Short scale with `милиард`; Cyrillic Conway names above (`SCALE-SHORT-CYRILLIC`, `кватуор`), unbounded. `хиляди`, count forms `милиона`/`милиарда` (NTS-30B) and `трилиона`… (NTS-30C); `и` before the last component of every numeral phrase: `двадесет и едно`, `хиляда и сто`, `двадесет и една хиляди` (NTS-30D) |
 | HR, HR-HR | Croatian | ✓ declarative (last word) + range plugin | ✓ 15 min, 12 h | — | local | Masculine nominative ordinals only; round scale ordinals other than tisućiti (1 000), milijunti (1 000 000) and milijarditi (1 000 000 000) fail closed, including 10^12 and above |
 | HU, HU-HU | Hungarian | ✓ plugin (int range) | ✓ 15 min, 12 h | — | local | Ordinal of zero *nulladik* (NTS-29) |
 | CS, CS-CZ | Czech | ✓ plugin, gender × case | ✓ 15 min, 12 h | gender × case | local | Ordinals verified up to 9 999 (round millions/milliards: one only). `tisíc`/`milion`/`miliarda` agree with their multiplier (NTS-30B), so do the generated `biliony`/`biliardy`… (NTS-30C); Latin Conway prefixes `quadri-` (NTS-36) |
@@ -1325,7 +1325,20 @@ on the same language register the same converter under several codes.
 | `groupConnector` / `groupConnectorThreshold` | | Word inserted between the last two groups when the lowest group's value is below the threshold (e.g. English "one thousand **and** one" — `groupConnector="and" groupConnectorThreshold="100"`). |
 | `intraGroupConnector` / `intraGroupConnectorThreshold` | | Word inserted between the hundreds digit and the remainder within a group of 3, when hundreds are present and the remainder is below the threshold (e.g. 101 → "một trăm **linh** một" with `intraGroupConnector="linh" intraGroupConnectorThreshold="10"`; since NTS-27 the Vietnamese configuration uses `innerBuildString="linh *"` instead, which also reaches the zero hundreds of a class after the thousands). |
 | `scaleConnector` / `scaleConnectorThreshold` | | Word inserted between a group's text and its scale name (thousand/million/…) when the group's value is at or above the threshold (e.g. Romanian 20 000 → "douăzeci **de** mii" — `scaleConnector="de" scaleConnectorThreshold="20"`). |
+| `finalComponentConnector` | | Word placed before the last additive component of every numeral phrase (NTS-30D). A phrase is the multiplier of a scale group, or the whole number whose components are its non-zero groups: inside a group the word precedes the last non-zero position, once (an `Exception` such as 15 is one component); between groups it precedes the last non-zero group when that group is a single component. Bulgarian `finalComponentConnector="и"`: 21 → "двадесет **и** едно", 121 → "сто двадесет **и** едно", 1100 → "хиляда **и** сто", 1121 → "хиляда сто двадесет **и** едно", 21 000 → "двадесет **и** една хиляди". Inherited through `baseOn`; an explicit empty value removes it. Rejected together with `groupConnector`, `intraGroupConnector` or a `Fusion`, which rewrite the same junctions. Programmatic: `NumberToStringConverterOptions.FinalComponentConnector`, read back as `NumberToStringConverter.FinalComponentConnector`. |
 | `multiplierPosition` | | `beforeScale` (default, "two thousand") or `afterScale`: the scale noun precedes its multiplier (Ewe 2000 → "akpe eve"). See [`<Groups onScale>` and `multiplierPosition`](#groups-onscale--multiplier-tables-and-multiplierposition). |
+
+The final-component connector (NTS-30D) marks one junction per numeral phrase, walking outward from the last
+component; a multiplier is a phrase of its own:
+
+```csharp
+var bg = NumberToStringConverter.GetConverter("BG");     // finalComponentConnector="и"
+bg.Convert(121);          // "сто двадесет и едно"             (not "сто и двадесет и едно")
+bg.Convert(1100);         // "хиляда и сто"                    (one-component last group)
+bg.Convert(21_121);       // "двадесет и една хиляди сто двадесет и едно"
+bg.Convert(21_000_000);   // "двадесет и един милиона"         (и inside the multiplier)
+bg.FinalComponentConnector; // "и" (NumberToStringConverterOptions.FinalComponentConnector)
+```
 
 ---
 
@@ -1359,7 +1372,7 @@ they are not globally registered converters and are not visible to `RegisterConf
 
 **Merge rules**:
 - `Culture`: not inherited. Every `<Language>` declares at least one `<Culture>` (XSD `minOccurs="1"`) and only those are registered for the child. A regional culture must be declared once, in the child only, never also in its general parent (a culture declared by two built-in documents is a retained initialization failure).
-- Scalar attributes (`groupSize`, `groupPattern`, `separator`, `groupSeparator`, `zero`, `minus`, `decimalSeparator`, `fractionSeparator`, `maxNumber`, `decimalDigitByDigitMaxDigits`, `mixedFractionSeparator`, `groupConnector`, `intraGroupConnector`, `scaleConnector` and their thresholds, `multiplierPosition`): child wins; absent child attributes inherit from the base.
+- Scalar attributes (`groupSize`, `groupPattern`, `separator`, `groupSeparator`, `zero`, `minus`, `decimalSeparator`, `fractionSeparator`, `maxNumber`, `decimalDigitByDigitMaxDigits`, `mixedFractionSeparator`, `groupConnector`, `intraGroupConnector`, `scaleConnector` and their thresholds, `finalComponentConnector`, `multiplierPosition`): child wins; absent child attributes inherit from the base.
 - `<Groups onScale="…">` tables are merged by range: a child table whose range is identical to an inherited one (compared in canonical form) replaces it, a disjoint range is added, and any other overlap is rejected. The default `<Groups>` follows the rule below independently.
 - Sections replaced as a whole when the child declares them (`Groups`, `Exceptions`, `Replacements`, `Fractions`, `DecimalDigits`, `Variants`, `YearFormat`, `Multiplicatives`, `TimeUnits`, `ClockTime`, `DateFormat`, `LanguageSpecifics`): the child's section replaces the base's completely, nothing is merged inside it. Omitted sections are inherited. An empty element (e.g. `<Replacements />`) explicitly overrides with an empty list.
 - `Fusion` rules belong to their `<Digit>` and therefore follow the `Groups` rule: a child that omits `<Groups>` inherits the base's digits together with their fusions; a child that declares `<Groups>` replaces every digit, and the base's fusions are not merged into it.
@@ -1769,7 +1782,7 @@ var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConv
 new NumberToStringConverter(options).Convert(2_000_000_000_000);   // "два триллиона"
 
 NumberToStringConverter.GetConverter("UK").Convert(22_000_000_000_000);     // "двадцять два трильйони"
-NumberToStringConverter.GetConverter("BG").Convert(21_000_000_000_000);     // "двадесет един трилиона"
+NumberToStringConverter.GetConverter("BG").Convert(21_000_000_000_000);     // "двадесет и един трилиона"
 NumberToStringConverter.GetConverter("CS").Convert(2_000_000_000_000_000);  // "dvě biliardy"
 NumberToStringConverter.GetConverter("SK").Convert(5_000_000_000_000_000);  // "päť biliárd"
 ```

@@ -9,7 +9,14 @@
         minus="минус *"
         decimalSeparator="цяло"
         fractionSeparator="на"
+        finalComponentConnector="и"
     >
+        <!-- NTS-30D: и before the last component of every numeral phrase (Речник на българския език, ИБЕ-БАН, "и",
+             sense 3: "В съставни числителни имена ... свързва последното числително с предходното"): inside a group
+             before its last non-zero position (двадесет и едно, сто и петнадесет, сто двадесет и едно), and between
+             groups before a last group that is a single component (хиляда и сто, един милион и едно). A multiplier is
+             a phrase of its own (двадесет и една хиляди; ФСлФ СУ: един милиард двеста милиона шейсет и пет хиляди
+             седемстотин осемдесет и пет). The ordinals keep their plugin, which already wrote и. -->
         <Culture>BG</Culture>
         <Culture>BG-BG</Culture>
         <Groups>
@@ -110,7 +117,7 @@
                  милион: the singular after exactly one, otherwise its count form (бройна форма) трилиона
                  (Речник на българския език, rechnik.chitanka.info "трилион": м.р., бройна форма трилиона;
                  Официален правописен речник, ИБЕ-БАН 2012, pp. 26-27). The multiplier is masculine (един,
-                 два), compounds included; the conjunction и of the compounds is NTS-30D. -->
+                 два), compounds included, with its own и (NTS-30D: двадесет и два трилиона). -->
             <GeneratedScaleForm suffix="0">
                 <Forms>
                     <Form key="singular" value="он" forceVariants="gender=masculine" />
