@@ -213,11 +213,11 @@ public class NumberToStringNts37Tests
     public void Synthetic_PairedScales_ReplacementsSeeTheWholeMultiplier()
     {
         var converter = Paired(languageContent: """
-            <Replacements><Replacement oldValue="one" newValue="" scope="StartsWith" onScale="2.." onValue="1" /></Replacements>
+            <Replacements><Replacement oldValue="one" newValue="a single" scope="StartsWith" onScale="2.." onValue="1" /></Replacements>
             """);
 
-        Assert.AreEqual("Y", converter.Convert(S(1, 2)));
-        Assert.AreEqual("bZ", converter.Convert(S(1, 4)));
+        Assert.AreEqual("a single Y", converter.Convert(S(1, 2)));
+        Assert.AreEqual("a single bZ", converter.Convert(S(1, 4)));
         Assert.AreEqual("one x Y", converter.Convert(S(1, 3)), "multiplier 100");
         Assert.AreEqual("one x", converter.Convert(S(1, 1)), "scale 1 is not covered");
     }

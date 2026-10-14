@@ -1432,14 +1432,33 @@ namespace Utils.NumberToString
             {
                 int width = GetGroupWidth(groupNumber);
                 BigInteger groupValue = _groupDivisors[Math.Min(groupNumber, _groupDivisors.Length - 1)];
-                var group = (long)(remaining % groupValue);
+                // A paired scale (NumberScale.PairedScalesFrom) takes the group above it into its multiplier.
+                bool paired = Scale.PairedScalesFrom is int pairedFrom && groupNumber >= pairedFrom && ((groupNumber - pairedFrom) & 1) == 0;
+                BigInteger multiplierDivisor = paired
+                    ? groupValue * _groupDivisors[Math.Min(groupNumber + 1, _groupDivisors.Length - 1)]
+                    : groupValue;
+                var group = (long)(remaining % multiplierDivisor);
                 if (group != 0)
                 {
                     // A group preceded by a higher non-zero group renders its leading positions with the
                     // inner forms of the digits (innerString/innerBuildString), when the tables declare any.
-                    bool hasHigherGroup = remaining >= groupValue;
-                    // The multiplier of a scale covered by a scoped Groups uses that table.
-                    string digits = ConvertGroup(GetGroupTable(groupNumber), width, group, hasHigherGroup, out bool hasFinalConnector);
+                    bool hasHigherGroup = remaining >= multiplierDivisor;
+                    string digits;
+                    bool hasFinalConnector;
+                    if (group < groupValue)
+                    {
+                        // The multiplier of a scale covered by a scoped Groups uses that table.
+                        digits = ConvertGroup(GetGroupTable(groupNumber), width, group, hasHigherGroup, out hasFinalConnector);
+                    }
+                    else
+                    {
+                        // A multiplier spanning both groups of a pair is a complete cardinal (kaksituhatta kolme
+                        // biljoonaa), whose own phrase already places its connectors. A forced variant inside it can
+                        // only come from a scale below the pair, which no configuration combines with pairing: its
+                        // groups are not shielded from the whole-number passes.
+                        digits = ConvertRaw(group, variantQuery);
+                        hasFinalConnector = true;
+                    }
 
                     // The scale noun's form is selected once, on the caller's variants. A generated form may
                     // impose variants on its multiplier: the forced values overlay the caller's, and that one
@@ -1472,8 +1491,8 @@ namespace Utils.NumberToString
 
                     groupsValues.Push((resValue.Trim(), group, forced, hasFinalConnector));
                 }
-                remaining /= groupValue;
-                groupNumber++;
+                remaining /= multiplierDivisor;
+                groupNumber += paired ? 2 : 1;
             }
 
             var result = new StringBuilder();
@@ -3649,6 +3668,39 @@ namespace Utils.NumberToString
         /// </summary>
         public string? MultiplierSeparator { get; init; }
 
+        /// <summary>Backing field of <see cref="PairedScalesFrom"/>.</summary>
+        private readonly int? _pairedScalesFrom;
+
+        /// <summary>
+        /// Gets the first scale index from which the scales are paired, or <see langword="null"/> when every scale is
+        /// named (the default). From that index on, only every other scale is named (<c>from</c>, <c>from + 2</c> …):
+        /// the multiplier of a named scale spans its own group and the group above it, and is read as a complete
+        /// cardinal, so the scale above a named one is the thousands of its multiplier and has no name of its own
+        /// (<see cref="GetScaleName"/> rejects it). Finnish pairs from 4: 10^12 is <c>biljoona</c>, 10^15
+        /// <c>tuhat biljoonaa</c> (no <c>biljardi</c>), 2 003 × 10^12 <c>kaksituhatta kolme biljoonaa</c>.
+        /// </summary>
+        /// <exception cref="ArgumentOutOfRangeException">The value is lower than 1.</exception>
+        public int? PairedScalesFrom
+        {
+            get => _pairedScalesFrom;
+            init
+            {
+                if (value is < 1)
+                    throw new ArgumentOutOfRangeException(nameof(PairedScalesFrom), value,
+                        "PairedScalesFrom must be at least 1 (the first scale whose multiplier spans two groups).");
+                _pairedScalesFrom = value;
+            }
+        }
+
+        /// <summary>
+        /// Determines whether <paramref name="scale"/> is the upper scale of a pair (see <see cref="PairedScalesFrom"/>):
+        /// its group belongs to the multiplier of the named scale below it.
+        /// </summary>
+        /// <param name="scale">The scale index.</param>
+        /// <returns><see langword="true"/> when the scale has no name of its own.</returns>
+        internal bool IsPairedUpperScale(int scale)
+            => _pairedScalesFrom is int from && scale > from && ((scale - from) & 1) == 1;
+
         private static readonly Regex PrefixParser = PrefixParserRegex();
 
         /// <summary>Parsed <see cref="UnitsPrefixes"/>, or <see langword="null"/> when the table is not configured.</summary>
@@ -3696,7 +3748,10 @@ namespace Utils.NumberToString
         /// </summary>
         public IReadOnlyList<string>? HundredsPrefixes { get; }
 
-        /// <summary>Gets whether every non-negative group index can be named.</summary>
+        /// <summary>
+        /// Gets whether every non-negative value can be named: every group index can, except the upper scales of the
+        /// pairs (see <see cref="PairedScalesFrom"/>), which are read inside the multiplier of the scale below.
+        /// </summary>
         public bool IsUnbounded => ScaleSuffixes.Count > 0
             && ScaleSuffixes.All(suffix => !string.IsNullOrWhiteSpace(suffix))
             && Scale0Prefixes != null
@@ -3743,8 +3798,16 @@ namespace Utils.NumberToString
         /// <summary>
         /// Retrieves the name of the scale for a given power of 10.
         /// </summary>
+        /// <exception cref="InvalidOperationException">
+        /// The scale cannot be named: it exceeds the static names and no suffix is configured, or it is the upper scale
+        /// of a pair (see <see cref="PairedScalesFrom"/>).
+        /// </exception>
         public string GetScaleName(int scale)
         {
+            if (IsPairedUpperScale(scale))
+                throw new InvalidOperationException(
+                    $"scale {scale} has no name of its own: the scales are paired from {PairedScalesFrom}, so its group is " +
+                    $"the upper half of the multiplier of scale {scale - 1}.");
             if (TryGetDynamicScaleInfo(scale, out long prefix, out int suffixIndex))
                 return BuildDynamicName(prefix, ScaleSuffixes[suffixIndex]);
             if (scale < StaticValues.Count) return StaticValues[scale];

@@ -1579,6 +1579,17 @@ public class NumberScaleType
     public string? MultiplierSeparator { get; set; }
 
     /// <summary>
+    /// Gets or sets the first scale index from which the scales are paired (see <c>NumberScale.PairedScalesFrom</c>);
+    /// meaningful only when <see cref="PairedScalesFromSpecified"/> is <see langword="true"/>.
+    /// </summary>
+    [XmlAttribute("pairedScalesFrom")]
+    public int PairedScalesFrom { get; set; }
+
+    /// <summary>Gets or sets whether <see cref="PairedScalesFrom"/> is present (set by XmlSerializer).</summary>
+    [XmlIgnore]
+    public bool PairedScalesFromSpecified { get; set; }
+
+    /// <summary>
     /// Gets or sets the index offset applied when computing scale names.
     /// </summary>
     [XmlAttribute("startIndex")]

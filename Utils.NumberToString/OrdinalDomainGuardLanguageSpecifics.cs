@@ -183,15 +183,21 @@ public sealed class GreekOrdinalLanguageSpecifics : OrdinalDomainGuardLanguageSp
 }
 
 /// <summary>
-/// Finnish ordinal domain: the nominative of 0–1999. NTS-08 validated 0–20, the round tens and hundreds and 1000
-/// (Aalto University "Numeroiden taivutus", Kielitoimisto; <c>nollas</c>, NTS-12). NTS-28 added the compounds,
+/// Finnish ordinal domain: the nominative of 0–1 999 999. NTS-08 validated 0–20, the round tens and hundreds and
+/// 1000 (Aalto University "Numeroiden taivutus", Kielitoimisto; <c>nollas</c>, NTS-12). NTS-28 added the compounds,
 /// one word with the ordinal marker in every part (Kielitoimiston ohjepankki: <c>viideskymmenesviides</c>,
-/// <c>kahdeskymmenesensimmäinen</c>), composed by the configuration. The inflected ordinals change every
-/// component (genitive <c>kolmannenkymmenennenkuudennen</c>), but the consulted sources give the paradigms of
-/// 1, 3, 5, 17, 20, 100 and 1000 only, so every non-nominative case fails closed. From 2000 the cardinal is
-/// correct since NTS-30E (<c>kaksituhatta</c>), but no consulted source gives the round-thousand ordinals
-/// (2000th, 3000th, 21 000th): those values stay deliberately unsupported until they are sourced.
+/// <c>kahdeskymmenesensimmäinen</c>). NTS-37 opened the thousands and the first million, composed by the
+/// configuration: the marker in every part, <c>yhdes</c>/<c>kahdes</c> inside a larger number, one space between
+/// groups (Kielitoimiston ohjepankki: <c>3 760. kolmastuhannes seitsemässadaskuudeskymmenes</c>,
+/// <c>1 000 000:s miljoonas</c>).
 /// </summary>
+/// <remarks>
+/// Deliberately fail-closed: a million multiplied by more than one (2 000 000 and above: no source gives the
+/// ordinal of <c>kaksi miljoonaa</c>, whose scale noun stands apart), the milliard and every higher scale
+/// (<c>miljardis</c> and the generated <c>-ljoonas</c> are attested by no normative source), and every
+/// non-nominative case: the inflected ordinals change every component (genitive
+/// <c>kolmannenkymmenennenkuudennen</c>), but the consulted sources give the paradigms of a few values only.
+/// </remarks>
 public sealed class FinnishOrdinalLanguageSpecifics : OrdinalDomainGuardLanguageSpecifics
 {
     /// <summary>The value of the case dimension that selects the nominative.</summary>
@@ -201,7 +207,7 @@ public sealed class FinnishOrdinalLanguageSpecifics : OrdinalDomainGuardLanguage
     protected override string LanguageName => "Finnish";
 
     /// <inheritdoc />
-    protected override string SupportedDomain => "the nominative of 0–1999";
+    protected override string SupportedDomain => "the nominative of 0–1 999 999";
 
     /// <inheritdoc />
     protected override bool IsSupported(long number, IReadOnlyDictionary<string, string> activeVariants)
@@ -209,7 +215,7 @@ public sealed class FinnishOrdinalLanguageSpecifics : OrdinalDomainGuardLanguage
         if ((activeVariants.TryGetValue("case", out string? caseValue) || activeVariants.TryGetValue("sijamuoto", out caseValue))
             && caseValue != Nominative)
             return false;
-        return number is >= 0 and <= 1999;
+        return number is >= 0 and <= 1_999_999;
     }
 }
 

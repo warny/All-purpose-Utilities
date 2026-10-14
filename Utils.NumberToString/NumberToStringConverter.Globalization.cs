@@ -915,6 +915,9 @@ namespace Utils.NumberToString
                 StartIndex = model.StartIndexSpecified
                     ? Optional<int>.Of(model.StartIndex)
                     : Optional<int>.Unspecified,
+                PairedScalesFrom = model.PairedScalesFromSpecified
+                    ? Optional<int>.Of(model.PairedScalesFrom)
+                    : Optional<int>.Unspecified,
                 StaticNames = model.StaticNames,
                 Scale0Prefixes = model.Scale0Prefixes,
                 UnitsPrefixes = model.UnitsPrefixes,
@@ -1082,6 +1085,7 @@ namespace Utils.NumberToString
                 // Presence-sensitive: an explicit "" is a valid junction and replaces the inherited value.
                 MultiplierSeparator = overriding.MultiplierSeparator ?? inherited.MultiplierSeparator,
                 StartIndex = MergeOptional(inherited.StartIndex, overriding.StartIndex),
+                PairedScalesFrom = MergeOptional(inherited.PairedScalesFrom, overriding.PairedScalesFrom),
                 StaticNames = overriding.StaticNames ?? inherited.StaticNames,
                 Scale0Prefixes = overriding.Scale0Prefixes ?? inherited.Scale0Prefixes,
                 UnitsPrefixes = overriding.UnitsPrefixes ?? inherited.UnitsPrefixes,
@@ -1190,6 +1194,8 @@ namespace Utils.NumberToString
                 SuffixSeparator = definition.SuffixSeparator,
                 MultiplierSeparator = definition.MultiplierSeparator,
                 StartIndex = definition.StartIndex.GetValueOrDefault(0),
+                PairedScalesFrom = definition.PairedScalesFrom.GetValueOrDefault(0),
+                PairedScalesFromSpecified = definition.PairedScalesFrom.IsSpecified,
                 StaticNames = definition.StaticNames,
                 Scale0Prefixes = definition.Scale0Prefixes,
                 UnitsPrefixes = definition.UnitsPrefixes,
@@ -1438,6 +1444,7 @@ namespace Utils.NumberToString
             {
                 SuffixSeparator = confScale.SuffixSeparator,
                 MultiplierSeparator = confScale.MultiplierSeparator,
+                PairedScalesFrom = confScale.PairedScalesFromSpecified ? confScale.PairedScalesFrom : null,
             };
 
             var scaleFormEntries = confScale.ScaleForms ?? [];
@@ -1464,7 +1471,8 @@ namespace Utils.NumberToString
                     : GroupIndexOfDigit(ParseGroupPattern(language.GroupPattern, languageIdentifier), language.GroupSize,
                         configuredMaximum.Value.ToString(CultureInfo.InvariantCulture).Length - 1);
                 for (int groupIndex = 1; groupIndex <= maximumGroup; groupIndex++)
-                    if (!scale.CanNameGroup(groupIndex))
+                    // The upper scale of a pair is read inside the multiplier of the named scale below it.
+                    if (!scale.IsPairedUpperScale(groupIndex) && !scale.CanNameGroup(groupIndex))
                         throw new InvalidOperationException($"[{languageIdentifier}] NumberScale cannot name group {groupIndex} required by MaxNumber {configuredMaximum.Value}.");
             }
 
