@@ -64082,6 +64082,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.LanguageType.Exceptions
   nameWithType: LanguageType.Exceptions
+- uid: Utils.NumberToString.LanguageType.FinalComponentConnector
+  name: FinalComponentConnector
+  href: api/Utils.NumberToString.LanguageType.html#Utils_NumberToString_LanguageType_FinalComponentConnector
+  commentId: P:Utils.NumberToString.LanguageType.FinalComponentConnector
+  fullName: Utils.NumberToString.LanguageType.FinalComponentConnector
+  nameWithType: LanguageType.FinalComponentConnector
+- uid: Utils.NumberToString.LanguageType.FinalComponentConnector*
+  name: FinalComponentConnector
+  href: api/Utils.NumberToString.LanguageType.html#Utils_NumberToString_LanguageType_FinalComponentConnector_
+  commentId: Overload:Utils.NumberToString.LanguageType.FinalComponentConnector
+  isSpec: "True"
+  fullName: Utils.NumberToString.LanguageType.FinalComponentConnector
+  nameWithType: LanguageType.FinalComponentConnector
 - uid: Utils.NumberToString.LanguageType.FractionSeparator
   name: FractionSeparator
   href: api/Utils.NumberToString.LanguageType.html#Utils_NumberToString_LanguageType_FractionSeparator
@@ -64595,6 +64608,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.LanguageXmlModel.Exceptions
   nameWithType: LanguageXmlModel.Exceptions
+- uid: Utils.NumberToString.LanguageXmlModel.FinalComponentConnector
+  name: FinalComponentConnector
+  href: api/Utils.NumberToString.LanguageXmlModel.html#Utils_NumberToString_LanguageXmlModel_FinalComponentConnector
+  commentId: P:Utils.NumberToString.LanguageXmlModel.FinalComponentConnector
+  fullName: Utils.NumberToString.LanguageXmlModel.FinalComponentConnector
+  nameWithType: LanguageXmlModel.FinalComponentConnector
+- uid: Utils.NumberToString.LanguageXmlModel.FinalComponentConnector*
+  name: FinalComponentConnector
+  href: api/Utils.NumberToString.LanguageXmlModel.html#Utils_NumberToString_LanguageXmlModel_FinalComponentConnector_
+  commentId: Overload:Utils.NumberToString.LanguageXmlModel.FinalComponentConnector
+  isSpec: "True"
+  fullName: Utils.NumberToString.LanguageXmlModel.FinalComponentConnector
+  nameWithType: LanguageXmlModel.FinalComponentConnector
 - uid: Utils.NumberToString.LanguageXmlModel.FractionSeparator
   name: FractionSeparator
   href: api/Utils.NumberToString.LanguageXmlModel.html#Utils_NumberToString_LanguageXmlModel_FractionSeparator
@@ -66772,6 +66798,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberToStringConverter.Exceptions
   nameWithType: NumberToStringConverter.Exceptions
+- uid: Utils.NumberToString.NumberToStringConverter.FinalComponentConnector
+  name: FinalComponentConnector
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_FinalComponentConnector
+  commentId: P:Utils.NumberToString.NumberToStringConverter.FinalComponentConnector
+  fullName: Utils.NumberToString.NumberToStringConverter.FinalComponentConnector
+  nameWithType: NumberToStringConverter.FinalComponentConnector
+- uid: Utils.NumberToString.NumberToStringConverter.FinalComponentConnector*
+  name: FinalComponentConnector
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_FinalComponentConnector_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverter.FinalComponentConnector
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverter.FinalComponentConnector
+  nameWithType: NumberToStringConverter.FinalComponentConnector
 - uid: Utils.NumberToString.NumberToStringConverter.FractionForcedVariants
   name: FractionForcedVariants
   href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_FractionForcedVariants
@@ -68450,6 +68489,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberToStringConverterOptions.Exceptions
   nameWithType: NumberToStringConverterOptions.Exceptions
+- uid: Utils.NumberToString.NumberToStringConverterOptions.FinalComponentConnector
+  name: FinalComponentConnector
+  href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_FinalComponentConnector
+  commentId: P:Utils.NumberToString.NumberToStringConverterOptions.FinalComponentConnector
+  fullName: Utils.NumberToString.NumberToStringConverterOptions.FinalComponentConnector
+  nameWithType: NumberToStringConverterOptions.FinalComponentConnector
+- uid: Utils.NumberToString.NumberToStringConverterOptions.FinalComponentConnector*
+  name: FinalComponentConnector
+  href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_FinalComponentConnector_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverterOptions.FinalComponentConnector
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverterOptions.FinalComponentConnector
+  nameWithType: NumberToStringConverterOptions.FinalComponentConnector
 - uid: Utils.NumberToString.NumberToStringConverterOptions.FractionForcedVariants
   name: FractionForcedVariants
   href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_FractionForcedVariants
