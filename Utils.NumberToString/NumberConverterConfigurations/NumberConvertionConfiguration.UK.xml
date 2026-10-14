@@ -59,9 +59,9 @@
              The engine uses the same junction between Conway groups and before the suffix, so
              n = 1000 is мі+ль+ні+ль+йон = мільнільйон (accepted limitation, NTS-25).
              Note: й (U+0439) starts suffix йон.
-             NTS-30B: тисяча, мільйон and мільярд agree with their multiplier (ScaleForm below); the
-             generated names from трильйон up keep the historical (ів) plural, wrong after …2–4
-             (два трильйонів for два трильйони, NTS-30C). -->
+             NTS-30B: тисяча, мільйон and мільярд agree with their multiplier (ScaleForm below); NTS-30C:
+             the generated names from трильйон up agree too, through GeneratedScaleForm (два трильйони),
+             which replaces the former (ів) plural of the suffix. -->
         <NumberScale firstLetterUpperCase="false" voidGroup="ні" groupSeparator="ль" startIndex="2">
             <StaticNames>
                 <Scale value="0" string="" />
@@ -70,7 +70,7 @@
                 <Scale value="3" string="мільярд" />
             </StaticNames>
             <Suffixes>
-                <Suffix>йон(ів)</Suffix>
+                <Suffix>йон</Suffix>
             </Suffixes>
             <Scale0Prefixes>
                 <Digit digit="0" string="" />
@@ -146,6 +146,17 @@
                     <Form key="many" value="мільярдів" />
                 </Forms>
             </ScaleForm>
+            <!-- NTS-30C: every generated scale (трильйон, квадрильйон, …) is a masculine noun of the
+                 second declension declined like мільйон: трильйон, два трильйони, п'ять трильйонів
+                 (Горох, "трильйон", словозміна; uk.wiktionary "трильйон": 5 трильйонів; Unicode CLDR
+                 plural rules, uk). The forms are suffix fragments joined to the Conway prefix. -->
+            <GeneratedScaleForm suffix="0" formSelector="UkrainianPluralLexicalFormSelector">
+                <Forms>
+                    <Form key="one" value="йон" />
+                    <Form key="few" value="йони" />
+                    <Form key="many" value="йонів" />
+                </Forms>
+            </GeneratedScaleForm>
         </NumberScale>
         <Replacements>
             <!-- Drop "один" before "тисяча": 1000 = "тисяча" not "один тисяча" -->

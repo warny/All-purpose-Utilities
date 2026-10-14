@@ -4,6 +4,7 @@ Feature: Russian number conversion
 Background:
     Given I use the "RU" number converter
 
+# NTS-30C: the generated names (триллион, квадриллион, …) decline like миллион (ru.wiktionary "триллион").
 Scenario Outline: Cardinal numbers
     When I convert the cardinal number <number>
     Then the result is "<expected>"
@@ -22,6 +23,9 @@ Examples:
     | 1000000000000 | один триллион |
     | 1000000000000000 | один квадриллион |
     | 1000000000000000000 | один квинтиллион |
+    | 2000000000000 | два триллиона |
+    | 5000000000000 | пять триллионов |
+    | 22000000000000 | двадцать два триллиона |
 
 # NTS-27: the scale nouns agree with their multiplier: тысяча is a feminine noun (одна тысяча, две
 # тысячи), and тысяча, миллион, миллиард take the singular after 1 (but not 11), the genitive singular

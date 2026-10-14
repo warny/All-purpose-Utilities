@@ -30,14 +30,14 @@ dotnet add package omy.Utils.NumberToString --version 2.0.0-rc.2
 | DA, DA-DK | Danish | ✓ plugin (int range) | ✓ 5 min, 12 h | gender (fælleskøn/intetkøn) | local | Ordinal of zero *nulte* (NTS-29); ordinals above `int.MaxValue` fail closed |
 | NO, NB, NB-NO | Norwegian Bokmål | ✓ plugin (int range) | ✓ 5 min, 12 h | gender (hankjønn/hunkjønn/intetkjønn) | local | Ordinals above `int.MaxValue` fail closed; no ordinal of zero |
 | SV, SV-SE | Swedish | ✓ plugin (to one million) | ✓ 5 min, 12 h | — | local | One word below a million (tjugoentusen), en miljon (Språkrådet; NTS-27); ordinals above a million fail closed |
-| BG, BG-BG | Bulgarian | ✓ plugin, gendered | ✓ 15 min, 12 h | gender (standalone/masculine/feminine/neuter) | local | Unverified compound round thousands/millions fail closed. Short scale with `милиард`; Cyrillic Conway names above (`SCALE-SHORT-CYRILLIC`, `кватуор`), unbounded. `хиляди`, count forms `милиона`/`милиарда` (NTS-30B); compound cardinals still lack `и` (NTS-30D) |
+| BG, BG-BG | Bulgarian | ✓ plugin, gendered | ✓ 15 min, 12 h | gender (standalone/masculine/feminine/neuter) | local | Unverified compound round thousands/millions fail closed. Short scale with `милиард`; Cyrillic Conway names above (`SCALE-SHORT-CYRILLIC`, `кватуор`), unbounded. `хиляди`, count forms `милиона`/`милиарда` (NTS-30B) and `трилиона`… (NTS-30C); compound cardinals still lack `и` (NTS-30D) |
 | HR, HR-HR | Croatian | ✓ declarative (last word) + range plugin | ✓ 15 min, 12 h | — | local | Masculine nominative ordinals only; round scale ordinals other than tisućiti (1 000), milijunti (1 000 000) and milijarditi (1 000 000 000) fail closed, including 10^12 and above |
 | HU, HU-HU | Hungarian | ✓ plugin (int range) | ✓ 15 min, 12 h | — | local | Ordinal of zero *nulladik* (NTS-29) |
-| CS, CS-CZ | Czech | ✓ plugin, gender × case | ✓ 15 min, 12 h | gender × case | local | Ordinals verified up to 9 999 (round millions/milliards: one only). `tisíc`/`milion`/`miliarda` agree with their multiplier (NTS-30B) |
-| SK, SK-SK | Slovak | ✓ plugin, gender × case | ✓ 15 min, 12 h | gender × case | local | Ordinals verified up to 9 999 and one million. Cardinals in the PSP one-word spelling (`dvadsaťdva`, `päťsto`, `dvetisíc`), `milión`/`miliarda` agree (NTS-30B) |
+| CS, CS-CZ | Czech | ✓ plugin, gender × case | ✓ 15 min, 12 h | gender × case | local | Ordinals verified up to 9 999 (round millions/milliards: one only). `tisíc`/`milion`/`miliarda` agree with their multiplier (NTS-30B), so do the generated `biliony`/`biliardy`… (NTS-30C); Latin Conway prefixes `quadri-` (NTS-36) |
+| SK, SK-SK | Slovak | ✓ plugin, gender × case | ✓ 15 min, 12 h | gender × case | local | Ordinals verified up to 9 999 and one million. Cardinals in the PSP one-word spelling (`dvadsaťdva`, `päťsto`, `dvetisíc`), `milión`/`miliarda` agree (NTS-30B), so do the generated `bilióny`/`biliárd`… (NTS-30C); Latin Conway prefixes `quadri-` (NTS-36) |
 | PL | Polish | ✓ plugin + declarative (1–999 999; round thousands to 99 000, NTS-28) | ✓ 5 min, 12 h | rodzaj × przypadek | local | tysiąc/tysiące/tysięcy agree with their multiplier (NTS-27); cardinals to 999 999; no ordinal of zero |
-| RU | Russian | ✓ declarative + plugin for the one-word round values (zero: `нулевой`; 0–999 999 999, NTS-28) | ✓ 15 min, 12 h | gender × case | local | тысяча, миллион, миллиард agree with their multiplier (две тысячи, пять миллионов; NTS-27). Short scale with `миллиард`; Cyrillic Conway names above (`SCALE-SHORT-CYRILLIC`), unbounded, without plural agreement (NTS-30) |
-| UK, UK-UA | Ukrainian | ✓ plugin, gender × case | ✓ 15 min, 12 h | gender × case | local | Round thousands, millions and milliards with a multiplier of 1–89 (NTS-28, §38). Short scale with `мільярд`; Ukrainian-spelled Conway names above (`вігінтильйон`), unbounded. `тисяча`/`мільйон`/`мільярд` agree with their multiplier (NTS-30B) |
+| RU | Russian | ✓ declarative + plugin for the one-word round values (zero: `нулевой`; 0–999 999 999, NTS-28) | ✓ 15 min, 12 h | gender × case | local | тысяча, миллион, миллиард agree with their multiplier (две тысячи, пять миллионов; NTS-27). Short scale with `миллиард`; Cyrillic Conway names above (`SCALE-SHORT-CYRILLIC`), unbounded, agreeing with their multiplier (два триллиона; NTS-30C) |
+| UK, UK-UA | Ukrainian | ✓ plugin, gender × case | ✓ 15 min, 12 h | gender × case | local | Round thousands, millions and milliards with a multiplier of 1–89 (NTS-28, §38). Short scale with `мільярд`; Ukrainian-spelled Conway names above (`вігінтильйон`), unbounded. `тисяча`/`мільйон`/`мільярд` agree with their multiplier (NTS-30B), so do the generated names (два трильйони; NTS-30C) |
 | ES | Spanish | ✓ declarative, composed (1–999 999 999, NTS-28) | ✓ 5 min, 12 h | gender × form | local | Apocope before mil/millón (veintiún mil, un millón; NTS-27); `mil millones` followed by millions is not composed (NTS-30); no ordinal of zero |
 | IT | Italian | ✓ validated productive forms through round trilione: 1–1999 except 1110–1910, round thousands to 999000, round multiples of milione/miliardo/bilione/biliardo/trilione; selected sourced analytic compounds (1010, 100001–100009) (`<OrdinalStem>`, `<OrdinalComposition>`, `<OrdinalScale>`, domain-guard plugin) | ✓ 5 min, 12 h | gender | local | Unsourced ordinals fail closed by design: zero, 1110–1910, the other non-round thousands above 1999 and the non-round values from a million (no canonical form established); millions are separate nouns joined by `e` ("due milioni e centomila") |
 | PT | Portuguese | ✓ declarative, composed (1–1999, NTS-28) | ✓ 5 min, 12 h (direct "e …") | gender | local | Deliberate direct numeric reading (no "para"/"menos" constructions); PT-PT/PT-BR not split; no ordinal of zero |
@@ -1230,8 +1230,10 @@ number
       for each group (millions, thousands, units, …):
           ConvertGroup                    (digit text for this group: the Groups onScale table covering N, else Groups)
           Trigger group(N)                (optional: replacements on digit text)
-          add scale name                  (ScaleForm selector when configured, else singular/plural;
-                                           after the digits, or before them with multiplierPosition="afterScale")
+          add scale name                  (ScaleForm selector when configured, else the GeneratedScaleForm of the
+                                           suffix for a generated scale — its forceVariants then rewrite the digit
+                                           text —, else singular/plural; after the digits, or before them with
+                                           multiplierPosition="afterScale")
           Replacements with onScale=N     (per-group rules, filtered by onValue)
           Trigger groupWithScale(N)       (optional: replacements on digit+scale text)
           push to stack
@@ -1692,7 +1694,8 @@ When a language needs more than singular/plural for a scale noun, `<ScaleForm>` 
   (`one`/`few`/`other`: one = exactly 1, few = exactly 2–4, other otherwise, 22–24 included:
   CS `dva tisíce`, `pět milionů`, `dvacet dva milionů`; SK `dva milióny`, `päť miliárd`). Bulgarian uses
   the default selector with the count form as its `plural` (`хиляда`/`хиляди`, `милион`/`милиона`).
-  Only the scales 1–3 are configured; the generated names from 10^12 are not inflected yet (NTS-30C).
+  These `<ScaleForm>` cover the scales 1–3; the generated names from 10^12 use
+  [`<GeneratedScaleForm>`](#generated-scale-forms--generatedscaleform) (NTS-30C).
 
 ```csharp
 NumberToStringConverter.GetConverter("UK").Convert(22_000);         // "двадцять дві тисячі"
@@ -1708,6 +1711,66 @@ ar.Convert(3000);    // "ثلاثة آلاف"
 ar.Convert(11000);   // "أحد عشر ألفًا"
 ar.Convert(101000);  // "مائة وألف"
 ```
+
+#### Generated scale forms — `<GeneratedScaleForm>`
+
+`<ScaleForm>` is keyed by one exact scale index, so it cannot cover the unbounded names that
+`NumberScale` generates (триллион, квадриллион, …, миллиниллион). `<GeneratedScaleForm suffix="…">`
+attaches the forms to a **suffix family** instead: every generated scale whose name ends with the
+`<Suffix>` of that index (0 = first suffix) uses the entry, whatever its Conway prefix.
+
+```xml
+<NumberScale firstLetterUpperCase="false" groupSeparator="li">
+    <StaticNames>…</StaticNames>
+    <Suffixes><Suffix>on</Suffix><Suffix>ard</Suffix></Suffixes>
+    <!-- exact low scales keep their ScaleForm -->
+    <ScaleForm scale="3" formSelector="CzechSlovakPluralLexicalFormSelector">…</ScaleForm>
+    <GeneratedScaleForm suffix="1" formSelector="CzechSlovakPluralLexicalFormSelector">
+        <Forms>
+            <Form key="one" value="arda" forceVariants="gender=ženský" />
+            <Form key="few" value="ardy" forceVariants="gender=ženský" />
+            <Form key="other" value="ard" />
+        </Forms>
+    </GeneratedScaleForm>
+</NumberScale>
+```
+
+- The values are **suffix fragments**: the selected one is joined to the generated Conway prefix of the
+  scale (`bi` + `li` + `ardy` = `biliardy`), so one entry serves every prefix value, the grouped names
+  above the 999th included. No name is generated first and patched afterwards.
+- Resolution: an exact `<ScaleForm>` of the scale wins; otherwise a generated scale uses the entry of its
+  suffix index; otherwise the historical `GetScaleName(index).ToPlural(multiplier)` is kept byte for byte.
+- The selector runs once per scale noun, on the caller's effective variants. A form may carry
+  `forceVariants`: once that form is selected, those variants are overlaid on the caller's for the
+  **multiplier fragment only** (`dva` → `dvě` before `biliardy`), with the language's variant rules and
+  without finalization; a form without `forceVariants` leaves the multiplier untouched.
+- Validated while loading: suffix index within `<Suffixes>` and nameable by the scale, one entry per
+  index, non-empty forms, forced dimensions and values declared by the language, and every key the
+  selector returns for the possible multipliers (probed once under the language defaults; a key reached
+  only under a caller variant still throws `UNTS007` at conversion). `baseOn` merges by suffix index.
+- Programmatic: `NumberToStringConverterOptions.GeneratedScaleForms` (`IReadOnlyDictionary<int,
+  GeneratedScaleForm>`), exposed read-only by the converter. A `GeneratedScaleForm` is immutable
+  (`Forms`, `Selector`, `MultiplierForcedVariants`); a clone may replace `Scale`, the names are
+  rebuilt from the new prefixes.
+
+```csharp
+// The same entry as the built-in RU configuration, declared programmatically.
+var forms = new GeneratedScaleForm(
+    LexicalFormSet.Create(("one", "он"), ("few", "она"), ("many", "онов")),
+    new RussianPluralLexicalFormSelector());
+var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("RU"))
+{
+    GeneratedScaleForms = new Dictionary<int, GeneratedScaleForm> { [0] = forms },
+};
+new NumberToStringConverter(options).Convert(2_000_000_000_000);   // "два триллиона"
+
+NumberToStringConverter.GetConverter("UK").Convert(22_000_000_000_000);     // "двадцять два трильйони"
+NumberToStringConverter.GetConverter("BG").Convert(21_000_000_000_000);     // "двадесет един трилиона"
+NumberToStringConverter.GetConverter("CS").Convert(2_000_000_000_000_000);  // "dvě biliardy"
+NumberToStringConverter.GetConverter("SK").Convert(5_000_000_000_000_000);  // "päť biliárd"
+```
+
+RU, UK, BG, CS and SK configure it (NTS-30C); PL is bounded at 999 999 (NTS-35).
 
 ---
 

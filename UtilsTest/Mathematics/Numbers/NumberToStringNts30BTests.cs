@@ -11,7 +11,7 @@ namespace UtilsTest.NumberToString;
 /// multiplier in Ukrainian, Bulgarian, Czech and Slovak, the Slovak one-word writing of the thousands
 /// and of the tens with units, and the selectors added for it. Every expected form is sourced in
 /// <c>docs/NTS-08-linguistic-sources.md</c> (NTS-30B section). The generated Conway scales from 10^12
-/// are out of scope (NTS-30C): only the absence of a configured form there is pinned.
+/// use the generated forms of NTS-30C (<see cref="NumberToStringNts30CTests"/>): only the absence of an exact form there is pinned.
 /// </summary>
 [TestClass]
 public class NumberToStringNts30BTests
@@ -85,7 +85,7 @@ public class NumberToStringNts30BTests
         Assert.AreEqual("other", Select(selector, BigInteger.Pow(10, 30) + 2));
     }
 
-    /// <summary>The built-in configurations bind the scales 1–3 to the intended selectors, and no scale from 4 (NTS-30C).</summary>
+    /// <summary>The built-in configurations bind the scales 1–3 to the intended selectors, and no exact form from scale 4 (generated forms, NTS-30C).</summary>
     [TestMethod]
     public void Configurations_BindLowScalesOnly()
     {
@@ -285,7 +285,7 @@ public class NumberToStringNts30BTests
 
     // ----- generated scales (NTS-30C boundary) ---------------------------------------------------------
 
-    /// <summary>The scale 4 and above has no configured form in any of the four languages (deferred to NTS-30C).</summary>
+    /// <summary>The scale 4 and above has no exact ScaleForm in any of the four languages: it uses the GeneratedScaleForm of its suffix (NTS-30C).</summary>
     [TestMethod]
     public void GeneratedScales_HaveNoConfiguredForms()
     {

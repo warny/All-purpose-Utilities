@@ -90,6 +90,17 @@
                     <Form key="many" value="миллиардов" />
                 </Forms>
             </ScaleForm>
+            <!-- NTS-30C: every generated scale (триллион, квадриллион, …, миллиниллион) is a masculine
+                 noun declined like миллион: триллион, два триллиона, пять триллионов (ru.wiktionary
+                 "триллион", after Zaliznyak's Grammatical Dictionary; Unicode CLDR plural rules, ru).
+                 The forms are suffix fragments joined to the Conway prefix of each scale. -->
+            <GeneratedScaleForm suffix="0" formSelector="RussianPluralLexicalFormSelector">
+                <Forms>
+                    <Form key="one" value="он" />
+                    <Form key="few" value="она" />
+                    <Form key="many" value="онов" />
+                </Forms>
+            </GeneratedScaleForm>
         </NumberScale>
         <Replacements>
             <Replacement oldValue="один тысяча" newValue="тысяча" onScale="1" onValue="1" />

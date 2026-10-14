@@ -106,9 +106,9 @@
         </Groups>
         <!-- Long scale with groupSeparator="li" (single l): mi+li+ón=milión, mi+li+ard=miliard,
              bi+li+ón=bilión, bi+li+ard=biliard, tri+li+ón=trilión…
-             NTS-30B: milión and miliarda (feminine) agree with their multiplier (ScaleForm below). The
-             generated names from bilión up keep the bare singular and the masculine -ard (dva bilión
-             for dva bilióny, dva biliard for dve biliardy, NTS-30C). -->
+             NTS-30B: milión and miliarda (feminine) agree with their multiplier (ScaleForm below);
+             NTS-30C: the generated names from bilión up agree too, through one GeneratedScaleForm per
+             suffix (dva bilióny, dve biliardy). -->
         <NumberScale firstLetterUpperCase="false" groupSeparator="li">
             <StaticNames>
                 <Scale value="0" string="" />
@@ -138,6 +138,25 @@
                     <Form key="other" value="miliárd" />
                 </Forms>
             </ScaleForm>
+            <!-- NTS-30C: the generated scales alternate two families, by suffix index. -ón (bilión, trilión…)
+                 is masculine: bilión, dva bilióny, päť biliónov (KSSJ 4: bilión -a m. čísl. zákl.; PSP 2000:
+                 sedem biliónov); -arda is feminine like miliarda: jedna biliarda, dve biliardy, päť biliárd
+                 (KSSJ 4 / PSP 2013: miliarda -y -árd ž.; Slovak Wikipedia "Biliarda": biliarda, triliarda,
+                 kvadriliarda). A one-word compound stays indeclinable (dvadsaťdva biliárd, NTS-30B). -->
+            <GeneratedScaleForm suffix="0" formSelector="CzechSlovakPluralLexicalFormSelector">
+                <Forms>
+                    <Form key="one" value="ón" />
+                    <Form key="few" value="óny" />
+                    <Form key="other" value="ónov" />
+                </Forms>
+            </GeneratedScaleForm>
+            <GeneratedScaleForm suffix="1" formSelector="CzechSlovakPluralLexicalFormSelector">
+                <Forms>
+                    <Form key="one" value="arda" forceVariants="gender=ženský" />
+                    <Form key="few" value="ardy" forceVariants="gender=ženský" />
+                    <Form key="other" value="árd" />
+                </Forms>
+            </GeneratedScaleForm>
         </NumberScale>
         <Replacements>
             <!-- Drop "jeden" before "tisíc": 1000 = "tisíc" not "jeden tisíc" -->

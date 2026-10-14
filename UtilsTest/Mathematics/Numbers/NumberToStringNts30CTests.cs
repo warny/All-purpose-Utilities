@@ -558,9 +558,9 @@ public class NumberToStringNts30CTests
         [102] = "сто два", [111] = "сто одинадцять", [112] = "сто дванадцять",
     };
 
-    /// <summary>Russian generated scales: 10^12, 10^15, 10^18, 10^33 (prefix 10), 10^63 (prefix 20) and 10^3003 (prefix 1000).</summary>
+    /// <summary>Russian generated scales: 10^12, 10^15, 10^18, 10^33 (prefix 10), 10^63 (prefix 20, vigintillion) and 10^3003 (prefix 1000).</summary>
     private static readonly GeneratedScale[] RussianScales =
-        [new(4, "трилли"), new(5, "квадрилли"), new(6, "квинтилли"), new(11, "децилли"), new(22, "вигинтилли"), new(1001, "миллинилли")];
+        [new(4, "трилли"), new(5, "квадрилли"), new(6, "квинтилли"), new(11, "децилли"), new(21, "вигинтилли"), new(1001, "миллинилли")];
 
     /// <summary>Russian: триллион / триллиона / триллионов after the CLDR ru category, the masculine multiplier unchanged.</summary>
     [TestMethod]
@@ -570,7 +570,7 @@ public class NumberToStringNts30CTests
 
     /// <summary>Ukrainian generated scales, same indices as Russian.</summary>
     private static readonly GeneratedScale[] UkrainianScales =
-        [new(4, "триль"), new(5, "квадриль"), new(6, "квінтиль"), new(11, "дециль"), new(22, "вігінтиль"), new(1001, "мільніль")];
+        [new(4, "триль"), new(5, "квадриль"), new(6, "квінтиль"), new(11, "дециль"), new(21, "вігінтиль"), new(1001, "мільніль")];
 
     /// <summary>Ukrainian: трильйон / трильйони / трильйонів after the CLDR uk category, the masculine multiplier unchanged.</summary>
     [TestMethod]
@@ -582,7 +582,7 @@ public class NumberToStringNts30CTests
 
     /// <summary>Bulgarian generated scales.</summary>
     private static readonly GeneratedScale[] BulgarianScales =
-        [new(4, "трили"), new(5, "квадрили"), new(6, "квинтили"), new(11, "децили"), new(22, "вигинтили"), new(1001, "милинили")];
+        [new(4, "трили"), new(5, "квадрили"), new(6, "квинтили"), new(11, "децили"), new(21, "вигинтили"), new(1001, "милинили")];
 
     /// <summary>
     /// Bulgarian: the singular after exactly one, the count form трилиона otherwise, a masculine multiplier
@@ -605,13 +605,13 @@ public class NumberToStringNts30CTests
     /// <returns>The key.</returns>
     private static string WestSlavicKey(int value) => new CzechSlovakPluralLexicalFormSelector().SelectForm(new LexicalFormContext(value, new Dictionary<string, string>()));
 
-    /// <summary>Czech -on scales (10^12, 10^24, 10^36, prefix 10 at 10^120, prefix 1000 at 10^12000).</summary>
+    /// <summary>Czech -on scales (10^12, 10^18, 10^24, prefix 10 at 10^60, prefix 1000 at 10^6000); the Conway prefixes keep their Latin spelling (quadri-).</summary>
     private static readonly GeneratedScale[] CzechOnScales =
-        [new(4, "bili"), new(6, "trili"), new(8, "kvadrili"), new(20, "decili"), new(2000, "milinili")];
+        [new(4, "bili"), new(6, "trili"), new(8, "quadrili"), new(20, "decili"), new(2000, "milinili")];
 
-    /// <summary>Czech -arda scales (10^15, 10^27, 10^39, 10^123, 10^12003).</summary>
+    /// <summary>Czech -arda scales (10^15, 10^21, 10^27, 10^63, 10^6003).</summary>
     private static readonly GeneratedScale[] CzechArdScales =
-        [new(5, "bili"), new(7, "trili"), new(9, "kvadrili"), new(21, "decili"), new(2001, "milinili")];
+        [new(5, "bili"), new(7, "trili"), new(9, "quadrili"), new(21, "decili"), new(2001, "milinili")];
 
     /// <summary>
     /// Czech -on family: masculine bilion (jeden bilion, dva biliony, pět bilionů); after a compound the
@@ -645,11 +645,11 @@ public class NumberToStringNts30CTests
 
     /// <summary>Slovak -ón scales.</summary>
     private static readonly GeneratedScale[] SlovakOnScales =
-        [new(4, "bili"), new(6, "trili"), new(8, "kvadrili"), new(20, "decili"), new(2000, "milinili")];
+        [new(4, "bili"), new(6, "trili"), new(8, "quadrili"), new(20, "decili"), new(2000, "milinili")];
 
     /// <summary>Slovak -arda scales.</summary>
     private static readonly GeneratedScale[] SlovakArdScales =
-        [new(5, "bili"), new(7, "trili"), new(9, "kvadrili"), new(21, "decili"), new(2001, "milinili")];
+        [new(5, "bili"), new(7, "trili"), new(9, "quadrili"), new(21, "decili"), new(2001, "milinili")];
 
     /// <summary>Slovak -ón family: bilión, dva bilióny, päť biliónov; an indeclinable one-word compound governs the genitive.</summary>
     [TestMethod]

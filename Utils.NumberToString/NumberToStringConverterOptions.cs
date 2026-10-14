@@ -314,6 +314,18 @@ public sealed class NumberToStringConverterOptions
     /// </summary>
     public IReadOnlyDictionary<int, ILexicalFormSelector>? ScaleFormSelectors { get; set; }
 
+    /// <summary>
+    /// Optional lexical forms of the generated scale nouns, keyed by <see cref="NumberScale.ScaleSuffixes"/>
+    /// index: every scale that <see cref="Scale"/> generates with that suffix, whatever its Conway prefix,
+    /// uses the entry (Russian suffix 0: <c>он</c> / <c>она</c> / <c>онов</c> for триллион, квадриллион,
+    /// …). The forms are suffix fragments, so they never depend on the names of a particular scale and a
+    /// clone may replace <see cref="Scale"/>. An exact <see cref="ScaleForms"/> or
+    /// <see cref="ScaleFormSelectors"/> entry keeps precedence for its own scale; a scale matched by
+    /// neither keeps the historical <c>GetScaleName(index).ToPlural(multiplier)</c> rendering. Keys must
+    /// be valid suffix indices of <see cref="Scale"/>, whose generated names must be nameable.
+    /// </summary>
+    public IReadOnlyDictionary<int, GeneratedScaleForm>? GeneratedScaleForms { get; set; }
+
     /// <summary>Optional idiomatic clock-time formatting configuration.</summary>
     public ClockTimeFormatOptions? ClockTime { get; set; }
 
@@ -389,6 +401,8 @@ public sealed class NumberToStringConverterOptions
         // synthesized from source.Scale, which must not override the names of a replaced Scale.
         ScaleForms = source.ScaleFormOverrides;
         ScaleFormSelectors = source.ScaleFormSelectorOverrides;
+        // Suffix fragments only, nothing synthesized from source.Scale: the effective view is safe to copy.
+        GeneratedScaleForms = source.GeneratedScaleForms;
         OrdinalPrefix = source.OrdinalPrefix;
         OrdinalVariants = source.OrdinalVariants;
         VariantDimensions = source.VariantDimensions;

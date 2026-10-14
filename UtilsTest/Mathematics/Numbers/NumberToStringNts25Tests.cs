@@ -162,13 +162,13 @@ public class NumberToStringNts25Tests
     {
         var bg = NumberToStringConverter.GetConverter("BG");
 
-        // NTS-30B: милион and милиард are masculine (един милион); the generated names keep the counting
-        // form едно until NTS-30C.
+        // NTS-30B: милион and милиард are masculine (един милион); NTS-30C: so are the generated names
+        // (един трилион), through the GeneratedScaleForm of their suffix.
         Assert.AreEqual("един милион", bg.Convert(Pow10(6)));
         Assert.AreEqual("един милиард", bg.Convert(Pow10(9)));
-        Assert.AreEqual("едно трилион", bg.Convert(Pow10(12)));
-        Assert.AreEqual("едно квадрилион", bg.Convert(Pow10(15)));
-        Assert.AreEqual("едно квинтилион", bg.Convert(Pow10(18)));
+        Assert.AreEqual("един трилион", bg.Convert(Pow10(12)));
+        Assert.AreEqual("един квадрилион", bg.Convert(Pow10(15)));
+        Assert.AreEqual("един квинтилион", bg.Convert(Pow10(18)));
 
         var scale = bg.Scale;
         Assert.AreEqual("ундецилион", scale.GetScaleName(12));
@@ -193,20 +193,20 @@ public class NumberToStringNts25Tests
         Assert.AreEqual("один квінтильйон", uk.Convert(Pow10(18)));
 
         var scale = uk.Scale;
-        Assert.AreEqual("ундецильйон(ів)", scale.GetScaleName(12));
-        Assert.AreEqual("кватуордецильйон(ів)", scale.GetScaleName(15));
-        Assert.AreEqual("квінквадецильйон(ів)", scale.GetScaleName(16));
-        Assert.AreEqual("вігінтильйон(ів)", scale.GetScaleName(21));
-        Assert.AreEqual("сесвігінтильйон(ів)", scale.GetScaleName(27));
-        Assert.AreEqual("тригінтильйон(ів)", scale.GetScaleName(31));
-        Assert.AreEqual("квінквагінтильйон(ів)", scale.GetScaleName(51));
-        Assert.AreEqual("центильйон(ів)", scale.GetScaleName(101));
-        Assert.AreEqual("сексцентильйон(ів)", scale.GetScaleName(107));
-        Assert.AreEqual("тригінтацентильйон(ів)", scale.GetScaleName(131));
-        Assert.AreEqual("квінгентильйон(ів)", scale.GetScaleName(501));
+        Assert.AreEqual("ундецильйон", scale.GetScaleName(12));
+        Assert.AreEqual("кватуордецильйон", scale.GetScaleName(15));
+        Assert.AreEqual("квінквадецильйон", scale.GetScaleName(16));
+        Assert.AreEqual("вігінтильйон", scale.GetScaleName(21));
+        Assert.AreEqual("сесвігінтильйон", scale.GetScaleName(27));
+        Assert.AreEqual("тригінтильйон", scale.GetScaleName(31));
+        Assert.AreEqual("квінквагінтильйон", scale.GetScaleName(51));
+        Assert.AreEqual("центильйон", scale.GetScaleName(101));
+        Assert.AreEqual("сексцентильйон", scale.GetScaleName(107));
+        Assert.AreEqual("тригінтацентильйон", scale.GetScaleName(131));
+        Assert.AreEqual("квінгентильйон", scale.GetScaleName(501));
         // Same junction between groups and before the suffix: мі+ль+ні+ль+йон (accepted limitation).
-        Assert.AreEqual("мільнільйон(ів)", scale.GetScaleName(1001));
-        Assert.AreEqual("мільнільтрильйон(ів)", scale.GetScaleName(1_000_004));
+        Assert.AreEqual("мільнільйон", scale.GetScaleName(1001));
+        Assert.AreEqual("мільнільтрильйон", scale.GetScaleName(1_000_004));
     }
 
     /// <summary>No generated RU, BG or UK scale name, nor any cardinal using it, contains an ASCII Latin letter.</summary>

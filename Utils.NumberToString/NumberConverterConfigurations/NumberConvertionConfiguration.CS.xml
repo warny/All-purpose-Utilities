@@ -55,8 +55,8 @@
         <!-- Long scale with groupSeparator="li" (single l): mi+li+on=milion, mi+li+ard=miliard,
              bi+li+on=bilion, bi+li+ard=biliard, tri+li+on=trilion…
              NTS-30B: tisíc, milion and miliarda (feminine) agree with their multiplier (ScaleForm
-             below). The generated names from bilion up keep the bare singular and the masculine
-             -ard (dva bilion for dva biliony, dva biliard for dvě biliardy, NTS-30C). -->
+             below); NTS-30C: the generated names from bilion up agree too, through one
+             GeneratedScaleForm per suffix (dva biliony, dvě biliardy). -->
         <NumberScale firstLetterUpperCase="false" groupSeparator="li">
             <StaticNames>
                 <Scale value="0" string="" />
@@ -90,6 +90,27 @@
                     <Form key="other" value="miliard" />
                 </Forms>
             </ScaleForm>
+            <!-- NTS-30C: the generated scales alternate two families, by suffix index. -on (bilion, trilion,
+                 kvadrilion…) is masculine inanimate: bilion, dva biliony, pět bilionů, jeden bilion; -ard is
+                 the feminine biliarda: jedna biliarda, dvě biliardy, pět biliard (IJP, ÚJČ AV ČR, entries
+                 bilion, trilion, kvadrilion, biliarda: 23 biliard dolarů). After a compound the genitive
+                 construction keeps the counting form of the numeral, as for milion and miliarda above
+                 (IJP "Počítaný předmět po číslovkách": dvacet jedna žáků; "Členění čísel": dvacet dva
+                 korunám): dvacet dva biliard. Only the exact multipliers 1-4 agree in gender. -->
+            <GeneratedScaleForm suffix="0" formSelector="CzechSlovakPluralLexicalFormSelector">
+                <Forms>
+                    <Form key="one" value="on" forceVariants="gender=mužský" />
+                    <Form key="few" value="ony" />
+                    <Form key="other" value="onů" />
+                </Forms>
+            </GeneratedScaleForm>
+            <GeneratedScaleForm suffix="1" formSelector="CzechSlovakPluralLexicalFormSelector">
+                <Forms>
+                    <Form key="one" value="arda" forceVariants="gender=ženský" />
+                    <Form key="few" value="ardy" forceVariants="gender=ženský" />
+                    <Form key="other" value="ard" />
+                </Forms>
+            </GeneratedScaleForm>
         </NumberScale>
         <Replacements>
             <!-- Drop "jedna" before "tisíc": 1000 = "tisíc" not "jedna tisíc" -->

@@ -90,6 +90,43 @@ public sealed class NumberToStringImmutabilityTests
         Assert.IsFalse(converter.ScaleFormSelectors is Dictionary<int, ILexicalFormSelector>, "The converter must not expose a mutable dictionary.");
     }
 
+    /// <summary>
+    /// Mutating the source generated scale forms (the options dictionary, the forced-variant dictionary handed
+    /// to an entry) after construction affects neither the entry nor the converter, and the exposed views are
+    /// not mutable collections.
+    /// </summary>
+    [TestMethod]
+    public void GeneratedScaleForms_SourceMutationAfterConstruction_DoesNotChangeConverter()
+    {
+        string[] digits = ["", "a", "b", "c", "d", "e", "f", "g", "h", "i"];
+        var forced = new Dictionary<string, ForcedVariantSet> { ["other"] = ForcedVariantSet.Parse("gender=other") };
+        var entry = new GeneratedScaleForm(LexicalFormSet.Create(("one", "X1"), ("other", "XO")), new OneOtherSelector(), forced);
+        var generated = new Dictionary<int, GeneratedScaleForm> { [0] = entry };
+        var options = Options([]);
+        options.Scale = new NumberScale(["", "thousand"], ["X"], 0, "n", "-", digits, digits, digits, digits);
+        options.VariantDimensions = [new NumberToStringConverter.VariantDimension("gender", ["plain", "other"])];
+        options.VariantRules =
+        [
+            new NumberToStringConverter.VariantRule(
+                new Dictionary<string, string> { ["gender"] = "other" },
+                [new NumberToStringConverter.ReplacementRule("two", "TWO", ReplacementScope.LastWord)]),
+        ];
+        options.GeneratedScaleForms = generated;
+        var converter = new NumberToStringConverter(options);
+
+        forced["other"] = ForcedVariantSet.Empty;
+        forced["one"] = ForcedVariantSet.Parse("gender=other");
+        generated[0] = new GeneratedScaleForm(LexicalFormSet.Create(("one", "changed"), ("other", "changed")), new AlwaysOtherSelector());
+        generated.Clear();
+        options.GeneratedScaleForms = null;
+
+        Assert.AreEqual("one a-X1", converter.Convert(BigInteger.Pow(100, 2)));
+        Assert.AreEqual("TWO a-XO", converter.Convert(2 * BigInteger.Pow(100, 2)));
+        Assert.AreEqual(1, entry.MultiplierForcedVariants.Count);
+        Assert.IsFalse(converter.GeneratedScaleForms is Dictionary<int, GeneratedScaleForm>, "The converter must not expose a mutable dictionary.");
+        Assert.IsFalse(entry.MultiplierForcedVariants is Dictionary<string, ForcedVariantSet>, "The entry must not expose a mutable dictionary.");
+    }
+
     /// <summary>Mutating the source ordinal replacement lists after construction does not affect the converter snapshot.</summary>
     [TestMethod]
     public void OrdinalReplacements_SourceMutationAfterConstruction_DoesNotChangeConverter()

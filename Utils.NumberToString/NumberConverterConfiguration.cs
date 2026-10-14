@@ -992,6 +992,59 @@ public class ScaleFormEntry
 }
 
 /// <summary>
+/// XML element <c>&lt;GeneratedScaleForm suffix="…"&gt;</c> inside <c>&lt;NumberScale&gt;</c>: declares the
+/// suffix fragments of every scale noun the NumberScale generates with one suffix (one index of
+/// <c>&lt;Suffixes&gt;</c>), the selector choosing the fragment from the group multiplier, and the
+/// variants each fragment may force on that multiplier. Projected into
+/// <c>NumberToStringConverterOptions.GeneratedScaleForms</c>.
+/// </summary>
+public class GeneratedScaleFormEntry
+{
+    /// <summary>The index of the suffix in <c>&lt;Suffixes&gt;</c> (0 = first suffix).</summary>
+    [XmlAttribute("suffix")]
+    public int Suffix { get; set; }
+
+    /// <summary>Optional selector type name or built-in alias (same vocabulary as <see cref="ScaleFormEntry.FormSelector"/>).</summary>
+    [XmlAttribute("formSelector")]
+    public string? FormSelector { get; set; }
+
+    /// <summary>Optional structured selector declaration, used instead of <see cref="FormSelector"/> when the selector needs its own configuration.</summary>
+    [XmlElement("LexicalFormSelector")]
+    public LexicalFormSelectorElementType? LexicalFormSelector { get; set; }
+
+    /// <summary>The suffix fragment of each form key.</summary>
+    [XmlElement("Forms")]
+    public GeneratedScaleFormsType? Forms { get; set; }
+}
+
+/// <summary>Holds the suffix fragments of a <see cref="GeneratedScaleFormEntry"/>.</summary>
+public class GeneratedScaleFormsType
+{
+    /// <summary>Gets or sets the form entries.</summary>
+    [XmlElement("Form")]
+    public List<GeneratedScaleFormValueEntry>? Entries { get; set; }
+}
+
+/// <summary>
+/// Maps one form key of a generated scale family to its suffix fragment and to the variants it forces
+/// on the multiplier when selected.
+/// </summary>
+public class GeneratedScaleFormValueEntry
+{
+    /// <summary>The form key, looked up by the configured <see cref="Utils.NumberToString.ILexicalFormSelector"/>.</summary>
+    [XmlAttribute("key")]
+    public string Key { get; set; } = "";
+
+    /// <summary>The suffix fragment joined to the Conway prefix (e.g. "она" for триллиона).</summary>
+    [XmlAttribute("value")]
+    public string Value { get; set; } = "";
+
+    /// <summary>Optional comma-separated <c>dimension=value</c> variants forced on the multiplier of this form.</summary>
+    [XmlAttribute("forceVariants")]
+    public string? ForceVariants { get; set; }
+}
+
+/// <summary>
 /// Holds named lexical form entries for a configurable constituent (e.g. a time unit).
 /// </summary>
 public class LexicalFormsType
@@ -1548,4 +1601,10 @@ public class NumberScaleType
     /// </summary>
     [XmlElement(ElementName = "ScaleForm")]
     public List<ScaleFormEntry>? ScaleForms { get; set; }
+
+    /// <summary>
+    /// Gets or sets the lexical forms of the generated scale families, by suffix index (see <see cref="GeneratedScaleFormEntry"/>).
+    /// </summary>
+    [XmlElement(ElementName = "GeneratedScaleForm")]
+    public List<GeneratedScaleFormEntry>? GeneratedScaleForms { get; set; }
 }
