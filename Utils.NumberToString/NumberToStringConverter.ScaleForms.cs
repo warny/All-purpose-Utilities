@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Numerics;
+using System.Text;
 using Utils.String;
 
 namespace Utils.NumberToString
@@ -166,6 +167,82 @@ namespace Utils.NumberToString
 
             /// <inheritdoc />
             public int GetHashCode(KeyValuePair<string, string> pair) => HashCode.Combine(pair.Key, pair.Value);
+        }
+
+        /// <summary>First character of a shield token; never produced by a configuration.</summary>
+        private const char ShieldStart = '';
+
+        /// <summary>Last character of a shield token.</summary>
+        private const char ShieldEnd = '';
+
+        /// <summary>First of the sixteen private-use characters spelling the index inside a shield token.</summary>
+        private const char ShieldDigitBase = '';
+
+        /// <summary>
+        /// Returns the list collecting the shielded groups of one conversion (see <see cref="ConvertRaw"/>),
+        /// or <see langword="null"/> when no generated scale form is configured, so that languages without
+        /// one allocate nothing.
+        /// </summary>
+        /// <returns>A new empty list, or <see langword="null"/>.</returns>
+        private List<string>? NewShieldedGroups() => _generatedScaleFormBySuffix.Length == 0 ? null : [];
+
+        /// <summary>
+        /// Runs the whole-number passes made with the caller's query (the global variant rules and the end
+        /// triggers) without letting them touch a group whose multiplier was rendered under forced variants:
+        /// such a group already went through its complete local pipeline with the forced values, which take
+        /// precedence over the caller's. Each shielded group is replaced by an opaque private-use token for
+        /// the passes, then restored. A group a preceding replacement or adjustment rewrote can no longer be
+        /// located and is processed as before.
+        /// </summary>
+        /// <param name="text">The assembled cardinal.</param>
+        /// <param name="shieldedGroups">The shielded group texts in assembly order, or <see langword="null"/>.</param>
+        /// <param name="passes">The whole-number passes.</param>
+        /// <returns>The text after the passes, the shielded groups unchanged.</returns>
+        /// <exception cref="InvalidOperationException">A pass removed or duplicated a shield token.</exception>
+        private string ApplyShielded(string text, List<string>? shieldedGroups, Func<string, string> passes)
+        {
+            if (shieldedGroups is not { Count: > 0 }) return passes(text);
+
+            var masked = new StringBuilder(text.Length);
+            var tokens = new List<(string Token, string Group)>(shieldedGroups.Count);
+            int cursor = 0;
+            foreach (string group in shieldedGroups)
+            {
+                int at = text.IndexOf(group, cursor, StringComparison.Ordinal);
+                if (at < 0) continue;
+                string token = ShieldToken(tokens.Count);
+                masked.Append(text, cursor, at - cursor).Append(token);
+                tokens.Add((token, group));
+                cursor = at + group.Length;
+            }
+            masked.Append(text, cursor, text.Length - cursor);
+
+            string result = passes(masked.ToString());
+            foreach (var (token, group) in tokens)
+            {
+                int at = result.IndexOf(token, StringComparison.Ordinal);
+                if (at < 0 || result.IndexOf(token, at + token.Length, StringComparison.Ordinal) >= 0)
+                    throw new InvalidOperationException(
+                        $"Language '{LanguageIdentifier}': a whole-number variant rule or end trigger rewrote the scale group " +
+                        $"'{group}', whose multiplier carries forced variants.");
+                result = string.Concat(result.AsSpan(0, at), group, result.AsSpan(at + token.Length));
+            }
+            return result;
+        }
+
+        /// <summary>Spells the shield token of index <paramref name="index"/> with private-use characters only.</summary>
+        /// <param name="index">The token index.</param>
+        /// <returns>The token.</returns>
+        private static string ShieldToken(int index)
+        {
+            var token = new StringBuilder().Append(ShieldStart);
+            do
+            {
+                token.Append((char)(ShieldDigitBase + (index & 0xF)));
+                index >>= 4;
+            }
+            while (index > 0);
+            return token.Append(ShieldEnd).ToString();
         }
 
         /// <summary>

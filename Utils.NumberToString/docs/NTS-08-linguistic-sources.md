@@ -87,6 +87,12 @@ also writes the undeclined compound before a feminine noun with *dva* (*k tisíc
 "Členění čísel"). No source gives *dvacet dvě biliard*. Only the exact multipliers 1–4 take the nominative and agree
 in gender (*dvě biliardy*). The NTS-30B note on *miliarda* is closed by the same evidence; scale 3 is unchanged.
 
+**Slovak evidence level for *-iarda*.** No normative source consulted gives *biliarda* itself: KSSJ 4 lists only
+*bilión* (and *biliard*, the game), and the JÚĽŠ portal could not be read. The series *biliarda*, *triliarda*,
+*kvadriliarda* … is attested by the Slovak Wikipedia only, and its inflection (*biliardy*, genitive plural
+*biliárd*) is extrapolated from the codified *miliarda -y -árd ž.* of the same productive family. Kept as a
+documented reserve, not presented as normative.
+
 **Slovak compounds.** A tens-with-units compound is one indeclinable word in its base form before any noun
 (Jarošová 2021: *dvadsaťdva – pri všetkých substantívach základný tvar*), so *dvadsaťdva biliárd*, *dvadsaťjeden
 biliónov*; only the exact 1–4 agree (*jedna biliarda*, *dve biliardy*).

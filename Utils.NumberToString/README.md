@@ -1741,9 +1741,13 @@ attaches the forms to a **suffix family** instead: every generated scale whose n
 - Resolution: an exact `<ScaleForm>` of the scale wins; otherwise a generated scale uses the entry of its
   suffix index; otherwise the historical `GetScaleName(index).ToPlural(multiplier)` is kept byte for byte.
 - The selector runs once per scale noun, on the caller's effective variants. A form may carry
-  `forceVariants`: once that form is selected, those variants are overlaid on the caller's for the
-  **multiplier fragment only** (`dva` → `dvě` before `biliardy`), with the language's variant rules and
-  without finalization; a form without `forceVariants` leaves the multiplier untouched.
+  `forceVariants`: once that form is selected, those variants are overlaid on the caller's (forced values
+  win, dimension by dimension) and that query drives the **whole local pipeline of the group**: its
+  `group(N)` triggers, the language's variant rules on the multiplier (`dva` → `dvě` before `biliardy`),
+  its `onScale` variant rules and its `groupWithScale(N)` triggers, without finalization. The group is then
+  shielded from the whole-number passes made with the caller's query (global variant rules, `end`
+  triggers), so a caller value never rewrites it. A form without `forceVariants` keeps the caller's query
+  everywhere, exactly as before.
 - Validated while loading: suffix index within `<Suffixes>` and nameable by the scale, one entry per
   index, non-empty forms, forced dimensions and values declared by the language, and every key the
   selector returns for the possible multipliers (probed once under the language defaults; a key reached

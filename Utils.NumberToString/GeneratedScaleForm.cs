@@ -21,8 +21,11 @@ namespace Utils.NumberToString;
 /// <para>
 /// A form may also carry <see cref="MultiplierForcedVariants"/>: the variant values the noun imposes on
 /// the numeral of its multiplier when that form is selected (Czech <c>dvě biliardy</c>: the feminine
-/// few form forces gender on <c>dva</c>). They are overlaid on the caller's variants for the multiplier
-/// fragment only; the selector runs once, before they are applied. Instances are immutable.
+/// few form forces gender on <c>dva</c>). They are overlaid on the caller's variants, forced values winning
+/// dimension by dimension, and that query drives the whole local pipeline of the group (group triggers,
+/// variant rules of the multiplier, <c>onScale</c> variant rules, group-with-scale triggers); the group is
+/// then left untouched by the whole-number passes run with the caller's query. The selector runs once,
+/// before they are applied. Instances are immutable.
 /// </para>
 /// </remarks>
 public sealed class GeneratedScaleForm

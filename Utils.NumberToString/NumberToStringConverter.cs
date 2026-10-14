@@ -1330,10 +1330,10 @@ namespace Utils.NumberToString
             var query = BuildVariantQuery(variants);
             // Zero goes through the same post-processing pipeline as non-zero values so that
             // variant rules, end triggers, and language finalization can be applied to "zero".
-            string raw = abs == BigInteger.Zero ? Zero : ConvertRaw(abs, query);
+            var shielded = NewShieldedGroups();
+            string raw = abs == BigInteger.Zero ? Zero : ConvertRaw(abs, query, shielded);
             if (_rawAdjustFunction != null) raw = _rawAdjustFunction(raw);
-            raw = ApplyVariantRules(raw, query, (BigInteger?)abs);
-            raw = ApplyTriggers(raw, TriggerAt.End, null, query);
+            raw = ApplyShielded(raw, shielded, text => ApplyTriggers(ApplyVariantRules(text, query, (BigInteger?)abs), TriggerAt.End, null, query));
             string final = LanguageSpecifics.FinalizeWriting(LanguageIdentifier, raw);
 
             return isNegative ? Minus.Replace("*", final) : final;
@@ -1365,10 +1365,10 @@ namespace Utils.NumberToString
             if (number.Sign < 0)
                 throw new ArgumentOutOfRangeException(nameof(number), "Cardinal fragments must be non-negative.");
 
-            string raw = number.IsZero ? Zero : ConvertRaw(number, query);
+            var shielded = NewShieldedGroups();
+            string raw = number.IsZero ? Zero : ConvertRaw(number, query, shielded);
             raw = ApplyRawAdjustment(raw);
-            raw = ApplyVariantRules(raw, query, number);
-            return ApplyTriggers(raw, TriggerAt.End, null, query);
+            return ApplyShielded(raw, shielded, text => ApplyTriggers(ApplyVariantRules(text, query, number), TriggerAt.End, null, query));
         }
 
         /// <summary>
@@ -1392,13 +1392,20 @@ namespace Utils.NumberToString
         /// <summary>
         /// Produces the raw text for a positive number without any adjustment or finalization.
         /// </summary>
-        private string ConvertRaw(BigInteger abs, IReadOnlyDictionary<string, string>? variantQuery = null)
+        /// <param name="abs">The positive value.</param>
+        /// <param name="variantQuery">The caller's effective variant query, or <see langword="null"/>.</param>
+        /// <param name="shieldedGroups">
+        /// When not <see langword="null"/>, receives, in assembly order, the text of every group whose
+        /// generated scale form forced variants on its multiplier, so that the whole-number passes run with
+        /// the caller's query can leave it untouched (see <see cref="ApplyShielded"/>).
+        /// </param>
+        private string ConvertRaw(BigInteger abs, IReadOnlyDictionary<string, string>? variantQuery = null, List<string>? shieldedGroups = null)
         {
             if (abs.Between(long.MinValue, long.MaxValue) && Exceptions.TryGetValue((long)abs, out var exValue))
                 return exValue;
 
             int groupNumber = 0;
-            var groupsValues = new Stack<(string text, long numericValue)>();
+            var groupsValues = new Stack<(string text, long numericValue, bool shielded)>();
 
             BigInteger remaining = abs;
             while (remaining != 0)
@@ -1413,13 +1420,18 @@ namespace Utils.NumberToString
                     bool hasHigherGroup = remaining >= groupValue;
                     // The multiplier of a scale covered by a scoped Groups uses that table.
                     string digits = ConvertGroup(GetGroupTable(groupNumber), width, group, hasHigherGroup);
-                    digits = ApplyTriggers(digits, TriggerAt.Group, groupNumber, variantQuery);
 
-                    // The scale noun's form is selected once, on the caller's variants; a generated form may
-                    // then impose variants on its multiplier, rendered as an unfinalized fragment.
+                    // The scale noun's form is selected once, on the caller's variants. A generated form may
+                    // impose variants on its multiplier: the forced values overlay the caller's, and that one
+                    // query then drives every local pass of the group (group triggers, the variant rules of the
+                    // multiplier, the scale-scoped variant rules, the group-with-scale triggers). Without
+                    // forced variants the caller's query is used, exactly as before.
                     var (scaleName, multiplierVariants) = ResolveScaleWord(groupNumber, group, variantQuery);
-                    if (!multiplierVariants.IsEmpty)
-                        digits = ApplyVariantRules(digits, multiplierVariants.Overlay(variantQuery ?? _defaultVariantQuery), group);
+                    bool forced = !multiplierVariants.IsEmpty;
+                    var groupQuery = forced ? multiplierVariants.Overlay(variantQuery ?? _defaultVariantQuery) : variantQuery;
+                    digits = ApplyTriggers(digits, TriggerAt.Group, groupNumber, groupQuery);
+                    if (forced)
+                        digits = ApplyVariantRules(digits, groupQuery!, group);
                     string scaleJoin = (_scaleConnector != null && groupNumber > 0 && group >= _scaleConnectorThreshold)
                         ? Separator + _scaleConnector + Separator
                         : Separator;
@@ -1433,11 +1445,11 @@ namespace Utils.NumberToString
                             ? scaleName + scaleJoin + digits
                             : digits + scaleJoin + scaleName;
                     resValue = ApplyReplacements(resValue, groupNumber, group);
-                    if (variantQuery != null && _hasScaleSpecificVariantRules)
-                        resValue = ApplyVariantRulesForScale(resValue, variantQuery, groupNumber, group);
-                    resValue = ApplyTriggers(resValue, TriggerAt.GroupWithScale, groupNumber, variantQuery);
+                    if (groupQuery != null && _hasScaleSpecificVariantRules)
+                        resValue = ApplyVariantRulesForScale(resValue, groupQuery, groupNumber, group);
+                    resValue = ApplyTriggers(resValue, TriggerAt.GroupWithScale, groupNumber, groupQuery);
 
-                    groupsValues.Push((resValue.Trim(), group));
+                    groupsValues.Push((resValue.Trim(), group, forced));
                 }
                 remaining /= groupValue;
                 groupNumber++;
@@ -1446,7 +1458,8 @@ namespace Utils.NumberToString
             var result = new StringBuilder();
             while (groupsValues.Count > 0)
             {
-                var (text, _) = groupsValues.Pop();
+                var (text, _, shielded) = groupsValues.Pop();
+                if (shielded) shieldedGroups?.Add(text);
                 result.Append(text);
                 if (groupsValues.Count > 0)
                 {
@@ -2386,8 +2399,9 @@ namespace Utils.NumberToString
                 // since they agree a cardinal, not the joined multiplier + noun text.
                 if (!TryBuildRoundScaleText(number, activeVariants, out raw))
                 {
-                    raw = number == 0 ? Zero : ConvertRaw((BigInteger)number, activeVariants);
-                    raw = ApplyVariantRules(raw, activeVariants, number);
+                    var shielded = NewShieldedGroups();
+                    raw = number == 0 ? Zero : ConvertRaw((BigInteger)number, activeVariants, shielded);
+                    raw = ApplyShielded(raw, shielded, text => ApplyVariantRules(text, activeVariants, number));
                 }
                 // Ordinal-only replacements see the assembled, variant-transformed cardinal and run
                 // before the ordinal transformation (word rules, stems, removeTrailing, suffix).

@@ -106,8 +106,11 @@ public class NumberToStringNts30CTests
     /// <param name="scaleContent">Elements appended inside the NumberScale (ScaleForm, GeneratedScaleForm).</param>
     /// <param name="suffixes">The Suffix elements.</param>
     /// <param name="extraLanguages">Additional Language elements.</param>
+    /// <param name="extraVariants">Additional Variant elements of the gender dimension.</param>
+    /// <param name="extra">Additional elements appended to the Language after its Variants (e.g. Trigger).</param>
     /// <returns>The configuration document.</returns>
-    private static string Document(string culture, string scaleContent = "", string suffixes = "<Suffix>X</Suffix><Suffix>Y</Suffix>", string extraLanguages = "")
+    private static string Document(string culture, string scaleContent = "", string suffixes = "<Suffix>X</Suffix><Suffix>Y</Suffix>",
+        string extraLanguages = "", string extraVariants = "", string extra = "")
     {
         string tens = string.Concat(Tens.Select((t, i) => i == 0
             ? """<Digit digit="0" string="" buildString="*" />"""
@@ -136,7 +139,9 @@ public class NumberToStringNts30CTests
                     <Replacement oldValue="one" newValue="oneB" scope="LastWord" />
                     <Replacement oldValue="two" newValue="twoB" scope="LastWord" />
                   </Variant>
+                  {extraVariants}
                 </Variants>
+                {extra}
               </Language>
               {extraLanguages}
             </Numbers>
@@ -146,11 +151,14 @@ public class NumberToStringNts30CTests
     /// <summary>Builds the synthetic converter.</summary>
     /// <param name="scaleContent">Elements appended inside the NumberScale.</param>
     /// <param name="suffixes">The Suffix elements.</param>
+    /// <param name="extraVariants">Additional Variant elements of the gender dimension.</param>
+    /// <param name="extra">Additional elements appended to the Language after its Variants.</param>
     /// <returns>The converter.</returns>
-    private static NumberToStringConverter Build(string scaleContent = "", string suffixes = "<Suffix>X</Suffix><Suffix>Y</Suffix>")
+    private static NumberToStringConverter Build(string scaleContent = "", string suffixes = "<Suffix>X</Suffix><Suffix>Y</Suffix>",
+        string extraVariants = "", string extra = "")
     {
         string culture = NewName();
-        return NumberToStringConverter.ReadConfiguration(Document(culture, scaleContent, suffixes))[culture];
+        return NumberToStringConverter.ReadConfiguration(Document(culture, scaleContent, suffixes, "", extraVariants, extra))[culture];
     }
 
     /// <summary>Registers <paramref name="selector"/> under a fresh type name and returns that name.</summary>
@@ -226,6 +234,60 @@ public class NumberToStringNts30CTests
         Assert.AreEqual("twoB a-YF", converter.Convert(S(2, 3), "gender=a"));
         // The whole number keeps its own last-word variant pass.
         Assert.AreEqual("twoB a-YF twoB", converter.Convert(S(2, 3) + 2, "gender=b"));
+    }
+
+    /// <summary>
+    /// The forced variants reach the scale-scoped variant rules of the group: an <c>onScale</c> rule of the forced
+    /// value applies to the multiplier, whatever the caller's value for the same dimension.
+    /// </summary>
+    [TestMethod]
+    public void Synthetic_ForcedVariantsReachScaleScopedVariantRules()
+    {
+        var converter = Build(GeneratedX + GeneratedY,
+            extraVariants: """<Variant type="gender" variant="b" priority="1"><Replacement oldValue="three" newValue="threeB" scope="StartsWith" onScale="5" /></Variant>""");
+
+        Assert.AreEqual("threeB b-YF", converter.Convert(S(3, 5)));
+        Assert.AreEqual("threeB b-YF", converter.Convert(S(3, 5), "gender=a"));
+        Assert.AreEqual("five b-YM", converter.Convert(S(5, 5)), "a form without forced variants keeps the caller's query");
+        Assert.AreEqual("threeB b-YF", converter.Convert(S(3, 5), "gender=b"));
+    }
+
+    /// <summary>The forced variants reach the group and group-with-scale triggers of the group.</summary>
+    [TestMethod]
+    public void Synthetic_ForcedVariantsReachGroupTriggers()
+    {
+        var converter = Build(GeneratedX + GeneratedY, extra: """
+            <Trigger executeAt="group(5)"><Replace from="four"><Variant type="gender" variant="b" value="fourT" /></Replace></Trigger>
+            <Trigger executeAt="groupWithScale(3)"><Replace from="twoB a-YF"><Variant type="gender" variant="b" value="twoB a-YF!" /></Replace></Trigger>
+            """);
+
+        Assert.AreEqual("fourT b-YF", converter.Convert(S(4, 5), "gender=a"));
+        Assert.AreEqual("twoB a-YF!", converter.Convert(S(2, 3), "gender=a"));
+        Assert.AreEqual("twoB a-YF!", converter.Convert(S(2, 3)));
+        Assert.AreEqual("five b-YM", converter.Convert(S(5, 5), "gender=b"), "the trigger only rewrites \"four\"");
+        Assert.AreEqual("four b-XF", converter.Convert(S(4, 4), "gender=a"), "an unforced group keeps the caller's query");
+    }
+
+    /// <summary>
+    /// The forced value wins over a conflicting caller value in every later pass: neither a scale-scoped rule nor
+    /// a whole-number rule of the caller's value rewrites the forced group, while the rest of the number still
+    /// follows the caller's variants.
+    /// </summary>
+    [TestMethod]
+    public void Synthetic_ForcedVariantsAreNotReprocessedWithTheCallerQuery()
+    {
+        var converter = Build(GeneratedX + GeneratedY, extraVariants: """
+            <Variant type="gender" variant="a">
+              <Replacement oldValue="twoB" newValue="twoA" scope="Anywhere" />
+              <Replacement oldValue="two" newValue="twoA" scope="StartsWith" onScale="3" />
+              <Replacement oldValue="five" newValue="fiveA" scope="Anywhere" />
+            </Variant>
+            """);
+
+        Assert.AreEqual("twoB a-YF", converter.Convert(S(2, 3), "gender=a"));
+        Assert.AreEqual("twoB a-YF fiveA", converter.Convert(S(2, 3) + 5, "gender=a"));
+        Assert.AreEqual("fiveA a-YM", converter.Convert(S(5, 3), "gender=a"), "an unforced group is processed with the caller's query");
+        Assert.AreEqual("twoB b-YF twoB a-YF", converter.Convert(S(2, 5) + S(2, 3), "gender=a"));
     }
 
     /// <summary>An exact ScaleForm keeps precedence over the generated family of the same scale.</summary>

@@ -1632,7 +1632,10 @@
                                                     The selector receives the multiplier and the effective variants
                                                     and returns a form key; a Form may force variants on the
                                                     multiplier when it is selected (forceVariants="gender=ženský":
-                                                    dvě biliardy). A ScaleForm of the same scale keeps precedence; a
+                                                    dvě biliardy): the forced values overlay the caller's for the
+                                                    group triggers, variant rules (onScale ones included) and
+                                                    group-with-scale triggers of that group, which the whole-number
+                                                    caller passes then leave untouched. A ScaleForm of the same scale keeps precedence; a
                                                     generated scale without entry keeps the historical name. Under
                                                     baseOn, entries are merged by suffix index.
                                                 </xs:documentation>
