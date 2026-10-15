@@ -76,7 +76,9 @@ classification.
   without an IJP fraction noun (1/13, 1/101), for which the productive reading is *lomeno* + instrumental cardinal
   (IJP *lomit*: *dvě lomeno třemi*) and needs a cardinal instrumental; SK nouns other than *polovica*, *tretina*,
   *pätina*, *stotina*, *tisícina*, and their plurals other than *tretiny/tretín* (2/100, 5/7), with the specialist
-  *lomené* + instrumental (Ondrus 1968); oblique cases of every fraction (UK, CS, SK). Each needs a source audit.
+  *lomené* + instrumental (Ondrus 1968); oblique cases of every fraction (UK, CS, SK); zero numerators (0/3) and
+  the denominator one (5/1) in all four languages, deliberately closed because their idiomatic reading has not been
+  sourced. Each needs a source audit.
 - **NTS-38 — ES and EU ordinals from the million, after NTS-30F.** Opened by NTS-30F, which left every ordinal
   byte-identical. EU: `ConvertOrdinal(1 000 000)` gives `milioi batgarren`, whereas Euskaltzaindia rule 203 §5
   writes *milioigarren* (and *milioi bat eta batgarren* for 1 000 001, *bi milioigarren* for 2 000 000); rule 203
