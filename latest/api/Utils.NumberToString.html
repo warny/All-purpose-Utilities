@@ -295,6 +295,12 @@ into <code>OrdinalVariantRule</code> or <code>VariantRule</code> entries — no 
 </dd>
     </dl>
     <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.FractionDenominatorReading.html">FractionDenominatorReading</a></dt>
+      <dd><p>The denominator of a fraction as an <a class="xref" href="Utils.NumberToString.IFractionLanguageSpecifics.html">IFractionLanguageSpecifics</a> spells it, with the variants it forces
+on the numerator. Immutable.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
       <dt><a class="xref" href="Utils.NumberToString.FractionListType.html">FractionListType</a></dt>
       <dd><p>Represents a collection of fractional definitions.</p>
 </dd>
@@ -938,6 +944,16 @@ uses to choose a form key.</p>
     <h3 id="interfaces">
 Interfaces
 </h3>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.IFractionLanguageSpecifics.html">IFractionLanguageSpecifics</a></dt>
+      <dd><p>Optional language extension for <a class="xref" href="Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_ConvertFraction_System_Numerics_BigInteger_System_Numerics_BigInteger_System_String___">ConvertFraction(BigInteger, BigInteger, params string[])</a>
+and the fraction form of <code>Convert(Number)</code>, for languages whose fractions are not &quot;numerator, connector,
+denominator cardinal&quot;. The language supplies only what the declarative configuration cannot express: the
+denominator word or phrase, in the form governed by the numerator (Ukrainian <code>одна третя</code> /
+<code>дві третіх</code>, Czech <code>jedna třetina</code> / <code>dvě třetiny</code> / <code>pět třetin</code>), and the variants that
+denominator imposes on the numerator (the feminine of <code>одна</code>, <code>dvě</code>).</p>
+</dd>
+    </dl>
     <dl class="jumplist">
       <dt><a class="xref" href="Utils.NumberToString.ILexicalFormSelector.html">ILexicalFormSelector</a></dt>
       <dd><p>Chooses which named lexical form of a configured constituent (e.g. a time unit) applies to

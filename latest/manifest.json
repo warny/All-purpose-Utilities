@@ -8945,6 +8945,20 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.FractionDenominatorReading.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.FractionDenominatorReading.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.FractionDenominatorReading",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.FractionDenominatorReading.yml\" sourcestartlinenumber=\"1\">The denominator of a fraction as an <xref href=\"Utils.NumberToString.IFractionLanguageSpecifics\" data-throw-if-not-resolved=\"false\"></xref> spells it, with the variants it forces\non the numerator. Immutable.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.NumberToString.FractionListType.yml",
       "output": {
         ".html": {
@@ -9138,6 +9152,20 @@
       "IsMRef": true,
       "Title": "Utils.NumberToString.HungarianOrdinalLanguageSpecifics",
       "Summary": "<p sourcefile=\"api/Utils.NumberToString.HungarianOrdinalLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Produces Hungarian ordinals. The ordinal suffix attaches to the last morpheme of the numeral\nwith vowel harmony and stem changes (<code>tizenegyedik</code>, <code>huszadik</code>, <code>századik</code>,\n<code>ezredik</code>, <code>milliomodik</code>); only the numbers 1 and 2 standing alone are suppletive\n(<code>első</code>, <code>második</code>), whereas they are regular at the end of a compound\n(<code>huszonegyedik</code>, <code>tizenkettedik</code>). Numbers up to 2000 are written as one word and\nlarger ones separate their thousand groups with hyphens (<code>kétezer-egyedik</code>); a single\nmillion or milliard is written with <code>egy</code> (<code>egymilliomodik</code>, <code>egymillió-egyedik</code>).</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.IFractionLanguageSpecifics.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.IFractionLanguageSpecifics.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.IFractionLanguageSpecifics",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.IFractionLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Optional language extension for <xref href=\"Utils.NumberToString.NumberToStringConverter.ConvertFraction(System.Numerics.BigInteger%2cSystem.Numerics.BigInteger%2cSystem.String%5b%5d)\" data-throw-if-not-resolved=\"false\"></xref>\nand the fraction form of <code>Convert(Number)</code>, for languages whose fractions are not &quot;numerator, connector,\ndenominator cardinal&quot;. The language supplies only what the declarative configuration cannot express: the\ndenominator word or phrase, in the form governed by the numerator (Ukrainian <code>одна третя</code> /\n<code>дві третіх</code>, Czech <code>jedna třetina</code> / <code>dvě třetiny</code> / <code>pět třetin</code>), and the variants that\ndenominator imposes on the numerator (the feminine of <code>одна</code>, <code>dvě</code>).</p>\n"
     },
     {
       "type": "ManagedReference",

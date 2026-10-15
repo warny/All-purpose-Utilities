@@ -60887,6 +60887,22 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.BulgarianOrdinalLanguageSpecifics.TryConvertOrdinal
   nameWithType: BulgarianOrdinalLanguageSpecifics.TryConvertOrdinal
+- uid: Utils.NumberToString.BulgarianOrdinalLanguageSpecifics.TryGetFractionDenominator(System.Numerics.BigInteger,System.Numerics.BigInteger,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},Utils.NumberToString.FractionDenominatorReading@)
+  name: TryGetFractionDenominator(BigInteger, BigInteger, IReadOnlyDictionary<string, string>, out FractionDenominatorReading?)
+  href: api/Utils.NumberToString.BulgarianOrdinalLanguageSpecifics.html#Utils_NumberToString_BulgarianOrdinalLanguageSpecifics_TryGetFractionDenominator_System_Numerics_BigInteger_System_Numerics_BigInteger_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__Utils_NumberToString_FractionDenominatorReading__
+  commentId: M:Utils.NumberToString.BulgarianOrdinalLanguageSpecifics.TryGetFractionDenominator(System.Numerics.BigInteger,System.Numerics.BigInteger,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},Utils.NumberToString.FractionDenominatorReading@)
+  name.vb: TryGetFractionDenominator(BigInteger, BigInteger, IReadOnlyDictionary(Of String, String), FractionDenominatorReading)
+  fullName: Utils.NumberToString.BulgarianOrdinalLanguageSpecifics.TryGetFractionDenominator(System.Numerics.BigInteger, System.Numerics.BigInteger, System.Collections.Generic.IReadOnlyDictionary<string, string>, out Utils.NumberToString.FractionDenominatorReading?)
+  fullName.vb: Utils.NumberToString.BulgarianOrdinalLanguageSpecifics.TryGetFractionDenominator(System.Numerics.BigInteger, System.Numerics.BigInteger, System.Collections.Generic.IReadOnlyDictionary(Of String, String), Utils.NumberToString.FractionDenominatorReading)
+  nameWithType: BulgarianOrdinalLanguageSpecifics.TryGetFractionDenominator(BigInteger, BigInteger, IReadOnlyDictionary<string, string>, out FractionDenominatorReading?)
+  nameWithType.vb: BulgarianOrdinalLanguageSpecifics.TryGetFractionDenominator(BigInteger, BigInteger, IReadOnlyDictionary(Of String, String), FractionDenominatorReading)
+- uid: Utils.NumberToString.BulgarianOrdinalLanguageSpecifics.TryGetFractionDenominator*
+  name: TryGetFractionDenominator
+  href: api/Utils.NumberToString.BulgarianOrdinalLanguageSpecifics.html#Utils_NumberToString_BulgarianOrdinalLanguageSpecifics_TryGetFractionDenominator_
+  commentId: Overload:Utils.NumberToString.BulgarianOrdinalLanguageSpecifics.TryGetFractionDenominator
+  isSpec: "True"
+  fullName: Utils.NumberToString.BulgarianOrdinalLanguageSpecifics.TryGetFractionDenominator
+  nameWithType: BulgarianOrdinalLanguageSpecifics.TryGetFractionDenominator
 - uid: Utils.NumberToString.ChineseOrdinalLanguageSpecifics
   name: ChineseOrdinalLanguageSpecifics
   href: api/Utils.NumberToString.ChineseOrdinalLanguageSpecifics.html
@@ -61637,6 +61653,22 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.CzechOrdinalLanguageSpecifics.TryDecompose
   nameWithType: CzechOrdinalLanguageSpecifics.TryDecompose
+- uid: Utils.NumberToString.CzechOrdinalLanguageSpecifics.TryGetFractionDenominator(System.Numerics.BigInteger,System.Numerics.BigInteger,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},Utils.NumberToString.FractionDenominatorReading@)
+  name: TryGetFractionDenominator(BigInteger, BigInteger, IReadOnlyDictionary<string, string>, out FractionDenominatorReading?)
+  href: api/Utils.NumberToString.CzechOrdinalLanguageSpecifics.html#Utils_NumberToString_CzechOrdinalLanguageSpecifics_TryGetFractionDenominator_System_Numerics_BigInteger_System_Numerics_BigInteger_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__Utils_NumberToString_FractionDenominatorReading__
+  commentId: M:Utils.NumberToString.CzechOrdinalLanguageSpecifics.TryGetFractionDenominator(System.Numerics.BigInteger,System.Numerics.BigInteger,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},Utils.NumberToString.FractionDenominatorReading@)
+  name.vb: TryGetFractionDenominator(BigInteger, BigInteger, IReadOnlyDictionary(Of String, String), FractionDenominatorReading)
+  fullName: Utils.NumberToString.CzechOrdinalLanguageSpecifics.TryGetFractionDenominator(System.Numerics.BigInteger, System.Numerics.BigInteger, System.Collections.Generic.IReadOnlyDictionary<string, string>, out Utils.NumberToString.FractionDenominatorReading?)
+  fullName.vb: Utils.NumberToString.CzechOrdinalLanguageSpecifics.TryGetFractionDenominator(System.Numerics.BigInteger, System.Numerics.BigInteger, System.Collections.Generic.IReadOnlyDictionary(Of String, String), Utils.NumberToString.FractionDenominatorReading)
+  nameWithType: CzechOrdinalLanguageSpecifics.TryGetFractionDenominator(BigInteger, BigInteger, IReadOnlyDictionary<string, string>, out FractionDenominatorReading?)
+  nameWithType.vb: CzechOrdinalLanguageSpecifics.TryGetFractionDenominator(BigInteger, BigInteger, IReadOnlyDictionary(Of String, String), FractionDenominatorReading)
+- uid: Utils.NumberToString.CzechOrdinalLanguageSpecifics.TryGetFractionDenominator*
+  name: TryGetFractionDenominator
+  href: api/Utils.NumberToString.CzechOrdinalLanguageSpecifics.html#Utils_NumberToString_CzechOrdinalLanguageSpecifics_TryGetFractionDenominator_
+  commentId: Overload:Utils.NumberToString.CzechOrdinalLanguageSpecifics.TryGetFractionDenominator
+  isSpec: "True"
+  fullName: Utils.NumberToString.CzechOrdinalLanguageSpecifics.TryGetFractionDenominator
+  nameWithType: CzechOrdinalLanguageSpecifics.TryGetFractionDenominator
 - uid: Utils.NumberToString.CzechSlovakPluralLexicalFormSelector
   name: CzechSlovakPluralLexicalFormSelector
   href: api/Utils.NumberToString.CzechSlovakPluralLexicalFormSelector.html
@@ -62503,6 +62535,57 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.FormVariantType.VariantValue
   nameWithType: FormVariantType.VariantValue
+- uid: Utils.NumberToString.FractionDenominatorReading
+  name: FractionDenominatorReading
+  href: api/Utils.NumberToString.FractionDenominatorReading.html
+  commentId: T:Utils.NumberToString.FractionDenominatorReading
+  fullName: Utils.NumberToString.FractionDenominatorReading
+  nameWithType: FractionDenominatorReading
+- uid: Utils.NumberToString.FractionDenominatorReading.#ctor(System.String,Utils.NumberToString.ForcedVariantSet)
+  name: FractionDenominatorReading(string, ForcedVariantSet?)
+  href: api/Utils.NumberToString.FractionDenominatorReading.html#Utils_NumberToString_FractionDenominatorReading__ctor_System_String_Utils_NumberToString_ForcedVariantSet_
+  commentId: M:Utils.NumberToString.FractionDenominatorReading.#ctor(System.String,Utils.NumberToString.ForcedVariantSet)
+  name.vb: New(String, ForcedVariantSet)
+  fullName: Utils.NumberToString.FractionDenominatorReading.FractionDenominatorReading(string, Utils.NumberToString.ForcedVariantSet?)
+  fullName.vb: Utils.NumberToString.FractionDenominatorReading.New(String, Utils.NumberToString.ForcedVariantSet)
+  nameWithType: FractionDenominatorReading.FractionDenominatorReading(string, ForcedVariantSet?)
+  nameWithType.vb: FractionDenominatorReading.New(String, ForcedVariantSet)
+- uid: Utils.NumberToString.FractionDenominatorReading.#ctor*
+  name: FractionDenominatorReading
+  href: api/Utils.NumberToString.FractionDenominatorReading.html#Utils_NumberToString_FractionDenominatorReading__ctor_
+  commentId: Overload:Utils.NumberToString.FractionDenominatorReading.#ctor
+  isSpec: "True"
+  name.vb: New
+  fullName: Utils.NumberToString.FractionDenominatorReading.FractionDenominatorReading
+  fullName.vb: Utils.NumberToString.FractionDenominatorReading.New
+  nameWithType: FractionDenominatorReading.FractionDenominatorReading
+  nameWithType.vb: FractionDenominatorReading.New
+- uid: Utils.NumberToString.FractionDenominatorReading.NumeratorForcedVariants
+  name: NumeratorForcedVariants
+  href: api/Utils.NumberToString.FractionDenominatorReading.html#Utils_NumberToString_FractionDenominatorReading_NumeratorForcedVariants
+  commentId: P:Utils.NumberToString.FractionDenominatorReading.NumeratorForcedVariants
+  fullName: Utils.NumberToString.FractionDenominatorReading.NumeratorForcedVariants
+  nameWithType: FractionDenominatorReading.NumeratorForcedVariants
+- uid: Utils.NumberToString.FractionDenominatorReading.NumeratorForcedVariants*
+  name: NumeratorForcedVariants
+  href: api/Utils.NumberToString.FractionDenominatorReading.html#Utils_NumberToString_FractionDenominatorReading_NumeratorForcedVariants_
+  commentId: Overload:Utils.NumberToString.FractionDenominatorReading.NumeratorForcedVariants
+  isSpec: "True"
+  fullName: Utils.NumberToString.FractionDenominatorReading.NumeratorForcedVariants
+  nameWithType: FractionDenominatorReading.NumeratorForcedVariants
+- uid: Utils.NumberToString.FractionDenominatorReading.Text
+  name: Text
+  href: api/Utils.NumberToString.FractionDenominatorReading.html#Utils_NumberToString_FractionDenominatorReading_Text
+  commentId: P:Utils.NumberToString.FractionDenominatorReading.Text
+  fullName: Utils.NumberToString.FractionDenominatorReading.Text
+  nameWithType: FractionDenominatorReading.Text
+- uid: Utils.NumberToString.FractionDenominatorReading.Text*
+  name: Text
+  href: api/Utils.NumberToString.FractionDenominatorReading.html#Utils_NumberToString_FractionDenominatorReading_Text_
+  commentId: Overload:Utils.NumberToString.FractionDenominatorReading.Text
+  isSpec: "True"
+  fullName: Utils.NumberToString.FractionDenominatorReading.Text
+  nameWithType: FractionDenominatorReading.Text
 - uid: Utils.NumberToString.FractionListType
   name: FractionListType
   href: api/Utils.NumberToString.FractionListType.html
@@ -63092,6 +63175,28 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.HungarianOrdinalLanguageSpecifics.TryConvertOrdinal
   nameWithType: HungarianOrdinalLanguageSpecifics.TryConvertOrdinal
+- uid: Utils.NumberToString.IFractionLanguageSpecifics
+  name: IFractionLanguageSpecifics
+  href: api/Utils.NumberToString.IFractionLanguageSpecifics.html
+  commentId: T:Utils.NumberToString.IFractionLanguageSpecifics
+  fullName: Utils.NumberToString.IFractionLanguageSpecifics
+  nameWithType: IFractionLanguageSpecifics
+- uid: Utils.NumberToString.IFractionLanguageSpecifics.TryGetFractionDenominator(System.Numerics.BigInteger,System.Numerics.BigInteger,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},Utils.NumberToString.FractionDenominatorReading@)
+  name: TryGetFractionDenominator(BigInteger, BigInteger, IReadOnlyDictionary<string, string>, out FractionDenominatorReading?)
+  href: api/Utils.NumberToString.IFractionLanguageSpecifics.html#Utils_NumberToString_IFractionLanguageSpecifics_TryGetFractionDenominator_System_Numerics_BigInteger_System_Numerics_BigInteger_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__Utils_NumberToString_FractionDenominatorReading__
+  commentId: M:Utils.NumberToString.IFractionLanguageSpecifics.TryGetFractionDenominator(System.Numerics.BigInteger,System.Numerics.BigInteger,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},Utils.NumberToString.FractionDenominatorReading@)
+  name.vb: TryGetFractionDenominator(BigInteger, BigInteger, IReadOnlyDictionary(Of String, String), FractionDenominatorReading)
+  fullName: Utils.NumberToString.IFractionLanguageSpecifics.TryGetFractionDenominator(System.Numerics.BigInteger, System.Numerics.BigInteger, System.Collections.Generic.IReadOnlyDictionary<string, string>, out Utils.NumberToString.FractionDenominatorReading?)
+  fullName.vb: Utils.NumberToString.IFractionLanguageSpecifics.TryGetFractionDenominator(System.Numerics.BigInteger, System.Numerics.BigInteger, System.Collections.Generic.IReadOnlyDictionary(Of String, String), Utils.NumberToString.FractionDenominatorReading)
+  nameWithType: IFractionLanguageSpecifics.TryGetFractionDenominator(BigInteger, BigInteger, IReadOnlyDictionary<string, string>, out FractionDenominatorReading?)
+  nameWithType.vb: IFractionLanguageSpecifics.TryGetFractionDenominator(BigInteger, BigInteger, IReadOnlyDictionary(Of String, String), FractionDenominatorReading)
+- uid: Utils.NumberToString.IFractionLanguageSpecifics.TryGetFractionDenominator*
+  name: TryGetFractionDenominator
+  href: api/Utils.NumberToString.IFractionLanguageSpecifics.html#Utils_NumberToString_IFractionLanguageSpecifics_TryGetFractionDenominator_
+  commentId: Overload:Utils.NumberToString.IFractionLanguageSpecifics.TryGetFractionDenominator
+  isSpec: "True"
+  fullName: Utils.NumberToString.IFractionLanguageSpecifics.TryGetFractionDenominator
+  nameWithType: IFractionLanguageSpecifics.TryGetFractionDenominator
 - uid: Utils.NumberToString.ILexicalFormSelector
   name: ILexicalFormSelector
   href: api/Utils.NumberToString.ILexicalFormSelector.html
@@ -71375,6 +71480,22 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.SlovakOrdinalLanguageSpecifics.TryDecompose
   nameWithType: SlovakOrdinalLanguageSpecifics.TryDecompose
+- uid: Utils.NumberToString.SlovakOrdinalLanguageSpecifics.TryGetFractionDenominator(System.Numerics.BigInteger,System.Numerics.BigInteger,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},Utils.NumberToString.FractionDenominatorReading@)
+  name: TryGetFractionDenominator(BigInteger, BigInteger, IReadOnlyDictionary<string, string>, out FractionDenominatorReading?)
+  href: api/Utils.NumberToString.SlovakOrdinalLanguageSpecifics.html#Utils_NumberToString_SlovakOrdinalLanguageSpecifics_TryGetFractionDenominator_System_Numerics_BigInteger_System_Numerics_BigInteger_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__Utils_NumberToString_FractionDenominatorReading__
+  commentId: M:Utils.NumberToString.SlovakOrdinalLanguageSpecifics.TryGetFractionDenominator(System.Numerics.BigInteger,System.Numerics.BigInteger,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},Utils.NumberToString.FractionDenominatorReading@)
+  name.vb: TryGetFractionDenominator(BigInteger, BigInteger, IReadOnlyDictionary(Of String, String), FractionDenominatorReading)
+  fullName: Utils.NumberToString.SlovakOrdinalLanguageSpecifics.TryGetFractionDenominator(System.Numerics.BigInteger, System.Numerics.BigInteger, System.Collections.Generic.IReadOnlyDictionary<string, string>, out Utils.NumberToString.FractionDenominatorReading?)
+  fullName.vb: Utils.NumberToString.SlovakOrdinalLanguageSpecifics.TryGetFractionDenominator(System.Numerics.BigInteger, System.Numerics.BigInteger, System.Collections.Generic.IReadOnlyDictionary(Of String, String), Utils.NumberToString.FractionDenominatorReading)
+  nameWithType: SlovakOrdinalLanguageSpecifics.TryGetFractionDenominator(BigInteger, BigInteger, IReadOnlyDictionary<string, string>, out FractionDenominatorReading?)
+  nameWithType.vb: SlovakOrdinalLanguageSpecifics.TryGetFractionDenominator(BigInteger, BigInteger, IReadOnlyDictionary(Of String, String), FractionDenominatorReading)
+- uid: Utils.NumberToString.SlovakOrdinalLanguageSpecifics.TryGetFractionDenominator*
+  name: TryGetFractionDenominator
+  href: api/Utils.NumberToString.SlovakOrdinalLanguageSpecifics.html#Utils_NumberToString_SlovakOrdinalLanguageSpecifics_TryGetFractionDenominator_
+  commentId: Overload:Utils.NumberToString.SlovakOrdinalLanguageSpecifics.TryGetFractionDenominator
+  isSpec: "True"
+  fullName: Utils.NumberToString.SlovakOrdinalLanguageSpecifics.TryGetFractionDenominator
+  nameWithType: SlovakOrdinalLanguageSpecifics.TryGetFractionDenominator
 - uid: Utils.NumberToString.SpanishOrdinalLanguageSpecifics
   name: SpanishOrdinalLanguageSpecifics
   href: api/Utils.NumberToString.SpanishOrdinalLanguageSpecifics.html
@@ -72079,6 +72200,22 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.UkrainianOrdinalLanguageSpecifics.TryDecompose
   nameWithType: UkrainianOrdinalLanguageSpecifics.TryDecompose
+- uid: Utils.NumberToString.UkrainianOrdinalLanguageSpecifics.TryGetFractionDenominator(System.Numerics.BigInteger,System.Numerics.BigInteger,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},Utils.NumberToString.FractionDenominatorReading@)
+  name: TryGetFractionDenominator(BigInteger, BigInteger, IReadOnlyDictionary<string, string>, out FractionDenominatorReading?)
+  href: api/Utils.NumberToString.UkrainianOrdinalLanguageSpecifics.html#Utils_NumberToString_UkrainianOrdinalLanguageSpecifics_TryGetFractionDenominator_System_Numerics_BigInteger_System_Numerics_BigInteger_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__Utils_NumberToString_FractionDenominatorReading__
+  commentId: M:Utils.NumberToString.UkrainianOrdinalLanguageSpecifics.TryGetFractionDenominator(System.Numerics.BigInteger,System.Numerics.BigInteger,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},Utils.NumberToString.FractionDenominatorReading@)
+  name.vb: TryGetFractionDenominator(BigInteger, BigInteger, IReadOnlyDictionary(Of String, String), FractionDenominatorReading)
+  fullName: Utils.NumberToString.UkrainianOrdinalLanguageSpecifics.TryGetFractionDenominator(System.Numerics.BigInteger, System.Numerics.BigInteger, System.Collections.Generic.IReadOnlyDictionary<string, string>, out Utils.NumberToString.FractionDenominatorReading?)
+  fullName.vb: Utils.NumberToString.UkrainianOrdinalLanguageSpecifics.TryGetFractionDenominator(System.Numerics.BigInteger, System.Numerics.BigInteger, System.Collections.Generic.IReadOnlyDictionary(Of String, String), Utils.NumberToString.FractionDenominatorReading)
+  nameWithType: UkrainianOrdinalLanguageSpecifics.TryGetFractionDenominator(BigInteger, BigInteger, IReadOnlyDictionary<string, string>, out FractionDenominatorReading?)
+  nameWithType.vb: UkrainianOrdinalLanguageSpecifics.TryGetFractionDenominator(BigInteger, BigInteger, IReadOnlyDictionary(Of String, String), FractionDenominatorReading)
+- uid: Utils.NumberToString.UkrainianOrdinalLanguageSpecifics.TryGetFractionDenominator*
+  name: TryGetFractionDenominator
+  href: api/Utils.NumberToString.UkrainianOrdinalLanguageSpecifics.html#Utils_NumberToString_UkrainianOrdinalLanguageSpecifics_TryGetFractionDenominator_
+  commentId: Overload:Utils.NumberToString.UkrainianOrdinalLanguageSpecifics.TryGetFractionDenominator
+  isSpec: "True"
+  fullName: Utils.NumberToString.UkrainianOrdinalLanguageSpecifics.TryGetFractionDenominator
+  nameWithType: UkrainianOrdinalLanguageSpecifics.TryGetFractionDenominator
 - uid: Utils.NumberToString.UkrainianPluralLexicalFormSelector
   name: UkrainianPluralLexicalFormSelector
   href: api/Utils.NumberToString.UkrainianPluralLexicalFormSelector.html

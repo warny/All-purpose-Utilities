@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_NumberToString_BulgarianOrdinalLanguageSpecifics" data-uid="Utils.NumberToString.BulgarianOrdinalLanguageSpecifics" class="text-break">
-Class BulgarianOrdinalLanguageSpecifics  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/BulgarianOrdinalLanguageSpecifics.cs/#L21"><i class="bi bi-code-slash"></i></a>
+Class BulgarianOrdinalLanguageSpecifics  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/BulgarianOrdinalLanguageSpecifics.cs/#L22"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -107,7 +107,7 @@ for <code>masculine</code>; <code>feminine</code> and <code>neuter</code> derive
   <div class="markdown conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public sealed class BulgarianOrdinalLanguageSpecifics : INumberToStringLanguageSpecifics, IOrdinalLanguageSpecifics</code></pre>
+    <pre><code class="lang-csharp hljs">public sealed class BulgarianOrdinalLanguageSpecifics : INumberToStringLanguageSpecifics, IOrdinalLanguageSpecifics, IFractionLanguageSpecifics</code></pre>
   </div>
 
 
@@ -126,6 +126,7 @@ for <code>masculine</code>; <code>feminine</code> and <code>neuter</code> derive
     <dd>
       <div><a class="xref" href="Utils.NumberToString.INumberToStringLanguageSpecifics.html">INumberToStringLanguageSpecifics</a></div>
       <div><a class="xref" href="Utils.NumberToString.IOrdinalLanguageSpecifics.html">IOrdinalLanguageSpecifics</a></div>
+      <div><a class="xref" href="Utils.NumberToString.IFractionLanguageSpecifics.html">IFractionLanguageSpecifics</a></div>
     </dd>
   </dl>
 
@@ -265,7 +266,7 @@ were not verified.</p>
 
   <h3 id="Utils_NumberToString_BulgarianOrdinalLanguageSpecifics_FinalizeWriting_System_String_System_String_" data-uid="Utils.NumberToString.BulgarianOrdinalLanguageSpecifics.FinalizeWriting(System.String,System.String)">
   FinalizeWriting(string, string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/BulgarianOrdinalLanguageSpecifics.cs/#L40"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/BulgarianOrdinalLanguageSpecifics.cs/#L74"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Finalizes a converted text according to language-specific writing rules.</p>
@@ -311,7 +312,7 @@ fragments without invoking this method, then invokes it exactly once for each pu
 
   <h3 id="Utils_NumberToString_BulgarianOrdinalLanguageSpecifics_TryConvertOrdinal_System_Int32_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__System_String__" data-uid="Utils.NumberToString.BulgarianOrdinalLanguageSpecifics.TryConvertOrdinal(System.Int32,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String@)">
   TryConvertOrdinal(int, IReadOnlyDictionary&lt;string, string&gt;, out string?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/BulgarianOrdinalLanguageSpecifics.cs/#L43"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/BulgarianOrdinalLanguageSpecifics.cs/#L77"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Attempts to convert a non-negative integer to its ordinal string representation.</p>
@@ -355,11 +356,64 @@ otherwise <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/
 
 
 
+  <a id="Utils_NumberToString_BulgarianOrdinalLanguageSpecifics_TryGetFractionDenominator_" data-uid="Utils.NumberToString.BulgarianOrdinalLanguageSpecifics.TryGetFractionDenominator*"></a>
+
+  <h3 id="Utils_NumberToString_BulgarianOrdinalLanguageSpecifics_TryGetFractionDenominator_System_Numerics_BigInteger_System_Numerics_BigInteger_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__Utils_NumberToString_FractionDenominatorReading__" data-uid="Utils.NumberToString.BulgarianOrdinalLanguageSpecifics.TryGetFractionDenominator(System.Numerics.BigInteger,System.Numerics.BigInteger,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},Utils.NumberToString.FractionDenominatorReading@)">
+  TryGetFractionDenominator(BigInteger, BigInteger, IReadOnlyDictionary&lt;string, string&gt;, out FractionDenominatorReading?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/BulgarianOrdinalLanguageSpecifics.cs/#L33"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Reads a fraction as the Institute for Bulgarian Language writes it (NTS-30H): the numerator in the feminine
+(<code>една</code>, <code>две</code>, agreeing with <code>част</code>), the denominator the ordinal in the feminine singular after
+one (<code>една втора</code>, <code>една осма</code>) and in the plural otherwise (<code>две трети</code>, <code>три четвърти</code>,
+<code>седем осми</code>); one quarter is the noun <code>една четвърт</code>. The denominator is any ordinal this class forms
+(<code>една стотна</code>, <code>една хилядна</code>); compound numerators ending in <code>една</code> after the tens (21, 101), a
+zero numerator and a denominator of one fail closed.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool TryGetFractionDenominator(BigInteger numerator, BigInteger denominator, IReadOnlyDictionary&lt;string, string&gt; variants, out FractionDenominatorReading? reading)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>numerator</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.numerics.biginteger">BigInteger</a></dt>
+    <dd><p>The absolute value of the numerator (may be zero).</p>
+</dd>
+    <dt><code>denominator</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.numerics.biginteger">BigInteger</a></dt>
+    <dd><p>The denominator, at least one.</p>
+</dd>
+    <dt><code>variants</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlydictionary-2">IReadOnlyDictionary</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a>&gt;</dt>
+    <dd><p>The caller's effective variant query (canonical dimension names, defaults filled in).</p>
+</dd>
+    <dt><code>reading</code> <a class="xref" href="Utils.NumberToString.FractionDenominatorReading.html">FractionDenominatorReading</a></dt>
+    <dd><p>Receives the denominator text and the variants forced on the numerator.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a></dt>
+    <dd><p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> when the language has a reading for the fraction.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
 
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/BulgarianOrdinalLanguageSpecifics.cs/#L21" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/BulgarianOrdinalLanguageSpecifics.cs/#L22" class="edit-link">Edit this page</a>
         </div>
 
 
