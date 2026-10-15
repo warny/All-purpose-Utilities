@@ -65691,6 +65691,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberScale.MultiplierSeparator
   nameWithType: NumberScale.MultiplierSeparator
+- uid: Utils.NumberToString.NumberScale.PairedScalesFrom
+  name: PairedScalesFrom
+  href: api/Utils.NumberToString.NumberScale.html#Utils_NumberToString_NumberScale_PairedScalesFrom
+  commentId: P:Utils.NumberToString.NumberScale.PairedScalesFrom
+  fullName: Utils.NumberToString.NumberScale.PairedScalesFrom
+  nameWithType: NumberScale.PairedScalesFrom
+- uid: Utils.NumberToString.NumberScale.PairedScalesFrom*
+  name: PairedScalesFrom
+  href: api/Utils.NumberToString.NumberScale.html#Utils_NumberToString_NumberScale_PairedScalesFrom_
+  commentId: Overload:Utils.NumberToString.NumberScale.PairedScalesFrom
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberScale.PairedScalesFrom
+  nameWithType: NumberScale.PairedScalesFrom
 - uid: Utils.NumberToString.NumberScale.Scale0Prefixes
   name: Scale0Prefixes
   href: api/Utils.NumberToString.NumberScale.html#Utils_NumberToString_NumberScale_Scale0Prefixes
@@ -65853,6 +65866,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberScaleType.MultiplierSeparator
   nameWithType: NumberScaleType.MultiplierSeparator
+- uid: Utils.NumberToString.NumberScaleType.PairedScalesFrom
+  name: PairedScalesFrom
+  href: api/Utils.NumberToString.NumberScaleType.html#Utils_NumberToString_NumberScaleType_PairedScalesFrom
+  commentId: P:Utils.NumberToString.NumberScaleType.PairedScalesFrom
+  fullName: Utils.NumberToString.NumberScaleType.PairedScalesFrom
+  nameWithType: NumberScaleType.PairedScalesFrom
+- uid: Utils.NumberToString.NumberScaleType.PairedScalesFrom*
+  name: PairedScalesFrom
+  href: api/Utils.NumberToString.NumberScaleType.html#Utils_NumberToString_NumberScaleType_PairedScalesFrom_
+  commentId: Overload:Utils.NumberToString.NumberScaleType.PairedScalesFrom
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberScaleType.PairedScalesFrom
+  nameWithType: NumberScaleType.PairedScalesFrom
 - uid: Utils.NumberToString.NumberScaleType.Scale0Prefixes
   name: Scale0Prefixes
   href: api/Utils.NumberToString.NumberScaleType.html#Utils_NumberToString_NumberScaleType_Scale0Prefixes
@@ -66054,6 +66080,32 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberScaleXmlModel.MultiplierSeparator
   nameWithType: NumberScaleXmlModel.MultiplierSeparator
+- uid: Utils.NumberToString.NumberScaleXmlModel.PairedScalesFrom
+  name: PairedScalesFrom
+  href: api/Utils.NumberToString.NumberScaleXmlModel.html#Utils_NumberToString_NumberScaleXmlModel_PairedScalesFrom
+  commentId: P:Utils.NumberToString.NumberScaleXmlModel.PairedScalesFrom
+  fullName: Utils.NumberToString.NumberScaleXmlModel.PairedScalesFrom
+  nameWithType: NumberScaleXmlModel.PairedScalesFrom
+- uid: Utils.NumberToString.NumberScaleXmlModel.PairedScalesFrom*
+  name: PairedScalesFrom
+  href: api/Utils.NumberToString.NumberScaleXmlModel.html#Utils_NumberToString_NumberScaleXmlModel_PairedScalesFrom_
+  commentId: Overload:Utils.NumberToString.NumberScaleXmlModel.PairedScalesFrom
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberScaleXmlModel.PairedScalesFrom
+  nameWithType: NumberScaleXmlModel.PairedScalesFrom
+- uid: Utils.NumberToString.NumberScaleXmlModel.PairedScalesFromSpecified
+  name: PairedScalesFromSpecified
+  href: api/Utils.NumberToString.NumberScaleXmlModel.html#Utils_NumberToString_NumberScaleXmlModel_PairedScalesFromSpecified
+  commentId: P:Utils.NumberToString.NumberScaleXmlModel.PairedScalesFromSpecified
+  fullName: Utils.NumberToString.NumberScaleXmlModel.PairedScalesFromSpecified
+  nameWithType: NumberScaleXmlModel.PairedScalesFromSpecified
+- uid: Utils.NumberToString.NumberScaleXmlModel.PairedScalesFromSpecified*
+  name: PairedScalesFromSpecified
+  href: api/Utils.NumberToString.NumberScaleXmlModel.html#Utils_NumberToString_NumberScaleXmlModel_PairedScalesFromSpecified_
+  commentId: Overload:Utils.NumberToString.NumberScaleXmlModel.PairedScalesFromSpecified
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberScaleXmlModel.PairedScalesFromSpecified
+  nameWithType: NumberScaleXmlModel.PairedScalesFromSpecified
 - uid: Utils.NumberToString.NumberScaleXmlModel.Scale0Prefixes
   name: Scale0Prefixes
   href: api/Utils.NumberToString.NumberScaleXmlModel.html#Utils_NumberToString_NumberScaleXmlModel_Scale0Prefixes
