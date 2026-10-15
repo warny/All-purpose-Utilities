@@ -127,6 +127,43 @@ public sealed class NumberToStringImmutabilityTests
         Assert.IsFalse(entry.MultiplierForcedVariants is Dictionary<string, ForcedVariantSet>, "The entry must not expose a mutable dictionary.");
     }
 
+    /// <summary>
+    /// Mutating the source variants forced by exact scale forms (the outer dictionary and the per-form dictionary)
+    /// after construction does not affect the converter, and the exposed views are not mutable collections.
+    /// </summary>
+    [TestMethod]
+    public void ScaleFormMultiplierForcedVariants_SourceMutationAfterConstruction_DoesNotChangeConverter()
+    {
+        var perForm = new Dictionary<string, ForcedVariantSet> { ["other"] = ForcedVariantSet.Parse("gender=other") };
+        var forced = new Dictionary<int, IReadOnlyDictionary<string, ForcedVariantSet>> { [1] = perForm };
+        var options = Options([]);
+        options.ScaleForms = new Dictionary<int, LexicalFormSet> { [1] = LexicalFormSet.Create(("one", "grand"), ("other", "grands")) };
+        options.ScaleFormSelectors = new Dictionary<int, ILexicalFormSelector> { [1] = new OneOtherSelector() };
+        options.VariantDimensions = [new NumberToStringConverter.VariantDimension("gender", ["plain", "other"])];
+        options.VariantRules =
+        [
+            new NumberToStringConverter.VariantRule(
+                new Dictionary<string, string> { ["gender"] = "other" },
+                [new NumberToStringConverter.ReplacementRule("two", "TWO", ReplacementScope.LastWord)]),
+        ];
+        options.ScaleFormMultiplierForcedVariants = forced;
+        var converter = new NumberToStringConverter(options);
+
+        perForm["other"] = ForcedVariantSet.Empty;
+        perForm["one"] = ForcedVariantSet.Parse("gender=other");
+        forced[1] = new Dictionary<string, ForcedVariantSet>();
+        forced.Clear();
+        options.ScaleFormMultiplierForcedVariants = null;
+
+        Assert.AreEqual("TWO grands", converter.Convert(new BigInteger(200)));
+        Assert.AreEqual("one grand", converter.Convert(new BigInteger(100)));
+        Assert.AreEqual(1, converter.ScaleFormMultiplierForcedVariants[1].Count);
+        Assert.IsFalse(converter.ScaleFormMultiplierForcedVariants is Dictionary<int, IReadOnlyDictionary<string, ForcedVariantSet>>,
+            "The converter must not expose a mutable dictionary.");
+        Assert.IsFalse(converter.ScaleFormMultiplierForcedVariants[1] is Dictionary<string, ForcedVariantSet>,
+            "The converter must not expose a mutable per-form dictionary.");
+    }
+
     /// <summary>Mutating the source ordinal replacement lists after construction does not affect the converter snapshot.</summary>
     [TestMethod]
     public void OrdinalReplacements_SourceMutationAfterConstruction_DoesNotChangeConverter()

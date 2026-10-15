@@ -25,7 +25,8 @@ namespace Utils.NumberToString;
 /// dimension by dimension, and that query drives the whole local pipeline of the group (group triggers,
 /// variant rules of the multiplier, <c>onScale</c> variant rules, group-with-scale triggers); the group is
 /// then left untouched by the whole-number passes run with the caller's query. The selector runs once,
-/// before they are applied. Instances are immutable.
+/// before they are applied. Instances are immutable. An exact scale form follows the same contract through
+/// <see cref="NumberToStringConverterOptions.ScaleFormMultiplierForcedVariants"/>.
 /// </para>
 /// </remarks>
 public sealed class GeneratedScaleForm
@@ -55,22 +56,43 @@ public sealed class GeneratedScaleForm
         if (forms.IsEmpty)
             throw new ArgumentException("A generated scale form needs at least one suffix form.", nameof(forms));
 
-        var forced = ImmutableDictionary.CreateBuilder<string, ForcedVariantSet>(StringComparer.OrdinalIgnoreCase);
-        foreach (var (key, value) in multiplierForcedVariants ?? ImmutableDictionary<string, ForcedVariantSet>.Empty)
-        {
-            if (value is null)
-                throw new ArgumentException($"MultiplierForcedVariants[{key}] must not be null.", nameof(multiplierForcedVariants));
-            if (!forms.TryGetForm(key, out _))
-                throw new ArgumentException(
-                    $"MultiplierForcedVariants key '{key}' has no matching form. Available forms: {string.Join(", ", forms.Keys)}.",
-                    nameof(multiplierForcedVariants));
-            if (!value.IsEmpty && !forced.TryAdd(key, value))
-                throw new ArgumentException($"MultiplierForcedVariants declares form '{key}' more than once.", nameof(multiplierForcedVariants));
-        }
-
         Forms = forms;
         Selector = selector ?? DefaultLexicalFormSelector.Instance;
-        MultiplierForcedVariants = forced.ToImmutable();
+        MultiplierForcedVariants = SnapshotMultiplierForcedVariants(forms, multiplierForcedVariants, "MultiplierForcedVariants", nameof(multiplierForcedVariants));
+    }
+
+    /// <summary>
+    /// Validates and snapshots the variants that the forms of a scale noun force on its multiplier, for a generated
+    /// family (<see cref="GeneratedScaleForm"/>) as for an exact scale
+    /// (<see cref="NumberToStringConverterOptions.ScaleFormMultiplierForcedVariants"/>): every key must be a key of
+    /// <paramref name="forms"/>, case-insensitively and once; an empty set forces nothing and is dropped. The values
+    /// are validated against the language later, by the converter.
+    /// </summary>
+    /// <param name="forms">The forms the keys refer to.</param>
+    /// <param name="forced">The forced variants by form key, or <see langword="null"/> for none.</param>
+    /// <param name="description">The name of the configured collection, used in the messages (e.g. <c>MultiplierForcedVariants</c>).</param>
+    /// <param name="parameterName">The parameter name reported by the exceptions.</param>
+    /// <returns>The non-empty forced variants by form key (case-insensitive keys).</returns>
+    /// <exception cref="ArgumentException">An entry is null, names a key absent from <paramref name="forms"/>, or is declared twice.</exception>
+    internal static ImmutableDictionary<string, ForcedVariantSet> SnapshotMultiplierForcedVariants(
+        LexicalFormSet forms,
+        IReadOnlyDictionary<string, ForcedVariantSet>? forced,
+        string description,
+        string parameterName)
+    {
+        var builder = ImmutableDictionary.CreateBuilder<string, ForcedVariantSet>(StringComparer.OrdinalIgnoreCase);
+        foreach (var (key, value) in forced ?? ImmutableDictionary<string, ForcedVariantSet>.Empty)
+        {
+            if (value is null)
+                throw new ArgumentException($"{description}[{key}] must not be null.", parameterName);
+            if (!forms.TryGetForm(key, out _))
+                throw new ArgumentException(
+                    $"{description} key '{key}' has no matching form. Available forms: {string.Join(", ", forms.Keys)}.",
+                    parameterName);
+            if (!value.IsEmpty && !builder.TryAdd(key, value))
+                throw new ArgumentException($"{description} declares form '{key}' more than once.", parameterName);
+        }
+        return builder.ToImmutable();
     }
 
     /// <summary>Gets the suffix fragment of each form key.</summary>

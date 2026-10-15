@@ -15,12 +15,20 @@ namespace Utils.NumberToString
             ImmutableDictionary<string, string>.Empty.WithComparers(StringComparer.OrdinalIgnoreCase);
 
         /// <summary>
-        /// Immutable, resolved lexical configuration of one scale noun: its effective forms and the
-        /// selector choosing which form a group multiplier governs.
+        /// Immutable, resolved lexical configuration of one scale noun: its effective forms, the
+        /// selector choosing which form a group multiplier governs, and the variants each form forces on
+        /// that multiplier (the exact-scale counterpart of <see cref="GeneratedScaleForm"/>).
         /// </summary>
         /// <param name="Forms">The effective forms (synthesized singular/plural merged with the configured overrides).</param>
         /// <param name="Selector">The selector, <see cref="DefaultLexicalFormSelector"/> unless configured.</param>
-        private sealed record ScaleFormDefinition(LexicalFormSet Forms, ILexicalFormSelector Selector);
+        /// <param name="MultiplierForcedVariants">
+        /// The non-empty variants forced on the multiplier by form key (canonicalized once the variant dimensions are
+        /// known, see <see cref="CanonicalizeScaleFormForcedVariants"/>); forms absent from it force nothing.
+        /// </param>
+        private sealed record ScaleFormDefinition(
+            LexicalFormSet Forms,
+            ILexicalFormSelector Selector,
+            ImmutableDictionary<string, ForcedVariantSet> MultiplierForcedVariants);
 
         /// <summary>
         /// Validates and snapshots the configured scale forms and selectors. Every configured index
@@ -32,16 +40,25 @@ namespace Utils.NumberToString
         /// </summary>
         /// <param name="forms">The configured forms by scale index, or <see langword="null"/>.</param>
         /// <param name="selectors">The configured selectors by scale index, or <see langword="null"/>.</param>
+        /// <param name="forcedVariants">
+        /// The configured variants forced on the multiplier, by scale index then form key, or <see langword="null"/>.
+        /// Their keys are checked against the effective forms here; their values are canonicalized later, by
+        /// <see cref="CanonicalizeScaleFormForcedVariants"/>, once the variant dimensions are compiled.
+        /// </param>
         /// <returns>The resolved definitions by scale index.</returns>
-        /// <exception cref="ArgumentException">An index cannot be named by the scale, or an entry is null.</exception>
+        /// <exception cref="ArgumentException">
+        /// An index cannot be named by the scale, an entry is null, or a forced-variant key names no form of its scale.
+        /// </exception>
         private ImmutableDictionary<int, ScaleFormDefinition> CompileScaleForms(
             IReadOnlyDictionary<int, LexicalFormSet>? forms,
-            IReadOnlyDictionary<int, ILexicalFormSelector>? selectors)
+            IReadOnlyDictionary<int, ILexicalFormSelector>? selectors,
+            IReadOnlyDictionary<int, IReadOnlyDictionary<string, ForcedVariantSet>>? forcedVariants)
         {
-            // Copy both sources first: validation and resolution only ever read these snapshots.
+            // Copy every source first: validation and resolution only ever read these snapshots.
             var formSnapshot = forms?.ToArray() ?? [];
             var selectorSnapshot = selectors?.ToArray() ?? [];
-            if (formSnapshot.Length == 0 && selectorSnapshot.Length == 0)
+            var forcedSnapshot = forcedVariants?.ToArray() ?? [];
+            if (formSnapshot.Length == 0 && selectorSnapshot.Length == 0 && forcedSnapshot.Length == 0)
                 return ImmutableDictionary<int, ScaleFormDefinition>.Empty;
 
             foreach (var (index, value) in formSnapshot)
@@ -50,11 +67,16 @@ namespace Utils.NumberToString
             foreach (var (index, value) in selectorSnapshot)
                 if (value is null)
                     throw new ArgumentException($"ScaleFormSelectors[{index}] must not be null.", nameof(NumberToStringConverterOptions.ScaleFormSelectors));
+            foreach (var (index, value) in forcedSnapshot)
+                if (value is null)
+                    throw new ArgumentException($"ScaleFormMultiplierForcedVariants[{index}] must not be null.",
+                        nameof(NumberToStringConverterOptions.ScaleFormMultiplierForcedVariants));
 
             var formByIndex = formSnapshot.ToDictionary(kv => kv.Key, kv => kv.Value);
             var selectorByIndex = selectorSnapshot.ToDictionary(kv => kv.Key, kv => kv.Value);
+            var forcedByIndex = forcedSnapshot.ToDictionary(kv => kv.Key, kv => kv.Value);
             var builder = ImmutableDictionary.CreateBuilder<int, ScaleFormDefinition>();
-            foreach (int index in formByIndex.Keys.Union(selectorByIndex.Keys).OrderBy(i => i))
+            foreach (int index in formByIndex.Keys.Union(selectorByIndex.Keys).Union(forcedByIndex.Keys).OrderBy(i => i))
             {
                 if (index < 1 || !Scale.CanNameGroup(index))
                     throw new ArgumentException(
@@ -66,10 +88,64 @@ namespace Utils.NumberToString
                 var baseForms = LexicalFormSet.Create(("singular", name.ToPlural(1)), ("plural", name.ToPlural(2)));
                 var effectiveForms = formByIndex.TryGetValue(index, out var overrides) ? baseForms.MergeOverriddenBy(overrides) : baseForms;
                 var selector = selectorByIndex.TryGetValue(index, out var configured) ? configured : DefaultLexicalFormSelector.Instance;
-                builder.Add(index, new ScaleFormDefinition(effectiveForms, selector));
+                var forced = GeneratedScaleForm.SnapshotMultiplierForcedVariants(
+                    effectiveForms,
+                    forcedByIndex.GetValueOrDefault(index),
+                    $"ScaleFormMultiplierForcedVariants[{index}]",
+                    nameof(NumberToStringConverterOptions.ScaleFormMultiplierForcedVariants));
+                builder.Add(index, new ScaleFormDefinition(effectiveForms, selector, forced));
             }
             return builder.ToImmutable();
         }
+
+        /// <summary>
+        /// Canonicalizes, against the variant dimensions of the language, the variants every exact scale form forces
+        /// on its multiplier (same rules as <see cref="CompileGeneratedScaleForms"/>). Called once from the
+        /// constructor, after the dimensions are compiled.
+        /// </summary>
+        /// <param name="definitions">The definitions compiled by <see cref="CompileScaleForms"/>.</param>
+        /// <returns>The definitions with canonical forced variants (the same instances when nothing is forced).</returns>
+        /// <exception cref="NumberToStringConfigurationException">A forced dimension or value is not declared (<c>UNTS006</c>).</exception>
+        private ImmutableDictionary<int, ScaleFormDefinition> CanonicalizeScaleFormForcedVariants(ImmutableDictionary<int, ScaleFormDefinition> definitions)
+        {
+            var builder = definitions.ToBuilder();
+            foreach (var (index, definition) in definitions)
+            {
+                if (definition.MultiplierForcedVariants.Count == 0) continue;
+                builder[index] = definition with
+                {
+                    MultiplierForcedVariants = CanonicalizeMultiplierForcedVariants(definition.MultiplierForcedVariants, $"ScaleForms[{index}]"),
+                };
+            }
+            return builder.ToImmutable();
+        }
+
+        /// <summary>
+        /// Canonicalizes every forced set of a scale noun's forms (see <see cref="CanonicalizeForcedVariants"/>), each
+        /// one reported as <c>{path}.{form key}</c>.
+        /// </summary>
+        /// <param name="forced">The forced variants by form key.</param>
+        /// <param name="path">The configuration path of the scale noun (e.g. <c>ScaleForms[2]</c>).</param>
+        /// <returns>The canonical forced variants by form key.</returns>
+        /// <exception cref="NumberToStringConfigurationException">A forced dimension or value is not declared (<c>UNTS006</c>).</exception>
+        private ImmutableDictionary<string, ForcedVariantSet> CanonicalizeMultiplierForcedVariants(
+            IReadOnlyDictionary<string, ForcedVariantSet> forced, string path)
+        {
+            var canonical = ImmutableDictionary.CreateBuilder<string, ForcedVariantSet>(StringComparer.OrdinalIgnoreCase);
+            foreach (var (key, set) in forced)
+                canonical[key] = CanonicalizeForcedVariants(set, $"{path}.{key}");
+            return canonical.ToImmutable();
+        }
+
+        /// <summary>
+        /// Determines whether two forced sets of one form are spelled identically (canonicalization changes the case of
+        /// an alias only).
+        /// </summary>
+        /// <param name="left">The configured set.</param>
+        /// <param name="right">The canonical set.</param>
+        /// <returns><see langword="true"/> when both declare the same pairs in the same order, ordinally.</returns>
+        private static bool SameForcedSpelling(ForcedVariantSet left, ForcedVariantSet right)
+            => left.Constraints.Values.SequenceEqual(right.Constraints.Values, OrdinalPairComparer.Instance);
 
         /// <summary>
         /// Validates and snapshots the per-scale multiplier/scale junctions. Every index must be a scale the
@@ -154,15 +230,10 @@ namespace Utils.NumberToString
                 var canonical = form;
                 if (form.MultiplierForcedVariants.Count > 0)
                 {
-                    bool changed = false;
-                    var canonicalForced = new Dictionary<string, ForcedVariantSet>(StringComparer.OrdinalIgnoreCase);
-                    foreach (var (key, forced) in form.MultiplierForcedVariants)
-                    {
-                        var canonicalSet = CanonicalizeForcedVariants(forced, $"{path}.{key}");
-                        changed |= !canonicalSet.Constraints.Values.SequenceEqual(forced.Constraints.Values, OrdinalPairComparer.Instance);
-                        canonicalForced[key] = canonicalSet;
-                    }
-                    if (changed) canonical = form.WithForcedVariants(canonicalForced);
+                    var canonicalForced = CanonicalizeMultiplierForcedVariants(form.MultiplierForcedVariants, path);
+                    // The configured instance is kept (and reported) unless canonicalization respelled an alias.
+                    if (canonicalForced.Any(kv => !SameForcedSpelling(form.MultiplierForcedVariants[kv.Key], kv.Value)))
+                        canonical = form.WithForcedVariants(canonicalForced);
                 }
 
                 for (int value = 1; value <= probeLimit; value++)
@@ -227,11 +298,11 @@ namespace Utils.NumberToString
 
         /// <summary>
         /// Returns the list collecting the shielded groups of one conversion (see <see cref="ConvertRaw"/>),
-        /// or <see langword="null"/> when no generated scale form is configured, so that languages without
-        /// one allocate nothing.
+        /// or <see langword="null"/> when no scale form can force variants on its multiplier (no generated scale
+        /// form, and no exact scale form with forced variants), so that languages without one allocate nothing.
         /// </summary>
         /// <returns>A new empty list, or <see langword="null"/>.</returns>
-        private List<string>? NewShieldedGroups() => _generatedScaleFormBySuffix.Length == 0 ? null : [];
+        private List<string>? NewShieldedGroups() => _scaleFormsMayForceVariants ? [] : null;
 
         /// <summary>
         /// Runs the whole-number passes made with the caller's query (the global variant rules and the end
@@ -306,7 +377,8 @@ namespace Utils.NumberToString
         /// <summary>
         /// Resolves the scale noun governed by the multiplier <paramref name="group"/> at scale
         /// <paramref name="groupNumber"/>, in this order: the exact <see cref="ScaleForms"/> entry of the
-        /// scale; for a generated scale, the <see cref="GeneratedScaleForms"/> entry of its suffix, whose
+        /// scale, whose selected form may force variants on the multiplier
+        /// (<see cref="ScaleFormMultiplierForcedVariants"/>); for a generated scale, the <see cref="GeneratedScaleForms"/> entry of its suffix, whose
         /// selected suffix fragment is joined to the Conway prefix of the scale and whose forced variants
         /// apply to the multiplier; otherwise the historical singular/plural scale name. The selector runs
         /// once, on the caller's effective variants.
@@ -325,7 +397,9 @@ namespace Utils.NumberToString
                     throw new NumberToStringConfigurationException("UNTS007", LanguageIdentifier, $"ScaleForms[{groupNumber}]",
                         $"Language '{LanguageIdentifier}', ScaleForms[{groupNumber}]: lexical form selector returned " +
                         $"unknown form key '{formKey}'. Available forms: {string.Join(", ", definition.Forms.Keys)}.");
-                return (word, ForcedVariantSet.Empty);
+                var exactForced = definition.MultiplierForcedVariants.Count != 0
+                    && definition.MultiplierForcedVariants.TryGetValue(formKey, out var exactSet) ? exactSet : ForcedVariantSet.Empty;
+                return (word, exactForced);
             }
 
             if (_generatedScaleFormBySuffix.Length != 0

@@ -222,6 +222,10 @@ namespace Utils.NumberToString
         [XmlAttribute("finalComponentConnector")]
         public string? FinalComponentConnector { get; set; }
 
+        /// <summary>Gets or sets the connector placed between groups only, before the last non-zero group of every numeral phrase.</summary>
+        [XmlAttribute("finalGroupConnector")]
+        public string? FinalGroupConnector { get; set; }
+
         /// <summary>Gets or sets the time-unit configuration.</summary>
         [XmlElement(ElementName = "TimeUnits")]
         public TimeUnitsType? TimeUnits { get; set; }
@@ -361,6 +365,7 @@ namespace Utils.NumberToString
         public string? ScaleConnector { get; init; }
         public string? ScaleConnectorThresholdString { get; init; }
         public string? FinalComponentConnector { get; init; }
+        public string? FinalGroupConnector { get; init; }
         public TimeUnitsType? TimeUnits { get; init; }
         public ClockTimeType? ClockTime { get; init; }
         public DateFormatType? DateFormat { get; init; }

@@ -173,6 +173,7 @@ namespace Utils.NumberToString
         /// <param name="number">The non-negative ordinal value.</param>
         /// <param name="activeVariants">The resolved variant query, passed to both parts.</param>
         /// <param name="explicitVariantIntent">Whether a caller or constituent explicitly selected a variant.</param>
+        /// <param name="shieldedGroups">Receives, head first, the forced groups of both parts, or <see langword="null"/>.</param>
         /// <param name="ordinal">Receives the composed ordinal.</param>
         /// <returns><see langword="true"/> when the value was composed.</returns>
         /// <remarks>
@@ -181,7 +182,8 @@ namespace Utils.NumberToString
         /// bookkeeping (in practice by the number of digits, since a rule only splits off the
         /// remainder of its divisor).
         /// </remarks>
-        private bool TryComposeOrdinal(long number, IReadOnlyDictionary<string, string> activeVariants, bool explicitVariantIntent, out string ordinal)
+        private bool TryComposeOrdinal(long number, IReadOnlyDictionary<string, string> activeVariants, bool explicitVariantIntent,
+            List<string>? shieldedGroups, out string ordinal)
         {
             ordinal = string.Empty;
             foreach (var composition in _ordinalCompositions)
@@ -191,9 +193,9 @@ namespace Utils.NumberToString
                 long head = number - tail;
                 if (head == 0 || tail == 0) return false;
                 ordinal = string.Concat(
-                    BuildOrdinalCore(head, activeVariants, explicitVariantIntent),
+                    BuildOrdinalCore(head, activeVariants, explicitVariantIntent, shieldedGroups),
                     composition.Rule.Separator,
-                    BuildOrdinalCore(tail, activeVariants, explicitVariantIntent));
+                    BuildOrdinalCore(tail, activeVariants, explicitVariantIntent, shieldedGroups));
                 return true;
             }
             return false;
@@ -206,9 +208,14 @@ namespace Utils.NumberToString
         /// </summary>
         /// <param name="number">The non-negative ordinal value.</param>
         /// <param name="activeVariants">The resolved variant query (multiplier cardinal and scale noun).</param>
+        /// <param name="shieldedGroups">
+        /// Receives the multiplier when the scale form forces variants on it, otherwise the forced groups inside the
+        /// multiplier, or <see langword="null"/>.
+        /// </param>
         /// <param name="text">Receives the text to transform.</param>
         /// <returns><see langword="true"/> when <paramref name="number"/> is round at a covered scale.</returns>
-        private bool TryBuildRoundScaleText(long number, IReadOnlyDictionary<string, string> activeVariants, out string text)
+        private bool TryBuildRoundScaleText(long number, IReadOnlyDictionary<string, string> activeVariants, List<string>? shieldedGroups,
+            out string text)
         {
             text = string.Empty;
             // From the highest index down, the first unit not above the value is its highest scale.
@@ -218,7 +225,9 @@ namespace Utils.NumberToString
                 if (number < unit) continue;
                 if (_ordinalScaleByIndex[index] is not { } rule || number % unit != 0) return false;
                 long multiplier = number / unit;
-                string noun = GetScaleWord(index, 1, activeVariants);
+                // The round ordinal is built on the singular noun whatever the multiplier: that one selected form
+                // gives both the word and the variants it forces on the multiplier.
+                var (noun, forced) = ResolveScaleWord(index, 1, activeVariants);
                 if (multiplier == 1)
                 {
                     text = noun;
@@ -227,9 +236,15 @@ namespace Utils.NumberToString
                 // The multiplier is rendered exactly like its standalone cardinal: ConvertRaw (which
                 // already applies the scale-specific variant rules), then the global variant rules
                 // evaluated against the multiplier itself (onValue included). ApplyVariantRules skips
-                // the onScale rules, so nothing is applied twice.
-                string multiplierText = ConvertRaw(multiplier, activeVariants);
-                multiplierText = ApplyVariantRules(multiplierText, activeVariants, multiplier);
+                // the onScale rules, so nothing is applied twice. The variants the singular form forces
+                // (exact or generated scale form) render it, and its forced inner groups are shielded from
+                // the pass run with another query.
+                var multiplierQuery = forced.IsEmpty ? activeVariants : forced.Overlay(activeVariants);
+                var inner = NewShieldedGroups();
+                string multiplierText = ConvertRaw(multiplier, multiplierQuery, inner);
+                multiplierText = ApplyShielded(multiplierText, inner, raw => ApplyVariantRules(raw, multiplierQuery, multiplier));
+                if (!forced.IsEmpty) shieldedGroups?.Add(multiplierText);
+                else if (inner is { Count: > 0 }) shieldedGroups?.AddRange(inner);
                 text = string.Concat(multiplierText, rule.MultiplierSeparator, noun);
                 return true;
             }

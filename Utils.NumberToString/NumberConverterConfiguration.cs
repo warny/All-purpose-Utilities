@@ -994,7 +994,8 @@ public class ScaleFormEntry
 
     /// <summary>
     /// Optional named forms, overriding or extending the "singular"/"plural" forms synthesized from
-    /// the scale name.
+    /// the scale name. Each form may force variants on the multiplier it governs
+    /// (<see cref="LexicalFormEntry.ForceVariants"/>).
     /// </summary>
     [XmlElement("Forms")]
     public LexicalFormsType? Forms { get; set; }
@@ -1075,6 +1076,16 @@ public class LexicalFormEntry
     /// <summary>The localized word for this form.</summary>
     [XmlAttribute("value")]
     public string Value { get; set; } = "";
+
+    /// <summary>
+    /// Optional comma-separated <c>dimension=value</c> variants that this form forces on the multiplier it governs, when
+    /// it is selected. Only meaningful on the forms of a <see cref="ScaleFormEntry"/> (Spanish <c>millón</c> /
+    /// <c>millones</c>: <c>gender=masculino</c>), projected into
+    /// <c>NumberToStringConverterOptions.ScaleFormMultiplierForcedVariants</c>; the variants apply to the multiplier,
+    /// not to the scale noun itself. The schema rejects it on other forms, and so does the loader for a time unit.
+    /// </summary>
+    [XmlAttribute("forceVariants")]
+    public string? ForceVariants { get; set; }
 }
 
 /// <summary>
@@ -1365,6 +1376,15 @@ public class LanguageType
     /// </summary>
     [XmlAttribute("finalComponentConnector")]
     public string? FinalComponentConnector { get; set; }
+
+    /// <summary>
+    /// Gets or sets the connector placed between groups only, at the junction before the last non-zero group of every
+    /// numeral phrase, without affecting the composition inside a group. Example: "eta" for Basque (hirurogei milioi
+    /// berrehun mila eta bat, bi milioi eta zazpiehun mila). <see langword="null"/> when absent: inherited through
+    /// <c>baseOn</c>, otherwise no connector; an explicit empty value removes it.
+    /// </summary>
+    [XmlAttribute("finalGroupConnector")]
+    public string? FinalGroupConnector { get; set; }
 
     /// <summary>Gets or sets the time-unit configuration (hours, minutes, seconds).</summary>
     [XmlElement(ElementName = "TimeUnits")]

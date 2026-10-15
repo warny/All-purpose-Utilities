@@ -8,8 +8,7 @@
                 minus="ken *"
                 decimalSeparator="koma"
                 fractionSeparator="zati"
-                groupConnector="eta"
-                groupConnectorThreshold="1000"
+                finalGroupConnector="eta"
 
                 maxNumber="999999999999"
         >
@@ -65,14 +64,19 @@
                         </StaticNames>
                 </NumberScale>
                 <Replacements>
-                        <Replacement oldValue="bat ehun" newValue="ehun" scope="Anywhere" />
                         <Replacement oldValue="bat mila" newValue="mila" onScale="1" onValue="1" />
                         <!-- NTS-27: Euskaltzaindia rule 7: 1.000.000 "milioi bat" (multiplier one after the noun),
-                             1.000.000.000 "mila milioi"; from a thousand upwards "eta" joins the following part
-                             (groupConnector) and is dropped when the following hundreds carry their own "eta"
-                             ("mila eta berrehun" but "mila berrehun eta bi"). NTS-30F: onValue="1" keeps the
-                             inversion to exactly one million; a paired multiplier ending in one keeps its order
-                             ("mila eta bat milioi"), and 1000 renders "mila" through the thousands rule above. -->
+                             1.000.000.000 "mila milioi". NTS-30G, rule 203 §4: from a thousand upwards one "eta" joins
+                             the last group of the numeral phrase (finalGroupConnector: "hirurogei milioi berrehun mila
+                             eta bat", "bi milioi eta zazpiehun mila"; a paired multiplier is a phrase of its own,
+                             "bi mila eta bostehun milioi mila eta bat") and is dropped when the hundreds of that group
+                             carry their own "eta" (the "eta X-ehun eta" rules below: "mila eta berrehun" but "mila
+                             berrehun eta bat"). NTS-30F: onValue="1" keeps the inversion to exactly one million; a
+                             paired multiplier ending in one keeps its order ("mila eta bat milioi"), and 1000 renders
+                             "mila" through the thousands rule above. The historical "bat ehun" -> "ehun" rule is gone:
+                             a group never spells its hundreds "bat ehun", so the rule only ever met the junction of
+                             "milioi bat" with a following "ehun …" group, where it deleted the multiplier
+                             (1 100 001 is "milioi bat ehun mila eta bat", like rule 203's "milioi bat seiehun …"). -->
                         <Replacement oldValue="bat milioi" newValue="milioi bat" onScale="2" onValue="1" />
                         <Replacement oldValue="eta ehun eta" newValue="ehun eta" scope="Anywhere" />
                         <Replacement oldValue="eta berrehun eta" newValue="berrehun eta" scope="Anywhere" />
