@@ -2449,6 +2449,9 @@ namespace Utils.NumberToString
         /// <param name="allowFractionNames">When <see langword="true"/>, uses named fraction suffixes when available.</param>
         /// <param name="variants">Optional variant dimension values (e.g. gender) forwarded to the numerator/denominator conversions.</param>
         /// <returns>The textual representation of the fraction.</returns>
+        /// <exception cref="NotSupportedException">
+        /// The language implements <see cref="IFractionLanguageSpecifics"/> and has no reading for this fraction.
+        /// </exception>
         private string BuildFractionText(BigInteger numerator, BigInteger denominator, bool allowFractionNames = true, string[]? variants = null)
         {
             string[] v = variants ?? [];
@@ -2462,6 +2465,21 @@ namespace Utils.NumberToString
                 // Numerator is a sub-expression; do not apply MaxNumber guard.
                 string valueText = BuildCardinalFragment(numerator, query);
                 return string.Concat(valueText, Separator, suffix.ToPlural((long)BigInteger.Abs(numerator))).Trim();
+            }
+
+            // A language whose fraction is not "numerator, connector, denominator cardinal" spells the denominator in
+            // the form its numerator governs and names the variants it forces on the numerator; the numerator still
+            // goes through the cardinal pipeline. Without a sourced reading the language fails closed.
+            if (LanguageSpecifics is IFractionLanguageSpecifics fractionSpecifics)
+            {
+                var query = BuildVariantQuery(v);
+                if (!fractionSpecifics.TryGetFractionDenominator(numerator, denominator, query, out var reading) || reading is null)
+                    throw new NotSupportedException(
+                        $"Language '{LanguageIdentifier}' has no sourced reading for the fraction {numerator}/{denominator}.");
+                var numeratorForced = CanonicalizeForcedVariants(reading.NumeratorForcedVariants, "IFractionLanguageSpecifics.NumeratorForcedVariants");
+                // The numerator is a sub-expression; do not apply MaxNumber guard.
+                string fractionNumerator = BuildCardinalFragment(numerator, numeratorForced.Overlay(query));
+                return string.Concat(fractionNumerator, Separator, reading.Text).Trim();
             }
 
             // Numerator and denominator are sub-expressions; do not apply MaxNumber guard.

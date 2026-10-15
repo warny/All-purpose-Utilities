@@ -8,7 +8,6 @@
         zero="нула"
         minus="минус *"
         decimalSeparator="цяло"
-        fractionSeparator="на"
         finalComponentConnector="и"
     >
         <!-- NTS-30D: и before the last component of every numeral phrase (Речник на българския език, ИБЕ-БАН, "и",
@@ -164,6 +163,10 @@
                 <Replacement oldValue="едно" newValue="една" scope="LastWord" />
             </Variant>
         </Variants>
+        <!-- NTS-30H: fractions are read by the language specifics (IFractionLanguageSpecifics), as the Institute for Bulgarian
+             Language writes them: една втора, две трети, една четвърт, седем осми (feminine numerator, ordinal denominator
+             in the feminine singular after one, in the plural otherwise). The former connector reading "едно на хиляда" is
+             gone; values outside the sourced domain fail closed. -->
         <LanguageSpecifics>BulgarianOrdinalLanguageSpecifics</LanguageSpecifics>
         <!-- "Часът е един": "час" is masculine, so {hour} is forced to the masculine numeral.
              Quarter-hour 12-hour clock without day-part wording; "петнайсет" is the colloquial

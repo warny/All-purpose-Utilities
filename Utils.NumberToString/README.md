@@ -1195,6 +1195,36 @@ none exist, fails closed with `NotSupportedException`. `ArabicOrdinalLanguageSpe
 `NotSupportedException` itself above 99 so the XML rules for 1–19 never produce a cardinal
 fallback for larger values.
 
+### `IFractionLanguageSpecifics`
+
+`ConvertFraction` (and the fraction form of `Convert(Number)`) reads by default *numerator, `fractionSeparator`,
+denominator cardinal*. A language whose fraction is built otherwise implements `IFractionLanguageSpecifics` on its
+`<LanguageSpecifics>`: it spells the denominator in the form the numerator governs and names the variants that
+denominator forces on the numerator. The numerator still goes through the cardinal pipeline (scale nouns,
+connectors), the sign and the finalization stay the engine's, and named power-of-ten `<Fractions>` keep precedence.
+Returning `false` throws `NotSupportedException`: there is no fallback to the connector reading.
+
+```csharp
+var uk = NumberToStringConverter.GetConverter("UK");
+uk.ConvertFraction(1, 3);              // "одна третя"
+uk.ConvertFraction(2, 3);              // "дві третіх"
+uk.ConvertFraction(5_000_000, 3);      // "п'ять мільйонів третіх"
+NumberToStringConverter.GetConverter("BG").ConvertFraction(7, 8);    // "седем осми"
+NumberToStringConverter.GetConverter("CS").ConvertFraction(5, 7);    // "pět sedmin"
+NumberToStringConverter.GetConverter("SK").ConvertFraction(2, 3);    // "dve tretiny"
+NumberToStringConverter.GetConverter("CS").ConvertFraction(1, 13);   // NotSupportedException
+```
+
+| Plugin | Language | Reading |
+|--------|----------|---------|
+| `UkrainianOrdinalLanguageSpecifics` | UK | feminine numerator; ordinal denominator, feminine singular after one, genitive plural otherwise (Правопис 2019 §107) |
+| `BulgarianOrdinalLanguageSpecifics` | BG | feminine numerator; ordinal denominator, feminine singular after one, plural otherwise; *една четвърт* |
+| `CzechOrdinalLanguageSpecifics` | CS | fraction nouns of the IJP (*třetina*, *tisícina* …), 2–12, 100, 1000, 10^6 |
+| `SlovakOrdinalLanguageSpecifics` | SK | fraction nouns (*tretina*, *polovica*, *pätina*, *stotina*, *tisícina*); plurals only where sourced |
+
+Compound numerators ending in *один/една* after the tens (UK, BG) or in 1–4 (CS, SK), zero numerators and
+non-nominative cases fail closed. Sources: `docs/NTS-08-linguistic-sources.md`, section NTS-30H.
+
 ### `GermanNumberToStringLanguageSpecifics`
 
 Provided in the package. Corrects `"ein"` → `"eins"` (standalone number) and `"ein Million"` → `"eine Million"`:
@@ -1327,7 +1357,7 @@ on the same language register the same converter under several codes.
 | `zero` | ✓ | Text for the value 0. |
 | `minus` | ✓ | Template for negatives; `*` is replaced by the absolute value. |
 | `decimalSeparator` | | Word between the integer and decimal parts (e.g. `"point"`, `"virgule"`). |
-| `fractionSeparator` | | Connector for fractions (e.g. `"sur"`, `"over"`). |
+| `fractionSeparator` | | Connector for fractions (e.g. `"sur"`, `"over"`). Unused by a language whose `<LanguageSpecifics>` implements `IFractionLanguageSpecifics` (UK, BG, CS, SK). |
 | `maxNumber` | | Maximum accepted value; beyond this, `ArgumentOutOfRangeException` is thrown. |
 | `decimalDigitByDigitMaxDigits` | | Largest number of decimal digits that `DecimalReadingMode.LanguageDefault` reads digit by digit when no `<Fraction>` matches the digit count (non-negative; `0` disables that fallback, absent = unlimited). Beyond it the decimal throws `NotSupportedException`; the caller-selected `DigitByDigit` mode is never limited. Inherited through `baseOn`; an explicit `0` overrides the base. Programmatic: `NumberToStringConverterOptions.DecimalDigitByDigitMaxDigits`, exposed by `NumberToStringConverter.DecimalDigitByDigitMaxDigits`. |
 | `mixedFractionSeparator` | | Connector between a non-zero integer part and a named decimal fraction in `DecimalReadingMode.MathematicalFraction` (FR `et`: *deux et quatre dixièmes*; EN `and`: *five and twenty-four hundredths*). Distinct from `decimalSeparator`. Absent: that mode reads a zero integer part only and throws `NotSupportedException` otherwise. Programmatic: `NumberToStringConverterOptions.MixedFractionSeparator`. |

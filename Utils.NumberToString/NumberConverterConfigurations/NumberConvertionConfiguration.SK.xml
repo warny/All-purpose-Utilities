@@ -8,7 +8,6 @@
         zero="nula"
         minus="mínus *"
         decimalSeparator="celá"
-        fractionSeparator="ku"
     >
         <Culture>SK</Culture>
         <Culture>SK-SK</Culture>
@@ -195,6 +194,10 @@
                 <Replacement oldValue="dva" newValue="dve" scope="LastWord" />
             </Variant>
         </Variants>
+        <!-- NTS-30H: fractions are read by the language specifics (IFractionLanguageSpecifics) with the fraction nouns of
+             P. Ondrus (Slovenská reč 1968) and KSSJ/PSP: jedna tretina, dve tretiny, päť tretín, jedna tisícina. "ku" reads
+             a ratio (dvadsaťsedem má sa ku deviatim), not a fraction; "lomené" + instrumental needs a cardinal
+             instrumental. Unestablished forms fail closed. -->
         <LanguageSpecifics>SlovakOrdinalLanguageSpecifics</LanguageSpecifics>
         <!-- Quarter-hour 12-hour clock without day-part wording. "hodina" is feminine: the whole
              hour agrees the noun with the count (jedna hodina, dve hodiny, päť hodín); quarters take
