@@ -1,6 +1,9 @@
 # Utils.NumberToString — Current backlog
 
-Re-audited on 2026-10-15 after closing NTS-30G (Basque *eta* only before the last group of a numeral phrase,
+Re-audited on 2026-10-15 after closing NTS-30H (UK, BG, CS, SK fractions read as these languages read them, through
+the generic `IFractionLanguageSpecifics`: `одна третя`, `дві третіх`, `една втора`, `седем осми`, `jedna třetina`,
+`pět sedmin`, `dve tretiny`; the connector reading `один на тисяча` / `jedna ku tisíc` is gone, unsourced values
+fail closed; NTS-39 opened), after closing NTS-30G (Basque *eta* only before the last group of a numeral phrase,
 `hirurogei milioi berrehun mila eta bat`, through the generic `finalGroupConnector`; Spanish *millón/millones* force a
 masculine multiplier, `quinientos millones` under `gender=femenino`, through `forceVariants` on the forms of an exact
 `<ScaleForm>`), after closing NTS-30F (Spanish and Basque milliards read as a thousand millions through
@@ -61,14 +64,19 @@ classification.
 
 - **NTS-30 — cardinal defects found by NTS-27 and NTS-28 outside their lists.** Recorded, not fixed (the ES/EU
   long-scale item was fixed by NTS-30F, `DONE-2026-10-15(1).md`; the EU *eta* and ES feminine million items by
-  NTS-30G, `DONE-2026-10-15(2).md`):
-  - UK, BG, CS, SK `ConvertFraction` (seen by NTS-30B): the denominator is the plain nominative cardinal after the
-    connector (`один на тисяча`, `jedna ku tisíc`); the construction itself has not been validated.
+  NTS-30G, `DONE-2026-10-15(2).md`; the UK, BG, CS, SK fractions by NTS-30H, `DONE-2026-10-15(3).md`):
   - VN: a whole zero class after a higher class is skipped (`một triệu không trăm linh một`), whereas the
     SGK Toán 4 solution keys read it `không nghìn` (*năm mươi triệu không nghìn một trăm linh hai*); needs a
     zero-group rendering and a normative source.
   - ES currency: `uno euro` for DPD *un euro* (apocope before a noun); the caller-defined currency wording does
     not force the attributive form.
+- **NTS-39 — UK, BG, CS, SK fractions left closed by NTS-30H.** NTS-30H reads only what its sources establish and
+  throws `NotSupportedException` elsewhere: compound numerators ending in *один/една* after the tens (21/37, 101/1000;
+  UK, BG) or in 1–4 (21/100, 22/3; CS, SK), whose agreement with the denominator is not sourced; CS denominators
+  without an IJP fraction noun (1/13, 1/101), for which the productive reading is *lomeno* + instrumental cardinal
+  (IJP *lomit*: *dvě lomeno třemi*) and needs a cardinal instrumental; SK nouns other than *polovica*, *tretina*,
+  *pätina*, *stotina*, *tisícina*, and their plurals other than *tretiny/tretín* (2/100, 5/7), with the specialist
+  *lomené* + instrumental (Ondrus 1968); oblique cases of every fraction (UK, CS, SK). Each needs a source audit.
 - **NTS-38 — ES and EU ordinals from the million, after NTS-30F.** Opened by NTS-30F, which left every ordinal
   byte-identical. EU: `ConvertOrdinal(1 000 000)` gives `milioi batgarren`, whereas Euskaltzaindia rule 203 §5
   writes *milioigarren* (and *milioi bat eta batgarren* for 1 000 001, *bi milioigarren* for 2 000 000); rule 203

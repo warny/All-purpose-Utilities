@@ -578,14 +578,18 @@ public class NumberToStringNts30DTests
         Assert.AreEqual("сто двадесет и един лева и двадесет и една стотинки", converter.ConvertCurrency(121.21m, lev));
     }
 
-    /// <summary>Fractions: numerator and denominator are the corrected cardinals; the connector на is unchanged.</summary>
+    /// <summary>
+    /// Fractions keep the и of the numerator cardinal and of the ordinal denominator. NTS-30H replaced the connector
+    /// reading (двадесет и едно на сто и едно) with the ordinal one; a compound numerator ending in една fails closed.
+    /// </summary>
     [TestMethod]
     public void Bulgarian_Fractions()
     {
         var converter = Get("BG");
-        Assert.AreEqual("двадесет и едно на сто и едно", converter.ConvertFraction(21, 101));
-        Assert.AreEqual("сто двадесет и едно на хиляда и едно", converter.ConvertFraction(121, 1001));
-        Assert.AreEqual("двадесет и едно на сто и едно", converter.Convert(new Number(21, 101)));
+        Assert.AreEqual("двадесет и две сто и първи", converter.ConvertFraction(22, 101));
+        Assert.AreEqual("сто двадесет и пет хиляда и първи", converter.ConvertFraction(125, 1001));
+        Assert.AreEqual("двадесет и две сто и първи", converter.Convert(new Number(22, 101)));
+        Assert.ThrowsExactly<NotSupportedException>(() => converter.ConvertFraction(21, 101));
     }
 
     /// <summary>

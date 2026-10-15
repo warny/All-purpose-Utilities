@@ -8,7 +8,6 @@
         zero="nula"
         minus="minus *"
         decimalSeparator="celá"
-        fractionSeparator="ku"
     >
         <Culture>CS</Culture>
         <Culture>CS-CZ</Culture>
@@ -151,6 +150,9 @@
                 <Replacement oldValue="dva" newValue="dvě" scope="LastWord" />
             </Variant>
         </Variants>
+        <!-- NTS-30H: fractions are read by the language specifics (IFractionLanguageSpecifics) with the fraction nouns of the
+             IJP: jedna třetina, dvě třetiny, pět sedmin, jedna tisícina. the IJP gives no fraction reading with "ku";
+             the mathematical "lomeno" + instrumental reading needs a cardinal instrumental. Other denominators fail closed. -->
         <LanguageSpecifics>CzechOrdinalLanguageSpecifics</LanguageSpecifics>
         <!-- Internetová jazyková příručka (ÚJČ AV ČR), "Časové údaje". Quarter-hour 12-hour clock
              without day-part wording. "hodina" is feminine: the whole hour agrees the noun with the
