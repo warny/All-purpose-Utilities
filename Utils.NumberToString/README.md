@@ -1798,6 +1798,11 @@ biljoonaa* (NTS-37). `<NumberScale pairedScalesFrom="n">` (`NumberScale.PairedSc
 - the generated names keep their natural indices: Finnish declares the suffixes `joona`/`jardi` with
   `pairedScalesFrom="4"`, so *mi-l-joona* (2), *mi-l-jardi* (3), *bi-l-joona* (4), *tri-l-joona* (6) — the `jardi`
   family only ever names *miljardi*;
+- variants forced by a `<GeneratedScaleForm>` on the paired scale are resolved before its multiplier is rendered,
+  so they drive the whole multiplier phrase (its own scale-scoped rules included); forced groups inside the
+  multiplier stay shielded from the caller's whole-number passes, as for any generated form (NTS-30C);
+- the two groups of a pair may hold 18 digits together (a multiplier is a `long`): a group size above 9 with
+  pairing is rejected when the converter is built (`ArgumentException`), never by an overflow during a conversion;
 - absent (`null`, the default) every scale is named; values below 1 are rejected; `baseOn` inherits an absent
   attribute and an explicit value replaces it (pairing cannot be removed by a derived language).
 

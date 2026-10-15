@@ -285,6 +285,124 @@ public class NumberToStringNts37Tests
         Assert.Throws<Exception>(() => Build("""pairedScalesFrom="0" """));
     }
 
+    /// <summary>
+    /// The gender dimension of the forced-variant tests: <c>a</c> and <c>b</c> rewrite the unit words everywhere, and
+    /// <c>b</c> also rewrites the scale noun x, through a rule scoped to scale 1.
+    /// </summary>
+    private const string GenderVariants = """
+        <Variants>
+          <Dimension name="gender" values="a,b" />
+          <Variant type="gender" variant="a">
+            <Replacement oldValue="one" newValue="oneA" scope="Anywhere" />
+            <Replacement oldValue="seven" newValue="sevenA" scope="Anywhere" />
+          </Variant>
+          <Variant type="gender" variant="b">
+            <Replacement oldValue="one" newValue="oneB" scope="Anywhere" />
+            <Replacement oldValue="two" newValue="twoB" scope="Anywhere" />
+            <Replacement oldValue="x" newValue="xB" scope="Anywhere" onScale="1" />
+          </Variant>
+        </Variants>
+        """;
+
+    /// <summary>
+    /// NTS-30C contract on a paired multiplier: the variants a generated form forces are resolved before the
+    /// multiplier is rendered, so its whole phrase (its scale-scoped rules included: xB) is built with them, against
+    /// the caller's conflicting value; the group is then shielded from the caller's whole-number passes (oneB is not
+    /// rewritten by gender=a), which still reach the rest of the number (sevenA).
+    /// </summary>
+    [TestMethod]
+    public void Synthetic_PairedScales_ForcedVariantsDriveTheWholeMultiplier()
+    {
+        var converter = Paired(
+            scaleContent: """<GeneratedScaleForm suffix="0"><Forms><Form key="singular" value="Z" forceVariants="gender=b" /><Form key="plural" value="Zs" forceVariants="gender=b" /></Forms></GeneratedScaleForm>""",
+            languageContent: GenderVariants);
+
+        Assert.AreEqual("twoB xB oneB bZs sevenA", converter.Convert(S(201, 4) + 7, "gender=a"));
+        Assert.AreEqual("twoB xB oneB bZs", converter.Convert(S(201, 4), "gender=b"));
+        Assert.AreEqual("oneB bZ", converter.Convert(S(1, 4), "gender=a"), "one-group multiplier, unchanged path");
+    }
+
+    /// <summary>
+    /// A generated form forcing variants inside a paired multiplier (scale 1 is generated here): the inner group keeps
+    /// its forced value and stays shielded from the caller's whole-number passes, which still reach the rest of the
+    /// multiplier and of the number.
+    /// </summary>
+    [TestMethod]
+    public void Synthetic_PairedScales_ForcedVariantsInsideTheMultiplierStayShielded()
+    {
+        string culture = NewName();
+        string tens = string.Concat(Tens.Select((t, i) => i == 0
+            ? """<Digit digit="0" string="" buildString="*" />"""
+            : $"""<Digit digit="{i}" string="{t}" buildString="{t} *" />"""));
+        string language = $"""
+              <Language groupSize="2" separator=" " groupSeparator="" zero="zero" minus="minus *" decimalSeparator="point" maxNumber="99999999">
+                <Culture>{culture}</Culture>
+                <Groups>
+                  <Group level="1">{Digits(Units)}</Group>
+                  <Group level="2">{tens}</Group>
+                </Groups>
+                <NumberScale firstLetterUpperCase="false" groupSeparator="" pairedScalesFrom="2">
+                  <StaticNames><Scale value="0" string="" /></StaticNames>
+                  <Suffixes><Suffix>Z</Suffix></Suffixes>
+                  <Scale0Prefixes>{Digits(Prefixes)}</Scale0Prefixes>
+                  <GeneratedScaleForm suffix="0"><Forms><Form key="singular" value="Z" forceVariants="gender=b" /><Form key="plural" value="Zs" /></Forms></GeneratedScaleForm>
+                </NumberScale>
+                {GenderVariants}
+              </Language>
+            """;
+        var converter = NumberToStringConverter.ReadConfiguration(Document(language))[culture];
+
+        // 101 × 100^2: scale 2 (bZ) has the two-group multiplier "one aZ one", whose scale 1 (aZ, singular) forces b.
+        Assert.AreEqual("oneB aZ oneA bZs sevenA", converter.Convert(S(101, 2) + 7, "gender=a"));
+        Assert.AreEqual("oneB aZ sevenA", converter.Convert(S(1, 1) + 7, "gender=a"), "the same group outside a pair");
+    }
+
+    /// <summary>
+    /// A paired multiplier is a <see cref="long"/> throughout the scale pipeline: the two groups of a pair may hold 18
+    /// digits together. Nine-digit groups are accepted and convert their largest multiplier; ten-digit groups are
+    /// rejected when the converter is built, never by an overflow during a conversion.
+    /// </summary>
+    [TestMethod]
+    public void Synthetic_PairedScales_GroupWidthIsBoundedAtConstruction()
+    {
+        static string Wide(string culture, int width, string pairing)
+        {
+            var groups = new System.Text.StringBuilder().Append($"""<Group level="1">{Digits(Units)}</Group>""");
+            for (int level = 2; level <= width; level++)
+                groups.Append($"""<Group level="{level}">""")
+                    .Append(string.Concat(Enumerable.Range(0, 10).Select(d => d == 0
+                        ? """<Digit digit="0" string="" buildString="*" />"""
+                        : $"""<Digit digit="{d}" string="{d}e{level}" buildString="{d}e{level} *" />""")))
+                    .Append("</Group>");
+            // 28 digits: the largest maxNumber the XSD integer type accepts, enough to reach the pair of scales 2-3.
+            return $"""
+                  <Language groupSize="{width}" separator=" " groupSeparator="" zero="zero" minus="minus *" decimalSeparator="point" maxNumber="{new string('9', 28)}">
+                    <Culture>{culture}</Culture>
+                    <Groups>{groups}</Groups>
+                    <NumberScale firstLetterUpperCase="false" groupSeparator="" {pairing}>
+                      <StaticNames><Scale value="0" string="" /><Scale value="1" string="x" /><Scale value="2" string="Y" /></StaticNames>
+                    </NumberScale>
+                  </Language>
+                """;
+        }
+
+        string nine = NewName();
+        var accepted = NumberToStringConverter.ReadConfiguration(Document(Wide(nine, 9, """pairedScalesFrom="2" """)))[nine];
+        // The multiplier of Y is 9 999 999 999 (ten digits, beyond a single nine-digit group): "nine x 9e9 … Y …".
+        string text = accepted.Convert(BigInteger.Pow(10, 28) - 1);
+        StringAssert.StartsWith(text, "nine x 9e9 ");
+        StringAssert.Contains(text, " nine Y 9e9 ");
+
+        string tenUnpaired = NewName();
+        var unpaired = NumberToStringConverter.ReadConfiguration(Document(Wide(tenUnpaired, 10, "")))[tenUnpaired];
+        var exception = Assert.ThrowsExactly<ArgumentException>(() => new NumberToStringConverter(new NumberToStringConverterOptions(unpaired)
+        {
+            Scale = new NumberScale(["", "x", "Y"], []) { PairedScalesFrom = 2 },
+        }));
+        StringAssert.Contains(exception.Message, "20 digits");
+        Assert.Throws<Exception>(() => NumberToStringConverter.ReadConfiguration(Document(Wide(NewName(), 10, """pairedScalesFrom="2" """))));
+    }
+
     /// <summary>Pairing introduces no intermediate finalization: one public result, one call.</summary>
     [TestMethod]
     public void Finalization_RunsOncePerPublicResult()

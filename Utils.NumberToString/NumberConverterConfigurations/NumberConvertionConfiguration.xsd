@@ -1754,7 +1754,10 @@
                                                 it and is converted as a complete cardinal, so the scale above a
                                                 named one is the thousands of its multiplier and has no name of
                                                 its own. The selected scale form and the onScale/onValue
-                                                replacements see the whole multiplier. Absent: every scale is
+                                                replacements see the whole multiplier, and the variants its
+                                                generated form forces drive its whole rendering. The two
+                                                groups of a pair may hold 18 digits together (group size 9
+                                                at most); a wider configuration is rejected. Absent: every scale is
                                                 named. Under baseOn an absent attribute inherits. Finnish: 4
                                                 (10^12 biljoona, 10^15 tuhat biljoonaa, 2 003 × 10^12
                                                 kaksituhatta kolme biljoonaa; biljardi is not a numeral).

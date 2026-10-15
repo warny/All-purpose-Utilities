@@ -171,6 +171,7 @@ namespace Utils.NumberToString
                 .Where(r => r.OnScale is not null)
                 .ToImmutableArray();
             Scale = options.Scale;
+            ValidatePairedScaleWidths();
             // Override-only snapshots, taken once: CompileScaleForms validates exactly these copies, and
             // they are what a clone receives, so the singular/plural synthesized from this Scale never
             // become explicit overrides of a clone built on another Scale.
@@ -1425,7 +1426,9 @@ namespace Utils.NumberToString
                 return exValue;
 
             int groupNumber = 0;
-            var groupsValues = new Stack<(string text, long numericValue, bool shielded, bool hasFinalConnector)>();
+            // innerShielded: the shielded groups of a paired multiplier rendered under the caller's query, to be
+            // shielded at the outer level in assembly order (null when there are none or the whole group is shielded).
+            var groupsValues = new Stack<(string text, long numericValue, bool shielded, bool hasFinalConnector, List<string>? innerShielded)>();
 
             BigInteger remaining = abs;
             while (remaining != 0)
@@ -1443,34 +1446,45 @@ namespace Utils.NumberToString
                     // A group preceded by a higher non-zero group renders its leading positions with the
                     // inner forms of the digits (innerString/innerBuildString), when the tables declare any.
                     bool hasHigherGroup = remaining >= multiplierDivisor;
+
+                    // The scale noun's form is selected once, on the caller's variants. A generated form may
+                    // impose variants on its multiplier: the forced values overlay the caller's, and that one
+                    // query then drives the rendering of the multiplier and every local pass of the group (group
+                    // triggers, the variant rules of the multiplier, the scale-scoped variant rules, the
+                    // group-with-scale triggers). Without forced variants the caller's query is used, exactly as
+                    // before. Resolved before the multiplier is rendered: a paired multiplier is a whole cardinal
+                    // whose own groups must already see the forced values.
+                    var (scaleName, multiplierVariants) = ResolveScaleWord(groupNumber, group, variantQuery);
+                    bool forced = !multiplierVariants.IsEmpty;
+                    var groupQuery = forced ? multiplierVariants.Overlay(variantQuery ?? _defaultVariantQuery) : variantQuery;
+
                     string digits;
                     bool hasFinalConnector;
+                    List<string>? innerShielded = null;
                     if (group < groupValue)
                     {
                         // The multiplier of a scale covered by a scoped Groups uses that table.
                         digits = ConvertGroup(GetGroupTable(groupNumber), width, group, hasHigherGroup, out hasFinalConnector);
+                        digits = ApplyTriggers(digits, TriggerAt.Group, groupNumber, groupQuery);
+                        if (forced)
+                            digits = ApplyVariantRules(digits, groupQuery!, group);
                     }
                     else
                     {
                         // A multiplier spanning both groups of a pair is a complete cardinal (kaksituhatta kolme
-                        // biljoonaa), whose own phrase already places its connectors. A forced variant inside it can
-                        // only come from a scale below the pair, which no configuration combines with pairing: its
-                        // groups are not shielded from the whole-number passes.
-                        digits = ConvertRaw(group, variantQuery);
+                        // biljoonaa), whose own phrase already places its connectors, rendered with the group's
+                        // query. Its own groups may carry forced variants of a scale below the pair: they are
+                        // shielded, from the multiplier's variant rules when this group is forced, otherwise from
+                        // the whole-number passes (propagated in assembly order when the group is popped).
+                        var nested = NewShieldedGroups();
+                        digits = ConvertRaw(group, groupQuery, nested);
+                        digits = ApplyTriggers(digits, TriggerAt.Group, groupNumber, groupQuery);
+                        if (forced)
+                            digits = ApplyShielded(digits, nested, text => ApplyVariantRules(text, groupQuery!, group));
+                        else if (nested is { Count: > 0 })
+                            innerShielded = nested;
                         hasFinalConnector = true;
                     }
-
-                    // The scale noun's form is selected once, on the caller's variants. A generated form may
-                    // impose variants on its multiplier: the forced values overlay the caller's, and that one
-                    // query then drives every local pass of the group (group triggers, the variant rules of the
-                    // multiplier, the scale-scoped variant rules, the group-with-scale triggers). Without
-                    // forced variants the caller's query is used, exactly as before.
-                    var (scaleName, multiplierVariants) = ResolveScaleWord(groupNumber, group, variantQuery);
-                    bool forced = !multiplierVariants.IsEmpty;
-                    var groupQuery = forced ? multiplierVariants.Overlay(variantQuery ?? _defaultVariantQuery) : variantQuery;
-                    digits = ApplyTriggers(digits, TriggerAt.Group, groupNumber, groupQuery);
-                    if (forced)
-                        digits = ApplyVariantRules(digits, groupQuery!, group);
                     // The scale connector keeps its historical formatting; otherwise the multiplier/scale junction applies.
                     string scaleJoin = (_scaleConnector != null && groupNumber > 0 && group >= _scaleConnectorThreshold)
                         ? Separator + _scaleConnector + Separator
@@ -1485,11 +1499,15 @@ namespace Utils.NumberToString
                             ? scaleName + scaleJoin + digits
                             : digits + scaleJoin + scaleName;
                     resValue = ApplyReplacements(resValue, groupNumber, group);
-                    if (groupQuery != null && _hasScaleSpecificVariantRules)
-                        resValue = ApplyVariantRulesForScale(resValue, groupQuery, groupNumber, group);
-                    resValue = ApplyTriggers(resValue, TriggerAt.GroupWithScale, groupNumber, groupQuery);
+                    // The passes made with the group's query leave the forced groups of a paired multiplier untouched.
+                    resValue = ApplyShielded(resValue, innerShielded, text =>
+                    {
+                        if (groupQuery != null && _hasScaleSpecificVariantRules)
+                            text = ApplyVariantRulesForScale(text, groupQuery, groupNumber, group);
+                        return ApplyTriggers(text, TriggerAt.GroupWithScale, groupNumber, groupQuery);
+                    });
 
-                    groupsValues.Push((resValue.Trim(), group, forced, hasFinalConnector));
+                    groupsValues.Push((resValue.Trim(), group, forced, hasFinalConnector, innerShielded));
                 }
                 remaining /= multiplierDivisor;
                 groupNumber += paired ? 2 : 1;
@@ -1498,12 +1516,13 @@ namespace Utils.NumberToString
             var result = new StringBuilder();
             while (groupsValues.Count > 0)
             {
-                var (text, _, shielded, _) = groupsValues.Pop();
+                var (text, _, shielded, _, innerShielded) = groupsValues.Pop();
                 if (shielded) shieldedGroups?.Add(text);
+                else if (innerShielded != null) shieldedGroups?.AddRange(innerShielded);
                 result.Append(text);
                 if (groupsValues.Count > 0)
                 {
-                    var (_, nextValue, _, nextHasFinalConnector) = groupsValues.Peek();
+                    var (_, nextValue, _, nextHasFinalConnector, _) = groupsValues.Peek();
                     // The whole number is a phrase whose components are its non-zero groups: the connector precedes
                     // the last one when that group is a single component (its multiplier has no connector of its own).
                     if (_finalComponentConnector != null && groupsValues.Count == 1 && !nextHasFinalConnector)
@@ -2342,6 +2361,36 @@ namespace Utils.NumberToString
             _groupPattern = [.. snapshot];
             _groupWidths = snapshot.Length == 0 ? [maxLevel] : snapshot;
             _groupDivisors = [.. _groupWidths.Select(width => BigInteger.Pow(10, width))];
+        }
+
+        /// <summary>
+        /// Largest number of digits a paired multiplier may span: the multiplier of a scale is a <see cref="long"/>
+        /// throughout the scale pipeline (lexical form selectors, <c>onValue</c> predicates), and 10^18 − 1 is the
+        /// largest power-of-ten bound below <see cref="long.MaxValue"/>.
+        /// </summary>
+        private const int MaxPairedMultiplierDigits = 18;
+
+        /// <summary>
+        /// Rejects a <see cref="NumberScale.PairedScalesFrom"/> whose paired multipliers could exceed a
+        /// <see cref="long"/>: the two groups of every pair must hold at most <see cref="MaxPairedMultiplierDigits"/>
+        /// digits together (a uniform group size of 9 at most). Checked once, at construction, so that such a
+        /// configuration fails explicitly instead of overflowing during a conversion.
+        /// </summary>
+        /// <exception cref="ArgumentException">A pair of groups is wider than <see cref="MaxPairedMultiplierDigits"/> digits.</exception>
+        private void ValidatePairedScaleWidths()
+        {
+            if (Scale?.PairedScalesFrom is not int from) return;
+            // Beyond the explicit widths every group repeats the last one, so these pairs cover every combination.
+            int last = Math.Max(from, _groupWidths.Length) + 2;
+            for (int group = from; group < last; group += 2)
+            {
+                int digits = GetGroupWidth(group) + GetGroupWidth(group + 1);
+                if (digits > MaxPairedMultiplierDigits)
+                    throw new ArgumentException(
+                        $"NumberScale.PairedScalesFrom = {from}: the multiplier of scale {group} spans groups {group} and {group + 1}, " +
+                        $"{digits} digits, more than the {MaxPairedMultiplierDigits} a paired multiplier supports (group size 9 at most).",
+                        nameof(NumberToStringConverterOptions.Scale));
+            }
         }
 
         /// <summary>Returns the digit width of the group at <paramref name="groupNumber"/> (0 = units).</summary>
@@ -3678,6 +3727,9 @@ namespace Utils.NumberToString
         /// cardinal, so the scale above a named one is the thousands of its multiplier and has no name of its own
         /// (<see cref="GetScaleName"/> rejects it). Finnish pairs from 4: 10^12 is <c>biljoona</c>, 10^15
         /// <c>tuhat biljoonaa</c> (no <c>biljardi</c>), 2 003 × 10^12 <c>kaksituhatta kolme biljoonaa</c>.
+        /// The variants a generated form forces on that multiplier drive its whole rendering. A converter rejects a
+        /// pairing whose two groups exceed 18 digits together (a group size above 9), since a multiplier is a
+        /// <see cref="long"/>.
         /// </summary>
         /// <exception cref="ArgumentOutOfRangeException">The value is lower than 1.</exception>
         public int? PairedScalesFrom
