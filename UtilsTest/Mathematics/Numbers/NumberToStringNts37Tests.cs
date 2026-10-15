@@ -1,9 +1,11 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Threading;
+using System.Xml.Serialization;
 using Utils.NumberToString;
 
 namespace UtilsTest.NumberToString;
@@ -657,5 +659,32 @@ public class NumberToStringNts37Tests
             Assert.ThrowsExactly<NotSupportedException>(() => FI.ConvertOrdinal(value, "sijamuoto=partitiivi"), value.ToString());
         }
         Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => FI.ConvertOrdinal(P(30)));
+    }
+
+    // ===== public XML model ==========================================================================
+
+    /// <summary>
+    /// The public <see cref="NumberScaleType"/> exposes no <c>…Specified</c> companion: 0 (the default) means no
+    /// pairing and is not written, because the XSD declares <c>pairedScalesFrom</c> a positive integer; a configured
+    /// index round-trips.
+    /// </summary>
+    [TestMethod]
+    public void PublicModel_PairedScalesFrom_SerializesOnlyWhenConfigured()
+    {
+        Assert.IsNull(typeof(NumberScaleType).GetProperty("PairedScalesFromSpecified"));
+        var serializer = new XmlSerializer(typeof(NumberScaleType));
+
+        static string Write(XmlSerializer serializer, NumberScaleType scale)
+        {
+            using var writer = new StringWriter();
+            serializer.Serialize(writer, scale);
+            return writer.ToString();
+        }
+
+        StringAssert.DoesNotMatch(Write(serializer, new NumberScaleType()), new System.Text.RegularExpressions.Regex("pairedScalesFrom"));
+        string paired = Write(serializer, new NumberScaleType { PairedScalesFrom = 4 });
+        StringAssert.Contains(paired, "pairedScalesFrom=\"4\"");
+        using var reader = new StringReader(paired);
+        Assert.AreEqual(4, ((NumberScaleType)serializer.Deserialize(reader)!).PairedScalesFrom);
     }
 }

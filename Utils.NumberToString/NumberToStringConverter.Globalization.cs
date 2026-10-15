@@ -1195,7 +1195,6 @@ namespace Utils.NumberToString
                 MultiplierSeparator = definition.MultiplierSeparator,
                 StartIndex = definition.StartIndex.GetValueOrDefault(0),
                 PairedScalesFrom = definition.PairedScalesFrom.GetValueOrDefault(0),
-                PairedScalesFromSpecified = definition.PairedScalesFrom.IsSpecified,
                 StaticNames = definition.StaticNames,
                 Scale0Prefixes = definition.Scale0Prefixes,
                 UnitsPrefixes = definition.UnitsPrefixes,
@@ -1444,7 +1443,8 @@ namespace Utils.NumberToString
             {
                 SuffixSeparator = confScale.SuffixSeparator,
                 MultiplierSeparator = confScale.MultiplierSeparator,
-                PairedScalesFrom = confScale.PairedScalesFromSpecified ? confScale.PairedScalesFrom : null,
+                // 0 (the public model's default) means no pairing; a negative value is rejected by NumberScale.
+                PairedScalesFrom = confScale.PairedScalesFrom != 0 ? confScale.PairedScalesFrom : null,
             };
 
             var scaleFormEntries = confScale.ScaleForms ?? [];

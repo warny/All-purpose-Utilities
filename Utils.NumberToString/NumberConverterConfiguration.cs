@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Xml;
 using System.Xml.Serialization;
 using Utils.Range;
@@ -1579,15 +1580,19 @@ public class NumberScaleType
     public string? MultiplierSeparator { get; set; }
 
     /// <summary>
-    /// Gets or sets the first scale index from which the scales are paired (see <c>NumberScale.PairedScalesFrom</c>);
-    /// meaningful only when <see cref="PairedScalesFromSpecified"/> is <see langword="true"/>.
+    /// Gets or sets the first scale index from which the scales are paired (see <c>NumberScale.PairedScalesFrom</c>),
+    /// or 0 (the default) when every scale is named.
     /// </summary>
     [XmlAttribute("pairedScalesFrom")]
     public int PairedScalesFrom { get; set; }
 
-    /// <summary>Gets or sets whether <see cref="PairedScalesFrom"/> is present (set by XmlSerializer).</summary>
-    [XmlIgnore]
-    public bool PairedScalesFromSpecified { get; set; }
+    /// <summary>
+    /// Tells <see cref="XmlSerializer"/> to write <c>pairedScalesFrom</c> only when pairing is configured: the XSD
+    /// declares a positive integer, so the default 0 is left out.
+    /// </summary>
+    /// <returns><see langword="true"/> when <see cref="PairedScalesFrom"/> is not 0.</returns>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public bool ShouldSerializePairedScalesFrom() => PairedScalesFrom != 0;
 
     /// <summary>
     /// Gets or sets the index offset applied when computing scale names.

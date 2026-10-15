@@ -46,7 +46,7 @@ dotnet add package omy.Utils.NumberToString --version 2.0.0-rc.2
 | CA, ca-ES | Catalan | ✓ declarative | ✓ 15 min, 12 h | gender | local | Traditional quarters only; no ordinal of zero |
 | ca-ES-valencia | Valencian | ✓ inherited | ✓ 5 min, 12 h, own section | gender | child of CA | Invariable `dos` in ClockTime only |
 | EL | Greek | ✓ declarative, composed (1–1999, NTS-28) | ✓ 15 min, 12 h | gender | local | Masculine cardinal forms (ένας) not modelled; no ordinal of zero |
-| FI | Finnish | ✓ declarative (zero: nollas; nominative 0–1999, NTS-28) | ✓ 15 min, 12 h | case | local | Inflected ordinals and ordinals from 2000 fail closed (round thousands unsourced); cardinals 0–999 999 (NTS-30E) |
+| FI | Finnish | ✓ declarative (zero: nollas; nominative 0–1 999 999, NTS-28, NTS-37) | ✓ 15 min, 12 h | case | local (long scale from SCALE-LONG) | Inflected ordinals and ordinals from 2 000 000 fail closed (unsourced); cardinals unbounded, paired scales without *-ljardi* (NTS-37) |
 | AR | Arabic | ✓ 1–99, 100, 1000 | ✓ 15 min, 12 h | gender | local | Other ordinals above 99 fail closed; thousands take the form their multiplier governs (ألف, ألفان, ثلاثة آلاف, أحد عشر ألفًا) |
 | HE | Hebrew | ✓ 1–10 adjectives, above ten the agreeing cardinal (masculine by default, also for compounds ending in a teen) | ✓ 15 min, 12 h | gender (standalone/zachar/nekeva) | local | No ordinal of zero |
 | FA, FA-IR | Persian | ✓ declarative | ✓ 15 min, 12 h | — | local | — |
@@ -554,7 +554,14 @@ implemented: nominative (default), partitive (`partitiivi`) and genitive
   components that contain their bare form (`sataa`, `tuhatta`) being brought back to it first.
 - `-toista` (11–19) never inflects; `seitsemän`, `kahdeksan`, `yhdeksän` (7, 8, 9) are
   invariable in the genitive.
-- The cardinal domain is 0–999 999.
+- The cardinals are unbounded since NTS-37 (Kielitoimiston sanakirja): long scale *miljoona*, *miljardi*,
+  *biljoona*, *triljoona*, *kvadriljoona* … without the *-ljardi* names above *miljardi* (10^15 is *tuhat
+  biljoonaa*, see [`pairedScalesFrom`](#paired-scales--pairedscalesfrom)); the scale noun stands apart from
+  its multiplier and is in the partitive after any multiplier but the (unsaid) one: `miljoona`,
+  `kaksi miljoonaa`, genitive `kahden miljoonan`. Zero inflects too: `nollaa`, `nollan`.
+- Ordinals: the nominative of 0–1 999 999, the marker in every part, one space between the groups
+  (`3 760.` `kolmastuhannes seitsemässadaskuudeskymmenes`, `1 000 000:s` `miljoonas`); from 2 000 000, and
+  in every other case, they fail closed (no source).
 
 ```csharp
 NumberToStringConverter fi = NumberToStringConverter.GetConverter("FI");
@@ -1775,6 +1782,41 @@ fi.Convert(2000);      // "kaksituhatta"
 fi.Convert(21_121);    // "kaksikymmentäyksituhatta satakaksikymmentäyksi"
 fi.Convert(21, "sijamuoto=partitiivi");     // "kahtakymmentäyhtä"
 fi.Convert(21_000, "sijamuoto=genetiivi");  // "kahdenkymmenenyhdentuhannen"
+```
+
+#### Paired scales — `pairedScalesFrom`
+
+Some long-scale languages name only every other scale above a point: Finnish has *miljoona* (10^6),
+*miljardi* (10^9), then *biljoona* (10^12), *triljoona* (10^18) … with no *biljardi*: 10^15 is *tuhat
+biljoonaa* (NTS-37). `<NumberScale pairedScalesFrom="n">` (`NumberScale.PairedScalesFrom`, `int?`) expresses it:
+
+- from scale index `n` on, only `n`, `n + 2`, `n + 4` … are named; the multiplier of a named scale spans its own
+  group **and the group above it**, and is read as a complete cardinal (its own groups, junctions and
+  agreement): `2 003 × 10^12` → `kaksituhatta kolme biljoonaa`, `10^15 + 10^12` → `tuhat yksi biljoonaa`;
+- the upper scales of the pairs (`n + 1`, `n + 3` …) have no name: `GetScaleName` throws
+  `InvalidOperationException`, and the `maxNumber` validation and the generated-form checks skip them;
+- the generated names keep their natural indices: Finnish declares the suffixes `joona`/`jardi` with
+  `pairedScalesFrom="4"`, so *mi-l-joona* (2), *mi-l-jardi* (3), *bi-l-joona* (4), *tri-l-joona* (6) — the `jardi`
+  family only ever names *miljardi*;
+- absent (`null`, the default) every scale is named; values below 1 are rejected; `baseOn` inherits an absent
+  attribute and an explicit value replaces it (pairing cannot be removed by a derived language).
+
+```xml
+<Language baseOn="SCALE-LONG" …>
+    <NumberScale multiplierSeparator=" " suffixSeparator="l" pairedScalesFrom="4">
+        <Suffixes><Suffix>joona</Suffix><Suffix>jardi</Suffix></Suffixes>
+        …
+    </NumberScale>
+</Language>
+```
+
+```csharp
+var fi = NumberToStringConverter.GetConverter("FI");
+fi.Convert(1_000_000_000);              // "miljardi"
+fi.Convert(1_000_000_000_000_000);      // "tuhat biljoonaa"
+fi.Convert(2_003_000_000_000_000);      // "kaksituhatta kolme biljoonaa"
+fi.Convert(BigInteger.Pow(10, 24));     // "kvadriljoona"
+fi.Scale.GetScaleName(5);               // throws InvalidOperationException (10^15 has no name)
 ```
 
 #### Generated scale forms — `<GeneratedScaleForm>`
