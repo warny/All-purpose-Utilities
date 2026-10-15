@@ -64095,6 +64095,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.LanguageType.FinalComponentConnector
   nameWithType: LanguageType.FinalComponentConnector
+- uid: Utils.NumberToString.LanguageType.FinalGroupConnector
+  name: FinalGroupConnector
+  href: api/Utils.NumberToString.LanguageType.html#Utils_NumberToString_LanguageType_FinalGroupConnector
+  commentId: P:Utils.NumberToString.LanguageType.FinalGroupConnector
+  fullName: Utils.NumberToString.LanguageType.FinalGroupConnector
+  nameWithType: LanguageType.FinalGroupConnector
+- uid: Utils.NumberToString.LanguageType.FinalGroupConnector*
+  name: FinalGroupConnector
+  href: api/Utils.NumberToString.LanguageType.html#Utils_NumberToString_LanguageType_FinalGroupConnector_
+  commentId: Overload:Utils.NumberToString.LanguageType.FinalGroupConnector
+  isSpec: "True"
+  fullName: Utils.NumberToString.LanguageType.FinalGroupConnector
+  nameWithType: LanguageType.FinalGroupConnector
 - uid: Utils.NumberToString.LanguageType.FractionSeparator
   name: FractionSeparator
   href: api/Utils.NumberToString.LanguageType.html#Utils_NumberToString_LanguageType_FractionSeparator
@@ -64621,6 +64634,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.LanguageXmlModel.FinalComponentConnector
   nameWithType: LanguageXmlModel.FinalComponentConnector
+- uid: Utils.NumberToString.LanguageXmlModel.FinalGroupConnector
+  name: FinalGroupConnector
+  href: api/Utils.NumberToString.LanguageXmlModel.html#Utils_NumberToString_LanguageXmlModel_FinalGroupConnector
+  commentId: P:Utils.NumberToString.LanguageXmlModel.FinalGroupConnector
+  fullName: Utils.NumberToString.LanguageXmlModel.FinalGroupConnector
+  nameWithType: LanguageXmlModel.FinalGroupConnector
+- uid: Utils.NumberToString.LanguageXmlModel.FinalGroupConnector*
+  name: FinalGroupConnector
+  href: api/Utils.NumberToString.LanguageXmlModel.html#Utils_NumberToString_LanguageXmlModel_FinalGroupConnector_
+  commentId: Overload:Utils.NumberToString.LanguageXmlModel.FinalGroupConnector
+  isSpec: "True"
+  fullName: Utils.NumberToString.LanguageXmlModel.FinalGroupConnector
+  nameWithType: LanguageXmlModel.FinalGroupConnector
 - uid: Utils.NumberToString.LanguageXmlModel.FractionSeparator
   name: FractionSeparator
   href: api/Utils.NumberToString.LanguageXmlModel.html#Utils_NumberToString_LanguageXmlModel_FractionSeparator
@@ -65068,6 +65094,19 @@ references:
   commentId: T:Utils.NumberToString.LexicalFormEntry
   fullName: Utils.NumberToString.LexicalFormEntry
   nameWithType: LexicalFormEntry
+- uid: Utils.NumberToString.LexicalFormEntry.ForceVariants
+  name: ForceVariants
+  href: api/Utils.NumberToString.LexicalFormEntry.html#Utils_NumberToString_LexicalFormEntry_ForceVariants
+  commentId: P:Utils.NumberToString.LexicalFormEntry.ForceVariants
+  fullName: Utils.NumberToString.LexicalFormEntry.ForceVariants
+  nameWithType: LexicalFormEntry.ForceVariants
+- uid: Utils.NumberToString.LexicalFormEntry.ForceVariants*
+  name: ForceVariants
+  href: api/Utils.NumberToString.LexicalFormEntry.html#Utils_NumberToString_LexicalFormEntry_ForceVariants_
+  commentId: Overload:Utils.NumberToString.LexicalFormEntry.ForceVariants
+  isSpec: "True"
+  fullName: Utils.NumberToString.LexicalFormEntry.ForceVariants
+  nameWithType: LexicalFormEntry.ForceVariants
 - uid: Utils.NumberToString.LexicalFormEntry.Key
   name: Key
   href: api/Utils.NumberToString.LexicalFormEntry.html#Utils_NumberToString_LexicalFormEntry_Key
@@ -66902,6 +66941,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberToStringConverter.FinalComponentConnector
   nameWithType: NumberToStringConverter.FinalComponentConnector
+- uid: Utils.NumberToString.NumberToStringConverter.FinalGroupConnector
+  name: FinalGroupConnector
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_FinalGroupConnector
+  commentId: P:Utils.NumberToString.NumberToStringConverter.FinalGroupConnector
+  fullName: Utils.NumberToString.NumberToStringConverter.FinalGroupConnector
+  nameWithType: NumberToStringConverter.FinalGroupConnector
+- uid: Utils.NumberToString.NumberToStringConverter.FinalGroupConnector*
+  name: FinalGroupConnector
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_FinalGroupConnector_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverter.FinalGroupConnector
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverter.FinalGroupConnector
+  nameWithType: NumberToStringConverter.FinalGroupConnector
 - uid: Utils.NumberToString.NumberToStringConverter.FractionForcedVariants
   name: FractionForcedVariants
   href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_FractionForcedVariants
@@ -67735,6 +67787,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberToStringConverter.ScaleConnectorThreshold
   nameWithType: NumberToStringConverter.ScaleConnectorThreshold
+- uid: Utils.NumberToString.NumberToStringConverter.ScaleFormMultiplierForcedVariants
+  name: ScaleFormMultiplierForcedVariants
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_ScaleFormMultiplierForcedVariants
+  commentId: P:Utils.NumberToString.NumberToStringConverter.ScaleFormMultiplierForcedVariants
+  fullName: Utils.NumberToString.NumberToStringConverter.ScaleFormMultiplierForcedVariants
+  nameWithType: NumberToStringConverter.ScaleFormMultiplierForcedVariants
+- uid: Utils.NumberToString.NumberToStringConverter.ScaleFormMultiplierForcedVariants*
+  name: ScaleFormMultiplierForcedVariants
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_ScaleFormMultiplierForcedVariants_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverter.ScaleFormMultiplierForcedVariants
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverter.ScaleFormMultiplierForcedVariants
+  nameWithType: NumberToStringConverter.ScaleFormMultiplierForcedVariants
 - uid: Utils.NumberToString.NumberToStringConverter.ScaleFormMultiplierSeparators
   name: ScaleFormMultiplierSeparators
   href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_ScaleFormMultiplierSeparators
@@ -68606,6 +68671,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberToStringConverterOptions.FinalComponentConnector
   nameWithType: NumberToStringConverterOptions.FinalComponentConnector
+- uid: Utils.NumberToString.NumberToStringConverterOptions.FinalGroupConnector
+  name: FinalGroupConnector
+  href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_FinalGroupConnector
+  commentId: P:Utils.NumberToString.NumberToStringConverterOptions.FinalGroupConnector
+  fullName: Utils.NumberToString.NumberToStringConverterOptions.FinalGroupConnector
+  nameWithType: NumberToStringConverterOptions.FinalGroupConnector
+- uid: Utils.NumberToString.NumberToStringConverterOptions.FinalGroupConnector*
+  name: FinalGroupConnector
+  href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_FinalGroupConnector_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverterOptions.FinalGroupConnector
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverterOptions.FinalGroupConnector
+  nameWithType: NumberToStringConverterOptions.FinalGroupConnector
 - uid: Utils.NumberToString.NumberToStringConverterOptions.FractionForcedVariants
   name: FractionForcedVariants
   href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_FractionForcedVariants
@@ -69057,6 +69135,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberToStringConverterOptions.ScaleConnectorThreshold
   nameWithType: NumberToStringConverterOptions.ScaleConnectorThreshold
+- uid: Utils.NumberToString.NumberToStringConverterOptions.ScaleFormMultiplierForcedVariants
+  name: ScaleFormMultiplierForcedVariants
+  href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_ScaleFormMultiplierForcedVariants
+  commentId: P:Utils.NumberToString.NumberToStringConverterOptions.ScaleFormMultiplierForcedVariants
+  fullName: Utils.NumberToString.NumberToStringConverterOptions.ScaleFormMultiplierForcedVariants
+  nameWithType: NumberToStringConverterOptions.ScaleFormMultiplierForcedVariants
+- uid: Utils.NumberToString.NumberToStringConverterOptions.ScaleFormMultiplierForcedVariants*
+  name: ScaleFormMultiplierForcedVariants
+  href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_ScaleFormMultiplierForcedVariants_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverterOptions.ScaleFormMultiplierForcedVariants
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverterOptions.ScaleFormMultiplierForcedVariants
+  nameWithType: NumberToStringConverterOptions.ScaleFormMultiplierForcedVariants
 - uid: Utils.NumberToString.NumberToStringConverterOptions.ScaleFormMultiplierSeparators
   name: ScaleFormMultiplierSeparators
   href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_ScaleFormMultiplierSeparators

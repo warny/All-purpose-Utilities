@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_NumberToString_GeneratedScaleForm" data-uid="Utils.NumberToString.GeneratedScaleForm" class="text-break">
-Class GeneratedScaleForm  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/GeneratedScaleForm.cs/#L31"><i class="bi bi-code-slash"></i></a>
+Class GeneratedScaleForm  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/GeneratedScaleForm.cs/#L32"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -253,7 +253,8 @@ few form forces gender on <code>dva</code>). They are overlaid on the caller's v
 dimension by dimension, and that query drives the whole local pipeline of the group (group triggers,
 variant rules of the multiplier, <code>onScale</code> variant rules, group-with-scale triggers); the group is
 then left untouched by the whole-number passes run with the caller's query. The selector runs once,
-before they are applied. Instances are immutable.
+before they are applied. Instances are immutable. An exact scale form follows the same contract through
+<a class="xref" href="Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_ScaleFormMultiplierForcedVariants">ScaleFormMultiplierForcedVariants</a>.
 </p>
 </div>
 
@@ -266,7 +267,7 @@ before they are applied. Instances are immutable.
 
   <h3 id="Utils_NumberToString_GeneratedScaleForm__ctor_Utils_NumberToString_LexicalFormSet_Utils_NumberToString_ILexicalFormSelector_System_Collections_Generic_IReadOnlyDictionary_System_String_Utils_NumberToString_ForcedVariantSet__" data-uid="Utils.NumberToString.GeneratedScaleForm.#ctor(Utils.NumberToString.LexicalFormSet,Utils.NumberToString.ILexicalFormSelector,System.Collections.Generic.IReadOnlyDictionary{System.String,Utils.NumberToString.ForcedVariantSet})">
   GeneratedScaleForm(LexicalFormSet, ILexicalFormSelector?, IReadOnlyDictionary&lt;string, ForcedVariantSet&gt;?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/GeneratedScaleForm.cs/#L49"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/GeneratedScaleForm.cs/#L50"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes the forms of a generated scale family.</p>
@@ -320,7 +321,7 @@ must be a key of <code class="paramref">forms</code>. Validated against the lang
 
   <h3 id="Utils_NumberToString_GeneratedScaleForm_Forms" data-uid="Utils.NumberToString.GeneratedScaleForm.Forms">
   Forms
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/GeneratedScaleForm.cs/#L77"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/GeneratedScaleForm.cs/#L99"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the suffix fragment of each form key.</p>
@@ -352,7 +353,7 @@ must be a key of <code class="paramref">forms</code>. Validated against the lang
 
   <h3 id="Utils_NumberToString_GeneratedScaleForm_MultiplierForcedVariants" data-uid="Utils.NumberToString.GeneratedScaleForm.MultiplierForcedVariants">
   MultiplierForcedVariants
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/GeneratedScaleForm.cs/#L83"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/GeneratedScaleForm.cs/#L105"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the variants each form key forces on the multiplier; forms absent from it force nothing.</p>
@@ -384,7 +385,7 @@ must be a key of <code class="paramref">forms</code>. Validated against the lang
 
   <h3 id="Utils_NumberToString_GeneratedScaleForm_Selector" data-uid="Utils.NumberToString.GeneratedScaleForm.Selector">
   Selector
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/GeneratedScaleForm.cs/#L80"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/GeneratedScaleForm.cs/#L102"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the selector choosing the form key from the group multiplier.</p>
@@ -416,7 +417,7 @@ must be a key of <code class="paramref">forms</code>. Validated against the lang
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/GeneratedScaleForm.cs/#L31" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/GeneratedScaleForm.cs/#L32" class="edit-link">Edit this page</a>
         </div>
 
 
