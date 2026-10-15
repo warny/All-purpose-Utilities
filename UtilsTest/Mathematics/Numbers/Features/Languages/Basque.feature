@@ -75,6 +75,22 @@ Examples:
     | 1000000000 | mila milioi                                |
     | -1001      | ken mila eta bat                           |
 
+# NTS-30F: Euskaltzaindia rule 203 (2025) §4: Basque uses the long scale and the multiplier of milioi is one
+# cardinal of up to six digits, with its own "eta" ("berrehun eta sei mila zazpiehun eta laurogeita hamabost
+# milioi"); never "bi mila milioi eta bostehun milioi".
+Scenario Outline: NTS-30F Basque million multipliers of four to six digits
+    Given I use the "EU" number converter
+    When I convert the cardinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number       | expected                                                                                          |
+    | 1500000000   | mila eta bostehun milioi                                                                          |
+    | 2500000000   | bi mila eta bostehun milioi                                                                       |
+    | 1001000000   | mila eta bat milioi                                                                               |
+    | 206795000000 | berrehun eta sei mila zazpiehun eta laurogeita hamabost milioi                                    |
+    | 206795843000 | berrehun eta sei mila zazpiehun eta laurogeita hamabost milioi zortziehun eta berrogeita hiru mila |
+
 Scenario Outline: Irregular first ordinal
     Given I use the "EU" number converter
     And I use the variants "<variants>"
@@ -127,7 +143,8 @@ Examples:
 
 # NTS-28: Euskaltzaindia rule 18: the ordinal is the cardinal written in letters followed by -garren ("…
 # ehungarren, milagarren …"), batgarren separate from the preceding part; on the NTS-27 cardinal (rule 7) the
-# ordinal covers 1-999 999 999. The milliard and above wait for the composition of mila milioi (NTS-30).
+# ordinal covers 1-999 999 999. The cardinal composes mila milioi since NTS-30F, but the ordinals from the
+# milliard are not audited and stay closed.
 Scenario Outline: NTS-28 Basque ordinals above a thousand
     Given I use the "EU" number converter
     When I convert the ordinal number <number>

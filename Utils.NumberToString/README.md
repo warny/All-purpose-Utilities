@@ -1824,6 +1824,16 @@ fi.Convert(BigInteger.Pow(10, 24));     // "kvadriljoona"
 fi.Scale.GetScaleName(5);               // throws InvalidOperationException (10^15 has no name)
 ```
 
+Spanish and Basque pair from the million with static names only (NTS-30F): 10^9 is *mil millones* / *mila
+milioi*, a thousand times the million, so the whole multiplier of *millón* / *milioi* is one cardinal and keeps its
+own apocope and connectors.
+
+```csharp
+NumberToStringConverter.GetConverter("ES").Convert(2_500_000_000);  // "dos mil quinientos millones"
+NumberToStringConverter.GetConverter("ES").Convert(1_001_000_000);  // "mil un millones"
+NumberToStringConverter.GetConverter("EU").Convert(2_500_000_000);  // "bi mila eta bostehun milioi"
+```
+
 #### Generated scale forms — `<GeneratedScaleForm>`
 
 `<ScaleForm>` is keyed by one exact scale index, so it cannot cover the unbounded names that

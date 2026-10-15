@@ -123,7 +123,7 @@ Examples:
 # NTS-28: the DPD prefixes "the multiplying cardinal" without saying how a cardinal that varies (apocope of
 # uno, feminine -cientas) or is written in several words (ciento cincuenta) is soldered: those round
 # thousands and millions fail closed, as do zero (no ordinal) and the milliard and above (milmillonésimo is
-# attested, but the cardinal "mil millones" + millions is not composed, NTS-30).
+# attested; the cardinal composes its million multiplier since NTS-30F, but those ordinals are not yet audited).
 Scenario Outline: Spanish ordinals outside the validated domain are not supported
     Given I use the variants "<variants>"
     When I attempt to convert the ordinal number <number>
@@ -277,6 +277,22 @@ Examples:
     | 21000000000 | veintiún mil millones                                            |
     | -21000     | menos veintiún mil                                                |
     | -1000000   | menos un millón                                                   |
+
+# NTS-30F: DPD "millardo" (dos mil millones) and "números" §3.3c (13 000 millones): the multiplier of millones is one
+# cardinal of up to six digits (pairedScalesFrom 2), never "dos mil millones quinientos millones"; the apocope
+# of uno before mil and before millones applies inside it (mil un millones, veintiún mil un millones).
+Scenario Outline: NTS-30F Spanish million multipliers of four to six digits
+    When I convert the cardinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number       | expected                                     |
+    | 1001000000   | mil un millones                              |
+    | 2500000000   | dos mil quinientos millones                  |
+    | 3500000000   | tres mil quinientos millones                 |
+    | 21001000000  | veintiún mil un millones                     |
+    | 2500000001   | dos mil quinientos millones uno              |
+    | -2500000000  | menos dos mil quinientos millones            |
 
 # DPD "cardinales" §3 and "uno" §2.3: before mil the feminine concord of uno is optional (veintiún mil
 # or veintiuna mil toneladas); the hundreds always agree (doscientas mil). The apocopated form is kept.

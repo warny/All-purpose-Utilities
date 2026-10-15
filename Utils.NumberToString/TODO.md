@@ -1,6 +1,8 @@
 # Utils.NumberToString — Current backlog
 
-Re-audited on 2026-10-15 after closing NTS-37 (Finnish long scale without *-ljardi* above *miljardi*: unbounded
+Re-audited on 2026-10-15 after closing NTS-30F (Spanish and Basque milliards read as a thousand millions through
+`pairedScalesFrom="2"`: `dos mil quinientos millones`, `mil un millones`, `mila eta bostehun milioi`; NTS-38 and two
+NTS-30 items opened), after closing NTS-37 (Finnish long scale without *-ljardi* above *miljardi*: unbounded
 cardinals `miljoona`, `kaksi miljoonaa`, `tuhat biljoonaa`, `kvadriljoona`, through the generic
 `pairedScalesFrom` primitive; ordinals to 1 999 999, `kolmastuhannes seitsemässadaskuudeskymmenes`, `miljoonas`;
 `nollaa`, `nollan`), on 2026-10-14 after closing NTS-30E (Finnish cardinals: one word inside a group, multiplier and
@@ -54,13 +56,17 @@ classification.
 
 ## Open items
 
-- **NTS-30 — cardinal defects found by NTS-27 and NTS-28 outside their lists.** Recorded, not fixed:
-  - ES/EU long scale: a milliard followed by millions is not composed (`dos mil millones quinientos millones` for
-    DPD *dos mil quinientos millones*, "3500 millones (tres mil quinientos millones)"; `mil millones un millón`
-    for *mil un millones*; EU `bi mila milioi eta bostehun milioi`). The multiplier of millón/milioi spans six
-    digits and needs a recursive multiplier, which neither the uniform groups nor `groupPattern` express. NTS-37
-    added that recursive multiplier for Finnish (`NumberScale pairedScalesFrom`); pairing from the million (scale 2)
-    would read *dos mil quinientos millones*, but ES/EU still need their own audit.
+- **NTS-30 — cardinal defects found by NTS-27 and NTS-28 outside their lists.** Recorded, not fixed (the ES/EU
+  long-scale item was fixed by NTS-30F, `DONE-2026-10-15(1).md`):
+  - EU: an *eta* is written after *milioi* before a component that is not the last one
+    (`hirurogei milioi eta berrehun mila eta bat`, `bi mila eta bostehun milioi eta mila eta bat`), whereas
+    Euskaltzaindia rule 203 writes *hirurogei milioi berrehun mila eta bat* (60 200 001) but *bi milioi eta
+    zazpiehun mila* (2 700 000): the *eta* seems to precede only the last component of the whole phrase. Found by
+    NTS-30F; the outputs below 10^9 predate it. Needs the rule stated, then probably `finalComponentConnector`.
+  - ES feminine: the hundreds of a multiplier of *millones* take the feminine of the counted noun
+    (`quinientas millones`, `dos mil quinientas millones` under `gender=femenino`), whereas *millón* is a masculine
+    noun (DPD "cardinales" §6) that its multiplier quantifies. Found by NTS-30F; predates it; needs a source on the
+    concord of the hundreds before *millones* with a feminine counted noun.
   - UK, BG, CS, SK `ConvertFraction` (seen by NTS-30B): the denominator is the plain nominative cardinal after the
     connector (`один на тисяча`, `jedna ku tisíc`); the construction itself has not been validated.
   - VN: a whole zero class after a higher class is skipped (`một triệu không trăm linh một`), whereas the
@@ -68,6 +74,12 @@ classification.
     zero-group rendering and a normative source.
   - ES currency: `uno euro` for DPD *un euro* (apocope before a noun); the caller-defined currency wording does
     not force the attributive form.
+- **NTS-38 — ES and EU ordinals from the million, after NTS-30F.** Opened by NTS-30F, which left every ordinal
+  byte-identical. EU: `ConvertOrdinal(1 000 000)` gives `milioi batgarren`, whereas Euskaltzaindia rule 203 §5
+  writes *milioigarren* (and *milioi bat eta batgarren* for 1 000 001, *bi milioigarren* for 2 000 000); rule 203
+  is newer than the rule 18 audited by NTS-08/NTS-28 and may settle more ordinals. ES and EU: the ordinals from
+  10^9 stay closed by `SpanishOrdinalLanguageSpecifics` / `BasqueOrdinalLanguageSpecifics` although the cardinal is
+  now composed (DPD "ordinales" attests *milmillonésimo*); opening them needs their own audit.
 - **NTS-35 — Polish cardinals above 999 999.** Excluded from NTS-30C: PL declares `maxNumber="999999"`, so no
   generated scale is part of its public domain and NTS-30C configured none. Opening the domain needs, together: the
   Polish long-scale names (*milion*, *miliard*, *bilion*, *biliard* …, not the current generated spelling), their
@@ -114,7 +126,7 @@ classification.
   cardinals below and above a million.
 
 
-NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-25, NTS-27, NTS-28, NTS-29, NTS-30A, NTS-30B, NTS-30C, NTS-30D, NTS-30E, NTS-31, NTS-32 and NTS-37 are closed:
+NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-25, NTS-27, NTS-28, NTS-29, NTS-30A, NTS-30B, NTS-30C, NTS-30D, NTS-30E, NTS-30F, NTS-31, NTS-32 and NTS-37 are closed:
 
 - NTS-01 — XSD validation: `DONE-2026-08-21.md`.
 - NTS-02 — initialization isolation: `DONE-2026-08-21.md`.
@@ -236,6 +248,13 @@ NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-25, NTS-27, NTS-28, NT
   (Kielitoimiston ohjepankki: *kolmastuhannes seitsemässadaskuudeskymmenes*, *miljoonas*; 1001–1999 no longer
   soldered); 2 000 000 and above, *miljardi* and the inflected ordinals fail closed (unsourced). *nollaa*, *nollan*.
   Dump FI-only: `DONE-2026-10-15.md`.
+- NTS-30F (ES/EU item of NTS-30): Spanish and Basque read the milliard as a thousand millions, the multiplier of
+  *millón*/*milioi* being one cardinal of up to six digits (DPD "números" *13 000 millones*, "millardo" *dos mil
+  millones*; Euskaltzaindia rule 203: long scale, *berrehun eta sei mila zazpiehun eta laurogeita hamabost milioi*),
+  through the NTS-37 primitive `pairedScalesFrom="2"` with no engine change: *dos mil quinientos millones*, *mil un
+  millones*, *veintiún mil un millones*, *mila eta bostehun milioi*, *mila eta bat milioi*. The scale-3 literals
+  *mil millones*/*mila milioi* and their rules removed; domain, ordinals and clock unchanged; NTS-38 and two NTS-30
+  items opened: `DONE-2026-10-15(1).md`.
 
 Full multi-form plural systems (Russian/Slavic count-dependent noun forms,
 Arabic dual/paucal/plural categories) were long deliberately out of scope — the
