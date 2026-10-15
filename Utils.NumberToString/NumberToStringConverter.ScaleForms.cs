@@ -119,7 +119,8 @@ namespace Utils.NumberToString
         /// <see cref="Scale"/> whose generated names the scale can produce; every forced variant must be
         /// declared by the language (and is canonicalized); and the selector, probed once with every
         /// multiplier a group can hold (up to <see cref="GeneratedScaleFormProbeLimit"/>) under the
-        /// language defaults, must only return configured keys. Called once from the constructor.
+        /// language defaults, must only return configured keys (a paired scale's multiplier spans two groups,
+        /// see <see cref="NumberScale.PairedScalesFrom"/>). Called once from the constructor.
         /// </summary>
         /// <param name="forms">The configured forms by suffix index, or <see langword="null"/>.</param>
         /// <returns>The validated entries by suffix index.</returns>
@@ -130,7 +131,10 @@ namespace Utils.NumberToString
             var snapshot = forms?.ToArray() ?? [];
             if (snapshot.Length == 0) return ImmutableDictionary<int, GeneratedScaleForm>.Empty;
 
-            int probeLimit = (int)BigInteger.Min(_groupDivisors.Aggregate(BigInteger.Max) - 1, GeneratedScaleFormProbeLimit);
+            // A paired scale's multiplier spans two groups.
+            BigInteger largestDivisor = _groupDivisors.Aggregate(BigInteger.Max);
+            BigInteger largestMultiplier = (Scale.PairedScalesFrom.HasValue ? largestDivisor * largestDivisor : largestDivisor) - 1;
+            int probeLimit = (int)BigInteger.Min(largestMultiplier, GeneratedScaleFormProbeLimit);
             var builder = ImmutableDictionary.CreateBuilder<int, GeneratedScaleForm>();
             foreach (var (suffix, form) in snapshot.OrderBy(kv => kv.Key))
             {
@@ -177,10 +181,13 @@ namespace Utils.NumberToString
         /// <returns><see langword="true"/> when the first generated scale using that suffix can be named.</returns>
         private bool CanGenerateWithSuffix(int suffix)
         {
-            // Each suffix occurs exactly once among the first ScaleSuffixes.Count generated scales.
+            // Each suffix occurs once in every run of ScaleSuffixes.Count generated scales. The upper scales of the
+            // pairs are never named (NumberScale.PairedScalesFrom), so the search goes on past them, until the first
+            // pair above the generated scales has repeated every suffix.
             int first = Scale.StaticValues.Count;
-            for (int scale = first; scale < first + Scale.ScaleSuffixes.Count; scale++)
-                if (Scale.TryGetDynamicScaleInfo(scale, out _, out int index) && index == suffix)
+            int last = Math.Max(first, Scale.PairedScalesFrom ?? 0) + 2 * Scale.ScaleSuffixes.Count;
+            for (int scale = first; scale < last; scale++)
+                if (!Scale.IsPairedUpperScale(scale) && Scale.TryGetDynamicScaleInfo(scale, out _, out int index) && index == suffix)
                     return Scale.CanNameGroup(scale);
             return false;
         }

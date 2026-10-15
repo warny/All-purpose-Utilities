@@ -270,6 +270,14 @@ namespace Utils.NumberToString
         [XmlAttribute("multiplierSeparator")]
         public string? MultiplierSeparator { get; set; }
 
+        /// <summary>Gets or sets the first paired scale index; meaningful only when <see cref="PairedScalesFromSpecified"/> is set.</summary>
+        [XmlAttribute("pairedScalesFrom")]
+        public int PairedScalesFrom { get; set; }
+
+        /// <summary>Set by XmlSerializer when the <c>pairedScalesFrom</c> attribute is present.</summary>
+        [XmlIgnore]
+        public bool PairedScalesFromSpecified { get; set; }
+
         /// <summary>Gets or sets the index offset applied when computing scale names.</summary>
         [XmlAttribute("startIndex")]
         public int StartIndex { get; set; }
@@ -373,6 +381,8 @@ namespace Utils.NumberToString
         /// <summary>Absent (<see langword="null"/>) inherits; an explicit value, empty included, replaces.</summary>
         public string? MultiplierSeparator { get; init; }
         public Optional<int> StartIndex { get; init; }
+        /// <summary>Absent inherits; an explicit index replaces (pairing cannot be removed by a derived language).</summary>
+        public Optional<int> PairedScalesFrom { get; init; }
         public StaticNamesType? StaticNames { get; init; }
         public DigitListType? Scale0Prefixes { get; init; }
         public DigitListType? UnitsPrefixes { get; init; }

@@ -566,25 +566,24 @@ public class NumberToStringNts30ETests
     }
 
     /// <summary>
-    /// The ordinals keep their NTS-28 domain: nominative 0-1999. From 2000 the cardinal is now correct, but no
-    /// consulted source gives the round-thousand ordinals, so they still fail closed.
+    /// The ordinals below a thousand keep their NTS-28 forms. NTS-37 opened the ordinals from 1001 on, with one
+    /// space between groups (Kielitoimiston ohjepankki: 3 760. kolmastuhannes seitsemässadaskuudeskymmenes); see
+    /// <see cref="NumberToStringNts37Tests"/>.
     /// </summary>
     [TestMethod]
-    public void Finnish_OrdinalDomainIsUnchanged()
+    public void Finnish_OrdinalsBelowAThousandAreUnchanged()
     {
         Assert.AreEqual("kahdeskymmenesensimmäinen", FI.ConvertOrdinal(21));
         Assert.AreEqual("sadaskahdeskymmenesensimmäinen", FI.ConvertOrdinal(121));
         Assert.AreEqual("tuhannes", FI.ConvertOrdinal(1000));
-        Assert.AreEqual("tuhannesyhdeksässadasyhdeksäskymmenesyhdeksäs", FI.ConvertOrdinal(1999));
-        foreach (long value in new long[] { 2000, 2001, 3000, 21000 })
-            Assert.ThrowsExactly<NotSupportedException>(() => FI.ConvertOrdinal(value), value.ToString());
+        Assert.AreEqual("tuhannes yhdeksässadasyhdeksäskymmenesyhdeksäs", FI.ConvertOrdinal(1999));
     }
 
-    /// <summary>The supported cardinal domain stays 0-999 999: the millions are not opened by NTS-30E.</summary>
+    /// <summary>NTS-37 removed the 0-999 999 limit: the millions and the larger scales are named (see <see cref="NumberToStringNts37Tests"/>).</summary>
     [TestMethod]
-    public void Finnish_DomainIsUnchanged()
+    public void Finnish_DomainIsUnbounded()
     {
-        Assert.AreEqual(new BigInteger(999999), FI.MaxNumber);
-        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => FI.Convert(1_000_000));
+        Assert.IsNull(FI.MaxNumber);
+        Assert.AreEqual("miljoona", FI.Convert(1_000_000));
     }
 }

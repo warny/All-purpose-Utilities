@@ -215,6 +215,8 @@ Examples:
 # case forms (genitive "kolmen", partitive "kolmea") and "kaksikymmentä ensimmäinen": inflected
 # ordinals and compounds fail closed; the nominative of 0-20, the round tens and hundreds and 1000
 # stay supported.
+# NTS-37: the nominative is supported up to 1 999 999; a multiplied million (2 000 000) and the milliard and
+# above have no sourced ordinal and fail closed.
 Scenario Outline: Finnish ordinals outside the validated domain are not supported
     Given I use the "FI" number converter
     And I use the variants "<variants>"
@@ -227,17 +229,17 @@ Examples:
     | 1 | case=partitiivi |
     | 20 | sijamuoto=genetiivi |
     | 21 | case=genetiivi |
-    | 2000 |  |
-    | 2001 |  |
+    | 2000000 |  |
+    | 1000000000 |  |
 
 # NTS-28: Kielitoimiston ohjepankki, "Luvut ja numerot: järjestysluvut": the ordinal marker recurs in every
 # part of a multi-part ordinal, written as one word (viideskymmenesviides); ensimmäinen and toinen are more
 # common than yhdes and kahdes as the last part (kahdeskymmenesensimmäinen, kolmaskymmenestoinen); in 11-19
 # only the first part is ordinal (yhdestoista). Nominative only: the inflected compounds (genitive
 # kolmannenkymmenennenkuudennen) need paradigms of every component that the consulted sources give for 1,
-# 3, 5, 17, 20, 100 and 1000 only, so they still fail closed. From 2000 the cardinal itself is wrong
-# ("kaksi tuhat") until NTS-30E; the cardinal is now correct (kaksituhatta) but no source gives the round
-# thousands: they still fail closed.
+# 3, 5, 17, 20, 100 and 1000 only, so they still fail closed. NTS-37 ("pitkät luvut ääneen luettaessa":
+# 3 760. kolmastuhannes seitsemässadaskuudeskymmenes): the groups of an ordinal are separated by a space, as
+# those of the cardinal; the ordinals from 2000 and of the millions are pinned by NumberToStringNts37Tests.
 Scenario Outline: NTS-28 Finnish compound ordinals in the nominative
     Given I use the "FI" number converter
     When I convert the ordinal number <number>
@@ -253,8 +255,8 @@ Examples:
     | 111 | sadasyhdestoista |
     | 121 | sadaskahdeskymmenesensimmäinen |
     | 999 | yhdeksässadasyhdeksäskymmenesyhdeksäs |
-    | 1001 | tuhannesensimmäinen |
-    | 1999 | tuhannesyhdeksässadasyhdeksäskymmenesyhdeksäs |
+    | 1001 | tuhannes ensimmäinen |
+    | 1999 | tuhannes yhdeksässadasyhdeksäskymmenesyhdeksäs |
 
 Scenario: Ordinal conversion is supported
     Given I use the "FI" number converter

@@ -59,6 +59,55 @@ describes any capability.
 | EE | EE | SCALE-SHORT (scale tables only, NTS-23) | Yes (NTS-20): cardinal + `-lia` on the last element, `gbãtɔ` for 1 | Declarative + `ZeroOrdinalUnsupportedLanguageSpecifics` | **Deferred** | — | none | **Consulted** (NTS-20): Dzablu-Kumah, *Basic Ewe for Foreign Students*; Biblica Open Ewe Contemporary Scriptures; *Ewe Basic Course* 1968; Peace Corps Togo 2010; Wiktionary | Cardinals unbounded (NTS-23): static `akpe`, then the Conway-Wechsler short scale `miliɔn`, `biliɔn`, `triliɔn` (sourced anchors), `quadriliɔn` … (project extrapolation), each before its standalone multiplier (`multiplierPosition="afterScale"`); zero ordinal unsupported |
 | WO | WO | none | Yes (`-éel`, NTS-16, NTS-19) | Declarative + `WolofOrdinalLanguageSpecifics` | **Deferred** | — | none | No consistent source found | Cardinals unbounded (NTS-21): static `junni`, then the long-scale Conway-Wechsler names `milyoŋ`, `milyaar` (attested anchors), `bilyoŋ`, `bilyaar` … (project extrapolation in Wolof spelling); ordinals 1–999 999 only, no ordinal of zero nor of the round thousands |
 
+## NTS-37 — Finnish large numbers, ordinals to 1 999 999, cases of zero (2026-10-15)
+
+Scope: the Finnish cardinals above 999 999 (scale names, agreement, cases), the ordinals from 2000 and the
+inflection of *nolla*, through the generic `NumberScale pairedScalesFrom` primitive. Old/new outputs and the
+regression dump: `DONE-2026-10-15.md`. All entries were read on 2026-10-14 (the dictionary through its public
+search API, the guide pages in full).
+
+| # | Source | What it establishes |
+|---|---|---|
+| 1 | Kielitoimiston sanakirja (<https://www.kielitoimistonsanakirja.fi/>), entries *miljoona* ("tuhat tuhatta", type 10), *miljardi* ("tuhat miljoonaa", type 5), *biljoona* ("miljoona miljoonaa eli tuhat miljardia"), *triljoona* ("miljoona biljoonaa"), *kvadriljoona* ("miljoona triljoonaa (10^24)"), *kvintiljoona* ("miljoona kvadriljoonaa (10^30)"); *biljardi* only as the cue game; no entry *triljardi*, *kvadriljardi* | Finnish follows the **long scale**, with *miljardi* but **no *-ljardi* name above it**: 10^15 and 10^21 have no name of their own |
+| 2 | Same dictionary, examples and paradigms: "Suomessa on noin viisi miljoonaa asukasta", "Hän peri miljoona (harv. miljoonan) markkaa", "miljardi euroa", "Kaksimiljardia kolmemiljoonaa ruplaa"; yks. gen. *miljoonan*, *miljardin*, *biljoonan* …, yks. part. *miljoonaa*, *miljardia*, *biljoonaa* … | the bare noun after one, which is **not said** (*miljoona*, not *yksi miljoona*); the singular partitive after any other multiplier; genitive *-joonan*, *-jardin* |
+| 3 | fi.wikipedia, "Suurten lukujen nimet": "10^6 = miljoona, 10^9 = miljardi / tuhat miljoonaa, 10^12 = biljoona, 10^15 = tuhat biljoonaa, 10^18 = triljoona"; *biljardi*, *triljardi* "eivät ole kuitenkaan normien mukaisia eivätkä yleisesti käytössä" (citing Korpela, *Pienehkö sivistyssanakirja*); higher names *sekstiljoona*, *septiljoona*, *oktiljoona* (Otavan tietokalenteri 1970, p. 171), *noniljoona* (Otavan uusi sivistyssanakirja) or *noviljoona*, *dekiljoona* (Antero Vipunen, WSOY 1984, p. 435) | 10^15 = ***tuhat biljoonaa***: the multiplier of *biljoona* spans six digits; the Conway prefixes are written the Finnish way (*kv*, *ks*, *k*) |
+| 4 | fi.wiktionary, *desiljoona*, *sentiljoona*, *noniljoona* | *desiljoona* (10^60) and *sentiljoona* (10^600) in the Finnish spelling of the Latin loans (*desi-*, *sentti*) |
+| 5 | Kielitoimiston ohjepankki, "Luvut ja numerot: pitkät luvut ääneen luettaessa" (<https://kielitoimistonohjepankki.fi/ohje/luvut-ja-numerot-pitkat-luvut-aaneen-luettaessa/>): "3 760. [kolmastuhannes seitsemässadaskuudeskymmenes ~ …]", "3 400. [kolmastuhannes neljässadas]", "29 153:een kahteenkymmeneenyhdeksääntuhanteen sataanviiteenkymmeneenkolmeen"; "Luvun kaikkien osien taivuttaminen on kuitenkin aina tyylikkäämpää" | ordinals above 2000: the marker in **every part**, the thousands part one word (*kolmastuhannes*), **one space between the groups**; the cases of long numbers inflect every component, group by group |
+| 6 | Kielitoimiston ohjepankki, "Luvut ja numerot: järjestyslukujen taivuttaminen" (<https://kielitoimistonohjepankki.fi/ohje/luvut-ja-numerot-jarjestyslukujen-taivuttaminen/>): *500:s viidessadas*, *1 000:s tuhannes*, *1 000 000:s miljoonas* | *miljoonas* (10^6); no ordinal of *kaksi miljoonaa* nor of *miljardi* is given |
+| 7 | Kielitoimiston sanakirja, *yhdes* and *kahdes*: "järjestysluku suuremman luvun osana sanaa 'ensimmäinen' / 'toinen' vastaamassa"; *tuhannes*, *miljoonas*, *nollas* (type 45); no entry *miljardis*, *biljoonas*, *kahdestuhannes* | *yhdes*/*kahdes* inside a larger number (*kahdestuhannes*, *kahdeskymmenesyhdestuhannes*); *ensimmäinen*/*toinen* as a whole number and as the final part (ohjepankki "järjestysluvut": *kahdeskymmenesensimmäinen*, "tavallisempia ovat kuitenkin vaihtoehdot") |
+| 8 | Kielitoimiston sanakirja, *nolla* (type 10): yks. gen. *nollan*, yks. part. *nollaa*; "Miljoonassa on kuusi nollaa" | the zero inflects: partitive *nollaa*, genitive *nollan* |
+
+**Rules implemented.**
+
+- `baseOn="SCALE-LONG"`, `maxNumber` removed: the cardinals are unbounded. Suffixes `joona` and `jardi` after the
+  junction `suffixSeparator="l"` (*mi-l-joona*, *mi-l-jardi*); every Conway table overridden in Finnish spelling
+  (#3, #4): *kvadri*, *kvinti*, *seksti*, *okti*, *noni*, *kvattuor*, *kvinkva*, *se(ks,s)*, *(n)desi*,
+  *(n,ks,s)senti* … Where usage hesitates (*desi-*/*deki-*, *noni-*/*novi-*), the orthographic rule of the Latin
+  loans decides.
+- `pairedScalesFrom="4"` (generic, see the README): only *biljoona* (4), *triljoona* (6), *kvadriljoona* (8) … are
+  named above *miljardi*; their multiplier spans two groups and is a complete cardinal (#1, #3): *tuhat biljoonaa*,
+  *kaksituhatta kolme biljoonaa*, *triljoona tuhat biljoonaa*.
+- Agreement (#2): `<GeneratedScaleForm>` per suffix family (*joona*/*joonaa*, *jardi*/*jardia*); the one is
+  dropped by a `groupWithScale` trigger matching a whole multiplier *yksi* followed by the scale noun alone, so
+  *kaksikymmentäyksi miljoonaa* and *tuhat yksi biljoonaa* keep their one. `multiplierSeparator=" "` from NTS-30E
+  (*kaksi miljoonaa*).
+- Cases (#2, #5): the `Anywhere` replacements of NTS-30E, generalized to the suffix fragments (*-joonaa* →
+  *-joona* → *-joonan*/*-joonaa*, same for *-jardi*), cover every scale noun, generated ones included:
+  *kahden miljoonan*, *kahta miljoonaa*, *kahdenkymmenenyhden biljoonan*. Zero (#8): `Standalone` *nollaa*, *nollan*.
+- Ordinals (#5, #6, #7): ordered `Anywhere` ordinal replacements turn every component of the cardinal into its
+  ordinal (*sataa*/*sata* → *sadas*, *tuhatta*/*tuhat* → *tuhannes*, *miljoona* → *miljoonas*, *-kymmentä* →
+  *-kymmenes*, *yksi* → *yhdes* …), replacing the former per-word rules; `<OrdinalComposition>` 1001–999 999 by
+  1000 and 1 000 001–1 999 999 by 1 000 000 with the separator `" "`, so the final part is composed on its own
+  (*ensimmäinen*, *toinen*): *kahdestuhannes*, *kolmastuhannes seitsemässadaskuudeskymmenes*,
+  *miljoonas ensimmäinen*.
+
+**Corrected legacy outputs.** 1001–1999 were soldered (`tuhannesensimmäinen`, NTS-28): #5 separates the groups
+(*tuhannes ensimmäinen*). Every case of zero kept *nolla*.
+
+**Deliberately fail-closed (not TODO).** The ordinals from 2 000 000 (no source gives the ordinal of *kaksi
+miljoonaa*, whose noun stands apart), of *miljardi* and above (*miljardis*, *-ljoonas*: no dictionary entry), and
+every non-nominative ordinal (#5 gives a few inflected ordinals, not their paradigms).
+
 ## NTS-30E — Finnish cardinal composition and thousand agreement (2026-10-14)
 
 Scope: the spelling of every Finnish cardinal of the supported domain (0–999 999) in the nominative, partitive and

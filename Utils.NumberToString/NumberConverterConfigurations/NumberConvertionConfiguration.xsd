@@ -1745,6 +1745,25 @@
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:attribute>
+                                    <xs:attribute name="pairedScalesFrom" type="xs:positiveInteger">
+                                        <xs:annotation>
+                                            <xs:documentation>
+                                                First scale index from which the scales are paired. From it,
+                                                only every other scale is named (from, from + 2 …): the
+                                                multiplier of a named scale spans its group and the group above
+                                                it and is converted as a complete cardinal, so the scale above a
+                                                named one is the thousands of its multiplier and has no name of
+                                                its own. The selected scale form and the onScale/onValue
+                                                replacements see the whole multiplier, and the variants its
+                                                generated form forces drive its whole rendering. The two
+                                                groups of a pair may hold 18 digits together (group size 9
+                                                at most); a wider configuration is rejected. Absent: every scale is
+                                                named. Under baseOn an absent attribute inherits. Finnish: 4
+                                                (10^12 biljoona, 10^15 tuhat biljoonaa, 2 003 × 10^12
+                                                kaksituhatta kolme biljoonaa; biljardi is not a numeral).
+                                            </xs:documentation>
+                                        </xs:annotation>
+                                    </xs:attribute>
                                     <xs:attribute name="startIndex" type="xs:integer">
                                         <xs:annotation>
                                             <xs:documentation>

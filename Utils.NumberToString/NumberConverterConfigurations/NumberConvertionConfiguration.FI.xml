@@ -1,6 +1,16 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Numbers xmlns="Utils/NumberConvertionConfiguration.xsd">
+    <!--
+      NTS-37: Finnish follows the long scale (Kielitoimiston sanakirja: miljoona "tuhat tuhatta"; miljardi "tuhat
+      miljoonaa"; biljoona "miljoona miljoonaa eli tuhat miljardia"; triljoona "miljoona biljoonaa"; kvadriljoona
+      "miljoona triljoonaa (10^24)"; kvintiljoona "miljoona kvadriljoonaa (10^30)"), hence baseOn SCALE-LONG. Unlike
+      the other long-scale languages it has no -ljardi family above miljardi: the dictionary knows biljardi as the
+      game only, and fi.wikipedia "Suurten lukujen nimet" states that biljardi, triljardi "eivät ole normien mukaisia
+      eivätkä yleisesti käytössä"; 10^15 is "tuhat biljoonaa". Every Conway table is overridden: none of the
+      inherited Latin spellings is Finnish.
+    -->
     <Language
+        baseOn="SCALE-LONG"
         groupSize="3"
         separator=" "
         groupSeparator=""
@@ -8,7 +18,6 @@
         minus="miinus *"
         decimalSeparator="pilkku"
         fractionSeparator="yli"
-        maxNumber="999999"
     >
         <Culture>FI</Culture>
         <Groups>
@@ -59,18 +68,86 @@
           - inside a group: the buildStrings carry no space (kaksikymmentäyksi, satakaksikymmentäyksi);
           - between groups: groupSeparator "" + separator " " (one space). The language separator stays " " because
             it also separates the words of decimals, fractions, currencies and digit-by-digit readings;
-          - multiplier and scale noun: multiplierSeparator " " for every scale, "" for the thousands (kaksituhatta).
-          The cardinal domain stays 0-999 999 (maxNumber): the miljoona suffix and its variant rules are dormant
-          configuration kept for a future opening of the millions.
+          - multiplier and scale noun: multiplierSeparator " " for every scale, generated ones included, and "" for
+            the thousands (kaksituhatta, kaksi miljoonaa, kaksi biljoonaa).
+
+          NTS-37, the scales:
+          - 10^6 miljoona and 10^9 miljardi are the first generated names (suffixes joona / jardi after the junction
+            "l": mi + l + joona); from 10^12 the scales are paired (pairedScalesFrom 4): only biljoona, triljoona,
+            kvadriljoona … (10^6k) are named and their multiplier spans six digits, read as a complete cardinal:
+            10^15 "tuhat biljoonaa", 2 003 × 10^12 "kaksituhatta kolme biljoonaa". The jardi suffix therefore only
+            ever names miljardi.
+          - The Conway-Wechsler prefixes in Finnish spelling (the Latin loans of the language: kvartsi, seksti, oktaavi,
+            desi-, sentti): qu → kv (kvadri, kvinti, kvattuor, kvinkva, kvadraginta, kvadringenti, kvingenti), x → ks
+            (seksti, seksaginta, and the linking consonant se(ks,s) / (m,ks,s), as the Cyrillic tables of NTS-25),
+            c → k before a back vowel or a consonant (okti, okto, oktoginta, oktingenti) and s before e/i (desi, senti,
+            dusenti, tresenti, sessenti). Attested: kvadriljoona, kvintiljoona (Kielitoimiston sanakirja), sekstiljoona,
+            septiljoona, oktiljoona (Otavan tietokalenteri), noniljoona (Otavan uusi sivistyssanakirja), sentiljoona
+            (fi.wiktionary). Where usage hesitates, the orthographic rule decides: desiljoona (also dekiljoona,
+            noviljoona in Antero Vipunen).
+          - The groups of a Conway index above 999 are joined by the default "lli" (milliniljoona, 10^6000), as in
+            Dutch (milliniljoen).
+          - Agreement (Kielitoimiston sanakirja: "Hän peri miljoona markkaa", "miljardi euroa", "viisi miljoonaa
+            asukasta"): the bare noun after one, which is not said (replacement below), its partitive after any
+            other multiplier, generated names included: GeneratedScaleForm per suffix family.
         -->
-        <NumberScale firstLetterUpperCase="false" multiplierSeparator=" ">
+        <NumberScale firstLetterUpperCase="false" multiplierSeparator=" " suffixSeparator="l" pairedScalesFrom="4">
             <StaticNames>
                 <Scale value="0" string="" />
                 <Scale value="1" string="tuhat" />
             </StaticNames>
             <Suffixes>
-                <Suffix>miljoona</Suffix>
+                <Suffix>joona</Suffix>
+                <Suffix>jardi</Suffix>
             </Suffixes>
+            <Scale0Prefixes>
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="mi" />
+                <Digit digit="2" string="bi" />
+                <Digit digit="3" string="tri" />
+                <Digit digit="4" string="kvadri" />
+                <Digit digit="5" string="kvinti" />
+                <Digit digit="6" string="seksti" />
+                <Digit digit="7" string="septi" />
+                <Digit digit="8" string="okti" />
+                <Digit digit="9" string="noni" />
+            </Scale0Prefixes>
+            <UnitsPrefixes>
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="un" />
+                <Digit digit="2" string="duo" />
+                <Digit digit="3" string="tre(s)" />
+                <Digit digit="4" string="kvattuor" />
+                <Digit digit="5" string="kvinkva" />
+                <Digit digit="6" string="se(ks,s)" />
+                <Digit digit="7" string="septe(mn)" />
+                <Digit digit="8" string="okto" />
+                <Digit digit="9" string="nove(mn)" />
+            </UnitsPrefixes>
+            <TensPrefixes>
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="(n)desi" />
+                <Digit digit="2" string="(ms)viginti" />
+                <Digit digit="3" string="(ns)trigint[a|-illi=>i]" />
+                <Digit digit="4" string="(ns)kvadragint[a|-illi=>i]" />
+                <Digit digit="5" string="(ns)kvinkvagint[a|-illi=>i]" />
+                <Digit digit="6" string="(n)seksagint[a|-illi=>i]" />
+                <Digit digit="7" string="(n)septuagint[a|-illi=>i]" />
+                <Digit digit="8" string="(m,ks,s)oktogint[a|-illi=>i]" />
+                <Digit digit="9" string="nonagint[a|-illi=>i]" />
+            </TensPrefixes>
+            <HundredsPrefixes>
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="(n,ks,s)senti" />
+                <Digit digit="2" string="(n)dusenti" />
+                <Digit digit="3" string="(ns)tresenti" />
+                <Digit digit="4" string="(ns)kvadringenti" />
+                <Digit digit="5" string="(ns)kvingenti" />
+                <Digit digit="6" string="(n)sessenti" />
+                <Digit digit="7" string="(n)septingenti" />
+                <Digit digit="8" string="(m,ks,s)oktingenti" />
+                <Digit digit="9" string="nongenti" />
+            </HundredsPrefixes>
             <!-- tuhat after the (elided) multiplier one, the partitive tuhatta after any other multiplier (viisituhatta,
                  neljätoistatuhatta, satatuhatta), written together with the multiplier. -->
             <ScaleForm scale="1" multiplierSeparator="">
@@ -79,12 +156,35 @@
                     <Form key="plural" value="tuhatta" />
                 </Forms>
             </ScaleForm>
+            <!-- miljoona, biljoona, kvadriljoona … after one; the partitive -joonaa after any other multiplier
+                 (Kielitoimiston sanakirja, inflection type 10: yks. part. miljoonaa, biljoonaa, triljoonaa). -->
+            <GeneratedScaleForm suffix="0">
+                <Forms>
+                    <Form key="singular" value="joona" />
+                    <Form key="plural" value="joonaa" />
+                </Forms>
+            </GeneratedScaleForm>
+            <!-- miljardi after one, miljardia after any other multiplier (type 5: yks. part. miljardia;
+                 "Kaksimiljardia kolmemiljoonaa ruplaa"). -->
+            <GeneratedScaleForm suffix="1">
+                <Forms>
+                    <Form key="singular" value="jardi" />
+                    <Form key="plural" value="jardia" />
+                </Forms>
+            </GeneratedScaleForm>
         </NumberScale>
         <Replacements>
             <!-- 1 000 is "tuhat", not "yksituhat": the multiplier 1 is elided before the thousands (same mechanism as
                  the Hungarian egyezer → ezer). The rule matches the whole thousands group only. -->
             <Replacement oldValue="yksituhat" newValue="tuhat" onScale="1" onValue="1" />
         </Replacements>
+        <!-- NTS-37: likewise "miljoona", "miljardi", "biljoona" … for a multiplier of one (Kielitoimiston sanakirja:
+             "Hän peri miljoona markkaa", "miljardi euroa"). The pattern requires the whole multiplier to be "yksi"
+             followed by the scale noun alone: 21 (kaksikymmentäyksi miljoonaa) and the six-digit multiplier of a
+             paired scale (tuhat yksi biljoonaa) keep their one; the thousands (yksituhat) are covered above. -->
+        <Trigger executeAt="groupWithScale">
+            <Replace from="^yksi (?=\S+$)" to="" regex="true" />
+        </Trigger>
         <Exceptions>
             <Number value="11" string="yksitoista" />
             <Number value="12" string="kaksitoista" />
@@ -106,35 +206,46 @@
               kahtakymmentäyhtä, 21:n kahdenkymmenenyhden, 115:tä sataaviittätoista, 125:n
               sadankahdenkymmenenviiden, 125:tä sataakahtakymmentäviittä, 523:a viittäsataakahtakymmentäkolmea,
               3 000:n kolmentuhannen, 3 000:ta kolmeatuhatta); -toista never inflects; seitsemän, kahdeksan and
-              yhdeksän are identical in the nominative and the genitive.
+              yhdeksän are identical in the nominative and the genitive. NTS-37: the same holds for long numbers,
+              group by group ("pitkät luvut ääneen luettaessa": 29 153:een kahteenkymmeneenyhdeksääntuhanteen
+              sataanviiteenkymmeneenkolmeen), the scale nouns taking their dictionary forms (Kielitoimiston
+              sanakirja: miljoonan, miljoonaa; miljardin, miljardia; biljoonan, biljoonaa …).
 
               Every nominative component is therefore replaced wherever it occurs (scope Anywhere), the rules
               running once each in declaration order:
               - the components whose nominative already contains their bare form (sataa ⊃ sata, tuhatta ⊃ tuhat,
-                miljoonaa ⊃ miljoona) are first brought back to that bare form, then the bare form is inflected, so
-                that no form is inflected twice;
+                -joonaa ⊃ -joona, -jardia ⊃ -jardi) are first brought back to that bare form, then the bare form is
+                inflected, so that no form is inflected twice; -joona and -jardi cover every scale noun, generated
+                names included;
               - no unit word is a substring of another component (yksi, kaksi, kolme, neljä, viisi, kuusi,
-                seitsemän, kahdeksan, yhdeksän, kymmen-, sata, tuhat, toista, miljoona), and no inflected form is
-                matched by a later rule.
+                seitsemän, kahdeksan, yhdeksän, kymmen-, sata, tuhat, toista, -joona, -jardi, nor of a Conway prefix),
+                and no inflected form is matched by a later rule.
               The separators are untouched: a space between groups stays a space ("kahtakymmentäyhtätuhatta
-              sataakahtakymmentäyhtä").
+              sataakahtakymmentäyhtä", "kahta miljoonaa").
+
+              NTS-37, zero (Kielitoimiston sanakirja, nolla, inflection type 10: yks. gen. nollan, yks. part. nollaa;
+              "Miljoonassa on kuusi nollaa"): the whole zero only (scope Standalone).
             -->
             <Dimension name="case" localName="sijamuoto" values="nominatiivi,partitiivi,genetiivi" />
 
             <!-- ── Partitiivi ─────────────────────────────────────────────── -->
             <Variant type="case" variant="partitiivi">
-                <!-- Hundreds, thousands, millions: the multiplied form already is the partitive (kaksisataa); the
-                     bare form gets it (sata → sataa, tuhat → tuhatta). -->
+                <Replacement oldValue="nolla"     newValue="nollaa"    scope="Standalone" />
+                <!-- Hundreds, thousands and the scale nouns: the multiplied form already is the partitive
+                     (kaksisataa, kaksi miljoonaa); the bare form gets it (sata → sataa, tuhat → tuhatta,
+                     miljoona → miljoonaa, miljardi → miljardia). -->
                 <Replacement oldValue="sataa"     newValue="sata"      scope="Anywhere" />
                 <Replacement oldValue="sata"      newValue="sataa"     scope="Anywhere" />
                 <Replacement oldValue="tuhatta"   newValue="tuhat"     scope="Anywhere" />
                 <Replacement oldValue="tuhat"     newValue="tuhatta"   scope="Anywhere" />
-                <Replacement oldValue="miljoonaa" newValue="miljoona"  scope="Anywhere" />
-                <Replacement oldValue="miljoona"  newValue="miljoonaa" scope="Anywhere" />
+                <Replacement oldValue="joonaa"    newValue="joona"     scope="Anywhere" />
+                <Replacement oldValue="joona"     newValue="joonaa"    scope="Anywhere" />
+                <Replacement oldValue="jardia"    newValue="jardi"     scope="Anywhere" />
+                <Replacement oldValue="jardi"     newValue="jardia"    scope="Anywhere" />
                 <!-- Ten alone (kymmenen → kymmentä); the multiplied -kymmentä already is the partitive. -->
                 <Replacement oldValue="kymmenen"  newValue="kymmentä"  scope="Anywhere" />
                 <!-- Units, alone or as the first part of 11-19 (yhtätoista), of the tens (kahtakymmentä), of the
-                     hundreds (kahtasataa) and of the thousands (kahtatuhatta). -->
+                     hundreds (kahtasataa), of the thousands (kahtatuhatta) and of the other scales (kahta miljoonaa). -->
                 <Replacement oldValue="yksi"      newValue="yhtä"      scope="Anywhere" />
                 <Replacement oldValue="kaksi"     newValue="kahta"     scope="Anywhere" />
                 <Replacement oldValue="kolme"     newValue="kolmea"    scope="Anywhere" />
@@ -148,12 +259,15 @@
 
             <!-- ── Genetiivi ──────────────────────────────────────────────── -->
             <Variant type="case" variant="genetiivi">
+                <Replacement oldValue="nolla"     newValue="nollan"    scope="Standalone" />
                 <Replacement oldValue="sataa"     newValue="sadan"     scope="Anywhere" />
                 <Replacement oldValue="sata"      newValue="sadan"     scope="Anywhere" />
                 <Replacement oldValue="tuhatta"   newValue="tuhannen"  scope="Anywhere" />
                 <Replacement oldValue="tuhat"     newValue="tuhannen"  scope="Anywhere" />
-                <Replacement oldValue="miljoonaa" newValue="miljoonan" scope="Anywhere" />
-                <Replacement oldValue="miljoona"  newValue="miljoonan" scope="Anywhere" />
+                <Replacement oldValue="joonaa"    newValue="joona"     scope="Anywhere" />
+                <Replacement oldValue="joona"     newValue="joonan"    scope="Anywhere" />
+                <Replacement oldValue="jardia"    newValue="jardi"     scope="Anywhere" />
+                <Replacement oldValue="jardi"     newValue="jardin"    scope="Anywhere" />
                 <!-- The multiplied tens (kaksikymmentä → kahdenkymmenen); kymmenen alone is already the genitive. -->
                 <Replacement oldValue="kymmentä"  newValue="kymmenen"  scope="Anywhere" />
                 <!-- Units; seitsemän, kahdeksan and yhdeksän are invariable. -->
@@ -165,64 +279,52 @@
                 <Replacement oldValue="kuusi"     newValue="kuuden"    scope="Anywhere" />
             </Variant>
         </Variants>
-        <!-- NTS-08: ordinal domain guard; values outside the validated domain fail closed (see FinnishOrdinalLanguageSpecifics). -->
+        <!-- NTS-08/NTS-37: ordinal domain guard; values outside the validated domain fail closed (see FinnishOrdinalLanguageSpecifics). -->
         <LanguageSpecifics>FinnishOrdinalLanguageSpecifics</LanguageSpecifics>
         <Ordinals>
             <!-- Zéro : "nollas" (Wiktionary citant le Kielitoimiston sanakirja ; kieli.net), NTS-12 -->
             <OrdinalException value="0" string="nollas" />
-            <!-- Unités -->
+            <!-- ensimmäinen and toinen as a whole number and as the last part of a compound (kahdeskymmenesensimmäinen,
+                 kolmaskymmenestoinen: "tavallisempia" than -yhdes, -kahdes). -->
             <OrdinalException value="1" string="ensimmäinen" />
             <OrdinalException value="2" string="toinen" />
-            <Ordinal from="yksi"      to="ensimmäinen" />
-            <Ordinal from="kaksi"     to="toinen" />
-            <Ordinal from="kolme"     to="kolmas" />
-            <Ordinal from="neljä"     to="neljäs" />
-            <Ordinal from="viisi"     to="viides" />
-            <Ordinal from="kuusi"     to="kuudes" />
-            <Ordinal from="seitsemän" to="seitsemäs" />
-            <Ordinal from="kahdeksan" to="kahdeksas" />
-            <Ordinal from="yhdeksän"  to="yhdeksäs" />
-            <!-- Dizaine de base -->
-            <Ordinal from="kymmenen"  to="kymmenes" />
-            <!-- Exceptions 11-19 -->
-            <Ordinal from="yksitoista"      to="yhdestoista" />
-            <Ordinal from="kaksitoista"     to="kahdestoista" />
-            <Ordinal from="kolmetoista"     to="kolmastoista" />
-            <Ordinal from="neljätoista"     to="neljästoista" />
-            <Ordinal from="viisitoista"     to="viidestoista" />
-            <Ordinal from="kuusitoista"     to="kuudestoista" />
-            <Ordinal from="seitsemäntoista" to="seitsemästoista" />
-            <Ordinal from="kahdeksantoista" to="kahdeksastoista" />
-            <Ordinal from="yhdeksäntoista"  to="yhdeksästoista" />
-            <!-- Dizaines 20-90 -->
-            <Ordinal from="kaksikymmentä"     to="kahdeskymmenes" />
-            <Ordinal from="kolmekymmentä"     to="kolmaskymmenes" />
-            <Ordinal from="neljäkymmentä"     to="neljäskymmenes" />
-            <Ordinal from="viisikymmentä"     to="viideskymmenes" />
-            <Ordinal from="kuusikymmentä"     to="kuudeskymmenes" />
-            <Ordinal from="seitsemänkymmentä" to="seitsemäskymmenes" />
-            <Ordinal from="kahdeksankymmentä" to="kahdeksaskymmenes" />
-            <Ordinal from="yhdeksänkymmentä"  to="yhdeksäskymmenes" />
-            <!-- Centaines -->
-            <Ordinal from="sata"           to="sadas" />
-            <Ordinal from="kaksisataa"     to="kahdessadas" />
-            <Ordinal from="kolmesataa"     to="kolmassadas" />
-            <Ordinal from="neljäsataa"     to="neljässadas" />
-            <Ordinal from="viisisataa"     to="viidessadas" />
-            <Ordinal from="kuusisataa"     to="kuudessadas" />
-            <Ordinal from="seitsemänsataa" to="seitsemässadas" />
-            <Ordinal from="kahdeksansataa" to="kahdeksassadas" />
-            <Ordinal from="yhdeksänsataa"  to="yhdeksässadas" />
-            <!-- Millier -->
-            <Ordinal from="tuhat" to="tuhannes" />
-            <!-- NTS-28, Kielitoimiston ohjepankki "Luvut ja numerot: järjestysluvut": the ordinal marker recurs in
-                 every part, written as one word (viideskymmenesviides, kahdeskymmenesensimmäinen,
-                 kolmaskymmenestoinen); each part is built through the whole pipeline (11-19 keep the marker on the
-                 first part only: sadasyhdestoista). Nominative only; from 2000 the guard fails closed: the cardinal is correct since NTS-30E (kaksituhatta), but
-                 no consulted source gives the round-thousand ordinals. -->
+            <!--
+              NTS-37, Kielitoimiston ohjepankki "Luvut ja numerot: järjestysluvut": the ordinal marker recurs in every
+              part ("tunnus toistuu periaatteessa luvun kaikissa osissa": viideskymmenesviides); the parts yhdes and
+              kahdes are used inside a larger number (yhdestoista, kahdeskymmenes, kahdessadas "jne."; Kielitoimiston
+              sanakirja, yhdes / kahdes: "järjestysluku suuremman luvun osana"); "järjestyslukujen taivuttaminen":
+              500:s viidessadas, 1 000:s tuhannes, 1 000 000:s miljoonas; "pitkät luvut ääneen luettaessa": 3 760.
+              kolmastuhannes seitsemässadaskuudeskymmenes, 3 400. kolmastuhannes neljässadas.
+              Every value that is not composed below (3-20, the round tens, hundreds and thousands, 1 000 000) is
+              therefore the component-wise ordinal of its cardinal, one word: each nominative component is replaced
+              wherever it occurs, once, in declaration order (sataa and tuhatta before their bare forms; no ordinal
+              form contains a later key). -toista is invariable (yhdestoista).
+            -->
+            <Replacement oldValue="sataa"     newValue="sadas"     scope="Anywhere" />
+            <Replacement oldValue="sata"      newValue="sadas"     scope="Anywhere" />
+            <Replacement oldValue="tuhatta"   newValue="tuhannes"  scope="Anywhere" />
+            <Replacement oldValue="tuhat"     newValue="tuhannes"  scope="Anywhere" />
+            <Replacement oldValue="miljoona"  newValue="miljoonas" scope="Anywhere" />
+            <Replacement oldValue="kymmentä"  newValue="kymmenes"  scope="Anywhere" />
+            <Replacement oldValue="kymmenen"  newValue="kymmenes"  scope="Anywhere" />
+            <Replacement oldValue="yksi"      newValue="yhdes"     scope="Anywhere" />
+            <Replacement oldValue="kaksi"     newValue="kahdes"    scope="Anywhere" />
+            <Replacement oldValue="kolme"     newValue="kolmas"    scope="Anywhere" />
+            <Replacement oldValue="neljä"     newValue="neljäs"    scope="Anywhere" />
+            <Replacement oldValue="viisi"     newValue="viides"    scope="Anywhere" />
+            <Replacement oldValue="kuusi"     newValue="kuudes"    scope="Anywhere" />
+            <Replacement oldValue="seitsemän" newValue="seitsemäs" scope="Anywhere" />
+            <Replacement oldValue="kahdeksan" newValue="kahdeksas" scope="Anywhere" />
+            <Replacement oldValue="yhdeksän"  newValue="yhdeksäs"  scope="Anywhere" />
+            <!-- NTS-28/NTS-37: the compounds are composed part by part, each through the whole pipeline (11-19 keep the
+                 marker on the first part only: sadasyhdestoista; a final one or two is ensimmäinen, toinen); the
+                 parts of a group are one word, the groups are separated by one space, as in the cardinal (tuhannes
+                 viidessadas, kolmastuhannes neljässadas, miljoonas ensimmäinen). Nominative only, up to 1 999 999:
+                 see FinnishOrdinalLanguageSpecifics for the families that fail closed. -->
             <OrdinalComposition for="21..99" divisor="10" separator="" />
             <OrdinalComposition for="101..999" divisor="100" separator="" />
-            <OrdinalComposition for="1001..1999" divisor="1000" separator="" />
+            <OrdinalComposition for="1001..999999" divisor="1000" separator=" " />
+            <OrdinalComposition for="1000001..1999999" divisor="1000000" separator=" " />
         </Ordinals>
         <!-- Kielitoimisto: "varttia yli yksi", "puoli kaksi" (the half refers to the following hour),
              "varttia vaille kaksi". Quarter-hour 12-hour clock without day-part wording. -->
