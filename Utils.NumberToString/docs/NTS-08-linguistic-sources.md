@@ -33,7 +33,7 @@ describes any capability.
 | PL | PL | none | Yes (existing) | `PolishOrdinalLanguageSpecifics` + declarative | Yes | 5 / 12 | rodzaj × przypadek | **Corrected** (NTS-08 final): ZPE (MEN) "Odmiana liczebnika i zaimka"; PWN (*wpół do*, *za pięć dwunasta*); Babbel | —; NTS-08: Ordinals 1–1999 (1000–1999 rebuilt); from 2000 fail closed |
 | RU | RU | SCALE-SHORT-CYRILLIC (NTS-25A; was SCALE-LONG) | Yes (existing) | Declarative + `RussianOrdinalLanguageSpecifics` (NTS-08 domain guard) | Yes | 15 / 12 | gender × case | **Validated** (NTS-08 final): Правила (2006) §132–133; Ожегов, Ушаков, Ефремова (clock) | Ordinal of zero `нулевой` (NTS-14); NTS-08: Ordinals 0–1999; from 2000 fail closed |
 | UK | UK, UK-UA | SCALE-SHORT-CYRILLIC (NTS-25A; was SCALE-LONG) | Yes | `UkrainianOrdinalLanguageSpecifics` (gender × case) | Yes | 15 / 12 | `gender` × `case` (Ukrainian values) | **Corrected** (NTS-08 final): Український правопис 2019 §38; goroh.pp.ua paradigms; Антоненко-Давидович (clock) | Round thousands verified up to 10 000; ASCII apostrophe as in the cardinals; NTS-08: Single million/milliard without *один*; round thousands up to 10 000 only; NTS-30B: *тисяча/мільйон/мільярд* agree (*дві тисячі, два мільйони, п'ять мільйонів*) |
-| ES | ES | none | Yes (existing) | Declarative + `SpanishOrdinalLanguageSpecifics` (NTS-08 domain guard) | Yes | 5 / 12 | gender × form | **Corrected** (NTS-08 final): RAE/ASALE DPD "ordinales" and "hora" | Exact `Convert(TimeOnly)` unchanged; NTS-08: Ordinals 1–29, round tens, 100, 1000; cardinals 22/23/26 accented; other values fail closed |
+| ES | ES | none | Yes (existing) | Declarative + `SpanishOrdinalLanguageSpecifics` (NTS-08 domain guard) | Yes | 5 / 12 | gender × form | **Corrected** (NTS-08 final): RAE/ASALE DPD "ordinales" and "hora" | Exact `Convert(TimeOnly)` unchanged; NTS-08: Ordinals 1–29, round tens, 100, 1000; cardinals 22/23/26 accented; other values fail closed; NTS-30G: the multiplier of *millón/millones* is masculine under any caller gender (DLE *millón*, DPD "cardinales" §3, §6) |
 | IT | IT | SCALE-LONG | Yes: 1–1999 except 1110–1910, round thousands 2000–999000, 100001–100009, round multiples of milione/miliardo/bilione/biliardo/trilione | Declarative `<OrdinalStem>`, `<OrdinalComposition>`, `<OrdinalScale>` + `ItalianOrdinalLanguageSpecifics` (domain guard) | Yes | 5 / 12 | gender | Clock **validated** (NTS-08 final): Treccani vocabolario *ora²* (full five-minute table); Accademia della Crusca (`l'una e mezzo`, `le due meno un quarto`, `le otto meno venti`) | Cardinals soldered with `<Fusion>` (NTS-10); compound ordinals by `<OrdinalStem>` (NTS-13, see below), analytic 1010 and 100001–100009 (NTS-15) and round scale ordinals through trilione (NTS-17, NTS-18) (see below); zero, 1110–1910, the other non-round thousands above 1999 and the non-round values from a million deliberately fail closed as ordinals (Italian closure, see below); millions and above are separate nouns joined by `e` (NTS-14, see below) |
 | PT | PT | none | Yes (existing) | Declarative + `PortugueseOrdinalLanguageSpecifics` (NTS-08 domain guard) | Yes | 5 / 12 | gender | **Corrected** (NTS-08 final): Priberam; Ciberdúvidas "Minutos para a hora", "Eram duas horas da tarde" | Deliberate direct numeric reading; `para`/`menos` constructions not produced; PT-PT/PT-BR not split; NTS-08: European Portuguese clock (*menos* after the half hour); ordinals 1–20, round tens, 100, 1000 |
 | GL | GL, gl-ES | none | Yes (existing) | Declarative + `GalicianOrdinalLanguageSpecifics` (NTS-08 domain guard) | Yes | 5 / 12 | gender | **Corrected** (NTS-08 final): RAG/ILG NOMIG 2003 §16.2; RAG dictionary; Xunta *Aula de Galego 1* (clock) | —; NTS-08: Ordinals 1–20, round tens, 100, 1000 |
@@ -53,11 +53,68 @@ describes any capability.
 | MS | MS, MS-MY | ID | Yes | `MalayOrdinalLanguageSpecifics` (`long`) | Yes, replaces parent | 5 / 12 | none | DBP PRPM entries `lapan`, `pukul`, `suku`, `setengah`, `bilion`, `trilion` | Half hour keeps the current hour |
 | CA | CA, ca-ES | none | Yes | Declarative | Yes | 15 / 12 | `gender=femení` forced on `{hour}` | IEC, *Gramàtica essencial*, §31.2; Optimot | Traditional quarters only; no ordinal of zero (NTS-14) |
 | CA-valencia | ca-ES-valencia | CA | Inherited | Declarative | Yes, replaces parent | 5 / 12 | `una` forced; invariable `dos` in ClockTime only | AVL, *Gramàtica normativa valenciana*, §32.2; AVL glossary `dos` | `dos` limited to ConvertClockTime |
-| EU | EU, eu-ES | none | Yes (existing) | Declarative + `BasqueOrdinalLanguageSpecifics` (NTS-08 domain guard) | Yes | 15 / 12 | none | **Corrected** (NTS-08 final): Euskaltzaindia rules 7 and 18; Sareko Euskal Gramatika (clock) | Clock-case forms are literal per hour; cardinals unchanged; NTS-08: Ordinals 1–1000 (*bosgarren*); zero and > 1000 fail closed |
+| EU | EU, eu-ES | none | Yes (existing) | Declarative + `BasqueOrdinalLanguageSpecifics` (NTS-08 domain guard) | Yes | 15 / 12 | none | **Corrected** (NTS-08 final): Euskaltzaindia rules 7 and 18; Sareko Euskal Gramatika (clock) | Clock-case forms are literal per hour; cardinals unchanged; NTS-08: Ordinals 1–1000 (*bosgarren*); zero and > 1000 fail closed; NTS-30G: one *eta* before the last group of each numeral phrase (rule 203 §4: *hirurogei milioi berrehun mila eta bat*) |
 | SW | SW, SW-KE, SW-TZ | SCALE-SHORT | **Deferred** | — | Yes | 15 / 12, `hourOffset=-6` | none | **Consulted**: Five Colleges LangMedia, “Swahili – Tanzania – Telling Time”; SpokenSwahili, “Telling the time in Swahili” | No day-part words (asubuhi, mchana, jioni, usiku) |
 | ZU | ZU | none | **Deferred** | — | Yes | 15 / 12 | none | **Validated** (NTS-08 final, two sources): Unisa *Learn online Zulu* Theme 4; DBE *IsiZulu Grade 4 and 5 Mathematics Terminology* | Hour forms are literal ClockTime patterns; they do not enable ordinals |
 | EE | EE | SCALE-SHORT (scale tables only, NTS-23) | Yes (NTS-20): cardinal + `-lia` on the last element, `gbãtɔ` for 1 | Declarative + `ZeroOrdinalUnsupportedLanguageSpecifics` | **Deferred** | — | none | **Consulted** (NTS-20): Dzablu-Kumah, *Basic Ewe for Foreign Students*; Biblica Open Ewe Contemporary Scriptures; *Ewe Basic Course* 1968; Peace Corps Togo 2010; Wiktionary | Cardinals unbounded (NTS-23): static `akpe`, then the Conway-Wechsler short scale `miliɔn`, `biliɔn`, `triliɔn` (sourced anchors), `quadriliɔn` … (project extrapolation), each before its standalone multiplier (`multiplierPosition="afterScale"`); zero ordinal unsupported |
 | WO | WO | none | Yes (`-éel`, NTS-16, NTS-19) | Declarative + `WolofOrdinalLanguageSpecifics` | **Deferred** | — | none | No consistent source found | Cardinals unbounded (NTS-21): static `junni`, then the long-scale Conway-Wechsler names `milyoŋ`, `milyaar` (attested anchors), `bilyoŋ`, `bilyaar` … (project extrapolation in Wolof spelling); ordinals 1–999 999 only, no ordinal of zero nor of the round thousands |
+
+## NTS-30G — Basque final *eta* and the Spanish masculine million multiplier (2026-10-15)
+
+Scope: the two NTS-30 items opened by NTS-30F, closed by two independent generic primitives (`finalGroupConnector`,
+and `forceVariants` on the forms of an exact `<ScaleForm>`). Old/new outputs and the regression dump:
+`DONE-2026-10-15(2).md`. The Euskaltzaindia rules were read from their PDFs (text layer), the RAE entries in full on
+2026-10-15 (rae.es and dle.rae.es, fetched with `curl.exe`).
+
+### EU — placement of *eta* between groups
+
+| # | Source | What it establishes |
+|---|---|---|
+| 1 | Euskaltzaindia, rule 203 (2025) §4 (<https://www.euskaltzaindia.eus/dok/arauak/Araua_0203.pdf>): "Mila zenbakitik aurrera, *eta* kenduko da ondoren datozen ehunekoetan ere agertzen bada; bestela, jarri egin behar da: (egokia) *mila eta hiru; mila eta hamaika; mila eta berrogeita sei* […] *mila eta ehun; mila eta berrehun* […] *bost mila eta berrogei; bi mila eta hogeita bost* […] *mila ehun eta zazpi; mila hirurehun eta hogeita bost*; (desegokia) *mila eta ehun eta zazpi*" | from a thousand upwards an *eta* is placed before the following part, and **dropped when the hundreds of that part carry their own** *eta* |
+| 2 | Rule 203 §4, table: "1 200 000 *milioi bat eta berrehun mila*", "1 647 413 *milioi bat seiehun eta berrogeita zazpi mila laurehun eta hamahiru*", "2 700 000 *bi milioi eta zazpiehun mila*", "**60 200 001 *hirurogei milioi berrehun mila eta bat***", "500 321 207 *bostehun milioi hirurehun eta hogeita bat mila berrehun eta zazpi*" | the *eta* of #1 stands **only before the last group** of the number: 60 200 001 has none after *milioi* although *berrehun mila* carries no *eta* of its own; 2 700 000 and 1 200 000 have one because *zazpiehun mila* / *berrehun mila* is the last group |
+| 3 | Rule 203 §4: "(egokia) 206 795 843 237: *berrehun eta sei mila zazpiehun eta laurogeita hamabost milioi zortziehun eta berrogeita hiru mila berrehun eta hogeita zazpi*"; "(desegokia) … *milioi, zortziehun eta berrogeita hiru mila* …" | the six-digit multiplier of *milioi* places its own *eta* (*berrehun eta sei mila zazpiehun eta …*): a multiplier is a numeral phrase of its own; no *eta* after *milioi* before a non-final group |
+| 4 | Euskaltzaindia, rule 7 (1994) (<https://www.euskaltzaindia.eus/dok/arauak/Araua_0007.pdf>), point 7 and table: "Mila zenbakitik gorakoen artean ere ohiturak ez dira berdinak, eta juntagailua sartu ala ez: *mila Ø bortz ehun eta berrogoi* […] *milla eta ehun gizon*"; "1200 *mila eta berrehun*", "1201 *mila berrehun eta bat*" | the same rule in the older text (usage split on the conjunction, decided by the table); rule 203 supersedes it with the large-number examples of #2 |
+
+**Rule implemented.** One *eta* per numeral phrase, at the junction before its last non-zero group (#1–#3); the
+phrase is the whole number, or a multiplier of *milioi* spanning two groups (`pairedScalesFrom="2"`, NTS-30F), which
+places its own. The generic `finalGroupConnector` (inter-group assembly only) expresses it; the *eta* inside a group
+stays in the `buildString`s (*ehun eta bat*, *berrehun eta hogeita bost*), and the existing `eta X-ehun eta → X-ehun
+eta` replacements implement the "dropped when the hundreds carry their own" clause (*mila berrehun eta bat*,
+*… mila laurehun eta hamahiru*). `groupConnector="eta"` (every junction, threshold 1000) is removed: it put an *eta*
+after *milioi* before a non-final group. `finalComponentConnector` (NTS-30D) was not reusable: it also joins the
+components inside a group, where EU already writes its *eta* in the `buildString`s.
+
+Internal vs. final *eta*, 2 500 001 001: *bi mila **eta** bostehun* (the multiplier's own phrase) *milioi mila **eta**
+bat* (the whole number's last group); 2 500 001 000: *bi mila eta bostehun milioi eta mila* (*mila* is the last group).
+
+Also removed: the historical replacement `bat ehun → ehun` (`scope="Anywhere"`). A group never spells its hundreds
+*bat ehun* (the digit table gives *ehun*), so the rule could only meet the junction of *milioi bat* with a following
+*ehun …* group, where it deleted the multiplier; the removed *eta* had been hiding it. 1 100 001 is *milioi bat ehun
+mila eta bat*, like #2's *milioi bat seiehun …*.
+
+**Attested vs. productive.** Attested: the #1 and #2 values (1001, 1100, 1107, 1200, 1201, 1984, 2025, 5040,
+13 425, 147 589, 1 000 000, 1 200 000, 1 647 413, 2 700 000, 10 000 000, 60 200 001, 500 000 000, 500 321 207) and the
+#3 model number. Productive (#1–#3 composed): *milioi bat eta bat*, *bi milioi eta mila*, *mila milioi eta bat*,
+*bi mila eta bostehun milioi mila eta bat*, *milioi bat ehun mila eta bat*.
+
+### ES — the multiplier of *millón* is masculine
+
+| # | Source | What it establishes |
+|---|---|---|
+| 5 | RAE, DLE "millón" (<https://dle.rae.es/millón>): "1. **m.** Mil millares. *Un millón de euros, de habitantes*." | *millón* is a masculine noun |
+| 6 | RAE/ASALE, DPD "cardinales" §3 (<https://www.rae.es/dpd/cardinales>): "Los cardinales, cuando son sustantivos, son siempre masculinos: *el tres, el ciento veinticinco, un millón*"; "El género del numeral lo determina el sustantivo al que se refiere"; "En el caso de las centenas, el cardinal en función determinativa o adjetiva debe concordar necesariamente en género con el sustantivo al que cuantifica, tanto si lo precede inmediatamente (*doscientos kilos, las trescientas toneladas*) como si entre ellos se interpone otro elemento, por ejemplo, la palabra *mil* […] (*doscientos mil kilos, las trescientas mil toneladas*)" | the hundreds agree with **the noun they quantify**, and agreement crosses *mil* |
+| 7 | DPD "cardinales" §6: "Las voces *millar, millón, millardo, billón* […] son sustantivos […] la noción cuantificada se expresa en un complemento encabezado por la preposición *de*: *un millón de personas, dos billones de pesos*; ahora bien, cuando van seguidos de otros cardinales formando parte de un numeral complejo, el sustantivo que expresa la entidad cuantificada no va precedido de preposición: *un millón doscientas mil personas*" | the multiplier of *millones* quantifies *millones*, not the counted noun (which is a complement with *de*); **the groups after the million phrase quantify the counted noun** (*doscientas mil personas*) |
+| 8 | DPD "uno" §2.3 (<https://www.rae.es/dpd/uno>): "Los numerales *uno, una* y sus compuestos concuerdan en género con el sustantivo al que acompañan cuando lo preceden inmediatamente"; "la concordancia en femenino se está imponiendo […] por analogía con la que obligatoriamente establecen los numerales referidos a centenas: *setecientas mil toneladas* (no ⊗ *setecientos mil toneladas*)" | the same agreement for *uno* (the apocope before *millón* stays masculine: *veintiún millones*); the feminine before *mil* is the counted noun's, as kept for the lower groups |
+
+**Rule implemented.** Derived, not stated in so many words: no consulted entry prints *quinientos millones de
+personas*; the conclusion follows from #5 (masculine noun) and #6 (the hundreds agree with the noun they quantify),
+with #7 placing the counted noun after *de*. So the multiplier of *millón/millones* — one group or a paired six-digit
+multiplier — is masculine whatever the caller's gender (*quinientos millones*, *dos mil quinientos millones*,
+*quinientos mil quinientos millones*), while the lower groups keep the caller's feminine (*quinientos millones
+quinientas mil quinientas*, *un millón doscientas mil*). Configured by `forceVariants="gender=masculino"` on the
+`singular` and `plural` forms of `<ScaleForm scale="2">` (the synthesized words *millón*/*millones* restated), which
+forces only the gender: the `form` dimension (attributive apocope) stays the caller's. The NTS-27/NTS-30F apocope
+(*un millón*, *veintiún millones*, *mil un millones*) is unaffected.
 
 ## NTS-30F — Spanish and Basque million multipliers of four to six digits (2026-10-15)
 
@@ -103,12 +160,12 @@ zazpi* (227): the tests pin it up to *… hiru mila*, before that inconsistency.
 
 - EU: an *eta* is written after *milioi* before a non-final component (`hirurogei milioi eta berrehun mila eta bat`),
   whereas rule 203 writes *hirurogei milioi berrehun mila eta bat* (60 200 001); the same holds above 10^9
-  (`… milioi eta mila eta bat`). Pre-existing below 10^9, not changed by NTS-30F.
+  (`… milioi eta mila eta bat`). Pre-existing below 10^9, not changed by NTS-30F. Fixed by NTS-30G.
 - EU ordinal of 1 000 000: `milioi batgarren`, whereas rule 203 §5 gives *milioigarren* (and *milioi bat eta
   batgarren* for 1 000 001).
 - ES feminine: the hundreds of a multiplier of *millones* agree with the counted noun (`quinientas millones`,
   `dos mil quinientas millones`), whereas *millón* is a masculine noun (DPD "cardinales" §6); the concord before
-  *millones* with a feminine counted noun still needs a source. Pre-existing below 10^9.
+  *millones* with a feminine counted noun still needs a source. Pre-existing below 10^9. Fixed by NTS-30G.
 
 ## NTS-37 — Finnish large numbers, ordinals to 1 999 999, cases of zero (2026-10-15)
 

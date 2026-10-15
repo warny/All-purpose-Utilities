@@ -420,7 +420,7 @@ public class NumberToStringNts30GTests
     /// the shield list to generated forms); a language using neither allocates none.
     /// </summary>
     [TestMethod]
-    public void ScaleForm_ShieldingIsAllocatedForExactFormsOnly()
+    public void ScaleForm_ShieldsAreAllocatedForForcingExactForms()
     {
         var method = typeof(NumberToStringConverter).GetMethod("NewShieldedGroups", BindingFlags.Instance | BindingFlags.NonPublic)!;
 
@@ -519,6 +519,21 @@ public class NumberToStringNts30GTests
         => Assert.ThrowsExactly<XmlSchemaValidationException>(() => Build(extra: """
             <TimeUnits><Unit name="hour" singular="h" plural="hs"><Forms><Form key="singular" value="h" forceVariants="gender=b" /></Forms></Unit></TimeUnits>
             """));
+
+    /// <summary>
+    /// Without the schema (the built-in path), the loader itself rejects forceVariants on a time-unit form, naming it.
+    /// </summary>
+    [TestMethod]
+    public void ScaleForm_ForceVariantsOnATimeUnitForm_IsRejectedByTheLoader()
+    {
+        string culture = NewName();
+        string document = Document(culture, variants: GenderRules, extra: """
+            <TimeUnits><Unit name="hour" singular="h" plural="hs"><Forms><Form key="singular" value="h" forceVariants="gender=b" /></Forms></Unit></TimeUnits>
+            """);
+        var error = Assert.ThrowsExactly<InvalidOperationException>(() =>
+            NumberToStringConverter.BuildConfigurationForTesting(document, NumberToStringConverter.ConfigurationSchemaValidation.Skip));
+        StringAssert.Contains(error.Message, "TimeUnits[hour].Forms[singular].ForceVariants");
+    }
 
     /// <summary>
     /// The programmatic options carry the forced variants with the XML capabilities: synthesized forms may force, a

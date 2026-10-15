@@ -25,7 +25,8 @@ namespace Utils.NumberToString;
 /// dimension by dimension, and that query drives the whole local pipeline of the group (group triggers,
 /// variant rules of the multiplier, <c>onScale</c> variant rules, group-with-scale triggers); the group is
 /// then left untouched by the whole-number passes run with the caller's query. The selector runs once,
-/// before they are applied. Instances are immutable.
+/// before they are applied. Instances are immutable. An exact scale form follows the same contract through
+/// <see cref="NumberToStringConverterOptions.ScaleFormMultiplierForcedVariants"/>.
 /// </para>
 /// </remarks>
 public sealed class GeneratedScaleForm

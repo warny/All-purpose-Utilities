@@ -1,6 +1,9 @@
 # Utils.NumberToString — Current backlog
 
-Re-audited on 2026-10-15 after closing NTS-30F (Spanish and Basque milliards read as a thousand millions through
+Re-audited on 2026-10-15 after closing NTS-30G (Basque *eta* only before the last group of a numeral phrase,
+`hirurogei milioi berrehun mila eta bat`, through the generic `finalGroupConnector`; Spanish *millón/millones* force a
+masculine multiplier, `quinientos millones` under `gender=femenino`, through `forceVariants` on the forms of an exact
+`<ScaleForm>`), after closing NTS-30F (Spanish and Basque milliards read as a thousand millions through
 `pairedScalesFrom="2"`: `dos mil quinientos millones`, `mil un millones`, `mila eta bostehun milioi`; NTS-38 and two
 NTS-30 items opened), after closing NTS-37 (Finnish long scale without *-ljardi* above *miljardi*: unbounded
 cardinals `miljoona`, `kaksi miljoonaa`, `tuhat biljoonaa`, `kvadriljoona`, through the generic
@@ -57,16 +60,8 @@ classification.
 ## Open items
 
 - **NTS-30 — cardinal defects found by NTS-27 and NTS-28 outside their lists.** Recorded, not fixed (the ES/EU
-  long-scale item was fixed by NTS-30F, `DONE-2026-10-15(1).md`):
-  - EU: an *eta* is written after *milioi* before a component that is not the last one
-    (`hirurogei milioi eta berrehun mila eta bat`, `bi mila eta bostehun milioi eta mila eta bat`), whereas
-    Euskaltzaindia rule 203 writes *hirurogei milioi berrehun mila eta bat* (60 200 001) but *bi milioi eta
-    zazpiehun mila* (2 700 000): the *eta* seems to precede only the last component of the whole phrase. Found by
-    NTS-30F; the outputs below 10^9 predate it. Needs the rule stated, then probably `finalComponentConnector`.
-  - ES feminine: the hundreds of a multiplier of *millones* take the feminine of the counted noun
-    (`quinientas millones`, `dos mil quinientas millones` under `gender=femenino`), whereas *millón* is a masculine
-    noun (DPD "cardinales" §6) that its multiplier quantifies. Found by NTS-30F; predates it; needs a source on the
-    concord of the hundreds before *millones* with a feminine counted noun.
+  long-scale item was fixed by NTS-30F, `DONE-2026-10-15(1).md`; the EU *eta* and ES feminine million items by
+  NTS-30G, `DONE-2026-10-15(2).md`):
   - UK, BG, CS, SK `ConvertFraction` (seen by NTS-30B): the denominator is the plain nominative cardinal after the
     connector (`один на тисяча`, `jedna ku tisíc`); the construction itself has not been validated.
   - VN: a whole zero class after a higher class is skipped (`một triệu không trăm linh một`), whereas the
@@ -126,7 +121,7 @@ classification.
   cardinals below and above a million.
 
 
-NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-25, NTS-27, NTS-28, NTS-29, NTS-30A, NTS-30B, NTS-30C, NTS-30D, NTS-30E, NTS-30F, NTS-31, NTS-32 and NTS-37 are closed:
+NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-25, NTS-27, NTS-28, NTS-29, NTS-30A, NTS-30B, NTS-30C, NTS-30D, NTS-30E, NTS-30F, NTS-30G, NTS-31, NTS-32 and NTS-37 are closed:
 
 - NTS-01 — XSD validation: `DONE-2026-08-21.md`.
 - NTS-02 — initialization isolation: `DONE-2026-08-21.md`.
@@ -255,6 +250,16 @@ NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-25, NTS-27, NTS-28, NT
   millones*, *veintiún mil un millones*, *mila eta bostehun milioi*, *mila eta bat milioi*. The scale-3 literals
   *mil millones*/*mila milioi* and their rules removed; domain, ordinals and clock unchanged; NTS-38 and two NTS-30
   items opened: `DONE-2026-10-15(1).md`.
+- NTS-30G (the two NTS-30 items opened by NTS-30F): Basque writes one *eta* before the last group of each numeral
+  phrase (Euskaltzaindia rule 203 §4: *hirurogei milioi berrehun mila eta bat*, *bi milioi eta zazpiehun mila*),
+  through the new generic `finalGroupConnector` (inter-group assembly only; rejected with `finalComponentConnector`),
+  replacing `groupConnector="eta"`; the stray `bat ehun → ehun` replacement removed (*milioi bat ehun mila eta bat*).
+  Spanish *millón/millones* force a masculine multiplier (DLE *millón* m.; DPD "cardinales" §3, §6: the hundreds
+  agree with the noun they quantify): *quinientos millones*, *dos mil quinientos millones* under `gender=femenino`,
+  lower groups still feminine (*quinientos millones quinientas mil*), through the new `forceVariants` on the forms of
+  an exact `<ScaleForm>` (`NumberToStringConverterOptions.ScaleFormMultiplierForcedVariants`, the
+  `GeneratedScaleForm` contract, shields allocated for exact forms too). Dump ES (feminine only) and EU only; ES
+  masculine, ordinals and clocks byte-identical: `DONE-2026-10-15(2).md`.
 
 Full multi-form plural systems (Russian/Slavic count-dependent noun forms,
 Arabic dual/paucal/plural categories) were long deliberately out of scope — the

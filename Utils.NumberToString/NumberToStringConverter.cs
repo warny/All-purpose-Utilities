@@ -1449,8 +1449,8 @@ namespace Utils.NumberToString
         /// <param name="variantQuery">The caller's effective variant query, or <see langword="null"/>.</param>
         /// <param name="shieldedGroups">
         /// When not <see langword="null"/>, receives, in assembly order, the text of every group whose
-        /// generated scale form forced variants on its multiplier, so that the whole-number passes run with
-        /// the caller's query can leave it untouched (see <see cref="ApplyShielded"/>).
+        /// scale form (exact or generated) forced variants on its multiplier, so that the whole-number passes
+        /// run with the caller's query can leave it untouched (see <see cref="ApplyShielded"/>).
         /// </param>
         private string ConvertRaw(BigInteger abs, IReadOnlyDictionary<string, string>? variantQuery = null, List<string>? shieldedGroups = null)
         {
@@ -1479,8 +1479,8 @@ namespace Utils.NumberToString
                     // inner forms of the digits (innerString/innerBuildString), when the tables declare any.
                     bool hasHigherGroup = remaining >= multiplierDivisor;
 
-                    // The scale noun's form is selected once, on the caller's variants. A generated form may
-                    // impose variants on its multiplier: the forced values overlay the caller's, and that one
+                    // The scale noun's form is selected once, on the caller's variants. The selected form, exact
+                    // or generated, may impose variants on its multiplier: the forced values overlay the caller's, and that one
                     // query then drives the rendering of the multiplier and every local pass of the group (group
                     // triggers, the variant rules of the multiplier, the scale-scoped variant rules, the
                     // group-with-scale triggers). Without forced variants the caller's query is used, exactly as
