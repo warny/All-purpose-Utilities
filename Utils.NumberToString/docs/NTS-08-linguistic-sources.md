@@ -59,6 +59,57 @@ describes any capability.
 | EE | EE | SCALE-SHORT (scale tables only, NTS-23) | Yes (NTS-20): cardinal + `-lia` on the last element, `gbãtɔ` for 1 | Declarative + `ZeroOrdinalUnsupportedLanguageSpecifics` | **Deferred** | — | none | **Consulted** (NTS-20): Dzablu-Kumah, *Basic Ewe for Foreign Students*; Biblica Open Ewe Contemporary Scriptures; *Ewe Basic Course* 1968; Peace Corps Togo 2010; Wiktionary | Cardinals unbounded (NTS-23): static `akpe`, then the Conway-Wechsler short scale `miliɔn`, `biliɔn`, `triliɔn` (sourced anchors), `quadriliɔn` … (project extrapolation), each before its standalone multiplier (`multiplierPosition="afterScale"`); zero ordinal unsupported |
 | WO | WO | none | Yes (`-éel`, NTS-16, NTS-19) | Declarative + `WolofOrdinalLanguageSpecifics` | **Deferred** | — | none | No consistent source found | Cardinals unbounded (NTS-21): static `junni`, then the long-scale Conway-Wechsler names `milyoŋ`, `milyaar` (attested anchors), `bilyoŋ`, `bilyaar` … (project extrapolation in Wolof spelling); ordinals 1–999 999 only, no ordinal of zero nor of the round thousands |
 
+## NTS-30F — Spanish and Basque million multipliers of four to six digits (2026-10-15)
+
+Scope: the ES and EU cardinals from 10^9 to the unchanged `maxNumber` 999 999 999 999, which composed the milliard as
+an independent scale (`dos mil millones quinientos millones`, `bi mila milioi eta bostehun milioi`). Old/new outputs
+and the regression dump: `DONE-2026-10-15(1).md`. The DPD entries were read in full on 2026-10-15 (rae.es, 2nd
+edition); the Euskaltzaindia rules from their PDFs (text layer extracted with PyMuPDF).
+
+| # | Source | What it establishes |
+|---|---|---|
+| 1 | RAE/ASALE, DPD "números" §3.3b–c (<https://www.rae.es/dpd/números>): "*327 millones de habitantes*"; "no debe escribirse ⊗ *13 mil millones de dólares* […] deben escribirse enteramente en cifras: *125 000 personas*, *13 000 millones*" | the quantity before *millones* is one numeral of up to six digits (13 000 = *trece mil*): **the multiplier of *millón* is a complete cardinal** |
+| 2 | RAE/ASALE, DPD "millardo" (<https://www.rae.es/dpd/millardo>): "'mil millones (10^9)' […] en la lengua general resulta más natural y de inmediata comprensión el uso de la expresión *mil millones*: «Puede pagar mil millones, dos mil millones»"; DPD "billón": "'un millón de millones (10^12)' […] no se recomienda su empleo en español con el sentido de 'mil millones'" | long scale; 10^9 is ***mil millones*** (not a scale noun of its own: *millardo* is a recommended alternative, not the default), *dos mil millones* |
+| 3 | RAE/ASALE, DPD "cardinales" §1 (table) (<https://www.rae.es/dpd/cardinales>): "1001 mil uno, fem. mil una; apocopado: mil un", "1021 … apocopado: mil veintiún", "1031 … apocopado: mil treinta y un", "1101 … apocopado: mil ciento un", "21 000 veintiún mil", "31 000 treinta y un mil", "1 000 000 un millón", "2 000 000 dos millones", "1 000 000 000 mil millones o un millardo", "1 000 000 000 000 un billón" | the apocopated form of every multiplier ending in one; *mil* alone for 1000 |
+| 4 | DPD "cardinales" §4: "Cuando el cardinal *uno* y sus compuestos se anteponen, como determinantes, a un sustantivo masculino, adoptan siempre la forma apocopada *un*: *un libro, veintiún soldados, ciento un opositores*"; §6: *millón* … "son sustantivos"; DPD "uno" §2.2: "Estas mismas leyes de la apócope rigen cuando *uno, una* es componente de numerales complejos, escritos en una o en varias palabras" | *millones* is a masculine noun: a multiplier ending in one is apocopated before it (*mil un millones*, *veintiún mil un millones*, *treinta y un mil un millones*), and before *mil* inside the multiplier (*veintiún mil millones*, *ciento un mil millones*) |
+| 5 | Euskaltzaindia, rule 7 *Zenbakien idazkeraz* (1994) (<https://www.euskaltzaindia.eus/dok/arauak/Araua_0007.pdf>), table: "1000 mila", "1200 mila eta berrehun", "1201 mila berrehun eta bat", "1.000.000 milioi bat", "10.000.000 hamar milioi", "1.000.000.000 mila milioi (miliar bat)"; note: "Mila zenbakitik gora eta kenduko da ondoren datozen ehunekoetan ere agertzen bada" | *milioi bat* (one after the noun) only for one million; ***mila milioi*** for 10^9; the *eta* after *mila* is dropped when the following hundreds carry their own |
+| 6 | Euskaltzaindia, rule 203 *Euskara Batuaren Ortotipografia: zenbakizko adierazpenak* (approved 2025-10-31 Donostia, 2025-12-19 Baiona) (<https://www.euskaltzaindia.eus/dok/arauak/Araua_0203.pdf>), §4.1: "Euskaraz, eskala luzea erabiltzen da, gaztelaniaz eta frantsesez bezala"; table "10^9 = 1 000 000 000 mila milioi / miliar bat", "10^12 bilioi bat", "10^15 mila bilioi" | Basque uses the **long scale**; 10^9 is *mila milioi*, 10^15 *mila bilioi* (the same pairing above the billion, not configured here: `maxNumber` unchanged) |
+| 7 | Rule 203 §4, table and examples: "1001 mila eta bat", "1 200 000 milioi bat eta berrehun mila", "2 700 000 bi milioi eta zazpiehun mila", "500 321 207 bostehun milioi hirurehun eta hogeita bat mila berrehun eta zazpi", "(egokia) 206 795 843 237: berrehun eta sei mila zazpiehun eta laurogeita hamabost milioi zortziehun eta berrogeita hiru mila berrehun eta hogeita zazpi"; "(egokia) mila eta ehun; mila eta berrehun […] bi mila eta hogeita bost", "(desegokia) mila eta ehun eta zazpi" | **a six-digit multiplier of *milioi*, attested**, with the *eta* of its own thousands placed by the general rule; no *eta* is added between the multiplier and *milioi* |
+| 8 | Rule 203, note 17: "*milioi bat euro* da molde estandarra, eta ez *milioi euro*" | the noun-before-*bat* order belongs to the one million, not to a multiplier ending in one |
+
+**Rules implemented.**
+
+- ES and EU: `pairedScalesFrom="2"` (the NTS-37 primitive, unchanged): scale 2 (*millón*, *milioi*) takes the group
+  above it into its multiplier, rendered as a complete cardinal; scale 3 has no name of its own (`CanNameGroup(3)` is
+  false, `GetScaleName(3)` throws). *mil millones* / *mila milioi* are no longer stored: they are *mil* / *mila* (the
+  existing `onScale="1" onValue="1"` rules) followed by the scale noun (#2, #5).
+- ES (#1–#4): the existing NTS-27 apocope rules apply inside the multiplier (scale 1) and before *millones* (scale 2):
+  *mil un millones*, *mil veintiún millones*, *veintiún mil un millones*, *ciento veintiún mil ciento veintiún
+  millones*. Removed: the scale-3 literal *mil millones* and its rules `uno mil millones → mil millones` (onValue 1),
+  `uno mil millones → un mil millones`, and scale 3 from `veintiuno mil → veintiún mil` (`onScale="1,3"` → `"1"`).
+- EU (#5–#8): the multiplier keeps its own *eta* (*mila eta bostehun milioi*, *bi mila bostehun eta bat milioi*);
+  `bat milioi → milioi bat` keeps `onValue="1"`, so *mila eta bat milioi* is not reordered. Removed: the scale-3
+  literal *mila milioi* and its rule `bat mila milioi → mila milioi`.
+
+**Attested vs. productive.** Directly attested: ES *mil millones*, *dos mil millones* (#2), the multiplier *13 000*
+(#1), the apocopated multipliers 1001, 1021, 1031, 1101, 21 000, 31 000 (#3); EU *milioi bat*, *hamar milioi*,
+*mila milioi* (#5, #6) and *berrehun eta sei mila zazpiehun eta laurogeita hamabost milioi zortziehun eta berrogeita
+hiru mila* (#7). Productive (the attested rules composed, no counter-example found): ES *dos mil quinientos
+millones*, *mil un millones*, *veintiún mil un millones*; EU *mila eta bostehun milioi*, *bi mila eta bostehun
+milioi*, *mila eta bat milioi*, *bi mila eta bat milioi*. Rule 203's example #7 writes 237 as *berrehun eta hogeita
+zazpi* (227): the tests pin it up to *… hiru mila*, before that inconsistency.
+
+**Found, not fixed (recorded in `TODO.md`).**
+
+- EU: an *eta* is written after *milioi* before a non-final component (`hirurogei milioi eta berrehun mila eta bat`),
+  whereas rule 203 writes *hirurogei milioi berrehun mila eta bat* (60 200 001); the same holds above 10^9
+  (`… milioi eta mila eta bat`). Pre-existing below 10^9, not changed by NTS-30F.
+- EU ordinal of 1 000 000: `milioi batgarren`, whereas rule 203 §5 gives *milioigarren* (and *milioi bat eta
+  batgarren* for 1 000 001).
+- ES feminine: the hundreds of a multiplier of *millones* agree with the counted noun (`quinientas millones`,
+  `dos mil quinientas millones`), whereas *millón* is a masculine noun (DPD "cardinales" §6); the concord before
+  *millones* with a feminine counted noun still needs a source. Pre-existing below 10^9.
+
 ## NTS-37 — Finnish large numbers, ordinals to 1 999 999, cases of zero (2026-10-15)
 
 Scope: the Finnish cardinals above 999 999 (scale names, agreement, cases), the ordinals from 2000 and the
@@ -403,7 +454,7 @@ dispositions: `DONE-2026-10-11.md`. The guards still bound every unsourced famil
 | ZH | 第 "用於整數數詞之前" (any integer numeral) | 國語辭典 via 汉典 (NTS-08) | **Widened** to the cardinal domain (10^12 − 1) |
 | VN | thứ "Đặt trước số từ để chỉ thứ tự" | vtudien Việt-Việt | **Widened** to the cardinal domain, except a whole zero class (NTS-30) |
 | HI | §180 (इ) "सौ से ऊपर की संख्याओं में पिछले शब्द के अंत में वाँ लगाते हैं" | Kamta Prasad Guru, हिंदी व्याकरण (hi.wikisource) | **Widened** to the cardinal domain (एक लाखवाँ, एक करोड़वाँ) |
-| EU | Ordinal = cardinal in letters + *-garren* ("… ehungarren, milagarren …"), *batgarren* separate | Euskaltzaindia rule 18 (PDF) | **Widened** to 1–999 999 999 (≥ 10^9 NTS-30) |
+| EU | Ordinal = cardinal in letters + *-garren* ("… ehungarren, milagarren …"), *batgarren* separate | Euskaltzaindia rule 18 (PDF) | **Widened** to 1–999 999 999 (≥ 10^9 NTS-30; the cardinal is composed since NTS-30F, the ordinals stay closed) |
 
 ## NTS-27 — cardinal corrections (2026-10-10)
 
@@ -422,7 +473,7 @@ are unchanged; the cardinals no longer block them (NTS-28). Details and old/new 
 | ZH | Counting by 万, 亿; one 零 for a run of skipped positions, none at the end of a group; 十 keeps 一 except at the head (一百一十) | AllSet Learning, Chinese Grammar Wiki, *Zeros in numbers* | **Corrected**; below 万亿 (10^12), which needs a multiplier counted by 万 itself. `两` stays a ClockTime literal |
 | HI | हजार 10^3, लाख 10^5, करोड़ 10^7, अरब 10^9, खरब 10^11; the higher names (नील, पद्म, शंख) "बहुधा असंख्यता का बोध"; spelling पाँच | Kamta Prasad Guru, *हिंदी व्याकरण* §173, §176, §180 (hi.wikisource, chapter विशेषण) | **Corrected** (`groupPattern="3,2"`, domain below 100 खरब, पाँच everywhere) |
 | EU | *mila eta berrehun* but *mila berrehun eta bi* (the *eta* after the thousands is dropped when the following hundreds carry their own); *milioi bat*, *hamar milioi*, *mila milioi*; 600 *seiehun* | Euskaltzaindia, rule 7 *Zenbakien idazkeraz* (1994), table and notes | **Corrected**. The *eta* is applied from the thousand upward also after *milioi* (*milioi bat eta bat*), as the note's "Mila zenbakitik gora" states; *seirehun* → *seiehun* also corrects the ordinals 600–699 |
-| ES | Apocope of *uno* and its compounds before *mil* and the nouns *millón/millones* (*veintiún mil*, *treinta y un mil*, *ciento un mil*, *un millón*); *mil* not *un mil*; *mil millones*; *ciento uno* in two words | RAE/ASALE DPD *cardinales* (table, §2, §3, §4), *uno* §2.2–2.3, *mil* §1 | **Corrected**; feminine before *mil* keeps the apocope (allowed by §3); *mil millones* + millions not composed (NTS-30) |
+| ES | Apocope of *uno* and its compounds before *mil* and the nouns *millón/millones* (*veintiún mil*, *treinta y un mil*, *ciento un mil*, *un millón*); *mil* not *un mil*; *mil millones*; *ciento uno* in two words | RAE/ASALE DPD *cardinales* (table, §2, §3, §4), *uno* §2.2–2.3, *mil* §1 | **Corrected**; feminine before *mil* keeps the apocope (allowed by §3); *mil millones* + millions not composed (NTS-30; composed since NTS-30F) |
 
 ## NTS-08 final validation (2026-10-09)
 

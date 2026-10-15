@@ -53,12 +53,15 @@
                                 <Digit digit="9" string="bederatziehun" buildString="bederatziehun eta *" />
                         </Group>
                 </Groups>
-                <NumberScale firstLetterUpperCase="false">
+                <!-- NTS-30F: Euskaltzaindia rule 203 (2025) §4.1: Basque uses the long scale; 10^9 is "mila milioi"
+                     (rules 7 and 203) and the multiplier of milioi is a complete cardinal of up to six digits ("berrehun
+                     eta sei mila zazpiehun eta laurogeita hamabost milioi", rule 203 §4), so the scales are paired from
+                     the million (pairedScalesFrom 2) and 10^9 has no name of its own. -->
+                <NumberScale firstLetterUpperCase="false" pairedScalesFrom="2">
                         <StaticNames>
                                 <Scale value="0" string="" />
                                 <Scale value="1" string="mila" />
                                 <Scale value="2" string="milioi" />
-                                <Scale value="3" string="mila milioi" />
                         </StaticNames>
                 </NumberScale>
                 <Replacements>
@@ -67,9 +70,10 @@
                         <!-- NTS-27: Euskaltzaindia rule 7: 1.000.000 "milioi bat" (multiplier one after the noun),
                              1.000.000.000 "mila milioi"; from a thousand upwards "eta" joins the following part
                              (groupConnector) and is dropped when the following hundreds carry their own "eta"
-                             ("mila eta berrehun" but "mila berrehun eta bi"). -->
+                             ("mila eta berrehun" but "mila berrehun eta bi"). NTS-30F: onValue="1" keeps the
+                             inversion to exactly one million; a paired multiplier ending in one keeps its order
+                             ("mila eta bat milioi"), and 1000 renders "mila" through the thousands rule above. -->
                         <Replacement oldValue="bat milioi" newValue="milioi bat" onScale="2" onValue="1" />
-                        <Replacement oldValue="bat mila milioi" newValue="mila milioi" onScale="3" onValue="1" />
                         <Replacement oldValue="eta ehun eta" newValue="ehun eta" scope="Anywhere" />
                         <Replacement oldValue="eta berrehun eta" newValue="berrehun eta" scope="Anywhere" />
                         <Replacement oldValue="eta hirurehun eta" newValue="hirurehun eta" scope="Anywhere" />

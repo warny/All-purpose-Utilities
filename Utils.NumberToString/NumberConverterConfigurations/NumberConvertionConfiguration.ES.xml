@@ -50,29 +50,32 @@
 				<Digit digit="9" string="novecientos" buildString="novecientos *" />
 			</Group>
 		</Groups>
-		<NumberScale firstLetterUpperCase="false">
+		<!-- NTS-30F: long scale, DPD "cardinales" (1 000 000 000 "mil millones"), "millardo" ("dos mil millones") and
+		     "números" §3.3c ("13 000 millones"): the multiplier of millón is a complete cardinal of up to six digits, so
+		     the scales are paired from the million (pairedScalesFrom 2) and 10^9 has no name of its own (mil millones,
+		     dos mil quinientos millones, mil un millones). -->
+		<NumberScale firstLetterUpperCase="false" pairedScalesFrom="2">
 			<StaticNames>
 				<Scale value="0" string="" />
 				<Scale value="1" string="mil" />
 				<Scale value="2" string="mill(ón|ones)" />
-				<!-- NTS-27: DPD "cardinales": 1 000 000 000 is "mil millones" (plural also for a multiplier of one). -->
-				<Scale value="3" string="mil millones" />
 			</StaticNames>
 			<Suffixes>
 				<Suffix>(ón|ones)</Suffix>
 			</Suffixes>
 		</NumberScale>
 		<Replacements>
-			<!-- DPD "mil" §1: 1000 is "mil", not "un mil"; likewise "mil millones". -->
+			<!-- DPD "mil" §1: 1000 is "mil", not "un mil"; likewise "mil millones" (a paired multiplier of 1000
+			     renders its own thousands through this rule). -->
 			<Replacement oldValue="uno mil" newValue="mil" onScale="1" onValue="1" />
-			<Replacement oldValue="uno mil millones" newValue="mil millones" onScale="3" onValue="1" />
 			<!-- NTS-27: DPD "cardinales" §4 and "uno" §2.2-2.3: uno and its compounds are apocopated before
 			     mil and before the nouns millón/millones (veintiún mil, treinta y un mil, ciento un mil, un millón,
 			     veintiún millones). Only the multiplier of a scale is affected, never a standalone cardinal.
-			     The fused 21 comes first so that the generic "uno" ending does not leave "veintiun". -->
-			<Replacement oldValue="veintiuno mil" newValue="veintiún mil" scope="Anywhere" onScale="1,3" />
+			     The fused 21 comes first so that the generic "uno" ending does not leave "veintiun". NTS-30F: the
+			     multiplier of millones is rendered as a whole cardinal, so these rules also give veintiún mil millones
+			     (scale 1 inside the multiplier) and mil un millones, mil veintiún millones (scale 2). -->
+			<Replacement oldValue="veintiuno mil" newValue="veintiún mil" scope="Anywhere" onScale="1" />
 			<Replacement oldValue="uno mil" newValue="un mil" scope="EndsWith" onScale="1" />
-			<Replacement oldValue="uno mil millones" newValue="un mil millones" scope="EndsWith" onScale="3" />
 			<Replacement oldValue="veintiuno millones" newValue="veintiún millones" scope="Anywhere" onScale="2" />
 			<Replacement oldValue="uno millón" newValue="un millón" scope="EndsWith" onScale="2" />
 			<Replacement oldValue="uno millones" newValue="un millones" scope="EndsWith" onScale="2" />
