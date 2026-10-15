@@ -1725,7 +1725,9 @@ When a language needs more than singular/plural for a scale noun, `<ScaleForm>` 
   [`<GeneratedScaleForm>`](#generated-scale-forms--generatedscaleform): `forceVariants` on a `<Form>`; once the
   selector chose that form (on the caller's variants), the forced values overlay the caller's for the whole
   multiplier (a paired one included) and the group's local passes, and the group is shielded from the caller's
-  whole-number passes. The variants apply to the multiplier, never to the scale noun. Unknown dimensions or values
+  whole-number passes — on every surface built from the cardinal (unnamed multiplicatives, the multiplier of an
+  `OrdinalScale` round ordinal, the ordinal end triggers). The variants apply to the multiplier, never to the scale
+  noun. Unknown dimensions or values
   are rejected at load (`UNTS006`, path `ScaleForms[2].plural`); `baseOn` replaces a whole `<ScaleForm>` entry,
   forced variants included. Programmatic: `NumberToStringConverterOptions.ScaleFormMultiplierForcedVariants`
   (scale index → form key → `ForcedVariantSet`; keys of the synthesized `singular`/`plural` are allowed), read back

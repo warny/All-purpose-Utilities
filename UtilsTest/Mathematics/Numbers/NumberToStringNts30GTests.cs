@@ -473,6 +473,55 @@ public class NumberToStringNts30GTests
         Assert.AreEqual("twoC thousand twoB millions", converter.Convert(2_002_000_000L, "gender=b"));
     }
 
+    /// <summary>End trigger of the caller's gender a trying to rewrite the forced spellings.</summary>
+    private const string EndTriggerA = """<Trigger executeAt="end"><Replace from="twoB"><Variant type="gender" variant="a" value="twoEndB" /></Replace><Replace from="twoC"><Variant type="gender" variant="a" value="twoEndC" /></Replace></Trigger>""";
+
+    /// <summary>
+    /// <c>ConvertMultiplicative</c> renders an unnamed multiplicative through the cardinal: its whole-number variant
+    /// pass and end triggers, run with the caller's query, must leave the forced group untouched.
+    /// </summary>
+    [TestMethod]
+    public void ScaleForm_Multiplicative_ForcedGroupIsShielded()
+    {
+        var converter = BuildForced(extra: """<Multiplicatives suffix=" times" />""" + EndTriggerA);
+
+        Assert.AreEqual("twoB millions times", converter.ConvertMultiplicative(2_000_000, "gender=a"));
+        Assert.AreEqual("twoB millions fiveA times", converter.ConvertMultiplicative(2_000_005, "gender=a"));
+        Assert.AreEqual("twoB millions twoC times", converter.ConvertMultiplicative(2_000_002, "gender=c"));
+        Assert.AreEqual("minus twoB millions times", converter.ConvertMultiplicative(-2_000_000, "gender=a"));
+    }
+
+    /// <summary>
+    /// An <c>OrdinalScale</c> builds a round ordinal on its scale noun from the multiplier's cardinal: the variants the
+    /// noun's form forces render that multiplier, as in the cardinal, and survive the caller's variant pass.
+    /// </summary>
+    [TestMethod]
+    public void ScaleForm_OrdinalScale_ForcedVariantsRenderTheMultiplier()
+    {
+        var converter = BuildForced(extra: """<Ordinals suffix="th"><OrdinalScale scales="2" multiplierSeparator=" " /></Ordinals>""");
+
+        Assert.AreEqual("twoB millionth", converter.ConvertOrdinal(2_000_000L, "gender=a"));
+        Assert.AreEqual("twoB hundred twenty twoB millionth", converter.ConvertOrdinal(222_000_000L, "gender=a"));
+        Assert.AreEqual("millionth", converter.ConvertOrdinal(1_000_000L, "gender=a"), "a multiplier of one is the noun alone");
+        Assert.AreEqual("two thousandth", converter.ConvertOrdinal(2_000L, "gender=a"), "scale 1 is not covered: cardinal path, unforced");
+    }
+
+    /// <summary>
+    /// The ordinal end triggers run with the caller's query on the finished ordinal: a forced group the ordinal
+    /// transformation left intact stays shielded, on the round-scale path as on the cardinal path.
+    /// </summary>
+    [TestMethod]
+    public void ScaleForm_OrdinalEndTriggers_LeaveTheForcedGroupUntouched()
+    {
+        var roundScale = BuildForced(extra: """<Ordinals suffix="th"><OrdinalScale scales="2" multiplierSeparator=" " /></Ordinals>""" + EndTriggerA);
+        Assert.AreEqual("twoB millionth", roundScale.ConvertOrdinal(2_000_000L, "gender=a"));
+
+        var cardinal = BuildForced(ThousandForcesC, extra: """<Ordinals suffix="th" /><Trigger executeAt="end"><Replace from="twoC"><Variant type="gender" variant="c" value="twoEnd" /></Replace></Trigger>""");
+        Assert.AreEqual("twoC thousand fiveAth", cardinal.ConvertOrdinal(2_005L, "gender=a"));
+        Assert.AreEqual("twoC thousand twoEndth", cardinal.ConvertOrdinal(2_002L, "gender=c"),
+            "the forced group keeps its own twoC, the caller's end trigger still reaches the unforced twoC");
+    }
+
     /// <summary>A ScaleForm without forceVariants behaves exactly as before: the caller's query reaches the multiplier.</summary>
     [TestMethod]
     public void ScaleForm_WithoutForcedVariants_KeepsHistoricalOutput()

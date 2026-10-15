@@ -2512,9 +2512,12 @@ namespace Utils.NumberToString
         {
             activeVariants ??= BuildVariantQuery(variants);
             bool explicitVariantIntent = hasExplicitVariantIntent ?? variants.Length > 0;
-            string ordinal = BuildOrdinalCore(number, activeVariants, explicitVariantIntent);
+            // The forced groups of the cardinal text survive the ordinal transformation unless it rewrote them: the
+            // end triggers, run with the caller's query, leave the ones still found untouched.
+            var shielded = NewShieldedGroups();
+            string ordinal = BuildOrdinalCore(number, activeVariants, explicitVariantIntent, shielded);
             ordinal = ApplyRawAdjustment(ordinal);
-            return ApplyTriggers(ordinal, TriggerAt.End, null, activeVariants);
+            return ApplyShielded(ordinal, shielded, text => ApplyTriggers(text, TriggerAt.End, null, activeVariants));
         }
 
         /// <summary>
@@ -2525,8 +2528,13 @@ namespace Utils.NumberToString
         /// <param name="number">The non-negative ordinal value.</param>
         /// <param name="activeVariants">The resolved variant query.</param>
         /// <param name="explicitVariantIntent">Whether a caller or constituent explicitly selected a variant.</param>
+        /// <param name="shieldedGroups">
+        /// When not <see langword="null"/>, receives in text order the forced groups of the cardinal texts the ordinal
+        /// is built from (see <see cref="ConvertRaw"/>), for the caller's later passes.
+        /// </param>
         /// <returns>The unadjusted ordinal.</returns>
-        private string BuildOrdinalCore(long number, IReadOnlyDictionary<string, string> activeVariants, bool explicitVariantIntent)
+        private string BuildOrdinalCore(long number, IReadOnlyDictionary<string, string> activeVariants, bool explicitVariantIntent,
+            List<string>? shieldedGroups = null)
         {
             if (LanguageSpecifics is IOrdinalLanguageSpecifics ordinalPlugin)
             {
@@ -2536,7 +2544,7 @@ namespace Utils.NumberToString
                     throw new NotSupportedException(
                         $"Language '{LanguageIdentifier}' has no ordinal fallback for value {number}.");
             }
-            return BuildDeclarativeOrdinalFragment(number, activeVariants, explicitVariantIntent);
+            return BuildDeclarativeOrdinalFragment(number, activeVariants, explicitVariantIntent, shieldedGroups);
         }
 
         /// <summary>
@@ -2550,11 +2558,13 @@ namespace Utils.NumberToString
         /// <param name="number">The non-negative ordinal value.</param>
         /// <param name="activeVariants">The resolved variant query.</param>
         /// <param name="explicitVariantIntent">Whether a caller or constituent explicitly selected a variant.</param>
+        /// <param name="shieldedGroups">Receives the forced groups of the cardinal text, or <see langword="null"/>.</param>
         /// <returns>The unadjusted declarative ordinal fragment.</returns>
         private string BuildDeclarativeOrdinalFragment(
             long number,
             IReadOnlyDictionary<string, string> activeVariants,
-            bool explicitVariantIntent)
+            bool explicitVariantIntent,
+            List<string>? shieldedGroups = null)
         {
             // Find the most specific matching ordinal variant
             OrdinalVariantRule? activeVariant = FindBestOrdinalVariant(activeVariants);
@@ -2572,7 +2582,7 @@ namespace Utils.NumberToString
             else if (OrdinalExceptions.TryGetValue(number, out var exception))
                 return exception;
             // An analytic composition (numeric head + tail, each through the whole pipeline) comes next.
-            else if (TryComposeOrdinal(number, activeVariants, explicitVariantIntent, out string composed))
+            else if (TryComposeOrdinal(number, activeVariants, explicitVariantIntent, shieldedGroups, out string composed))
                 return composed;
             else
             {
@@ -2580,11 +2590,12 @@ namespace Utils.NumberToString
                 // A round value covered by an OrdinalScale rule is formed on its scale noun, never on
                 // the assembled cardinal; the cardinal variant rules were applied to its multiplier only,
                 // since they agree a cardinal, not the joined multiplier + noun text.
-                if (!TryBuildRoundScaleText(number, activeVariants, out raw))
+                if (!TryBuildRoundScaleText(number, activeVariants, shieldedGroups, out raw))
                 {
                     var shielded = NewShieldedGroups();
                     raw = number == 0 ? Zero : ConvertRaw((BigInteger)number, activeVariants, shielded);
                     raw = ApplyShielded(raw, shielded, text => ApplyVariantRules(text, activeVariants, number));
+                    if (shielded is { Count: > 0 }) shieldedGroups?.AddRange(shielded);
                 }
                 // Ordinal-only replacements see the assembled, variant-transformed cardinal and run
                 // before the ordinal transformation (word rules, stems, removeTrailing, suffix).
@@ -2827,12 +2838,15 @@ namespace Utils.NumberToString
                 throw new NotSupportedException($"Language '{LanguageIdentifier}' has no multiplicative configuration.");
             var query = BuildVariantQuery(variants);
             BigInteger magnitude = BigInteger.Abs((BigInteger)multiplier);
+            // The historical order is kept (variant rules, raw adjustment, end triggers); the forced groups of the
+            // cardinal are shielded from both caller passes, the adjustment seeing the plain text in between.
+            var shielded = Multiplicatives.ContainsKey(multiplier) || magnitude.IsZero ? null : NewShieldedGroups();
             string raw = Multiplicatives.TryGetValue(multiplier, out var named)
                 ? named
-                : (magnitude.IsZero ? Zero : ConvertRaw(magnitude, query)) + (MultiplicativeSuffix ?? string.Empty);
-            raw = ApplyVariantRules(raw, query, magnitude);
+                : (magnitude.IsZero ? Zero : ConvertRaw(magnitude, query, shielded)) + (MultiplicativeSuffix ?? string.Empty);
+            raw = ApplyShielded(raw, shielded, text => ApplyVariantRules(text, query, magnitude));
             if (_rawAdjustFunction != null) raw = _rawAdjustFunction(raw);
-            raw = ApplyTriggers(raw, TriggerAt.End, null, query);
+            raw = ApplyShielded(raw, shielded, text => ApplyTriggers(text, TriggerAt.End, null, query));
             string final = LanguageSpecifics.FinalizeWriting(LanguageIdentifier, raw);
             return multiplier < 0 ? Minus.Replace("*", final) : final;
         }
