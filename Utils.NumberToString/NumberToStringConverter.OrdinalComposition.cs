@@ -225,7 +225,9 @@ namespace Utils.NumberToString
                 if (number < unit) continue;
                 if (_ordinalScaleByIndex[index] is not { } rule || number % unit != 0) return false;
                 long multiplier = number / unit;
-                string noun = GetScaleWord(index, 1, activeVariants);
+                // The round ordinal is built on the singular noun whatever the multiplier: that one selected form
+                // gives both the word and the variants it forces on the multiplier.
+                var (noun, forced) = ResolveScaleWord(index, 1, activeVariants);
                 if (multiplier == 1)
                 {
                     text = noun;
@@ -234,10 +236,9 @@ namespace Utils.NumberToString
                 // The multiplier is rendered exactly like its standalone cardinal: ConvertRaw (which
                 // already applies the scale-specific variant rules), then the global variant rules
                 // evaluated against the multiplier itself (onValue included). ApplyVariantRules skips
-                // the onScale rules, so nothing is applied twice. As in the cardinal, the variants the
-                // scale form selected for this multiplier forces (exact or generated) render it, and its
-                // forced inner groups are shielded from the pass run with another query.
-                var (_, forced) = ResolveScaleWord(index, multiplier, activeVariants);
+                // the onScale rules, so nothing is applied twice. The variants the singular form forces
+                // (exact or generated scale form) render it, and its forced inner groups are shielded from
+                // the pass run with another query.
                 var multiplierQuery = forced.IsEmpty ? activeVariants : forced.Overlay(activeVariants);
                 var inner = NewShieldedGroups();
                 string multiplierText = ConvertRaw(multiplier, multiplierQuery, inner);

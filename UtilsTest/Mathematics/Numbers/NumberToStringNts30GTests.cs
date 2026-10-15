@@ -507,6 +507,22 @@ public class NumberToStringNts30GTests
     }
 
     /// <summary>
+    /// An <c>OrdinalScale</c> builds on the singular scale noun whatever the multiplier, so the variants forced on the
+    /// multiplier are those of that singular form, not those of the form the cardinal selects for the same multiplier.
+    /// </summary>
+    [TestMethod]
+    public void ScaleForm_OrdinalScale_UsesTheForcedVariantsOfTheSingularForm()
+    {
+        var converter = BuildForced(
+            """<ScaleForm scale="2"><Forms><Form key="singular" value="million" forceVariants="gender=c" /><Form key="plural" value="millions" /></Forms></ScaleForm>""",
+            extra: """<Ordinals suffix="th"><OrdinalScale scales="2" multiplierSeparator=" " /></Ordinals>""");
+
+        Assert.AreEqual("twoC millionth", converter.ConvertOrdinal(2_000_000L, "gender=a"), "the ordinal uses the singular form");
+        Assert.AreEqual("two millions", converter.Convert(2_000_000, "gender=a"), "the cardinal uses the plural form, which forces nothing");
+        Assert.AreEqual("five millionth", converter.ConvertOrdinal(5_000_000L, "gender=a"), "c rewrites two only; the caller's a pass is shielded off");
+    }
+
+    /// <summary>
     /// The ordinal end triggers run with the caller's query on the finished ordinal: a forced group the ordinal
     /// transformation left intact stays shielded, on the round-scale path as on the cardinal path.
     /// </summary>
