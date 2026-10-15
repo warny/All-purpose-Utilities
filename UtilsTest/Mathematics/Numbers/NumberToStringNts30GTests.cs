@@ -695,6 +695,10 @@ public class NumberToStringNts30GTests
     [DataRow(500_200_000L, "bostehun milioi eta berrehun mila")]
     [DataRow(500_500_500L, "bostehun milioi bostehun mila eta bostehun")]
     [DataRow(21_021_021L, "hogeita bat milioi hogeita bat mila eta hogeita bat")]
+    [DataRow(1_100_000L, "milioi bat eta ehun mila")]
+    [DataRow(1_100_001L, "milioi bat ehun mila eta bat")]
+    [DataRow(1_100_100L, "milioi bat ehun mila eta ehun")]
+    [DataRow(1_101_000L, "milioi bat ehun eta bat mila")]
     public void Basque_OneEtaBeforeTheLastGroup(long value, string expected)
         => Assert.AreEqual(expected, Get("EU").Convert(value));
 

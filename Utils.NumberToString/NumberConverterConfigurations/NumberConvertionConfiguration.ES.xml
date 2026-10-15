@@ -63,6 +63,17 @@
 			<Suffixes>
 				<Suffix>(ón|ones)</Suffix>
 			</Suffixes>
+			<!-- NTS-30G: millón is a masculine noun (DLE "millón": m.; DPD "cardinales" §3, §6) and the hundreds agree
+			     with the noun they quantify (DPD "cardinales" §3): the multiplier of millón/millones is masculine
+			     whatever the caller's gender (quinientos millones, dos mil quinientos millones de personas), while
+			     the lower groups keep agreeing with the counted noun (un millón doscientas mil personas). The forms
+			     are the synthesized ones; only the forced gender is added, form (apocope) is left to the caller. -->
+			<ScaleForm scale="2">
+				<Forms>
+					<Form key="singular" value="millón" forceVariants="gender=masculino" />
+					<Form key="plural" value="millones" forceVariants="gender=masculino" />
+				</Forms>
+			</ScaleForm>
 		</NumberScale>
 		<Replacements>
 			<!-- DPD "mil" §1: 1000 is "mil", not "un mil"; likewise "mil millones" (a paired multiplier of 1000
