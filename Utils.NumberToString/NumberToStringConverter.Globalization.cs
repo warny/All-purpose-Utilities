@@ -823,6 +823,7 @@ namespace Utils.NumberToString
             ScaleConnector = model.ScaleConnector,
             ScaleConnectorThresholdString = model.ScaleConnectorThresholdString,
             FinalComponentConnector = model.FinalComponentConnector,
+            FinalGroupConnector = model.FinalGroupConnector,
             TimeUnits = model.TimeUnits,
             ClockTime = model.ClockTime,
             DateFormat = model.DateFormat,
@@ -997,6 +998,7 @@ namespace Utils.NumberToString
                 ScaleConnector = overriding.ScaleConnector ?? inherited.ScaleConnector,
                 ScaleConnectorThresholdString = overriding.ScaleConnectorThresholdString ?? inherited.ScaleConnectorThresholdString,
                 FinalComponentConnector = overriding.FinalComponentConnector ?? inherited.FinalComponentConnector,
+                FinalGroupConnector = overriding.FinalGroupConnector ?? inherited.FinalGroupConnector,
                 TimeUnits = overriding.TimeUnits ?? inherited.TimeUnits,
                 ClockTime = overriding.ClockTime ?? inherited.ClockTime,
                 DateFormat = overriding.DateFormat ?? inherited.DateFormat,
@@ -1173,6 +1175,7 @@ namespace Utils.NumberToString
             ScaleConnector = definition.ScaleConnector,
             ScaleConnectorThresholdString = definition.ScaleConnectorThresholdString,
             FinalComponentConnector = definition.FinalComponentConnector,
+            FinalGroupConnector = definition.FinalGroupConnector,
             TimeUnits = definition.TimeUnits,
             ClockTime = definition.ClockTime,
             DateFormat = definition.DateFormat,
@@ -1228,6 +1231,12 @@ namespace Utils.NumberToString
                 ValidateGroupTable(scoped, path);
             }
             Require(language.MultiplierPosition is null or "beforeScale" or "afterScale", "multiplierPosition", "must be 'beforeScale' or 'afterScale'.");
+            // LexicalFormEntry is shared with the scale forms, the only forms whose forceVariants has a meaning (the
+            // multiplier they govern); the XSD already rejects it elsewhere, this guards a programmatic model.
+            foreach (var unit in language.TimeUnits?.Units ?? [])
+                foreach (var form in unit?.Forms?.Entries ?? [])
+                    Require(string.IsNullOrWhiteSpace(form?.ForceVariants), $"TimeUnits[{unit!.Name}].Forms[{form!.Key}].ForceVariants",
+                        "forceVariants is only supported on the forms of a ScaleForm; a time unit forces variants with its own forceVariants.");
 
             void ValidateGroupTable(GroupsListType? table, string path)
             {
@@ -2032,6 +2041,9 @@ namespace Utils.NumberToString
                 FinalComponentConnector = string.IsNullOrWhiteSpace(language.FinalComponentConnector)
                     ? null
                     : language.FinalComponentConnector,
+                FinalGroupConnector = string.IsNullOrWhiteSpace(language.FinalGroupConnector)
+                    ? null
+                    : language.FinalGroupConnector,
                 // Every <ScaleForm> registers its scale (with empty forms when it only names a
                 // selector) so that its index is validated; selectors are resolved here, once.
                 ScaleForms = scaleFormEntries.ToDictionary(
@@ -2039,6 +2051,16 @@ namespace Utils.NumberToString
                     e => e.Forms?.Entries is { Count: > 0 }
                         ? LexicalFormSet.Create(e.Forms.Entries.Select(f => (f.Key, f.Value)))
                         : LexicalFormSet.Empty),
+                // Per form, like GeneratedScaleForm: the variants the selected form forces on its multiplier
+                // (Spanish millón/millones: gender=masculino); validated against the language by the converter.
+                ScaleFormMultiplierForcedVariants = scaleFormEntries
+                    .Where(e => e.Forms?.Entries?.Any(f => !string.IsNullOrWhiteSpace(f.ForceVariants)) == true)
+                    .ToDictionary(
+                        e => e.Scale,
+                        e => (IReadOnlyDictionary<string, ForcedVariantSet>)e.Forms!.Entries!
+                            .Where(f => !string.IsNullOrWhiteSpace(f.ForceVariants))
+                            .ToDictionary(f => f.Key, f => ForcedVariantSet.Parse(f.ForceVariants, languageIdentifier,
+                                $"ScaleForms[{e.Scale}].{f.Key}"), StringComparer.OrdinalIgnoreCase)),
                 ScaleFormSelectors = scaleFormEntries
                     .Where(e => !string.IsNullOrWhiteSpace(e.LexicalFormSelector?.Type) || !string.IsNullOrWhiteSpace(e.FormSelector))
                     .ToDictionary(e => e.Scale, e => ResolveLexicalFormSelector(

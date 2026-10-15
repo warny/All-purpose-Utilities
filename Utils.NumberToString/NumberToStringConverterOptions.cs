@@ -251,9 +251,22 @@ public sealed class NumberToStringConverterOptions
     /// group the connector precedes the last non-zero digit position (an exception such as 15 is one component), and
     /// between groups it precedes the last non-zero group when that group is a single component. <see langword="null"/>
     /// or white space (the default): no connector. Cannot be combined with <see cref="GroupConnector"/>,
-    /// <see cref="IntraGroupConnector"/> or a <c>Fusion</c>, which rewrite the same junctions.
+    /// <see cref="FinalGroupConnector"/>, <see cref="IntraGroupConnector"/> or a <c>Fusion</c>, which rewrite the
+    /// same junctions.
     /// </summary>
     public string? FinalComponentConnector { get; set; }
+
+    /// <summary>
+    /// Connector placed between groups only, at the junction preceding the last non-zero group of a numeral phrase
+    /// (e.g. <c>"eta"</c> for Basque: <c>hirurogei milioi berrehun mila eta bat</c>, <c>bi milioi eta zazpiehun
+    /// mila</c>). The other inter-group junctions keep <see cref="GroupConnector"/> (when its threshold applies) or
+    /// <see cref="GroupSeparator"/>; the composition inside a group is never affected, so a language may encode its
+    /// own connectors in its <c>buildString</c>s. A paired multiplier (<see cref="NumberScale.PairedScalesFrom"/>) is a
+    /// numeral phrase of its own and places its connector before its own last group. <see langword="null"/> or white
+    /// space (the default): no connector. Cannot be combined with <see cref="FinalComponentConnector"/>, which also
+    /// claims the junction before the last group.
+    /// </summary>
+    public string? FinalGroupConnector { get; set; }
 
     /// <summary>
     /// Time units keyed by canonical name ("hour", "minute", "second"),
@@ -324,6 +337,22 @@ public sealed class NumberToStringConverterOptions
     /// performed here). Scales with forms but no selector use <see cref="DefaultLexicalFormSelector"/>.
     /// </summary>
     public IReadOnlyDictionary<int, ILexicalFormSelector>? ScaleFormSelectors { get; set; }
+
+    /// <summary>
+    /// Optional variants that the forms of an exact scale noun force on the multiplier they govern, keyed by scale
+    /// index (1 = thousands, 2 = millions, …), then by form key (Spanish scale 2: <c>singular</c> and
+    /// <c>plural</c> force <c>gender=masculino</c>, since <c>millón</c> is a masculine noun: <c>quinientos
+    /// millones</c> whatever the caller's gender). The same contract as
+    /// <see cref="GeneratedScaleForm.MultiplierForcedVariants"/>: the selector runs once, on the caller's variants;
+    /// the forced values of the selected form overlay the caller's, dimension by dimension, for the rendering of the
+    /// whole multiplier (a paired multiplier included, see <see cref="NumberScale.PairedScalesFrom"/>) and every local
+    /// pass of the group (group triggers, variant rules of the multiplier, <c>onScale</c> variant rules,
+    /// group-with-scale triggers); the group is then left untouched by the whole-number passes run with the caller's
+    /// query. The variants apply to the multiplier, never to the scale noun itself. Form keys must be keys of the
+    /// effective forms of the scale (the synthesized "singular"/"plural" included); dimensions and values must be
+    /// declared by the language. A scale listed here only is registered with its synthesized forms.
+    /// </summary>
+    public IReadOnlyDictionary<int, IReadOnlyDictionary<string, ForcedVariantSet>>? ScaleFormMultiplierForcedVariants { get; set; }
 
     /// <summary>
     /// Optional per-scale junction between a group multiplier and the scale noun, keyed by scale index
@@ -424,6 +453,8 @@ public sealed class NumberToStringConverterOptions
         // synthesized from source.Scale, which must not override the names of a replaced Scale.
         ScaleForms = source.ScaleFormOverrides;
         ScaleFormSelectors = source.ScaleFormSelectorOverrides;
+        // Configured entries only (keyed by form key, nothing synthesized): the public view is safe to copy.
+        ScaleFormMultiplierForcedVariants = source.ScaleFormMultiplierForcedVariants;
         // Configured overrides only (nothing is synthesized): the public view is safe to copy.
         ScaleFormMultiplierSeparators = source.ScaleFormMultiplierSeparators;
         // Suffix fragments only, nothing synthesized from source.Scale: the effective view is safe to copy.
@@ -443,6 +474,7 @@ public sealed class NumberToStringConverterOptions
         ScaleConnector = source.ScaleConnector;
         ScaleConnectorThreshold = source.ScaleConnectorThreshold;
         FinalComponentConnector = source.FinalComponentConnector;
+        FinalGroupConnector = source.FinalGroupConnector;
         TimeUnits = source.TimeUnits;
         TimeUnitForcedVariants = source.TimeUnitForcedVariants;
         // Use the override-only internal snapshots, not the effective TimeUnitForms/

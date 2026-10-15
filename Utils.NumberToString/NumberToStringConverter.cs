@@ -177,7 +177,8 @@ namespace Utils.NumberToString
             // become explicit overrides of a clone built on another Scale.
             _scaleFormOverrides = (options.ScaleForms ?? ImmutableDictionary<int, LexicalFormSet>.Empty).ToImmutableDictionary();
             _scaleFormSelectorOverrides = (options.ScaleFormSelectors ?? ImmutableDictionary<int, ILexicalFormSelector>.Empty).ToImmutableDictionary();
-            _scaleForms = CompileScaleForms(_scaleFormOverrides, _scaleFormSelectorOverrides);
+            // The forced-variant keys are checked here; their values are canonicalized below, with the dimensions.
+            _scaleForms = CompileScaleForms(_scaleFormOverrides, _scaleFormSelectorOverrides, options.ScaleFormMultiplierForcedVariants);
             _scaleFormsPublic = _scaleForms.ToImmutableDictionary(kv => kv.Key, kv => kv.Value.Forms);
             _scaleFormSelectorsPublic = _scaleForms.ToImmutableDictionary(kv => kv.Key, kv => kv.Value.Selector);
             _scaleFormMultiplierSeparators = CompileScaleFormMultiplierSeparators(options.ScaleFormMultiplierSeparators);
@@ -266,6 +267,7 @@ namespace Utils.NumberToString
             _scaleConnector = options.ScaleConnector;
             _scaleConnectorThreshold = options.ScaleConnectorThreshold;
             _finalComponentConnector = string.IsNullOrWhiteSpace(options.FinalComponentConnector) ? null : options.FinalComponentConnector;
+            _finalGroupConnector = string.IsNullOrWhiteSpace(options.FinalGroupConnector) ? null : options.FinalGroupConnector;
             ValidateFinalComponentConnector();
             // Needs the group tables, Exceptions and the intra-group connector: edge validation renders
             // the actual lower constituents of each table through ConvertGroup.
@@ -376,6 +378,12 @@ namespace Utils.NumberToString
                 : Enumerable.Range(0, Scale.ScaleSuffixes.Count)
                     .Select(index => _generatedScaleForms.TryGetValue(index, out var form) ? form : null)
                     .ToArray();
+            _scaleForms = CanonicalizeScaleFormForcedVariants(_scaleForms);
+            _scaleFormMultiplierForcedVariants = _scaleForms
+                .Where(kv => kv.Value.MultiplierForcedVariants.Count != 0)
+                .ToImmutableDictionary(kv => kv.Key, kv => (IReadOnlyDictionary<string, ForcedVariantSet>)kv.Value.MultiplierForcedVariants);
+            // Generated forms keep their historical condition (any entry); an exact form only when it forces variants.
+            _scaleFormsMayForceVariants = _generatedScaleFormBySuffix.Length != 0 || _scaleFormMultiplierForcedVariants.Count != 0;
 
             CompileAndValidateRulePrecedence();
         }
@@ -506,6 +514,14 @@ namespace Utils.NumberToString
         /// (<see cref="DefaultLexicalFormSelector"/> when none was configured).
         /// </summary>
         public IReadOnlyDictionary<int, ILexicalFormSelector> ScaleFormSelectors => _scaleFormSelectorsPublic;
+
+        /// <summary>
+        /// Gets the variants that the forms of each exact scale noun force on the multiplier they govern, keyed by
+        /// scale index then form key, canonicalized for this language
+        /// (see <see cref="NumberToStringConverterOptions.ScaleFormMultiplierForcedVariants"/>). Only the scales with at
+        /// least one forcing form are listed; empty when none is configured.
+        /// </summary>
+        public IReadOnlyDictionary<int, IReadOnlyDictionary<string, ForcedVariantSet>> ScaleFormMultiplierForcedVariants => _scaleFormMultiplierForcedVariants;
 
         /// <summary>
         /// Gets only the explicitly configured scale forms, unlike the effective <see cref="ScaleForms"/>.
@@ -645,6 +661,13 @@ namespace Utils.NumberToString
         /// </summary>
         public string? FinalComponentConnector => _finalComponentConnector;
 
+        /// <summary>
+        /// Gets the connector placed between groups only, before the last non-zero group of every numeral phrase (e.g.
+        /// "eta" for Basque), or <see langword="null"/> when the language declares none
+        /// (see <see cref="NumberToStringConverterOptions.FinalGroupConnector"/>).
+        /// </summary>
+        public string? FinalGroupConnector => _finalGroupConnector;
+
         /// <inheritdoc/>
         public bool SupportsTimeConversion => _timeUnits.Count > 0;
 
@@ -753,6 +776,13 @@ namespace Utils.NumberToString
         private readonly ImmutableDictionary<int, LexicalFormSet> _scaleFormOverrides;
         /// <summary>Only the explicitly configured scale form selectors (no default filled in).</summary>
         private readonly ImmutableDictionary<int, ILexicalFormSelector> _scaleFormSelectorOverrides;
+        /// <summary>Canonical variants forced on the multiplier by the forms of the exact scales; the public view.</summary>
+        private readonly ImmutableDictionary<int, IReadOnlyDictionary<string, ForcedVariantSet>> _scaleFormMultiplierForcedVariants;
+        /// <summary>
+        /// Whether a scale form (any generated one, or an exact one with forced variants) can force variants on its
+        /// multiplier, so that the conversions collect the shielded groups (see <see cref="NewShieldedGroups"/>).
+        /// </summary>
+        private readonly bool _scaleFormsMayForceVariants;
         /// <summary>Validated multiplier/scale junctions of the exact scales; empty when none is configured.</summary>
         private readonly ImmutableDictionary<int, string> _scaleFormMultiplierSeparators;
         /// <summary>Validated generated scale forms by suffix index (forced variants canonicalized); the public view.</summary>
@@ -780,6 +810,8 @@ namespace Utils.NumberToString
         private readonly string? _scaleConnector;
         private readonly long _scaleConnectorThreshold;
         private readonly string? _finalComponentConnector;
+        /// <summary>The inter-group connector before the last non-zero group, or <see langword="null"/> (see <see cref="FinalGroupConnector"/>).</summary>
+        private readonly string? _finalGroupConnector;
         private readonly ImmutableDictionary<int, ForcedVariantSet> _fractionForcedVariants;
         /// <summary>Lazily computed text of each pronounced decimal digit (see <see cref="DecimalDigitTexts"/>).</summary>
         private string[]? _decimalDigitTexts;
@@ -1525,8 +1557,13 @@ namespace Utils.NumberToString
                     var (_, nextValue, _, nextHasFinalConnector, _) = groupsValues.Peek();
                     // The whole number is a phrase whose components are its non-zero groups: the connector precedes
                     // the last one when that group is a single component (its multiplier has no connector of its own).
+                    // The final-group connector (never combined with it, rejected at load) claims the junction before
+                    // the last group whatever that group holds; the other junctions keep the group connector or the
+                    // separator. A paired multiplier, rendered by its own ConvertRaw, already placed its own.
                     if (_finalComponentConnector != null && groupsValues.Count == 1 && !nextHasFinalConnector)
                         result.Append(Separator).Append(_finalComponentConnector).Append(Separator);
+                    else if (_finalGroupConnector != null && groupsValues.Count == 1)
+                        result.Append(Separator).Append(_finalGroupConnector).Append(Separator);
                     else if (_groupConnector != null && nextValue < _groupConnectorThreshold)
                         result.Append(Separator).Append(_groupConnector).Append(Separator);
                     else
@@ -2309,14 +2346,17 @@ namespace Utils.NumberToString
 
         /// <summary>
         /// Rejects a <see cref="FinalComponentConnector"/> combined with a primitive that rewrites the same junctions:
-        /// the group connector (between groups), the intra-group connector (after the hundreds) and a <c>Fusion</c>
-        /// (inside a group, of the default or of a scale-scoped table). Their joint semantics are undefined.
+        /// the group connector (between groups), the final-group connector (before the last group), the intra-group
+        /// connector (after the hundreds) and a <c>Fusion</c> (inside a group, of the default or of a scale-scoped
+        /// table). Their joint semantics are undefined. The <see cref="FinalGroupConnector"/> alone combines with every
+        /// other primitive: it only claims the junction before the last group.
         /// </summary>
         /// <exception cref="ArgumentException">The connector is combined with one of these primitives.</exception>
         private void ValidateFinalComponentConnector()
         {
             if (_finalComponentConnector == null) return;
             string? conflict = _groupConnector != null ? nameof(NumberToStringConverterOptions.GroupConnector)
+                : _finalGroupConnector != null ? nameof(NumberToStringConverterOptions.FinalGroupConnector)
                 : _intraGroupConnector != null ? nameof(NumberToStringConverterOptions.IntraGroupConnector)
                 : HasFusions(_defaultGroupTable) || _scopedGroupTables.Any(scoped => HasFusions(scoped.Table)) ? "Fusion"
                 : null;
