@@ -208,13 +208,16 @@ public class NumberToStringNts30HTests
     public void Ukrainian_Productive(long numerator, long denominator, string expected)
         => Assert.AreEqual(expected, Get("UK").ConvertFraction(numerator, denominator));
 
-    /// <summary>Outside the sourced domain the Ukrainian reading fails closed.</summary>
+    /// <summary>
+    /// Outside the sourced domain the Ukrainian reading fails closed. The compound numerators ending in один were opened
+    /// by NTS-39 (singular denominator, <see cref="NumberToStringNts39Tests"/>).
+    /// </summary>
     [TestMethod]
     public void Ukrainian_FailsClosed()
     {
         var uk = Get("UK");
-        Assert.ThrowsExactly<NotSupportedException>(() => uk.ConvertFraction(21, 37), "compound numerator ending in один");
-        Assert.ThrowsExactly<NotSupportedException>(() => uk.ConvertFraction(101, 1000));
+        Assert.AreEqual("двадцять одна тридцять сьома", uk.ConvertFraction(21, 37), "NTS-39");
+        Assert.AreEqual("сто одна тисячна", uk.ConvertFraction(101, 1000), "NTS-39");
         Assert.ThrowsExactly<NotSupportedException>(() => uk.ConvertFraction(0, 3), "zero numerator");
         Assert.ThrowsExactly<NotSupportedException>(() => uk.ConvertFraction(5, 1), "denominator one");
         Assert.ThrowsExactly<NotSupportedException>(() => uk.ConvertFraction(1, 3, "case=родовий"), "only the nominative");
@@ -258,12 +261,15 @@ public class NumberToStringNts30HTests
     public void Bulgarian_Productive(long numerator, long denominator, string expected)
         => Assert.AreEqual(expected, Get("BG").ConvertFraction(numerator, denominator));
 
-    /// <summary>Outside the sourced domain the Bulgarian reading fails closed.</summary>
+    /// <summary>
+    /// Outside the sourced domain the Bulgarian reading fails closed. The compound numerators ending in една were opened
+    /// by NTS-39 (plural denominator, <see cref="NumberToStringNts39Tests"/>).
+    /// </summary>
     [TestMethod]
     public void Bulgarian_FailsClosed()
     {
         var bg = Get("BG");
-        Assert.ThrowsExactly<NotSupportedException>(() => bg.ConvertFraction(21, 37), "compound numerator ending in една");
+        Assert.AreEqual("двадесет и една тридесет и седми", bg.ConvertFraction(21, 37), "NTS-39");
         Assert.ThrowsExactly<NotSupportedException>(() => bg.ConvertFraction(0, 3));
         Assert.ThrowsExactly<NotSupportedException>(() => bg.ConvertFraction(5, 1));
         Assert.ThrowsExactly<NotSupportedException>(() => bg.ConvertFraction(1, 2_000_000), "ordinal declined by the plugin");
@@ -292,19 +298,20 @@ public class NumberToStringNts30HTests
         => Assert.AreEqual(expected, Get("CS").ConvertFraction(numerator, denominator));
 
     /// <summary>
-    /// Outside the IJP nouns the Czech reading fails closed: the productive <c>lomeno</c> + instrumental reading
-    /// needs a cardinal instrumental (recorded in TODO), and <c>ku</c> reads a ratio.
+    /// <c>ku</c> reads a ratio and is never produced; 1/13 (IJP noun), compound numerators (genitive plural) and zero
+    /// (<c>lomeno</c>) were opened by NTS-39 (<see cref="NumberToStringNts39Tests"/>); denominators ending in one after the
+    /// tens or hundreds and the oblique cases still fail closed.
     /// </summary>
     [TestMethod]
     public void Czech_FailsClosed()
     {
         var cs = Get("CS");
-        Assert.ThrowsExactly<NotSupportedException>(() => cs.ConvertFraction(1, 13));
+        Assert.AreEqual("jedna třináctina", cs.ConvertFraction(1, 13), "NTS-39");
         Assert.ThrowsExactly<NotSupportedException>(() => cs.ConvertFraction(1, 101));
         Assert.ThrowsExactly<NotSupportedException>(() => cs.ConvertFraction(1, 1001));
-        Assert.ThrowsExactly<NotSupportedException>(() => cs.ConvertFraction(21, 100), "compound numerator ending in 1–4");
-        Assert.ThrowsExactly<NotSupportedException>(() => cs.ConvertFraction(22, 3));
-        Assert.ThrowsExactly<NotSupportedException>(() => cs.ConvertFraction(0, 3));
+        Assert.AreEqual("dvacet jedna setin", cs.ConvertFraction(21, 100), "NTS-39");
+        Assert.AreEqual("dvacet dva třetin", cs.ConvertFraction(22, 3), "NTS-39");
+        Assert.AreEqual("nula lomeno třemi", cs.ConvertFraction(0, 3), "NTS-39");
         Assert.ThrowsExactly<NotSupportedException>(() => cs.ConvertFraction(1, 3, "case=genitiv"));
     }
 
@@ -323,16 +330,22 @@ public class NumberToStringNts30HTests
     public void Slovak_FractionNouns(long numerator, long denominator, string expected)
         => Assert.AreEqual(expected, Get("SK").ConvertFraction(numerator, denominator));
 
-    /// <summary>Unestablished Slovak forms fail closed; <c>ku</c> (a ratio) is no longer produced.</summary>
+    /// <summary>
+    /// <c>ku</c> (a ratio) is no longer produced. The forms NTS-30H left closed were opened by NTS-39 (noun paradigms,
+    /// compound numerators, <c>lomené</c>; <see cref="NumberToStringNts39Tests"/>); the denominator one and the oblique
+    /// cases still fail closed.
+    /// </summary>
     [TestMethod]
     public void Slovak_FailsClosed()
     {
         var sk = Get("SK");
-        Assert.ThrowsExactly<NotSupportedException>(() => sk.ConvertFraction(5, 7));
-        Assert.ThrowsExactly<NotSupportedException>(() => sk.ConvertFraction(2, 100), "plural of stotina not established");
-        Assert.ThrowsExactly<NotSupportedException>(() => sk.ConvertFraction(1, 13));
-        Assert.ThrowsExactly<NotSupportedException>(() => sk.ConvertFraction(1, 1001));
-        Assert.ThrowsExactly<NotSupportedException>(() => sk.ConvertFraction(21, 3));
+        Assert.AreEqual("päť sedmín", sk.ConvertFraction(5, 7), "NTS-39");
+        Assert.AreEqual("dve stotiny", sk.ConvertFraction(2, 100), "NTS-39");
+        Assert.AreEqual("jedna trinástina", sk.ConvertFraction(1, 13), "NTS-39");
+        Assert.AreEqual("jedna lomené číslom tisíc jeden", sk.ConvertFraction(1, 1001), "NTS-39");
+        Assert.AreEqual("dvadsaťjeden tretín", sk.ConvertFraction(21, 3), "NTS-39");
+        Assert.ThrowsExactly<NotSupportedException>(() => sk.ConvertFraction(5, 1));
+        Assert.ThrowsExactly<NotSupportedException>(() => sk.ConvertFraction(1, 3, "case=genitív"));
     }
 
     // ===== composites ================================================================================

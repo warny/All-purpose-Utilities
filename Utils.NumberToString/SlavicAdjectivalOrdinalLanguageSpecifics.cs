@@ -112,38 +112,37 @@ public abstract class SlavicAdjectivalOrdinalLanguageSpecifics : INumberToString
         => (number / 1_000_000_000, number / 1_000_000 % 1000, number / 1000 % 1000, number % 1000);
 
     /// <summary>
-    /// The agreement class of a fraction numerator with its denominator noun or adjective (NTS-30H): exactly one, two
-    /// to four, or another value. A compound numerator ending in a unit whose agreement after the tens is not sourced
-    /// for fractions (<see cref="FractionNumeratorClass.Unsupported"/>) fails closed.
+    /// The agreement class of a fraction numerator with its denominator noun or adjective: exactly one, exactly two to
+    /// four, or another value (NTS-30H, NTS-39).
     /// </summary>
     private protected enum FractionNumeratorClass
     {
-        /// <summary>The numerator is exactly one.</summary>
+        /// <summary>The numerator is one (or, where the language says so, a compound ending in one).</summary>
         One,
-        /// <summary>The numerator is two, three or four.</summary>
+        /// <summary>The numerator is exactly two, three or four.</summary>
         Few,
-        /// <summary>Any other supported numerator (five to twenty, round tens, hundreds, …).</summary>
+        /// <summary>Any other numerator: five and more, and the compounds (21, 22, 101 …) unless they read as one.</summary>
         Many,
-        /// <summary>A compound numerator whose agreement is not sourced (21, 22, 101 …): no reading.</summary>
-        Unsupported,
     }
 
     /// <summary>
-    /// Classifies a fraction numerator. A numerator above twenty ending in one of <paramref name="unsourcedFinalUnits"/>
-    /// (and not in 11–19) is <see cref="FractionNumeratorClass.Unsupported"/>.
+    /// Classifies a non-zero fraction numerator. Only the simple numerals two to four are <see cref="FractionNumeratorClass.Few"/>:
+    /// a compound ending in two to four governs the genitive plural in Czech (IJP, "Počítaný předmět po číslovkách":
+    /// <i>dvacet dva žáků</i>, the more common and natural form) and Slovak (Morfológia slovenského jazyka 1966:
+    /// <i>dvadsaťdva jabĺk</i>), and the plural in Ukrainian (<i>двадцять дві шістдесятих</i>). A compound ending in one
+    /// is <see cref="FractionNumeratorClass.Many"/> as well (<i>dvacet jedna žáků</i>; Slovak <i>dvadsaťjeden žien</i>)
+    /// unless <paramref name="compoundEndingInOneIsSingular"/>, as in Ukrainian, where the denominator agrees with the
+    /// last component (<i>тридцять одна сота</i>).
     /// </summary>
     /// <param name="numerator">The absolute numerator, at least one.</param>
-    /// <param name="unsourcedFinalUnits">The final units whose compound agreement is not sourced.</param>
+    /// <param name="compoundEndingInOneIsSingular">Whether a compound ending in one (21, 101, not 11) reads as one.</param>
     /// <returns>The class.</returns>
-    private protected static FractionNumeratorClass ClassifyFractionNumerator(BigInteger numerator, int[] unsourcedFinalUnits)
+    private protected static FractionNumeratorClass ClassifyFractionNumerator(BigInteger numerator, bool compoundEndingInOneIsSingular)
     {
         if (numerator.IsOne) return FractionNumeratorClass.One;
         if (numerator <= 4) return FractionNumeratorClass.Few;
-        if (numerator <= 20) return FractionNumeratorClass.Many;
         int lastTwo = (int)(numerator % 100);
-        int unit = lastTwo % 10;
-        bool teen = lastTwo is >= 11 and <= 19;
-        return !teen && System.Array.IndexOf(unsourcedFinalUnits, unit) >= 0 ? FractionNumeratorClass.Unsupported : FractionNumeratorClass.Many;
+        return compoundEndingInOneIsSingular && lastTwo % 10 == 1 && lastTwo != 11 ? FractionNumeratorClass.One : FractionNumeratorClass.Many;
     }
 
     /// <summary>Determines whether the caller's variants ask for the nominative, the only case a fraction reading supports.</summary>
@@ -154,46 +153,68 @@ public abstract class SlavicAdjectivalOrdinalLanguageSpecifics : INumberToString
 
     /// <summary>The feminine gender forced on a fraction numerator (the fraction words are feminine).</summary>
     /// <returns>The forced variant set.</returns>
-    private protected ForcedVariantSet FeminineNumerator() => ForcedVariantSet.Create((GenderDimension, FeminineValue));
+    private protected ForcedVariantSet FeminineNumerator() => NumeratorGender(FeminineValue);
 
     /// <summary>
     /// The forms of one fraction noun (Czech <c>třetina</c>, Slovak <c>tretina</c>) after a numerator of one (nominative
-    /// singular), of two to four (nominative plural) and of five and more (genitive plural); a form not established by
-    /// the source is <see langword="null"/> and makes the numerators of that class fail closed.
+    /// singular), of exactly two to four (nominative plural) and of any other numerator (genitive plural).
     /// </summary>
     /// <param name="One">The nominative singular.</param>
-    /// <param name="Few">The nominative plural, or <see langword="null"/>.</param>
-    /// <param name="Many">The genitive plural, or <see langword="null"/>.</param>
-    private protected readonly record struct FractionNounForms(string One, string? Few, string? Many);
+    /// <param name="Few">The nominative plural.</param>
+    /// <param name="Many">The genitive plural.</param>
+    private protected readonly record struct FractionNounForms(string One, string Few, string Many);
 
     /// <summary>
-    /// Builds the reading of a fraction whose denominator is a fraction noun of <paramref name="lexicon"/>: the noun in
-    /// the form the numerator governs, the numerator forced to the feminine. Compound numerators ending in one to four
-    /// fail closed, as do denominators absent from the lexicon, other cases than the nominative, and zero numerators.
+    /// Builds the reading of a non-zero fraction whose denominator is a fraction noun of <paramref name="lexicon"/>: the
+    /// noun in the form the numerator governs. One and two to four agree with the feminine noun (<c>jedna třetina</c>,
+    /// <c>dvě třetiny</c>); with the genitive plural the numerator keeps its counting form, given by
+    /// <paramref name="countingGender"/> (<c>pět třetin</c>, <c>dvacet dva třetin</c>, Slovak <c>dvadsaťdva tretín</c>).
     /// </summary>
-    /// <param name="numerator">The absolute numerator.</param>
+    /// <param name="numerator">The absolute numerator, at least one.</param>
     /// <param name="denominator">The denominator.</param>
-    /// <param name="variants">The caller's effective variant query.</param>
     /// <param name="lexicon">The sourced fraction nouns by denominator.</param>
+    /// <param name="countingGender">The gender value of the counting form of the numerals.</param>
     /// <param name="reading">Receives the reading.</param>
-    /// <returns><see langword="true"/> when the fraction has a sourced reading.</returns>
-    private protected bool TryBuildFractionNoun(BigInteger numerator, BigInteger denominator, IReadOnlyDictionary<string, string> variants,
-        IReadOnlyDictionary<long, FractionNounForms> lexicon, out FractionDenominatorReading? reading)
+    /// <returns><see langword="true"/> when <paramref name="lexicon"/> has a noun for <paramref name="denominator"/>.</returns>
+    private protected bool TryBuildFractionNoun(BigInteger numerator, BigInteger denominator, IReadOnlyDictionary<long, FractionNounForms> lexicon,
+        string countingGender, out FractionDenominatorReading? reading)
     {
         reading = null;
-        if (numerator.IsZero || denominator > long.MaxValue || !IsNominativeRequested(variants)
-            || !lexicon.TryGetValue((long)denominator, out var forms))
+        if (denominator > long.MaxValue || !lexicon.TryGetValue((long)denominator, out var forms))
             return false;
-        string? word = ClassifyFractionNumerator(numerator, [1, 2, 3, 4]) switch
+        reading = ClassifyFractionNumerator(numerator, compoundEndingInOneIsSingular: false) switch
         {
-            FractionNumeratorClass.One => forms.One,
-            FractionNumeratorClass.Few => forms.Few,
-            FractionNumeratorClass.Many => forms.Many,
-            _ => null,
+            FractionNumeratorClass.One => new FractionDenominatorReading(forms.One, FeminineNumerator()),
+            FractionNumeratorClass.Few => new FractionDenominatorReading(forms.Few, FeminineNumerator()),
+            _ => new FractionDenominatorReading(forms.Many, NumeratorGender(countingGender)),
         };
-        if (word == null) return false;
-        reading = new FractionDenominatorReading(word, FeminineNumerator());
         return true;
+    }
+
+    /// <summary>A gender forced on a fraction numerator.</summary>
+    /// <param name="value">The gender value.</param>
+    /// <returns>The forced variant set.</returns>
+    private protected ForcedVariantSet NumeratorGender(string value) => ForcedVariantSet.Create((GenderDimension, value));
+
+    /// <summary>
+    /// Writes the instrumental of a number between 2 and 99 from the instrumental tables of a language, the tens and
+    /// the unit of a compound as two words (Czech <c>dvaceti třemi</c>, Slovak <c>dvadsiatimi dvoma</c>). A final one
+    /// has no instrumental (<see langword="null"/>): its gender in a bare numeral is not sourced (Czech), or the compound
+    /// is indeclinable (Slovak <c>dvadsaťjeden</c>).
+    /// </summary>
+    /// <param name="number">A number between 0 and 99; 0 gives the empty string.</param>
+    /// <param name="units">The instrumentals of 0–9 (0 and 1 unused).</param>
+    /// <param name="teens">The instrumentals of 10–19.</param>
+    /// <param name="tens">The instrumentals of the round tens (indexes 2–9).</param>
+    /// <returns>The instrumental, or <see langword="null"/>.</returns>
+    private protected static string? InstrumentalBelowHundred(int number, string[] units, string[] teens, string[] tens)
+    {
+        if (number == 0) return string.Empty;
+        if (number is >= 10 and < 20) return teens[number - 10];
+        int unit = number % 10;
+        if (unit == 1) return null;
+        if (number < 10) return units[unit];
+        return unit == 0 ? tens[number / 10] : tens[number / 10] + " " + units[unit];
     }
 }
 
@@ -208,8 +229,9 @@ public abstract class SlavicAdjectivalOrdinalLanguageSpecifics : INumberToString
 public sealed class CzechOrdinalLanguageSpecifics : SlavicAdjectivalOrdinalLanguageSpecifics, IFractionLanguageSpecifics
 {
     /// <summary>
-    /// The fraction nouns established by the Internetová jazyková příručka (ÚJČ AV ČR) with their paradigm (NTS-30H):
-    /// 1 → nominative singular, 2–4 → nominative plural, 5+ → genitive plural (jedna třetina, dvě třetiny, pět třetin).
+    /// The fraction nouns of the Internetová jazyková příručka (ÚJČ AV ČR), each an entry with its paradigm (NTS-30H,
+    /// NTS-39): 2–20, the round tens, 100, 1000, 100 000, 10^6 and 10^9 (SSČ "zlomk."). The IJP has no entry for a
+    /// compound denominator (<c>jednadvacetina</c>, <c>desetitisícina</c>): the lexicon is closed, not productive.
     /// </summary>
     private static readonly Dictionary<long, FractionNounForms> s_fractionNouns = new()
     {
@@ -224,21 +246,88 @@ public sealed class CzechOrdinalLanguageSpecifics : SlavicAdjectivalOrdinalLangu
         [10] = new("desetina", "desetiny", "desetin"),
         [11] = new("jedenáctina", "jedenáctiny", "jedenáctin"),
         [12] = new("dvanáctina", "dvanáctiny", "dvanáctin"),
+        [13] = new("třináctina", "třináctiny", "třináctin"),
+        [14] = new("čtrnáctina", "čtrnáctiny", "čtrnáctin"),
+        [15] = new("patnáctina", "patnáctiny", "patnáctin"),
+        [16] = new("šestnáctina", "šestnáctiny", "šestnáctin"),
+        [17] = new("sedmnáctina", "sedmnáctiny", "sedmnáctin"),
+        [18] = new("osmnáctina", "osmnáctiny", "osmnáctin"),
+        [19] = new("devatenáctina", "devatenáctiny", "devatenáctin"),
+        [20] = new("dvacetina", "dvacetiny", "dvacetin"),
+        [30] = new("třicetina", "třicetiny", "třicetin"),
+        [40] = new("čtyřicetina", "čtyřicetiny", "čtyřicetin"),
+        [50] = new("padesátina", "padesátiny", "padesátin"),
+        [60] = new("šedesátina", "šedesátiny", "šedesátin"),
+        [70] = new("sedmdesátina", "sedmdesátiny", "sedmdesátin"),
+        [80] = new("osmdesátina", "osmdesátiny", "osmdesátin"),
+        [90] = new("devadesátina", "devadesátiny", "devadesátin"),
         [100] = new("setina", "setiny", "setin"),
         [1000] = new("tisícina", "tisíciny", "tisícin"),
+        [100_000] = new("stotisícina", "stotisíciny", "stotisícin"),
         [1_000_000] = new("miliontina", "miliontiny", "miliontin"),
+        [1_000_000_000] = new("miliardtina", "miliardtiny", "miliardtin"),
     };
 
+    // Instrumentals of the IJP paradigms (dva → dvěma, tři → třemi, čtyři → čtyřmi, pět → pěti, deset → deseti,
+    // jedenáct → jedenácti, dvacet → dvaceti, devadesát → devadesáti; "Počítaný předmět po číslovkách": the numerals
+    // 5–99 share the paradigm of pět).
+    private static readonly string[] s_instrumentalUnits = ["", "", "dvěma", "třemi", "čtyřmi", "pěti", "šesti", "sedmi", "osmi", "devíti"];
+    private static readonly string[] s_instrumentalTeens =
+        ["deseti", "jedenácti", "dvanácti", "třinácti", "čtrnácti", "patnácti", "šestnácti", "sedmnácti", "osmnácti", "devatenácti"];
+    private static readonly string[] s_instrumentalTens =
+        ["", "", "dvaceti", "třiceti", "čtyřiceti", "padesáti", "šedesáti", "sedmdesáti", "osmdesáti", "devadesáti"];
+
+    /// <summary>The instrumental of the hundreds 200–900: the multiplier and <c>sty</c> (IJP: <c>třemi sty šedesáti pěti</c>).</summary>
+    private static readonly string[] s_instrumentalHundreds =
+        ["", "", "dvěma sty", "třemi sty", "čtyřmi sty", "pěti sty", "šesti sty", "sedmi sty", "osmi sty", "devíti sty"];
+
     /// <summary>
-    /// Reads a fraction with its fraction noun (<c>jedna třetina</c>, <c>dvě třetiny</c>, <c>pět sedmin</c>,
-    /// <c>jedna tisícina</c>): the ordinary reading of the IJP. The productive mathematical reading <c>lomeno</c> +
-    /// instrumental cardinal (IJP <c>lomit</c>: <c>dvě lomeno třemi</c>) needs a cardinal instrumental the configuration does not
-    /// have; denominators without an established noun therefore fail closed.
+    /// Reads a fraction as the IJP does. A denominator with a fraction noun takes the noun in the form the numerator
+    /// governs (<c>jedna třetina</c>, <c>dvě třetiny</c>, <c>pět sedmin</c>); a compound numerator governs the genitive
+    /// plural and keeps its counting form (<c>dvacet jedna třetin</c>, <c>dvacet dva třetin</c>: IJP "Počítaný předmět po
+    /// číslovkách", the genitive after <i>dvacet jeden … čtyři</i> being "more common and more natural"; "Členění čísel":
+    /// <i>tisíc dvacet čtyři celé/celých</i>). Any other denominator from 2 to 999, and a zero numerator, take the
+    /// mathematical reading <c>lomeno</c> + instrumental (IJP <c>lomit</c>: SSJČ <i>dvě lomeno třemi</i>, SSČ <i>pět lomeno
+    /// dvěma</i>), every part of the denominator declined (<i>třemi sty šedesáti pěti</i>) but <c>sto</c> before another
+    /// numeral (<i>ve sto dvaceti případech</i>); a numerator of one to four is feminine (<i>jedna a dvě jsou tři</i>, SSČ
+    /// <c>dva</c>), a compound keeps its counting form, as in arithmetic operations (IJP "Členění čísel": <i>k tisíc sedm
+    /// set dvacet dva korunám</i>).
+    /// Without a sourced form the reading fails closed: a denominator of one, a denominator ending in one after the tens
+    /// or hundreds (21, 101: the gender of a bare <c>jedna</c> in the instrumental is not sourced), from 1000 without a
+    /// noun, and every case other than the nominative.
     /// </summary>
     /// <inheritdoc />
     public bool TryGetFractionDenominator(BigInteger numerator, BigInteger denominator, IReadOnlyDictionary<string, string> variants,
         out FractionDenominatorReading? reading)
-        => TryBuildFractionNoun(numerator, denominator, variants, s_fractionNouns, out reading);
+    {
+        reading = null;
+        if (denominator < 2 || !IsNominativeRequested(variants))
+            return false;
+        if (!numerator.IsZero && TryBuildFractionNoun(numerator, denominator, s_fractionNouns, "standalone", out reading))
+            return true;
+        if (denominator > 999 || InstrumentalBelowThousand((int)denominator) is not string instrumental)
+            return false;
+        bool simple = !numerator.IsZero && ClassifyFractionNumerator(numerator, compoundEndingInOneIsSingular: false) != FractionNumeratorClass.Many;
+        reading = new FractionDenominatorReading("lomeno " + instrumental, simple ? FeminineNumerator() : NumeratorGender("standalone"));
+        return true;
+    }
+
+    /// <summary>
+    /// Writes the instrumental of a number between 2 and 999, every part declined (IJP "Členění čísel": <i>třemi sty
+    /// šedesáti pěti</i>) except <c>sto</c> followed by another numeral, which stays undeclined (IJP "Počítaný předmět
+    /// po číslovkách": <i>ve sto dvaceti případech</i>); <c>sto</c> alone is <c>stem</c>.
+    /// </summary>
+    /// <param name="number">A number between 2 and 999.</param>
+    /// <returns>The instrumental, or <see langword="null"/> when the number ends in one after the tens or hundreds.</returns>
+    private static string? InstrumentalBelowThousand(int number)
+    {
+        int hundreds = number / 100;
+        string? rest = InstrumentalBelowHundred(number % 100, s_instrumentalUnits, s_instrumentalTeens, s_instrumentalTens);
+        if (rest == null || hundreds == 0)
+            return rest;
+        string head = hundreds == 1 ? (rest.Length == 0 ? "stem" : "sto") : s_instrumentalHundreds[hundreds];
+        return rest.Length == 0 ? head : head + " " + rest;
+    }
 
     private static readonly string[] s_units = ["", "první", "druhý", "třetí", "čtvrtý", "pátý", "šestý", "sedmý", "osmý", "devátý"];
     private static readonly string[] s_teens =
@@ -341,30 +430,161 @@ public sealed class CzechOrdinalLanguageSpecifics : SlavicAdjectivalOrdinalLangu
 public sealed class SlovakOrdinalLanguageSpecifics : SlavicAdjectivalOrdinalLanguageSpecifics, IFractionLanguageSpecifics
 {
     /// <summary>
-    /// The fraction nouns established for Slovak (NTS-30H): P. Ondrus, Slovenská reč 33 (1968), 40–41, gives the
-    /// ordinary readings <c>jedna polovica</c>, <c>jedna tretina</c>, <c>pätina</c>, <c>jedna stotina</c>,
-    /// <c>jedna tisícina</c>; the Krátky slovník slovenského jazyka and the Pravidlá slovenského pravopisu give the
-    /// paradigm of <c>tretina -y -tín</c>. A plural not established by these sources is left <see langword="null"/>.
+    /// The Slovak fraction nouns (NTS-30H, NTS-39). Morfológia slovenského jazyka (1966), 332, gives the rule: from
+    /// <c>pätina</c> on the suffix <c>-ina</c> on the cardinal (<i>jedenástina … dvadsatina, päťdesiatina, tisícina</i>),
+    /// <c>tretina</c>, <c>štvrtina</c> on the ordinal, <c>stotina</c>, <c>milióntina</c>, <c>miliardtina</c> on an extended
+    /// stem, <c>polovica</c> on <i>pol-</i>. The Krátky slovník slovenského jazyka (2003) gives the genitive singular
+    /// (= nominative plural, <i>dve tretiny</i>, <i>dve polovice</i>) and genitive plural of 2–10, 12, 16, 17, 19, 20,
+    /// 30, 40, 60, 70, 80, 100, 1000 and 10^6 (<i>tretina -y -tín</i>, <i>dvanástina -y -tin</i>, <i>tisícina -y -cin</i>);
+    /// 11, 13, 14, 15, 18, 50, 90 and 10^9 follow the rule with the genitive plural of their pattern (<i>-nástin</i> as
+    /// <i>dvanástin</i>, <i>-desiatin</i> as <i>šesťdesiatin</i>, <i>miliardtin</i> as <i>milióntin</i>). Compound
+    /// denominators are built on the obsolescent inverse cardinal (<i>jedenadvadsatina</i>) and are not listed.
     /// </summary>
     private static readonly Dictionary<long, FractionNounForms> s_fractionNouns = new()
     {
-        [2] = new("polovica", null, null),
+        [2] = new("polovica", "polovice", "polovíc"),
         [3] = new("tretina", "tretiny", "tretín"),
-        [5] = new("pätina", null, null),
-        [100] = new("stotina", null, null),
-        [1000] = new("tisícina", null, null),
+        [4] = new("štvrtina", "štvrtiny", "štvrtín"),
+        [5] = new("pätina", "pätiny", "pätín"),
+        [6] = new("šestina", "šestiny", "šestín"),
+        [7] = new("sedmina", "sedminy", "sedmín"),
+        [8] = new("osmina", "osminy", "osmín"),
+        [9] = new("devätina", "devätiny", "devätín"),
+        [10] = new("desatina", "desatiny", "desatín"),
+        [11] = new("jedenástina", "jedenástiny", "jedenástin"),
+        [12] = new("dvanástina", "dvanástiny", "dvanástin"),
+        [13] = new("trinástina", "trinástiny", "trinástin"),
+        [14] = new("štrnástina", "štrnástiny", "štrnástin"),
+        [15] = new("pätnástina", "pätnástiny", "pätnástin"),
+        [16] = new("šestnástina", "šestnástiny", "šestnástin"),
+        [17] = new("sedemnástina", "sedemnástiny", "sedemnástin"),
+        [18] = new("osemnástina", "osemnástiny", "osemnástin"),
+        [19] = new("devätnástina", "devätnástiny", "devätnástin"),
+        [20] = new("dvadsatina", "dvadsatiny", "dvadsatín"),
+        [30] = new("tridsatina", "tridsatiny", "tridsatín"),
+        [40] = new("štyridsatina", "štyridsatiny", "štyridsatín"),
+        [50] = new("päťdesiatina", "päťdesiatiny", "päťdesiatin"),
+        [60] = new("šesťdesiatina", "šesťdesiatiny", "šesťdesiatin"),
+        [70] = new("sedemdesiatina", "sedemdesiatiny", "sedemdesiatin"),
+        [80] = new("osemdesiatina", "osemdesiatiny", "osemdesiatin"),
+        [90] = new("deväťdesiatina", "deväťdesiatiny", "deväťdesiatin"),
+        [100] = new("stotina", "stotiny", "stotín"),
+        [1000] = new("tisícina", "tisíciny", "tisícin"),
+        [1_000_000] = new("milióntina", "milióntiny", "milióntin"),
+        [1_000_000_000] = new("miliardtina", "miliardtiny", "miliardtin"),
     };
 
+    // Instrumentals (Morfológia slovenského jazyka 1966: paradigm of päť, I. piatimi, for 5–99 except the compounds with
+    // -jeden; I. štyrmi; Krátky slovník: dva I. dvoma, tri I. troma, genitives šiestich … deväťdesiatich).
+    private static readonly string[] s_instrumentalUnits = ["", "", "dvoma", "troma", "štyrmi", "piatimi", "šiestimi", "siedmimi", "ôsmimi", "deviatimi"];
+    private static readonly string[] s_instrumentalTeens =
+        ["desiatimi", "jedenástimi", "dvanástimi", "trinástimi", "štrnástimi", "pätnástimi", "šestnástimi", "sedemnástimi", "osemnástimi", "devätnástimi"];
+    private static readonly string[] s_instrumentalTens =
+        ["", "", "dvadsiatimi", "tridsiatimi", "štyridsiatimi", "päťdesiatimi", "šesťdesiatimi", "sedemdesiatimi", "osemdesiatimi", "deväťdesiatimi"];
+
     /// <summary>
-    /// Reads a fraction with its fraction noun (<c>jedna tretina</c>, <c>dve tretiny</c>, <c>päť tretín</c>), the
-    /// everyday and arithmetic reading of Ondrus (1968). The specialist reading <c>lomené</c> + instrumental cardinal
-    /// (<c>jedna lomené troma</c>) needs a cardinal instrumental the configuration does not have, and <c>ku</c> reads
-    /// a ratio (<c>dvadsaťsedem má sa ku deviatim</c>), not a fraction; unestablished forms fail closed.
+    /// Reads a fraction as Slovak does. A denominator with a fraction noun takes the noun in the form the numerator
+    /// governs (<c>jedna tretina</c>, <c>dve tretiny</c>, <c>päť tretín</c>, Ondrus 1968, Morfológia: <i>dve šestiny a
+    /// tri šestiny je päť šestín</i>); a compound numerator keeps its base form for every gender and governs the
+    /// genitive plural (Jarošová, Slovenská reč 86, 2021: <i>dvadsaťdva žien</i>, also for 102, 122; Páleníková, JÚĽŠ,
+    /// 2026: <i>dvadsaťjeden žien</i>, not <i>dvadsaťjedna</i>); <c>nula</c> governs the genitive plural as well
+    /// (Morfológia: <i>nula stupňov</i>, <i>nula celých</i>). Any other denominator takes the mathematical reading of
+    /// Ondrus (1968), §10: <c>lomené</c> + instrumental for a declinable numeral (<i>jedna lomené troma</i>, <i>sto
+    /// delené piatimi</i>, Jarošová <i>dvadsiatimi dvoma</i>), only the last component declined (Slovenská reč 43, 1978:
+    /// <i>jeden lomené sto štyridsiatimi dvoma</i>; see <see cref="InstrumentalCardinal"/>), <c>lomené číslom</c> + the
+    /// absolute form when the last component is indeclinable (<i>jedna lomené číslom dvadsaťjeden</i>, <i>jedna lomené
+    /// číslom sto</i>; <c>sto</c>, <c>tisíc</c> and their compounds, the compounds with <c>-jeden</c>), the numerator in
+    /// its absolute form (<i>jedna</i>, <i>dva</i>). The sources differ on a numerator of one: Ondrus reads the
+    /// absolute <i>jedna</i> (<i>jedna lomené troma</i>, <i>jedna lomené číslom sto</i>), the 1978 article the
+    /// masculine <i>jeden</i>; Ondrus's rule is kept. A denominator of one, a denominator from 10^6 without a noun and
+    /// every case other than the nominative fail closed; <c>ku</c> reads a ratio, not a fraction.
     /// </summary>
     /// <inheritdoc />
     public bool TryGetFractionDenominator(BigInteger numerator, BigInteger denominator, IReadOnlyDictionary<string, string> variants,
         out FractionDenominatorReading? reading)
-        => TryBuildFractionNoun(numerator, denominator, variants, s_fractionNouns, out reading);
+    {
+        reading = null;
+        if (denominator < 2 || !IsNominativeRequested(variants))
+            return false;
+        if (numerator.IsZero && denominator <= long.MaxValue && s_fractionNouns.TryGetValue((long)denominator, out var forms))
+        {
+            reading = new FractionDenominatorReading(forms.Many);
+            return true;
+        }
+        if (!numerator.IsZero && TryBuildFractionNoun(numerator, denominator, s_fractionNouns, "mužský", out reading))
+            return true;
+        if (denominator > 999_999)
+            return false;
+        int value = (int)denominator;
+        string denominatorText = InstrumentalCardinal(value) ?? "číslom " + Cardinal(value);
+        reading = new FractionDenominatorReading("lomené " + denominatorText, NumeratorGender(numerator.IsOne ? "ženský" : "mužský"));
+        return true;
+    }
+
+    /// <summary>
+    /// Writes the instrumental of a cardinal between 2 and 999 999 when its last component is declinable. The grammar
+    /// of a compound is set by its last component (Ondrus 1968, §8: <i>o gramatickom charaktere zloženého slova …
+    /// rozhoduje vždy posledný komponent</i>), so only the tens and units are declined and the words before them keep
+    /// their absolute form (Slovenská reč 43, 1978: <i>jeden lomené sto štyridsiatimi dvoma</i>, <i>dvanásť lomené
+    /// štyridsiatimi piatimi</i>). A cardinal ending in <c>sto</c> or <c>tisíc</c> (<c>sto</c>, <c>päťsto</c>,
+    /// <c>dvetisíc</c>, <c>tisíc sto</c>) or in a compound with <c>-jeden</c> (<c>dvadsaťjeden</c>) is indeclinable and
+    /// has no instrumental. A final bare <c>jeden</c> (<c>sto jeden</c>, <c>tisíc jeden</c>) has none either: the gender
+    /// of its instrumental in a bare numeral is not sourced, and <c>číslom</c> suits any numeral (Ondrus, §6: <i>po
+    /// substantíve číslo každá číslovka má podobu ako v absolútnom postavení</i>).
+    /// </summary>
+    /// <param name="number">A number between 2 and 999 999.</param>
+    /// <returns>The instrumental, or <see langword="null"/> when the last component is indeclinable.</returns>
+    private static string? InstrumentalCardinal(int number)
+    {
+        int rest = number % 100;
+        if (rest == 0 || InstrumentalBelowHundred(rest, s_instrumentalUnits, s_instrumentalTeens, s_instrumentalTens) is not string instrumental)
+            return null;
+        int head = number - rest;
+        return head == 0 ? instrumental : Cardinal(head) + " " + instrumental;
+    }
+
+    private static readonly string[] s_cardinalUnits = ["", "jeden", "dva", "tri", "štyri", "päť", "šesť", "sedem", "osem", "deväť"];
+    private static readonly string[] s_cardinalTeens =
+        ["desať", "jedenásť", "dvanásť", "trinásť", "štrnásť", "pätnásť", "šestnásť", "sedemnásť", "osemnásť", "devätnásť"];
+    private static readonly string[] s_cardinalTens = ["", "", "dvadsať", "tridsať", "štyridsať", "päťdesiat", "šesťdesiat", "sedemdesiat", "osemdesiat", "deväťdesiat"];
+
+    /// <summary>
+    /// Writes the absolute (masculine) cardinal of a number between 2 and 999 999 as the SK configuration does (PSP,
+    /// Jarošová 2021): tens and units in one word (<c>dvadsaťdva</c>), a thousands multiplier joined to <c>tisíc</c>
+    /// (<c>dvetisíc</c>, <c>stodvadsaťjedentisíc</c>), the hundreds apart from the rest of the last group
+    /// (<c>sto dva</c>, <c>tisíc deväťsto deväťdesiatdeväť</c>).
+    /// </summary>
+    /// <param name="number">A number between 2 and 999 999.</param>
+    /// <returns>The cardinal.</returns>
+    private static string Cardinal(int number)
+    {
+        int thousands = number / 1000;
+        string units = Group(number % 1000, joined: false);
+        if (thousands == 0)
+            return units;
+        string head = thousands switch { 1 => "tisíc", 2 => "dvetisíc", _ => Group(thousands, joined: true) + "tisíc" };
+        return units.Length == 0 ? head : head + " " + units;
+    }
+
+    /// <summary>Writes a group between 0 and 999, the hundreds joined to the rest or apart from it.</summary>
+    /// <param name="group">The group value.</param>
+    /// <param name="joined">Whether the hundreds are joined to the tens and units (in a thousands multiplier).</param>
+    /// <returns>The group text (empty for 0).</returns>
+    private static string Group(int group, bool joined)
+    {
+        int remainder = group % 100;
+        string rest = remainder switch
+        {
+            0 => string.Empty,
+            < 10 => s_cardinalUnits[remainder],
+            < 20 => s_cardinalTeens[remainder - 10],
+            _ => s_cardinalTens[remainder / 10] + s_cardinalUnits[remainder % 10],
+        };
+        string hundreds = s_cardinalHundreds[group / 100];
+        if (hundreds.Length == 0 || rest.Length == 0 || joined)
+            return hundreds + rest;
+        return hundreds + " " + rest;
+    }
 
     private static readonly string[] s_units = ["", "prvý", "druhý", "tretí", "štvrtý", "piaty", "šiesty", "siedmy", "ôsmy", "deviaty"];
     private static readonly string[] s_teens =
@@ -497,8 +717,13 @@ public sealed class UkrainianOrdinalLanguageSpecifics : SlavicAdjectivalOrdinalL
     /// Reads a fraction as Український правопис 2019, §107.1, does: the numerator in the feminine, the denominator the
     /// ordinal in the feminine nominative singular after one (<c>одна третя</c>, <c>одна четверта</c>) and in the
     /// genitive plural otherwise (<c>дві третіх</c>, <c>три четвертих</c>, <c>п'ять других</c>, <c>дев'ять десятих</c>).
-    /// The denominator is any ordinal this class forms (<c>одна тисячна</c>, <c>дві двадцять п'ятих</c>); compound
-    /// numerators ending in <c>один</c> after the tens (21, 101) and other cases than the nominative fail closed.
+    /// The denominator agrees as a noun with the implied <c>частина</c> (І. Літвінова, Українська мова 6 кл., 2022), so
+    /// after a compound it agrees with the last component: singular after a compound ending in <c>одна</c>
+    /// (<c>тридцять одна сота</c>: "якщо … числівник дробової частини … закінчується на одиницю, то весь запис треба
+    /// ставити в називний відмінок"), genitive plural after one ending in two to four (<c>двадцять дві шістдесятих</c>,
+    /// <c>тридцять чотири сорок третіх</c>, Літвінова). The denominator is any ordinal this class forms (<c>одна
+    /// тисячна</c>, <c>дві двадцять п'ятих</c>). A zero numerator, a denominator of one and the cases other than the
+    /// nominative (§107: the numerator is declined as a cardinal, <c>двом третім</c>) fail closed.
     /// </summary>
     /// <inheritdoc />
     public bool TryGetFractionDenominator(BigInteger numerator, BigInteger denominator, IReadOnlyDictionary<string, string> variants,
@@ -507,9 +732,8 @@ public sealed class UkrainianOrdinalLanguageSpecifics : SlavicAdjectivalOrdinalL
         reading = null;
         if (numerator.IsZero || denominator < 2 || denominator > int.MaxValue || !IsNominativeRequested(variants))
             return false;
-        var numeratorClass = ClassifyFractionNumerator(numerator, [1]);
-        if (numeratorClass == FractionNumeratorClass.Unsupported
-            || !TryDecompose((int)denominator, out string prefix, out IReadOnlyList<string> components))
+        var numeratorClass = ClassifyFractionNumerator(numerator, compoundEndingInOneIsSingular: true);
+        if (!TryDecompose((int)denominator, out string prefix, out IReadOnlyList<string> components))
             return false;
         string last = components[^1];
         string word = numeratorClass == FractionNumeratorClass.One ? Decline(last, Gender.Feminine, 0) : GenitivePlural(last);

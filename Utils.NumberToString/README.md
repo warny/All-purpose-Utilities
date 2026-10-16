@@ -1212,18 +1212,24 @@ uk.ConvertFraction(5_000_000, 3);      // "п'ять мільйонів трет
 NumberToStringConverter.GetConverter("BG").ConvertFraction(7, 8);    // "седем осми"
 NumberToStringConverter.GetConverter("CS").ConvertFraction(5, 7);    // "pět sedmin"
 NumberToStringConverter.GetConverter("SK").ConvertFraction(2, 3);    // "dve tretiny"
-NumberToStringConverter.GetConverter("CS").ConvertFraction(1, 13);   // NotSupportedException
+uk.ConvertFraction(21, 37);                                          // "двадцять одна тридцять сьома"
+NumberToStringConverter.GetConverter("CS").ConvertFraction(22, 3);   // "dvacet dva třetin"
+NumberToStringConverter.GetConverter("CS").ConvertFraction(1, 23);   // "jedna lomeno dvaceti třemi"
+NumberToStringConverter.GetConverter("SK").ConvertFraction(1, 142);  // "jedna lomené sto štyridsiatimi dvoma"
+NumberToStringConverter.GetConverter("SK").ConvertFraction(1, 200);  // "jedna lomené číslom dvesto"
+NumberToStringConverter.GetConverter("CS").ConvertFraction(1, 101);  // NotSupportedException
 ```
 
 | Plugin | Language | Reading |
 |--------|----------|---------|
-| `UkrainianOrdinalLanguageSpecifics` | UK | feminine numerator; ordinal denominator, feminine singular after one, genitive plural otherwise (Правопис 2019 §107) |
-| `BulgarianOrdinalLanguageSpecifics` | BG | feminine numerator; ordinal denominator, feminine singular after one, plural otherwise; *една четвърт* |
-| `CzechOrdinalLanguageSpecifics` | CS | fraction nouns of the IJP (*třetina*, *tisícina* …), 2–12, 100, 1000, 10^6 |
-| `SlovakOrdinalLanguageSpecifics` | SK | fraction nouns (*tretina*, *polovica*, *pätina*, *stotina*, *tisícina*); plurals only where sourced |
+| `UkrainianOrdinalLanguageSpecifics` | UK | feminine numerator; ordinal denominator agreeing with the last component of the numerator: feminine singular after *одна* (also *двадцять одна*), genitive plural otherwise (Правопис 2019 §107) |
+| `BulgarianOrdinalLanguageSpecifics` | BG | feminine numerator; ordinal denominator, feminine singular after one, plural otherwise (also *двадесет и една*); *една четвърт* |
+| `CzechOrdinalLanguageSpecifics` | CS | fraction nouns of the IJP (2–20, round tens, 100, 1000, 100 000, 10^6, 10^9), genitive plural after a compound numerator; otherwise *lomeno* + instrumental for 2–999 (*dvě lomeno třemi*) |
+| `SlovakOrdinalLanguageSpecifics` | SK | fraction nouns (2–20, round tens, 100, 1000, 10^6, 10^9) with their full paradigm, genitive plural after a compound or *nula*; otherwise, up to 999 999, *lomené* + the instrumental of the last component (*jedna lomené sto štyridsiatimi dvoma*) or, when it is indeclinable, *lomené číslom* + cardinal (*jedna lomené číslom dvesto*) |
 
-Compound numerators ending in *один/една* after the tens (UK, BG) or in 1–4 (CS, SK), zero numerators and
-non-nominative cases fail closed. Sources: `docs/NTS-08-linguistic-sources.md`, section NTS-30H.
+Denominator one, zero numerators in UK and BG, Czech denominators ending in one after the tens or hundreds or from
+1000 without a noun, Slovak denominators above 999 999 without a noun, and non-nominative cases fail closed. Sources:
+`docs/NTS-08-linguistic-sources.md`, sections NTS-30H and NTS-39.
 
 ### `GermanNumberToStringLanguageSpecifics`
 

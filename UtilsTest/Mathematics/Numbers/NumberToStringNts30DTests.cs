@@ -580,7 +580,8 @@ public class NumberToStringNts30DTests
 
     /// <summary>
     /// Fractions keep the и of the numerator cardinal and of the ordinal denominator. NTS-30H replaced the connector
-    /// reading (двадесет и едно на сто и едно) with the ordinal one; a compound numerator ending in една fails closed.
+    /// reading (двадесет и едно на сто и едно) with the ordinal one; NTS-39 opened the compound numerator ending in една
+    /// (plural denominator), which keeps the и of both terms.
     /// </summary>
     [TestMethod]
     public void Bulgarian_Fractions()
@@ -589,7 +590,7 @@ public class NumberToStringNts30DTests
         Assert.AreEqual("двадесет и две сто и първи", converter.ConvertFraction(22, 101));
         Assert.AreEqual("сто двадесет и пет хиляда и първи", converter.ConvertFraction(125, 1001));
         Assert.AreEqual("двадесет и две сто и първи", converter.Convert(new Number(22, 101)));
-        Assert.ThrowsExactly<NotSupportedException>(() => converter.ConvertFraction(21, 101));
+        Assert.AreEqual("двадесет и една сто и първи", converter.ConvertFraction(21, 101));
     }
 
     /// <summary>
