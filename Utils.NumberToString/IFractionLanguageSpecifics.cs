@@ -18,7 +18,8 @@ namespace Utils.NumberToString;
 /// <c>&lt;LanguageSpecifics&gt;</c>). The converter keeps every other step: the zero-denominator rejection, the move of
 /// the sign to the numerator, the numerator rendered through the cardinal pipeline (scale forms, connectors,
 /// shielding) with the forced variants overlaid on the caller's, the single finalization and the outer sign. Named
-/// power-of-ten fractions (<c>&lt;Fractions&gt;</c>) keep precedence.
+/// power-of-ten fractions (<c>&lt;Fractions&gt;</c>) keep precedence. Only the built-in Ukrainian, Czech and Slovak
+/// readings of an oblique case spell their numerator themselves (NTS-40), the cardinal pipeline having no case forms.
 /// </para>
 /// <para>
 /// Returning <see langword="false"/> means the language has no sourced reading for that fraction: the converter then
@@ -63,4 +64,26 @@ public sealed class FractionDenominatorReading
 
     /// <summary>Gets the variants forced on the numerator.</summary>
     public ForcedVariantSet NumeratorForcedVariants { get; }
+
+    /// <summary>
+    /// Gets the numerator text spelled by a built-in language, or <see langword="null"/> when the converter renders the
+    /// numerator through its cardinal pipeline. Only the built-in Slavic readings of an oblique case set it (NTS-40): the
+    /// cardinal pipeline has no case forms, and these languages decline every component of the numerator.
+    /// </summary>
+    internal string? NumeratorText { get; private init; }
+
+    /// <summary>
+    /// Creates a reading whose numerator is spelled by the language instead of the cardinal pipeline (NTS-40). The
+    /// numerator then receives no forced variants: its text already carries the case and gender the fraction requires.
+    /// </summary>
+    /// <param name="numeratorText">The numerator text.</param>
+    /// <param name="text">The denominator text.</param>
+    /// <returns>The reading.</returns>
+    /// <exception cref="ArgumentException">A text is null, empty or white space.</exception>
+    internal static FractionDenominatorReading WithNumerator(string numeratorText, string text)
+    {
+        if (string.IsNullOrWhiteSpace(numeratorText))
+            throw new ArgumentException("A fraction numerator needs a non-empty text.", nameof(numeratorText));
+        return new FractionDenominatorReading(text) { NumeratorText = numeratorText };
+    }
 }

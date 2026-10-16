@@ -1217,19 +1217,29 @@ NumberToStringConverter.GetConverter("CS").ConvertFraction(22, 3);   // "dvacet 
 NumberToStringConverter.GetConverter("CS").ConvertFraction(1, 23);   // "jedna lomeno dvaceti třemi"
 NumberToStringConverter.GetConverter("SK").ConvertFraction(1, 142);  // "jedna lomené sto štyridsiatimi dvoma"
 NumberToStringConverter.GetConverter("SK").ConvertFraction(1, 200);  // "jedna lomené číslom dvesto"
-NumberToStringConverter.GetConverter("CS").ConvertFraction(1, 101);  // NotSupportedException
+NumberToStringConverter.GetConverter("CS").ConvertFraction(1, 101);  // "jedna lomeno sto jednou"
+NumberToStringConverter.GetConverter("CS").ConvertFraction(1, 2023); // "jedna lomeno dvěma tisíci dvaceti třemi"
+NumberToStringConverter.GetConverter("SK").ConvertFraction(1, 2_000_003); // "jedna lomené dva milióny troma"
+
+// The case variant applies to the whole fraction (NTS-40): numerator and denominator are declined.
+uk.ConvertFraction(2, 3, "case=давальний");                                        // "двом третім"
+uk.ConvertFraction(3, 5, "case=орудний");                                          // "трьома п'ятими"
+NumberToStringConverter.GetConverter("CS").ConvertFraction(365, 1000, "case=instrumentál"); // "třemi sty šedesáti pěti tisícinami"
+NumberToStringConverter.GetConverter("SK").ConvertFraction(2, 3, "case=datív");   // "dvom tretinám"
+NumberToStringConverter.GetConverter("CS").ConvertFraction(1, 23, "case=genitiv"); // NotSupportedException (lomeno is nominative only)
 ```
 
 | Plugin | Language | Reading |
 |--------|----------|---------|
-| `UkrainianOrdinalLanguageSpecifics` | UK | feminine numerator; ordinal denominator agreeing with the last component of the numerator: feminine singular after *одна* (also *двадцять одна*), genitive plural otherwise (Правопис 2019 §107) |
+| `UkrainianOrdinalLanguageSpecifics` | UK | feminine numerator; ordinal denominator agreeing with the last component of the numerator: feminine singular after *одна* (also *двадцять одна*), genitive plural otherwise (Правопис 2019 §107); every case, the numerator declined in every part (§105) |
 | `BulgarianOrdinalLanguageSpecifics` | BG | feminine numerator; ordinal denominator, feminine singular after one, plural otherwise (also *двадесет и една*); *една четвърт* |
-| `CzechOrdinalLanguageSpecifics` | CS | fraction nouns of the IJP (2–20, round tens, 100, 1000, 100 000, 10^6, 10^9), genitive plural after a compound numerator; otherwise *lomeno* + instrumental for 2–999 (*dvě lomeno třemi*) |
-| `SlovakOrdinalLanguageSpecifics` | SK | fraction nouns (2–20, round tens, 100, 1000, 10^6, 10^9) with their full paradigm, genitive plural after a compound or *nula*; otherwise, up to 999 999, *lomené* + the instrumental of the last component (*jedna lomené sto štyridsiatimi dvoma*) or, when it is indeclinable, *lomené číslom* + cardinal (*jedna lomené číslom dvesto*) |
+| `CzechOrdinalLanguageSpecifics` | CS | fraction nouns of the IJP (2–20, round tens, 100, 1000, 100 000, 10^6, 10^9), genitive plural after a compound numerator, every case; otherwise *lomeno* + the instrumental, every part declined, up to 999 999 999 999 (*dvě lomeno třemi*, *jedna lomeno tisícem jednou*), nominative only |
+| `SlovakOrdinalLanguageSpecifics` | SK | fraction nouns (2–20, round tens, 100, 1000, 10^6, 10^9) with their full paradigm, genitive plural after a compound or *nula*, every case; otherwise, up to 999 999 999 999, *lomené* + the instrumental of the last component (*jedna lomené sto štyridsiatimi dvoma*, *jedna lomené dvoma miliónmi*) or, when it is indeclinable, *lomené číslom* + cardinal (*jedna lomené číslom dvesto*), nominative only |
 
-Denominator one, zero numerators in UK and BG, Czech denominators ending in one after the tens or hundreds or from
-1000 without a noun, Slovak denominators above 999 999 without a noun, and non-nominative cases fail closed. Sources:
-`docs/NTS-08-linguistic-sources.md`, sections NTS-30H and NTS-39.
+Denominator one, zero numerators in UK and BG (and in every oblique case), the CS/SK slash readings in an oblique case,
+the oblique cases of a CS compound numerator ending in *jedna* and of an SK numerator ending in a bare *jeden*, a CS
+multiplier ending in one (21 000), and values from 10^12 fail closed. `Convert` itself keeps no case. Sources:
+`docs/NTS-08-linguistic-sources.md`, sections NTS-30H, NTS-39 and NTS-40/41.
 
 ### `GermanNumberToStringLanguageSpecifics`
 

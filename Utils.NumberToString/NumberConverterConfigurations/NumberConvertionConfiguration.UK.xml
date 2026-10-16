@@ -192,7 +192,7 @@
         <!-- NTS-30H: fractions are read by the language specifics (IFractionLanguageSpecifics), as Український правопис 2019
              §107.1 writes them: одна третя, дві третіх, три четвертих, дев'ять десятих (feminine numerator, ordinal
              denominator in the feminine singular after one, in the genitive plural otherwise; NTS-39: singular after a
-             compound ending in одна, тридцять одна сота). The former connector reading
+             compound ending in одна, тридцять одна сота; NTS-40: every case, двом третім, трьома п'ятими). The former connector reading
              "один на тисяча" is gone; values outside the sourced domain fail closed. -->
         <LanguageSpecifics>UkrainianOrdinalLanguageSpecifics</LanguageSpecifics>
         <!-- Quarter-hour 12-hour clock without day-part wording. "година" is feminine: the hour is

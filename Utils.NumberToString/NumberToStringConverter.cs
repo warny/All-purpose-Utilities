@@ -2476,6 +2476,11 @@ namespace Utils.NumberToString
                 if (!fractionSpecifics.TryGetFractionDenominator(numerator, denominator, query, out var reading) || reading is null)
                     throw new NotSupportedException(
                         $"Language '{LanguageIdentifier}' has no sourced reading for the fraction {numerator}/{denominator}.");
+                // A built-in language may spell the numerator itself (an oblique case the cardinal pipeline cannot form).
+                // The text is already declined, so only the user's raw adjustment applies to it, as it does to every
+                // cardinal fragment; the morphology rules and end triggers of the pipeline are not re-run on it.
+                if (reading.NumeratorText is string spelledNumerator)
+                    return string.Concat(ApplyRawAdjustment(spelledNumerator), Separator, reading.Text).Trim();
                 var numeratorForced = CanonicalizeForcedVariants(reading.NumeratorForcedVariants, "IFractionLanguageSpecifics.NumeratorForcedVariants");
                 // The numerator is a sub-expression; do not apply MaxNumber guard.
                 string fractionNumerator = BuildCardinalFragment(numerator, numeratorForced.Overlay(query));

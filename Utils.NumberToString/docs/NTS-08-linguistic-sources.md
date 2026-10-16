@@ -59,6 +59,65 @@ describes any capability.
 | EE | EE | SCALE-SHORT (scale tables only, NTS-23) | Yes (NTS-20): cardinal + `-lia` on the last element, `gbãtɔ` for 1 | Declarative + `ZeroOrdinalUnsupportedLanguageSpecifics` | **Deferred** | — | none | **Consulted** (NTS-20): Dzablu-Kumah, *Basic Ewe for Foreign Students*; Biblica Open Ewe Contemporary Scriptures; *Ewe Basic Course* 1968; Peace Corps Togo 2010; Wiktionary | Cardinals unbounded (NTS-23): static `akpe`, then the Conway-Wechsler short scale `miliɔn`, `biliɔn`, `triliɔn` (sourced anchors), `quadriliɔn` … (project extrapolation), each before its standalone multiplier (`multiplierPosition="afterScale"`); zero ordinal unsupported |
 | WO | WO | none | Yes (`-éel`, NTS-16, NTS-19) | Declarative + `WolofOrdinalLanguageSpecifics` | **Deferred** | — | none | No consistent source found | Cardinals unbounded (NTS-21): static `junni`, then the long-scale Conway-Wechsler names `milyoŋ`, `milyaar` (attested anchors), `bilyoŋ`, `bilyaar` … (project extrapolation in Wolof spelling); ordinals 1–999 999 only, no ordinal of zero nor of the round thousands |
 
+## NTS-40 and NTS-41 — oblique fractions and the large slash readings (2026-10-16)
+
+Scope: NTS-40 (the oblique cases of the UK, CS and SK fractions) and NTS-41 (the CS and SK slash readings beyond the
+NTS-39 domain), implemented together because both need declined compound cardinals. One declined-cardinal builder per
+language, internal to its `IFractionLanguageSpecifics` plugin (`UkrainianOrdinalLanguageSpecifics.FractionCases.cs`,
+`CzechOrdinalLanguageSpecifics.FractionCases.cs`, `SlovakOrdinalLanguageSpecifics.FractionCases.cs`), spells both the
+oblique numerators and the slash denominators. `Convert` keeps no case (`Convert(365, "case=…")` is the nominative
+cardinal). No XSD, XML or public API change: the declined numerator travels through an `internal` member of
+`FractionDenominatorReading` (`WithNumerator`), which `NumberToStringConverter.BuildFractionText` writes instead of the
+cardinal pipeline. Old/new outputs: `DONE-2026-10-16(1).md`.
+
+| # | Language | Source | What it establishes |
+|---|---|---|---|
+| 1 | UK | Український правопис 2019, §107.1 (slovnyk.ua, `prav_par=107`) | **attested**: *двом третім*, *трьома п'ятими*, *ділити на одну двадцяту*; **rule**: fractions decline "як звичайні числівники", the numerator as a cardinal, the denominator as an ordinal |
+| 2 | UK | Правопис 2019, §105 (`prav_par=105`; same tables in the 2015 edition, pravopys.net §70) | **attested** paradigms of *один/одна* (*однієї, одній, одну, однією*), *два*, *три*, *чотири* (*чотирма*), *п'ять* … *вісім* (*п'яти, п'ятьма*; *сьома*; *вісьма*), *п'ятдесят* (*п'ятдесяти, п'ятдесятьма*), *двісті* (*двохсот, двомстам, двомастами, двохстах*), *п'ятсот* (*п'ятисот, п'ятистам, п'ятьмастами, п'ятистах*); **rules**: 9–30 as *п'ять* (§105.3); *сорок, дев'яносто, сто* → *-а* (§105.7); **every part of a compound is declined** (§105.6: *з чотирьохсот сімдесяти восьми тисяч шестисот п'ятдесяти дев'яти*); *тисяча, мільйон, мільярд* decline as nouns (§105.11) |
+| 3 | UK | Правопис 2019, §106.2 | **rule**: only the last part of a compound ordinal is declined (*вісімдесят восьмого*, *у тисяча сімсот вісімдесят дев'ятому*) |
+| 4 | UK | VESUM (goroh.pp.ua) paradigms of *тисяча*, *мільйон*, *мільярд*, *шістсот* … *дев'ятсот*, *третій*, *п'ятий*, *сотий* | **attested** forms the §105 tables abbreviate: *тисячею, тисячам*; *мільйонові, мільйоні, мільйонами*; *шестисот, семистам, вісьмастами*; plural ordinals *третіх, третім, третіми*, *п'ятих, п'ятим, п'ятими* |
+| 5 | CS | IJP, "Členění čísel, víceslovné číslovkové výrazy" | **rule**: three strategies for a multi-word numeral: every part (*před třemi sty šedesáti pěti lety*, *bez tisíce osmi set čtyřiceti sedmi korun*), the tens and units only (*o milion tři sta padesát osm tisíc čtyři sta dvaceti třech dokladech*), none (dictation, arithmetic) |
+| 6 | CS | E. Prandstetter, "Čtení matematických značek a výrazů", *Naše řeč* 22 (1938), 3, 78–86 | **attested**: *šedesát osm lomeno třemi sty padesáti šesti* (every part of the slash denominator declined), *lomeno jednou celou*, *čtyřmi iks minus jedna*, *em lomeno dvěma en*; **rule**: "zlomkovou čáru čteme nejčastěji lomeno, při čemž jmenovatele čteme v sedmém pádu" |
+| 7 | CS | IJP, "Počítaný předmět po číslovkách" | **rule**: 1–4 agree with the noun (*dvě ženy, dvou žen, dvěma ženám*); after 5–99 the noun takes the case in the oblique cases (*pěti ženám, o pěti ženách, s pěti ženami*); after *sto, tisíc, milion, miliarda* the genitive is the basic construction (*tisíce žen, milionu měst*), case agreement possible (*s třemi tisíci diváků/diváky*, *před třemi sty tisíci let/lety*); *k dvěma stům lidem, o dvou stech lidech*; *sto* before another numeral usually undeclined |
+| 8 | CS | IJP paradigms *dva*, *tři*, *čtyři*, *sto*, *tisíc*, *milion*, *miliarda*, *dvacet*, *jedenáct*, *devadesát*, *třetina*, *setina*, *tisícina*, *miliontina*, *polovina*; cs.wiktionary *jeden*, *pět* | **attested** case forms (*tří, třem, třech, třemi*; *set, stům, stech, sty*; *tisíci, tisícem, tisícům, tisících*; *milionu, milionem, milionům, milionech*; *miliardě, miliardou, miliardám*; *třetině, třetinou, třetinám, třetinách, třetinami*; *jedné, jednu, jednou*; *jednoho, jedním*; *pěti*) |
+| 9 | SK | *Morfológia slovenského jazyka* (1966), 101–105 | **attested** patterns *žena* (*ženy, žene, ženu, ženou*; *ženám, ženách, ženami*; rhythmic law only after a long stem syllable) and *ulica* (*ulice, ulici, ulicu, ulicou*; *uliciam, uliciach, ulicami*) |
+| 10 | SK | *Morfológia slovenského jazyka* (1966), 316–330 | **attested** paradigms *jeden* (318: fem. *jednej, jednu, jednou*; masc. *jedného, jednému, jednom, jedným*), *dva* (*dvoch, dvom, dvoma*), *tri* (*troch, trom, troma*), *štyri* (*štyrom, štyrmi*), *päť* (*piatich, piatim, piatimi*); **rules**: after 5+ the noun takes the case in the oblique cases (317: *k desiatim sudom, s deväťdesiatimi piatimi sedadlami*); *dvadsaťdva* declined in both parts (326: *dvadsiatich dvoch, dvadsiatim dvom, s dvadsiatimi dvoma*); the *-jeden* compounds indeclinable, the noun alone declined (326: *ku štyridsaťjeden družstvám, so štyridsaťjeden družstvami*); *sto* undeclined before a noun (327: *k sto robotníkom, so sto robotníkmi*); the *tisíc* compounds usually undeclined (328: *od päťtisíc robotníkov*); *milión* declined after *dub* with its multiplier (329–330: *z jedného milióna, so štyrmi miliónmi, s dvadsiatimi piatimi miliónmi*, or the multiplier undeclined: *s päť, osem, dvadsaťdva miliónmi*), the counted noun always in the genitive plural; *miliarda* after *žena*, "nemá tendenciu k neohybnosti"; in arithmetic the numerals decline (316: *Tristo šesťdesiatpäť násob dvadsiatimi štyrmi*) |
+
+**Strategies chosen.**
+
+- UK — **cardinal declension**: every part (#2, §105.6), the first form of each §105 doublet (*п'яти*, *п'ятьма*,
+  *сьома*), the units feminine as in the nominative fraction (*одна, дві*), the scale nouns singular after one and plural
+  in the case otherwise, as nouns (§105.11). **Denominator**: the ordinal the plugin already forms, only its last word
+  declined (#3): the feminine singular in the case after a numerator read as one (one, or a compound ending in *одна*, as
+  NTS-39 does in the nominative: *двадцяти одній сотій* is an **inference** from that agreement), the genitive plural
+  after a numerator ending in a scale noun (an **inference** from §105.11: a noun governs the genitive), the plural in
+  the case otherwise (#1, #4); the accusative of an inanimate quantity is its nominative (*дві третіх*).
+- CS — **cardinal declension**: every part (#5 first strategy, #6), compositional, the strategy NTS-39 already used
+  below 1000; *sto* before another numeral undeclined (#7). **Fraction nouns**: their IJP paradigms (#8); 1–4 agree, 5–99
+  impose the case (#7), the genitive plural after a numeral ending in *sto*/*tisíc*/*milion*/*miliarda* (#7, the
+  basic construction), the accusative = the nominative. **Slash reading (NTS-41)**: *lomeno* + that instrumental up to
+  999 999 999 999; a final *jedna* is the feminine *jednou*: arithmetic numbers are feminine (SSČ *jedna a dvě jsou
+  tři*; #6 *minus jedna*) and #6 declines it so in a slash denominator (*lomeno jednou celou*) — the composition is an
+  **inference** from these attested parts.
+- SK — **cardinal declension**: the last component only (Ondrus §8, SR 1978, as in NTS-39), continued through the
+  scales (#10): a final *milión*/*miliarda* is declined with its multiplier when the multiplier is one or a declinable
+  number below 100 (*jedným miliónom*, *dvoma miliónmi*, *dvadsiatimi dvoma miliónmi*), and keeps an indeclinable or
+  larger multiplier in its absolute form (*dvadsaťjeden miliónmi*, *sto štyridsaťdva miliónmi*: #10, second
+  construction). **Fraction nouns**: patterns *žena* and *ulica* (#9); 1–4 agree, after 5+ and after the indeclinable
+  components the noun takes the case, after *milión*/*miliarda* the genitive plural (#10). **Slash reading (NTS-41)**:
+  *lomené* + the instrumental of the last component up to 999 999 999 999 (*jedna lomené dva milióny troma*), *lomené
+  číslom* + the cardinal of the configuration when that component is indeclinable or a bare *jeden* (*jedna lomené
+  číslom jeden milión jeden*).
+
+**Slash readings under a caller case.** No source declines the *lomeno*/*lomené* phrase as a whole: its denominator is
+already the instrumental the construction requires. The caller's case is not piped into it; an oblique case of a
+fraction without a fraction noun **fails closed** (NTS-42).
+
+**Remaining closures (NTS-42).** CS: an oblique compound numerator ending in *jedna* (only its nominative is sourced),
+a multiplier ending in one (21 000) in *lomeno* or an oblique case. SK: an oblique numerator ending in a bare *jeden*
+(101). UK, CS, SK: a zero numerator in an oblique case (no source); 10^12 and above. Denominator one stays closed
+everywhere (NTS-39). BG has no NTS-40 item and is byte-identical.
+
 ## NTS-39 — the fraction domains NTS-30H left closed (2026-10-16)
 
 Scope: the six NTS-39 items (compound numerators; CS denominators without a noun; SK nouns; oblique cases; zero
@@ -122,11 +181,12 @@ keeps its own normalization (`Number(5, 1)` is the integer, `Number(2, 4)` is 1/
 
 **Oblique cases.** §107 (#3) and the CS/SK paradigms decline the numerator as a cardinal in every case; the UK, CS and
 SK cardinals of the configuration have no case declension, so a declined fraction needs a declined-cardinal feature
-first: **moved to NTS-40**, still fail-closed.
+first: **moved to NTS-40** (since closed, see the NTS-40/41 section above).
 
 **Still closed in CS/SK, moved to NTS-41**: CS denominators ending in *jedna* after the tens or hundreds (21, 101: the
 gender of a bare *jedna* in the instrumental is not sourced) and from 1000 without a noun (the IJP gives both the
-all-parts and the tens-and-units-only declension for large numbers); SK denominators above 999 999 without a noun.
+all-parts and the tens-and-units-only declension for large numbers); SK denominators above 999 999 without a noun
+(since opened by NTS-41, see the NTS-40/41 section above).
 
 ## NTS-30H — fractions of Ukrainian, Bulgarian, Czech and Slovak (2026-10-15)
 
@@ -1515,3 +1575,9 @@ supported value, round scales, fail-closed range) and by the language `.feature`
   - P. Ondrus, Slovenská reč 33 (1968) (the NTS-30H scan)
   - І. Літвінова, Українська мова 6 кл., ч. 6: <https://ua.izzi.digital/DOS/360496/datastore/21/publication/360496/files/2022/12/29/854a8ad143d6c75b7060c817b05b5302_ukrains_ka_mova._navcal_nij_posibnik_dla_6_klasu_zzso__avt._i._m._litvinova__c._6._cislivnik._zajmennik._povtorenna.pdf>; "Числівник" (НККЕП): <http://nkkep.com/wp-content/uploads/2020/02/CHy-slivny-k-PRAVY-LA.pdf>
   - Г. Митринов, ИБЕ-БАН: <https://ibl.bas.bg/ezikovi_spravki/za-edna-osobenost-v-upotrebata-na-tchislitelnite-imena/>; Клет България, Математика 5. клас, урок 58: <https://bg.izzi.digital/DOS/3887/9974.html>
+- NTS-40 and NTS-41 (2026-10-16):
+  - Український правопис 2019 (slovnyk.ua): §105 <https://slovnyk.ua/pravopys.php?prav_par=105>, §106 <https://slovnyk.ua/pravopys.php?prav_par=106>, §107 <https://slovnyk.ua/pravopys.php?prav_par=107>; 2015 edition §70 (the *п'ятсот* table): <https://pravopys.net/sections/70/>
+  - Горох (VESUM), словозміна: *тисяча* <https://goroh.pp.ua/%D0%A1%D0%BB%D0%BE%D0%B2%D0%BE%D0%B7%D0%BC%D1%96%D0%BD%D0%B0/%D1%82%D0%B8%D1%81%D1%8F%D1%87%D0%B0>, *мільйон* <https://goroh.pp.ua/%D0%A1%D0%BB%D0%BE%D0%B2%D0%BE%D0%B7%D0%BC%D1%96%D0%BD%D0%B0/%D0%BC%D1%96%D0%BB%D1%8C%D0%B9%D0%BE%D0%BD>, *третій* <https://goroh.pp.ua/%D0%A1%D0%BB%D0%BE%D0%B2%D0%BE%D0%B7%D0%BC%D1%96%D0%BD%D0%B0/%D1%82%D1%80%D0%B5%D1%82%D1%96%D0%B9>
+  - E. Prandstetter, "Čtení matematických značek a výrazů", Naše řeč 22 (1938), 3, 78–86: <http://nase-rec.ujc.cas.cz/archiv.php?art=3262>
+  - IJP entries *tři* (cached with *třetina*), *čtyři* <https://prirucka.ujc.cas.cz/?slovo=%C4%8Dty%C5%99i>, *tisíc* <https://prirucka.ujc.cas.cz/?slovo=tis%C3%ADc>, *milion* <https://prirucka.ujc.cas.cz/?slovo=milion>, *miliarda* <https://prirucka.ujc.cas.cz/?slovo=miliarda>, *polovina* <https://prirucka.ujc.cas.cz/?slovo=polovina>; cs.wiktionary *jeden* <https://cs.wiktionary.org/wiki/jeden>, *pět* <https://cs.wiktionary.org/wiki/p%C4%9Bt>
+  - Morfológia slovenského jazyka (1966), pp. 100–199 (patterns *žena*, *ulica*): <https://www.juls.savba.sk/ediela/msj/pdf100/MSJ_100_199_LQ.pdf>; pp. 300–399 (numerals): <https://www.juls.savba.sk/ediela/msj/pdf100/MSJ_300_399_LQ.pdf>
