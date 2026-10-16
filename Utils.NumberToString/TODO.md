@@ -1,6 +1,10 @@
 # Utils.NumberToString — Current backlog
 
-Re-audited on 2026-10-15 after closing NTS-30H (UK, BG, CS, SK fractions read as these languages read them, through
+Re-audited on 2026-10-16 after closing NTS-39 (the UK, BG, CS, SK fraction domains NTS-30H left closed: compound
+numerators by each language's agreement rule, `двадцять одна тридцять сьома`, `сто и една хилядни`, `dvacet dva
+třetin`, `dvadsaťdva tretín`; every IJP fraction noun and the complete Slovak paradigms; the mathematical readings
+`jedna lomeno dvaceti třemi`, `jedna lomené troma`, `jedna lomené číslom sto jeden`; `nula tretín`; denominator one and
+zero in UK/BG deliberately closed; NTS-40 and NTS-41 opened), on 2026-10-15 after closing NTS-30H (UK, BG, CS, SK fractions read as these languages read them, through
 the generic `IFractionLanguageSpecifics`: `одна третя`, `дві третіх`, `една втора`, `седем осми`, `jedna třetina`,
 `pět sedmin`, `dve tretiny`; the connector reading `один на тисяча` / `jedna ku tisíc` is gone, unsourced values
 fail closed; NTS-39 opened), after closing NTS-30G (Basque *eta* only before the last group of a numeral phrase,
@@ -70,15 +74,21 @@ classification.
     zero-group rendering and a normative source.
   - ES currency: `uno euro` for DPD *un euro* (apocope before a noun); the caller-defined currency wording does
     not force the attributive form.
-- **NTS-39 — UK, BG, CS, SK fractions left closed by NTS-30H.** NTS-30H reads only what its sources establish and
-  throws `NotSupportedException` elsewhere: compound numerators ending in *один/една* after the tens (21/37, 101/1000;
-  UK, BG) or in 1–4 (21/100, 22/3; CS, SK), whose agreement with the denominator is not sourced; CS denominators
-  without an IJP fraction noun (1/13, 1/101), for which the productive reading is *lomeno* + instrumental cardinal
-  (IJP *lomit*: *dvě lomeno třemi*) and needs a cardinal instrumental; SK nouns other than *polovica*, *tretina*,
-  *pätina*, *stotina*, *tisícina*, and their plurals other than *tretiny/tretín* (2/100, 5/7), with the specialist
-  *lomené* + instrumental (Ondrus 1968); oblique cases of every fraction (UK, CS, SK); zero numerators (0/3) and
-  the denominator one (5/1) in all four languages, deliberately closed because their idiomatic reading has not been
-  sourced. Each needs a source audit.
+- **NTS-40 — oblique cases of the UK, CS and SK fractions.** Opened by NTS-39, still fail-closed
+  (`NotSupportedException` for any `case` other than the nominative). Український правопис 2019 §107 declines the
+  numerator as a cardinal and the denominator in the same case (*двом третім*, *трьома п'ятими*, *ділити на одну
+  двадцяту*); Czech and Slovak decline the numerator and the fraction noun (*se dvěma třetinami*, *s tretinou*). The UK,
+  CS and SK cardinals of the configuration have no case declension (the `case` dimension reaches only the ordinals), so
+  a declined fraction first needs declined cardinals, numerator compounds included (IJP: *třemi sty šedesáti pěti*;
+  Morfológia slovenského jazyka: *s deväťdesiatimi piatimi*); the fraction plugins can then return the oblique
+  denominator. Not to be faked by declining only the denominator.
+- **NTS-41 — CS and SK slash readings beyond the NTS-39 domain.** Opened by NTS-39, still fail-closed. CS: *lomeno*
+  + instrumental is built for 2–999; denominators ending in *jedna* after the tens or hundreds (1/21, 1/101) need the
+  instrumental gender of a bare *jedna* (*jedním* or *jednou*), which no source gives for arithmetic; from 1000 without a
+  fraction noun (1/1001, 1/2023) the IJP gives two declension strategies (every part, or the tens and units only:
+  *o milion tři sta padesát osm tisíc čtyři sta dvaceti třech dokladech*), to be chosen and sourced. SK: *lomené číslom*
+  + cardinal is built up to 999 999; above (1/1 000 001, 1/2 000 000) it only needs the million and milliard forms of
+  the cardinal, kept in parity with the configuration.
 - **NTS-38 — ES and EU ordinals from the million, after NTS-30F.** Opened by NTS-30F, which left every ordinal
   byte-identical. EU: `ConvertOrdinal(1 000 000)` gives `milioi batgarren`, whereas Euskaltzaindia rule 203 §5
   writes *milioigarren* (and *milioi bat eta batgarren* for 1 000 001, *bi milioigarren* for 2 000 000); rule 203
@@ -131,7 +141,7 @@ classification.
   cardinals below and above a million.
 
 
-NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-25, NTS-27, NTS-28, NTS-29, NTS-30A, NTS-30B, NTS-30C, NTS-30D, NTS-30E, NTS-30F, NTS-30G, NTS-31, NTS-32 and NTS-37 are closed:
+NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-25, NTS-27, NTS-28, NTS-29, NTS-30A, NTS-30B, NTS-30C, NTS-30D, NTS-30E, NTS-30F, NTS-30G, NTS-30H, NTS-31, NTS-32, NTS-37 and NTS-39 are closed:
 
 - NTS-01 — XSD validation: `DONE-2026-08-21.md`.
 - NTS-02 — initialization isolation: `DONE-2026-08-21.md`.
@@ -270,6 +280,18 @@ NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-25, NTS-27, NTS-28, NT
   an exact `<ScaleForm>` (`NumberToStringConverterOptions.ScaleFormMultiplierForcedVariants`, the
   `GeneratedScaleForm` contract, shields allocated for exact forms too). Dump ES (feminine only) and EU only; ES
   masculine, ordinals and clocks byte-identical: `DONE-2026-10-15(2).md`.
+- NTS-30H (the NTS-30 item "UK, BG, CS, SK `ConvertFraction`"): the generic `IFractionLanguageSpecifics` extension
+  point; UK and BG ordinal denominators (*одна третя*, *дві третіх*, *една втора*), CS and SK fraction nouns (*jedna
+  třetina*, *pět sedmin*); unsourced values fail closed, NTS-39 opened: `DONE-2026-10-15(3).md`.
+- NTS-39 (opened by NTS-30H): each closed item audited separately, inside the four plugins with no engine or API
+  change. Compound numerators: UK singular after *одна* (*двадцять одна тридцять сьома*), BG plural (ИБЕ-БАН; *сто и
+  една хилядни*), CS and SK genitive plural with the counting/base form (IJP *dvacet dva žáků*; Jarošová 2021
+  *dvadsaťdva žien*). CS: every IJP fraction noun (13–20, round tens, 100 000, 10^9) and *lomeno* + instrumental for
+  2–999 (SSJČ *dvě lomeno třemi*). SK: complete paradigms (KSSJ, Morfológia 1966 rule) and *lomené* + instrumental or
+  *lomené číslom* + cardinal (Ondrus 1968). Zero: SK *nula tretín*, CS *nula lomeno třemi*, UK/BG closed (no source).
+  Denominator one closed everywhere (no source); oblique cases moved to NTS-40, the CS/SK slash readings beyond their
+  domain to NTS-41. Dump: only fraction probes of UK, BG, CS, SK changed, all `NotSupportedException` → reading:
+  `DONE-2026-10-16.md`.
 
 Full multi-form plural systems (Russian/Slavic count-dependent noun forms,
 Arabic dual/paucal/plural categories) were long deliberately out of scope — the

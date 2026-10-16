@@ -25,9 +25,11 @@ public sealed class BulgarianOrdinalLanguageSpecifics : INumberToStringLanguageS
     /// Reads a fraction as the Institute for Bulgarian Language writes it (NTS-30H): the numerator in the feminine
     /// (<c>една</c>, <c>две</c>, agreeing with <c>част</c>), the denominator the ordinal in the feminine singular after
     /// one (<c>една втора</c>, <c>една осма</c>) and in the plural otherwise (<c>две трети</c>, <c>три четвърти</c>,
-    /// <c>седем осми</c>); one quarter is the noun <c>една четвърт</c>. The denominator is any ordinal this class forms
-    /// (<c>една стотна</c>, <c>една хилядна</c>); compound numerators ending in <c>една</c> after the tens (21, 101), a
-    /// zero numerator and a denominator of one fail closed.
+    /// <c>седем осми</c>); one quarter is the noun <c>една четвърт</c>. A compound ending in <c>една</c> takes the plural
+    /// too (NTS-39): a noun after a compound numeral ending in one is plural (Г. Митринов, ИБЕ-БАН, "За една особеност
+    /// в употребата на числителните имена", Аз-буки 2020: <i>двайсет и един футболисти</i>), and the fraction reads so
+    /// (Математика 5. клас, Клет България 2021: <i>едно цяло и сто и една хилядни</i>). The denominator is any ordinal
+    /// this class forms (<c>една стотна</c>, <c>една хилядна</c>); a zero numerator and a denominator of one fail closed.
     /// </summary>
     /// <inheritdoc />
     public bool TryGetFractionDenominator(BigInteger numerator, BigInteger denominator, IReadOnlyDictionary<string, string> variants,
@@ -37,9 +39,6 @@ public sealed class BulgarianOrdinalLanguageSpecifics : INumberToStringLanguageS
         if (numerator.IsZero || denominator < 2 || denominator > int.MaxValue)
             return false;
         bool one = numerator.IsOne;
-        int lastTwo = (int)(numerator % 100);
-        if (!one && lastTwo % 10 == 1 && lastTwo != 11)
-            return false;
         string? masculine = BuildMasculineOrdinal((int)denominator);
         if (masculine == null)
             return false;
