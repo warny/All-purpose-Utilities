@@ -180,12 +180,14 @@ verified, so this plugin rejects it instead of letting a cardinal or invented fo
     </dl>
     <dl class="jumplist">
       <dt><a class="xref" href="Utils.NumberToString.CzechOrdinalLanguageSpecifics.html">CzechOrdinalLanguageSpecifics</a></dt>
-      <dd><p>Produces Czech ordinals. Every component of a compound is ordinal
-(<code>dvacátý první</code>, <code>stý dvacátý první</code>, <code>tisící první</code>), declined for gender
-(<code>standalone</code>/<code>mužský</code>, <code>ženský</code>, <code>střední</code>) and case (hard <code>-ý</code> and soft
-<code>-í</code> adjective paradigms). Round thousands accept single-digit multipliers
-(<code>dvoutisící</code>); larger round multipliers and round millions or milliards other than one
-are declined.</p>
+      <dd><p>The declined cardinals of Czech fractions (NTS-40, NTS-41). The IJP (&quot;Členění čísel, víceslovné číslovkové výrazy&quot;)
+allows three ways of declining a multi-word numeral: every part (<i>před třemi sty šedesáti pěti lety</i>, <i>bez
+tisíce osmi set čtyřiceti sedmi korun</i>), only the tens and units (<i>o milion tři sta padesát osm tisíc čtyři sta
+dvaceti třech dokladech</i>), or none (in dictation and arithmetic). This class declines every part: the strategy the
+IJP lists first, the one of the mathematical reading (E. Prandstetter, &quot;Čtení matematických značek a výrazů&quot;, Naše
+řeč 22, 1938, 78–86: <i>šedesát osm lomeno třemi sty padesáti šesti</i>), compositional, and the one NTS-39 already
+used below 1000; <code>sto</code> followed by another numeral stays undeclined (IJP &quot;Počítaný předmět po číslovkách&quot;:
+<i>ve sto dvaceti případech</i>).</p>
 </dd>
     </dl>
     <dl class="jumplist">

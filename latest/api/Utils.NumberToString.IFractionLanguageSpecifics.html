@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_NumberToString_IFractionLanguageSpecifics" data-uid="Utils.NumberToString.IFractionLanguageSpecifics" class="text-break">
-Interface IFractionLanguageSpecifics  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/IFractionLanguageSpecifics.cs/#L28"><i class="bi bi-code-slash"></i></a>
+Interface IFractionLanguageSpecifics  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/IFractionLanguageSpecifics.cs/#L29"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -217,7 +217,8 @@ Implemented by the <a class="xref" href="Utils.NumberToString.INumberToStringLan
 <code>&lt;LanguageSpecifics&gt;</code>). The converter keeps every other step: the zero-denominator rejection, the move of
 the sign to the numerator, the numerator rendered through the cardinal pipeline (scale forms, connectors,
 shielding) with the forced variants overlaid on the caller's, the single finalization and the outer sign. Named
-power-of-ten fractions (<code>&lt;Fractions&gt;</code>) keep precedence.
+power-of-ten fractions (<code>&lt;Fractions&gt;</code>) keep precedence. Only the built-in Ukrainian, Czech and Slovak
+readings of an oblique case spell their numerator themselves (NTS-40), the cardinal pipeline having no case forms.
 </p>
 <p>
 Returning <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a> means the language has no sourced reading for that fraction: the converter then
@@ -234,7 +235,7 @@ throws <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.notsu
 
   <h3 id="Utils_NumberToString_IFractionLanguageSpecifics_TryGetFractionDenominator_System_Numerics_BigInteger_System_Numerics_BigInteger_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__Utils_NumberToString_FractionDenominatorReading__" data-uid="Utils.NumberToString.IFractionLanguageSpecifics.TryGetFractionDenominator(System.Numerics.BigInteger,System.Numerics.BigInteger,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},Utils.NumberToString.FractionDenominatorReading@)">
   TryGetFractionDenominator(BigInteger, BigInteger, IReadOnlyDictionary&lt;string, string&gt;, out FractionDenominatorReading?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/IFractionLanguageSpecifics.cs/#L36"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/IFractionLanguageSpecifics.cs/#L37"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Builds the denominator of a fraction in the form its numerator governs.</p>
@@ -282,7 +283,7 @@ throws <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.notsu
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/IFractionLanguageSpecifics.cs/#L28" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/IFractionLanguageSpecifics.cs/#L29" class="edit-link">Edit this page</a>
         </div>
 
 

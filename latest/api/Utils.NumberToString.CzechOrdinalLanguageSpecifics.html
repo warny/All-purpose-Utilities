@@ -6,7 +6,7 @@
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <meta name="title" content="Class CzechOrdinalLanguageSpecifics | omy.Utils Documentation ">
       
-      <meta name="description" content="Produces Czech ordinals. Every component of a compound is ordinal (dvac&#225;t&#253; prvn&#237;, st&#253; dvac&#225;t&#253; prvn&#237;, tis&#237;c&#237; prvn&#237;), declined for gender (standalone/mužsk&#253;, žensk&#253;, středn&#237;) and case (hard -&#253; and soft -&#237; adjective paradigms). Round thousands accept single-digit multipliers (dvoutis&#237;c&#237;); larger round multipliers and round millions or milliards other than one are declined.">
+      <meta name="description" content="The declined cardinals of Czech fractions (NTS-40, NTS-41). The IJP (&amp;quot;Členěn&#237; č&#237;sel, v&#237;ceslovn&#233; č&#237;slovkov&#233; v&#253;razy&amp;quot;) allows three ways of declining a multi-word numeral: every part (před třemi sty šedes&#225;ti pěti lety, bez tis&#237;ce osmi set čtyřiceti sedmi korun), only the tens and units (o milion tři sta pades&#225;t osm tis&#237;c čtyři sta dvaceti třech dokladech), or none (in dictation and arithmetic). This class declines every part: the strategy the IJP lists first, the one of the mathematical reading (E. Prandstetter, &amp;quot;Čten&#237; matematick&#253;ch značek a v&#253;razů&amp;quot;, Naše řeč 22, 1938, 78–86: šedes&#225;t osm lomeno třemi sty pades&#225;ti šesti), compositional, and the one NTS-39 already used below 1000; sto followed by another numeral stays undeclined (IJP &amp;quot;Poč&#237;tan&#253; předmět po č&#237;slovk&#225;ch&amp;quot;: ve sto dvaceti př&#237;padech).">
       <link rel="icon" href="../favicon.ico">
       <link rel="stylesheet" href="../public/docfx.min.css">
       <link rel="stylesheet" href="../public/main.css">
@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_NumberToString_CzechOrdinalLanguageSpecifics" data-uid="Utils.NumberToString.CzechOrdinalLanguageSpecifics" class="text-break">
-Class CzechOrdinalLanguageSpecifics  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/SlavicAdjectivalOrdinalLanguageSpecifics.cs/#L229"><i class="bi bi-code-slash"></i></a>
+Class CzechOrdinalLanguageSpecifics  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/SlavicAdjectivalOrdinalLanguageSpecifics.cs/#L244"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -97,12 +97,14 @@ Class CzechOrdinalLanguageSpecifics  <a class="header-action link-secondary" tit
   <dl><dt>Assembly</dt><dd>Utils.NumberToString.dll</dd></dl>
   </div>
 
-  <div class="markdown summary"><p>Produces Czech ordinals. Every component of a compound is ordinal
-(<code>dvacátý první</code>, <code>stý dvacátý první</code>, <code>tisící první</code>), declined for gender
-(<code>standalone</code>/<code>mužský</code>, <code>ženský</code>, <code>střední</code>) and case (hard <code>-ý</code> and soft
-<code>-í</code> adjective paradigms). Round thousands accept single-digit multipliers
-(<code>dvoutisící</code>); larger round multipliers and round millions or milliards other than one
-are declined.</p>
+  <div class="markdown summary"><p>The declined cardinals of Czech fractions (NTS-40, NTS-41). The IJP (&quot;Členění čísel, víceslovné číslovkové výrazy&quot;)
+allows three ways of declining a multi-word numeral: every part (<i>před třemi sty šedesáti pěti lety</i>, <i>bez
+tisíce osmi set čtyřiceti sedmi korun</i>), only the tens and units (<i>o milion tři sta padesát osm tisíc čtyři sta
+dvaceti třech dokladech</i>), or none (in dictation and arithmetic). This class declines every part: the strategy the
+IJP lists first, the one of the mathematical reading (E. Prandstetter, &quot;Čtení matematických značek a výrazů&quot;, Naše
+řeč 22, 1938, 78–86: <i>šedesát osm lomeno třemi sty padesáti šesti</i>), compositional, and the one NTS-39 already
+used below 1000; <code>sto</code> followed by another numeral stays undeclined (IJP &quot;Počítaný předmět po číslovkách&quot;:
+<i>ve sto dvaceti případech</i>).</p>
 </div>
   <div class="markdown conceptual"></div>
 
@@ -265,7 +267,7 @@ are declined.</p>
 
   <h3 id="Utils_NumberToString_CzechOrdinalLanguageSpecifics_CaseValues" data-uid="Utils.NumberToString.CzechOrdinalLanguageSpecifics.CaseValues">
   CaseValues
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/SlavicAdjectivalOrdinalLanguageSpecifics.cs/#L362"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/SlavicAdjectivalOrdinalLanguageSpecifics.cs/#L370"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the case values in the column order of the ending tables (nominative first).</p>
@@ -297,7 +299,7 @@ are declined.</p>
 
   <h3 id="Utils_NumberToString_CzechOrdinalLanguageSpecifics_FeminineValue" data-uid="Utils.NumberToString.CzechOrdinalLanguageSpecifics.FeminineValue">
   FeminineValue
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/SlavicAdjectivalOrdinalLanguageSpecifics.cs/#L356"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/SlavicAdjectivalOrdinalLanguageSpecifics.cs/#L364"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the dimension values that select the feminine forms.</p>
@@ -329,7 +331,7 @@ are declined.</p>
 
   <h3 id="Utils_NumberToString_CzechOrdinalLanguageSpecifics_NeuterValue" data-uid="Utils.NumberToString.CzechOrdinalLanguageSpecifics.NeuterValue">
   NeuterValue
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/SlavicAdjectivalOrdinalLanguageSpecifics.cs/#L359"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/SlavicAdjectivalOrdinalLanguageSpecifics.cs/#L367"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the dimension values that select the neuter forms.</p>
@@ -365,7 +367,7 @@ are declined.</p>
 
   <h3 id="Utils_NumberToString_CzechOrdinalLanguageSpecifics_Decline_System_String_Utils_NumberToString_SlavicAdjectivalOrdinalLanguageSpecifics_Gender_System_Int32_" data-uid="Utils.NumberToString.CzechOrdinalLanguageSpecifics.Decline(System.String,Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.Gender,System.Int32)">
   Decline(string, Gender, int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/SlavicAdjectivalOrdinalLanguageSpecifics.cs/#L365"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/SlavicAdjectivalOrdinalLanguageSpecifics.cs/#L373"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Declines a masculine nominative ordinal for a gender and case.</p>
@@ -410,7 +412,7 @@ are declined.</p>
 
   <h3 id="Utils_NumberToString_CzechOrdinalLanguageSpecifics_TryDecompose_System_Int32_System_String__System_Collections_Generic_IReadOnlyList_System_String___" data-uid="Utils.NumberToString.CzechOrdinalLanguageSpecifics.TryDecompose(System.Int32,System.String@,System.Collections.Generic.IReadOnlyList{System.String}@)">
   TryDecompose(int, out string, out IReadOnlyList&lt;string&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/SlavicAdjectivalOrdinalLanguageSpecifics.cs/#L371"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/SlavicAdjectivalOrdinalLanguageSpecifics.cs/#L379"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Decomposes a positive number into a cardinal prefix and its ordinal components.</p>
@@ -455,22 +457,29 @@ are declined.</p>
 
   <h3 id="Utils_NumberToString_CzechOrdinalLanguageSpecifics_TryGetFractionDenominator_System_Numerics_BigInteger_System_Numerics_BigInteger_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__Utils_NumberToString_FractionDenominatorReading__" data-uid="Utils.NumberToString.CzechOrdinalLanguageSpecifics.TryGetFractionDenominator(System.Numerics.BigInteger,System.Numerics.BigInteger,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},Utils.NumberToString.FractionDenominatorReading@)">
   TryGetFractionDenominator(BigInteger, BigInteger, IReadOnlyDictionary&lt;string, string&gt;, out FractionDenominatorReading?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/SlavicAdjectivalOrdinalLanguageSpecifics.cs/#L300"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/SlavicAdjectivalOrdinalLanguageSpecifics.cs/#L318"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Reads a fraction as the IJP does. A denominator with a fraction noun takes the noun in the form the numerator
 governs (<code>jedna třetina</code>, <code>dvě třetiny</code>, <code>pět sedmin</code>); a compound numerator governs the genitive
 plural and keeps its counting form (<code>dvacet jedna třetin</code>, <code>dvacet dva třetin</code>: IJP &quot;Počítaný předmět po
 číslovkách&quot;, the genitive after <i>dvacet jeden … čtyři</i> being &quot;more common and more natural&quot;; &quot;Členění čísel&quot;:
-<i>tisíc dvacet čtyři celé/celých</i>). Any other denominator from 2 to 999, and a zero numerator, take the
-mathematical reading <code>lomeno</code> + instrumental (IJP <code>lomit</code>: SSJČ <i>dvě lomeno třemi</i>, SSČ <i>pět lomeno
-dvěma</i>), every part of the denominator declined (<i>třemi sty šedesáti pěti</i>) but <code>sto</code> before another
-numeral (<i>ve sto dvaceti případech</i>); a numerator of one to four is feminine (<i>jedna a dvě jsou tři</i>, SSČ
+<i>tisíc dvacet čtyři celé/celých</i>). Any other denominator up to 999 999 999 999, and a zero numerator, take
+the mathematical reading <code>lomeno</code> + instrumental (IJP <code>lomit</code>: SSJČ <i>dvě lomeno třemi</i>, SSČ <i>pět
+lomeno dvěma</i>; Prandstetter, Naše řeč 22, 1938: <i>šedesát osm lomeno třemi sty padesáti šesti</i>), every part
+of the denominator declined (NTS-41, see <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int64">DeclineCardinal(long, FractionCase, NumeralGender, bool)</a>) but <code>sto</code> before another numeral
+(<i>ve sto dvaceti případech</i>); a numerator of one to four is feminine (<i>jedna a dvě jsou tři</i>, SSČ
 <code>dva</code>), a compound keeps its counting form, as in arithmetic operations (IJP &quot;Členění čísel&quot;: <i>k tisíc sedm
-set dvacet dva korunám</i>).
-Without a sourced form the reading fails closed: a denominator of one, a denominator ending in one after the tens
-or hundreds (21, 101: the gender of a bare <code>jedna</code> in the instrumental is not sourced), from 1000 without a
-noun, and every case other than the nominative.</p>
+set dvacet dva korunám</i>). A <code>jedna</code> ending the denominator (21, 101, 1001) is the feminine instrumental
+<code>jednou</code>: a number in an arithmetic operation is feminine (SSČ <code>dva</code>: <i>jedna a dvě (čast. než jeden a
+dva) jsou tři</i>; Prandstetter: <i>čtyřmi iks minus jedna</i>), and the mathematical reading declines it so
+(Prandstetter: <i>lomeno jednou celou</i>).
+The cases other than the nominative read the fraction nouns only (NTS-40, see
+<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.numerics.biginteger">TryBuildObliqueNounFraction(BigInteger, FractionNounForms, FractionCase, out FractionDenominatorReading)</a>): no source declines the <code>lomeno</code> reading as a whole, whose
+denominator is already an instrumental. Without a sourced form the reading fails closed: a denominator of one, a
+denominator from 10^12, a multiplier ending in one after the tens or hundreds in an oblique case (21 000: no
+source gives the gender of its <code>jedna</code> there), and an oblique case of a zero numerator, of a compound
+numerator ending in <code>jedna</code> or of a denominator without a noun.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -515,7 +524,7 @@ noun, and every case other than the nominative.</p>
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/SlavicAdjectivalOrdinalLanguageSpecifics.cs/#L229" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/SlavicAdjectivalOrdinalLanguageSpecifics.cs/#L244" class="edit-link">Edit this page</a>
         </div>
 
 
