@@ -151,18 +151,15 @@ public class NumberToStringNts39Tests
     }
 
     /// <summary>
-    /// The Czech reading still fails closed: a denominator ending in one after the tens or hundreds (bare <c>jedna</c>
-    /// in the instrumental is not sourced), from 1000 without a noun.
+    /// The Czech reading still fails closed for a multiplier ending in one after the tens or hundreds (no source gives
+    /// the gender of its <c>jedna</c> in the instrumental) and from 10^12. The denominators ending in one and those from
+    /// 1000 that NTS-39 left closed were opened by NTS-41 (<see cref="NumberToStringNts40Nts41Tests"/>).
     /// </summary>
     [TestMethod]
-    [DataRow(1L, 21L)]
-    [DataRow(1L, 31L)]
-    [DataRow(1L, 101L)]
-    [DataRow(1L, 121L)]
-    [DataRow(1L, 1001L)]
-    [DataRow(1L, 2023L)]
-    [DataRow(1L, 10_000L)]
-    [DataRow(1L, 1_000_001L)]
+    [DataRow(1L, 21_000L)]
+    [DataRow(1L, 101_000L)]
+    [DataRow(1L, 31_000_000L)]
+    [DataRow(1L, 1_000_000_000_001L)]
     public void Czech_StillClosed(long numerator, long denominator)
         => Assert.ThrowsExactly<NotSupportedException>(() => Get("CS").ConvertFraction(numerator, denominator));
 
@@ -323,12 +320,17 @@ public class NumberToStringNts39Tests
         }
     }
 
-    /// <summary>Above 999 999 without a noun the Slovak reading fails closed.</summary>
+    /// <summary>
+    /// From 10^12 without a noun the Slovak reading fails closed; the denominators from 10^6 that NTS-39 left closed were
+    /// opened by NTS-41 (<see cref="NumberToStringNts40Nts41Tests"/>).
+    /// </summary>
     [TestMethod]
     public void Slovak_StillClosedAboveTheDomain()
     {
-        Assert.ThrowsExactly<NotSupportedException>(() => Get("SK").ConvertFraction(1, 1_000_001));
-        Assert.ThrowsExactly<NotSupportedException>(() => Get("SK").ConvertFraction(1, 2_000_000));
+        Assert.AreEqual("jedna lomené číslom jeden milión jeden", Get("SK").ConvertFraction(1, 1_000_001), "NTS-41");
+        Assert.AreEqual("jedna lomené dvoma miliónmi", Get("SK").ConvertFraction(1, 2_000_000), "NTS-41");
+        Assert.ThrowsExactly<NotSupportedException>(() => Get("SK").ConvertFraction(1, 1_000_000_000_001));
+        Assert.ThrowsExactly<NotSupportedException>(() => Get("SK").ConvertFraction(1, 2_000_000_000_000));
     }
 
     // ===== zero numerator ============================================================================
@@ -348,7 +350,7 @@ public class NumberToStringNts39Tests
         Assert.AreEqual("nula lomeno dvěma", Get("CS").ConvertFraction(0, 2));
         Assert.AreEqual("nula lomeno sto dvaceti", Get("CS").ConvertFraction(0, 120));
         Assert.AreEqual("nula lomeno stem", Get("CS").ConvertFraction(0, 100), "sto alone is stem (IJP)");
-        Assert.ThrowsExactly<NotSupportedException>(() => Get("CS").ConvertFraction(0, 1000), "no lomeno reading from 1000");
+        Assert.AreEqual("nula lomeno tisícem", Get("CS").ConvertFraction(0, 1000), "NTS-41: lomeno from 1000");
         Assert.ThrowsExactly<NotSupportedException>(() => Get("UK").ConvertFraction(0, 3));
         Assert.ThrowsExactly<NotSupportedException>(() => Get("BG").ConvertFraction(0, 3));
     }
@@ -382,8 +384,8 @@ public class NumberToStringNts39Tests
     // ===== oblique cases / deliberate closures =======================================================
 
     /// <summary>
-    /// The oblique cases stay closed: §107 declines the numerator as a cardinal (<c>двом третім</c>), and the UK, CS and
-    /// SK cardinals have no case declension (moved to NTS-40).
+    /// NTS-40 opened the oblique cases (<see cref="NumberToStringNts40Nts41Tests"/>); a zero numerator stays closed in
+    /// them in every language, and the CS/SK slash readings (21/37 has no fraction noun) stay nominative-only.
     /// </summary>
     [TestMethod]
     [DataRow("UK", "case=родовий")]
@@ -398,9 +400,9 @@ public class NumberToStringNts39Tests
     public void ObliqueCases_StayClosed(string culture, string variant)
     {
         var converter = Get(culture);
-        Assert.ThrowsExactly<NotSupportedException>(() => converter.ConvertFraction(21, 37, variant));
-        Assert.ThrowsExactly<NotSupportedException>(() => converter.ConvertFraction(1, 3, variant));
         Assert.ThrowsExactly<NotSupportedException>(() => converter.ConvertFraction(0, 3, variant));
+        if (culture != "UK")
+            Assert.ThrowsExactly<NotSupportedException>(() => converter.ConvertFraction(21, 37, variant));
     }
 
     // ===== caller variants ===========================================================================

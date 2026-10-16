@@ -1,6 +1,10 @@
 # Utils.NumberToString — Current backlog
 
-Re-audited on 2026-10-16 after closing NTS-39 (the UK, BG, CS, SK fraction domains NTS-30H left closed: compound
+Re-audited on 2026-10-16 after closing NTS-40 and NTS-41 together (one declined-cardinal builder per language,
+internal to the fraction plugins: the oblique cases `двом третім`, `трьома п'ятими`, `dvěma třetinám`, `třemi sty
+šedesáti pěti tisícinami`, `dvom tretinám`, `dvadsaťjeden stotinám`; the slash readings `jedna lomeno dvaceti jednou`,
+`jedna lomeno dvěma tisíci dvaceti třemi`, `jedna lomené dvoma miliónmi`, `jedna lomené dva milióny troma`; NTS-42
+opened for the remaining closures), after closing NTS-39 (the UK, BG, CS, SK fraction domains NTS-30H left closed: compound
 numerators by each language's agreement rule, `двадцять одна тридцять сьома`, `сто и една хилядни`, `dvacet dva
 třetin`, `dvadsaťdva tretín`; every IJP fraction noun and the complete Slovak paradigms; the mathematical readings
 `jedna lomeno dvaceti třemi`, `jedna lomené troma`, `jedna lomené sto štyridsiatimi dvoma`, `jedna lomené číslom dvesto`; `nula tretín`; denominator one and
@@ -74,22 +78,20 @@ classification.
     zero-group rendering and a normative source.
   - ES currency: `uno euro` for DPD *un euro* (apocope before a noun); the caller-defined currency wording does
     not force the attributive form.
-- **NTS-40 — oblique cases of the UK, CS and SK fractions.** Opened by NTS-39, still fail-closed
-  (`NotSupportedException` for any `case` other than the nominative). Український правопис 2019 §107 declines the
-  numerator as a cardinal and the denominator in the same case (*двом третім*, *трьома п'ятими*, *ділити на одну
-  двадцяту*); Czech and Slovak decline the numerator and the fraction noun (*se dvěma třetinami*, *s tretinou*). The UK,
-  CS and SK cardinals of the configuration have no case declension (the `case` dimension reaches only the ordinals), so
-  a declined fraction first needs declined cardinals, numerator compounds included (IJP: *třemi sty šedesáti pěti*;
-  Morfológia slovenského jazyka: *s deväťdesiatimi piatimi*); the fraction plugins can then return the oblique
-  denominator. Not to be faked by declining only the denominator.
-- **NTS-41 — CS and SK slash readings beyond the NTS-39 domain.** Opened by NTS-39, still fail-closed. CS: *lomeno*
-  + instrumental is built for 2–999; denominators ending in *jedna* after the tens or hundreds (1/21, 1/101) need the
-  instrumental gender of a bare *jedna* (*jedním* or *jednou*), which no source gives for arithmetic; from 1000 without a
-  fraction noun (1/1001, 1/2023) the IJP gives two declension strategies (every part, or the tens and units only:
-  *o milion tři sta padesát osm tisíc čtyři sta dvaceti třech dokladech*), to be chosen and sourced. SK: *lomené* + the
-  instrumental of the last component, or *lomené číslom* + cardinal when it is indeclinable, is built up to 999 999;
-  above (1/1 000 001, 1/2 000 000) it needs the million and milliard forms of the cardinal, kept in parity with the
-  configuration, and the declinability of a final *milión*/*miliarda* (unsourced).
+- **NTS-42 — the UK, CS and SK fraction readings NTS-40/41 left closed.** Each one fails closed for a named missing
+  piece of evidence (`DONE-2026-10-16(1).md`):
+  - CS, oblique cases of a compound numerator ending in *jedna* (21/100, 101/3, 1001/3 in the genitive): the IJP gives
+    only the nominative (*dvacet jeden žák* / *dvacet jedna žáků*); the gender and number the noun takes after a
+    declined *dvaceti jedné*/*dvaceti jednomu* are not sourced.
+  - CS, a multiplier ending in one after the tens or hundreds (21 000, 101 000, 31 000 000) in the *lomeno* reading and
+    in the oblique cases: no source gives the gender of its *jedna* before *tisíc*/*milion* outside the nominative.
+  - SK, oblique cases of a numerator ending in a bare *jeden* after a larger group (101/3, 1 000 001/3): Morfológia
+    gives the indeclinable compounds with *-jeden* (*ku štyridsaťjeden družstvám*) but not *sto jeden*.
+  - CS and SK, the *lomeno*/*lomené* readings in an oblique case: they are fixed mathematical phrases whose denominator
+    is already an instrumental; no source declines the phrase as a whole.
+  - UK, CS and SK, a zero numerator in an oblique case: Morfológia reads *nula* only in the direct cases (*nula
+    stupňov*); no source gives *нуля*, *nuly*, *nule* + a fraction.
+  - CS and SK denominators, and UK, CS and SK oblique numerators, from 10^12: the builders stop below *bilion*/*bilión*.
 - **NTS-38 — ES and EU ordinals from the million, after NTS-30F.** Opened by NTS-30F, which left every ordinal
   byte-identical. EU: `ConvertOrdinal(1 000 000)` gives `milioi batgarren`, whereas Euskaltzaindia rule 203 §5
   writes *milioigarren* (and *milioi bat eta batgarren* for 1 000 001, *bi milioigarren* for 2 000 000); rule 203
@@ -142,7 +144,7 @@ classification.
   cardinals below and above a million.
 
 
-NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-25, NTS-27, NTS-28, NTS-29, NTS-30A, NTS-30B, NTS-30C, NTS-30D, NTS-30E, NTS-30F, NTS-30G, NTS-30H, NTS-31, NTS-32, NTS-37 and NTS-39 are closed:
+NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-25, NTS-27, NTS-28, NTS-29, NTS-30A, NTS-30B, NTS-30C, NTS-30D, NTS-30E, NTS-30F, NTS-30G, NTS-30H, NTS-31, NTS-32, NTS-37, NTS-39, NTS-40 and NTS-41 are closed:
 
 - NTS-01 — XSD validation: `DONE-2026-08-21.md`.
 - NTS-02 — initialization isolation: `DONE-2026-08-21.md`.
@@ -294,6 +296,13 @@ NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-25, NTS-27, NTS-28, NT
   Denominator one closed everywhere (no source); oblique cases moved to NTS-40, the CS/SK slash readings beyond their
   domain to NTS-41. Dump: only fraction probes of UK, BG, CS, SK changed, all `NotSupportedException` → reading:
   `DONE-2026-10-16.md`.
+- NTS-40 and NTS-41 (opened by NTS-39), implemented together: one internal declined-cardinal builder per language,
+  shared by the oblique numerators (NTS-40) and the slash denominators (NTS-41); `Convert` keeps no case. UK: every
+  part declined (Правопис 2019 §105–107: *двом третім*, *трьома п'ятими*). CS: every part declined but *sto* before
+  another numeral (IJP; Prandstetter, Naše řeč 1938: *lomeno třemi sty padesáti šesti*), nouns after their IJP
+  paradigms, final *jedna* → *jednou*. SK: last component declined (Ondrus §8), *milión*/*miliarda* declinable
+  (Morfológia 329–330). Slash readings stay nominative-only; NTS-42 opened. Dump: only fraction probes of UK, CS, SK
+  changed, all `NotSupportedException` → reading; BG byte-identical: `DONE-2026-10-16(1).md`.
 
 Full multi-form plural systems (Russian/Slavic count-dependent noun forms,
 Arabic dual/paucal/plural categories) were long deliberately out of scope — the

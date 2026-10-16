@@ -153,7 +153,9 @@
         <!-- NTS-30H: fractions are read by the language specifics (IFractionLanguageSpecifics) with the fraction nouns of the
              IJP: jedna třetina, dvě třetiny, pět sedmin, jedna tisícina. the IJP gives no fraction reading with "ku".
              NTS-39: genitive plural after a compound numerator (dvacet dva třetin); denominators 2-999 without a noun
-             read "lomeno" + instrumental (dvě lomeno třemi, jedna lomeno dvaceti třemi). Other values fail closed. -->
+             read "lomeno" + instrumental (dvě lomeno třemi, jedna lomeno dvaceti třemi). NTS-41: every part declined up
+             to 999 999 999 999 (jedna lomeno dvěma tisíci dvaceti třemi, jedna lomeno sto jednou). NTS-40: the fraction
+             nouns in every case (dvěma třetinám, třemi sty šedesáti pěti tisícinami). Other values fail closed. -->
         <LanguageSpecifics>CzechOrdinalLanguageSpecifics</LanguageSpecifics>
         <!-- Internetová jazyková příručka (ÚJČ AV ČR), "Časové údaje". Quarter-hour 12-hour clock
              without day-part wording. "hodina" is feminine: the whole hour agrees the noun with the

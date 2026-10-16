@@ -199,8 +199,9 @@
              a ratio (dvadsaťsedem má sa ku deviatim), not a fraction. NTS-39: full noun paradigms (Morfológia 1966,
              KSSJ), genitive plural after a compound or nula (dvadsaťdva tretín, nula tretín); other denominators read
              "lomené" + the instrumental of the last component (jedna lomené troma, jedna lomené sto štyridsiatimi dvoma)
-             or, when it is indeclinable, "lomené číslom" + cardinal (jedna lomené číslom dvesto).
-             Unestablished forms fail closed. -->
+             or, when it is indeclinable, "lomené číslom" + cardinal (jedna lomené číslom dvesto). NTS-41: the same rule
+             up to 999 999 999 999, a final milión/miliarda declined (jedna lomené dvoma miliónmi). NTS-40: the fraction
+             nouns in every case (dvom tretinám, dvadsaťjeden stotinám). Unestablished forms fail closed. -->
         <LanguageSpecifics>SlovakOrdinalLanguageSpecifics</LanguageSpecifics>
         <!-- Quarter-hour 12-hour clock without day-part wording. "hodina" is feminine: the whole
              hour agrees the noun with the count (jedna hodina, dve hodiny, päť hodín); quarters take

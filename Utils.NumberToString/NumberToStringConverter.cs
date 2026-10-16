@@ -2476,6 +2476,9 @@ namespace Utils.NumberToString
                 if (!fractionSpecifics.TryGetFractionDenominator(numerator, denominator, query, out var reading) || reading is null)
                     throw new NotSupportedException(
                         $"Language '{LanguageIdentifier}' has no sourced reading for the fraction {numerator}/{denominator}.");
+                // A built-in language may spell the numerator itself (an oblique case the cardinal pipeline cannot form).
+                if (reading.NumeratorText is string spelledNumerator)
+                    return string.Concat(spelledNumerator, Separator, reading.Text).Trim();
                 var numeratorForced = CanonicalizeForcedVariants(reading.NumeratorForcedVariants, "IFractionLanguageSpecifics.NumeratorForcedVariants");
                 // The numerator is a sub-expression; do not apply MaxNumber guard.
                 string fractionNumerator = BuildCardinalFragment(numerator, numeratorForced.Overlay(query));

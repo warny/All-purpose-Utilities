@@ -145,11 +145,47 @@ public abstract class SlavicAdjectivalOrdinalLanguageSpecifics : INumberToString
         return compoundEndingInOneIsSingular && lastTwo % 10 == 1 && lastTwo != 11 ? FractionNumeratorClass.One : FractionNumeratorClass.Many;
     }
 
-    /// <summary>Determines whether the caller's variants ask for the nominative, the only case a fraction reading supports.</summary>
+    /// <summary>
+    /// A grammatical case of a fraction reading (NTS-40), in the column order of the case tables of the fraction
+    /// machinery: nominative, genitive, dative, accusative, locative, instrumental.
+    /// </summary>
+    private protected enum FractionCase
+    {
+        /// <summary>Nominative.</summary>
+        Nominative,
+        /// <summary>Genitive.</summary>
+        Genitive,
+        /// <summary>Dative.</summary>
+        Dative,
+        /// <summary>Accusative.</summary>
+        Accusative,
+        /// <summary>Locative.</summary>
+        Locative,
+        /// <summary>Instrumental.</summary>
+        Instrumental,
+    }
+
+    /// <summary>The case order of the Czech and Slovak <see cref="CaseValues"/> (the locative before the instrumental).</summary>
+    private static readonly FractionCase[] s_westSlavicCaseOrder =
+        [FractionCase.Nominative, FractionCase.Genitive, FractionCase.Dative, FractionCase.Accusative, FractionCase.Locative, FractionCase.Instrumental];
+
+    /// <summary>Gets the fraction case named by each entry of <see cref="CaseValues"/>, in the same order.</summary>
+    private protected virtual IReadOnlyList<FractionCase> FractionCaseOrder => s_westSlavicCaseOrder;
+
+    /// <summary>Resolves the case the caller's variants ask for (the nominative when none is requested).</summary>
     /// <param name="variants">The caller's effective variant query.</param>
-    /// <returns><see langword="true"/> when no other case is requested.</returns>
-    private protected bool IsNominativeRequested(IReadOnlyDictionary<string, string> variants)
-        => !variants.TryGetValue(CaseDimension, out string? caseValue) || caseValue == CaseValues[0];
+    /// <returns>The requested case.</returns>
+    private protected FractionCase RequestedFractionCase(IReadOnlyDictionary<string, string> variants)
+    {
+        if (!variants.TryGetValue(CaseDimension, out string? caseValue))
+            return FractionCase.Nominative;
+        for (int i = 0; i < CaseValues.Count; i++)
+        {
+            if (CaseValues[i] == caseValue)
+                return FractionCaseOrder[i];
+        }
+        return FractionCase.Nominative;
+    }
 
     /// <summary>The feminine gender forced on a fraction numerator (the fraction words are feminine).</summary>
     /// <returns>The forced variant set.</returns>
@@ -195,27 +231,6 @@ public abstract class SlavicAdjectivalOrdinalLanguageSpecifics : INumberToString
     /// <param name="value">The gender value.</param>
     /// <returns>The forced variant set.</returns>
     private protected ForcedVariantSet NumeratorGender(string value) => ForcedVariantSet.Create((GenderDimension, value));
-
-    /// <summary>
-    /// Writes the instrumental of a number between 2 and 99 from the instrumental tables of a language, the tens and
-    /// the unit of a compound as two words (Czech <c>dvaceti třemi</c>, Slovak <c>dvadsiatimi dvoma</c>). A final one
-    /// has no instrumental (<see langword="null"/>): its gender in a bare numeral is not sourced (Czech), or the compound
-    /// is indeclinable (Slovak <c>dvadsaťjeden</c>).
-    /// </summary>
-    /// <param name="number">A number between 0 and 99; 0 gives the empty string.</param>
-    /// <param name="units">The instrumentals of 0–9 (0 and 1 unused).</param>
-    /// <param name="teens">The instrumentals of 10–19.</param>
-    /// <param name="tens">The instrumentals of the round tens (indexes 2–9).</param>
-    /// <returns>The instrumental, or <see langword="null"/>.</returns>
-    private protected static string? InstrumentalBelowHundred(int number, string[] units, string[] teens, string[] tens)
-    {
-        if (number == 0) return string.Empty;
-        if (number is >= 10 and < 20) return teens[number - 10];
-        int unit = number % 10;
-        if (unit == 1) return null;
-        if (number < 10) return units[unit];
-        return unit == 0 ? tens[number / 10] : tens[number / 10] + " " + units[unit];
-    }
 }
 
 /// <summary>
@@ -226,7 +241,7 @@ public abstract class SlavicAdjectivalOrdinalLanguageSpecifics : INumberToString
 /// (<c>dvoutisící</c>); larger round multipliers and round millions or milliards other than one
 /// are declined.
 /// </summary>
-public sealed class CzechOrdinalLanguageSpecifics : SlavicAdjectivalOrdinalLanguageSpecifics, IFractionLanguageSpecifics
+public sealed partial class CzechOrdinalLanguageSpecifics : SlavicAdjectivalOrdinalLanguageSpecifics, IFractionLanguageSpecifics
 {
     /// <summary>
     /// The fraction nouns of the Internetová jazyková příručka (ÚJČ AV ČR), each an entry with its paradigm (NTS-30H,
@@ -277,56 +292,49 @@ public sealed class CzechOrdinalLanguageSpecifics : SlavicAdjectivalOrdinalLangu
     private static readonly string[] s_instrumentalTens =
         ["", "", "dvaceti", "třiceti", "čtyřiceti", "padesáti", "šedesáti", "sedmdesáti", "osmdesáti", "devadesáti"];
 
-    /// <summary>The instrumental of the hundreds 200–900: the multiplier and <c>sty</c> (IJP: <c>třemi sty šedesáti pěti</c>).</summary>
-    private static readonly string[] s_instrumentalHundreds =
-        ["", "", "dvěma sty", "třemi sty", "čtyřmi sty", "pěti sty", "šesti sty", "sedmi sty", "osmi sty", "devíti sty"];
-
     /// <summary>
     /// Reads a fraction as the IJP does. A denominator with a fraction noun takes the noun in the form the numerator
     /// governs (<c>jedna třetina</c>, <c>dvě třetiny</c>, <c>pět sedmin</c>); a compound numerator governs the genitive
     /// plural and keeps its counting form (<c>dvacet jedna třetin</c>, <c>dvacet dva třetin</c>: IJP "Počítaný předmět po
     /// číslovkách", the genitive after <i>dvacet jeden … čtyři</i> being "more common and more natural"; "Členění čísel":
-    /// <i>tisíc dvacet čtyři celé/celých</i>). Any other denominator from 2 to 999, and a zero numerator, take the
-    /// mathematical reading <c>lomeno</c> + instrumental (IJP <c>lomit</c>: SSJČ <i>dvě lomeno třemi</i>, SSČ <i>pět lomeno
-    /// dvěma</i>), every part of the denominator declined (<i>třemi sty šedesáti pěti</i>) but <c>sto</c> before another
-    /// numeral (<i>ve sto dvaceti případech</i>); a numerator of one to four is feminine (<i>jedna a dvě jsou tři</i>, SSČ
+    /// <i>tisíc dvacet čtyři celé/celých</i>). Any other denominator up to 999 999 999 999, and a zero numerator, take
+    /// the mathematical reading <c>lomeno</c> + instrumental (IJP <c>lomit</c>: SSJČ <i>dvě lomeno třemi</i>, SSČ <i>pět
+    /// lomeno dvěma</i>; Prandstetter, Naše řeč 22, 1938: <i>šedesát osm lomeno třemi sty padesáti šesti</i>), every part
+    /// of the denominator declined (NTS-41, see <see cref="DeclineCardinal"/>) but <c>sto</c> before another numeral
+    /// (<i>ve sto dvaceti případech</i>); a numerator of one to four is feminine (<i>jedna a dvě jsou tři</i>, SSČ
     /// <c>dva</c>), a compound keeps its counting form, as in arithmetic operations (IJP "Členění čísel": <i>k tisíc sedm
-    /// set dvacet dva korunám</i>).
-    /// Without a sourced form the reading fails closed: a denominator of one, a denominator ending in one after the tens
-    /// or hundreds (21, 101: the gender of a bare <c>jedna</c> in the instrumental is not sourced), from 1000 without a
-    /// noun, and every case other than the nominative.
+    /// set dvacet dva korunám</i>). A <c>jedna</c> ending the denominator (21, 101, 1001) is the feminine instrumental
+    /// <c>jednou</c>: a number in an arithmetic operation is feminine (SSČ <c>dva</c>: <i>jedna a dvě (čast. než jeden a
+    /// dva) jsou tři</i>; Prandstetter: <i>čtyřmi iks minus jedna</i>), and the mathematical reading declines it so
+    /// (Prandstetter: <i>lomeno jednou celou</i>).
+    /// The cases other than the nominative read the fraction nouns only (NTS-40, see
+    /// <see cref="TryBuildObliqueNounFraction"/>): no source declines the <c>lomeno</c> reading as a whole, whose
+    /// denominator is already an instrumental. Without a sourced form the reading fails closed: a denominator of one, a
+    /// denominator from 10^12, a multiplier ending in one after the tens or hundreds in an oblique case (21 000: no
+    /// source gives the gender of its <c>jedna</c> there), and an oblique case of a zero numerator, of a compound
+    /// numerator ending in <c>jedna</c> or of a denominator without a noun.
     /// </summary>
     /// <inheritdoc />
     public bool TryGetFractionDenominator(BigInteger numerator, BigInteger denominator, IReadOnlyDictionary<string, string> variants,
         out FractionDenominatorReading? reading)
     {
         reading = null;
-        if (denominator < 2 || !IsNominativeRequested(variants))
+        if (denominator < 2)
             return false;
+        var fractionCase = RequestedFractionCase(variants);
+        if (fractionCase != FractionCase.Nominative)
+        {
+            return denominator <= long.MaxValue && s_fractionNouns.TryGetValue((long)denominator, out var forms)
+                && TryBuildObliqueNounFraction(numerator, forms, fractionCase, out reading);
+        }
         if (!numerator.IsZero && TryBuildFractionNoun(numerator, denominator, s_fractionNouns, "standalone", out reading))
             return true;
-        if (denominator > 999 || InstrumentalBelowThousand((int)denominator) is not string instrumental)
+        if (denominator > MaxDeclinedNumber
+            || DeclineCardinal((long)denominator, FractionCase.Instrumental, NumeralGender.Feminine, finalOneInstrumental: true) is not string instrumental)
             return false;
         bool simple = !numerator.IsZero && ClassifyFractionNumerator(numerator, compoundEndingInOneIsSingular: false) != FractionNumeratorClass.Many;
         reading = new FractionDenominatorReading("lomeno " + instrumental, simple ? FeminineNumerator() : NumeratorGender("standalone"));
         return true;
-    }
-
-    /// <summary>
-    /// Writes the instrumental of a number between 2 and 999, every part declined (IJP "Členění čísel": <i>třemi sty
-    /// šedesáti pěti</i>) except <c>sto</c> followed by another numeral, which stays undeclined (IJP "Počítaný předmět
-    /// po číslovkách": <i>ve sto dvaceti případech</i>); <c>sto</c> alone is <c>stem</c>.
-    /// </summary>
-    /// <param name="number">A number between 2 and 999.</param>
-    /// <returns>The instrumental, or <see langword="null"/> when the number ends in one after the tens or hundreds.</returns>
-    private static string? InstrumentalBelowThousand(int number)
-    {
-        int hundreds = number / 100;
-        string? rest = InstrumentalBelowHundred(number % 100, s_instrumentalUnits, s_instrumentalTeens, s_instrumentalTens);
-        if (rest == null || hundreds == 0)
-            return rest;
-        string head = hundreds == 1 ? (rest.Length == 0 ? "stem" : "sto") : s_instrumentalHundreds[hundreds];
-        return rest.Length == 0 ? head : head + " " + rest;
     }
 
     private static readonly string[] s_units = ["", "první", "druhý", "třetí", "čtvrtý", "pátý", "šestý", "sedmý", "osmý", "devátý"];
@@ -427,7 +435,7 @@ public sealed class CzechOrdinalLanguageSpecifics : SlavicAdjectivalOrdinalLangu
 /// adjective paradigms. Values from one million upwards (except one million itself) and round or
 /// compound thousands above 9999 are declined because their written forms were not verified.
 /// </summary>
-public sealed class SlovakOrdinalLanguageSpecifics : SlavicAdjectivalOrdinalLanguageSpecifics, IFractionLanguageSpecifics
+public sealed partial class SlovakOrdinalLanguageSpecifics : SlavicAdjectivalOrdinalLanguageSpecifics, IFractionLanguageSpecifics
 {
     /// <summary>
     /// The Slovak fraction nouns (NTS-30H, NTS-39). Morfológia slovenského jazyka (1966), 332, gives the rule: from
@@ -491,56 +499,49 @@ public sealed class SlovakOrdinalLanguageSpecifics : SlavicAdjectivalOrdinalLang
     /// (Morfológia: <i>nula stupňov</i>, <i>nula celých</i>). Any other denominator takes the mathematical reading of
     /// Ondrus (1968), §10: <c>lomené</c> + instrumental for a declinable numeral (<i>jedna lomené troma</i>, <i>sto
     /// delené piatimi</i>, Jarošová <i>dvadsiatimi dvoma</i>), only the last component declined (Slovenská reč 43, 1978:
-    /// <i>jeden lomené sto štyridsiatimi dvoma</i>; see <see cref="InstrumentalCardinal"/>), <c>lomené číslom</c> + the
+    /// <i>jeden lomené sto štyridsiatimi dvoma</i>; see <see cref="DeclineLastComponent"/>), <c>lomené číslom</c> + the
     /// absolute form when the last component is indeclinable (<i>jedna lomené číslom dvadsaťjeden</i>, <i>jedna lomené
     /// číslom sto</i>; <c>sto</c>, <c>tisíc</c> and their compounds, the compounds with <c>-jeden</c>), the numerator in
     /// its absolute form (<i>jedna</i>, <i>dva</i>). The sources differ on a numerator of one: Ondrus reads the
     /// absolute <i>jedna</i> (<i>jedna lomené troma</i>, <i>jedna lomené číslom sto</i>), the 1978 article the
-    /// masculine <i>jeden</i>; Ondrus's rule is kept. A denominator of one, a denominator from 10^6 without a noun and
-    /// every case other than the nominative fail closed; <c>ku</c> reads a ratio, not a fraction.
+    /// masculine <i>jeden</i>; Ondrus's rule is kept. The last-component rule continues through the millions and
+    /// milliards (NTS-41): a final <c>milión</c> or <c>miliarda</c> is a declinable noun (Morfológia 329–330:
+    /// <i>s dvadsiatimi dvoma miliónmi</i>; <c>miliarda</c> "nemá tendenciu k neohybnosti"), so <i>jedna lomené dvoma
+    /// miliónmi</i>, <i>jedna lomené dva milióny troma</i>; a final bare <c>jeden</c> (<c>sto jeden</c>, <c>jeden milión
+    /// jeden</c>) takes <c>číslom</c>: the gender of its instrumental in a bare numeral is not sourced, and <c>číslom</c>
+    /// suits any numeral (Ondrus, §6: <i>po substantíve číslo každá číslovka má podobu ako v absolútnom postavení</i>).
+    /// The cases other than the nominative read the fraction nouns only (NTS-40, see
+    /// <see cref="TryBuildObliqueNounFraction"/>): the <c>lomené</c> reading is a fixed mathematical phrase no source
+    /// declines. A denominator of one, a denominator from 10^12 and an oblique case of a zero numerator, of a numerator
+    /// ending in a bare <c>jeden</c> or of a denominator without a noun fail closed; <c>ku</c> reads a ratio, not a
+    /// fraction.
     /// </summary>
     /// <inheritdoc />
     public bool TryGetFractionDenominator(BigInteger numerator, BigInteger denominator, IReadOnlyDictionary<string, string> variants,
         out FractionDenominatorReading? reading)
     {
         reading = null;
-        if (denominator < 2 || !IsNominativeRequested(variants))
+        if (denominator < 2)
             return false;
-        if (numerator.IsZero && denominator <= long.MaxValue && s_fractionNouns.TryGetValue((long)denominator, out var forms))
+        FractionNounForms forms = default;
+        bool hasNoun = denominator <= long.MaxValue && s_fractionNouns.TryGetValue((long)denominator, out forms);
+        var fractionCase = RequestedFractionCase(variants);
+        if (fractionCase != FractionCase.Nominative)
+            return hasNoun && TryBuildObliqueNounFraction(numerator, forms, fractionCase, out reading);
+        if (numerator.IsZero && hasNoun)
         {
             reading = new FractionDenominatorReading(forms.Many);
             return true;
         }
         if (!numerator.IsZero && TryBuildFractionNoun(numerator, denominator, s_fractionNouns, "mužský", out reading))
             return true;
-        if (denominator > 999_999)
+        if (denominator > MaxDeclinedNumber)
             return false;
-        int value = (int)denominator;
-        string denominatorText = InstrumentalCardinal(value) ?? "číslom " + Cardinal(value);
+        long value = (long)denominator;
+        string instrumental = DeclineLastComponent(value, FractionCase.Instrumental, out LastComponent last);
+        string denominatorText = last is LastComponent.Declined or LastComponent.ScaleNoun ? instrumental : "číslom " + Cardinal(value);
         reading = new FractionDenominatorReading("lomené " + denominatorText, NumeratorGender(numerator.IsOne ? "ženský" : "mužský"));
         return true;
-    }
-
-    /// <summary>
-    /// Writes the instrumental of a cardinal between 2 and 999 999 when its last component is declinable. The grammar
-    /// of a compound is set by its last component (Ondrus 1968, §8: <i>o gramatickom charaktere zloženého slova …
-    /// rozhoduje vždy posledný komponent</i>), so only the tens and units are declined and the words before them keep
-    /// their absolute form (Slovenská reč 43, 1978: <i>jeden lomené sto štyridsiatimi dvoma</i>, <i>dvanásť lomené
-    /// štyridsiatimi piatimi</i>). A cardinal ending in <c>sto</c> or <c>tisíc</c> (<c>sto</c>, <c>päťsto</c>,
-    /// <c>dvetisíc</c>, <c>tisíc sto</c>) or in a compound with <c>-jeden</c> (<c>dvadsaťjeden</c>) is indeclinable and
-    /// has no instrumental. A final bare <c>jeden</c> (<c>sto jeden</c>, <c>tisíc jeden</c>) has none either: the gender
-    /// of its instrumental in a bare numeral is not sourced, and <c>číslom</c> suits any numeral (Ondrus, §6: <i>po
-    /// substantíve číslo každá číslovka má podobu ako v absolútnom postavení</i>).
-    /// </summary>
-    /// <param name="number">A number between 2 and 999 999.</param>
-    /// <returns>The instrumental, or <see langword="null"/> when the last component is indeclinable.</returns>
-    private static string? InstrumentalCardinal(int number)
-    {
-        int rest = number % 100;
-        if (rest == 0 || InstrumentalBelowHundred(rest, s_instrumentalUnits, s_instrumentalTeens, s_instrumentalTens) is not string instrumental)
-            return null;
-        int head = number - rest;
-        return head == 0 ? instrumental : Cardinal(head) + " " + instrumental;
     }
 
     private static readonly string[] s_cardinalUnits = ["", "jeden", "dva", "tri", "štyri", "päť", "šesť", "sedem", "osem", "deväť"];
@@ -711,7 +712,7 @@ public sealed class SlovakOrdinalLanguageSpecifics : SlavicAdjectivalOrdinalLang
 /// the multipliers 1–89 except a final <c>один</c> after the tens; the other round multipliers are declined.
 /// </summary>
 /// <remarks>The apostrophe is the ASCII one used by the Ukrainian cardinal configuration (<c>п'ять</c>).</remarks>
-public sealed class UkrainianOrdinalLanguageSpecifics : SlavicAdjectivalOrdinalLanguageSpecifics, IFractionLanguageSpecifics
+public sealed partial class UkrainianOrdinalLanguageSpecifics : SlavicAdjectivalOrdinalLanguageSpecifics, IFractionLanguageSpecifics
 {
     /// <summary>
     /// Reads a fraction as Український правопис 2019, §107.1, does: the numerator in the feminine, the denominator the
@@ -722,20 +723,25 @@ public sealed class UkrainianOrdinalLanguageSpecifics : SlavicAdjectivalOrdinalL
     /// (<c>тридцять одна сота</c>: "якщо … числівник дробової частини … закінчується на одиницю, то весь запис треба
     /// ставити в називний відмінок"), genitive plural after one ending in two to four (<c>двадцять дві шістдесятих</c>,
     /// <c>тридцять чотири сорок третіх</c>, Літвінова). The denominator is any ordinal this class forms (<c>одна
-    /// тисячна</c>, <c>дві двадцять п'ятих</c>). A zero numerator, a denominator of one and the cases other than the
-    /// nominative (§107: the numerator is declined as a cardinal, <c>двом третім</c>) fail closed.
+    /// тисячна</c>, <c>дві двадцять п'ятих</c>). The other cases decline the numerator as a cardinal and the
+    /// denominator as an ordinal (§107: <c>двом третім</c>, <c>трьома п'ятими</c>; NTS-40, see
+    /// <see cref="TryBuildObliqueFraction"/>), the numerator up to the milliards. A zero numerator (no source reads it)
+    /// and a denominator of one fail closed.
     /// </summary>
     /// <inheritdoc />
     public bool TryGetFractionDenominator(BigInteger numerator, BigInteger denominator, IReadOnlyDictionary<string, string> variants,
         out FractionDenominatorReading? reading)
     {
         reading = null;
-        if (numerator.IsZero || denominator < 2 || denominator > int.MaxValue || !IsNominativeRequested(variants))
+        if (numerator.IsZero || denominator < 2 || denominator > int.MaxValue)
             return false;
         var numeratorClass = ClassifyFractionNumerator(numerator, compoundEndingInOneIsSingular: true);
         if (!TryDecompose((int)denominator, out string prefix, out IReadOnlyList<string> components))
             return false;
         string last = components[^1];
+        var fractionCase = RequestedFractionCase(variants);
+        if (fractionCase != FractionCase.Nominative)
+            return TryBuildObliqueFraction(numerator, prefix, last, fractionCase, out reading);
         string word = numeratorClass == FractionNumeratorClass.One ? Decline(last, Gender.Feminine, 0) : GenitivePlural(last);
         reading = new FractionDenominatorReading(prefix.Length == 0 ? word : prefix + " " + word, FeminineNumerator());
         return true;
