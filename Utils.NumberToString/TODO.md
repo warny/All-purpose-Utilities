@@ -3,7 +3,7 @@
 Re-audited on 2026-10-16 after closing NTS-39 (the UK, BG, CS, SK fraction domains NTS-30H left closed: compound
 numerators by each language's agreement rule, `двадцять одна тридцять сьома`, `сто и една хилядни`, `dvacet dva
 třetin`, `dvadsaťdva tretín`; every IJP fraction noun and the complete Slovak paradigms; the mathematical readings
-`jedna lomeno dvaceti třemi`, `jedna lomené troma`, `jedna lomené číslom sto jeden`; `nula tretín`; denominator one and
+`jedna lomeno dvaceti třemi`, `jedna lomené troma`, `jedna lomené sto štyridsiatimi dvoma`, `jedna lomené číslom dvesto`; `nula tretín`; denominator one and
 zero in UK/BG deliberately closed; NTS-40 and NTS-41 opened), on 2026-10-15 after closing NTS-30H (UK, BG, CS, SK fractions read as these languages read them, through
 the generic `IFractionLanguageSpecifics`: `одна третя`, `дві третіх`, `една втора`, `седем осми`, `jedna třetina`,
 `pět sedmin`, `dve tretiny`; the connector reading `один на тисяча` / `jedna ku tisíc` is gone, unsourced values
@@ -86,9 +86,10 @@ classification.
   + instrumental is built for 2–999; denominators ending in *jedna* after the tens or hundreds (1/21, 1/101) need the
   instrumental gender of a bare *jedna* (*jedním* or *jednou*), which no source gives for arithmetic; from 1000 without a
   fraction noun (1/1001, 1/2023) the IJP gives two declension strategies (every part, or the tens and units only:
-  *o milion tři sta padesát osm tisíc čtyři sta dvaceti třech dokladech*), to be chosen and sourced. SK: *lomené číslom*
-  + cardinal is built up to 999 999; above (1/1 000 001, 1/2 000 000) it only needs the million and milliard forms of
-  the cardinal, kept in parity with the configuration.
+  *o milion tři sta padesát osm tisíc čtyři sta dvaceti třech dokladech*), to be chosen and sourced. SK: *lomené* + the
+  instrumental of the last component, or *lomené číslom* + cardinal when it is indeclinable, is built up to 999 999;
+  above (1/1 000 001, 1/2 000 000) it needs the million and milliard forms of the cardinal, kept in parity with the
+  configuration, and the declinability of a final *milión*/*miliarda* (unsourced).
 - **NTS-38 — ES and EU ordinals from the million, after NTS-30F.** Opened by NTS-30F, which left every ordinal
   byte-identical. EU: `ConvertOrdinal(1 000 000)` gives `milioi batgarren`, whereas Euskaltzaindia rule 203 §5
   writes *milioigarren* (and *milioi bat eta batgarren* for 1 000 001, *bi milioigarren* for 2 000 000); rule 203
@@ -287,8 +288,9 @@ NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-25, NTS-27, NTS-28, NT
   change. Compound numerators: UK singular after *одна* (*двадцять одна тридцять сьома*), BG plural (ИБЕ-БАН; *сто и
   една хилядни*), CS and SK genitive plural with the counting/base form (IJP *dvacet dva žáků*; Jarošová 2021
   *dvadsaťdva žien*). CS: every IJP fraction noun (13–20, round tens, 100 000, 10^9) and *lomeno* + instrumental for
-  2–999 (SSJČ *dvě lomeno třemi*). SK: complete paradigms (KSSJ, Morfológia 1966 rule) and *lomené* + instrumental or
-  *lomené číslom* + cardinal (Ondrus 1968). Zero: SK *nula tretín*, CS *nula lomeno třemi*, UK/BG closed (no source).
+  2–999 (SSJČ *dvě lomeno třemi*). SK: complete paradigms (KSSJ, Morfológia 1966 rule) and *lomené* + instrumental of the last
+  component (*sto štyridsiatimi dvoma*, Slovenská reč 1978) or *lomené číslom* + cardinal when it is indeclinable
+  (Ondrus 1968). Zero: SK *nula tretín*, CS *nula lomeno třemi*, UK/BG closed (no source).
   Denominator one closed everywhere (no source); oblique cases moved to NTS-40, the CS/SK slash readings beyond their
   domain to NTS-41. Dump: only fraction probes of UK, BG, CS, SK changed, all `NotSupportedException` → reading:
   `DONE-2026-10-16.md`.

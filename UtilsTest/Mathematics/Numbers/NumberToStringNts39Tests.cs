@@ -257,36 +257,70 @@ public class NumberToStringNts39Tests
         => Assert.AreEqual(expected, Get("SK").ConvertFraction(numerator, denominator));
 
     /// <summary>
-    /// Indeclinable denominators (the compounds with <c>-jeden</c>, <c>sto</c>, <c>tisíc</c> and their compounds) take
-    /// <c>lomené číslom</c> + the absolute form (Ondrus: <c>jedna lomené číslom dvadsaťjeden</c>).
+    /// From 100 only the last component is declined, the words before it keep their absolute form (Slovenská reč 43,
+    /// 1978: <c>jeden lomené sto štyridsiatimi dvoma</c>, <c>dvanásť lomené štyridsiatimi piatimi</c>; the numerator
+    /// of one stays the absolute <c>jedna</c> of Ondrus 1968).
+    /// </summary>
+    [TestMethod]
+    [DataRow(1L, 142L, "jedna lomené sto štyridsiatimi dvoma")]
+    [DataRow(12L, 45L, "dvanásť lomené štyridsiatimi piatimi")]
+    [DataRow(1L, 120L, "jedna lomené sto dvadsiatimi")]
+    [DataRow(1L, 111L, "jedna lomené sto jedenástimi")]
+    [DataRow(1L, 102L, "jedna lomené sto dvoma")]
+    [DataRow(2L, 365L, "dva lomené tristo šesťdesiatimi piatimi")]
+    [DataRow(1L, 999L, "jedna lomené deväťsto deväťdesiatimi deviatimi")]
+    [DataRow(1L, 1042L, "jedna lomené tisíc štyridsiatimi dvoma")]
+    [DataRow(1L, 2003L, "jedna lomené dvetisíc troma")]
+    [DataRow(1L, 123_456L, "jedna lomené stodvadsaťtritisíc štyristo päťdesiatimi šiestimi")]
+    public void Slovak_LomeneInstrumental_LastComponent(long numerator, long denominator, string expected)
+        => Assert.AreEqual(expected, Get("SK").ConvertFraction(numerator, denominator));
+
+    /// <summary>
+    /// A denominator whose last component is indeclinable (a compound with <c>-jeden</c>, <c>sto</c>, <c>tisíc</c> and
+    /// their compounds, Ondrus §8: the last component decides) or a bare final <c>jeden</c> takes <c>lomené číslom</c>
+    /// + the absolute form (Ondrus: <c>jedna lomené číslom dvadsaťjeden</c>, <c>jedna lomené číslom sto</c>).
     /// </summary>
     [TestMethod]
     [DataRow(1L, 21L, "jedna lomené číslom dvadsaťjeden")]
     [DataRow(1L, 91L, "jedna lomené číslom deväťdesiatjeden")]
     [DataRow(1L, 101L, "jedna lomené číslom sto jeden")]
-    [DataRow(2L, 365L, "dva lomené číslom tristo šesťdesiatpäť")]
+    [DataRow(1L, 200L, "jedna lomené číslom dvesto")]
+    [DataRow(1L, 221L, "jedna lomené číslom dvesto dvadsaťjeden")]
+    [DataRow(3L, 500L, "tri lomené číslom päťsto")]
     [DataRow(1L, 1001L, "jedna lomené číslom tisíc jeden")]
+    [DataRow(1L, 1100L, "jedna lomené číslom tisíc sto")]
     [DataRow(1L, 2000L, "jedna lomené číslom dvetisíc")]
-    [DataRow(1L, 123_456L, "jedna lomené číslom stodvadsaťtritisíc štyristo päťdesiatšesť")]
+    [DataRow(1L, 21_000L, "jedna lomené číslom dvadsaťjedentisíc")]
     public void Slovak_LomeneCislom(long numerator, long denominator, string expected)
         => Assert.AreEqual(expected, Get("SK").ConvertFraction(numerator, denominator));
 
     /// <summary>
-    /// The absolute form after <c>číslom</c> is the cardinal of the configuration, over the whole supported domain
-    /// (the plugin rebuilds it; this pins the two together).
+    /// Over the whole supported domain, <c>číslom</c> is chosen exactly when the last component is indeclinable (a
+    /// round hundred or thousand, a final one other than eleven), and both readings reuse the cardinal of the
+    /// configuration: whole after <c>číslom</c>, all but its last word before the instrumental.
     /// </summary>
     [TestMethod]
-    public void Slovak_LomeneCislom_MatchesTheCardinal()
+    public void Slovak_Lomene_ChoiceFollowsTheLastComponent()
     {
         var sk = Get("SK");
         for (int denominator = 2; denominator <= 999_999; denominator += denominator < 3000 ? 1 : 997)
         {
             string reading = sk.ConvertFraction(1, denominator);
-            if (!reading.StartsWith("jedna lomené číslom ", StringComparison.Ordinal))
+            if (!reading.StartsWith("jedna lomené ", StringComparison.Ordinal))
                 continue;
-            Assert.AreEqual("jedna lomené číslom " + sk.Convert(denominator), reading, denominator.ToString());
+            string cardinal = sk.Convert(denominator);
+            int rest = denominator % 100;
+            bool indeclinable = rest == 0 || (rest % 10 == 1 && rest != 11);
+            if (indeclinable)
+            {
+                Assert.AreEqual("jedna lomené číslom " + cardinal, reading, denominator.ToString());
+                continue;
+            }
+            int lastSpace = cardinal.LastIndexOf(' ');
+            string head = lastSpace < 0 ? string.Empty : cardinal[..(lastSpace + 1)];
+            Assert.IsTrue(reading.StartsWith("jedna lomené " + head, StringComparison.Ordinal), denominator + ": " + reading);
+            Assert.IsFalse(reading.Contains("číslom", StringComparison.Ordinal), denominator + ": " + reading);
         }
-        Assert.AreEqual("jedna lomené číslom " + sk.Convert(999_999), sk.ConvertFraction(1, 999_999));
     }
 
     /// <summary>Above 999 999 without a noun the Slovak reading fails closed.</summary>

@@ -490,11 +490,14 @@ public sealed class SlovakOrdinalLanguageSpecifics : SlavicAdjectivalOrdinalLang
     /// 2026: <i>dvadsaťjeden žien</i>, not <i>dvadsaťjedna</i>); <c>nula</c> governs the genitive plural as well
     /// (Morfológia: <i>nula stupňov</i>, <i>nula celých</i>). Any other denominator takes the mathematical reading of
     /// Ondrus (1968), §10: <c>lomené</c> + instrumental for a declinable numeral (<i>jedna lomené troma</i>, <i>sto
-    /// delené piatimi</i>, Jarošová <i>dvadsiatimi dvoma</i>), <c>lomené číslom</c> + the absolute form for an
-    /// indeclinable one (<i>jedna lomené číslom dvadsaťjeden</i>, <i>jedna lomené číslom sto</i>; <c>sto</c>, <c>tisíc</c>
-    /// and their compounds, the compounds with <c>-jeden</c>), the numerator in its absolute form (<i>jedna</i>,
-    /// <i>dva</i>). A denominator of one, a denominator from 10^6 without a noun and every case other than the nominative
-    /// fail closed; <c>ku</c> reads a ratio, not a fraction.
+    /// delené piatimi</i>, Jarošová <i>dvadsiatimi dvoma</i>), only the last component declined (Slovenská reč 43, 1978:
+    /// <i>jeden lomené sto štyridsiatimi dvoma</i>; see <see cref="InstrumentalCardinal"/>), <c>lomené číslom</c> + the
+    /// absolute form when the last component is indeclinable (<i>jedna lomené číslom dvadsaťjeden</i>, <i>jedna lomené
+    /// číslom sto</i>; <c>sto</c>, <c>tisíc</c> and their compounds, the compounds with <c>-jeden</c>), the numerator in
+    /// its absolute form (<i>jedna</i>, <i>dva</i>). The sources differ on a numerator of one: Ondrus reads the
+    /// absolute <i>jedna</i> (<i>jedna lomené troma</i>, <i>jedna lomené číslom sto</i>), the 1978 article the
+    /// masculine <i>jeden</i>; Ondrus's rule is kept. A denominator of one, a denominator from 10^6 without a noun and
+    /// every case other than the nominative fail closed; <c>ku</c> reads a ratio, not a fraction.
     /// </summary>
     /// <inheritdoc />
     public bool TryGetFractionDenominator(BigInteger numerator, BigInteger denominator, IReadOnlyDictionary<string, string> variants,
@@ -513,11 +516,31 @@ public sealed class SlovakOrdinalLanguageSpecifics : SlavicAdjectivalOrdinalLang
         if (denominator > 999_999)
             return false;
         int value = (int)denominator;
-        string denominatorText = value < 100 && InstrumentalBelowHundred(value, s_instrumentalUnits, s_instrumentalTeens, s_instrumentalTens) is string instrumental
-            ? instrumental
-            : "číslom " + Cardinal(value);
+        string denominatorText = InstrumentalCardinal(value) ?? "číslom " + Cardinal(value);
         reading = new FractionDenominatorReading("lomené " + denominatorText, NumeratorGender(numerator.IsOne ? "ženský" : "mužský"));
         return true;
+    }
+
+    /// <summary>
+    /// Writes the instrumental of a cardinal between 2 and 999 999 when its last component is declinable. The grammar
+    /// of a compound is set by its last component (Ondrus 1968, §8: <i>o gramatickom charaktere zloženého slova …
+    /// rozhoduje vždy posledný komponent</i>), so only the tens and units are declined and the words before them keep
+    /// their absolute form (Slovenská reč 43, 1978: <i>jeden lomené sto štyridsiatimi dvoma</i>, <i>dvanásť lomené
+    /// štyridsiatimi piatimi</i>). A cardinal ending in <c>sto</c> or <c>tisíc</c> (<c>sto</c>, <c>päťsto</c>,
+    /// <c>dvetisíc</c>, <c>tisíc sto</c>) or in a compound with <c>-jeden</c> (<c>dvadsaťjeden</c>) is indeclinable and
+    /// has no instrumental. A final bare <c>jeden</c> (<c>sto jeden</c>, <c>tisíc jeden</c>) has none either: the gender
+    /// of its instrumental in a bare numeral is not sourced, and <c>číslom</c> suits any numeral (Ondrus, §6: <i>po
+    /// substantíve číslo každá číslovka má podobu ako v absolútnom postavení</i>).
+    /// </summary>
+    /// <param name="number">A number between 2 and 999 999.</param>
+    /// <returns>The instrumental, or <see langword="null"/> when the last component is indeclinable.</returns>
+    private static string? InstrumentalCardinal(int number)
+    {
+        int rest = number % 100;
+        if (rest == 0 || InstrumentalBelowHundred(rest, s_instrumentalUnits, s_instrumentalTeens, s_instrumentalTens) is not string instrumental)
+            return null;
+        int head = number - rest;
+        return head == 0 ? instrumental : Cardinal(head) + " " + instrumental;
     }
 
     private static readonly string[] s_cardinalUnits = ["", "jeden", "dva", "tri", "štyri", "päť", "šesť", "sedem", "osem", "deväť"];
