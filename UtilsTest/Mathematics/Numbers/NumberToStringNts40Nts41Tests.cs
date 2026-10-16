@@ -1,5 +1,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using System.Collections.Generic;
 using System.Numerics;
 using Utils.NumberToString;
 using Utils.Numerics;
@@ -282,6 +283,58 @@ public class NumberToStringNts40Nts41Tests
         Assert.AreEqual("мінус двом третім", Get("UK").ConvertFraction(-2, 3, "case=давальний"));
         Assert.AreEqual("minus dvěma třetinám", Get("CS").ConvertFraction(2, -3, "case=dativ"));
         Assert.AreEqual("mínus dvom tretinám", Get("SK").ConvertFraction(-2, 3, "case=datív"));
+    }
+
+    /// <summary>
+    /// The numerator a plugin spells for an oblique case goes through the caller's <c>AdjustFunction</c>, like the
+    /// numerator the cardinal pipeline renders in the nominative, and the language finalization still runs once, on the
+    /// complete phrase.
+    /// </summary>
+    [TestMethod]
+    [DataRow("UK", "case=давальний", "П'ЯТЬ третіх", "П'ЯТИ третім")]
+    [DataRow("CS", "case=dativ", "PĚT třetin", "PĚTI třetinám")]
+    [DataRow("SK", "case=datív", "PÄŤ tretín", "PIATIM tretinám")]
+    public void ObliqueNumerator_GoesThroughTheAdjustFunction(string culture, string variant, string nominative, string oblique)
+    {
+        NumberToStringConverter source = Get(culture);
+        var finalizer = new CountingFractionSpecifics(source.LanguageSpecifics);
+        var converter = new NumberToStringConverter(new NumberToStringConverterOptions(source)
+        {
+            AdjustFunction = text => text.ToUpperInvariant(),
+            LanguageSpecifics = finalizer,
+        });
+
+        Assert.AreEqual(nominative, converter.ConvertFraction(5, 3), "the nominative keeps its historical behavior");
+        CollectionAssert.AreEqual(new[] { nominative }, finalizer.Finalized);
+
+        finalizer.Finalized.Clear();
+        Assert.AreEqual(oblique, converter.ConvertFraction(5, 3, variant));
+        CollectionAssert.AreEqual(new[] { oblique }, finalizer.Finalized, "finalized once, on the whole phrase");
+    }
+
+    /// <summary>Wraps a built-in fraction plugin and records every finalization call.</summary>
+    /// <param name="inner">The built-in language specifics.</param>
+    private sealed class CountingFractionSpecifics(INumberToStringLanguageSpecifics inner)
+        : INumberToStringLanguageSpecifics, IFractionLanguageSpecifics, IOrdinalLanguageSpecifics
+    {
+        /// <inheritdoc />
+        public bool TryConvertOrdinal(int number, IReadOnlyDictionary<string, string> activeVariants, out string? result)
+            => ((IOrdinalLanguageSpecifics)inner).TryConvertOrdinal(number, activeVariants, out result);
+
+        /// <summary>Gets the texts passed to <see cref="FinalizeWriting"/>, in call order.</summary>
+        public List<string> Finalized { get; } = [];
+
+        /// <inheritdoc />
+        public string FinalizeWriting(string languageIdentifier, string text)
+        {
+            Finalized.Add(text);
+            return inner.FinalizeWriting(languageIdentifier, text);
+        }
+
+        /// <inheritdoc />
+        public bool TryGetFractionDenominator(BigInteger numerator, BigInteger denominator, IReadOnlyDictionary<string, string> variants,
+            out FractionDenominatorReading? reading)
+            => ((IFractionLanguageSpecifics)inner).TryGetFractionDenominator(numerator, denominator, variants, out reading);
     }
 
     /// <summary>The ordinary cardinal keeps no case: <c>Convert</c> under a case variant is the nominative cardinal.</summary>
