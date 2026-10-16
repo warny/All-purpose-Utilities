@@ -78,6 +78,16 @@ classification.
     zero-group rendering and a normative source.
   - ES currency: `uno euro` for DPD *un euro* (apocope before a noun); the caller-defined currency wording does
     not force the attributive form.
+- **NTS-43 — `AdjustFunction` runs before the morphology and can invalidate variant replacements.** Found by the
+  NTS-40 review (PR #646), not introduced by it. `BuildCardinalFragment` (and `ConvertCardinalUnchecked`) run
+  `ConvertRaw` → `AdjustFunction` → `ApplyVariantRules` → end triggers, so an adjustment that changes case or wording
+  hides the input of a `<Variant><Replacement>`: with an uppercasing `AdjustFunction`, the UK feminine numerator of
+  2/3 stays `ДВА третіх` (the gender rule looks for `два`), likewise CS/SK `DVA`, and potentially every language using
+  variant replacements. Audit the contract before any change: (1) move `AdjustFunction` after `ApplyVariantRules`, or
+  (2) keep the order and make the morphology independent of the user transformation; check triggers, shielded groups,
+  ordinals (`ConvertOrdinal_WordRulesMatchBeforeAdjustFunction` pins the ordinal order), currency/time/fraction
+  fragments, and callers relying on the historical order (`CompositeConversion_AdjustFunctionRunsBeforeVariantRules`
+  pins it for composites).
 - **NTS-42 — the UK, CS and SK fraction readings NTS-40/41 left closed.** Each one fails closed for a named missing
   piece of evidence (`DONE-2026-10-16(1).md`):
   - CS, oblique cases of a compound numerator ending in *jedna* (21/100, 101/3, 1001/3 in the genitive): the IJP gives
