@@ -266,7 +266,7 @@ were not verified.</p>
 
   <h3 id="Utils_NumberToString_BulgarianOrdinalLanguageSpecifics_FinalizeWriting_System_String_System_String_" data-uid="Utils.NumberToString.BulgarianOrdinalLanguageSpecifics.FinalizeWriting(System.String,System.String)">
   FinalizeWriting(string, string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/BulgarianOrdinalLanguageSpecifics.cs/#L74"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/BulgarianOrdinalLanguageSpecifics.cs/#L73"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Finalizes a converted text according to language-specific writing rules.</p>
@@ -312,7 +312,7 @@ fragments without invoking this method, then invokes it exactly once for each pu
 
   <h3 id="Utils_NumberToString_BulgarianOrdinalLanguageSpecifics_TryConvertOrdinal_System_Int32_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__System_String__" data-uid="Utils.NumberToString.BulgarianOrdinalLanguageSpecifics.TryConvertOrdinal(System.Int32,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String@)">
   TryConvertOrdinal(int, IReadOnlyDictionary&lt;string, string&gt;, out string?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/BulgarianOrdinalLanguageSpecifics.cs/#L77"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/BulgarianOrdinalLanguageSpecifics.cs/#L76"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Attempts to convert a non-negative integer to its ordinal string representation.</p>
@@ -360,15 +360,17 @@ otherwise <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/
 
   <h3 id="Utils_NumberToString_BulgarianOrdinalLanguageSpecifics_TryGetFractionDenominator_System_Numerics_BigInteger_System_Numerics_BigInteger_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__Utils_NumberToString_FractionDenominatorReading__" data-uid="Utils.NumberToString.BulgarianOrdinalLanguageSpecifics.TryGetFractionDenominator(System.Numerics.BigInteger,System.Numerics.BigInteger,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},Utils.NumberToString.FractionDenominatorReading@)">
   TryGetFractionDenominator(BigInteger, BigInteger, IReadOnlyDictionary&lt;string, string&gt;, out FractionDenominatorReading?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/BulgarianOrdinalLanguageSpecifics.cs/#L33"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/BulgarianOrdinalLanguageSpecifics.cs/#L35"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Reads a fraction as the Institute for Bulgarian Language writes it (NTS-30H): the numerator in the feminine
 (<code>една</code>, <code>две</code>, agreeing with <code>част</code>), the denominator the ordinal in the feminine singular after
 one (<code>една втора</code>, <code>една осма</code>) and in the plural otherwise (<code>две трети</code>, <code>три четвърти</code>,
-<code>седем осми</code>); one quarter is the noun <code>една четвърт</code>. The denominator is any ordinal this class forms
-(<code>една стотна</code>, <code>една хилядна</code>); compound numerators ending in <code>една</code> after the tens (21, 101), a
-zero numerator and a denominator of one fail closed.</p>
+<code>седем осми</code>); one quarter is the noun <code>една четвърт</code>. A compound ending in <code>една</code> takes the plural
+too (NTS-39): a noun after a compound numeral ending in one is plural (Г. Митринов, ИБЕ-БАН, &quot;За една особеност
+в употребата на числителните имена&quot;, Аз-буки 2020: <i>двайсет и един футболисти</i>), and the fraction reads so
+(Математика 5. клас, Клет България 2021: <i>едно цяло и сто и една хилядни</i>). The denominator is any ordinal
+this class forms (<code>една стотна</code>, <code>една хилядна</code>); a zero numerator and a denominator of one fail closed.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
