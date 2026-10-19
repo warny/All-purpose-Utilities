@@ -106,16 +106,19 @@ cardinal pipeline. Old/new outputs: `DONE-2026-10-16(1).md`.
   construction). **Fraction nouns**: patterns *žena* and *ulica* (#9); 1–4 agree, after 5+ and after the indeclinable
   components the noun takes the case, after *milión*/*miliarda* the genitive plural (#10). **Slash reading (NTS-41)**:
   *lomené* + the instrumental of the last component up to 999 999 999 999 (*jedna lomené dva milióny troma*), *lomené
-  číslom* + the cardinal of the configuration when that component is indeclinable or a bare *jeden* (*jedna lomené
-  číslom jeden milión jeden*).
+  číslom* + the cardinal of the configuration when that component is indeclinable, a bare final *jeden* included
+  (*jedna lomené číslom jeden milión jeden*). **Bare final *jeden* (NTS-44)**: #10, 226, *vyššie zložené číslovky
+  končiace sa na číslovku jeden (podobne ako typ dvadsaťjeden) sú nesklonné*, the millions and milliards counted among
+  the higher compounds (note 18, 221; table 2.4.1, 223–224); PSP 1953, 88–89, quoted by #10, 211: *so stojeden
+  družstvami*. The noun alone takes the case: *sto jeden tretinám*, *tisíc jeden tretinami* (application of the rule).
 
 **Slash readings under a caller case.** No source declines the *lomeno*/*lomené* phrase as a whole: its denominator is
 already the instrumental the construction requires. The caller's case is not piped into it; an oblique case of a
 fraction without a fraction noun **fails closed** (NTS-42).
 
 **Remaining closures (NTS-42).** CS: an oblique compound numerator ending in *jedna* (only its nominative is sourced),
-a multiplier ending in one (21 000) in *lomeno* or an oblique case. SK: an oblique numerator ending in a bare *jeden*
-(101). UK, CS, SK: a zero numerator in an oblique case (no source); 10^12 and above. Denominator one stays closed
+a multiplier ending in one (21 000) in *lomeno* or an oblique case. SK: the oblique numerator ending in a bare *jeden*
+(101) was opened by NTS-44. UK, CS, SK: a zero numerator in an oblique case (no source); 10^12 and above. Denominator one stays closed
 everywhere (NTS-39). BG has no NTS-40 item and is byte-identical.
 
 ## NTS-39 — the fraction domains NTS-30H left closed (2026-10-16)
@@ -164,8 +167,8 @@ is an **inference** from such a rule.
   lomené dvadsiatimi troma*, *jedna lomené sto štyridsiatimi dvoma*, *dva lomené tristo šesťdesiatimi piatimi*), or
   *lomené číslom* + the cardinal when that last component is indeclinable (#14: *sto*, *tisíc* and their compounds,
   the *-jeden* compounds: *jedna lomené číslom dvesto*, *jedna lomené číslom dvesto dvadsaťjeden*). A bare final
-  *jeden* (*sto jeden*) also takes *číslom*: its instrumental gender is not sourced and #14 §6 admits *číslom* before
-  any numeral. The numerator is in its absolute form (*jedna*, *dva*, #14); #15 reads *jeden* for one: the divergence
+  *jeden* (*sto jeden*) also takes *číslom*: it is indeclinable like *dvadsaťjeden* (#10, 226; NTS-44) and #14 §6
+  admits *číslom* before any numeral. The numerator is in its absolute form (*jedna*, *dva*, #14); #15 reads *jeden* for one: the divergence
   is documented, #14's explicit rule is kept. Extending the last-component rule from 142 to the thousands
   (*tisíc štyridsiatimi dvoma*, *tristo šesťdesiatimi piatimi*) is an **inference** from #14 §8 and #15.
 

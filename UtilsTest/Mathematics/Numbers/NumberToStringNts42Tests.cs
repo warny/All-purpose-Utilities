@@ -16,7 +16,8 @@ namespace UtilsTest.NumberToString;
 /// every oblique case, the neighbouring values that stay open (so a later change cannot widen or narrow a family
 /// unnoticed), and the generic boundary between the engine and the plugin. A change that opens a family on a sourced
 /// reading is expected to update the matching test. The level of evidence of each family (documented, partially
-/// documented, not established) is in <c>DONE-2026-10-19(1).md</c>.
+/// documented, not established) is in <c>DONE-2026-10-19(1).md</c>. Family C has since been opened by NTS-44
+/// (<c>NumberToStringNts44Tests</c>).
 /// </para>
 /// </summary>
 [TestClass]
@@ -122,11 +123,12 @@ public class NumberToStringNts42Tests
     // ===== C — SK numerator ending in a bare jeden ==================================================
 
     /// <summary>
-    /// Family C (characterization): a numerator ending in a bare <c>jeden</c> after a larger group is not implemented in
-    /// the oblique cases; the accusative is its nominative. Documented as a rule since the audit revision: Jarošová
-    /// (Slovenská reč 86, 2021, 223 and 226) states that <i>stojeden / sto jeden</i> and the higher compounds ending in
-    /// <i>jeden</i> are indeclinable like <i>dvadsaťjeden</i>, and PSP 1953 (88–89, as quoted there) attests <i>so
-    /// stojeden družstvami</i>. Opening it is the separate behaviour change NTS-44, which will update this test.
+    /// Family C, opened by NTS-44: a numerator ending in a bare <c>jeden</c> after a larger group was closed in the
+    /// oblique cases when this audit ran. Jarošová (Slovenská reč 86, 2021, 223 and 226) states that <i>stojeden / sto
+    /// jeden</i> and the higher compounds ending in <i>jeden</i> are indeclinable like <i>dvadsaťjeden</i>, and PSP 1953
+    /// (88–89, as quoted there) attests <i>so stojeden družstvami</i>; NTS-44 reads them as the indeclinable compounds,
+    /// the noun in the case. This keeps the family's values pinned as open in every oblique case, the accusative still
+    /// its nominative; the exact readings are specified by <c>NumberToStringNts44Tests</c>.
     /// </summary>
     [TestMethod]
     [DataRow(101L)]
@@ -134,9 +136,12 @@ public class NumberToStringNts42Tests
     [DataRow(2001L)]
     [DataRow(1_000_001L)]
     [DataRow(1_000_000_001L)]
-    public void C_SlovakBareJeden_ClosedInTheObliqueCases(long numerator)
+    public void C_SlovakBareJeden_OpenedByNts44(long numerator)
     {
-        AssertClosed("SK", numerator, 3, s_slovakObliqueCases);
+        string head = Get("SK").ConvertFraction(numerator, 3)[..^"tretín".Length];
+        string[] nouns = ["tretín", "tretinám", "tretinách", "tretinami"];
+        for (int i = 0; i < s_slovakObliqueCases.Length; i++)
+            Assert.AreEqual(head + nouns[i], Get("SK").ConvertFraction(numerator, 3, s_slovakObliqueCases[i]), s_slovakObliqueCases[i]);
         Assert.AreEqual(Get("SK").ConvertFraction(numerator, 3), Get("SK").ConvertFraction(numerator, 3, "case=akuzatív"));
     }
 

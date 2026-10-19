@@ -60,10 +60,12 @@ public sealed partial class SlovakOrdinalLanguageSpecifics
         Declined,
         /// <summary>A scale noun with its multiplier (<c>dvoma miliónmi</c>); a counted noun after it is in the genitive plural.</summary>
         ScaleNoun,
-        /// <summary>Indeclinable: <c>sto</c>, <c>tisíc</c> and their compounds, the compounds with <c>-jeden</c>.</summary>
+        /// <summary>
+        /// Indeclinable: <c>sto</c>, <c>tisíc</c> and their compounds, every compound ending in <c>jeden</c> — the tens
+        /// (<c>dvadsaťjeden</c>, Morfológia 326) and the higher compounds from 101 (<c>sto jeden</c>, <c>tisíc
+        /// jeden</c>, <c>jeden milión jeden</c>; Jarošová, Slovenská reč 86, 2021, 223, 226; NTS-44).
+        /// </summary>
         Indeclinable,
-        /// <summary>A bare <c>jeden</c> after a larger group (<c>sto jeden</c>, <c>tisíc jeden</c>): no sourced case form.</summary>
-        BareOne,
     }
 
     /// <summary>
@@ -71,12 +73,16 @@ public sealed partial class SlovakOrdinalLanguageSpecifics
     /// to four agree with the noun (Morfológia 317: <i>jedna kniha, dve sestry</i>, declined in parallel); after 5 and
     /// more the noun takes the case of the phrase in the oblique cases (317: <i>k desiatim sudom, o siedmich chlapcoch,
     /// s deväťdesiatimi piatimi sedadlami</i>) and the genitive plural in the accusative, as in the nominative; after an
-    /// indeclinable last component (<c>sto</c>, <c>tisíc</c>, <c>-jeden</c>) the noun alone takes the case (<i>ku
-    /// štyridsaťjeden družstvám</i>, <i>k sto robotníkom</i>); after <c>milión</c> or <c>miliarda</c> it is always in the
-    /// genitive plural (330: <i>pritom meno počítaného predmetu je vždy v G. pl.</i>). The noun follows the pattern
-    /// <c>žena</c> (<c>tretina</c>) or <c>ulica</c> (<c>polovica</c>). A numerator ending in a bare <c>jeden</c> after a
-    /// larger group (101, 1001) fails closed outside the accusative (no source declines it), as does a zero numerator
-    /// (<c>nula</c> is read only in the direct cases, 317: <i>nula stupňov</i>).
+    /// indeclinable last component (<c>sto</c>, <c>tisíc</c>, a compound ending in <c>jeden</c>) the noun alone takes the
+    /// case (<i>ku štyridsaťjeden družstvám</i>, <i>k sto robotníkom</i>; PSP 1953, 88–89, quoted by Jarošová, Slovenská
+    /// reč 86, 2021, 211: <i>so stojeden družstvami</i>), so <i>sto jeden tretinám</i>, <i>tisíc jeden tretinami</i>
+    /// (NTS-44); when the last component is itself <c>milión</c> or <c>miliarda</c> (a round number of millions or
+    /// milliards: <i>dvoma miliónmi tretín</i>) the noun is always in the genitive plural (330: <i>pritom meno
+    /// počítaného predmetu je vždy v G. pl.</i>). A scale noun followed by a lower group is not the last component and
+    /// does not govern the noun: the last component does (<i>jeden milión jeden tretinám</i>, <i>jeden milión
+    /// dvadsaťjeden tretinám</i>). The noun follows the pattern <c>žena</c> (<c>tretina</c>) or
+    /// <c>ulica</c> (<c>polovica</c>). A zero numerator fails closed (<c>nula</c> is read only in the direct cases, 317:
+    /// <i>nula stupňov</i>).
     /// </summary>
     /// <param name="numerator">The numerator.</param>
     /// <param name="forms">The fraction noun.</param>
@@ -104,8 +110,6 @@ public sealed partial class SlovakOrdinalLanguageSpecifics
             return true;
         }
         string numeratorText = DeclineLastComponent(value, fractionCase, out LastComponent last);
-        if (last == LastComponent.BareOne && !direct)
-            return false;
         bool genitivePlural = direct || last == LastComponent.ScaleNoun;
         reading = FractionDenominatorReading.WithNumerator(numeratorText,
             DeclineFractionNoun(forms, plural: true, genitivePlural ? FractionCase.Genitive : fractionCase));
@@ -154,7 +158,11 @@ public sealed partial class SlovakOrdinalLanguageSpecifics
     /// compound: <c>dvadsiatimi dvoma</c>); <c>milión</c> and <c>miliarda</c> with their multiplier (one: <c>jedným
     /// miliónom</c>, <c>jednou miliardou</c>; 2–99 declined when declinable: <c>dvoma miliónmi</c>, <c>dvadsiatimi
     /// dvoma miliónmi</c>; any other multiplier in its absolute form: <c>dvadsaťjeden miliónmi</c>, <c>sto dva
-    /// miliónmi</c>). An indeclinable or bare-one last component returns the absolute cardinal. The nominative and
+    /// miliónmi</c>). An indeclinable last component returns the absolute cardinal: <c>sto</c>, <c>tisíc</c> and the
+    /// other round values below the millions, and every compound whose last group ends in <c>jeden</c> but not in
+    /// <c>jedenásť</c> (21–91; 101, 1001, 2001, 1 000 001: Jarošová 2021, 226, <i>vyššie zložené číslovky končiace sa na
+    /// číslovku jeden (podobne ako typ dvadsaťjeden) sú nesklonné</i>; her note 18, 221, and table 2.4.1, 223–224, count
+    /// the millions and milliards among the higher compounds). The nominative and
     /// accusative are the absolute cardinal, except a final <c>milión</c> or <c>miliarda</c> after one, which agrees
     /// (<c>jednu miliardu</c>).
     /// </summary>
@@ -179,11 +187,6 @@ public sealed partial class SlovakOrdinalLanguageSpecifics
                 return DeclineScale((int)(number / 1_000_000_000), fractionCase, s_milliardSingular, s_milliardPlural, feminine: true);
             }
             last = LastComponent.Indeclinable;
-            return Cardinal(number);
-        }
-        if (rest == 1)
-        {
-            last = LastComponent.BareOne;
             return Cardinal(number);
         }
         if (rest % 10 == 1 && rest != 11)

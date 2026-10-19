@@ -508,13 +508,12 @@ public sealed partial class SlovakOrdinalLanguageSpecifics : SlavicAdjectivalOrd
     /// milliards (NTS-41): a final <c>milión</c> or <c>miliarda</c> is a declinable noun (Morfológia 329–330:
     /// <i>s dvadsiatimi dvoma miliónmi</i>; <c>miliarda</c> "nemá tendenciu k neohybnosti"), so <i>jedna lomené dvoma
     /// miliónmi</i>, <i>jedna lomené dva milióny troma</i>; a final bare <c>jeden</c> (<c>sto jeden</c>, <c>jeden milión
-    /// jeden</c>) takes <c>číslom</c>: the gender of its instrumental in a bare numeral is not sourced, and <c>číslom</c>
-    /// suits any numeral (Ondrus, §6: <i>po substantíve číslo každá číslovka má podobu ako v absolútnom postavení</i>).
+    /// jeden</c>) is indeclinable like <c>dvadsaťjeden</c> (Jarošová 2021, 226) and takes <c>číslom</c>, which suits any
+    /// numeral (Ondrus, §6: <i>po substantíve číslo každá číslovka má podobu ako v absolútnom postavení</i>).
     /// The cases other than the nominative read the fraction nouns only (NTS-40, see
     /// <see cref="TryBuildObliqueNounFraction"/>): the <c>lomené</c> reading is a fixed mathematical phrase no source
-    /// declines. A denominator of one, a denominator from 10^12 and an oblique case of a zero numerator, of a numerator
-    /// ending in a bare <c>jeden</c> or of a denominator without a noun fail closed; <c>ku</c> reads a ratio, not a
-    /// fraction.
+    /// declines. A denominator of one, a denominator from 10^12 and an oblique case of a zero numerator or of a
+    /// denominator without a noun fail closed; <c>ku</c> reads a ratio, not a fraction.
     /// </summary>
     /// <inheritdoc />
     public bool TryGetFractionDenominator(BigInteger numerator, BigInteger denominator, IReadOnlyDictionary<string, string> variants,
