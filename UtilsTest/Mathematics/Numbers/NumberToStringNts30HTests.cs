@@ -338,8 +338,9 @@ public class NumberToStringNts30HTests
     /// <summary>
     /// <c>ku</c> (a ratio) is no longer produced. The forms NTS-30H left closed were opened by NTS-39 (noun paradigms,
     /// compound numerators, <c>lomené</c>; <see cref="NumberToStringNts39Tests"/>), the oblique cases of the fraction nouns
-    /// by NTS-40 (<see cref="NumberToStringNts40Nts41Tests"/>); the denominator one and the oblique cases of a numerator
-    /// ending in a bare <c>jeden</c> and of the <c>lomené</c> reading still fail closed.
+    /// by NTS-40 (<see cref="NumberToStringNts40Nts41Tests"/>), those of a numerator ending in a bare <c>jeden</c> by
+    /// NTS-44 (<see cref="NumberToStringNts44Tests"/>); the denominator one and the oblique cases of the <c>lomené</c>
+    /// reading still fail closed.
     /// </summary>
     [TestMethod]
     public void Slovak_FailsClosed()
@@ -352,7 +353,7 @@ public class NumberToStringNts30HTests
         Assert.AreEqual("dvadsaťjeden tretín", sk.ConvertFraction(21, 3), "NTS-39");
         Assert.AreEqual("jednej tretiny", sk.ConvertFraction(1, 3, "case=genitív"), "NTS-40");
         Assert.ThrowsExactly<NotSupportedException>(() => sk.ConvertFraction(5, 1));
-        Assert.ThrowsExactly<NotSupportedException>(() => sk.ConvertFraction(101, 3, "case=genitív"), "bare final jeden");
+        Assert.AreEqual("sto jeden tretín", sk.ConvertFraction(101, 3, "case=genitív"), "NTS-44");
         Assert.ThrowsExactly<NotSupportedException>(() => sk.ConvertFraction(1, 23, "case=genitív"), "lomené is nominative only");
     }
 

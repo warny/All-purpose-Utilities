@@ -1238,7 +1238,7 @@ NumberToStringConverter.GetConverter("CS").ConvertFraction(1, 23, "case=genitiv"
 | `SlovakOrdinalLanguageSpecifics` | SK | fraction nouns (2–20, round tens, 100, 1000, 10^6, 10^9) with their full paradigm, genitive plural after a compound or *nula*, every case; otherwise, up to 999 999 999 999, *lomené* + the instrumental of the last component (*jedna lomené sto štyridsiatimi dvoma*, *jedna lomené dvoma miliónmi*) or, when it is indeclinable, *lomené číslom* + cardinal (*jedna lomené číslom dvesto*), nominative only |
 
 Denominator one, zero numerators in UK and BG (and in every oblique case), the CS/SK slash readings in an oblique case,
-the oblique cases of a CS compound numerator ending in *jedna* and of an SK numerator ending in a bare *jeden*, a CS
+the oblique cases of a CS compound numerator ending in *jedna*, a CS
 multiplier ending in one (21 000), and values from 10^12 fail closed. `Convert` itself keeps no case. Sources:
 `docs/NTS-08-linguistic-sources.md`, sections NTS-30H, NTS-39 and NTS-40/41.
 

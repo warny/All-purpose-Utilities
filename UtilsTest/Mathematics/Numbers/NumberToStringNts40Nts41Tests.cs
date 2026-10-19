@@ -244,10 +244,11 @@ public class NumberToStringNts40Nts41Tests
     public void Slovak_CompoundNumerators(long numerator, long denominator, string variant, string expected)
         => Assert.AreEqual(expected, Get("SK").ConvertFraction(numerator, denominator, variant));
 
-    /// <summary>Still closed: a bare final <c>jeden</c> outside the accusative, zero, and the <c>lomené</c> reading in an oblique case.</summary>
+    /// <summary>
+    /// Still closed: zero and the <c>lomené</c> reading in an oblique case. The bare final <c>jeden</c> (101, 1 000 001)
+    /// closed here by NTS-40 was opened by NTS-44 (<c>NumberToStringNts44Tests</c>).
+    /// </summary>
     [TestMethod]
-    [DataRow(101L, 3L, "case=genitív")]
-    [DataRow(1_000_001L, 3L, "case=inštrumentál")]
     [DataRow(0L, 3L, "case=akuzatív")]
     [DataRow(1L, 23L, "case=inštrumentál")]
     [DataRow(1L, 2_000_003L, "case=genitív")]

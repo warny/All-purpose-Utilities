@@ -1,6 +1,8 @@
 # Utils.NumberToString — Current backlog
 
-Re-audited on 2026-10-16 after closing NTS-40 and NTS-41 together (one declined-cardinal builder per language,
+Re-audited on 2026-10-19 after closing NTS-44 (Slovak oblique fractions whose numerator ends in a bare *jeden*, read
+as the indeclinable higher compounds of Jarošová 2021: `sto jeden tretinám`, `dvetisíc jeden tretinami`, `jeden milión
+jeden tretinách`; `DONE-2026-10-19(2).md`), on 2026-10-16 after closing NTS-40 and NTS-41 together (one declined-cardinal builder per language,
 internal to the fraction plugins: the oblique cases `двом третім`, `трьома п'ятими`, `dvěma třetinám`, `třemi sty
 šedesáti pěti tisícinami`, `dvom tretinám`, `dvadsaťjeden stotinám`; the slash readings `jedna lomeno dvaceti jednou`,
 `jedna lomeno dvěma tisíci dvaceti třemi`, `jedna lomené dvoma miliónmi`, `jedna lomené dva milióny troma`; NTS-42
@@ -93,10 +95,8 @@ classification.
   - CS, a multiplier ending in one after the tens or hundreds (21 000, 101 000, 31 000 000) in the *lomeno* reading and
     in the oblique cases: **partially documented**; even the nominative varies (*dvacet jedna / dvacet jeden tisíc*), and
     the agreement of *tisíc/milion/miliarda* after it outside the nominative is not sourced.
-  - SK, oblique cases of a numerator ending in a bare *jeden* after a larger group (101/3, 1 000 001/3): **documented
-    (rule + construction type)**. Jarošová, *Slovenská reč* 86 (2021), 223, 226: *stojeden / sto jeden* and the higher
-    compounds ending in *jeden* are indeclinable like *dvadsaťjeden*; PSP 1953 (quoted p. 211) attests *so stojeden
-    družstvami*. Moved to **NTS-44** (behaviour change, kept out of the NTS-42 audit).
+  - ~~SK, oblique cases of a numerator ending in a bare *jeden* after a larger group (101/3, 1 000 001/3)~~:
+    **documented (rule + construction type)**, opened by **NTS-44** (`DONE-2026-10-19(2).md`).
   - CS and SK, the *lomeno*/*lomené* readings in an oblique case: **not established**. *lomeno* is invariable and
     governs the instrumental; no source reads the whole phrase under a governing case (*dvěma lomeno třemi* and an
     undeclined *dvě lomeno třemi* are both plausible).
@@ -108,24 +108,6 @@ classification.
     nominative count forms only), which the plugins cannot reach. Opening it needs a generic way for the engine to supply
     a generated scale noun in a case (design to specify first; no second spelling of the Conway names in a plugin), and
     NTS-36 for the CS/SK names from 10^24.
-- **NTS-44 — SK oblique fractions whose numerator ends in a bare *jeden* (NTS-42 family C).** Opened by the NTS-42
-  audit (`DONE-2026-10-19(1).md`, section C). Evidence: Jarošová, *Slovenská reč* 86 (2021), 223 and 226 (*stojeden /
-  sto jeden – nesklonné*; the higher compounds ending in *jeden* are indeclinable like *dvadsaťjeden*); PSP 1953,
-  88–89, quoted there p. 211 (*so stojeden družstvami*); Morfológia slovenského jazyka (1966), 326 (*ku štyridsaťjeden
-  družstvám, so štyridsaťjeden družstvami*: the numeral stays, the noun alone takes the case). Expected readings
-  (applications of the rule, not quotations): 101/3 → genitive *sto jeden tretín*, dative *sto jeden tretinám*,
-  locative *sto jeden tretinách*, instrumental *sto jeden tretinami*; likewise 1001, 2001.
-  - Where: `SlovakOrdinalLanguageSpecifics.TryBuildObliqueNounFraction` closes `LastComponent.BareOne` outside the
-    accusative; the indeclinable path that already reads 21/3 and 121/3 (noun in the case, genitive plural in the
-    accusative) is the one to reuse. No engine, contract or XML change expected.
-  - Unchanged: the nominative/accusative (*sto jeden tretín*), the slash denominator (*jedna lomené číslom sto jeden*,
-    already the indeclinable reading), numerators 1, 2–4, 21, 121, the declined compounds, zero (still closed, NTS-42 E),
-    10^12 and above (NTS-42 F). Spelling: keep the separated groups the converter writes (*sto jeden*); Jarošová admits
-    *stojeden / sto jeden* (pp. 211–213, 226–227), so no concatenated form is introduced.
-  - To decide: 10^6 + 1 and 10^9 + 1 (*jeden milión jeden*) fall under Jarošová's general statement only, with no
-    example; open them with 101 or keep them closed.
-  - Tests: positive linguistic tests for 101, 1001, 2001 in the four oblique cases; update the NTS-42 characterization
-    tests of family C; the dump must differ only on those SK fraction probes.
 - **NTS-38 — ES and EU ordinals from the million, after NTS-30F.** Opened by NTS-30F, which left every ordinal
   byte-identical. EU: `ConvertOrdinal(1 000 000)` gives `milioi batgarren`, whereas Euskaltzaindia rule 203 §5
   writes *milioigarren* (and *milioi bat eta batgarren* for 1 000 001, *bi milioigarren* for 2 000 000); rule 203
