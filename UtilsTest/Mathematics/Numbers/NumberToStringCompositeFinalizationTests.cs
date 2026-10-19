@@ -128,32 +128,129 @@ public class NumberToStringCompositeFinalizationTests
         Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => converter.ConvertCurrency(1.999m, CreateCurrency()));
     }
 
-    /// <summary>Verifies raw adjustment precedes fragment variants without premature finalization.</summary>
+    /// <summary>
+    /// Verifies a composite numeric fragment runs its variant rules, then the raw adjustment, then the end triggers
+    /// (NTS-43), without premature finalization: each stage only matches the output of the previous one.
+    /// </summary>
     [TestMethod]
-    public void CompositeConversion_AdjustFunctionRunsBeforeVariantRules()
+    public void CompositeConversion_FragmentRunsVariantRulesThenAdjustFunctionThenEndTriggers()
+    {
+        var finalizer = new RecordingFinalizer();
+        NumberToStringConverter converter = CreateStagedConverter(finalizer);
+
+        string result = converter.ConvertCurrency(2m, CreateCurrency(), "style=proof");
+
+        Assert.AreEqual("<1:TRIGGERED UNITS>", result);
+        CollectionAssert.AreEqual(new[] { "TRIGGERED UNITS" }, finalizer.Inputs);
+    }
+
+    /// <summary>
+    /// Verifies the top-level cardinal and the multiplicative pipelines follow the same order as a fragment
+    /// (NTS-43): variant rules, raw adjustment, end triggers, then a single finalization.
+    /// </summary>
+    [TestMethod]
+    public void CardinalAndMultiplicative_RunVariantRulesThenAdjustFunctionThenEndTriggers()
+    {
+        var cardinalFinalizer = new RecordingFinalizer();
+        Assert.AreEqual("<1:TRIGGERED>", CreateStagedConverter(cardinalFinalizer).Convert(new BigInteger(2), "style=proof"));
+        CollectionAssert.AreEqual(new[] { "TRIGGERED" }, cardinalFinalizer.Inputs);
+
+        // EN names 2 "twice": a value without a named form goes through the cardinal + suffix path.
+        var multiplicativeFinalizer = new RecordingFinalizer();
+        NumberToStringConverter multiplicative = CreateStagedConverter(multiplicativeFinalizer, multiplicativeSuffix: " TIMES", clearNamedMultiplicatives: true);
+        Assert.AreEqual("<1:TRIGGERED TIMES>", multiplicative.ConvertMultiplicative(2, "style=proof"));
+        CollectionAssert.AreEqual(new[] { "TRIGGERED TIMES" }, multiplicativeFinalizer.Inputs);
+    }
+
+    /// <summary>
+    /// Verifies zero goes through the same variant → adjustment → end-trigger sequence as any other cardinal.
+    /// </summary>
+    [TestMethod]
+    public void Zero_RunsVariantRulesThenAdjustFunctionThenEndTriggers()
     {
         var finalizer = new RecordingFinalizer();
         NumberToStringConverter source = NumberToStringConverter.GetConverter("EN");
-        string baseToken = source.Convert(2);
-        var options = new NumberToStringConverterOptions(source)
+        var converter = new NumberToStringConverter(new NumberToStringConverterOptions(source)
         {
-            AdjustFunction = text => text.Replace(baseToken, "ADJUSTED", StringComparison.Ordinal),
+            Zero = "nought",
+            AdjustFunction = text => text.Replace("VARIANT", "ADJUSTED", StringComparison.Ordinal),
             LanguageSpecifics = finalizer,
-            VariantDimensions = [new NumberToStringConverter.VariantDimension("style", ["proof"])],
+            VariantDimensions = [new NumberToStringConverter.VariantDimension("style", ["plain", "proof"])],
             VariantRules =
             [
                 new NumberToStringConverter.VariantRule(
                     new Dictionary<string, string> { ["style"] = "proof" },
-                    [new NumberToStringConverter.ReplacementRule("ADJUSTED", "VARIANT", ReplacementScope.Anywhere)])
+                    [new NumberToStringConverter.ReplacementRule("nought", "VARIANT", ReplacementScope.Anywhere)])
             ],
-        };
-        var converter = new NumberToStringConverter(options);
+            Triggers = [CreateEndTrigger("ADJUSTED", "TRIGGERED")],
+        });
 
-        string result = converter.ConvertCurrency(2m, CreateCurrency(), "style=proof");
-
-        Assert.AreEqual("<1:VARIANT UNITS>", result);
-        CollectionAssert.AreEqual(new[] { "VARIANT UNITS" }, finalizer.Inputs);
+        Assert.AreEqual("<1:TRIGGERED>", converter.Convert(BigInteger.Zero, "style=proof"));
+        Assert.AreEqual("<2:nought>", converter.Convert(BigInteger.Zero, "style=plain"));
     }
+
+    /// <summary>
+    /// Verifies the minus template stays outside the adjusted, finalized magnitude: the adjustment runs on the
+    /// inflected absolute fragment only, never on the literal sign, for a cardinal and for a fraction.
+    /// </summary>
+    [TestMethod]
+    public void NegativeValues_AdjustTheInflectedMagnitudeOnly()
+    {
+        NumberToStringConverter source = NumberToStringConverter.GetConverter("EN");
+        var converter = new NumberToStringConverter(new NumberToStringConverterOptions(source)
+        {
+            Minus = "minus *",
+            AdjustFunction = text => text.ToUpperInvariant(),
+            VariantDimensions = [new NumberToStringConverter.VariantDimension("style", ["plain", "proof"])],
+            VariantRules =
+            [
+                new NumberToStringConverter.VariantRule(
+                    new Dictionary<string, string> { ["style"] = "proof" },
+                    [new NumberToStringConverter.ReplacementRule(source.Convert(2), "deux", ReplacementScope.Anywhere)])
+            ],
+        });
+
+        Assert.AreEqual("minus DEUX", converter.Convert(new BigInteger(-2), "style=proof"));
+        StringAssert.StartsWith(converter.ConvertFraction(-2, 3, "style=proof"), "minus DEUX ");
+    }
+
+    /// <summary>
+    /// Builds an EN converter whose three whole-number stages only match the previous stage's output:
+    /// variant rule <c>two → VARIANT</c>, adjustment <c>VARIANT → ADJUSTED</c>, end trigger <c>ADJUSTED → TRIGGERED</c>.
+    /// </summary>
+    /// <param name="finalizer">The recording finalizer.</param>
+    /// <param name="multiplicativeSuffix">An optional multiplicative suffix.</param>
+    /// <param name="clearNamedMultiplicatives">Whether to remove the named multiplicative forms.</param>
+    /// <returns>The staged converter.</returns>
+    private static NumberToStringConverter CreateStagedConverter(
+        RecordingFinalizer finalizer, string? multiplicativeSuffix = null, bool clearNamedMultiplicatives = false)
+    {
+        NumberToStringConverter source = NumberToStringConverter.GetConverter("EN");
+        string baseToken = source.Convert(2);
+        var options = new NumberToStringConverterOptions(source)
+        {
+            AdjustFunction = text => text.Replace("VARIANT", "ADJUSTED", StringComparison.Ordinal),
+            LanguageSpecifics = finalizer,
+            VariantDimensions = [new NumberToStringConverter.VariantDimension("style", ["plain", "proof"])],
+            VariantRules =
+            [
+                new NumberToStringConverter.VariantRule(
+                    new Dictionary<string, string> { ["style"] = "proof" },
+                    [new NumberToStringConverter.ReplacementRule(baseToken, "VARIANT", ReplacementScope.Anywhere)])
+            ],
+            Triggers = [CreateEndTrigger("ADJUSTED", "TRIGGERED")],
+        };
+        if (multiplicativeSuffix != null) options.MultiplicativeSuffix = multiplicativeSuffix;
+        if (clearNamedMultiplicatives) options.Multiplicatives = new Dictionary<int, string>();
+        return new NumberToStringConverter(options);
+    }
+
+    /// <summary>Creates an end trigger replacing <paramref name="from"/> by <paramref name="to"/>.</summary>
+    /// <param name="from">The matched text.</param>
+    /// <param name="to">The replacement.</param>
+    /// <returns>The trigger.</returns>
+    private static NumberToStringConverter.TriggerRule CreateEndTrigger(string from, string to) =>
+        new(NumberToStringConverter.TriggerAt.End, null, [new NumberToStringConverter.TriggerReplace(from, false, [], to)]);
 
     /// <summary>Verifies end triggers retain their historical fragment scope in composites.</summary>
     [TestMethod]

@@ -1201,8 +1201,8 @@
                   - Applies matching Variant rules in order from least to most specific.
                   - Ignores unrecognised dimension names or values silently.
 
-                Variants are applied after the user-supplied AdjustFunction and before
-                INumberToStringLanguageSpecifics.FinalizeWriting.
+                Variants are applied before the user-supplied AdjustFunction (which sees the
+                inflected text), the end triggers and INumberToStringLanguageSpecifics.FinalizeWriting.
             </xs:documentation>
         </xs:annotation>
         <xs:sequence>
@@ -1900,8 +1900,8 @@
                                         Convert(number, "dimension=value", …) calls.
 
                                         Declare all Dimension elements before any Variant element.
-                                        Variants are applied after Replacements and AdjustFunction
-                                        but before INumberToStringLanguageSpecifics.FinalizeWriting,
+                                        Variants are applied after Replacements and before AdjustFunction
+                                        and INumberToStringLanguageSpecifics.FinalizeWriting,
                                         so that language-specific post-processing can see the inflected form.
                                     </xs:documentation>
                                 </xs:annotation>

@@ -71,7 +71,17 @@ public sealed class NumberToStringConverterOptions
     /// <summary>Scale definition used to name large powers of ten.</summary>
     public NumberScale? Scale { get; set; }
 
-    /// <summary>Optional final transformation applied after all other processing.</summary>
+    /// <summary>
+    /// Optional final textual transformation of each numeric conversion or numeric fragment.
+    /// </summary>
+    /// <remarks>
+    /// The adjustment runs after the morphology of the text it receives (cardinal variant rules, ordinal formation,
+    /// constituent forced variants), so it always sees the inflected form, and before the <c>TriggerAt.End</c>
+    /// triggers and the language finalization. In a composite conversion (fraction, decimal, currency, time, clock,
+    /// date, year) it applies to each numeric fragment, not necessarily once to the complete phrase (decimal and
+    /// rational <c>Number</c> conversions additionally adjust their assembled phrase); the language finalizes the
+    /// complete phrase once, and the outer minus template is never adjusted.
+    /// </remarks>
     public Func<string, string>? AdjustFunction { get; set; }
 
     /// <summary>Language-specific post-processing hook.</summary>

@@ -307,7 +307,8 @@ if (conv.SupportsOrdinals)
 > `AdjustFunction` and `INumberToStringLanguageSpecifics.FinalizeWriting` are applied.
 > `AdjustFunction` (and `FinalizeWriting`) then run on the ordinal result. This means a
 > converter with an uppercase `AdjustFunction` correctly produces `"TWENTY-FIRST"`, not
-> `"TWENTY-ONEth"`.
+> `"TWENTY-ONEth"`. The cardinal and multiplicative pipelines follow the same rule since NTS-43:
+> the variant morphology runs first and `AdjustFunction` sees the inflected text.
 
 > **Languages without ordinal support**: SW (Swahili) and ZU (Zulu) are deferred because of the
 > noun-class concord.
@@ -1295,12 +1296,22 @@ number
           push to stack
       assemble all groups
       Replacements without onScale        (global rules, filtered by onValue)
-  → AdjustFunction      (optional user-supplied transformation)
   → ApplyVariantRules   (morphological replacements, least to most specific)
-  → Trigger end         (optional: replacements on fully assembled text)
+  → AdjustFunction      (optional user-supplied transformation; sees the inflected text)
+  → Trigger end         (optional: replacements on the adjusted, fully assembled text)
   → FinalizeWriting     (INumberToStringLanguageSpecifics)
   → sign wrapping       (Minus template if negative)
 ```
+
+A cardinal fragment inside a composite conversion (fraction numerator, decimal integer part, currency amount,
+time unit, clock hour, day, year part) runs the same steps up to `Trigger end`, with its constituent forced
+variants overlaid on the caller's query; it is never finalized or signed on its own: the complete phrase is
+finalized once and the minus template wraps it. The scale groups whose multiplier was rendered under forced
+variants (`<ScaleForm forceVariants>` or `<GeneratedScaleForm forceVariants>`) are shielded from the caller's
+`ApplyVariantRules` and `Trigger end` passes; `AdjustFunction` still sees them as ordinary text. The multiplicative
+pipeline (`ConvertMultiplicative`) uses the same order. Before NTS-43, the cardinal pipeline ran `AdjustFunction`
+before `ApplyVariantRules`, so an adjustment such as `ToUpperInvariant` hid the input of the variant replacements
+(UK feminine `два → дві` gave `ДВА`).
 
 **Ordinal pipeline** (via `ConvertOrdinal`):
 
@@ -1314,8 +1325,9 @@ number
   → ApplyVariantRules      (default variant values)
   → ordinal Replacements   (base, then the selected ordinal variant; ordinal-only)
   → ApplyOrdinalTransform  (exact word rules, OrdinalStem / removeTrailing + suffix on last word)
-  → AdjustFunction         (user transform + FinalizeWriting)
+  → AdjustFunction         (user transform)
   → Trigger end
+  → FinalizeWriting
   → sign wrapping
 ```
 
@@ -2576,7 +2588,7 @@ optionally conditioned on active morphological variant values.
 | `"group(N,M,…)"` | Same, restricted to the listed group indices | Digit text |
 | `"groupWithScale"` | After per-group `Replacements`, before pushing | Digit+scale text |
 | `"groupWithScale(N)"` | Same, restricted to group N | Digit+scale text |
-| `"end"` | After full assembly, `AdjustFunction`, and `ApplyVariantRules` | Final assembled text |
+| `"end"` | After full assembly, `ApplyVariantRules`, then `AdjustFunction` | Final assembled, adjusted text |
 
 > **Warning**: `group` and `groupWithScale` triggers also fire during `ConvertOrdinal`. If the trigger
 > modifies a word that an ordinal word-rule targets (e.g. it replaces `"ein"` with something else),
