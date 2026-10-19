@@ -126,7 +126,7 @@ public class NumberToStringNts42Tests
     /// the oblique cases; the accusative is its nominative. Documented as a rule since the audit revision: Jarošová
     /// (Slovenská reč 86, 2021, 223 and 226) states that <i>stojeden / sto jeden</i> and the higher compounds ending in
     /// <i>jeden</i> are indeclinable like <i>dvadsaťjeden</i>, and PSP 1953 (88–89, as quoted there) attests <i>so
-    /// stojeden družstvami</i>. Opening it is a separate behaviour change, out of this audit.
+    /// stojeden družstvami</i>. Opening it is the separate behaviour change NTS-44, which will update this test.
     /// </summary>
     [TestMethod]
     [DataRow(101L)]
