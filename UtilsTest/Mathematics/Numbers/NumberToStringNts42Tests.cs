@@ -9,14 +9,20 @@ namespace UtilsTest.NumberToString;
 /// <summary>
 /// NTS-42 — audit of the UK, CS and SK fraction readings NTS-40/41 left closed. Every family was reproduced on master
 /// <c>4cd45b72</c> as a deliberate fail-closed reading of the language plugin (<see cref="NotSupportedException"/>), never
-/// as a silently wrong text, and none of them goes through a language-specific path of the generic engine. These tests
-/// pin each closure over every oblique case, the neighbouring values that stay open (so a later fix cannot widen or
-/// narrow a family unnoticed), and the generic boundary between the engine and the plugin. Audit:
-/// <c>DONE-2026-10-19(1).md</c>.
+/// as a silently wrong text, and none of them goes through a language-specific path of the generic engine.
+/// <para>
+/// These are <b>characterization tests of the current implementation</b>, not a grammatical specification: a closure
+/// pinned here means "no reading is implemented yet", not "the language has no such form". They pin each closure over
+/// every oblique case, the neighbouring values that stay open (so a later change cannot widen or narrow a family
+/// unnoticed), and the generic boundary between the engine and the plugin. A change that opens a family on a sourced
+/// reading is expected to update the matching test. The level of evidence of each family (documented, partially
+/// documented, not established) is in <c>DONE-2026-10-19(1).md</c>.
+/// </para>
 /// </summary>
 [TestClass]
 public class NumberToStringNts42Tests
 {
+    private static readonly string[] s_czechGenders = ["gender=mužský", "gender=ženský", "gender=střední"];
     private static readonly string[] s_czechObliqueCases = ["case=genitiv", "case=dativ", "case=lokál", "case=instrumentál"];
     private static readonly string[] s_slovakObliqueCases = ["case=genitív", "case=datív", "case=lokál", "case=inštrumentál"];
     private static readonly string[] s_ukrainianObliqueCases = ["case=родовий", "case=давальний", "case=знахідний", "case=орудний", "case=місцевий"];
@@ -42,8 +48,10 @@ public class NumberToStringNts42Tests
     // ===== A — CS compound numerator ending in jedna ================================================
 
     /// <summary>
-    /// Family A: a compound numerator ending in <c>jedna</c> has no sourced oblique form (the IJP gives only <i>dvacet
-    /// jeden žák</i> / <i>dvacet jedna žáků</i>), after the tens, the hundreds or a scale group, whatever the caller's gender.
+    /// Family A (characterization): a compound numerator ending in <c>jedna</c> is not implemented in the oblique cases,
+    /// after the tens, the hundreds or a scale group, whatever the caller's gender. Partially documented: the IJP gives
+    /// the nominative agreements (<i>dvacet jeden žák</i> / <i>dvacet jedna žáků</i>) and three declension strategies
+    /// for multi-word numerals, but no source chooses one for a compound ending in <i>jedna</i> with a fraction noun.
     /// </summary>
     [TestMethod]
     [DataRow(21L, 3L)]
@@ -57,7 +65,7 @@ public class NumberToStringNts42Tests
     public void A_CzechCompoundEndingInJedna_ClosedInTheObliqueCases(long numerator, long denominator)
     {
         AssertClosed("CS", numerator, denominator, s_czechObliqueCases);
-        foreach (string gender in new[] { "gender=mužský", "gender=ženský", "gender=střední" })
+        foreach (string gender in s_czechGenders)
             Assert.ThrowsExactly<NotSupportedException>(() => Get("CS").ConvertFraction(numerator, denominator, "case=dativ", gender));
     }
 
@@ -76,9 +84,11 @@ public class NumberToStringNts42Tests
     // ===== B — CS multiplier ending in one ==========================================================
 
     /// <summary>
-    /// Family B: a multiplier ending in one after the tens or hundreds (<c>dvacet jedna tisíc</c>) has no sourced form
-    /// outside the nominative and accusative, before <c>tisíc</c>, <c>milion</c> and <c>miliarda</c> alike: in the
-    /// oblique cases of a noun fraction and in the instrumental of the <c>lomeno</c> reading.
+    /// Family B (characterization): a multiplier ending in one after the tens or hundreds (<c>dvacet jedna tisíc</c>) is
+    /// not implemented outside the nominative and accusative, before <c>tisíc</c>, <c>milion</c> and <c>miliarda</c>
+    /// alike: in the oblique cases of a noun fraction and in the instrumental of the <c>lomeno</c> reading. Partially
+    /// documented: the IJP rules for the scale nouns and multi-word numerals apply, but even the nominative of the
+    /// multiplier varies (<i>dvacet jedna tisíc</i> / <i>dvacet jeden tisíc</i>), and no oblique example is sourced.
     /// </summary>
     [TestMethod]
     [DataRow(21_000L)]
@@ -112,8 +122,11 @@ public class NumberToStringNts42Tests
     // ===== C — SK numerator ending in a bare jeden ==================================================
 
     /// <summary>
-    /// Family C: a numerator ending in a bare <c>jeden</c> after a larger group has no sourced oblique form (Morfológia
-    /// 326 covers the indeclinable <c>-jeden</c> compounds, not <c>sto jeden</c>); the accusative is its nominative.
+    /// Family C (characterization): a numerator ending in a bare <c>jeden</c> after a larger group is not implemented in
+    /// the oblique cases; the accusative is its nominative. Documented as a rule since the audit revision: Jarošová
+    /// (Slovenská reč 86, 2021, 223 and 226) states that <i>stojeden / sto jeden</i> and the higher compounds ending in
+    /// <i>jeden</i> are indeclinable like <i>dvadsaťjeden</i>, and PSP 1953 (88–89, as quoted there) attests <i>so
+    /// stojeden družstvami</i>. Opening it is a separate behaviour change, out of this audit.
     /// </summary>
     [TestMethod]
     [DataRow(101L)]
@@ -145,9 +158,10 @@ public class NumberToStringNts42Tests
     // ===== D — lomeno / lomené under an oblique case ================================================
 
     /// <summary>
-    /// Family D: no source declines the <c>lomeno</c>/<c>lomené</c> phrase, whose denominator is already an
-    /// instrumental; a fraction without a fraction noun fails closed in every case but the nominative, the accusative
-    /// included, while its nominative reading stays open.
+    /// Family D (characterization): a fraction read with <c>lomeno</c>/<c>lomené</c> (no fraction noun) is not
+    /// implemented in any case but the nominative, the accusative included, while its nominative reading stays open.
+    /// Not established: <i>lomeno</i> itself is invariable and governs the instrumental (SSJČ <i>dvě lomeno třemi</i>),
+    /// but no source shows the whole <i>x lomeno y</i> phrase in a sentence that requires an oblique case.
     /// </summary>
     [TestMethod]
     [DataRow("CS", 1L, 21L)]
@@ -173,14 +187,16 @@ public class NumberToStringNts42Tests
     // ===== E — zero numerator under an oblique case =================================================
 
     /// <summary>
-    /// Family E: no source declines <c>нуль</c>/<c>nula</c> with a fraction; a zero numerator fails closed in every oblique
-    /// case, with or without a fraction noun, while the sourced nominatives stay open (CS <c>nula lomeno třemi</c>,
-    /// SK <c>nula tretín</c>; UK has none, NTS-39).
+    /// Family E (characterization): a zero numerator is not implemented in any oblique case, with or without a fraction
+    /// noun, while the current nominatives stay open (CS <c>nula lomeno třemi</c>, SK <c>nula tretín</c>; UK has none,
+    /// NTS-39). The lexical declension of <c>нуль</c>/<c>nula</c> is documented; its combination with a fraction noun or
+    /// a <i>lomeno</i> phrase in an oblique case is not.
     /// </summary>
     [TestMethod]
     public void E_ZeroNumerator_ClosedInEveryObliqueCase()
     {
-        foreach (long denominator in new[] { 2L, 3L, 23L, 100L, 1000L })
+        long[] denominators = [2, 3, 23, 100, 1000];
+        foreach (long denominator in denominators)
         {
             AssertClosed("CS", 0, denominator, [.. s_czechObliqueCases, "case=akuzativ"]);
             AssertClosed("SK", 0, denominator, [.. s_slovakObliqueCases, "case=akuzatív"]);
@@ -273,7 +289,8 @@ public class NumberToStringNts42Tests
         foreach (string variant in cases)
             Assert.IsFalse(string.IsNullOrWhiteSpace(Get(language).ConvertFraction(last, 3, variant)), variant);
         BigInteger first = BigInteger.Pow(10, 12);
-        foreach (BigInteger numerator in new[] { first, first + 1, 2 * first, BigInteger.Pow(10, 15), BigInteger.Pow(10, 24) })
+        BigInteger[] numerators = [first, first + 1, 2 * first, BigInteger.Pow(10, 15), BigInteger.Pow(10, 24)];
+        foreach (BigInteger numerator in numerators)
             AssertClosed(language, numerator, 3, cases);
     }
 
@@ -285,7 +302,8 @@ public class NumberToStringNts42Tests
     {
         StringAssert.StartsWith(Get(language).ConvertFraction(1, 999_999_999_999), language == "CS" ? "jedna lomeno " : "jedna lomené ");
         BigInteger first = BigInteger.Pow(10, 12);
-        foreach (BigInteger denominator in new[] { first, first + 1, 2 * first, BigInteger.Pow(10, 15) + 3 })
+        BigInteger[] denominators = [first, first + 1, 2 * first, BigInteger.Pow(10, 15) + 3];
+        foreach (BigInteger denominator in denominators)
             Assert.ThrowsExactly<NotSupportedException>(() => Get(language).ConvertFraction(BigInteger.One, denominator), denominator.ToString());
     }
 
@@ -300,7 +318,8 @@ public class NumberToStringNts42Tests
     [DataRow("UK", " третіх")]
     public void F_NominativeNumerators_UseTheGeneratedScales(string language, string suffix)
     {
-        foreach (BigInteger numerator in new[] { 2 * BigInteger.Pow(10, 12), 5 * BigInteger.Pow(10, 15), BigInteger.Pow(10, 24) })
+        BigInteger[] numerators = [2 * BigInteger.Pow(10, 12), 5 * BigInteger.Pow(10, 15), BigInteger.Pow(10, 24)];
+        foreach (BigInteger numerator in numerators)
             Assert.AreEqual(Get(language).Convert(numerator) + suffix, Get(language).ConvertFraction(numerator, 3), numerator.ToString());
     }
 }
