@@ -288,13 +288,17 @@ public class NumberToStringNts40Nts41Tests
     /// <summary>
     /// The numerator a plugin spells for an oblique case goes through the caller's <c>AdjustFunction</c>, like the
     /// numerator the cardinal pipeline renders in the nominative, and the language finalization still runs once, on the
-    /// complete phrase.
+    /// complete phrase. Numerator 2 is the case NTS-43 fixed: its nominative is a variant replacement (UK
+    /// <c>два → дві</c>, CS <c>dva → dvě</c>, SK <c>dva → dve</c>) that now runs before the adjustment.
     /// </summary>
     [TestMethod]
-    [DataRow("UK", "case=давальний", "П'ЯТЬ третіх", "П'ЯТИ третім")]
-    [DataRow("CS", "case=dativ", "PĚT třetin", "PĚTI třetinám")]
-    [DataRow("SK", "case=datív", "PÄŤ tretín", "PIATIM tretinám")]
-    public void ObliqueNumerator_GoesThroughTheAdjustFunction(string culture, string variant, string nominative, string oblique)
+    [DataRow("UK", 5L, "case=давальний", "П'ЯТЬ третіх", "П'ЯТИ третім")]
+    [DataRow("CS", 5L, "case=dativ", "PĚT třetin", "PĚTI třetinám")]
+    [DataRow("SK", 5L, "case=datív", "PÄŤ tretín", "PIATIM tretinám")]
+    [DataRow("UK", 2L, "case=давальний", "ДВІ третіх", "ДВОМ третім")]
+    [DataRow("CS", 2L, "case=dativ", "DVĚ třetiny", "DVĚMA třetinám")]
+    [DataRow("SK", 2L, "case=datív", "DVE tretiny", "DVOM tretinám")]
+    public void ObliqueNumerator_GoesThroughTheAdjustFunction(string culture, long numerator, string variant, string nominative, string oblique)
     {
         NumberToStringConverter source = Get(culture);
         var finalizer = new CountingFractionSpecifics(source.LanguageSpecifics);
@@ -304,11 +308,11 @@ public class NumberToStringNts40Nts41Tests
             LanguageSpecifics = finalizer,
         });
 
-        Assert.AreEqual(nominative, converter.ConvertFraction(5, 3), "the nominative keeps its historical behavior");
+        Assert.AreEqual(nominative, converter.ConvertFraction(numerator, 3), "the nominative is inflected, then adjusted");
         CollectionAssert.AreEqual(new[] { nominative }, finalizer.Finalized);
 
         finalizer.Finalized.Clear();
-        Assert.AreEqual(oblique, converter.ConvertFraction(5, 3, variant));
+        Assert.AreEqual(oblique, converter.ConvertFraction(numerator, 3, variant));
         CollectionAssert.AreEqual(new[] { oblique }, finalizer.Finalized, "finalized once, on the whole phrase");
     }
 

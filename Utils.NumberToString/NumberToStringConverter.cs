@@ -1347,9 +1347,12 @@ namespace Utils.NumberToString
         ///   <item><description>
         ///     Final combined pass: value-filtered global replacements → exact/substring global replacements.
         ///   </description></item>
-        ///   <item><description>User adjust function (<see cref="NumberToStringConverterOptions.AdjustFunction"/>).</description></item>
         ///   <item><description>All non-scale variant rules, applied in ascending specificity order.</description></item>
-        ///   <item><description><c>TriggerAt.End</c> triggers.</description></item>
+        ///   <item><description>
+        ///     User adjust function (<see cref="NumberToStringConverterOptions.AdjustFunction"/>), which sees the
+        ///     inflected text (NTS-43).
+        ///   </description></item>
+        ///   <item><description><c>TriggerAt.End</c> triggers, which see the adjusted text.</description></item>
         ///   <item><description><see cref="INumberToStringLanguageSpecifics.FinalizeWriting"/> (language finalization).</description></item>
         ///   <item><description>Minus prefix when the input is negative.</description></item>
         /// </list>
@@ -1385,16 +1388,15 @@ namespace Utils.NumberToString
             // variant rules, end triggers, and language finalization can be applied to "zero".
             var shielded = NewShieldedGroups();
             string raw = abs == BigInteger.Zero ? Zero : ConvertRaw(abs, query, shielded);
-            if (_rawAdjustFunction != null) raw = _rawAdjustFunction(raw);
-            raw = ApplyShielded(raw, shielded, text => ApplyTriggers(ApplyVariantRules(text, query, (BigInteger?)abs), TriggerAt.End, null, query));
+            raw = ApplyCardinalPostProcessing(raw, abs, query, shielded);
             string final = LanguageSpecifics.FinalizeWriting(LanguageIdentifier, raw);
 
             return isNegative ? Minus.Replace("*", final) : final;
         }
 
         /// <summary>
-        /// Builds a cardinal fragment with its historical adjustment, morphology, and end-trigger
-        /// pipeline, but without language finalization or an outer sign.
+        /// Builds a cardinal fragment through its morphology, adjustment, and end-trigger pipeline
+        /// (see <see cref="ApplyCardinalPostProcessing"/>), but without language finalization or an outer sign.
         /// </summary>
         /// <param name="number">The non-negative numeric value to render.</param>
         /// <param name="variants">The morphological variants to apply to the fragment.</param>
@@ -1406,7 +1408,7 @@ namespace Utils.NumberToString
         /// Builds a cardinal fragment from an already-resolved variant query. Used by constituents
         /// (time units, currency units/subunits, fraction terms) that overlay a constituent-local
         /// <see cref="ForcedVariantSet"/> on top of the caller's query before rendering their own
-        /// fragment. Same raw-adjustment/variant-rule/end-trigger pipeline as the
+        /// fragment. Same variant-rule/raw-adjustment/end-trigger pipeline as the
         /// <see cref="BuildCardinalFragment(BigInteger, string[])"/> overload; never applies language
         /// finalization or a sign (see the "single finalization" invariant on <see cref="FinalizePhrase"/>).
         /// </summary>
@@ -1420,8 +1422,27 @@ namespace Utils.NumberToString
 
             var shielded = NewShieldedGroups();
             string raw = number.IsZero ? Zero : ConvertRaw(number, query, shielded);
+            return ApplyCardinalPostProcessing(raw, number, query, shielded);
+        }
+
+        /// <summary>
+        /// Runs the whole-number passes of a cardinal (top-level value or fragment) on its raw text, in the order
+        /// shared with the ordinal and multiplicative pipelines (NTS-43): the non-scale variant rules, then the
+        /// user's raw adjustment, then the <c>TriggerAt.End</c> triggers. The morphology therefore always sees the
+        /// text the configuration produced, and the adjustment sees the inflected text. The groups whose multiplier
+        /// carries forced variants are shielded from both caller passes; the adjustment sees them as plain text in
+        /// between (see <see cref="ApplyShielded"/>). Never applies language finalization or a sign.
+        /// </summary>
+        /// <param name="raw">The raw cardinal text (<see cref="ConvertRaw"/> or <see cref="Zero"/>).</param>
+        /// <param name="number">The non-negative value the text spells, used by value-filtered variant rules.</param>
+        /// <param name="query">The effective variant query.</param>
+        /// <param name="shielded">The shielded groups collected by <see cref="ConvertRaw"/>, or <see langword="null"/>.</param>
+        /// <returns>The processed, unfinalized cardinal text.</returns>
+        private string ApplyCardinalPostProcessing(string raw, BigInteger number, IReadOnlyDictionary<string, string> query, List<string>? shielded)
+        {
+            raw = ApplyShielded(raw, shielded, text => ApplyVariantRules(text, query, (BigInteger?)number));
             raw = ApplyRawAdjustment(raw);
-            return ApplyShielded(raw, shielded, text => ApplyTriggers(ApplyVariantRules(text, query, number), TriggerAt.End, null, query));
+            return ApplyShielded(raw, shielded, text => ApplyTriggers(text, TriggerAt.End, null, query));
         }
 
         /// <summary>
@@ -2861,15 +2882,13 @@ namespace Utils.NumberToString
                 throw new NotSupportedException($"Language '{LanguageIdentifier}' has no multiplicative configuration.");
             var query = BuildVariantQuery(variants);
             BigInteger magnitude = BigInteger.Abs((BigInteger)multiplier);
-            // The historical order is kept (variant rules, raw adjustment, end triggers); the forced groups of the
-            // cardinal are shielded from both caller passes, the adjustment seeing the plain text in between.
+            // Same order as the cardinal pipeline (variant rules, raw adjustment, end triggers); the forced groups of
+            // the cardinal are shielded from both caller passes, the adjustment seeing the plain text in between.
             var shielded = Multiplicatives.ContainsKey(multiplier) || magnitude.IsZero ? null : NewShieldedGroups();
             string raw = Multiplicatives.TryGetValue(multiplier, out var named)
                 ? named
                 : (magnitude.IsZero ? Zero : ConvertRaw(magnitude, query, shielded)) + (MultiplicativeSuffix ?? string.Empty);
-            raw = ApplyShielded(raw, shielded, text => ApplyVariantRules(text, query, magnitude));
-            if (_rawAdjustFunction != null) raw = _rawAdjustFunction(raw);
-            raw = ApplyShielded(raw, shielded, text => ApplyTriggers(text, TriggerAt.End, null, query));
+            raw = ApplyCardinalPostProcessing(raw, magnitude, query, shielded);
             string final = LanguageSpecifics.FinalizeWriting(LanguageIdentifier, raw);
             return multiplier < 0 ? Minus.Replace("*", final) : final;
         }
