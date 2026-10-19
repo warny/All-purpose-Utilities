@@ -139,8 +139,9 @@ public class NumberToStringNts42Tests
     public void C_SlovakBareJeden_OpenedByNts44(long numerator)
     {
         string head = Get("SK").ConvertFraction(numerator, 3)[..^"tretín".Length];
-        foreach (string variant in s_slovakObliqueCases)
-            StringAssert.StartsWith(Get("SK").ConvertFraction(numerator, 3, variant), head + "tret", variant);
+        string[] nouns = ["tretín", "tretinám", "tretinách", "tretinami"];
+        for (int i = 0; i < s_slovakObliqueCases.Length; i++)
+            Assert.AreEqual(head + nouns[i], Get("SK").ConvertFraction(numerator, 3, s_slovakObliqueCases[i]), s_slovakObliqueCases[i]);
         Assert.AreEqual(Get("SK").ConvertFraction(numerator, 3), Get("SK").ConvertFraction(numerator, 3, "case=akuzatív"));
     }
 

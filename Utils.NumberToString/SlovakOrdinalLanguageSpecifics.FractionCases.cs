@@ -76,8 +76,11 @@ public sealed partial class SlovakOrdinalLanguageSpecifics
     /// indeclinable last component (<c>sto</c>, <c>tisíc</c>, a compound ending in <c>jeden</c>) the noun alone takes the
     /// case (<i>ku štyridsaťjeden družstvám</i>, <i>k sto robotníkom</i>; PSP 1953, 88–89, quoted by Jarošová, Slovenská
     /// reč 86, 2021, 211: <i>so stojeden družstvami</i>), so <i>sto jeden tretinám</i>, <i>tisíc jeden tretinami</i>
-    /// (NTS-44); after <c>milión</c> or <c>miliarda</c> it is always in the genitive plural (330: <i>pritom meno
-    /// počítaného predmetu je vždy v G. pl.</i>). The noun follows the pattern <c>žena</c> (<c>tretina</c>) or
+    /// (NTS-44); when the last component is itself <c>milión</c> or <c>miliarda</c> (a round number of millions or
+    /// milliards: <i>dvoma miliónmi tretín</i>) the noun is always in the genitive plural (330: <i>pritom meno
+    /// počítaného predmetu je vždy v G. pl.</i>). A scale noun followed by a lower group is not the last component and
+    /// does not govern the noun: the last component does (<i>jeden milión jeden tretinám</i>, <i>jeden milión
+    /// dvadsaťjeden tretinám</i>). The noun follows the pattern <c>žena</c> (<c>tretina</c>) or
     /// <c>ulica</c> (<c>polovica</c>). A zero numerator fails closed (<c>nula</c> is read only in the direct cases, 317:
     /// <i>nula stupňov</i>).
     /// </summary>
