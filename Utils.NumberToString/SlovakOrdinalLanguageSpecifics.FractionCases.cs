@@ -50,8 +50,27 @@ public sealed partial class SlovakOrdinalLanguageSpecifics
     /// <summary>The plural of <c>miliarda</c> (pattern <c>žena</c>; genitive <c>miliárd</c>, Krátky slovník).</summary>
     private static readonly string[] s_milliardPlural = ["miliardy", "miliárd", "miliardám", "miliardy", "miliardách", "miliardami"];
 
-    /// <summary>The largest number this class declines: the milliards end the long scale below <c>bilión</c>.</summary>
-    private const long MaxDeclinedNumber = 999_999_999_999;
+    /// <summary><c>milión</c>, masculine (<i>jeden milión</i>).</summary>
+    private static readonly ScaleNoun s_million = new(s_millionSingular, s_millionPlural, Feminine: false);
+
+    /// <summary><c>miliarda</c>, feminine (<i>dve miliardy</i>).</summary>
+    private static readonly ScaleNoun s_milliard = new(s_milliardSingular, s_milliardPlural, Feminine: true);
+
+    /// <summary>
+    /// Returns the noun of a scale from the millions: <c>milión</c> and <c>miliarda</c> from the tables above, every scale
+    /// from <c>bilión</c> (10^12, the first generated noun past <c>miliarda</c>) from the case keys of the SK
+    /// <c>&lt;GeneratedScaleForm&gt;</c>, through the converter (NTS-42 F, see
+    /// <see cref="SlavicAdjectivalOrdinalLanguageSpecifics.ReadScaleNoun"/>).
+    /// </summary>
+    /// <param name="scale">The scale index, at least 2.</param>
+    /// <param name="scaleNouns">The converter's scale nouns, or <see langword="null"/>.</param>
+    /// <returns>The noun, or <see langword="null"/> when it has no source.</returns>
+    private ScaleNoun? GetScaleNoun(int scale, IScaleNounSource? scaleNouns) => scale switch
+    {
+        2 => s_million,
+        3 => s_milliard,
+        _ => ReadScaleNoun(scaleNouns, scale),
+    };
 
     /// <summary>How the last component of a cardinal behaves in a case.</summary>
     private enum LastComponent
@@ -87,29 +106,31 @@ public sealed partial class SlovakOrdinalLanguageSpecifics
     /// <param name="numerator">The numerator.</param>
     /// <param name="forms">The fraction noun.</param>
     /// <param name="fractionCase">The requested case, not the nominative.</param>
+    /// <param name="scaleNouns">The converter's scale nouns, or <see langword="null"/> (no scale from 10^12 is then declined).</param>
     /// <param name="reading">Receives the reading.</param>
     /// <returns><see langword="false"/> when the reading is not sourced.</returns>
-    private static bool TryBuildObliqueNounFraction(BigInteger numerator, FractionNounForms forms, FractionCase fractionCase,
-        out FractionDenominatorReading? reading)
+    private bool TryBuildObliqueNounFraction(BigInteger numerator, FractionNounForms forms, FractionCase fractionCase,
+        IScaleNounSource? scaleNouns, out FractionDenominatorReading? reading)
     {
         reading = null;
-        if (numerator.IsZero || numerator > MaxDeclinedNumber)
+        if (numerator.IsZero)
             return false;
-        long value = (long)numerator;
         int column = (int)fractionCase;
         bool direct = fractionCase == FractionCase.Accusative;
-        if (value == 1)
+        if (numerator.IsOne)
         {
             reading = FractionDenominatorReading.WithNumerator(s_oneFeminineCases[column], DeclineFractionNoun(forms, plural: false, fractionCase));
             return true;
         }
-        if (value <= 4)
+        if (numerator <= 4)
         {
+            int value = (int)numerator;
             string few = direct ? (value == 2 ? "dve" : s_fewCases[value][column]) : s_fewCases[value][column];
             reading = FractionDenominatorReading.WithNumerator(few, DeclineFractionNoun(forms, plural: true, fractionCase));
             return true;
         }
-        string numeratorText = DeclineLastComponent(value, fractionCase, out LastComponent last);
+        if (DeclineLastComponent(numerator, fractionCase, scaleNouns, out LastComponent last) is not string numeratorText)
+            return false;
         bool genitivePlural = direct || last == LastComponent.ScaleNoun;
         reading = FractionDenominatorReading.WithNumerator(numeratorText,
             DeclineFractionNoun(forms, plural: true, genitivePlural ? FractionCase.Genitive : fractionCase));
@@ -153,7 +174,8 @@ public sealed partial class SlovakOrdinalLanguageSpecifics
     }
 
     /// <summary>
-    /// Declines the last component of a cardinal between 2 and 999 999 999 999 for a case, the words before it in their
+    /// Declines the last component of a cardinal of at least 2 for a case (a scale noun from 10^12 is one of the converter,
+    /// <c>bilión</c> declined like <c>milión</c> and <c>biliarda</c> like <c>miliarda</c>: NTS-42 F), the words before it in their
     /// absolute form (see the class remarks): tens and units after <c>päť</c>, <c>dva</c> … <c>štyri</c> (two words for a
     /// compound: <c>dvadsiatimi dvoma</c>); <c>milión</c> and <c>miliarda</c> with their multiplier (one: <c>jedným
     /// miliónom</c>, <c>jednou miliardou</c>; 2–99 declined when declinable: <c>dvoma miliónmi</c>, <c>dvadsiatimi
@@ -168,62 +190,68 @@ public sealed partial class SlovakOrdinalLanguageSpecifics
     /// </summary>
     /// <param name="number">The number, at least 2.</param>
     /// <param name="fractionCase">The case.</param>
+    /// <param name="scaleNouns">The converter's scale nouns, or <see langword="null"/> (a scale from 10^12 then has no form).</param>
     /// <param name="last">Receives the behavior of the last component.</param>
-    /// <returns>The cardinal with its last component in the case, or the absolute cardinal.</returns>
-    private static string DeclineLastComponent(long number, FractionCase fractionCase, out LastComponent last)
+    /// <returns>
+    /// The cardinal with its last component in the case, or the absolute cardinal; <see langword="null"/> when a scale noun
+    /// has no sourced form.
+    /// </returns>
+    private string? DeclineLastComponent(BigInteger number, FractionCase fractionCase, IScaleNounSource? scaleNouns, out LastComponent last)
     {
         int rest = (int)(number % 100);
         if (rest == 0)
         {
-            long millions = number / 1_000_000 % 1000;
-            if (number % 1_000_000 == 0 && millions != 0)
+            // A round number of millions or of a higher scale: that scale noun is the last component.
+            var groups = ThousandGroups(number);
+            int scale = groups.FindIndex(group => group != 0);
+            if (scale >= 2)
             {
                 last = LastComponent.ScaleNoun;
-                return Join(Cardinal(number - millions * 1_000_000), DeclineScale((int)millions, fractionCase, s_millionSingular, s_millionPlural, feminine: false));
-            }
-            if (number % 1_000_000_000 == 0)
-            {
-                last = LastComponent.ScaleNoun;
-                return DeclineScale((int)(number / 1_000_000_000), fractionCase, s_milliardSingular, s_milliardPlural, feminine: true);
+                BigInteger head = number - groups[scale] * BigInteger.Pow(1000, scale);
+                return GetScaleNoun(scale, scaleNouns) is ScaleNoun noun
+                    && Cardinal(head, scaleNouns) is string headText
+                    && DeclineScale(groups[scale], fractionCase, noun) is string scaleText
+                    ? Join(headText, scaleText)
+                    : null;
             }
             last = LastComponent.Indeclinable;
-            return Cardinal(number);
+            return Cardinal(number, scaleNouns);
         }
         if (rest % 10 == 1 && rest != 11)
         {
             last = LastComponent.Indeclinable;
-            return Cardinal(number);
+            return Cardinal(number, scaleNouns);
         }
         last = LastComponent.Declined;
         string tail = fractionCase is FractionCase.Nominative or FractionCase.Accusative ? Group(rest, joined: false) : DeclineBelowHundred(rest, fractionCase);
-        return Join(Cardinal(number - rest), tail);
+        return Cardinal(number - rest, scaleNouns) is string start ? Join(start, tail) : null;
     }
 
     /// <summary>
     /// Declines a scale noun and its multiplier. After one the noun is singular and the multiplier agrees; after two to
     /// four the noun is the nominative plural in the direct cases; after the other multipliers the genitive plural in
-    /// the direct cases (as the SK configuration writes them); the plural of the case otherwise.
+    /// the direct cases (as the SK configuration writes them); the plural of the case otherwise. A generated masculine noun
+    /// has no genitive singular: the <c>dub</c> paradigm leaves the ending lexical (<c>-a</c> or <c>-u</c>), the KSSJ gives
+    /// it for <i>bilión -a</i> only, so the SK configuration declares no such form and the reading fails closed.
     /// </summary>
     /// <param name="multiplier">The multiplier, 1–999.</param>
     /// <param name="fractionCase">The case.</param>
-    /// <param name="singular">The singular of the noun by case.</param>
-    /// <param name="plural">The plural of the noun by case.</param>
-    /// <param name="feminine">Whether the noun is feminine (<c>miliarda</c>: <c>jedna</c>, <c>dve</c>).</param>
-    /// <returns>The declined multiplier and noun.</returns>
-    private static string DeclineScale(int multiplier, FractionCase fractionCase, string[] singular, string[] plural, bool feminine)
+    /// <param name="noun">The scale noun (<c>miliarda</c>, feminine: <c>jedna</c>, <c>dve</c>).</param>
+    /// <returns>The declined multiplier and noun, or <see langword="null"/> when the noun has no form for the case.</returns>
+    private static string? DeclineScale(int multiplier, FractionCase fractionCase, ScaleNoun noun)
     {
         int column = (int)fractionCase;
         bool direct = fractionCase is FractionCase.Nominative or FractionCase.Accusative;
         if (multiplier == 1)
-            return (feminine ? s_oneFeminineCases : s_oneMasculineCases)[column] + " " + singular[column];
+            return noun.Singular[column] is string singular ? (noun.Feminine ? s_oneFeminineCases : s_oneMasculineCases)[column] + " " + singular : null;
         if (multiplier <= 4)
         {
-            string few = direct && feminine && multiplier == 2 ? "dve" : s_fewCases[multiplier][column];
-            return few + " " + plural[direct ? (int)FractionCase.Nominative : column];
+            string few = direct && noun.Feminine && multiplier == 2 ? "dve" : s_fewCases[multiplier][column];
+            return noun.Plural[direct ? (int)FractionCase.Nominative : column] is string fewPlural ? few + " " + fewPlural : null;
         }
         bool declinable = multiplier < 100 && (multiplier % 10 != 1 || multiplier == 11);
         string head = direct || !declinable ? Group(multiplier, joined: false) : DeclineBelowHundred(multiplier, fractionCase);
-        return head + " " + plural[direct ? (int)FractionCase.Genitive : column];
+        return noun.Plural[direct ? (int)FractionCase.Genitive : column] is string plural ? head + " " + plural : null;
     }
 
     /// <summary>
@@ -263,23 +291,28 @@ public sealed partial class SlovakOrdinalLanguageSpecifics
     }
 
     /// <summary>
-    /// Writes the absolute cardinal of a number between 0 and 999 999 999 999 as the SK configuration does: <c>jedna
-    /// miliarda</c>, <c>dve miliardy</c>, <c>päť miliárd</c>; <c>jeden milión</c>, <c>dva milióny</c>, <c>dvadsaťdva
-    /// miliónov</c>, <c>sto dva miliónov</c> (the multiplier written as a group, the hundreds apart); the thousands and
-    /// units as <see cref="Cardinal(int)"/>.
+    /// Writes the absolute cardinal of a number as the SK configuration does: <c>jeden bilión</c>, <c>dve biliardy</c>,
+    /// <c>päť biliárd</c> (from 10^12 the converter's nouns); <c>jedna miliarda</c>, <c>dve miliardy</c>, <c>päť
+    /// miliárd</c>; <c>jeden milión</c>, <c>dva milióny</c>, <c>dvadsaťdva miliónov</c>, <c>sto dva miliónov</c> (the
+    /// multiplier written as a group, the hundreds apart); the thousands and units as <see cref="Cardinal(int)"/>.
     /// </summary>
     /// <param name="number">The number.</param>
-    /// <returns>The cardinal (empty for 0).</returns>
-    private static string Cardinal(long number)
+    /// <param name="scaleNouns">The converter's scale nouns, or <see langword="null"/> (a scale from 10^12 then has no form).</param>
+    /// <returns>The cardinal (empty for 0), or <see langword="null"/> when a scale noun has no source.</returns>
+    private string? Cardinal(BigInteger number, IScaleNounSource? scaleNouns)
     {
-        int milliards = (int)(number / 1_000_000_000 % 1000);
-        int millions = (int)(number / 1_000_000 % 1000);
-        int rest = (int)(number % 1_000_000);
+        var groups = ThousandGroups(number);
         string text = string.Empty;
-        if (milliards > 0)
-            text = DeclineScale(milliards, FractionCase.Nominative, s_milliardSingular, s_milliardPlural, feminine: true);
-        if (millions > 0)
-            text = Join(text, DeclineScale(millions, FractionCase.Nominative, s_millionSingular, s_millionPlural, feminine: false));
+        for (int scale = groups.Count - 1; scale >= 2; scale--)
+        {
+            if (groups[scale] == 0)
+                continue;
+            if (GetScaleNoun(scale, scaleNouns) is not ScaleNoun noun
+                || DeclineScale(groups[scale], FractionCase.Nominative, noun) is not string scaleText)
+                return null;
+            text = Join(text, scaleText);
+        }
+        int rest = (int)(number % 1_000_000);
         return rest == 0 ? text : Join(text, Cardinal(rest));
     }
 

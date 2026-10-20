@@ -67,24 +67,47 @@ public sealed partial class CzechOrdinalLanguageSpecifics
     /// <summary>The plural of <c>miliarda</c> (IJP <c>miliarda</c>).</summary>
     private static readonly string[] s_milliardPlural = ["miliardy", "miliard", "miliardám", "miliardy", "miliardách", "miliardami"];
 
-    /// <summary>The largest number this class declines: the milliards end the long scale below <c>bilion</c>.</summary>
-    private const long MaxDeclinedNumber = 999_999_999_999;
+    /// <summary><c>tisíc</c>, masculine (<i>dva tisíce</i>).</summary>
+    private static readonly ScaleNoun s_thousand = new(s_thousandSingular, s_thousandPlural, Feminine: false);
+
+    /// <summary><c>milion</c>, masculine inanimate (<i>jeden milion</i>).</summary>
+    private static readonly ScaleNoun s_million = new(s_millionSingular, s_millionPlural, Feminine: false);
+
+    /// <summary><c>miliarda</c>, feminine (<i>dvě miliardy</i>).</summary>
+    private static readonly ScaleNoun s_milliard = new(s_milliardSingular, s_milliardPlural, Feminine: true);
 
     /// <summary>The gender of a numeral's one and two in the nominative and accusative.</summary>
     private enum NumeralGender
     {
-        /// <summary>The masculine (<c>jeden</c>, <c>dva</c>): before <c>tisíc</c> and <c>milion</c>.</summary>
+        /// <summary>The masculine (<c>jeden</c>, <c>dva</c>): before <c>tisíc</c>, <c>milion</c> and <c>bilion</c>.</summary>
         Masculine,
-        /// <summary>The feminine (<c>jedna</c>, <c>dvě</c>): a fraction numerator, before <c>miliarda</c>.</summary>
+        /// <summary>The feminine (<c>jedna</c>, <c>dvě</c>): a fraction numerator, before <c>miliarda</c> and <c>biliarda</c>.</summary>
         Feminine,
     }
+
+    /// <summary>
+    /// Returns the noun of a scale: <c>tisíc</c>, <c>milion</c> and <c>miliarda</c> from the tables above, every scale from
+    /// <c>bilion</c> (10^12, the first generated noun past <c>miliarda</c>) from the case keys of the CS
+    /// <c>&lt;GeneratedScaleForm&gt;</c>, through the converter (NTS-42 F, see
+    /// <see cref="SlavicAdjectivalOrdinalLanguageSpecifics.ReadScaleNoun"/>).
+    /// </summary>
+    /// <param name="scale">The scale index, at least 1.</param>
+    /// <param name="scaleNouns">The converter's scale nouns, or <see langword="null"/>.</param>
+    /// <returns>The noun, or <see langword="null"/> when it has no source.</returns>
+    private ScaleNoun? GetScaleNoun(int scale, IScaleNounSource? scaleNouns) => scale switch
+    {
+        1 => s_thousand,
+        2 => s_million,
+        3 => s_milliard,
+        _ => ReadScaleNoun(scaleNouns, scale),
+    };
 
     /// <summary>
     /// Builds the reading of a fraction whose denominator has a fraction noun in a case other than the nominative. The
     /// numerals one to four agree with the noun (IJP "Počítaný předmět po číslovkách": <i>dvě ženy, dvou žen, dvěma
     /// ženám</i>); after the numerals 5–99 the noun takes the case of the phrase in the oblique cases (<i>pěti ženám, o
     /// pěti ženách, s pěti ženami</i>) and the genitive plural in the accusative, as in the nominative; after a numeral
-    /// ending in <c>sto</c>, <c>tisíc</c>, <c>milion</c> or <c>miliarda</c> the noun keeps the genitive plural, the basic
+    /// ending in <c>sto</c>, <c>tisíc</c> or a scale noun (<c>milion</c>, <c>miliarda</c>, <c>bilion</c> …) the noun keeps the genitive plural, the basic
     /// construction the IJP gives for these numerals (<i>tisíce žen</i>, <i>milionu měst</i>; <i>ke stu korun</i>). The
     /// noun follows its IJP paradigm (<c>třetina</c>: <c>třetině</c>, <c>třetinou</c>, <c>třetinám</c>,
     /// <c>třetinách</c>, <c>třetinami</c>). A compound numerator ending in <c>jedna</c> (21, 101) has no sourced
@@ -94,23 +117,23 @@ public sealed partial class CzechOrdinalLanguageSpecifics
     /// <param name="numerator">The numerator.</param>
     /// <param name="forms">The fraction noun.</param>
     /// <param name="fractionCase">The requested case, not the nominative.</param>
+    /// <param name="scaleNouns">The converter's scale nouns, or <see langword="null"/> (no scale from 10^12 is then declined).</param>
     /// <param name="reading">Receives the reading.</param>
     /// <returns><see langword="false"/> when the reading is not sourced.</returns>
-    private static bool TryBuildObliqueNounFraction(BigInteger numerator, FractionNounForms forms, FractionCase fractionCase,
-        out FractionDenominatorReading? reading)
+    private bool TryBuildObliqueNounFraction(BigInteger numerator, FractionNounForms forms, FractionCase fractionCase,
+        IScaleNounSource? scaleNouns, out FractionDenominatorReading? reading)
     {
         reading = null;
-        if (numerator.IsZero || numerator > MaxDeclinedNumber)
+        if (numerator.IsZero)
             return false;
-        long value = (long)numerator;
-        if (value == 1)
+        if (numerator.IsOne)
         {
             reading = FractionDenominatorReading.WithNumerator(s_oneFeminineCases[(int)fractionCase], DeclineFractionNoun(forms, plural: false, fractionCase));
             return true;
         }
-        if (DeclineCardinal(value, fractionCase, NumeralGender.Feminine, finalOneInstrumental: false) is not string numeratorText)
+        if (DeclineCardinal(numerator, fractionCase, NumeralGender.Feminine, finalOneInstrumental: false, scaleNouns) is not string numeratorText)
             return false;
-        bool genitivePlural = value > 4 && (fractionCase == FractionCase.Accusative || value % 100 == 0);
+        bool genitivePlural = numerator > 4 && (fractionCase == FractionCase.Accusative || numerator % 100 == 0);
         string noun = DeclineFractionNoun(forms, plural: true, genitivePlural ? FractionCase.Genitive : fractionCase);
         reading = FractionDenominatorReading.WithNumerator(numeratorText, noun);
         return true;
@@ -150,8 +173,10 @@ public sealed partial class CzechOrdinalLanguageSpecifics
     }
 
     /// <summary>
-    /// Declines a cardinal between 2 and 999 999 999 999 for a case, every part declined (see the class remarks): the
-    /// scale nouns follow their IJP paradigms, singular after one and plural after the other multipliers (the
+    /// Declines a cardinal of at least 2 for a case, every part declined (see the class remarks): the scale nouns follow
+    /// their IJP paradigms (<c>tisíc</c>, <c>milion</c>, <c>miliarda</c> here; from <c>bilion</c> the generated nouns of
+    /// the converter, whose IJP paradigms the CS configuration declares: <i>bilion, bilionu, bilionem</i>, <i>biliarda,
+    /// biliardě, biliardou</i>), singular after one and plural after the other multipliers (the
     /// nominative plural after two to four and the genitive plural after the other multipliers in the nominative and
     /// accusative, as the CS configuration writes them: <i>dva tisíce</i>, <i>pět milionů</i>, <i>dvacet dva
     /// milionů</i>; the plural of the requested case otherwise: <i>s třemi tisíci</i>, <i>před třemi sty tisíci
@@ -165,19 +190,22 @@ public sealed partial class CzechOrdinalLanguageSpecifics
     /// <param name="fractionCase">The case.</param>
     /// <param name="gender">The gender of a simple one or two in the nominative and accusative.</param>
     /// <param name="finalOneInstrumental">Whether a final <c>jedna</c> takes the feminine instrumental <c>jednou</c>.</param>
+    /// <param name="scaleNouns">The converter's scale nouns, or <see langword="null"/> (a scale from 10^12 then has no form).</param>
     /// <returns>The declined cardinal, or <see langword="null"/> when a part has no sourced form.</returns>
-    private static string? DeclineCardinal(long number, FractionCase fractionCase, NumeralGender gender, bool finalOneInstrumental)
+    private string? DeclineCardinal(BigInteger number, FractionCase fractionCase, NumeralGender gender, bool finalOneInstrumental,
+        IScaleNounSource? scaleNouns)
     {
+        var groups = ThousandGroups(number);
         var words = new List<string>();
-        bool ok = AppendDeclinedScale(words, (int)(number / 1_000_000_000 % 1000), fractionCase, s_milliardSingular, s_milliardPlural,
-                NumeralGender.Feminine, bareOne: false)
-            && AppendDeclinedScale(words, (int)(number / 1_000_000 % 1000), fractionCase, s_millionSingular, s_millionPlural,
-                NumeralGender.Masculine, bareOne: false)
-            && AppendDeclinedScale(words, (int)(number / 1000 % 1000), fractionCase, s_thousandSingular, s_thousandPlural,
-                NumeralGender.Masculine, bareOne: true);
-        if (!ok)
-            return null;
-        int units = (int)(number % 1000);
+        for (int scale = groups.Count - 1; scale >= 1; scale--)
+        {
+            if (groups[scale] == 0)
+                continue;
+            if (GetScaleNoun(scale, scaleNouns) is not ScaleNoun noun
+                || !AppendDeclinedScale(words, groups[scale], fractionCase, noun, bareOne: scale == 1))
+                return null;
+        }
+        int units = groups[0];
         if (units == 1 && words.Count > 0)
         {
             // A jedna after a larger group (1001, 1 000 001) ends the numeral as in a compound.
@@ -195,30 +223,29 @@ public sealed partial class CzechOrdinalLanguageSpecifics
 
     /// <summary>Appends a declined scale group: the multiplier and the scale noun in the form the multiplier governs.</summary>
     /// <param name="words">The target word list.</param>
-    /// <param name="group">The multiplier (0–999; 0 appends nothing).</param>
+    /// <param name="group">The multiplier, 1–999.</param>
     /// <param name="fractionCase">The case.</param>
-    /// <param name="singular">The singular of the scale noun by case.</param>
-    /// <param name="plural">The plural of the scale noun by case.</param>
-    /// <param name="gender">The gender of the scale noun (the multiplier one or two agrees with it).</param>
+    /// <param name="noun">The scale noun (the multiplier one or two agrees with its gender).</param>
     /// <param name="bareOne">Whether a multiplier of one is left out (<c>tisíc</c>, not <c>jeden tisíc</c>).</param>
-    /// <returns><see langword="false"/> when the multiplier has no sourced form.</returns>
-    private static bool AppendDeclinedScale(List<string> words, int group, FractionCase fractionCase, string[] singular, string[] plural,
-        NumeralGender gender, bool bareOne)
+    /// <returns><see langword="false"/> when the multiplier or the noun has no sourced form.</returns>
+    private static bool AppendDeclinedScale(List<string> words, int group, FractionCase fractionCase, ScaleNoun noun, bool bareOne)
     {
-        if (group == 0)
-            return true;
         int column = (int)fractionCase;
         bool direct = fractionCase is FractionCase.Nominative or FractionCase.Accusative;
+        var gender = noun.Feminine ? NumeralGender.Feminine : NumeralGender.Masculine;
         if (group == 1)
         {
+            if (noun.Singular[column] is not string singular)
+                return false;
             if (!bareOne)
                 words.Add((gender == NumeralGender.Feminine ? s_oneFeminineCases : s_oneMasculineCases)[column]);
-            words.Add(singular[column]);
+            words.Add(singular);
             return true;
         }
-        if (!AppendDeclinedGroup(words, group, fractionCase, gender, finalOneInstrumental: false))
+        int pluralColumn = !direct ? column : group <= 4 ? (int)FractionCase.Nominative : (int)FractionCase.Genitive;
+        if (noun.Plural[pluralColumn] is not string plural || !AppendDeclinedGroup(words, group, fractionCase, gender, finalOneInstrumental: false))
             return false;
-        words.Add(!direct ? plural[column] : group <= 4 ? plural[(int)FractionCase.Nominative] : plural[(int)FractionCase.Genitive]);
+        words.Add(plural);
         return true;
     }
 

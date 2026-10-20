@@ -456,13 +456,17 @@ public class NumberToStringNts40Nts41Tests
         Assert.AreEqual("jedna lomené číslom tisíc jeden", Get("SK").ConvertFraction(1, 1001));
     }
 
-    /// <summary>The slash readings beyond 10^12 still fail closed.</summary>
+    /// <summary>
+    /// The slash readings beyond 10^12, closed by NTS-41, follow the same rules since NTS-42 F (the scale nouns read from
+    /// the converter); a CS multiplier ending in one after the tens stays closed there as below (NTS-42 B).
+    /// </summary>
     [TestMethod]
-    public void Large_StillClosed()
+    public void Large_OpenedByNts42F()
     {
-        Assert.ThrowsExactly<NotSupportedException>(() => Get("CS").ConvertFraction(1, 1_000_000_000_001));
-        Assert.ThrowsExactly<NotSupportedException>(() => Get("SK").ConvertFraction(1, 1_000_000_000_001));
-        Assert.ThrowsExactly<NotSupportedException>(() => Get("CS").ConvertFraction(BigInteger.One, BigInteger.Pow(10, 30) + 3));
+        Assert.AreEqual("jedna lomeno jedním bilionem jednou", Get("CS").ConvertFraction(1, 1_000_000_000_001));
+        Assert.AreEqual("jedna lomené číslom jeden bilión jeden", Get("SK").ConvertFraction(1, 1_000_000_000_001));
+        Assert.AreEqual("jedna lomeno jedním kvintilionem třemi", Get("CS").ConvertFraction(BigInteger.One, BigInteger.Pow(10, 30) + 3));
+        Assert.ThrowsExactly<NotSupportedException>(() => Get("CS").ConvertFraction(1, 21_000_000_000_000));
     }
 
     /// <summary>The fraction form of <c>Convert(Number)</c> uses the same readings.</summary>

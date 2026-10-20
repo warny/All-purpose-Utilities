@@ -231,6 +231,57 @@ public abstract class SlavicAdjectivalOrdinalLanguageSpecifics : INumberToString
     /// <param name="value">The gender value.</param>
     /// <returns>The forced variant set.</returns>
     private protected ForcedVariantSet NumeratorGender(string value) => ForcedVariantSet.Create((GenderDimension, value));
+
+    /// <summary>
+    /// The declined forms of one scale noun (Czech <c>milion</c>, a generated <c>bilion</c>), in <see cref="FractionCase"/>
+    /// order; a <see langword="null"/> cell is a form no source gives, which fails the reading closed.
+    /// </summary>
+    /// <param name="Singular">The singular by case.</param>
+    /// <param name="Plural">The plural by case.</param>
+    /// <param name="Feminine">Whether the noun is feminine: its multiplier one or two takes the feminine (<c>jedna biliarda</c>).</param>
+    private protected sealed record ScaleNoun(string?[] Singular, string?[] Plural, bool Feminine);
+
+    /// <summary>
+    /// Reads the declined forms of the noun of scale <paramref name="scale"/> from the converter (NTS-42 F): the case keys of
+    /// <see cref="ScaleNounFormKeys"/> configured on its <c>&lt;GeneratedScaleForm&gt;</c>, so that the plugin holds no Conway
+    /// name. The noun is feminine when its form after one forces the feminine on its multiplier, as the configuration of the
+    /// language declares it (<c>jedna biliarda</c>, <c>forceVariants="gender=ženský"</c>).
+    /// </summary>
+    /// <param name="scaleNouns">The converter's scale nouns, or <see langword="null"/> when the plugin is called without the converter.</param>
+    /// <param name="scale">The scale index.</param>
+    /// <returns>The noun, or <see langword="null"/> when the converter names no such scale.</returns>
+    private protected ScaleNoun? ReadScaleNoun(IScaleNounSource? scaleNouns, int scale)
+    {
+        if (scaleNouns is null || !scaleNouns.TryGetScaleNoun(scale, ScaleNounFormKeys.One, out _, out var forced))
+            return null;
+        bool feminine = false;
+        foreach (var pair in forced.Constraints.Values)
+            feminine |= string.Equals(pair.Key, GenderDimension, System.StringComparison.OrdinalIgnoreCase) && pair.Value == FeminineValue;
+        var singular = new string?[ScaleNounFormKeys.CaseCount];
+        var plural = new string?[ScaleNounFormKeys.CaseCount];
+        for (int i = 0; i < singular.Length; i++)
+        {
+            singular[i] = scaleNouns.TryGetScaleNoun(scale, ScaleNounFormKeys.Get(plural: false, i), out string one, out _) ? one : null;
+            plural[i] = scaleNouns.TryGetScaleNoun(scale, ScaleNounFormKeys.Get(plural: true, i), out string many, out _) ? many : null;
+        }
+        return new ScaleNoun(singular, plural, feminine);
+    }
+
+    /// <summary>
+    /// Splits a number into its groups of three digits, the units first (index = scale index).
+    /// </summary>
+    /// <param name="number">A non-negative number.</param>
+    /// <returns>The groups.</returns>
+    private protected static List<int> ThousandGroups(BigInteger number)
+    {
+        var groups = new List<int>();
+        while (!number.IsZero)
+        {
+            number = BigInteger.DivRem(number, 1000, out BigInteger group);
+            groups.Add((int)group);
+        }
+        return groups;
+    }
 }
 
 /// <summary>
@@ -241,7 +292,8 @@ public abstract class SlavicAdjectivalOrdinalLanguageSpecifics : INumberToString
 /// (<c>dvoutisící</c>); larger round multipliers and round millions or milliards other than one
 /// are declined.
 /// </summary>
-public sealed partial class CzechOrdinalLanguageSpecifics : SlavicAdjectivalOrdinalLanguageSpecifics, IFractionLanguageSpecifics
+public sealed partial class CzechOrdinalLanguageSpecifics : SlavicAdjectivalOrdinalLanguageSpecifics, IFractionLanguageSpecifics,
+    IScaleNounFractionLanguageSpecifics
 {
     /// <summary>
     /// The fraction nouns of the Internetová jazyková příručka (ÚJČ AV ČR), each an entry with its paradigm (NTS-30H,
@@ -297,7 +349,7 @@ public sealed partial class CzechOrdinalLanguageSpecifics : SlavicAdjectivalOrdi
     /// governs (<c>jedna třetina</c>, <c>dvě třetiny</c>, <c>pět sedmin</c>); a compound numerator governs the genitive
     /// plural and keeps its counting form (<c>dvacet jedna třetin</c>, <c>dvacet dva třetin</c>: IJP "Počítaný předmět po
     /// číslovkách", the genitive after <i>dvacet jeden … čtyři</i> being "more common and more natural"; "Členění čísel":
-    /// <i>tisíc dvacet čtyři celé/celých</i>). Any other denominator up to 999 999 999 999, and a zero numerator, take
+    /// <i>tisíc dvacet čtyři celé/celých</i>). Any other denominator, and a zero numerator, take
     /// the mathematical reading <c>lomeno</c> + instrumental (IJP <c>lomit</c>: SSJČ <i>dvě lomeno třemi</i>, SSČ <i>pět
     /// lomeno dvěma</i>; Prandstetter, Naše řeč 22, 1938: <i>šedesát osm lomeno třemi sty padesáti šesti</i>), every part
     /// of the denominator declined (NTS-41, see <see cref="DeclineCardinal"/>) but <c>sto</c> before another numeral
@@ -309,14 +361,33 @@ public sealed partial class CzechOrdinalLanguageSpecifics : SlavicAdjectivalOrdi
     /// (Prandstetter: <i>lomeno jednou celou</i>).
     /// The cases other than the nominative read the fraction nouns only (NTS-40, see
     /// <see cref="TryBuildObliqueNounFraction"/>): no source declines the <c>lomeno</c> reading as a whole, whose
-    /// denominator is already an instrumental. Without a sourced form the reading fails closed: a denominator of one, a
-    /// denominator from 10^12, a multiplier ending in one after the tens or hundreds in an oblique case (21 000: no
-    /// source gives the gender of its <c>jedna</c> there), and an oblique case of a zero numerator, of a compound
-    /// numerator ending in <c>jedna</c> or of a denominator without a noun.
+    /// denominator is already an instrumental. From 10^12 the scale nouns are the converter's (NTS-42 F): the generated
+    /// <c>bilion</c>, <c>biliarda</c>, <c>trilion</c> … declined after the IJP paradigms the CS configuration declares
+    /// (<i>jedním bilionem</i>, <i>dvěma bilionům</i>, <i>pěti biliardami</i>); called without the converter, this
+    /// overload declines no scale from 10^12. Without a sourced form the reading fails closed: a denominator of one, a
+    /// multiplier ending in one after the tens or hundreds in an oblique case (21 000: no source gives the gender of its
+    /// <c>jedna</c> there), and an oblique case of a zero numerator, of a compound numerator ending in <c>jedna</c> or of
+    /// a denominator without a noun.
     /// </summary>
     /// <inheritdoc />
     public bool TryGetFractionDenominator(BigInteger numerator, BigInteger denominator, IReadOnlyDictionary<string, string> variants,
         out FractionDenominatorReading? reading)
+        => TryGetFractionDenominator(numerator, denominator, variants, null, out reading);
+
+    /// <inheritdoc cref="TryGetFractionDenominator(BigInteger, BigInteger, IReadOnlyDictionary{string, string}, out FractionDenominatorReading?)"/>
+    bool IScaleNounFractionLanguageSpecifics.TryGetFractionDenominator(BigInteger numerator, BigInteger denominator,
+        IReadOnlyDictionary<string, string> variants, IScaleNounSource scaleNouns, out FractionDenominatorReading? reading)
+        => TryGetFractionDenominator(numerator, denominator, variants, scaleNouns, out reading);
+
+    /// <summary>Reads a fraction (see <see cref="TryGetFractionDenominator(BigInteger, BigInteger, IReadOnlyDictionary{string, string}, out FractionDenominatorReading?)"/>).</summary>
+    /// <param name="numerator">The absolute value of the numerator (may be zero).</param>
+    /// <param name="denominator">The denominator, at least one.</param>
+    /// <param name="variants">The caller's effective variant query.</param>
+    /// <param name="scaleNouns">The converter's scale nouns, or <see langword="null"/>.</param>
+    /// <param name="reading">Receives the reading.</param>
+    /// <returns><see langword="true"/> when the language has a reading for the fraction.</returns>
+    private bool TryGetFractionDenominator(BigInteger numerator, BigInteger denominator, IReadOnlyDictionary<string, string> variants,
+        IScaleNounSource? scaleNouns, out FractionDenominatorReading? reading)
     {
         reading = null;
         if (denominator < 2)
@@ -325,12 +396,11 @@ public sealed partial class CzechOrdinalLanguageSpecifics : SlavicAdjectivalOrdi
         if (fractionCase != FractionCase.Nominative)
         {
             return denominator <= long.MaxValue && s_fractionNouns.TryGetValue((long)denominator, out var forms)
-                && TryBuildObliqueNounFraction(numerator, forms, fractionCase, out reading);
+                && TryBuildObliqueNounFraction(numerator, forms, fractionCase, scaleNouns, out reading);
         }
         if (!numerator.IsZero && TryBuildFractionNoun(numerator, denominator, s_fractionNouns, "standalone", out reading))
             return true;
-        if (denominator > MaxDeclinedNumber
-            || DeclineCardinal((long)denominator, FractionCase.Instrumental, NumeralGender.Feminine, finalOneInstrumental: true) is not string instrumental)
+        if (DeclineCardinal(denominator, FractionCase.Instrumental, NumeralGender.Feminine, finalOneInstrumental: true, scaleNouns) is not string instrumental)
             return false;
         bool simple = !numerator.IsZero && ClassifyFractionNumerator(numerator, compoundEndingInOneIsSingular: false) != FractionNumeratorClass.Many;
         reading = new FractionDenominatorReading("lomeno " + instrumental, simple ? FeminineNumerator() : NumeratorGender("standalone"));
@@ -435,7 +505,8 @@ public sealed partial class CzechOrdinalLanguageSpecifics : SlavicAdjectivalOrdi
 /// adjective paradigms. Values from one million upwards (except one million itself) and round or
 /// compound thousands above 9999 are declined because their written forms were not verified.
 /// </summary>
-public sealed partial class SlovakOrdinalLanguageSpecifics : SlavicAdjectivalOrdinalLanguageSpecifics, IFractionLanguageSpecifics
+public sealed partial class SlovakOrdinalLanguageSpecifics : SlavicAdjectivalOrdinalLanguageSpecifics, IFractionLanguageSpecifics,
+    IScaleNounFractionLanguageSpecifics
 {
     /// <summary>
     /// The Slovak fraction nouns (NTS-30H, NTS-39). Morfológia slovenského jazyka (1966), 332, gives the rule: from
@@ -512,12 +583,32 @@ public sealed partial class SlovakOrdinalLanguageSpecifics : SlavicAdjectivalOrd
     /// numeral (Ondrus, §6: <i>po substantíve číslo každá číslovka má podobu ako v absolútnom postavení</i>).
     /// The cases other than the nominative read the fraction nouns only (NTS-40, see
     /// <see cref="TryBuildObliqueNounFraction"/>): the <c>lomené</c> reading is a fixed mathematical phrase no source
-    /// declines. A denominator of one, a denominator from 10^12 and an oblique case of a zero numerator or of a
+    /// declines. From 10^12 the scale nouns are the converter's (NTS-42 F): the generated <c>bilión</c>, <c>biliarda</c>,
+    /// <c>trilión</c> … declined, as the last component, after the patterns <c>dub</c> and <c>žena</c> the SK
+    /// configuration declares (<i>jedna lomené jedným biliónom</i>, <i>jedna lomené jednou biliardou</i>); called without
+    /// the converter, this overload declines no scale from 10^12. A denominator of one, a scale form no source gives (the
+    /// genitive singular of <c>bilión</c>, see <see cref="DeclineScale"/>) and an oblique case of a zero numerator or of a
     /// denominator without a noun fail closed; <c>ku</c> reads a ratio, not a fraction.
     /// </summary>
     /// <inheritdoc />
     public bool TryGetFractionDenominator(BigInteger numerator, BigInteger denominator, IReadOnlyDictionary<string, string> variants,
         out FractionDenominatorReading? reading)
+        => TryGetFractionDenominator(numerator, denominator, variants, null, out reading);
+
+    /// <inheritdoc cref="TryGetFractionDenominator(BigInteger, BigInteger, IReadOnlyDictionary{string, string}, out FractionDenominatorReading?)"/>
+    bool IScaleNounFractionLanguageSpecifics.TryGetFractionDenominator(BigInteger numerator, BigInteger denominator,
+        IReadOnlyDictionary<string, string> variants, IScaleNounSource scaleNouns, out FractionDenominatorReading? reading)
+        => TryGetFractionDenominator(numerator, denominator, variants, scaleNouns, out reading);
+
+    /// <summary>Reads a fraction (see <see cref="TryGetFractionDenominator(BigInteger, BigInteger, IReadOnlyDictionary{string, string}, out FractionDenominatorReading?)"/>).</summary>
+    /// <param name="numerator">The absolute value of the numerator (may be zero).</param>
+    /// <param name="denominator">The denominator, at least one.</param>
+    /// <param name="variants">The caller's effective variant query.</param>
+    /// <param name="scaleNouns">The converter's scale nouns, or <see langword="null"/>.</param>
+    /// <param name="reading">Receives the reading.</param>
+    /// <returns><see langword="true"/> when the language has a reading for the fraction.</returns>
+    private bool TryGetFractionDenominator(BigInteger numerator, BigInteger denominator, IReadOnlyDictionary<string, string> variants,
+        IScaleNounSource? scaleNouns, out FractionDenominatorReading? reading)
     {
         reading = null;
         if (denominator < 2)
@@ -526,7 +617,7 @@ public sealed partial class SlovakOrdinalLanguageSpecifics : SlavicAdjectivalOrd
         bool hasNoun = denominator <= long.MaxValue && s_fractionNouns.TryGetValue((long)denominator, out forms);
         var fractionCase = RequestedFractionCase(variants);
         if (fractionCase != FractionCase.Nominative)
-            return hasNoun && TryBuildObliqueNounFraction(numerator, forms, fractionCase, out reading);
+            return hasNoun && TryBuildObliqueNounFraction(numerator, forms, fractionCase, scaleNouns, out reading);
         if (numerator.IsZero && hasNoun)
         {
             reading = new FractionDenominatorReading(forms.Many);
@@ -534,11 +625,12 @@ public sealed partial class SlovakOrdinalLanguageSpecifics : SlavicAdjectivalOrd
         }
         if (!numerator.IsZero && TryBuildFractionNoun(numerator, denominator, s_fractionNouns, "mužský", out reading))
             return true;
-        if (denominator > MaxDeclinedNumber)
+        if (DeclineLastComponent(denominator, FractionCase.Instrumental, scaleNouns, out LastComponent last) is not string instrumental)
             return false;
-        long value = (long)denominator;
-        string instrumental = DeclineLastComponent(value, FractionCase.Instrumental, out LastComponent last);
-        string denominatorText = last is LastComponent.Declined or LastComponent.ScaleNoun ? instrumental : "číslom " + Cardinal(value);
+        string? denominatorText = last is LastComponent.Declined or LastComponent.ScaleNoun ? instrumental
+            : Cardinal(denominator, scaleNouns) is string absolute ? "číslom " + absolute : null;
+        if (denominatorText is null)
+            return false;
         reading = new FractionDenominatorReading("lomené " + denominatorText, NumeratorGender(numerator.IsOne ? "ženský" : "mužský"));
         return true;
     }

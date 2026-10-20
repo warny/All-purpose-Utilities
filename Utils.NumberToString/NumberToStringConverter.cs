@@ -2494,7 +2494,11 @@ namespace Utils.NumberToString
             if (LanguageSpecifics is IFractionLanguageSpecifics fractionSpecifics)
             {
                 var query = BuildVariantQuery(v);
-                if (!fractionSpecifics.TryGetFractionDenominator(numerator, denominator, query, out var reading) || reading is null)
+                // A built-in plugin that declines scale nouns reads them from this converter (NTS-42 F).
+                bool found = fractionSpecifics is IScaleNounFractionLanguageSpecifics scaleNounSpecifics
+                    ? scaleNounSpecifics.TryGetFractionDenominator(numerator, denominator, query, ScaleNouns, out var reading)
+                    : fractionSpecifics.TryGetFractionDenominator(numerator, denominator, query, out reading);
+                if (!found || reading is null)
                     throw new NotSupportedException(
                         $"Language '{LanguageIdentifier}' has no sourced reading for the fraction {numerator}/{denominator}.");
                 // A built-in language may spell the numerator itself (an oblique case the cardinal pipeline cannot form).

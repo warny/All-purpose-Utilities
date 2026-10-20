@@ -181,18 +181,23 @@ public class NumberToStringNts44Tests
         => Assert.AreEqual(expected, Slovak().ConvertFraction(numerator, 3, variant));
 
     /// <summary>
-    /// What NTS-44 leaves closed: zero (NTS-42 E), a denominator without a fraction noun (NTS-42 D), and 10^12 and
-    /// above (NTS-42 F), a bare final <c>jeden</c> included.
+    /// What NTS-44 leaves closed: zero (NTS-42 E) and a denominator without a fraction noun (NTS-42 D). From 10^12 a bare
+    /// final <c>jeden</c>, closed with the whole of NTS-42 F until then, reads exactly as after <c>milión</c> since NTS-42 F
+    /// (the scale noun before it is not the last component and keeps its absolute form).
     /// </summary>
     [TestMethod]
     public void StillClosed()
     {
-        BigInteger[] numerators = [0, BigInteger.Pow(10, 12) + 1, BigInteger.Pow(10, 12) + 101];
-        foreach (BigInteger numerator in numerators)
-            foreach (string variant in s_slovakObliqueCases)
-                Assert.ThrowsExactly<NotSupportedException>(() => Slovak().ConvertFraction(numerator, 3, variant), $"{numerator} {variant}");
+        foreach (string variant in s_slovakObliqueCases)
+            Assert.ThrowsExactly<NotSupportedException>(() => Slovak().ConvertFraction(BigInteger.Zero, 3, variant), variant);
         foreach (string variant in s_slovakObliqueCases)
             Assert.ThrowsExactly<NotSupportedException>(() => Slovak().ConvertFraction(101, 23, variant), variant);
+        foreach (int tail in new[] { 1, 101 })
+            foreach (string variant in s_slovakObliqueCases)
+                Assert.AreEqual(
+                    Slovak().ConvertFraction(1_000_000 + tail, 3, variant).Replace("milión", "bilión"),
+                    Slovak().ConvertFraction(BigInteger.Pow(10, 12) + tail, 3, variant),
+                    $"{tail} {variant}");
     }
 
     /// <summary>

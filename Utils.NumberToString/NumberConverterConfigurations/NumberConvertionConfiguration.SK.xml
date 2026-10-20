@@ -118,6 +118,64 @@
                 <Suffix>ón</Suffix>
                 <Suffix>ard</Suffix>
             </Suffixes>
+            <!-- NTS-36: the SCALE-LONG Conway tables in Slovak spelling. Attested: bilión (KSSJ 4: bilión -a m.
+                 čísl. zákl.), biliarda, trilión, triliarda, kvadrilión, kvadriliarda, kvintilión, sextilión,
+                 septilión (Slovník cudzích slov, slovnik.sk, Ringier / R. Andraščík: kvadrilión "bilión biliónov",
+                 kvadriliarda "číslo 10^27"); qu is written kv, x and the other letters are kept. The other
+                 components follow the spelling of the domesticated Latin loans, each attested in the KSSJ 4 or the
+                 PSP 2013: qu → kv (kvadrant, kvinteto, kvinta: kvadragint-, kvinkva), c read [k] → k (oktáva,
+                 okteto, oktán: okti-, okto, oktogint-, oktingenti), c read [ts] kept (deciliter, centiliter: deci,
+                 centi, ducenti, trecenti, sescenti), x kept (sexta, sexteto: sexti, sexagint-), a Latin double
+                 consonant simplified (atribút < attributum: kvatuor). Conway's construction and linking markers are
+                 unchanged (NTS-24); only the spelling of the components differs from SCALE-LONG. -->
+            <Scale0Prefixes>
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="mi" />
+                <Digit digit="2" string="bi" />
+                <Digit digit="3" string="tri" />
+                <Digit digit="4" string="kvadri" />
+                <Digit digit="5" string="kvinti" />
+                <Digit digit="6" string="sexti" />
+                <Digit digit="7" string="septi" />
+                <Digit digit="8" string="okti" />
+                <Digit digit="9" string="noni" />
+            </Scale0Prefixes>
+            <UnitsPrefixes>
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="un" />
+                <Digit digit="2" string="duo" />
+                <Digit digit="3" string="tre(s)" />
+                <Digit digit="4" string="kvatuor" />
+                <Digit digit="5" string="kvinkva" />
+                <Digit digit="6" string="se(xs)" />
+                <Digit digit="7" string="septe(mn)" />
+                <Digit digit="8" string="okto" />
+                <Digit digit="9" string="nove(mn)" />
+            </UnitsPrefixes>
+            <TensPrefixes>
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="(n)deci" />
+                <Digit digit="2" string="(ms)viginti" />
+                <Digit digit="3" string="(ns)trigint[a|-illi=>i]" />
+                <Digit digit="4" string="(ns)kvadragint[a|-illi=>i]" />
+                <Digit digit="5" string="(ns)kvinkvagint[a|-illi=>i]" />
+                <Digit digit="6" string="(n)sexagint[a|-illi=>i]" />
+                <Digit digit="7" string="(n)septuagint[a|-illi=>i]" />
+                <Digit digit="8" string="(mxs)oktogint[a|-illi=>i]" />
+                <Digit digit="9" string="nonagint[a|-illi=>i]" />
+            </TensPrefixes>
+            <HundredsPrefixes>
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="(nxs)centi" />
+                <Digit digit="2" string="(n)ducenti" />
+                <Digit digit="3" string="(ns)trecenti" />
+                <Digit digit="4" string="(ns)kvadringenti" />
+                <Digit digit="5" string="(ns)kvingenti" />
+                <Digit digit="6" string="(n)sescenti" />
+                <Digit digit="7" string="(n)septingenti" />
+                <Digit digit="8" string="(mxs)oktingenti" />
+                <Digit digit="9" string="nongenti" />
+            </HundredsPrefixes>
             <!-- NTS-30B: nominative singular after one, nominative plural after 2-4, genitive plural otherwise;
                  a compound (dvadsaťjeden, dvadsaťdva) is one indeclinable word governing the genitive plural
                  (PSP 2000: štyri milióny, päť miliónov, tri miliardy; KSSJ 4 / PSP 2013: miliarda -y -iárd ž.;
@@ -141,12 +199,30 @@
                  is masculine: bilión, dva bilióny, päť biliónov (KSSJ 4: bilión -a m. čísl. zákl.; PSP 2000:
                  sedem biliónov); -arda is feminine like miliarda: jedna biliarda, dve biliardy, päť biliárd
                  (KSSJ 4 / PSP 2013: miliarda -y -árd ž.; Slovak Wikipedia "Biliarda": biliarda, triliarda,
-                 kvadriliarda). A one-word compound stays indeclinable (dvadsaťdva biliárd, NTS-30B). -->
+                 kvadriliarda). A one-word compound stays indeclinable (dvadsaťdva biliárd, NTS-30B).
+                 NTS-42 F: the singular.* and plural.* keys are the cases the fraction plugin declines
+                 (SlovakOrdinalLanguageSpecifics, through the converter: the plugin holds no Conway name). The -ón
+                 family is declined like milión, the numeral of KSSJ 4 "bilión -a ... milión miliónov", pattern dub
+                 (Morfológia slovenského jazyka 1966, 329–330: miliónu, milióne, miliónom; pl. miliónov, miliónom,
+                 miliónoch, miliónmi); its genitive singular is lexical in that pattern (-a or -u) and attested for
+                 bilión -a only, so it is not declared and that form fails closed. The -arda family is declined like
+                 miliarda, pattern žena (Morfológia 101, 330; KSSJ 4 / PSP 2013: miliarda -y -árd ž.). -->
             <GeneratedScaleForm suffix="0" formSelector="CzechSlovakPluralLexicalFormSelector">
                 <Forms>
                     <Form key="one" value="ón" />
                     <Form key="few" value="óny" />
                     <Form key="other" value="ónov" />
+                    <Form key="singular.nominative" value="ón" />
+                    <Form key="singular.dative" value="ónu" />
+                    <Form key="singular.accusative" value="ón" />
+                    <Form key="singular.locative" value="óne" />
+                    <Form key="singular.instrumental" value="ónom" />
+                    <Form key="plural.nominative" value="óny" />
+                    <Form key="plural.genitive" value="ónov" />
+                    <Form key="plural.dative" value="ónom" />
+                    <Form key="plural.accusative" value="óny" />
+                    <Form key="plural.locative" value="ónoch" />
+                    <Form key="plural.instrumental" value="ónmi" />
                 </Forms>
             </GeneratedScaleForm>
             <GeneratedScaleForm suffix="1" formSelector="CzechSlovakPluralLexicalFormSelector">
@@ -154,6 +230,18 @@
                     <Form key="one" value="arda" forceVariants="gender=ženský" />
                     <Form key="few" value="ardy" forceVariants="gender=ženský" />
                     <Form key="other" value="árd" />
+                    <Form key="singular.nominative" value="arda" />
+                    <Form key="singular.genitive" value="ardy" />
+                    <Form key="singular.dative" value="arde" />
+                    <Form key="singular.accusative" value="ardu" />
+                    <Form key="singular.locative" value="arde" />
+                    <Form key="singular.instrumental" value="ardou" />
+                    <Form key="plural.nominative" value="ardy" />
+                    <Form key="plural.genitive" value="árd" />
+                    <Form key="plural.dative" value="ardám" />
+                    <Form key="plural.accusative" value="ardy" />
+                    <Form key="plural.locative" value="ardách" />
+                    <Form key="plural.instrumental" value="ardami" />
                 </Forms>
             </GeneratedScaleForm>
         </NumberScale>
