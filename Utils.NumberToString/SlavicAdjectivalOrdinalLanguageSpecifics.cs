@@ -807,7 +807,8 @@ public sealed partial class SlovakOrdinalLanguageSpecifics : SlavicAdjectivalOrd
 /// the multipliers 1–89 except a final <c>один</c> after the tens; the other round multipliers are declined.
 /// </summary>
 /// <remarks>The apostrophe is the ASCII one used by the Ukrainian cardinal configuration (<c>п'ять</c>).</remarks>
-public sealed partial class UkrainianOrdinalLanguageSpecifics : SlavicAdjectivalOrdinalLanguageSpecifics, IFractionLanguageSpecifics
+public sealed partial class UkrainianOrdinalLanguageSpecifics : SlavicAdjectivalOrdinalLanguageSpecifics, IFractionLanguageSpecifics,
+    IScaleNounFractionLanguageSpecifics
 {
     /// <summary>
     /// Reads a fraction as Український правопис 2019, §107.1, does: the numerator in the feminine, the denominator the
@@ -820,23 +821,49 @@ public sealed partial class UkrainianOrdinalLanguageSpecifics : SlavicAdjectival
     /// <c>тридцять чотири сорок третіх</c>, Літвінова). The denominator is any ordinal this class forms (<c>одна
     /// тисячна</c>, <c>дві двадцять п'ятих</c>). The other cases decline the numerator as a cardinal and the
     /// denominator as an ordinal (§107: <c>двом третім</c>, <c>трьома п'ятими</c>; NTS-40, see
-    /// <see cref="TryBuildObliqueFraction"/>), the numerator up to the milliards. A zero numerator (no source reads it)
-    /// and a denominator of one fail closed.
+    /// <see cref="TryBuildObliqueFraction"/>). A zero numerator is the noun <c>нуль</c>, which governs the genitive plural
+    /// in every case (<c>нуль третіх</c>, <c>нулем третіх</c>; NTS-42 E, see <see cref="s_zeroCases"/>). From 10^12 the
+    /// scale nouns are the converter's (NTS-42 F): the generated <c>трильйон</c>, <c>квадрильйон</c> … declined after the
+    /// paradigm the UK configuration declares on its <c>&lt;GeneratedScaleForm&gt;</c> (<i>одним трильйоном третіх</i>);
+    /// called without the converter, this overload declines no scale from 10^12. A denominator of one fails closed.
     /// </summary>
     /// <inheritdoc />
     public bool TryGetFractionDenominator(BigInteger numerator, BigInteger denominator, IReadOnlyDictionary<string, string> variants,
         out FractionDenominatorReading? reading)
+        => TryGetFractionDenominator(numerator, denominator, variants, null, out reading);
+
+    /// <inheritdoc cref="TryGetFractionDenominator(BigInteger, BigInteger, IReadOnlyDictionary{string, string}, out FractionDenominatorReading?)"/>
+    bool IScaleNounFractionLanguageSpecifics.TryGetFractionDenominator(BigInteger numerator, BigInteger denominator,
+        IReadOnlyDictionary<string, string> variants, IScaleNounSource scaleNouns, out FractionDenominatorReading? reading)
+        => TryGetFractionDenominator(numerator, denominator, variants, scaleNouns, out reading);
+
+    /// <summary>Reads a fraction (see <see cref="TryGetFractionDenominator(BigInteger, BigInteger, IReadOnlyDictionary{string, string}, out FractionDenominatorReading?)"/>).</summary>
+    /// <param name="numerator">The absolute value of the numerator (may be zero).</param>
+    /// <param name="denominator">The denominator, at least one.</param>
+    /// <param name="variants">The caller's effective variant query.</param>
+    /// <param name="scaleNouns">The converter's scale nouns, or <see langword="null"/>.</param>
+    /// <param name="reading">Receives the reading.</param>
+    /// <returns><see langword="true"/> when the language has a reading for the fraction.</returns>
+    private bool TryGetFractionDenominator(BigInteger numerator, BigInteger denominator, IReadOnlyDictionary<string, string> variants,
+        IScaleNounSource? scaleNouns, out FractionDenominatorReading? reading)
     {
         reading = null;
-        if (numerator.IsZero || denominator < 2 || denominator > int.MaxValue)
+        if (denominator < 2 || denominator > int.MaxValue)
             return false;
-        var numeratorClass = ClassifyFractionNumerator(numerator, compoundEndingInOneIsSingular: true);
         if (!TryDecompose((int)denominator, out string prefix, out IReadOnlyList<string> components))
             return false;
         string last = components[^1];
         var fractionCase = RequestedFractionCase(variants);
         if (fractionCase != FractionCase.Nominative)
-            return TryBuildObliqueFraction(numerator, prefix, last, fractionCase, out reading);
+            return TryBuildObliqueFraction(numerator, prefix, last, fractionCase, scaleNouns, out reading);
+        if (numerator.IsZero)
+        {
+            // нуль is written by the cardinal pipeline (its zero) and has a gender of its own: nothing is forced on it.
+            string plural = GenitivePlural(last);
+            reading = new FractionDenominatorReading(prefix.Length == 0 ? plural : prefix + " " + plural);
+            return true;
+        }
+        var numeratorClass = ClassifyFractionNumerator(numerator, compoundEndingInOneIsSingular: true);
         string word = numeratorClass == FractionNumeratorClass.One ? Decline(last, Gender.Feminine, 0) : GenitivePlural(last);
         reading = new FractionDenominatorReading(prefix.Length == 0 ? word : prefix + " " + word, FeminineNumerator());
         return true;

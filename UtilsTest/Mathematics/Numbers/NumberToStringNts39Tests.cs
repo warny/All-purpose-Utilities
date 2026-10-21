@@ -340,7 +340,8 @@ public class NumberToStringNts39Tests
 
     /// <summary>
     /// Slovak <c>nula</c> governs the genitive plural (Morfológia: <c>nula stupňov</c>); without a noun, and in Czech,
-    /// zero takes the slash reading (<c>nula lomeno třemi</c>). UK and BG have no sourced reading.
+    /// zero takes the slash reading (<c>nula lomeno třemi</c>). UK <c>нуль</c> governs the genitive plural since NTS-46
+    /// (<c>нуль третіх</c>, <see cref="NumberToStringNts46Tests"/>); BG has no sourced reading.
     /// </summary>
     [TestMethod]
     public void ZeroNumerator()
@@ -354,7 +355,7 @@ public class NumberToStringNts39Tests
         Assert.AreEqual("nula lomeno sto dvaceti", Get("CS").ConvertFraction(0, 120));
         Assert.AreEqual("nula lomeno stem", Get("CS").ConvertFraction(0, 100), "sto alone is stem (IJP)");
         Assert.AreEqual("nula lomeno tisícem", Get("CS").ConvertFraction(0, 1000), "NTS-41: lomeno from 1000");
-        Assert.ThrowsExactly<NotSupportedException>(() => Get("UK").ConvertFraction(0, 3));
+        Assert.AreEqual("нуль третіх", Get("UK").ConvertFraction(0, 3), "NTS-46");
         Assert.ThrowsExactly<NotSupportedException>(() => Get("BG").ConvertFraction(0, 3));
     }
 
@@ -388,14 +389,15 @@ public class NumberToStringNts39Tests
 
     /// <summary>
     /// NTS-40 opened the oblique cases (<see cref="NumberToStringNts40Nts41Tests"/>); a zero numerator stays closed in
-    /// them in UK and CS, SK reading the indeclinable <c>nula</c> with the noun in the case since NTS-45
-    /// (<see cref="NumberToStringNts45Tests"/>), and the CS/SK slash readings (21/37 has no fraction noun) stay
+    /// them in CS, SK reading the indeclinable <c>nula</c> with the noun in the case since NTS-45
+    /// (<see cref="NumberToStringNts45Tests"/>), UK the declined noun <c>нуль</c> with the genitive plural since NTS-46
+    /// (<see cref="NumberToStringNts46Tests"/>), and the CS/SK slash readings (21/37 has no fraction noun) stay
     /// nominative-only.
     /// </summary>
     [TestMethod]
-    [DataRow("UK", "case=родовий", null)]
-    [DataRow("UK", "case=давальний", null)]
-    [DataRow("UK", "case=орудний", null)]
+    [DataRow("UK", "case=родовий", "нуля третіх")]
+    [DataRow("UK", "case=давальний", "нулеві третіх")]
+    [DataRow("UK", "case=орудний", "нулем третіх")]
     [DataRow("CS", "case=genitiv", null)]
     [DataRow("CS", "case=dativ", null)]
     [DataRow("CS", "case=instrumentál", null)]

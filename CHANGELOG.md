@@ -43,6 +43,17 @@ All notable changes to this project will be documented in this file.
 - Added `ItalianOrdinalLanguageSpecifics`, restricting Italian ordinals to verified forms.
 - Added `WolofOrdinalLanguageSpecifics`, a domain guard rejecting the Wolof ordinals of zero and of the round thousands.
 
+### Fixed — `omy.Utils.NumberToString` (NTS-46: NTS-42 E/UK and F/UK closed)
+- Ukrainian fractions with a zero numerator, which failed closed in every case, now read `нуль` declined as a noun with
+  the denominator in the genitive plural, as after `тисяча` (`нуль третіх`, `нуля третіх`, `нулеві третіх`, `нулем
+  третіх`, `нулю третіх`), after a Ukrainian university course (ПНТУ 2015: the part counted by `нуль` is not declined)
+  and the VESUM paradigm of `нуль` (first forms).
+- Ukrainian fractions whose numerator reaches 10^12, which failed closed in the oblique cases, now decline the generated
+  scale nouns (`одним трильйоном третіх`, `двадцяти одному трильйонові третіх`, `двома квадрильйонами трьома
+  трильйонами п'ятьма третіми`). The case forms are `singular.<case>` / `plural.<case>` keys of the UK
+  `<GeneratedScaleForm>`, read through the internal `IScaleNounSource` (NTS-42 F), so the plugin holds no generated
+  name. Cardinals, nominative fractions and every other language are unchanged; no public API or XSD change.
+
 ### Fixed — `omy.Utils.NumberToString` (NTS-45: NTS-42 A, B and E/SK closed)
 - Czech fractions whose numerator or scale multiplier ends in a compound *jedna* (21, 101, 1001, 21 000, 21 × 10^12),
   which failed closed in the oblique cases and in the *lomeno* reading, now read: the final one is declined with every

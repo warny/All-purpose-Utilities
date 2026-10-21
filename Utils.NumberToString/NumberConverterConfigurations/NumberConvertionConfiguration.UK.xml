@@ -148,12 +148,29 @@
             <!-- NTS-30C: every generated scale (трильйон, квадрильйон, …) is a masculine noun of the
                  second declension declined like мільйон: трильйон, два трильйони, п'ять трильйонів
                  (Горох, "трильйон", словозміна; uk.wiktionary "трильйон": 5 трильйонів; Unicode CLDR
-                 plural rules, uk). The forms are suffix fragments joined to the Conway prefix. -->
+                 plural rules, uk). The forms are suffix fragments joined to the Conway prefix.
+                 NTS-42 F: the case keys are read by UkrainianOrdinalLanguageSpecifics for the oblique cases of
+                 fractions (одним трильйоном третіх). Paradigm of the second declension, hard group, as мільйон
+                 (VESUM via Горох "трильйон", "квадрильйон", "квінтильйон": -а, -ові/-у, -ом, -і/-ові/-у; pl. -и,
+                 -ів, -ам, -ами, -ах; ПНТУ 2015: трильйон, квадрильйон "відмінюються як іменники"); the first VESUM
+                 form of each cell, as the plugin keeps for мільйон (мільйонові, мільйоні). -->
             <GeneratedScaleForm suffix="0" formSelector="UkrainianPluralLexicalFormSelector">
                 <Forms>
                     <Form key="one" value="йон" />
                     <Form key="few" value="йони" />
                     <Form key="many" value="йонів" />
+                    <Form key="singular.nominative" value="йон" />
+                    <Form key="singular.genitive" value="йона" />
+                    <Form key="singular.dative" value="йонові" />
+                    <Form key="singular.accusative" value="йон" />
+                    <Form key="singular.locative" value="йоні" />
+                    <Form key="singular.instrumental" value="йоном" />
+                    <Form key="plural.nominative" value="йони" />
+                    <Form key="plural.genitive" value="йонів" />
+                    <Form key="plural.dative" value="йонам" />
+                    <Form key="plural.accusative" value="йони" />
+                    <Form key="plural.locative" value="йонах" />
+                    <Form key="plural.instrumental" value="йонами" />
                 </Forms>
             </GeneratedScaleForm>
         </NumberScale>
