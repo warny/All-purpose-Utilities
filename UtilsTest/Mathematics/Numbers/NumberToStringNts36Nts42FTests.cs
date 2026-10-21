@@ -21,8 +21,9 @@ namespace UtilsTest.NumberToString;
 /// NTS-42 F sources: the IJP paradigms of <i>bilion</i> … <i>septilion</i> (masculine inanimate, <c>-u</c>, <c>-u</c>,
 /// <c>-em</c>; plural <c>-y</c>, <c>-ů</c>, <c>-ům</c>, <c>-ech</c>) and <i>biliarda</i>, <i>triliarda</i> (feminine,
 /// <c>žena</c>); Slovak: the <c>dub</c> paradigm of <i>milión</i> (Morfológia slovenského jazyka, 1966, 330) for the
-/// masculine family, whose genitive singular is lexical (<i>bilión -a</i>, KSSJ; <i>trilión -u</i>, <i>kvadrilión
-/// -u</i>, Slovník cudzích slov) and therefore not generated, and the <c>žena</c> paradigm of <i>miliarda</i> for the
+/// masculine family, whose genitive singular is lexical in <c>dub</c> (<i>bilión -a</i>, KSSJ), left closed here and
+/// opened by NTS-47 (<i>bilión, trilión, kvadrilión, kvintilión -a</i>, PSP; see <c>NumberToStringNts47Tests</c>), and
+/// the <c>žena</c> paradigm of <i>miliarda</i> for the
 /// feminine family. The construction rules are those of NTS-40/41 (CS: every part declined; SK: only the last
 /// component). The expected strings apply those rules; they are not quotations.
 /// </para>
@@ -276,15 +277,16 @@ public class NumberToStringNts36Nts42FTests
         => Assert.AreEqual(expected, Get("SK").ConvertFraction(BigInteger.One, BigInteger.Parse(denominator)));
 
     /// <summary>
-    /// What stays closed in Slovak: the genitive singular of a final generated <c>-ón</c> noun (lexical: <i>bilión
-    /// -a</i>, <i>trilión -u</i>), zero (E) and the <c>lomené</c> reading in an oblique case (D).
+    /// What stays closed in Slovak: the <c>lomené</c> reading in an oblique case (D). The genitive singular of a final
+    /// generated <c>-ón</c> noun, closed by NTS-42 F, reads since NTS-47 (<i>bilióna</i>, <i>trilióna</i>; exact
+    /// readings in <c>NumberToStringNts47Tests</c>).
     /// </summary>
     [TestMethod]
     public void Nts42F_Slovak_StillClosed()
     {
         var sk = Get("SK");
-        Assert.ThrowsExactly<NotSupportedException>(() => sk.ConvertFraction(E(1, 12), 3, "case=genitív"), "bilión gen. sg.");
-        Assert.ThrowsExactly<NotSupportedException>(() => sk.ConvertFraction(E(1, 18), 3, "case=genitív"), "trilión gen. sg.");
+        Assert.AreEqual("jedného bilióna tretín", sk.ConvertFraction(E(1, 12), 3, "case=genitív"), "bilión gen. sg. (NTS-47)");
+        Assert.AreEqual("jedného trilióna tretín", sk.ConvertFraction(E(1, 18), 3, "case=genitív"), "trilión gen. sg. (NTS-47)");
         Assert.ThrowsExactly<NotSupportedException>(() => sk.ConvertFraction(BigInteger.One, E(1, 12), "case=datív"), "D");
         Assert.AreEqual("jedného milióna tretín", sk.ConvertFraction(1_000_000, 3, "case=genitív"));
     }

@@ -43,6 +43,17 @@ All notable changes to this project will be documented in this file.
 - Added `ItalianOrdinalLanguageSpecifics`, restricting Italian ordinals to verified forms.
 - Added `WolofOrdinalLanguageSpecifics`, a domain guard rejecting the Wolof ordinals of zero and of the round thousands.
 
+### Fixed — `omy.Utils.NumberToString` (NTS-47: last audit of NTS-42)
+- Slovak fractions whose numerator ends in a generated `-ón` scale noun after one, which failed closed in the genitive,
+  now read its genitive singular in `-óna` (`jedného bilióna tretín`, `jedného trilióna tretín`, `jedného kvadrilióna
+  tretín`, up to the engine's own names such as `jedného milikvadrilióna tretín`), after the Pravidlá slovenského
+  pravopisu (`bilión`, `trilión`, `kvadrilión`, `kvintilión -a`) and the `dub` declension of the series (Kultúra slova
+  2003). Configuration only: one `singular.genitive` key on the SK `<GeneratedScaleForm>`; no public API or XSD change.
+- NTS-42 is closed. The Czech and Slovak `lomeno`/`lomené` readings under an external case (grammatical construction
+  not established) and the Czech zero numerator in an oblique case (`nula` attested both declined and indeclinable, no
+  canonical form) are deliberately unsupported: `ConvertFraction` throws `NotSupportedException` for them by decision,
+  documented in `Utils.NumberToString/docs/NTS-42-deliberate-closures.md` and next to the CS and SK language specifics.
+
 ### Fixed — `omy.Utils.NumberToString` (NTS-46: NTS-42 E/UK and F/UK closed)
 - Ukrainian fractions with a zero numerator, which failed closed in every case, now read `нуль` declined as a noun with
   the denominator in the genitive plural, as after `тисяча` (`нуль третіх`, `нуля третіх`, `нулеві третіх`, `нулем

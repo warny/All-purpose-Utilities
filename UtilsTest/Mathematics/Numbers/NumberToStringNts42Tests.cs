@@ -179,7 +179,8 @@ public class NumberToStringNts42Tests
     /// Family D (characterization): a fraction read with <c>lomeno</c>/<c>lomené</c> (no fraction noun) is not
     /// implemented in any case but the nominative, the accusative included, while its nominative reading stays open.
     /// Not established: <i>lomeno</i> itself is invariable and governs the instrumental (SSJČ <i>dvě lomeno třemi</i>),
-    /// but no source shows the whole <i>x lomeno y</i> phrase in a sentence that requires an oblique case.
+    /// but no source shows the whole <i>x lomeno y</i> phrase in a sentence that requires an oblique case. Closed by
+    /// NTS-47 as deliberately unsupported (<c>docs/NTS-42-deliberate-closures.md</c>).
     /// </summary>
     [TestMethod]
     [DataRow("CS", 1L, 21L)]
@@ -211,7 +212,8 @@ public class NumberToStringNts42Tests
     /// NTS-45 (Peciar, Slovenská reč 23, 1958: <i>nula</i> indeclinable with a counted noun, <i>s nula celými</i>): it
     /// reads in every oblique case, <c>nula</c> unchanged (exact readings in <c>NumberToStringNts45Tests</c>). UK zero was
     /// opened by NTS-46: the declined noun <c>нуль</c> with the denominator in the genitive plural (<c>нулем третіх</c>;
-    /// exact readings in <c>NumberToStringNts46Tests</c>).
+    /// exact readings in <c>NumberToStringNts46Tests</c>). The CS closure is deliberately unsupported since NTS-47 (the
+    /// cardinal <c>nula</c> attested both declined and indeclinable; <c>docs/NTS-42-deliberate-closures.md</c>).
     /// </summary>
     [TestMethod]
     public void E_ZeroNumerator_ClosedInEveryObliqueCase()
@@ -323,9 +325,9 @@ public class NumberToStringNts42Tests
 
     /// <summary>
     /// Family F, CS and SK (characterization): opened by NTS-42 F, the exact readings being pinned by
-    /// <c>NumberToStringNts36Nts42FTests</c>. The family's numerators read in every oblique case but the closure that
-    /// remains documented: the SK genitive singular of a generated <c>-ón</c> noun (<c>bilión</c>, <c>kvadrilión</c>:
-    /// lexical ending); CS 10^12 + 1 (family A) reads since NTS-45.
+    /// <c>NumberToStringNts36Nts42FTests</c>. The family's numerators read in every oblique case: CS 10^12 + 1 (family A)
+    /// since NTS-45, the SK genitive singular of a generated <c>-ón</c> noun (<c>bilióna</c>, <c>kvadrilióna</c>) since
+    /// NTS-47 (exact readings in <c>NumberToStringNts47Tests</c>).
     /// </summary>
     [TestMethod]
     [DataRow("CS")]
@@ -338,14 +340,7 @@ public class NumberToStringNts42Tests
         foreach (BigInteger numerator in numerators)
         {
             foreach (string variant in cases)
-            {
-                bool closed = language == "SK"
-                    && variant == "case=genitív" && (numerator == first || numerator == BigInteger.Pow(10, 24));
-                if (closed)
-                    AssertClosed(language, numerator, 3, [variant]);
-                else
-                    Assert.IsFalse(string.IsNullOrWhiteSpace(Get(language).ConvertFraction(numerator, 3, variant)), $"{numerator} {variant}");
-            }
+                Assert.IsFalse(string.IsNullOrWhiteSpace(Get(language).ConvertFraction(numerator, 3, variant)), $"{numerator} {variant}");
         }
     }
 
