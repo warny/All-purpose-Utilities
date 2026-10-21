@@ -100,8 +100,15 @@ public sealed partial class SlovakOrdinalLanguageSpecifics
     /// počítaného predmetu je vždy v G. pl.</i>). A scale noun followed by a lower group is not the last component and
     /// does not govern the noun: the last component does (<i>jeden milión jeden tretinám</i>, <i>jeden milión
     /// dvadsaťjeden tretinám</i>). The noun follows the pattern <c>žena</c> (<c>tretina</c>) or
-    /// <c>ulica</c> (<c>polovica</c>). A zero numerator fails closed (<c>nula</c> is read only in the direct cases, 317:
-    /// <i>nula stupňov</i>).
+    /// <c>ulica</c> (<c>polovica</c>). A zero numerator keeps <c>nula</c> in its absolute form and declines the noun alone
+    /// (NTS-42 E): Š. Peciar, "Nula celých, či nula celá?", Slovenská reč 23 (1958), 117–118, states that <c>nula</c>
+    /// becomes indeclinable with a counted noun, "dobre vidno z nepriamych pádov" (<i>na nula stupňov</i>, <i>z nula
+    /// percent</i>, <i>s nula celými</i>, not <i>na nulu</i>, <i>z nuly</i>, <i>s nulou</i>), like <c>sto</c> and
+    /// <c>tisíc</c>, whose noun alone changes (<i>pred sto rohmi</i>); Kultúra slova 36 (2002), 5, opposes the declined
+    /// noun (<i>napísať nulu</i>, <i>nad nulou</i>) to the quantifier, which "sa neskloňuje" (<i>pri nula stupňoch</i>);
+    /// so <i>nula tretín</i> (genitive and accusative,
+    /// as the nominative: Morfológia 317, <i>nula stupňov</i>), <i>nula tretinám</i>, <i>nula tretinách</i>, <i>nula
+    /// tretinami</i>. The <c>nula</c> is the converter's cardinal, as in the nominative.
     /// </summary>
     /// <param name="numerator">The numerator.</param>
     /// <param name="forms">The fraction noun.</param>
@@ -113,10 +120,13 @@ public sealed partial class SlovakOrdinalLanguageSpecifics
         IScaleNounSource? scaleNouns, out FractionDenominatorReading? reading)
     {
         reading = null;
-        if (numerator.IsZero)
-            return false;
         int column = (int)fractionCase;
         bool direct = fractionCase == FractionCase.Accusative;
+        if (numerator.IsZero)
+        {
+            reading = new FractionDenominatorReading(DeclineFractionNoun(forms, plural: true, direct ? FractionCase.Genitive : fractionCase));
+            return true;
+        }
         if (numerator.IsOne)
         {
             reading = FractionDenominatorReading.WithNumerator(s_oneFeminineCases[column], DeclineFractionNoun(forms, plural: false, fractionCase));

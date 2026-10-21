@@ -43,6 +43,16 @@ All notable changes to this project will be documented in this file.
 - Added `ItalianOrdinalLanguageSpecifics`, restricting Italian ordinals to verified forms.
 - Added `WolofOrdinalLanguageSpecifics`, a domain guard rejecting the Wolof ordinals of zero and of the round thousands.
 
+### Fixed — `omy.Utils.NumberToString` (NTS-45: NTS-42 A, B and E/SK closed)
+- Czech fractions whose numerator or scale multiplier ends in a compound *jedna* (21, 101, 1001, 21 000, 21 × 10^12),
+  which failed closed in the oblique cases and in the *lomeno* reading, now read: the final one is declined with every
+  other part and agrees with what it counts, the noun then in the singular of the case (`dvaceti jedné setiny`, `sto
+  jednou třetinou`, `dvaceti jednomu tisíci třetin`, `dvaceti jedné miliardě třetin`, `jedna lomeno dvaceti jedním
+  tisícem`). The nominative and accusative are unchanged (`dvacet jedna třetin`).
+- Slovak zero numerators with a fraction noun, which failed closed in the oblique cases, now keep `nula` and decline the
+  noun (`nula tretinám`, `nula tretinami`), after Peciar (Slovenská reč 1958). The Czech zero and the CS/SK slash
+  readings under an oblique case stay closed. No public API, XSD or configuration change; no other language changes.
+
 ### Fixed — `omy.Utils.NumberToString` (NTS-36 and NTS-42 F closed)
 - Czech and Slovak large-scale names now come from Conway tables in their own spelling (intentional output change from
   10^24): CS `quadrilion` → `kvadrilion`, `quintiliarda` → `kvintiliarda`, `octilion` → `oktilion`,

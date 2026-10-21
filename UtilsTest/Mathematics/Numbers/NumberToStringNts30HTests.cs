@@ -302,8 +302,9 @@ public class NumberToStringNts30HTests
     /// <summary>
     /// <c>ku</c> reads a ratio and is never produced; 1/13 (IJP noun), compound numerators (genitive plural) and zero
     /// (<c>lomeno</c>) were opened by NTS-39 (<see cref="NumberToStringNts39Tests"/>), the denominators ending in one by
-    /// NTS-41 and the oblique cases of the fraction nouns by NTS-40 (<see cref="NumberToStringNts40Nts41Tests"/>); the
-    /// oblique cases of a compound numerator ending in <c>jedna</c> and of the <c>lomeno</c> reading still fail closed.
+    /// NTS-41 and the oblique cases of the fraction nouns by NTS-40 (<see cref="NumberToStringNts40Nts41Tests"/>), the
+    /// oblique cases of a compound numerator ending in <c>jedna</c> by NTS-45 (<see cref="NumberToStringNts45Tests"/>);
+    /// the oblique cases of the <c>lomeno</c> reading still fail closed.
     /// </summary>
     [TestMethod]
     public void Czech_FailsClosed()
@@ -316,7 +317,7 @@ public class NumberToStringNts30HTests
         Assert.AreEqual("dvacet dva třetin", cs.ConvertFraction(22, 3), "NTS-39");
         Assert.AreEqual("nula lomeno třemi", cs.ConvertFraction(0, 3), "NTS-39");
         Assert.AreEqual("jedné třetiny", cs.ConvertFraction(1, 3, "case=genitiv"), "NTS-40");
-        Assert.ThrowsExactly<NotSupportedException>(() => cs.ConvertFraction(21, 100, "case=genitiv"), "compound ending in jedna");
+        Assert.AreEqual("dvaceti jedné setiny", cs.ConvertFraction(21, 100, "case=genitiv"), "NTS-45: compound ending in jedna");
         Assert.ThrowsExactly<NotSupportedException>(() => cs.ConvertFraction(1, 23, "case=genitiv"), "lomeno is nominative only");
     }
 

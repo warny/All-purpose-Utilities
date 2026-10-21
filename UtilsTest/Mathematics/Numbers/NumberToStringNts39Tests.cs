@@ -151,18 +151,19 @@ public class NumberToStringNts39Tests
     }
 
     /// <summary>
-    /// The Czech reading still fails closed for a multiplier ending in one after the tens or hundreds (no source gives
-    /// the gender of its <c>jedna</c> in the instrumental), from 10^12 as below. The denominators ending in one and those
-    /// from 1000 that NTS-39 left closed were opened by NTS-41 (<see cref="NumberToStringNts40Nts41Tests"/>), those from
-    /// 10^12 by NTS-42 F (<see cref="NumberToStringNts36Nts42FTests"/>: <c>jedna lomeno jedním bilionem jednou</c>).
+    /// A multiplier ending in one after the tens or hundreds, closed until NTS-45, declines in the instrumental in
+    /// agreement with its scale noun (NTS-42 B, <see cref="NumberToStringNts45Tests"/>), from 10^12 as below. The
+    /// denominators ending in one and those from 1000 that NTS-39 left closed were opened by NTS-41
+    /// (<see cref="NumberToStringNts40Nts41Tests"/>), those from 10^12 by NTS-42 F
+    /// (<see cref="NumberToStringNts36Nts42FTests"/>: <c>jedna lomeno jedním bilionem jednou</c>).
     /// </summary>
     [TestMethod]
-    [DataRow(1L, 21_000L)]
-    [DataRow(1L, 101_000L)]
-    [DataRow(1L, 31_000_000L)]
-    [DataRow(1L, 21_000_000_000_000L)]
-    public void Czech_StillClosed(long numerator, long denominator)
-        => Assert.ThrowsExactly<NotSupportedException>(() => Get("CS").ConvertFraction(numerator, denominator));
+    [DataRow(1L, 21_000L, "jedna lomeno dvaceti jedním tisícem")]
+    [DataRow(1L, 101_000L, "jedna lomeno sto jedním tisícem")]
+    [DataRow(1L, 31_000_000L, "jedna lomeno třiceti jedním milionem")]
+    [DataRow(1L, 21_000_000_000_000L, "jedna lomeno dvaceti jedním bilionem")]
+    public void Czech_MultiplierEndingInOne_OpenedByNts45(long numerator, long denominator, string expected)
+        => Assert.AreEqual(expected, Get("CS").ConvertFraction(numerator, denominator));
 
     // ===== SK compound numerator agreement ===========================================================
 
@@ -387,22 +388,27 @@ public class NumberToStringNts39Tests
 
     /// <summary>
     /// NTS-40 opened the oblique cases (<see cref="NumberToStringNts40Nts41Tests"/>); a zero numerator stays closed in
-    /// them in every language, and the CS/SK slash readings (21/37 has no fraction noun) stay nominative-only.
+    /// them in UK and CS, SK reading the indeclinable <c>nula</c> with the noun in the case since NTS-45
+    /// (<see cref="NumberToStringNts45Tests"/>), and the CS/SK slash readings (21/37 has no fraction noun) stay
+    /// nominative-only.
     /// </summary>
     [TestMethod]
-    [DataRow("UK", "case=родовий")]
-    [DataRow("UK", "case=давальний")]
-    [DataRow("UK", "case=орудний")]
-    [DataRow("CS", "case=genitiv")]
-    [DataRow("CS", "case=dativ")]
-    [DataRow("CS", "case=instrumentál")]
-    [DataRow("SK", "case=genitív")]
-    [DataRow("SK", "case=datív")]
-    [DataRow("SK", "case=inštrumentál")]
-    public void ObliqueCases_StayClosed(string culture, string variant)
+    [DataRow("UK", "case=родовий", null)]
+    [DataRow("UK", "case=давальний", null)]
+    [DataRow("UK", "case=орудний", null)]
+    [DataRow("CS", "case=genitiv", null)]
+    [DataRow("CS", "case=dativ", null)]
+    [DataRow("CS", "case=instrumentál", null)]
+    [DataRow("SK", "case=genitív", "nula tretín")]
+    [DataRow("SK", "case=datív", "nula tretinám")]
+    [DataRow("SK", "case=inštrumentál", "nula tretinami")]
+    public void ObliqueCases_StayClosed(string culture, string variant, string? zero)
     {
         var converter = Get(culture);
-        Assert.ThrowsExactly<NotSupportedException>(() => converter.ConvertFraction(0, 3, variant));
+        if (zero is null)
+            Assert.ThrowsExactly<NotSupportedException>(() => converter.ConvertFraction(0, 3, variant));
+        else
+            Assert.AreEqual(zero, converter.ConvertFraction(0, 3, variant));
         if (culture != "UK")
             Assert.ThrowsExactly<NotSupportedException>(() => converter.ConvertFraction(21, 37, variant));
     }

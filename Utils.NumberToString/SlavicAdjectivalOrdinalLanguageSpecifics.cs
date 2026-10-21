@@ -358,16 +358,18 @@ public sealed partial class CzechOrdinalLanguageSpecifics : SlavicAdjectivalOrdi
     /// set dvacet dva korunám</i>). A <c>jedna</c> ending the denominator (21, 101, 1001) is the feminine instrumental
     /// <c>jednou</c>: a number in an arithmetic operation is feminine (SSČ <c>dva</c>: <i>jedna a dvě (čast. než jeden a
     /// dva) jsou tři</i>; Prandstetter: <i>čtyřmi iks minus jedna</i>), and the mathematical reading declines it so
-    /// (Prandstetter: <i>lomeno jednou celou</i>).
+    /// (Prandstetter: <i>lomeno jednou celou</i>); a multiplier ending in one agrees with its scale noun instead
+    /// (<i>jedna lomeno dvaceti jedním tisícem</i>, <i>dvaceti jednou miliardou</i>: NTS-42 B, see
+    /// <see cref="FinalOne"/>).
     /// The cases other than the nominative read the fraction nouns only (NTS-40, see
-    /// <see cref="TryBuildObliqueNounFraction"/>): no source declines the <c>lomeno</c> reading as a whole, whose
-    /// denominator is already an instrumental. From 10^12 the scale nouns are the converter's (NTS-42 F): the generated
-    /// <c>bilion</c>, <c>biliarda</c>, <c>trilion</c> … declined after the IJP paradigms the CS configuration declares
-    /// (<i>jedním bilionem</i>, <i>dvěma bilionům</i>, <i>pěti biliardami</i>); called without the converter, this
-    /// overload declines no scale from 10^12. Without a sourced form the reading fails closed: a denominator of one, a
-    /// multiplier ending in one after the tens or hundreds in an oblique case (21 000: no source gives the gender of its
-    /// <c>jedna</c> there), and an oblique case of a zero numerator, of a compound numerator ending in <c>jedna</c> or of
-    /// a denominator without a noun.
+    /// <see cref="TryBuildObliqueNounFraction"/>): no source reads a whole <c>lomeno</c> phrase under an external case,
+    /// where its first operand could take the case (<i>s dvěma lomeno třemi</i>) or keep the nominative of the
+    /// arithmetic term (<i>s dvě lomeno třemi</i>; NTS-42 D). From 10^12 the scale nouns are the converter's (NTS-42 F):
+    /// the generated <c>bilion</c>, <c>biliarda</c>, <c>trilion</c> … declined after the IJP paradigms the CS
+    /// configuration declares (<i>jedním bilionem</i>, <i>dvěma bilionům</i>, <i>pěti biliardami</i>); called without the
+    /// converter, this overload declines no scale from 10^12. Without a sourced form the reading fails closed: a
+    /// denominator of one, and an oblique case of a zero numerator (NTS-42 E) or of a denominator without a noun
+    /// (NTS-42 D).
     /// </summary>
     /// <inheritdoc />
     public bool TryGetFractionDenominator(BigInteger numerator, BigInteger denominator, IReadOnlyDictionary<string, string> variants,
@@ -400,7 +402,7 @@ public sealed partial class CzechOrdinalLanguageSpecifics : SlavicAdjectivalOrdi
         }
         if (!numerator.IsZero && TryBuildFractionNoun(numerator, denominator, s_fractionNouns, "standalone", out reading))
             return true;
-        if (DeclineCardinal(denominator, FractionCase.Instrumental, NumeralGender.Feminine, finalOneInstrumental: true, scaleNouns) is not string instrumental)
+        if (DeclineCardinal(denominator, FractionCase.Instrumental, NumeralGender.Feminine, scaleNouns) is not string instrumental)
             return false;
         bool simple = !numerator.IsZero && ClassifyFractionNumerator(numerator, compoundEndingInOneIsSingular: false) != FractionNumeratorClass.Many;
         reading = new FractionDenominatorReading("lomeno " + instrumental, simple ? FeminineNumerator() : NumeratorGender("standalone"));
@@ -582,13 +584,15 @@ public sealed partial class SlovakOrdinalLanguageSpecifics : SlavicAdjectivalOrd
     /// jeden</c>) is indeclinable like <c>dvadsaťjeden</c> (Jarošová 2021, 226) and takes <c>číslom</c>, which suits any
     /// numeral (Ondrus, §6: <i>po substantíve číslo každá číslovka má podobu ako v absolútnom postavení</i>).
     /// The cases other than the nominative read the fraction nouns only (NTS-40, see
-    /// <see cref="TryBuildObliqueNounFraction"/>): the <c>lomené</c> reading is a fixed mathematical phrase no source
-    /// declines. From 10^12 the scale nouns are the converter's (NTS-42 F): the generated <c>bilión</c>, <c>biliarda</c>,
+    /// <see cref="TryBuildObliqueNounFraction"/>): no source reads a whole <c>lomené</c> phrase under an external case,
+    /// where its first operand could take the case (<i>s dvoma lomené troma</i>) or keep its absolute form (<i>s dva
+    /// lomené troma</i>; NTS-42 D); a zero numerator with a fraction noun reads in every case (<i>nula tretinám</i>,
+    /// NTS-42 E). From 10^12 the scale nouns are the converter's (NTS-42 F): the generated <c>bilión</c>, <c>biliarda</c>,
     /// <c>trilión</c> … declined, as the last component, after the patterns <c>dub</c> and <c>žena</c> the SK
     /// configuration declares (<i>jedna lomené jedným biliónom</i>, <i>jedna lomené jednou biliardou</i>); called without
     /// the converter, this overload declines no scale from 10^12. A denominator of one, a scale form no source gives (the
-    /// genitive singular of <c>bilión</c>, see <see cref="DeclineScale"/>) and an oblique case of a zero numerator or of a
-    /// denominator without a noun fail closed; <c>ku</c> reads a ratio, not a fraction.
+    /// genitive singular of <c>bilión</c>, see <see cref="DeclineScale"/>) and an oblique case of a denominator without a
+    /// noun fail closed; <c>ku</c> reads a ratio, not a fraction.
     /// </summary>
     /// <inheritdoc />
     public bool TryGetFractionDenominator(BigInteger numerator, BigInteger denominator, IReadOnlyDictionary<string, string> variants,

@@ -11,7 +11,9 @@ namespace Utils.NumberToString;
 /// IJP lists first, the one of the mathematical reading (E. Prandstetter, "Čtení matematických značek a výrazů", Naše
 /// řeč 22, 1938, 78–86: <i>šedesát osm lomeno třemi sty padesáti šesti</i>), compositional, and the one NTS-39 already
 /// used below 1000; <c>sto</c> followed by another numeral stays undeclined (IJP "Počítaný předmět po číslovkách":
-/// <i>ve sto dvaceti případech</i>).
+/// <i>ve sto dvaceti případech</i>). A <c>jeden/jedna</c> ending a compound (21, 101, 1001, a multiplier 21 000) is
+/// declined with the rest and agrees with what it counts, the counted noun then in the singular of the case (NTS-45, see
+/// <see cref="FinalOne"/>).
 /// </summary>
 public sealed partial class CzechOrdinalLanguageSpecifics
 {
@@ -76,14 +78,44 @@ public sealed partial class CzechOrdinalLanguageSpecifics
     /// <summary><c>miliarda</c>, feminine (<i>dvě miliardy</i>).</summary>
     private static readonly ScaleNoun s_milliard = new(s_milliardSingular, s_milliardPlural, Feminine: true);
 
-    /// <summary>The gender of a numeral's one and two in the nominative and accusative.</summary>
+    /// <summary>The gender of what a numeral counts: the gender of its one, and of its two in the nominative and accusative.</summary>
     private enum NumeralGender
     {
         /// <summary>The masculine (<c>jeden</c>, <c>dva</c>): before <c>tisíc</c>, <c>milion</c> and <c>bilion</c>.</summary>
         Masculine,
-        /// <summary>The feminine (<c>jedna</c>, <c>dvě</c>): a fraction numerator, before <c>miliarda</c> and <c>biliarda</c>.</summary>
+        /// <summary>The feminine (<c>jedna</c>, <c>dvě</c>): a fraction numerator or denominator, before <c>miliarda</c> and <c>biliarda</c>.</summary>
         Feminine,
     }
+
+    /// <summary>
+    /// Whether a number of at least two ends in a compound one (21, 101, 1001, 21 000 000 001; not 11, 111): the
+    /// <c>jeden/jedna</c> that, declined, makes the counted noun agree with it in the singular (see <see cref="FinalOne"/>).
+    /// </summary>
+    /// <param name="number">The number, at least 2.</param>
+    /// <returns><see langword="true"/> when the last word of the numeral is <c>jedna</c>.</returns>
+    private static bool EndsInCompoundOne(BigInteger number) => number % 10 == 1 && number % 100 != 11;
+
+    /// <summary>
+    /// The <c>jeden/jedna</c> ending a compound numeral (21, 101, 1001, 1 000 001) or a multiplier (21 000, 101 000 000),
+    /// shared by the numerators (NTS-42 A), the multipliers (NTS-42 B) and the <c>lomeno</c> denominators (NTS-41). The
+    /// nominative and accusative keep the counting form <c>jedna</c> (<i>dvacet jedna třetin</i>, <i>dvacet jedna
+    /// tisíc</i>: IJP "Počítaný předmět po číslovkách", the genitive "běžnější a přirozenější"). The other cases decline
+    /// it with every other part (IJP "Členění čísel": <i>před třemi sty šedesáti pěti lety</i>) and make it agree with
+    /// what it counts, as the IJP makes the counted noun agree with the last member of a compound when the noun is not in
+    /// the genitive (<i>dvacet jeden žák</i>): the feminine of a fraction noun or of an arithmetic term (<c>jedné</c>,
+    /// <c>jednou</c>), the gender of a scale noun (<c>jednomu tisíci</c>, <c>jedním milionem</c>, <c>jedné
+    /// miliardě</c>); the counted noun is then in the singular of the case. Corpus examples attest this agreement in the
+    /// oblique cases (ČNK, in "Sto jeden žák, či sto jedna žáků", ÚČJTK FF UK, 2009: <i>dožil se devadesáti jednoho
+    /// roku</i>, <i>po sto jednom roce</i>, <i>sto padesát jedním hlasem</i>, the singular prevailing after 101 and
+    /// 1001); the inverted <i>jednadvaceti</i> is not the configuration's word order and has no form for 101.
+    /// </summary>
+    /// <param name="fractionCase">The case.</param>
+    /// <param name="gender">The gender of what the one counts.</param>
+    /// <returns>The form of the one.</returns>
+    private static string FinalOne(FractionCase fractionCase, NumeralGender gender)
+        => fractionCase is FractionCase.Nominative or FractionCase.Accusative
+            ? "jedna"
+            : (gender == NumeralGender.Feminine ? s_oneFeminineCases : s_oneMasculineCases)[(int)fractionCase];
 
     /// <summary>
     /// Returns the noun of a scale: <c>tisíc</c>, <c>milion</c> and <c>miliarda</c> from the tables above, every scale from
@@ -110,9 +142,12 @@ public sealed partial class CzechOrdinalLanguageSpecifics
     /// ending in <c>sto</c>, <c>tisíc</c> or a scale noun (<c>milion</c>, <c>miliarda</c>, <c>bilion</c> …) the noun keeps the genitive plural, the basic
     /// construction the IJP gives for these numerals (<i>tisíce žen</i>, <i>milionu měst</i>; <i>ke stu korun</i>). The
     /// noun follows its IJP paradigm (<c>třetina</c>: <c>třetině</c>, <c>třetinou</c>, <c>třetinám</c>,
-    /// <c>třetinách</c>, <c>třetinami</c>). A compound numerator ending in <c>jedna</c> (21, 101) has no sourced
-    /// oblique form (the IJP gives only <i>dvacet jeden žák</i> / <i>dvacet jedna žáků</i> in the nominative) and fails
-    /// closed outside the accusative, as does a zero numerator.
+    /// <c>třetinách</c>, <c>třetinami</c>). A compound numerator ending in <c>jedna</c> (21, 101, 1001, 10^12 + 1)
+    /// declines its <c>jedna</c> with the noun in the singular of the case (NTS-42 A, see <see cref="FinalOne"/>):
+    /// <i>dvaceti jedné setiny</i>, <i>sto jedné třetině</i>, <i>tisícem jednou třetinou</i>; the accusative keeps the
+    /// counting form of the nominative (<i>dvacet jedna třetin</i>). A zero numerator fails closed: the usage of an
+    /// indeclinable <i>nula</i> before a counted noun (<i>při nula stupních</i>) has no Czech normative source, and the
+    /// IJP declines <c>nula</c> as a noun only (NTS-42 E).
     /// </summary>
     /// <param name="numerator">The numerator.</param>
     /// <param name="forms">The fraction noun.</param>
@@ -131,10 +166,13 @@ public sealed partial class CzechOrdinalLanguageSpecifics
             reading = FractionDenominatorReading.WithNumerator(s_oneFeminineCases[(int)fractionCase], DeclineFractionNoun(forms, plural: false, fractionCase));
             return true;
         }
-        if (DeclineCardinal(numerator, fractionCase, NumeralGender.Feminine, finalOneInstrumental: false, scaleNouns) is not string numeratorText)
+        if (DeclineCardinal(numerator, fractionCase, NumeralGender.Feminine, scaleNouns) is not string numeratorText)
             return false;
-        bool genitivePlural = numerator > 4 && (fractionCase == FractionCase.Accusative || numerator % 100 == 0);
-        string noun = DeclineFractionNoun(forms, plural: true, genitivePlural ? FractionCase.Genitive : fractionCase);
+        bool direct = fractionCase == FractionCase.Accusative;
+        bool genitivePlural = numerator > 4 && (direct || numerator % 100 == 0);
+        string noun = !direct && EndsInCompoundOne(numerator)
+            ? DeclineFractionNoun(forms, plural: false, fractionCase)
+            : DeclineFractionNoun(forms, plural: true, genitivePlural ? FractionCase.Genitive : fractionCase);
         reading = FractionDenominatorReading.WithNumerator(numeratorText, noun);
         return true;
     }
@@ -181,19 +219,19 @@ public sealed partial class CzechOrdinalLanguageSpecifics
     /// accusative, as the CS configuration writes them: <i>dva tisíce</i>, <i>pět milionů</i>, <i>dvacet dva
     /// milionů</i>; the plural of the requested case otherwise: <i>s třemi tisíci</i>, <i>před třemi sty tisíci
     /// lety</i>). The nominative and accusative keep the counting forms of a compound (<i>dvacet jedna</i>,
-    /// <i>dvacet dva</i>). A <c>jedna</c> ending a compound or following a larger group (21, 101, 1001) has an oblique form
-    /// only in the instrumental of the mathematical reading (<paramref name="finalOneInstrumental"/>: <c>jednou</c>, see
-    /// <see cref="TryGetFractionDenominator"/>); a multiplier ending in one after the tens or hundreds (<c>dvacet jedna
-    /// tisíc</c>) has none.
+    /// <i>dvacet dva</i>). A <c>jedna</c> ending the number or a multiplier, after the tens, the hundreds or a larger
+    /// group (21, 101, 1001, 21 000), is <see cref="FinalOne"/>: in the oblique cases it agrees with what it counts, the
+    /// feminine <paramref name="gender"/> of the fraction noun or of the arithmetic term (<c>jedné</c>; <c>jednou</c> in
+    /// the instrumental of the mathematical reading, see <see cref="TryGetFractionDenominator"/>), or the gender of the
+    /// scale noun after a multiplier, which is then in the singular of the case (<i>dvaceti jednomu tisíci</i>,
+    /// <i>dvaceti jedním milionem</i>, <i>dvaceti jedné miliardě</i>).
     /// </summary>
     /// <param name="number">The number, at least 2.</param>
     /// <param name="fractionCase">The case.</param>
-    /// <param name="gender">The gender of a simple one or two in the nominative and accusative.</param>
-    /// <param name="finalOneInstrumental">Whether a final <c>jedna</c> takes the feminine instrumental <c>jednou</c>.</param>
+    /// <param name="gender">The gender of what the number counts (see <see cref="NumeralGender"/>).</param>
     /// <param name="scaleNouns">The converter's scale nouns, or <see langword="null"/> (a scale from 10^12 then has no form).</param>
-    /// <returns>The declined cardinal, or <see langword="null"/> when a part has no sourced form.</returns>
-    private string? DeclineCardinal(BigInteger number, FractionCase fractionCase, NumeralGender gender, bool finalOneInstrumental,
-        IScaleNounSource? scaleNouns)
+    /// <returns>The declined cardinal, or <see langword="null"/> when a scale noun has no sourced form.</returns>
+    private string? DeclineCardinal(BigInteger number, FractionCase fractionCase, NumeralGender gender, IScaleNounSource? scaleNouns)
     {
         var groups = ThousandGroups(number);
         var words = new List<string>();
@@ -207,27 +245,25 @@ public sealed partial class CzechOrdinalLanguageSpecifics
         }
         int units = groups[0];
         if (units == 1 && words.Count > 0)
-        {
             // A jedna after a larger group (1001, 1 000 001) ends the numeral as in a compound.
-            if (fractionCase is FractionCase.Nominative or FractionCase.Accusative)
-                words.Add("jedna");
-            else if (fractionCase == FractionCase.Instrumental && finalOneInstrumental)
-                words.Add("jednou");
-            else
-                return null;
-        }
-        else if (units > 0 && !AppendDeclinedGroup(words, units, fractionCase, gender, finalOneInstrumental))
-            return null;
+            words.Add(FinalOne(fractionCase, gender));
+        else if (units > 0)
+            AppendDeclinedGroup(words, units, fractionCase, gender);
         return string.Join(" ", words);
     }
 
-    /// <summary>Appends a declined scale group: the multiplier and the scale noun in the form the multiplier governs.</summary>
+    /// <summary>
+    /// Appends a declined scale group: the multiplier and the scale noun in the form the multiplier governs. A
+    /// multiplier ending in a compound one (21, 101) agrees with the noun in an oblique case, the noun in the singular of
+    /// the case (<i>dvaceti jednomu tisíci</i>, <i>sto jedním bilionem</i>, see <see cref="FinalOne"/>); in the
+    /// nominative and accusative it keeps the counting form and the genitive plural (<i>dvacet jedna tisíc</i>).
+    /// </summary>
     /// <param name="words">The target word list.</param>
     /// <param name="group">The multiplier, 1–999.</param>
     /// <param name="fractionCase">The case.</param>
-    /// <param name="noun">The scale noun (the multiplier one or two agrees with its gender).</param>
+    /// <param name="noun">The scale noun (the multiplier's one or two agrees with its gender).</param>
     /// <param name="bareOne">Whether a multiplier of one is left out (<c>tisíc</c>, not <c>jeden tisíc</c>).</param>
-    /// <returns><see langword="false"/> when the multiplier or the noun has no sourced form.</returns>
+    /// <returns><see langword="false"/> when the noun has no sourced form.</returns>
     private static bool AppendDeclinedScale(List<string> words, int group, FractionCase fractionCase, ScaleNoun noun, bool bareOne)
     {
         int column = (int)fractionCase;
@@ -242,10 +278,13 @@ public sealed partial class CzechOrdinalLanguageSpecifics
             words.Add(singular);
             return true;
         }
-        int pluralColumn = !direct ? column : group <= 4 ? (int)FractionCase.Nominative : (int)FractionCase.Genitive;
-        if (noun.Plural[pluralColumn] is not string plural || !AppendDeclinedGroup(words, group, fractionCase, gender, finalOneInstrumental: false))
+        string? form = !direct && EndsInCompoundOne(group)
+            ? noun.Singular[column]
+            : noun.Plural[!direct ? column : group <= 4 ? (int)FractionCase.Nominative : (int)FractionCase.Genitive];
+        if (form is null)
             return false;
-        words.Add(plural);
+        AppendDeclinedGroup(words, group, fractionCase, gender);
+        words.Add(form);
         return true;
     }
 
@@ -253,15 +292,13 @@ public sealed partial class CzechOrdinalLanguageSpecifics
     /// Appends a group between 1 and 999 declined for a case: the hundreds (<c>sto</c> alone after its paradigm, before
     /// another numeral undeclined; 200–900 the multiplier and the plural of <c>sto</c>: <i>dvou set</i>, <i>dvěma
     /// stům</i>, <i>o dvou stech</i>, <i>třemi sty</i>), the tens and teens (the paradigm of <c>pět</c>: <c>dvaceti</c>,
-    /// <c>jedenácti</c>) and the units, each declined.
+    /// <c>jedenácti</c>) and the units, each declined; a one after the tens or hundreds is <see cref="FinalOne"/>.
     /// </summary>
     /// <param name="words">The target word list.</param>
     /// <param name="group">The group, 1–999.</param>
     /// <param name="fractionCase">The case.</param>
-    /// <param name="gender">The gender of a simple one or two in the nominative and accusative.</param>
-    /// <param name="finalOneInstrumental">Whether a final <c>jedna</c> after the tens or hundreds takes <c>jednou</c>.</param>
-    /// <returns><see langword="false"/> when the group ends in an unsourced one.</returns>
-    private static bool AppendDeclinedGroup(List<string> words, int group, FractionCase fractionCase, NumeralGender gender, bool finalOneInstrumental)
+    /// <param name="gender">The gender of what the group counts (see <see cref="NumeralGender"/>).</param>
+    private static void AppendDeclinedGroup(List<string> words, int group, FractionCase fractionCase, NumeralGender gender)
     {
         int column = (int)fractionCase;
         bool direct = fractionCase is FractionCase.Nominative or FractionCase.Accusative;
@@ -274,32 +311,23 @@ public sealed partial class CzechOrdinalLanguageSpecifics
         if (remainder >= 10 && remainder < 20)
         {
             words.Add(direct ? s_cardinalTeens[remainder - 10] : s_instrumentalTeens[remainder - 10]);
-            return true;
+            return;
         }
         if (remainder >= 20)
             words.Add(direct ? s_cardinalTens[remainder / 10] : s_instrumentalTens[remainder / 10]);
         int unit = remainder % 10;
         if (unit == 0)
-            return true;
+            return;
         bool simple = group == unit;
         if (unit == 1 && !simple)
-        {
-            // The counting form ending a compound (dvacet jedna, sto jedna).
-            if (direct)
-                words.Add("jedna");
-            else if (fractionCase == FractionCase.Instrumental && finalOneInstrumental)
-                words.Add("jednou");
-            else
-                return false;
-            return true;
-        }
-        if (simple && direct && unit <= 2 && gender == NumeralGender.Feminine)
+            // The one ending a compound (dvacet jedna, dvaceti jedné, sto jedním).
+            words.Add(FinalOne(fractionCase, gender));
+        else if (simple && direct && unit <= 2 && gender == NumeralGender.Feminine)
             words.Add(unit == 1 ? s_oneFeminineCases[column] : "dvě");
         else if (unit == 1)
             words.Add((gender == NumeralGender.Feminine ? s_oneFeminineCases : s_oneMasculineCases)[column]);
         else
             words.Add(direct ? s_cardinalUnits[unit] : DeclineUnit(unit, fractionCase));
-        return true;
     }
 
     /// <summary>Declines a unit from 2 to 9 in an oblique case (2–4 after their paradigms, 5–9 after <c>pět</c>: <c>pěti</c>).</summary>

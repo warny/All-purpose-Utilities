@@ -181,15 +181,20 @@ public class NumberToStringNts44Tests
         => Assert.AreEqual(expected, Slovak().ConvertFraction(numerator, 3, variant));
 
     /// <summary>
-    /// What NTS-44 leaves closed: zero (NTS-42 E) and a denominator without a fraction noun (NTS-42 D). From 10^12 a bare
-    /// final <c>jeden</c>, closed with the whole of NTS-42 F until then, reads exactly as after <c>milión</c> since NTS-42 F
-    /// (the scale noun before it is not the last component and keeps its absolute form).
+    /// What NTS-44 leaves closed: a denominator without a fraction noun (NTS-42 D), with a zero numerator as well; zero
+    /// over a fraction noun, closed until then (NTS-42 E), reads <c>nula</c> with the noun in the case since NTS-45
+    /// (<see cref="NumberToStringNts45Tests"/>). From 10^12 a bare final <c>jeden</c>, closed with the whole of NTS-42 F
+    /// until then, reads exactly as after <c>milión</c> since NTS-42 F (the scale noun before it is not the last component
+    /// and keeps its absolute form).
     /// </summary>
     [TestMethod]
     public void StillClosed()
     {
+        string[] zero = ["nula tretín", "nula tretinám", "nula tretinách", "nula tretinami"];
+        for (int i = 0; i < s_slovakObliqueCases.Length; i++)
+            Assert.AreEqual(zero[i], Slovak().ConvertFraction(BigInteger.Zero, 3, s_slovakObliqueCases[i]), s_slovakObliqueCases[i]);
         foreach (string variant in s_slovakObliqueCases)
-            Assert.ThrowsExactly<NotSupportedException>(() => Slovak().ConvertFraction(BigInteger.Zero, 3, variant), variant);
+            Assert.ThrowsExactly<NotSupportedException>(() => Slovak().ConvertFraction(BigInteger.Zero, 23, variant), variant);
         foreach (string variant in s_slovakObliqueCases)
             Assert.ThrowsExactly<NotSupportedException>(() => Slovak().ConvertFraction(101, 23, variant), variant);
         foreach (int tail in new[] { 1, 101 })
