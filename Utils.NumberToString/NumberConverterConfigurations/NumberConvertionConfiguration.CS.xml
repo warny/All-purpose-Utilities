@@ -243,6 +243,13 @@
              read "lomeno" + instrumental (dvě lomeno třemi, jedna lomeno dvaceti třemi). NTS-41: every part declined up
              to 999 999 999 999 (jedna lomeno dvěma tisíci dvaceti třemi, jedna lomeno sto jednou). NTS-40: the fraction
              nouns in every case (dvěma třetinám, třemi sty šedesáti pěti tisícinami). Other values fail closed. -->
+        <!-- NTS-42 deliberate closures (NTS-47): two fraction readings are intentionally unsupported and throw
+             NotSupportedException, because the linguistic sources do not select one unambiguous construction:
+             - an external case applied to a whole "X lomeno Y" reading (s dvěma lomeno třemi or s dvě lomeno třemi?);
+             - zero as a fraction numerator in an oblique case (nula is both declined and indeclinable as a cardinal,
+               NovaMorf: "záruka na nula/nulu vadných bodů").
+             This is a documented linguistic boundary, not a pending implementation:
+             see docs/NTS-42-deliberate-closures.md before reopening either. -->
         <LanguageSpecifics>CzechOrdinalLanguageSpecifics</LanguageSpecifics>
         <!-- Internetová jazyková příručka (ÚJČ AV ČR), "Časové údaje". Quarter-hour 12-hour clock
              without day-part wording. "hodina" is feminine: the whole hour agrees the noun with the

@@ -295,6 +295,11 @@
              or, when it is indeclinable, "lomené číslom" + cardinal (jedna lomené číslom dvesto). NTS-41: the same rule
              up to 999 999 999 999, a final milión/miliarda declined (jedna lomené dvoma miliónmi). NTS-40: the fraction
              nouns in every case (dvom tretinám, dvadsaťjeden stotinám). Unestablished forms fail closed. -->
+        <!-- NTS-42 deliberate closure (NTS-47): a whole "X lomené Y" reading under an external grammatical case (a
+             zero numerator over a denominator without a fraction noun included) is intentionally unsupported and
+             throws NotSupportedException. No source establishes whether X takes the external case (s dvoma lomené
+             troma) or keeps its absolute arithmetic form (s dva lomené troma). This is a documented linguistic
+             boundary, not a pending implementation: see docs/NTS-42-deliberate-closures.md before reopening it. -->
         <LanguageSpecifics>SlovakOrdinalLanguageSpecifics</LanguageSpecifics>
         <!-- Quarter-hour 12-hour clock without day-part wording. "hodina" is feminine: the whole
              hour agrees the noun with the count (jedna hodina, dve hodiny, päť hodín); quarters take

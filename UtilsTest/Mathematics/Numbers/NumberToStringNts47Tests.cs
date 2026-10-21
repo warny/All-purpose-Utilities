@@ -7,9 +7,9 @@ using Utils.NumberToString;
 namespace UtilsTest.NumberToString;
 
 /// <summary>
-/// NTS-47 — the last audit of NTS-42: the Slovak genitive singular of a generated <c>-ón</c> scale noun is opened, the
-/// families D (CS and SK <c>lomeno</c>/<c>lomené</c> under an external case) and E/CS (Czech zero in an oblique case) are
-/// re-audited and stay closed.
+/// NTS-47 — the last audit of NTS-42, which it closes: the Slovak genitive singular of a generated <c>-ón</c> scale noun
+/// is opened, the families D (CS and SK <c>lomeno</c>/<c>lomené</c> under an external case) and E/CS (Czech zero in an
+/// oblique case) are closed as deliberately unsupported.
 /// <list type="bullet">
 /// <item><b>SK <c>-ón</c></b>: the series is declined after the pattern <c>dub</c> (L. Navrátil, "Neohybnosť v ohybných
 /// slovných druhoch", Kultúra slova 37, 2003, 341: "Číslovky milión, bilión, trilión majú substantívnu povahu a skloňujú sa
@@ -18,9 +18,11 @@ namespace UtilsTest.NumberToString;
 /// (KSSJ 4); <i>bilión ‑a</i>, <i>kvadrilión ‑a</i>, <i>kvintilión ‑a</i> (Pravidlá slovenského pravopisu, current text of
 /// the JÚĽŠ). The higher Conway names are the productive continuation of that series (AGENTS.md): only the configured
 /// suffix fragment <c>óna</c> is added, the plugin holds no name.</item>
-/// <item><b>D</b> and <b>E/CS</b>: no source found states the form of the first operand of a whole <c>lomeno</c> phrase
-/// under an external case, nor the Czech quantifier <c>nula</c> in an oblique case; both keep failing closed (these
-/// tests are characterization tests, not a grammatical specification).</item>
+/// <item><b>D</b> and <b>E/CS</b>: deliberately unsupported (<c>docs/NTS-42-deliberate-closures.md</c>). No source states
+/// the form of the first operand of a whole <c>lomeno</c>/<c>lomené</c> phrase under an external case, and the Czech
+/// cardinal <c>nula</c> is attested both declined and indeclinable (NovaMorf: <i>záruka na nula/nulu vadných bodů</i>)
+/// with no canonical form. These tests lock that decision: reopening either needs a new source, an update of that
+/// document and an explicit change of these tests.</item>
 /// </list>
 /// The expected strings apply these rules; they are not quotations.
 /// </summary>
@@ -169,12 +171,12 @@ public class NumberToStringNts47Tests
         Assert.AreEqual("jednoho trilionu třetin", Get("CS").ConvertFraction(E(1, 18), 3, "case=genitiv"));
     }
 
-    // ===== D — lomeno / lomené under an external case ==================================================
+    // ===== D — lomeno / lomené under an external case (deliberately unsupported) ======================
 
     /// <summary>
-    /// Family D stays closed: a denominator without a fraction noun is read <c>X lomeno/lomené Y</c> in the nominative
-    /// only; under an external case the form of <c>X</c> (<i>s dvěma lomeno třemi</i> or <i>s dvě lomeno třemi</i>) is not
-    /// established.
+    /// Family D is deliberately unsupported (<c>docs/NTS-42-deliberate-closures.md</c>): a denominator without a
+    /// fraction noun is read <c>X lomeno/lomené Y</c> in the nominative only; under an external case the form of
+    /// <c>X</c> (<i>s dvěma lomeno třemi</i> or <i>s dvě lomeno třemi</i>) is not established, so no reading is invented.
     /// </summary>
     /// <param name="language">The culture.</param>
     /// <param name="numerator">The numerator.</param>
@@ -185,7 +187,7 @@ public class NumberToStringNts47Tests
     [DataRow("CS", 1L, 21L, "jedna lomeno dvaceti jednou")]
     [DataRow("SK", 2L, 23L, "dva lomené dvadsiatimi troma")]
     [DataRow("SK", 1L, 142L, "jedna lomené sto štyridsiatimi dvoma")]
-    public void D_SlashReading_StillClosed(string language, long numerator, long denominator, string nominative)
+    public void D_SlashExternalCase_DeliberatelyUnsupported(string language, long numerator, long denominator, string nominative)
     {
         AssertClosed(language, numerator, denominator, language == "CS" ? s_czechObliqueCases : s_slovakObliqueCases);
         Assert.AreEqual(nominative, Get(language).ConvertFraction(numerator, denominator));
@@ -193,10 +195,10 @@ public class NumberToStringNts47Tests
 
     /// <summary>
     /// The new Slovak genitive key does not open D: a <c>lomené</c> denominator from 10^12 under an external case, the
-    /// genitive included, and a Slovak zero over a denominator without a fraction noun stay closed.
+    /// genitive included, and a Slovak zero over a denominator without a fraction noun stay deliberately unsupported.
     /// </summary>
     [TestMethod]
-    public void D_GeneratedSlashAndSlovakZero_StillClosed()
+    public void D_GeneratedSlashAndSlovakZero_DeliberatelyUnsupported()
     {
         AssertClosed("SK", BigInteger.One, E(1, 12), s_slovakObliqueCases);
         AssertClosed("SK", BigInteger.One, E(1, 18), s_slovakObliqueCases);
@@ -218,12 +220,13 @@ public class NumberToStringNts47Tests
         Assert.AreEqual("dvoma tretinami", Get("SK").ConvertFraction(2, 3, "case=inštrumentál"));
     }
 
-    // ===== E/CS — Czech zero in an oblique case ========================================================
+    // ===== E/CS — Czech zero in an oblique case (deliberately unsupported) =============================
 
     /// <summary>
-    /// Family E/CS stays closed: <c>nula</c> is a declinable feminine noun in the dictionaries (<i>nuly, nule, nulou</i>)
-    /// and indeclinable before a counted noun in usage (<i>při nula stupních</i>), but no source says which applies to a
-    /// fraction in an oblique case; the nominative reading is unchanged.
+    /// Family E/CS is deliberately unsupported (<c>docs/NTS-42-deliberate-closures.md</c>): the cardinal <c>nula</c> is
+    /// attested both declined and indeclinable before a counted noun (NovaMorf, § 3.1.1: <i>záruka na nula/nulu vadných
+    /// bodů</i>; <i>do nula celá sedmi</i>) with no canonical preference, and no source gives the fraction paradigm, so
+    /// no variant is selected; the nominative reading is unchanged.
     /// </summary>
     /// <param name="denominator">The denominator.</param>
     /// <param name="nominative">The nominative reading, unchanged.</param>
@@ -231,7 +234,7 @@ public class NumberToStringNts47Tests
     [DataRow(3L, "nula lomeno třemi")]
     [DataRow(5L, "nula lomeno pěti")]
     [DataRow(100L, "nula lomeno stem")]
-    public void ECs_ZeroNumerator_StillClosed(long denominator, string nominative)
+    public void E_CzechZeroOblique_DeliberatelyUnsupported(long denominator, string nominative)
     {
         AssertClosed("CS", BigInteger.Zero, denominator, s_czechObliqueCases);
         Assert.AreEqual(nominative, Get("CS").ConvertFraction(0, denominator));

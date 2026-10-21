@@ -1245,9 +1245,11 @@ with what it counts, the noun then in the singular of the case (NTS-45: *dvaceti
 třetin*, *jedna lomeno dvaceti jedním tisícem*); a SK zero keeps *nula* and declines the fraction noun (*nula
 tretinám*); a UK zero is the declined noun *нуль* with the denominator in the genitive plural (NTS-46: *нуль третіх*,
 *нулем третіх*); a SK generated *-ón* noun after one takes the genitive singular *-óna* (NTS-47: *jedného trilióna
-tretín*). Denominator one, a BG zero numerator, a CS zero in an oblique case and the CS/SK slash readings in an oblique
-case fail closed, no source deciding their construction yet. `Convert` itself keeps no case. Sources:
-`docs/NTS-08-linguistic-sources.md`, sections NTS-30H, NTS-39, NTS-40/41, NTS-36/42 F, NTS-45, NTS-46 and NTS-47.
+tretín*). Denominator one and a BG zero numerator fail closed. A CS zero in an oblique case and the CS/SK slash readings
+in an oblique case are deliberately unsupported: the sources do not determine one canonical output, so `ConvertFraction`
+throws `NotSupportedException` by decision (see `docs/NTS-42-deliberate-closures.md`). `Convert` itself keeps no case.
+Sources: `docs/NTS-08-linguistic-sources.md`, sections NTS-30H, NTS-39, NTS-40/41, NTS-36/42 F, NTS-45, NTS-46 and
+NTS-47.
 
 ### `GermanNumberToStringLanguageSpecifics`
 

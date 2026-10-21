@@ -49,8 +49,10 @@ All notable changes to this project will be documented in this file.
   tretín`, up to the engine's own names such as `jedného milikvadrilióna tretín`), after the Pravidlá slovenského
   pravopisu (`bilión`, `trilión`, `kvadrilión`, `kvintilión -a`) and the `dub` declension of the series (Kultúra slova
   2003). Configuration only: one `singular.genitive` key on the SK `<GeneratedScaleForm>`; no public API or XSD change.
-- The Czech and Slovak `lomeno`/`lomené` readings under an external case and the Czech zero numerator in an oblique case
-  were re-audited and keep failing closed: no source decides their construction yet.
+- NTS-42 is closed. The Czech and Slovak `lomeno`/`lomené` readings under an external case (grammatical construction
+  not established) and the Czech zero numerator in an oblique case (`nula` attested both declined and indeclinable, no
+  canonical form) are deliberately unsupported: `ConvertFraction` throws `NotSupportedException` for them by decision,
+  documented in `Utils.NumberToString/docs/NTS-42-deliberate-closures.md` and next to the CS and SK language specifics.
 
 ### Fixed — `omy.Utils.NumberToString` (NTS-46: NTS-42 E/UK and F/UK closed)
 - Ukrainian fractions with a zero numerator, which failed closed in every case, now read `нуль` declined as a noun with

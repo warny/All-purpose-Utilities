@@ -179,7 +179,8 @@ public class NumberToStringNts42Tests
     /// Family D (characterization): a fraction read with <c>lomeno</c>/<c>lomené</c> (no fraction noun) is not
     /// implemented in any case but the nominative, the accusative included, while its nominative reading stays open.
     /// Not established: <i>lomeno</i> itself is invariable and governs the instrumental (SSJČ <i>dvě lomeno třemi</i>),
-    /// but no source shows the whole <i>x lomeno y</i> phrase in a sentence that requires an oblique case.
+    /// but no source shows the whole <i>x lomeno y</i> phrase in a sentence that requires an oblique case. Closed by
+    /// NTS-47 as deliberately unsupported (<c>docs/NTS-42-deliberate-closures.md</c>).
     /// </summary>
     [TestMethod]
     [DataRow("CS", 1L, 21L)]
@@ -211,7 +212,8 @@ public class NumberToStringNts42Tests
     /// NTS-45 (Peciar, Slovenská reč 23, 1958: <i>nula</i> indeclinable with a counted noun, <i>s nula celými</i>): it
     /// reads in every oblique case, <c>nula</c> unchanged (exact readings in <c>NumberToStringNts45Tests</c>). UK zero was
     /// opened by NTS-46: the declined noun <c>нуль</c> with the denominator in the genitive plural (<c>нулем третіх</c>;
-    /// exact readings in <c>NumberToStringNts46Tests</c>).
+    /// exact readings in <c>NumberToStringNts46Tests</c>). The CS closure is deliberately unsupported since NTS-47 (the
+    /// cardinal <c>nula</c> attested both declined and indeclinable; <c>docs/NTS-42-deliberate-closures.md</c>).
     /// </summary>
     [TestMethod]
     public void E_ZeroNumerator_ClosedInEveryObliqueCase()

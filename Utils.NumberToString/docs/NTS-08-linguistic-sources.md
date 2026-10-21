@@ -61,8 +61,9 @@ describes any capability.
 
 ## NTS-47 — last audit of NTS-42: SK generated *-ón* genitive, D and E/CS (2026-10-21)
 
-Scope: the three closures NTS-42 kept after NTS-46. Old/new outputs and the dump: `DONE-2026-10-21(2).md`. Evidence
-levels as in the NTS-36 section below.
+Scope: the three closures NTS-42 kept after NTS-46; NTS-42 is closed by this audit. Old/new outputs and the dump:
+`DONE-2026-10-21(2).md`; the permanent reference for the two deliberate closures: `docs/NTS-42-deliberate-closures.md`.
+Evidence levels as in the NTS-36 section below.
 
 | # | Language | Source | What it establishes |
 |---|---|---|---|
@@ -74,6 +75,9 @@ levels as in the NTS-36 section below.
 | 6 | CS | J. Sláma, "Operátor lomeno, koordinátor lomeno, adordinátor: K funkcím slova lomeno", *Naše řeč* 105 (2022), 1, 49–55 (<http://nase-rec.ujc.cas.cz/archiv.php?art=8661>; full text on CEEOL only) | abstract read only: *lomeno* names the sign, is a mathematical operator, a coordinator ('or') and an adordinator; **full text not accessible** here (CEEOL paywall, ResearchGate refused, no PDF in the Naše řeč archive) |
 | 7 | CS | ÚJČ poradna database (dotazy.ujc.cas.cz), searches *lomeno* and *nula* (keyword, question, case, answer) | *lomeno*: no public answer; *nula*: "obecné podstatné jméno" (#7437, project name), a time read *ve dvacet tři nula pět* (vokalizace), *nula bodů* in a question — nothing on *nula* + counted noun in an oblique case |
 | 8 | CS | CzechEncy, *Nový encyklopedický slovník češtiny*, "základní číslovka" (<https://www.czechency.org/slovnik/ZÁKLADNÍ ČÍSLOVKA>) | *nula* only as the value between positive and negative (*teplota nula stupňů*, nominative); *sto, milion, miliarda, bilion* decline after their noun patterns; nothing on an indeclinable quantifier *nula*; no entry *NULA* |
+| 9 | CS | NovaMorf (K. Osolsobě, J. Hlaváčová, V. Petkevič, J. Šimandl, M. Svášek; MU FF 2018, "NovaMorf — nová morfologie pro značkování korpusů češtiny"), concept § 3.1.1 (<https://sites.google.com/site/koncepcenovamorf/08-04>) | **academic description**: *nula* is a cardinal in its quantitative uses; both behaviours in one context: "záruka na nula/nulu vadných bodů"; model: "kromě skloňovaných tvarů sg. pro všechny pády i nesklonný tvar (do nula celá sedmi)"; also *mají nula procent hlasů*, *dělení nulou ~ dělení … dvěma* |
+| 10 | CS | SSJČ, *nula* (<https://ssjc.ujc.cas.cz/search.php?heslo=nula>) | *nula, -y ž.*; sense 2 "čísl. označuje počet žádných jednotek" (a numeral use of the noun) |
+| 11 | CS | ČVUT FJFI, Mathematics I (APO1), lesson material 9, 2024 (kmlinux.fjfi.cvut.cz), p. 4 | *a/x — a over x — a lomeno x*: the operator in isolation only |
 
 **SK *-ón* genitive — opened.** The series is one noun class (#4, *dub*) whose genitive singular, lexical in *dub*
 (NTS-42 F #8), is *-a* for every member the dictionaries give: *milión*, *bilión*, *trilión* (#1), *bilión* (#2, #3),
@@ -84,17 +88,23 @@ levels as in the NTS-36 section below.
 (*sextilióna* … *milikvadrilióna*: the Conway prefix invariant, only the suffix fragment inflected). No C# change: the
 plugin already read the key (`ReadScaleNoun`, `DeclineScale`).
 
-**D — still not established.** #6 could not be read beyond its abstract, which names the functions of *lomeno* but says
-nothing about its operands' case; #7 has no answer on *lomeno*. The sources of NTS-45 (Prandstetter 1938, SSJČ *dvě
-lomeno třemi*, Ondrus 1968, Peciar 1976, SR 1978) read the phrase in isolation. The open question is **syntactic**, not
-morphological: every candidate form of X exists (*dvěma*, *dvoma*), what is missing is whether the arithmetic term takes
-the external case at all. **Fail-closed.**
+**D — closed as deliberately unsupported (grammatical construction not established).** #6, the one syntactic study of
+*lomeno*, could be read here only through its abstract, which names its functions but says nothing about its operands'
+case; the NTS-47 reviewer read the full text (indexed on ResearchGate) and found no rule either. #7 has no answer on
+*lomeno*; #11 and the sources of NTS-45 (Prandstetter 1938, SSJČ *dvě lomeno třemi*, Ondrus 1968, Peciar 1976, SR
+1978) read the phrase in isolation. The question is **syntactic**, not morphological: every candidate form of X exists
+(*dvěma*, *dvoma*), what no source shows is whether the arithmetic term takes the external case at all. The research
+has reached what can reasonably be sourced: **deliberately unsupported**, no output invented
+(`docs/NTS-42-deliberate-closures.md`).
 
-**E/CS — still closed.** Lexical paradigm: *nula* is a feminine noun (*nuly, nule, nulu, nulou*; IJP, NTS-45 #4; #7
-"obecné podstatné jméno"). Usage: an indeclinable quantifier occurs (*při nula stupních*, NTS-45; *s nula stupni
-volnosti*, a VUT thesis cited by the request, not re-read here), which is **usage, not a norm**. No Czech normative or academic source (#7, #8, IJP "Počítaný předmět")
-says which applies to a counted noun in an oblique case; the Slovak rule (Peciar 1958) is not evidence for Czech.
-**Fail-closed.**
+**E/CS — closed as deliberately unsupported (attested variation, no canonical form).** *nula* declines as a noun (IJP,
+NTS-45 #4; #7 "obecné podstatné jméno") and is a cardinal in its quantitative uses (#10 sense 2; #8 *nula stupňů*). The
+academic morphology of #9 describes **both** a declined and an indeclinable cardinal *nula*, in one and the same
+context (*záruka na nula/nulu vadných bodů*), with no preference; usage has the indeclinable form too (*při nula
+stupních*, NTS-45; *s nula stupni volnosti*, a VUT thesis cited by the request, not re-read here). No source gives the
+complete fraction paradigm (*nule třetin*? *nula třetinám*?), and the Slovak rule (Peciar 1958) is codified for Slovak
+only. A single-output API would have to pick a variant arbitrarily: **deliberately unsupported**, no variant selected
+(`docs/NTS-42-deliberate-closures.md`). This replaces the NTS-45 status "usage attested, not normative".
 
 ## NTS-46 — NTS-42 E/UK and F/UK: Ukrainian zero and generated-scale fractions (2026-10-21)
 
