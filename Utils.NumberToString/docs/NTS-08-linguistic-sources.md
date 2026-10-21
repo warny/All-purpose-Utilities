@@ -59,6 +59,41 @@ describes any capability.
 | EE | EE | SCALE-SHORT (scale tables only, NTS-23) | Yes (NTS-20): cardinal + `-lia` on the last element, `gbãtɔ` for 1 | Declarative + `ZeroOrdinalUnsupportedLanguageSpecifics` | **Deferred** | — | none | **Consulted** (NTS-20): Dzablu-Kumah, *Basic Ewe for Foreign Students*; Biblica Open Ewe Contemporary Scriptures; *Ewe Basic Course* 1968; Peace Corps Togo 2010; Wiktionary | Cardinals unbounded (NTS-23): static `akpe`, then the Conway-Wechsler short scale `miliɔn`, `biliɔn`, `triliɔn` (sourced anchors), `quadriliɔn` … (project extrapolation), each before its standalone multiplier (`multiplierPosition="afterScale"`); zero ordinal unsupported |
 | WO | WO | none | Yes (`-éel`, NTS-16, NTS-19) | Declarative + `WolofOrdinalLanguageSpecifics` | **Deferred** | — | none | No consistent source found | Cardinals unbounded (NTS-21): static `junni`, then the long-scale Conway-Wechsler names `milyoŋ`, `milyaar` (attested anchors), `bilyoŋ`, `bilyaar` … (project extrapolation in Wolof spelling); ordinals 1–999 999 only, no ordinal of zero nor of the round thousands |
 
+## NTS-46 — NTS-42 E/UK and F/UK: Ukrainian zero and generated-scale fractions (2026-10-21)
+
+Scope: the two Ukrainian closures NTS-42 kept after NTS-45. Old/new outputs and the dump: `DONE-2026-10-21(1).md`.
+
+| # | Source | What it establishes |
+|---|---|---|
+| 1 | Український правопис 2019, §107.1 (<https://slovnyk.ua/pravopys.php?prav_par=107>; official 2026 edition: <https://mon.gov.ua/static-objects/mon/sites/1/zagalna%20serednya/Pravopys.2019/ukrayinskii-pravopis-oficiine-vidannia-2026.pdf>) | **rule**: fractions "відмінюємо … як звичайні числівники" (*двом третім*, *трьома п'ятими*, *ділити на одну двадцяту*) |
+| 2 | Правопис 2019, §105.6 and §105.11 (<https://slovnyk.ua/pravopys.php?prav_par=105>) | **rule**: every part of a compound cardinal declined; "Числові назви *тисяча, мільйон, мільярд* відмінюємо як іменники відповідних відмін". §105 does not mention *нуль* |
+| 3 | Курс лекцій «Лінгвістичні основи документознавства», ПНТУ ім. Ю. Кондратюка, Полтава 2015 (<https://reposit.nupp.edu.ua/files/original/13/522/b7052be0624c27992e3e22543d6019127bbb49e2.pdf>), p. 132 | **rule**: "Числівники нуль, тисяча, мільйон, мільярд, трильйон, квадрильйон. Числівники цього типу відмінюються як іменники відповідної відміни і групи"; p. 132, on fractions: "У дробових числівниках чисельник відмінюється як відповідний кількісний числівник, а знаменник як порядковий" |
+| 4 | Same source, p. 135, "Відмінювання числівників типу нуль цілих сім десятих" | **rule + attested paradigm**: "Якщо десятковий дріб починається на нуль, то частина цілих не відмінюється. В інших випадках вона відмінюється": Н. *нуль цілих сім десятих*, Р. *нуля цілих семи (сімох) десятих*, Д. *нулю (нулеві) цілих семи (сімом) десятим*, З. *нуль цілих сім десятих*, О. *нулем цілих сімома (сьома) десятими*, М. *на нулю (нулеві) цілих семи (сімох) десятих*; against *трьом цілим*, *трьома цілими* |
+| 5 | VESUM via Горох, "нуль" (<https://goroh.pp.ua/Словозміна/нуль>) | **paradigm**: masc., II declension, soft group: *нуль, нуля, нулеві / нулю, нуль, нулем, нулю / нулі / нулеві* (cells in this order) |
+| 6 | VESUM via Горох, "мільйон", "мільярд", "трильйон", "квадрильйон", "квінтильйон" (<https://goroh.pp.ua/Словозміна/трильйон> …) | **paradigm**: masc., II declension, hard group, identical endings: *-а*, *-ові / -у*, *-ом*, *-і / -ові / -у*; pl. *-и*, *-ів*, *-ам*, *-ами*, *-ах* (cells in this order); slovnyk.ua *трильйон*, *квадрильйон* agree |
+| 7 | Brief sources not re-read here: Запорізький національний університет, курс (eir.zp.edu.ua, bitstream bcc33af3…), МДПУ програма 2023–2024, підручник 6 кл. (lib.imzo.gov.ua) | cited by the request for the same class statement and the numerator/denominator rule; #3 states both verbatim and is the one quoted |
+
+**Form policy.** The plugin keeps the first VESUM form of each cell (*мільйонові*, *мільйоні*, already so since NTS-40).
+Applied to *нуль*: dative *нулеві* (VESUM *нулеві, нулю*; #4 gives *нулю (нулеві)*, both normative), locative *нулю*
+(VESUM *нулю, нулі, нулеві*; #4 *на нулю (нулеві)*). Applied to the generated *-йон* nouns: *-йонові*, *-йоні*.
+
+**E/UK — opened.** *нуль* is a noun (#3, #5). As a noun it governs the genitive plural of what it counts, which then stays
+unchanged in every case: #4 states it for *цілих* after *нуль* and contrasts the declined *трьом цілим*, *трьома цілими*.
+The fraction denominator after *нуль* is therefore the genitive plural in every case: *нуль третіх*, *нуля третіх*,
+*нулеві третіх*, *нуль третіх*, *нулем третіх*, *нулю третіх* — the rule the plugin already applies after *тисяча*,
+*мільйон* (*тисячею третіх*, NTS-40). Level: **rule (#1, #3) + attested paradigm (#5) + attested construction with zero
+(#4)**; the readings of *0/3*, *0/5* are a **productive application** (no source quotes *нулем третіх*). The construction
+proposed in the request (*нулем третіми*, the denominator in the case) contradicts #4 and was not adopted.
+
+**F/UK — opened.** *трильйон*, *квадрильйон*, *квінтильйон* have attested paradigms (#6), identical to *мільйон*; #3 puts
+*трильйон*, *квадрильйон* in the same noun class. The UK generated names all end in the configured suffix *йон* after a
+Conway prefix ending in *ль*: the case forms are suffix fragments of the UK `<GeneratedScaleForm>` (`singular.dative` =
+*йонові* …), read by the plugin through `IScaleNounSource` (NTS-42 F), so the plugin holds no generated name. Level:
+**attested** for 10^12–10^18; **productive application by morphological class** above (the prefix invariant, only the
+suffix inflected), the extension AGENTS.md allows for Conway names. Multipliers follow §105 unchanged (*одним
+трильйоном*, *двома трильйонами*, *двадцятьма одним трильйоном*); the denominator after a numerator ending in a scale
+noun stays the genitive plural (*одним трильйоном третіх*).
+
 ## NTS-45 — NTS-42 families A, B, D and E for Czech and Slovak (2026-10-21)
 
 Scope: the CS/SK closures NTS-42 kept after F. Old/new outputs and the dump: `DONE-2026-10-21.md`. Evidence levels as in

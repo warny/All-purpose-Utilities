@@ -211,7 +211,7 @@ public class NumberToStringNts30HTests
     /// <summary>
     /// Outside the sourced domain the Ukrainian reading fails closed. The compound numerators ending in один were opened
     /// by NTS-39 (singular denominator, <see cref="NumberToStringNts39Tests"/>), the oblique cases by NTS-40
-    /// (<see cref="NumberToStringNts40Nts41Tests"/>).
+    /// (<see cref="NumberToStringNts40Nts41Tests"/>), the zero numerator by NTS-46 (<see cref="NumberToStringNts46Tests"/>).
     /// </summary>
     [TestMethod]
     public void Ukrainian_FailsClosed()
@@ -220,8 +220,8 @@ public class NumberToStringNts30HTests
         Assert.AreEqual("двадцять одна тридцять сьома", uk.ConvertFraction(21, 37), "NTS-39");
         Assert.AreEqual("сто одна тисячна", uk.ConvertFraction(101, 1000), "NTS-39");
         Assert.AreEqual("однієї третьої", uk.ConvertFraction(1, 3, "case=родовий"), "NTS-40");
-        Assert.ThrowsExactly<NotSupportedException>(() => uk.ConvertFraction(0, 3), "zero numerator");
-        Assert.ThrowsExactly<NotSupportedException>(() => uk.ConvertFraction(0, 3, "case=родовий"), "zero numerator, oblique case");
+        Assert.AreEqual("нуль третіх", uk.ConvertFraction(0, 3), "zero numerator, NTS-46");
+        Assert.AreEqual("нуля третіх", uk.ConvertFraction(0, 3, "case=родовий"), "zero numerator, oblique case, NTS-46");
         Assert.ThrowsExactly<NotSupportedException>(() => uk.ConvertFraction(5, 1), "denominator one");
         Assert.ThrowsExactly<NotSupportedException>(() => uk.ConvertFraction(1, 90_000), "ordinal declined by the plugin");
     }

@@ -18,7 +18,8 @@ namespace UtilsTest.NumberToString;
 /// reading is expected to update the matching test. The level of evidence of each family (documented, partially
 /// documented, not established) is in <c>DONE-2026-10-19(1).md</c>. Family C has since been opened by NTS-44
 /// (<c>NumberToStringNts44Tests</c>), F for CS and SK by NTS-42 F (<c>NumberToStringNts36Nts42FTests</c>), A, B and the
-/// Slovak part of E by NTS-45 (<c>NumberToStringNts45Tests</c>, <c>DONE-2026-10-21.md</c>).
+/// Slovak part of E by NTS-45 (<c>NumberToStringNts45Tests</c>, <c>DONE-2026-10-21.md</c>), the Ukrainian parts of E and F
+/// by NTS-46 (<c>NumberToStringNts46Tests</c>, <c>DONE-2026-10-21(1).md</c>).
 /// </para>
 /// </summary>
 [TestClass]
@@ -204,11 +205,13 @@ public class NumberToStringNts42Tests
     // ===== E — zero numerator under an oblique case =================================================
 
     /// <summary>
-    /// Family E (characterization): a zero numerator is not implemented in any oblique case in CS and UK, with or without
+    /// Family E (characterization): a zero numerator is not implemented in any oblique case in CS, with or without
     /// a fraction noun, nor in SK with a <i>lomené</i> phrase (family D), while the current nominatives stay open (CS
-    /// <c>nula lomeno třemi</c>, SK <c>nula tretín</c>; UK has none, NTS-39). SK zero over a fraction noun was opened by
+    /// <c>nula lomeno třemi</c>, SK <c>nula tretín</c>). SK zero over a fraction noun was opened by
     /// NTS-45 (Peciar, Slovenská reč 23, 1958: <i>nula</i> indeclinable with a counted noun, <i>s nula celými</i>): it
-    /// reads in every oblique case, <c>nula</c> unchanged (exact readings in <c>NumberToStringNts45Tests</c>).
+    /// reads in every oblique case, <c>nula</c> unchanged (exact readings in <c>NumberToStringNts45Tests</c>). UK zero was
+    /// opened by NTS-46: the declined noun <c>нуль</c> with the denominator in the genitive plural (<c>нулем третіх</c>;
+    /// exact readings in <c>NumberToStringNts46Tests</c>).
     /// </summary>
     [TestMethod]
     public void E_ZeroNumerator_ClosedInEveryObliqueCase()
@@ -217,7 +220,8 @@ public class NumberToStringNts42Tests
         foreach (long denominator in denominators)
         {
             AssertClosed("CS", 0, denominator, [.. s_czechObliqueCases, "case=akuzativ"]);
-            AssertClosed("UK", 0, denominator, s_ukrainianObliqueCases);
+            foreach (string variant in s_ukrainianObliqueCases)
+                StringAssert.StartsWith(Get("UK").ConvertFraction(0, denominator, variant), "нул", variant);
             if (denominator == 23)
                 AssertClosed("SK", 0, denominator, [.. s_slovakObliqueCases, "case=akuzatív"]);
             else
@@ -228,17 +232,17 @@ public class NumberToStringNts42Tests
         }
         Assert.AreEqual("nula lomeno třemi", Get("CS").ConvertFraction(0, 3));
         Assert.AreEqual("nula tretín", Get("SK").ConvertFraction(0, 3));
-        Assert.ThrowsExactly<NotSupportedException>(() => Get("UK").ConvertFraction(0, 3));
+        Assert.AreEqual("нуль третіх", Get("UK").ConvertFraction(0, 3));
     }
 
     /// <summary>
     /// Family E, engine boundary: the generic engine does not special-case zero. A zero numerator reaches the language's
     /// <see cref="IFractionLanguageSpecifics"/> with the caller's case, exactly as a non-zero one does, and the closure is
-    /// the plugin's answer turned into the engine's <see cref="NotSupportedException"/> — or, for SK since NTS-45, the
-    /// plugin's reading.
+    /// the plugin's answer turned into the engine's <see cref="NotSupportedException"/> — or, for SK since NTS-45 and UK
+    /// since NTS-46, the plugin's reading.
     /// </summary>
     [TestMethod]
-    [DataRow("UK", "case=давальний", "давальний", false)]
+    [DataRow("UK", "case=давальний", "давальний", true)]
     [DataRow("CS", "case=dativ", "dativ", false)]
     [DataRow("SK", "case=datív", "datív", true)]
     public void E_ZeroReachesThePluginWithTheCase(string culture, string variant, string caseValue, bool answered)
@@ -297,22 +301,24 @@ public class NumberToStringNts42Tests
     // ===== F — 10^12 and above ======================================================================
 
     /// <summary>
-    /// Family F, UK: the declined-cardinal builder stops below the first generated scale (<c>трильйон</c>): the last value
-    /// of the milliards still declines, the first generated one fails closed, in every oblique case. (CS and SK: opened by
-    /// NTS-42 F, see <see cref="F_ObliqueNumerators_OpenedForCzechAndSlovak"/>.)
+    /// Family F, UK (characterization): the declined-cardinal builder stopped below the first generated scale
+    /// (<c>трильйон</c>) until NTS-46, which reads the generated nouns from the converter as CS and SK do: the last value
+    /// of the milliards and the generated scales decline in every oblique case (exact readings in
+    /// <c>NumberToStringNts46Tests</c>). (CS and SK: opened by NTS-42 F, see
+    /// <see cref="F_ObliqueNumerators_OpenedForCzechAndSlovak"/>.)
     /// </summary>
     [TestMethod]
     [DataRow("UK")]
-    public void F_ObliqueNumerators_BoundAtTenToTheTwelve(string language)
+    public void F_ObliqueNumerators_OpenedForUkrainian(string language)
     {
         string[] cases = s_ukrainianObliqueCases;
-        BigInteger last = 999_999_999_999;
-        foreach (string variant in cases)
-            Assert.IsFalse(string.IsNullOrWhiteSpace(Get(language).ConvertFraction(last, 3, variant)), variant);
         BigInteger first = BigInteger.Pow(10, 12);
-        BigInteger[] numerators = [first, first + 1, 2 * first, BigInteger.Pow(10, 15), BigInteger.Pow(10, 24)];
+        BigInteger[] numerators = [first - 1, first, first + 1, 2 * first, BigInteger.Pow(10, 15), BigInteger.Pow(10, 24)];
         foreach (BigInteger numerator in numerators)
-            AssertClosed(language, numerator, 3, cases);
+        {
+            foreach (string variant in cases)
+                Assert.IsFalse(string.IsNullOrWhiteSpace(Get(language).ConvertFraction(numerator, 3, variant)), $"{numerator} {variant}");
+        }
     }
 
     /// <summary>

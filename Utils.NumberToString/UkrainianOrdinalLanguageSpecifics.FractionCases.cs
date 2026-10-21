@@ -8,7 +8,9 @@ namespace Utils.NumberToString;
 /// ordinary numeral" (<i>двом третім</i>, <i>трьома п'ятими</i>; <i>ділити на одну двадцяту</i>): the numerator as a
 /// cardinal, the denominator as an ordinal. §105.6: every part of a compound cardinal is declined (<i>з чотирьохсот
 /// сімдесяти восьми тисяч шестисот п'ятдесяти дев'яти</i>); §105.11: <c>тисяча</c>, <c>мільйон</c>, <c>мільярд</c>
-/// decline as nouns; §106.2: only the last part of a compound ordinal is declined (<i>вісімдесят восьмого</i>).
+/// decline as nouns; §106.2: only the last part of a compound ordinal is declined (<i>вісімдесят восьмого</i>). NTS-42 E
+/// adds the zero numerator (<see cref="s_zeroCases"/>), NTS-42 F the generated scale nouns from 10^12, read from the
+/// converter (<see cref="GetScaleNoun"/>).
 /// </summary>
 public sealed partial class UkrainianOrdinalLanguageSpecifics
 {
@@ -59,23 +61,33 @@ public sealed partial class UkrainianOrdinalLanguageSpecifics
     private static readonly string[] s_hundredsInstrumental =
         ["", "", "двомастами", "трьомастами", "чотирмастами", "п'ятьмастами", "шістьмастами", "сьомастами", "вісьмастами", "дев'ятьмастами"];
 
-    /// <summary>The singular of <c>тисяча</c> (a feminine noun, §105.11; VESUM).</summary>
-    private static readonly string[] s_thousandSingular = ["тисяча", "тисячі", "тисячі", "тисячу", "тисячі", "тисячею"];
+    /// <summary>
+    /// The singular of <c>нуль</c>, a masculine noun of the second declension, soft group (NTS-42 E). It is not in the
+    /// Правопис 2019 §105 tables; it declines as a noun (Курс лекцій «Лінгвістичні основи документознавства», ПНТУ,
+    /// Полтава 2015, p. 132: "нуль, тисяча, мільйон, мільярд, трильйон, квадрильйон … відмінюються як іменники
+    /// відповідної відміни і групи"). The forms are the first ones of VESUM, as for <c>мільйон</c>: dative <c>нулеві</c>
+    /// (VESUM <c>нулеві, нулю</c>), locative <c>нулю</c> (VESUM <c>нулю, нулі, нулеві</c>); the ПНТУ paradigm of
+    /// <i>нуль цілих сім десятих</i> (p. 135) has both datives, <i>нулю (нулеві)</i>, and <i>на нулю (нулеві)</i>.
+    /// </summary>
+    private static readonly string[] s_zeroCases = ["нуль", "нуля", "нулеві", "нуль", "нулю", "нулем"];
 
-    /// <summary>The plural of <c>тисяча</c>.</summary>
-    private static readonly string[] s_thousandPlural = ["тисячі", "тисяч", "тисячам", "тисячі", "тисячах", "тисячами"];
+    /// <summary><c>тисяча</c>, a feminine noun (§105.11; VESUM): <c>одна тисяча</c>, <c>дві тисячі</c>.</summary>
+    private static readonly ScaleNoun s_thousand = new(
+        ["тисяча", "тисячі", "тисячі", "тисячу", "тисячі", "тисячею"],
+        ["тисячі", "тисяч", "тисячам", "тисячі", "тисячах", "тисячами"],
+        Feminine: true);
 
-    /// <summary>The singular of <c>мільйон</c> (a masculine noun, §105.11; VESUM, first forms).</summary>
-    private static readonly string[] s_millionSingular = ["мільйон", "мільйона", "мільйонові", "мільйон", "мільйоні", "мільйоном"];
+    /// <summary><c>мільйон</c>, a masculine noun (§105.11; VESUM, first forms).</summary>
+    private static readonly ScaleNoun s_million = new(
+        ["мільйон", "мільйона", "мільйонові", "мільйон", "мільйоні", "мільйоном"],
+        ["мільйони", "мільйонів", "мільйонам", "мільйони", "мільйонах", "мільйонами"],
+        Feminine: false);
 
-    /// <summary>The plural of <c>мільйон</c>.</summary>
-    private static readonly string[] s_millionPlural = ["мільйони", "мільйонів", "мільйонам", "мільйони", "мільйонах", "мільйонами"];
-
-    /// <summary>The singular of <c>мільярд</c> (a masculine noun, §105.11; VESUM, first forms).</summary>
-    private static readonly string[] s_milliardSingular = ["мільярд", "мільярда", "мільярдові", "мільярд", "мільярді", "мільярдом"];
-
-    /// <summary>The plural of <c>мільярд</c>.</summary>
-    private static readonly string[] s_milliardPlural = ["мільярди", "мільярдів", "мільярдам", "мільярди", "мільярдах", "мільярдами"];
+    /// <summary><c>мільярд</c>, a masculine noun (§105.11; VESUM, first forms).</summary>
+    private static readonly ScaleNoun s_milliard = new(
+        ["мільярд", "мільярда", "мільярдові", "мільярд", "мільярді", "мільярдом"],
+        ["мільярди", "мільярдів", "мільярдам", "мільярди", "мільярдах", "мільярдами"],
+        Feminine: false);
 
     /// <summary>The ordinal case columns (nominative, genitive, dative, accusative, instrumental, locative) by fraction case.</summary>
     private static readonly int[] s_ordinalColumn = [0, 1, 2, 3, 5, 4];
@@ -87,37 +99,53 @@ public sealed partial class UkrainianOrdinalLanguageSpecifics
     /// <inheritdoc />
     private protected override IReadOnlyList<FractionCase> FractionCaseOrder => s_ukrainianCaseOrder;
 
-    /// <summary>The largest numerator of an oblique fraction: the milliards end the scales this class declines.</summary>
-    private const long MaxDeclinedNumerator = 999_999_999_999;
+    /// <summary>
+    /// Returns the noun of a scale: <c>тисяча</c>, <c>мільйон</c> and <c>мільярд</c> from the tables above, every scale from
+    /// <c>трильйон</c> (10^12, the first generated noun) from the case keys of the UK <c>&lt;GeneratedScaleForm&gt;</c>,
+    /// through the converter (NTS-42 F, see <see cref="SlavicAdjectivalOrdinalLanguageSpecifics.ReadScaleNoun"/>).
+    /// </summary>
+    /// <param name="scale">The scale index, at least 1.</param>
+    /// <param name="scaleNouns">The converter's scale nouns, or <see langword="null"/>.</param>
+    /// <returns>The noun, or <see langword="null"/> when it has no source.</returns>
+    private ScaleNoun? GetScaleNoun(int scale, IScaleNounSource? scaleNouns) => scale switch
+    {
+        1 => s_thousand,
+        2 => s_million,
+        3 => s_milliard,
+        _ => ReadScaleNoun(scaleNouns, scale),
+    };
 
     /// <summary>
     /// Builds the reading of a fraction in an oblique case (or the accusative): the numerator declined as a feminine
     /// cardinal (<see cref="DeclineCardinal"/>), the denominator ordinal declined after it. After a numerator that
     /// reads as one (one, or a compound ending in <c>одна</c>, as in the nominative) the denominator is the feminine
     /// singular in the same case (<i>ділити на одну двадцяту</i>; <i>двадцяти одній сотій</i>); after a numerator
-    /// ending in a scale noun (<c>тисяча</c>, <c>мільйон</c>, <c>мільярд</c>), which governs the genitive as a noun
-    /// (§105.11), the genitive plural; after any other numerator the plural in the same case (<i>двом третім</i>,
-    /// <i>трьома п'ятими</i>), the accusative of an inanimate quantity being its nominative (<i>дві третіх</i>).
+    /// that is or ends in a noun, which governs the genitive (§105.11), the genitive plural in every case: a scale noun
+    /// (<c>тисяча</c>, <c>мільйон</c>, <c>мільярд</c>, <c>трильйон</c> …: <i>одним трильйоном третіх</i>) or <c>нуль</c>,
+    /// after which the counted word is not declined (ПНТУ 2015, p. 135: "Якщо десятковий дріб починається на нуль, то
+    /// частина цілих не відмінюється": <i>нулем цілих</i>, against <i>трьома цілими</i>; hence <i>нулем третіх</i>);
+    /// after any other numerator the plural in the same case (<i>двом третім</i>, <i>трьома п'ятими</i>), the accusative
+    /// of an inanimate quantity being its nominative (<i>дві третіх</i>).
     /// </summary>
-    /// <param name="numerator">The numerator, at least one.</param>
+    /// <param name="numerator">The numerator (may be zero).</param>
     /// <param name="prefix">The undeclined words of the compound ordinal denominator (§106.2).</param>
     /// <param name="last">The last ordinal component of the denominator, masculine nominative.</param>
     /// <param name="fractionCase">The requested case, not the nominative.</param>
+    /// <param name="scaleNouns">The converter's scale nouns, or <see langword="null"/> (no scale from 10^12 is then declined).</param>
     /// <param name="reading">Receives the reading.</param>
-    /// <returns><see langword="false"/> when the numerator is beyond the milliards.</returns>
+    /// <returns><see langword="false"/> when a scale noun of the numerator has no sourced form.</returns>
     private bool TryBuildObliqueFraction(BigInteger numerator, string prefix, string last, FractionCase fractionCase,
-        out FractionDenominatorReading? reading)
+        IScaleNounSource? scaleNouns, out FractionDenominatorReading? reading)
     {
         reading = null;
-        if (numerator > MaxDeclinedNumerator)
+        if (DeclineCardinal(numerator, fractionCase, scaleNouns) is not string numeratorText)
             return false;
-        long value = (long)numerator;
         string word;
-        if (ClassifyFractionNumerator(numerator, compoundEndingInOneIsSingular: true) == FractionNumeratorClass.One)
+        if (!numerator.IsZero && ClassifyFractionNumerator(numerator, compoundEndingInOneIsSingular: true) == FractionNumeratorClass.One)
             word = Decline(last, Gender.Feminine, s_ordinalColumn[(int)fractionCase]);
         else
-            word = PluralOrdinal(last, value % 1000 == 0 ? FractionCase.Genitive : fractionCase);
-        reading = FractionDenominatorReading.WithNumerator(DeclineCardinal(value, fractionCase), prefix.Length == 0 ? word : prefix + " " + word);
+            word = PluralOrdinal(last, numerator % 1000 == 0 ? FractionCase.Genitive : fractionCase);
+        reading = FractionDenominatorReading.WithNumerator(numeratorText, prefix.Length == 0 ? word : prefix + " " + word);
         return true;
     }
 
@@ -141,21 +169,32 @@ public sealed partial class UkrainianOrdinalLanguageSpecifics
     }
 
     /// <summary>
-    /// Declines a cardinal between 1 and 999 999 999 999 for a case, every part declined (§105.6), the units feminine as
-    /// a fraction numerator (<c>одна</c>, <c>дві</c>) and the groups spelled as the UK configuration spells them
-    /// (<c>тисяча</c> alone for one thousand, <c>один мільйон</c>, <c>один мільярд</c>). The nominative is the cardinal
+    /// Declines a cardinal for a case, every part declined (§105.6), the units feminine as a fraction numerator
+    /// (<c>одна</c>, <c>дві</c>) and the groups spelled as the UK configuration spells them (<c>тисяча</c> alone for one
+    /// thousand, <c>один мільйон</c>, <c>один трильйон</c>); zero is the noun <c>нуль</c> (<see cref="s_zeroCases"/>).
+    /// The scale nouns are <see cref="GetScaleNoun"/>'s: from <c>трильйон</c> the generated nouns of the converter, whose
+    /// paradigm the UK configuration declares (<i>трильйона, трильйонові, трильйоном</i>). The nominative is the cardinal
     /// of the configuration with the feminine units.
     /// </summary>
-    /// <param name="number">The number.</param>
+    /// <param name="number">The number, at least zero.</param>
     /// <param name="fractionCase">The case.</param>
-    /// <returns>The declined cardinal.</returns>
-    private static string DeclineCardinal(long number, FractionCase fractionCase)
+    /// <param name="scaleNouns">The converter's scale nouns, or <see langword="null"/> (a scale from 10^12 then has no form).</param>
+    /// <returns>The declined cardinal, or <see langword="null"/> when a scale noun has no sourced form.</returns>
+    private string? DeclineCardinal(BigInteger number, FractionCase fractionCase, IScaleNounSource? scaleNouns)
     {
+        if (number.IsZero)
+            return s_zeroCases[(int)fractionCase];
+        var groups = ThousandGroups(number);
         var words = new List<string>();
-        AppendDeclinedScale(words, (int)(number / 1_000_000_000 % 1000), fractionCase, s_milliardSingular, s_milliardPlural, feminine: false, bareOne: false);
-        AppendDeclinedScale(words, (int)(number / 1_000_000 % 1000), fractionCase, s_millionSingular, s_millionPlural, feminine: false, bareOne: false);
-        AppendDeclinedScale(words, (int)(number / 1000 % 1000), fractionCase, s_thousandSingular, s_thousandPlural, feminine: true, bareOne: true);
-        AppendDeclinedGroup(words, (int)(number % 1000), fractionCase, feminine: true);
+        for (int scale = groups.Count - 1; scale >= 1; scale--)
+        {
+            if (groups[scale] == 0)
+                continue;
+            if (GetScaleNoun(scale, scaleNouns) is not ScaleNoun noun
+                || !AppendDeclinedScale(words, groups[scale], fractionCase, noun, bareOne: scale == 1))
+                return null;
+        }
+        AppendDeclinedGroup(words, groups[0], fractionCase, feminine: true);
         return string.Join(" ", words);
     }
 
@@ -166,28 +205,29 @@ public sealed partial class UkrainianOrdinalLanguageSpecifics
     /// plural of the requested case in the oblique cases (<i>чотирьохсот сімдесяти восьми тисяч</i>).
     /// </summary>
     /// <param name="words">The target word list.</param>
-    /// <param name="group">The multiplier (0–999; 0 appends nothing).</param>
+    /// <param name="group">The multiplier, 1–999.</param>
     /// <param name="fractionCase">The case.</param>
-    /// <param name="singular">The singular of the scale noun by case.</param>
-    /// <param name="plural">The plural of the scale noun by case.</param>
-    /// <param name="feminine">Whether the scale noun is feminine (<c>тисяча</c>: <c>одна</c>, <c>дві</c>).</param>
+    /// <param name="noun">The scale noun (a feminine noun, <c>тисяча</c>, takes <c>одна</c>, <c>дві</c>).</param>
     /// <param name="bareOne">Whether a multiplier of one is left out (<c>тисяча</c>, not <c>одна тисяча</c>).</param>
-    private static void AppendDeclinedScale(List<string> words, int group, FractionCase fractionCase, string[] singular, string[] plural,
-        bool feminine, bool bareOne)
+    /// <returns><see langword="false"/> when the noun has no sourced form.</returns>
+    private static bool AppendDeclinedScale(List<string> words, int group, FractionCase fractionCase, ScaleNoun noun, bool bareOne)
     {
-        if (group == 0)
-            return;
-        if (group != 1 || !bareOne)
-            AppendDeclinedGroup(words, group, fractionCase, feminine);
         int lastTwo = group % 100;
         bool teen = lastTwo is >= 10 and < 20;
         int lastDigit = lastTwo % 10;
+        string? form;
         if (!teen && lastDigit == 1)
-            words.Add(singular[(int)fractionCase]);
+            form = noun.Singular[(int)fractionCase];
         else if (fractionCase is not (FractionCase.Nominative or FractionCase.Accusative))
-            words.Add(plural[(int)fractionCase]);
+            form = noun.Plural[(int)fractionCase];
         else
-            words.Add(!teen && lastDigit is >= 2 and <= 4 ? plural[(int)FractionCase.Nominative] : plural[(int)FractionCase.Genitive]);
+            form = noun.Plural[!teen && lastDigit is >= 2 and <= 4 ? (int)FractionCase.Nominative : (int)FractionCase.Genitive];
+        if (form is null)
+            return false;
+        if (group != 1 || !bareOne)
+            AppendDeclinedGroup(words, group, fractionCase, noun.Feminine);
+        words.Add(form);
+        return true;
     }
 
     /// <summary>

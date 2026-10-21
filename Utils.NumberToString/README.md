@@ -1237,16 +1237,17 @@ NumberToStringConverter.GetConverter("CS").ConvertFraction(1, 23, "case=genitiv"
 | `CzechOrdinalLanguageSpecifics` | CS | fraction nouns of the IJP (2–20, round tens, 100, 1000, 100 000, 10^6, 10^9), genitive plural after a compound numerator, every case; otherwise *lomeno* + the instrumental, every part declined (*dvě lomeno třemi*, *jedna lomeno tisícem jednou*, *jedna lomeno pěti biliardami*), nominative only |
 | `SlovakOrdinalLanguageSpecifics` | SK | fraction nouns (2–20, round tens, 100, 1000, 10^6, 10^9) with their full paradigm, genitive plural after a compound or *nula*, every case; otherwise *lomené* + the instrumental of the last component (*jedna lomené sto štyridsiatimi dvoma*, *jedna lomené dvoma miliónmi*, *jedna lomené jedným biliónom*) or, when it is indeclinable, *lomené číslom* + cardinal (*jedna lomené číslom dvesto*), nominative only |
 
-From 10^12 the CS and SK plugins decline the scale nouns the converter generates (NTS-42 F: *jednomu bilionu třetin*,
-*dvoma biliónmi tretín*): the case forms are configuration keys of the language's `<GeneratedScaleForm>` (see
-[Generated scale forms](#generated-scale-forms--generatedscaleform)), so the plugins hold no Conway name. Denominator
-A CS compound or multiplier ending in *jedna* declines it in the oblique cases, agreeing with what it counts, the noun
-then in the singular of the case (NTS-45: *dvaceti jedné setiny*, *dvaceti jednomu tisíci třetin*, *jedna lomeno dvaceti
-jedním tisícem*); a SK zero keeps *nula* and declines the fraction noun (*nula tretinám*). Denominator one, zero
-numerators in UK and BG, a CS zero in an oblique case, the CS/SK slash readings in an oblique case, the SK genitive
-singular of a generated *-ón* noun (*bilión -a* but *trilión* unattested), and the UK values from 10^12 fail closed.
+From 10^12 the CS, SK and UK plugins decline the scale nouns the converter generates (NTS-42 F: *jednomu bilionu
+třetin*, *dvoma biliónmi tretín*; NTS-46: *одним трильйоном третіх*): the case forms are configuration keys of the
+language's `<GeneratedScaleForm>` (see [Generated scale forms](#generated-scale-forms--generatedscaleform)), so the
+plugins hold no Conway name. A CS compound or multiplier ending in *jedna* declines it in the oblique cases, agreeing
+with what it counts, the noun then in the singular of the case (NTS-45: *dvaceti jedné setiny*, *dvaceti jednomu tisíci
+třetin*, *jedna lomeno dvaceti jedním tisícem*); a SK zero keeps *nula* and declines the fraction noun (*nula
+tretinám*); a UK zero is the declined noun *нуль* with the denominator in the genitive plural (NTS-46: *нуль третіх*,
+*нулем третіх*). Denominator one, a BG zero numerator, a CS zero in an oblique case, the CS/SK slash readings in an
+oblique case and the SK genitive singular of a generated *-ón* noun (*bilión -a* but *trilión* unattested) fail closed.
 `Convert` itself keeps no case. Sources: `docs/NTS-08-linguistic-sources.md`, sections NTS-30H, NTS-39, NTS-40/41,
-NTS-36/42 F and NTS-45.
+NTS-36/42 F, NTS-45 and NTS-46.
 
 ### `GermanNumberToStringLanguageSpecifics`
 
@@ -1996,7 +1997,7 @@ attaches the forms to a **suffix family** instead: every generated scale whose n
   index, non-empty forms, forced dimensions and values declared by the language, and every key the
   selector returns for the possible multipliers (probed once under the language defaults; a key reached
   only under a caller variant still throws `UNTS007` at conversion). `baseOn` merges by suffix index.
-- `<Forms>` may hold keys the selector never returns. The CS and SK configurations add the case keys
+- `<Forms>` may hold keys the selector never returns. The CS, SK and UK (NTS-46) configurations add the case keys
   `singular.<case>` and `plural.<case>` (`nominative`, `genitive`, `dative`, `accusative`, `locative`,
   `instrumental`: `<Form key="plural.dative" value="onům" />`), which their built-in fraction plugins read
   through the converter to decline the generated nouns (NTS-42 F); a key not declared is a form without

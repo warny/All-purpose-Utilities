@@ -1,6 +1,9 @@
 # Utils.NumberToString — Current backlog
 
-Re-audited on 2026-10-21 after NTS-45 (NTS-42 families A, B and E/SK closed: Czech compounds and multipliers ending
+Re-audited on 2026-10-21 after NTS-46 (NTS-42 E/UK and F/UK closed: the Ukrainian zero numerator declined as a noun
+governing the genitive plural, `нулем третіх`, `нулеві третіх`, and the oblique numerators from 10^12 declining the
+generated scale nouns read from the converter, `одним трильйоном третіх`, `двом квадрильйонам третіх`;
+`DONE-2026-10-21(1).md`), after NTS-45 (NTS-42 families A, B and E/SK closed: Czech compounds and multipliers ending
 in *jedna* declined in the oblique cases and in *lomeno*, `dvaceti jedné setiny`, `dvaceti jednomu tisíci třetin`,
 `jedna lomeno dvaceti jedním tisícem`; Slovak zero with a fraction noun in every case, `nula tretinám`; D and E/CS
 re-audited and kept closed; `DONE-2026-10-21.md`), on 2026-10-20 after closing NTS-36 (Czech and Slovak Conway names in their own spelling: `kvadrilion`,
@@ -86,8 +89,8 @@ classification.
     zero-group rendering and a normative source.
   - ES currency: `uno euro` for DPD *un euro* (apocope before a noun); the caller-defined currency wording does
     not force the attributive form.
-- **NTS-42 — the UK, CS and SK fraction readings NTS-40/41 left closed.** Still open: D (CS/SK), E/CS, E/UK, the UK
-  part of F and the SK genitive singular of a generated *-ón* noun. Each one fails closed for a named missing
+- **NTS-42 — the UK, CS and SK fraction readings NTS-40/41 left closed.** Still open: D (CS/SK), E/CS and the SK
+  genitive singular of a generated *-ón* noun (E/UK and the UK part of F closed by NTS-46). Each one fails closed for a named missing
   piece of evidence (`DONE-2026-10-16(1).md`). Audited on 2026-10-19 (`DONE-2026-10-19(1).md`): every family reproduced
   as a deliberate `NotSupportedException` of the language plugin, none silently wrong, no engine defect (zero and the
   case reach the plugin unchanged); every candidate reading of the first five items is representable by the plugin
@@ -119,15 +122,20 @@ classification.
     nulou*) and quote it as a quantifier only in the nominative (*nula celá pět desetin*; IJP "Počítaný předmět":
     *nula celá dva metrů*); no Czech source states the Slovak rule (indeclinable quantifier, noun in the case). Needed: a
     Czech normative or academic statement, or an IJP/poradna answer on *nula* + counted noun in an oblique case.
-  - E/UK — a Ukrainian zero numerator: no zero fraction even in the nominative; untouched by NTS-45.
+  - ~~E/UK — a Ukrainian zero numerator: no zero fraction even in the nominative~~: **closed by NTS-46**
+    (`DONE-2026-10-21(1).md`): *нуль* declines as a noun (VESUM first forms: *нуля, нулеві, нулем, нулю*) and, as a
+    noun, keeps what it counts in the genitive plural in every case (ПНТУ 2015: "Якщо десятковий дріб починається на
+    нуль, то частина цілих не відмінюється"): *нуль третіх*, *нуля третіх*, *нулеві третіх*, *нулем третіх*, *нулю
+    третіх*.
   - ~~CS and SK denominators, and CS and SK oblique numerators, from 10^12~~: **closed by NTS-42 F**
     (`DONE-2026-10-20.md`): the case forms are `singular.<case>` / `plural.<case>` keys of the `<GeneratedScaleForm>`
     families, read by the plugins through the converter (internal `IScaleNounSource`). Left closed inside F: the Slovak
     genitive singular of a generated *-ón* noun (*bilión -a* attested, the ending lexical in the pattern *dub*; no
     source for *trilión*, *kvadrilión* …).
-  - UK oblique numerators from 10^12: the Ukrainian builder still stops below *трильйон*. The mechanism of NTS-42 F
-    applies (case keys on the UK `<GeneratedScaleForm>`), but the paradigm of the generated *-йон* family in every case
-    needs its own source audit (VESUM *трильйон*, *квадрильйон*), outside the CS/SK lot.
+  - ~~UK oblique numerators from 10^12: the Ukrainian builder still stops below *трильйон*~~: **closed by NTS-46**: the
+    case keys of the UK `<GeneratedScaleForm>` (*йона, йонові, йоном, йоні*; pl. *йонів, йонам, йонами, йонах*, the
+    attested VESUM paradigm of *трильйон*, *квадрильйон*, *квінтильйон*, first forms) read through `IScaleNounSource`:
+    *одним трильйоном третіх*, *двадцяти одному трильйонові третіх*, *двом квадрильйонам трьом трильйонам п'яти третім*.
 - **NTS-38 — ES and EU ordinals from the million, after NTS-30F.** Opened by NTS-30F, which left every ordinal
   byte-identical. EU: `ConvertOrdinal(1 000 000)` gives `milioi batgarren`, whereas Euskaltzaindia rule 203 §5
   writes *milioigarren* (and *milioi bat eta batgarren* for 1 000 001, *bi milioigarren* for 2 000 000); rule 203
