@@ -59,6 +59,43 @@ describes any capability.
 | EE | EE | SCALE-SHORT (scale tables only, NTS-23) | Yes (NTS-20): cardinal + `-lia` on the last element, `gbãtɔ` for 1 | Declarative + `ZeroOrdinalUnsupportedLanguageSpecifics` | **Deferred** | — | none | **Consulted** (NTS-20): Dzablu-Kumah, *Basic Ewe for Foreign Students*; Biblica Open Ewe Contemporary Scriptures; *Ewe Basic Course* 1968; Peace Corps Togo 2010; Wiktionary | Cardinals unbounded (NTS-23): static `akpe`, then the Conway-Wechsler short scale `miliɔn`, `biliɔn`, `triliɔn` (sourced anchors), `quadriliɔn` … (project extrapolation), each before its standalone multiplier (`multiplierPosition="afterScale"`); zero ordinal unsupported |
 | WO | WO | none | Yes (`-éel`, NTS-16, NTS-19) | Declarative + `WolofOrdinalLanguageSpecifics` | **Deferred** | — | none | No consistent source found | Cardinals unbounded (NTS-21): static `junni`, then the long-scale Conway-Wechsler names `milyoŋ`, `milyaar` (attested anchors), `bilyoŋ`, `bilyaar` … (project extrapolation in Wolof spelling); ordinals 1–999 999 only, no ordinal of zero nor of the round thousands |
 
+## NTS-47 — last audit of NTS-42: SK generated *-ón* genitive, D and E/CS (2026-10-21)
+
+Scope: the three closures NTS-42 kept after NTS-46. Old/new outputs and the dump: `DONE-2026-10-21(2).md`. Evidence
+levels as in the NTS-36 section below.
+
+| # | Language | Source | What it establishes |
+|---|---|---|---|
+| 1 | SK | *Pravidlá slovenského pravopisu*, 1940 (JÚĽŠ e-dition, <https://www.juls.savba.sk/ediela/psp1940/psp1940.pdf>), pp. 254, 144, 412, 237 | **attested** *milión, -a, m.*; *bilión, -a, m.*; *trilión, -a, m.*; but *kvadrilión, -u, m., bilión biliónov* |
+| 2 | SK | *Pravidlá slovenského pravopisu*, current text of the JÚĽŠ (slovnik.aktuality.sk, "Pravidlá slov. pravopisu", © JÚĽŠ SAV) | **attested** *bilión ‑a čísl. m.*, *kvadrilión ‑a m.*, *kvintilión ‑a m.*; no entry *trilión* (the search falls back to *triler*) |
+| 3 | SK | KSSJ 4 (2003), *bilión -a m. čísl. zákl.* (NTS-42 F #5) | **attested** *bilióna* |
+| 4 | SK | L. Navrátil, "Neohybnosť v ohybných slovných druhoch", *Kultúra slova* 37 (2003), 6, 336–342 (<https://www.juls.savba.sk/ediela/ks/2003/6/ks2003-6.html>), p. 341 | **rule**: "Číslovky milión, bilión, trilión majú substantívnu povahu a skloňujú sa podľa vzoru dub" (no case form quoted) |
+| 5 | SK | Slovník cudzích slov online (slovnik.aktuality.sk), *bilión*, *trilión*, *kvadrilión*, *kvintilión*, *sextilión*, *septilión* | definitions only, **no grammatical marks**: the *trilión -u*, *kvadrilión -u* once attributed to it in a test comment are not in it (corrected) |
+| 6 | CS | J. Sláma, "Operátor lomeno, koordinátor lomeno, adordinátor: K funkcím slova lomeno", *Naše řeč* 105 (2022), 1, 49–55 (<http://nase-rec.ujc.cas.cz/archiv.php?art=8661>; full text on CEEOL only) | abstract read only: *lomeno* names the sign, is a mathematical operator, a coordinator ('or') and an adordinator; **full text not accessible** here (CEEOL paywall, ResearchGate refused, no PDF in the Naše řeč archive) |
+| 7 | CS | ÚJČ poradna database (dotazy.ujc.cas.cz), searches *lomeno* and *nula* (keyword, question, case, answer) | *lomeno*: no public answer; *nula*: "obecné podstatné jméno" (#7437, project name), a time read *ve dvacet tři nula pět* (vokalizace), *nula bodů* in a question — nothing on *nula* + counted noun in an oblique case |
+| 8 | CS | CzechEncy, *Nový encyklopedický slovník češtiny*, "základní číslovka" (<https://www.czechency.org/slovnik/ZÁKLADNÍ ČÍSLOVKA>) | *nula* only as the value between positive and negative (*teplota nula stupňů*, nominative); *sto, milion, miliarda, bilion* decline after their noun patterns; nothing on an indeclinable quantifier *nula*; no entry *NULA* |
+
+**SK *-ón* genitive — opened.** The series is one noun class (#4, *dub*) whose genitive singular, lexical in *dub*
+(NTS-42 F #8), is *-a* for every member the dictionaries give: *milión*, *bilión*, *trilión* (#1), *bilión* (#2, #3),
+*kvadrilión*, *kvintilión* (#2). The one divergent form, *kvadrilión, -u* (#1, 1940), is superseded by the current
+*kvadrilión ‑a* (#2) of the same codification. The configuration declares `singular.genitive` = *óna* on the *-ón*
+`<GeneratedScaleForm>`: *jedného bilióna tretín*, *jedného trilióna tretín*, *jedného kvadrilióna tretín*. Level:
+**attested** for *bilión*, *trilión*, *kvadrilión*, *kvintilión*; **productive application by morphological class** above
+(*sextilióna* … *milikvadrilióna*: the Conway prefix invariant, only the suffix fragment inflected). No C# change: the
+plugin already read the key (`ReadScaleNoun`, `DeclineScale`).
+
+**D — still not established.** #6 could not be read beyond its abstract, which names the functions of *lomeno* but says
+nothing about its operands' case; #7 has no answer on *lomeno*. The sources of NTS-45 (Prandstetter 1938, SSJČ *dvě
+lomeno třemi*, Ondrus 1968, Peciar 1976, SR 1978) read the phrase in isolation. The open question is **syntactic**, not
+morphological: every candidate form of X exists (*dvěma*, *dvoma*), what is missing is whether the arithmetic term takes
+the external case at all. **Fail-closed.**
+
+**E/CS — still closed.** Lexical paradigm: *nula* is a feminine noun (*nuly, nule, nulu, nulou*; IJP, NTS-45 #4; #7
+"obecné podstatné jméno"). Usage: an indeclinable quantifier occurs (*při nula stupních*, NTS-45; *s nula stupni
+volnosti*, a VUT thesis cited by the request, not re-read here), which is **usage, not a norm**. No Czech normative or academic source (#7, #8, IJP "Počítaný předmět")
+says which applies to a counted noun in an oblique case; the Slovak rule (Peciar 1958) is not evidence for Czech.
+**Fail-closed.**
+
 ## NTS-46 — NTS-42 E/UK and F/UK: Ukrainian zero and generated-scale fractions (2026-10-21)
 
 Scope: the two Ukrainian closures NTS-42 kept after NTS-45. Old/new outputs and the dump: `DONE-2026-10-21(1).md`.
@@ -196,7 +233,8 @@ names it declines are the ones the converter writes (no second Conway spelling i
   *bilióne*, *biliónom*; pl. *biliónov*, *biliónom*, *biliónoch*, *biliónmi* — **productive deduction** from the
   attested class; the *-arda* family follows *miliarda* (*žena*, #8) — **productive deduction** as in NTS-30C. The
   genitive singular of the *-ón* family is **fail-closed**: lexical in *dub* (#8), attested for *bilión -a* only (#5);
-  no key is declared, so *jedného bilióna tretín* throws rather than guess *-a* for *trilión*.
+  no key is declared, so *jedného bilióna tretín* throws rather than guess *-a* for *trilión*. **Opened by NTS-47**
+  (*bilión, trilión, kvadrilión, kvintilión -a*, PSP; see the NTS-47 section above).
 
 The construction rules are unchanged: CS declines every part (NTS-40), SK the last component only (NTS-40, NTS-44); a
 generated noun stands where *milion*/*milión* stood (singular after one, plural after the other multipliers, a counted

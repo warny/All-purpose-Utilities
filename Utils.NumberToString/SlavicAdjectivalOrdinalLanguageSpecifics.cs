@@ -590,9 +590,9 @@ public sealed partial class SlovakOrdinalLanguageSpecifics : SlavicAdjectivalOrd
     /// NTS-42 E). From 10^12 the scale nouns are the converter's (NTS-42 F): the generated <c>bilión</c>, <c>biliarda</c>,
     /// <c>trilión</c> … declined, as the last component, after the patterns <c>dub</c> and <c>žena</c> the SK
     /// configuration declares (<i>jedna lomené jedným biliónom</i>, <i>jedna lomené jednou biliardou</i>); called without
-    /// the converter, this overload declines no scale from 10^12. A denominator of one, a scale form no source gives (the
-    /// genitive singular of <c>bilión</c>, see <see cref="DeclineScale"/>) and an oblique case of a denominator without a
-    /// noun fail closed; <c>ku</c> reads a ratio, not a fraction.
+    /// the converter, this overload declines no scale from 10^12. A denominator of one, a scale form the configuration
+    /// does not declare (see <see cref="DeclineScale"/>) and an oblique case of a denominator without a noun fail closed;
+    /// <c>ku</c> reads a ratio, not a fraction.
     /// </summary>
     /// <inheritdoc />
     public bool TryGetFractionDenominator(BigInteger numerator, BigInteger denominator, IReadOnlyDictionary<string, string> variants,

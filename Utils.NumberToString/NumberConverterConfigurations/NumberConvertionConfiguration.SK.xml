@@ -204,15 +204,20 @@
                  (SlovakOrdinalLanguageSpecifics, through the converter: the plugin holds no Conway name). The -ón
                  family is declined like milión, the numeral of KSSJ 4 "bilión -a ... milión miliónov", pattern dub
                  (Morfológia slovenského jazyka 1966, 329–330: miliónu, milióne, miliónom; pl. miliónov, miliónom,
-                 miliónoch, miliónmi); its genitive singular is lexical in that pattern (-a or -u) and attested for
-                 bilión -a only, so it is not declared and that form fails closed. The -arda family is declined like
-                 miliarda, pattern žena (Morfológia 101, 330; KSSJ 4 / PSP 2013: miliarda -y -árd ž.). -->
+                 miliónoch, miliónmi). NTS-47: the genitive singular, lexical in that pattern (-a or -u), is -a
+                 for every member a dictionary gives: milión, bilión, trilión -a (PSP 1940); bilión, kvadrilión,
+                 kvintilión -a (current PSP text of the JÚĽŠ); the series milión, bilión, trilión "podľa vzoru dub"
+                 (Navrátil, Kultúra slova 2003, 341). The older PSP 1940 kvadrilión -u is superseded by the current
+                 kvadrilión -a. The higher names continue the series (bilióna, trilióna … milikvadrilióna).
+                 The -arda family is declined like miliarda, pattern žena (Morfológia 101, 330; KSSJ 4 / PSP 2013:
+                 miliarda -y -árd ž.). -->
             <GeneratedScaleForm suffix="0" formSelector="CzechSlovakPluralLexicalFormSelector">
                 <Forms>
                     <Form key="one" value="ón" />
                     <Form key="few" value="óny" />
                     <Form key="other" value="ónov" />
                     <Form key="singular.nominative" value="ón" />
+                    <Form key="singular.genitive" value="óna" />
                     <Form key="singular.dative" value="ónu" />
                     <Form key="singular.accusative" value="ón" />
                     <Form key="singular.locative" value="óne" />

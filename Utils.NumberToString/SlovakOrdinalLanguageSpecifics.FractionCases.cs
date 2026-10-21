@@ -240,9 +240,9 @@ public sealed partial class SlovakOrdinalLanguageSpecifics
     /// <summary>
     /// Declines a scale noun and its multiplier. After one the noun is singular and the multiplier agrees; after two to
     /// four the noun is the nominative plural in the direct cases; after the other multipliers the genitive plural in
-    /// the direct cases (as the SK configuration writes them); the plural of the case otherwise. A generated masculine noun
-    /// has no genitive singular: the <c>dub</c> paradigm leaves the ending lexical (<c>-a</c> or <c>-u</c>), the KSSJ gives
-    /// it for <i>bilión -a</i> only, so the SK configuration declares no such form and the reading fails closed.
+    /// the direct cases (as the SK configuration writes them); the plural of the case otherwise. The forms come from the
+    /// noun: a generated masculine noun has the genitive singular <c>-a</c> the SK configuration declares (NTS-47:
+    /// <i>bilión, trilión, kvadrilión, kvintilión -a</i>), and a form the configuration does not declare fails closed.
     /// </summary>
     /// <param name="multiplier">The multiplier, 1–999.</param>
     /// <param name="fractionCase">The case.</param>

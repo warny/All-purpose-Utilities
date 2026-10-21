@@ -1,6 +1,9 @@
 # Utils.NumberToString — Current backlog
 
-Re-audited on 2026-10-21 after NTS-46 (NTS-42 E/UK and F/UK closed: the Ukrainian zero numerator declined as a noun
+Re-audited on 2026-10-21 after NTS-47 (last audit of NTS-42: the SK genitive singular of a generated *-ón* noun
+opened, `jedného trilióna tretín`, `jedného kvadrilióna tretín`, after the PSP *bilión, trilión, kvadrilión, kvintilión
+-a*; D and E/CS re-audited and kept closed as external documentary blockers; `DONE-2026-10-21(2).md`), after NTS-46
+(NTS-42 E/UK and F/UK closed: the Ukrainian zero numerator declined as a noun
 governing the genitive plural, `нулем третіх`, `нулеві третіх`, and the oblique numerators from 10^12 declining the
 generated scale nouns read from the converter, `одним трильйоном третіх`, `двом квадрильйонам третіх`;
 `DONE-2026-10-21(1).md`), after NTS-45 (NTS-42 families A, B and E/SK closed: Czech compounds and multipliers ending
@@ -89,9 +92,12 @@ classification.
     zero-group rendering and a normative source.
   - ES currency: `uno euro` for DPD *un euro* (apocope before a noun); the caller-defined currency wording does
     not force the attributive form.
-- **NTS-42 — the UK, CS and SK fraction readings NTS-40/41 left closed.** Still open: D (CS/SK), E/CS and the SK
-  genitive singular of a generated *-ón* noun (E/UK and the UK part of F closed by NTS-46). Each one fails closed for a named missing
-  piece of evidence (`DONE-2026-10-16(1).md`). Audited on 2026-10-19 (`DONE-2026-10-19(1).md`): every family reproduced
+- **NTS-42 — the UK, CS and SK fraction readings NTS-40/41 left closed.** Still open: **D (CS and SK) and E/CS only**,
+  both **external documentary blockers**, not architecture debt: every candidate reading is representable by the
+  plugins, what is missing is a source deciding between them (last audit NTS-47, `DONE-2026-10-21(2).md`: Sláma 2022,
+  ÚJČ poradna database, CzechEncy, IJP; nothing new). They open as soon as such a source is found; until then they fail
+  closed. (E/UK and the UK part of F closed by NTS-46; the SK genitive singular of a generated *-ón* noun by NTS-47.)
+  Each one fails closed for a named missing piece of evidence (`DONE-2026-10-16(1).md`). Audited on 2026-10-19 (`DONE-2026-10-19(1).md`): every family reproduced
   as a deliberate `NotSupportedException` of the language plugin, none silently wrong, no engine defect (zero and the
   case reach the plugin unchanged); every candidate reading of the first five items is representable by the plugin
   contract (`NumeratorText`), so they stay open on linguistic evidence only, the last one on a design dependency.
@@ -106,8 +112,9 @@ classification.
     (*dvaceti jednomu tisíci třetin*, *dvaceti jedné miliardě třetin*, *jedna lomeno dvaceti jedním tisícem*).
   - ~~SK, oblique cases of a numerator ending in a bare *jeden* after a larger group (101/3, 1 000 001/3)~~:
     **documented (rule + construction type)**, opened by **NTS-44** (`DONE-2026-10-19(2).md`).
-  - D — CS and SK, the *lomeno*/*lomené* readings under an external case (2/3 → *s … lomeno třemi*): **not
-    established**, re-audited by NTS-45. The internal structure *X lomeno/lomené Y(instr.)* is sourced (Prandstetter
+  - D — CS and SK, the *lomeno*/*lomené* readings (a denominator without a fraction noun, 2/23 → *s … lomeno dvaceti
+    třemi*) under an external case: **not established**, re-audited by NTS-45 and NTS-47 (Sláma, *Naše řeč* 2022: only
+    the abstract accessible, nothing on the operands' case). The uncertainty is **syntactic**, not morphological. The internal structure *X lomeno/lomené Y(instr.)* is sourced (Prandstetter
     1938; Ondrus 1968, SR 1978); the open question is the form of the first operand X when the whole phrase is governed
     by a preposition or a case: declined (*s dvěma lomeno třemi*, *s dvoma lomené troma*) or kept in the nominative of the
     arithmetic term (*s dvě lomeno třemi*, *s dva lomené troma*). Needed: one attestation of a whole slash phrase under
@@ -117,7 +124,8 @@ classification.
   - ~~E/SK — a Slovak zero numerator with a fraction noun in an oblique case~~: **closed by NTS-45**: *nula*
     indeclinable before a counted noun, the noun takes the case (Peciar, SR 23, 1958; Kultúra slova 36, 2002: *pri
     nula stupňoch*): *nula tretinám*, *nula polovicami*.
-  - E/CS — a Czech zero numerator in an oblique case (0/3 → *nula třetinám*?): **usage attested, not normative**.
+  - E/CS — a Czech zero numerator in an oblique case (0/3 → *nula třetinám*?): **usage attested, not normative**,
+    re-audited by NTS-47 (ÚJČ poradna database: *nula* only as "obecné podstatné jméno"; CzechEncy: nothing).
     Usage has *při nula stupních*, but the IJP, ASCS, SSČ and SSJČ decline *nula* as a feminine noun (*nuly, nule,
     nulou*) and quote it as a quantifier only in the nominative (*nula celá pět desetin*; IJP "Počítaný předmět":
     *nula celá dva metrů*); no Czech source states the Slovak rule (indeclinable quantifier, noun in the case). Needed: a
@@ -129,9 +137,11 @@ classification.
     третіх*.
   - ~~CS and SK denominators, and CS and SK oblique numerators, from 10^12~~: **closed by NTS-42 F**
     (`DONE-2026-10-20.md`): the case forms are `singular.<case>` / `plural.<case>` keys of the `<GeneratedScaleForm>`
-    families, read by the plugins through the converter (internal `IScaleNounSource`). Left closed inside F: the Slovak
-    genitive singular of a generated *-ón* noun (*bilión -a* attested, the ending lexical in the pattern *dub*; no
-    source for *trilión*, *kvadrilión* …).
+    families, read by the plugins through the converter (internal `IScaleNounSource`).
+  - ~~SK, the genitive singular of a generated *-ón* noun (left closed inside F: *bilión -a* only)~~: **closed by
+    NTS-47** (`DONE-2026-10-21(2).md`): *-óna* for the whole family, after *milión, bilión, trilión -a* (PSP 1940),
+    *bilión, kvadrilión, kvintilión -a* (current PSP) and the series "podľa vzoru dub" (Kultúra slova 2003): *jedného
+    bilióna tretín*, *jedného kvintilióna tretín*, *jedného milikvadrilióna tretín*.
   - ~~UK oblique numerators from 10^12: the Ukrainian builder still stops below *трильйон*~~: **closed by NTS-46**: the
     case keys of the UK `<GeneratedScaleForm>` (*йона, йонові, йоном, йоні*; pl. *йонів, йонам, йонами, йонах*, the
     attested VESUM paradigm of *трильйон*, *квадрильйон*, *квінтильйон*, first forms) read through `IScaleNounSource`:
