@@ -6,7 +6,7 @@
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <meta name="title" content="Class CzechOrdinalLanguageSpecifics | omy.Utils Documentation ">
       
-      <meta name="description" content="The declined cardinals of Czech fractions (NTS-40, NTS-41). The IJP (&amp;quot;Členěn&#237; č&#237;sel, v&#237;ceslovn&#233; č&#237;slovkov&#233; v&#253;razy&amp;quot;) allows three ways of declining a multi-word numeral: every part (před třemi sty šedes&#225;ti pěti lety, bez tis&#237;ce osmi set čtyřiceti sedmi korun), only the tens and units (o milion tři sta pades&#225;t osm tis&#237;c čtyři sta dvaceti třech dokladech), or none (in dictation and arithmetic). This class declines every part: the strategy the IJP lists first, the one of the mathematical reading (E. Prandstetter, &amp;quot;Čten&#237; matematick&#253;ch značek a v&#253;razů&amp;quot;, Naše řeč 22, 1938, 78–86: šedes&#225;t osm lomeno třemi sty pades&#225;ti šesti), compositional, and the one NTS-39 already used below 1000; sto followed by another numeral stays undeclined (IJP &amp;quot;Poč&#237;tan&#253; předmět po č&#237;slovk&#225;ch&amp;quot;: ve sto dvaceti př&#237;padech).">
+      <meta name="description" content="The declined cardinals of Czech fractions (NTS-40, NTS-41). The IJP (&amp;quot;Členěn&#237; č&#237;sel, v&#237;ceslovn&#233; č&#237;slovkov&#233; v&#253;razy&amp;quot;) allows three ways of declining a multi-word numeral: every part (před třemi sty šedes&#225;ti pěti lety, bez tis&#237;ce osmi set čtyřiceti sedmi korun), only the tens and units (o milion tři sta pades&#225;t osm tis&#237;c čtyři sta dvaceti třech dokladech), or none (in dictation and arithmetic). This class declines every part: the strategy the IJP lists first, the one of the mathematical reading (E. Prandstetter, &amp;quot;Čten&#237; matematick&#253;ch značek a v&#253;razů&amp;quot;, Naše řeč 22, 1938, 78–86: šedes&#225;t osm lomeno třemi sty pades&#225;ti šesti), compositional, and the one NTS-39 already used below 1000; sto followed by another numeral stays undeclined (IJP &amp;quot;Poč&#237;tan&#253; předmět po č&#237;slovk&#225;ch&amp;quot;: ve sto dvaceti př&#237;padech). A jeden/jedna ending a compound (21, 101, 1001, a multiplier 21 000) is declined with the rest and agrees with what it counts, the counted noun then in the singular of the case (NTS-45, see ).">
       <link rel="icon" href="../favicon.ico">
       <link rel="stylesheet" href="../public/docfx.min.css">
       <link rel="stylesheet" href="../public/main.css">
@@ -104,7 +104,9 @@ dvaceti třech dokladech</i>), or none (in dictation and arithmetic). This class
 IJP lists first, the one of the mathematical reading (E. Prandstetter, &quot;Čtení matematických značek a výrazů&quot;, Naše
 řeč 22, 1938, 78–86: <i>šedesát osm lomeno třemi sty padesáti šesti</i>), compositional, and the one NTS-39 already
 used below 1000; <code>sto</code> followed by another numeral stays undeclined (IJP &quot;Počítaný předmět po číslovkách&quot;:
-<i>ve sto dvaceti případech</i>).</p>
+<i>ve sto dvaceti případech</i>). A <code>jeden/jedna</code> ending a compound (21, 101, 1001, a multiplier 21 000) is
+declined with the rest and agrees with what it counts, the counted noun then in the singular of the case (NTS-45, see
+<span class="xref">Utils.NumberToString.CzechOrdinalLanguageSpecifics.FinalOne(Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.FractionCase, Utils.NumberToString.CzechOrdinalLanguageSpecifics.NumeralGender)</span>).</p>
 </div>
   <div class="markdown conceptual"></div>
 
@@ -267,7 +269,7 @@ used below 1000; <code>sto</code> followed by another numeral stays undeclined (
 
   <h3 id="Utils_NumberToString_CzechOrdinalLanguageSpecifics_CaseValues" data-uid="Utils.NumberToString.CzechOrdinalLanguageSpecifics.CaseValues">
   CaseValues
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/SlavicAdjectivalOrdinalLanguageSpecifics.cs/#L440"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/SlavicAdjectivalOrdinalLanguageSpecifics.cs/#L442"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the case values in the column order of the ending tables (nominative first).</p>
@@ -299,7 +301,7 @@ used below 1000; <code>sto</code> followed by another numeral stays undeclined (
 
   <h3 id="Utils_NumberToString_CzechOrdinalLanguageSpecifics_FeminineValue" data-uid="Utils.NumberToString.CzechOrdinalLanguageSpecifics.FeminineValue">
   FeminineValue
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/SlavicAdjectivalOrdinalLanguageSpecifics.cs/#L434"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/SlavicAdjectivalOrdinalLanguageSpecifics.cs/#L436"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the dimension values that select the feminine forms.</p>
@@ -331,7 +333,7 @@ used below 1000; <code>sto</code> followed by another numeral stays undeclined (
 
   <h3 id="Utils_NumberToString_CzechOrdinalLanguageSpecifics_NeuterValue" data-uid="Utils.NumberToString.CzechOrdinalLanguageSpecifics.NeuterValue">
   NeuterValue
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/SlavicAdjectivalOrdinalLanguageSpecifics.cs/#L437"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/SlavicAdjectivalOrdinalLanguageSpecifics.cs/#L439"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the dimension values that select the neuter forms.</p>
@@ -367,7 +369,7 @@ used below 1000; <code>sto</code> followed by another numeral stays undeclined (
 
   <h3 id="Utils_NumberToString_CzechOrdinalLanguageSpecifics_Decline_System_String_Utils_NumberToString_SlavicAdjectivalOrdinalLanguageSpecifics_Gender_System_Int32_" data-uid="Utils.NumberToString.CzechOrdinalLanguageSpecifics.Decline(System.String,Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.Gender,System.Int32)">
   Decline(string, Gender, int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/SlavicAdjectivalOrdinalLanguageSpecifics.cs/#L443"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/SlavicAdjectivalOrdinalLanguageSpecifics.cs/#L445"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Declines a masculine nominative ordinal for a gender and case.</p>
@@ -412,7 +414,7 @@ used below 1000; <code>sto</code> followed by another numeral stays undeclined (
 
   <h3 id="Utils_NumberToString_CzechOrdinalLanguageSpecifics_TryDecompose_System_Int32_System_String__System_Collections_Generic_IReadOnlyList_System_String___" data-uid="Utils.NumberToString.CzechOrdinalLanguageSpecifics.TryDecompose(System.Int32,System.String@,System.Collections.Generic.IReadOnlyList{System.String}@)">
   TryDecompose(int, out string, out IReadOnlyList&lt;string&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/SlavicAdjectivalOrdinalLanguageSpecifics.cs/#L449"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/SlavicAdjectivalOrdinalLanguageSpecifics.cs/#L451"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Decomposes a positive number into a cardinal prefix and its ordinal components.</p>
@@ -457,7 +459,7 @@ used below 1000; <code>sto</code> followed by another numeral stays undeclined (
 
   <h3 id="Utils_NumberToString_CzechOrdinalLanguageSpecifics_TryGetFractionDenominator_System_Numerics_BigInteger_System_Numerics_BigInteger_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__Utils_NumberToString_FractionDenominatorReading__" data-uid="Utils.NumberToString.CzechOrdinalLanguageSpecifics.TryGetFractionDenominator(System.Numerics.BigInteger,System.Numerics.BigInteger,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},Utils.NumberToString.FractionDenominatorReading@)">
   TryGetFractionDenominator(BigInteger, BigInteger, IReadOnlyDictionary&lt;string, string&gt;, out FractionDenominatorReading?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/SlavicAdjectivalOrdinalLanguageSpecifics.cs/#L373"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/SlavicAdjectivalOrdinalLanguageSpecifics.cs/#L375"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Reads a fraction as the IJP does. A denominator with a fraction noun takes the noun in the form the numerator
@@ -467,22 +469,24 @@ plural and keeps its counting form (<code>dvacet jedna třetin</code>, <code>dva
 <i>tisíc dvacet čtyři celé/celých</i>). Any other denominator, and a zero numerator, take
 the mathematical reading <code>lomeno</code> + instrumental (IJP <code>lomit</code>: SSJČ <i>dvě lomeno třemi</i>, SSČ <i>pět
 lomeno dvěma</i>; Prandstetter, Naše řeč 22, 1938: <i>šedesát osm lomeno třemi sty padesáti šesti</i>), every part
-of the denominator declined (NTS-41, see <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.numerics.biginteger">DeclineCardinal(BigInteger, FractionCase, NumeralGender, bool, IScaleNounSource)</a>) but <code>sto</code> before another numeral
+of the denominator declined (NTS-41, see <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.numerics.biginteger">DeclineCardinal(BigInteger, FractionCase, NumeralGender, IScaleNounSource)</a>) but <code>sto</code> before another numeral
 (<i>ve sto dvaceti případech</i>); a numerator of one to four is feminine (<i>jedna a dvě jsou tři</i>, SSČ
 <code>dva</code>), a compound keeps its counting form, as in arithmetic operations (IJP &quot;Členění čísel&quot;: <i>k tisíc sedm
 set dvacet dva korunám</i>). A <code>jedna</code> ending the denominator (21, 101, 1001) is the feminine instrumental
 <code>jednou</code>: a number in an arithmetic operation is feminine (SSČ <code>dva</code>: <i>jedna a dvě (čast. než jeden a
 dva) jsou tři</i>; Prandstetter: <i>čtyřmi iks minus jedna</i>), and the mathematical reading declines it so
-(Prandstetter: <i>lomeno jednou celou</i>).
+(Prandstetter: <i>lomeno jednou celou</i>); a multiplier ending in one agrees with its scale noun instead
+(<i>jedna lomeno dvaceti jedním tisícem</i>, <i>dvaceti jednou miliardou</i>: NTS-42 B, see
+<span class="xref">Utils.NumberToString.CzechOrdinalLanguageSpecifics.FinalOne(Utils.NumberToString.SlavicAdjectivalOrdinalLanguageSpecifics.FractionCase, Utils.NumberToString.CzechOrdinalLanguageSpecifics.NumeralGender)</span>).
 The cases other than the nominative read the fraction nouns only (NTS-40, see
-<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.numerics.biginteger">TryBuildObliqueNounFraction(BigInteger, FractionNounForms, FractionCase, IScaleNounSource, out FractionDenominatorReading)</a>): no source declines the <code>lomeno</code> reading as a whole, whose
-denominator is already an instrumental. From 10^12 the scale nouns are the converter's (NTS-42 F): the generated
-<code>bilion</code>, <code>biliarda</code>, <code>trilion</code> … declined after the IJP paradigms the CS configuration declares
-(<i>jedním bilionem</i>, <i>dvěma bilionům</i>, <i>pěti biliardami</i>); called without the converter, this
-overload declines no scale from 10^12. Without a sourced form the reading fails closed: a denominator of one, a
-multiplier ending in one after the tens or hundreds in an oblique case (21 000: no source gives the gender of its
-<code>jedna</code> there), and an oblique case of a zero numerator, of a compound numerator ending in <code>jedna</code> or of
-a denominator without a noun.</p>
+<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.numerics.biginteger">TryBuildObliqueNounFraction(BigInteger, FractionNounForms, FractionCase, IScaleNounSource, out FractionDenominatorReading)</a>): no source reads a whole <code>lomeno</code> phrase under an external case,
+where its first operand could take the case (<i>s dvěma lomeno třemi</i>) or keep the nominative of the
+arithmetic term (<i>s dvě lomeno třemi</i>; NTS-42 D). From 10^12 the scale nouns are the converter's (NTS-42 F):
+the generated <code>bilion</code>, <code>biliarda</code>, <code>trilion</code> … declined after the IJP paradigms the CS
+configuration declares (<i>jedním bilionem</i>, <i>dvěma bilionům</i>, <i>pěti biliardami</i>); called without the
+converter, this overload declines no scale from 10^12. Without a sourced form the reading fails closed: a
+denominator of one, and an oblique case of a zero numerator (NTS-42 E) or of a denominator without a noun
+(NTS-42 D).</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
