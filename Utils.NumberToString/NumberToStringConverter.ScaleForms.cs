@@ -415,5 +415,57 @@ namespace Utils.NumberToString
 
             return (Scale.GetScaleName(groupNumber).ToPlural(group), ForcedVariantSet.Empty);
         }
+
+        /// <summary>The scale nouns handed to a built-in fraction plugin, created on first use (see <see cref="IScaleNounSource"/>).</summary>
+        private IScaleNounSource? _scaleNounSource;
+
+        /// <summary>Gets the scale nouns handed to a built-in fraction plugin.</summary>
+        private IScaleNounSource ScaleNouns => _scaleNounSource ??= new ScaleNounSource(this);
+
+        /// <summary>
+        /// Resolves one configured form of the noun of scale <paramref name="groupNumber"/> by its key, in the order of
+        /// <see cref="ResolveScaleWord"/> but without a selector: the exact <see cref="ScaleForms"/> entry of the scale, else the
+        /// <see cref="GeneratedScaleForms"/> entry of its suffix, whose fragment is joined to the Conway prefix of the scale.
+        /// </summary>
+        /// <param name="groupNumber">The scale index, at least 1.</param>
+        /// <param name="formKey">The form key.</param>
+        /// <param name="noun">Receives the noun.</param>
+        /// <param name="multiplierVariants">Receives the variants the form forces on its multiplier.</param>
+        /// <returns><see langword="false"/> when the scale cannot be named or no form has that key.</returns>
+        private bool TryGetScaleNounForm(int groupNumber, string formKey, out string noun, out ForcedVariantSet multiplierVariants)
+        {
+            noun = string.Empty;
+            multiplierVariants = ForcedVariantSet.Empty;
+            if (groupNumber < 1 || Scale is null || !Scale.CanNameGroup(groupNumber))
+                return false;
+
+            if (_scaleForms.Count != 0 && _scaleForms.TryGetValue(groupNumber, out var definition))
+            {
+                if (!definition.Forms.TryGetForm(formKey, out noun))
+                    return false;
+                if (definition.MultiplierForcedVariants.TryGetValue(formKey, out var exactSet))
+                    multiplierVariants = exactSet;
+                return true;
+            }
+
+            if (_generatedScaleFormBySuffix.Length == 0
+                || !Scale.TryGetDynamicScaleInfo(groupNumber, out long prefix, out int suffix)
+                || _generatedScaleFormBySuffix[suffix] is not { } generated
+                || !generated.Forms.TryGetForm(formKey, out string suffixForm))
+                return false;
+            if (generated.MultiplierForcedVariants.TryGetValue(formKey, out var set))
+                multiplierVariants = set;
+            noun = Scale.BuildDynamicName(prefix, suffixForm);
+            return true;
+        }
+
+        /// <summary>The <see cref="IScaleNounSource"/> of a converter: its configured scale nouns, read-only.</summary>
+        /// <param name="owner">The converter.</param>
+        private sealed class ScaleNounSource(NumberToStringConverter owner) : IScaleNounSource
+        {
+            /// <inheritdoc />
+            public bool TryGetScaleNoun(int scale, string formKey, out string noun, out ForcedVariantSet multiplierVariants)
+                => owner.TryGetScaleNounForm(scale, formKey, out noun, out multiplierVariants);
+        }
     }
 }

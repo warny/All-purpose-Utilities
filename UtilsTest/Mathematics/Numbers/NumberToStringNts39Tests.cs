@@ -152,14 +152,15 @@ public class NumberToStringNts39Tests
 
     /// <summary>
     /// The Czech reading still fails closed for a multiplier ending in one after the tens or hundreds (no source gives
-    /// the gender of its <c>jedna</c> in the instrumental) and from 10^12. The denominators ending in one and those from
-    /// 1000 that NTS-39 left closed were opened by NTS-41 (<see cref="NumberToStringNts40Nts41Tests"/>).
+    /// the gender of its <c>jedna</c> in the instrumental), from 10^12 as below. The denominators ending in one and those
+    /// from 1000 that NTS-39 left closed were opened by NTS-41 (<see cref="NumberToStringNts40Nts41Tests"/>), those from
+    /// 10^12 by NTS-42 F (<see cref="NumberToStringNts36Nts42FTests"/>: <c>jedna lomeno jedním bilionem jednou</c>).
     /// </summary>
     [TestMethod]
     [DataRow(1L, 21_000L)]
     [DataRow(1L, 101_000L)]
     [DataRow(1L, 31_000_000L)]
-    [DataRow(1L, 1_000_000_000_001L)]
+    [DataRow(1L, 21_000_000_000_000L)]
     public void Czech_StillClosed(long numerator, long denominator)
         => Assert.ThrowsExactly<NotSupportedException>(() => Get("CS").ConvertFraction(numerator, denominator));
 
@@ -321,16 +322,17 @@ public class NumberToStringNts39Tests
     }
 
     /// <summary>
-    /// From 10^12 without a noun the Slovak reading fails closed; the denominators from 10^6 that NTS-39 left closed were
-    /// opened by NTS-41 (<see cref="NumberToStringNts40Nts41Tests"/>).
+    /// The Slovak denominators NTS-39 left closed: those from 10^6 were opened by NTS-41
+    /// (<see cref="NumberToStringNts40Nts41Tests"/>), those from 10^12 by NTS-42 F
+    /// (<see cref="NumberToStringNts36Nts42FTests"/>), each by the same last-component rule.
     /// </summary>
     [TestMethod]
     public void Slovak_StillClosedAboveTheDomain()
     {
         Assert.AreEqual("jedna lomené číslom jeden milión jeden", Get("SK").ConvertFraction(1, 1_000_001), "NTS-41");
         Assert.AreEqual("jedna lomené dvoma miliónmi", Get("SK").ConvertFraction(1, 2_000_000), "NTS-41");
-        Assert.ThrowsExactly<NotSupportedException>(() => Get("SK").ConvertFraction(1, 1_000_000_000_001));
-        Assert.ThrowsExactly<NotSupportedException>(() => Get("SK").ConvertFraction(1, 2_000_000_000_000));
+        Assert.AreEqual("jedna lomené číslom jeden bilión jeden", Get("SK").ConvertFraction(1, 1_000_000_000_001), "NTS-42 F");
+        Assert.AreEqual("jedna lomené dvoma biliónmi", Get("SK").ConvertFraction(1, 2_000_000_000_000), "NTS-42 F");
     }
 
     // ===== zero numerator ============================================================================

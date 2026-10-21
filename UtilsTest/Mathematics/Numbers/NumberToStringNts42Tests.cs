@@ -274,22 +274,15 @@ public class NumberToStringNts42Tests
     // ===== F — 10^12 and above ======================================================================
 
     /// <summary>
-    /// Family F: the declined-cardinal builders stop below the first generated scale (<c>bilion</c>, <c>bilión</c>,
-    /// <c>трильйон</c>): the last value of the milliards still declines, the first generated one fails closed, in every
-    /// oblique case.
+    /// Family F, UK: the declined-cardinal builder stops below the first generated scale (<c>трильйон</c>): the last value
+    /// of the milliards still declines, the first generated one fails closed, in every oblique case. (CS and SK: opened by
+    /// NTS-42 F, see <see cref="F_ObliqueNumerators_OpenedForCzechAndSlovak"/>.)
     /// </summary>
     [TestMethod]
-    [DataRow("CS")]
-    [DataRow("SK")]
     [DataRow("UK")]
     public void F_ObliqueNumerators_BoundAtTenToTheTwelve(string language)
     {
-        string[] cases = language switch
-        {
-            "CS" => s_czechObliqueCases,
-            "SK" => s_slovakObliqueCases,
-            _ => s_ukrainianObliqueCases,
-        };
+        string[] cases = s_ukrainianObliqueCases;
         BigInteger last = 999_999_999_999;
         foreach (string variant in cases)
             Assert.IsFalse(string.IsNullOrWhiteSpace(Get(language).ConvertFraction(last, 3, variant)), variant);
@@ -299,17 +292,52 @@ public class NumberToStringNts42Tests
             AssertClosed(language, numerator, 3, cases);
     }
 
-    /// <summary>Family F: the CS and SK slash denominators decline up to 999 999 999 999 and fail closed from 10^12.</summary>
+    /// <summary>
+    /// Family F, CS and SK (characterization): opened by NTS-42 F, the exact readings being pinned by
+    /// <c>NumberToStringNts36Nts42FTests</c>. The family's numerators read in every oblique case but the closures that
+    /// remain documented: CS 10^12 + 1 (family A, a compound ending in <c>jedna</c>) and the SK genitive singular of a
+    /// generated <c>-ón</c> noun (<c>bilión</c>, <c>kvadrilión</c>: lexical ending).
+    /// </summary>
+    [TestMethod]
+    [DataRow("CS")]
+    [DataRow("SK")]
+    public void F_ObliqueNumerators_OpenedForCzechAndSlovak(string language)
+    {
+        string[] cases = language == "CS" ? s_czechObliqueCases : s_slovakObliqueCases;
+        BigInteger first = BigInteger.Pow(10, 12);
+        BigInteger[] numerators = [first, first + 1, 2 * first, BigInteger.Pow(10, 15), BigInteger.Pow(10, 24)];
+        foreach (BigInteger numerator in numerators)
+        {
+            foreach (string variant in cases)
+            {
+                bool closed = language == "CS"
+                    ? numerator == first + 1
+                    : variant == "case=genitív" && (numerator == first || numerator == BigInteger.Pow(10, 24));
+                if (closed)
+                    AssertClosed(language, numerator, 3, [variant]);
+                else
+                    Assert.IsFalse(string.IsNullOrWhiteSpace(Get(language).ConvertFraction(numerator, 3, variant)), $"{numerator} {variant}");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Family F: the CS and SK slash denominators decline beyond 999 999 999 999 since NTS-42 F (exact readings in
+    /// <c>NumberToStringNts36Nts42FTests</c>); a CS multiplier ending in one after the tens stays closed (family B).
+    /// </summary>
     [TestMethod]
     [DataRow("CS")]
     [DataRow("SK")]
     public void F_SlashDenominators_BoundAtTenToTheTwelve(string language)
     {
-        StringAssert.StartsWith(Get(language).ConvertFraction(1, 999_999_999_999), language == "CS" ? "jedna lomeno " : "jedna lomené ");
+        string prefix = language == "CS" ? "jedna lomeno " : "jedna lomené ";
+        StringAssert.StartsWith(Get(language).ConvertFraction(1, 999_999_999_999), prefix);
         BigInteger first = BigInteger.Pow(10, 12);
         BigInteger[] denominators = [first, first + 1, 2 * first, BigInteger.Pow(10, 15) + 3];
         foreach (BigInteger denominator in denominators)
-            Assert.ThrowsExactly<NotSupportedException>(() => Get(language).ConvertFraction(BigInteger.One, denominator), denominator.ToString());
+            StringAssert.StartsWith(Get(language).ConvertFraction(BigInteger.One, denominator), prefix, denominator.ToString());
+        if (language == "CS")
+            Assert.ThrowsExactly<NotSupportedException>(() => Get(language).ConvertFraction(BigInteger.One, 21 * first), "B");
     }
 
     /// <summary>

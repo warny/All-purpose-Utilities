@@ -43,6 +43,19 @@ All notable changes to this project will be documented in this file.
 - Added `ItalianOrdinalLanguageSpecifics`, restricting Italian ordinals to verified forms.
 - Added `WolofOrdinalLanguageSpecifics`, a domain guard rejecting the Wolof ordinals of zero and of the round thousands.
 
+### Fixed — `omy.Utils.NumberToString` (NTS-36 and NTS-42 F closed)
+- Czech and Slovak large-scale names now come from Conway tables in their own spelling (intentional output change from
+  10^24): CS `quadrilion` → `kvadrilion`, `quintiliarda` → `kvintiliarda`, `octilion` → `oktilion`,
+  `quattuordecilion` → `kvatuordecilion`, `quinquagintilion` → `kvinkvagintilion`, `octingentilion` →
+  `oktingentilion`; SK likewise with `-ilión` (`kvadrilión`, `kvadriliarda`, `oktilión`). Every other language is
+  unchanged.
+- Czech and Slovak fractions from 10^12, which failed closed, now decline the generated scale nouns in every case and in
+  the slash reading: CS `jednomu bilionu třetin`, `pěti biliardách třetin`, `jedna lomeno dvěma biliony`; SK `jednému
+  biliónu tretín`, `dvoma biliónmi tretín`, `jedna lomené jednou biliardou`. The case forms are `singular.<case>` /
+  `plural.<case>` keys of the language's `<GeneratedScaleForm>`, read by the built-in plugins through an internal
+  interface of the converter, so the plugins hold no Conway name. The Slovak genitive singular of a generated `-ón`
+  noun stays closed (lexical ending). No public API or XSD change.
+
 ### Fixed — `omy.Utils.NumberToString` (NTS-25B; NTS-25 closed)
 - Indonesian, Malay, Swahili and Turkish large-scale names now come from Conway tables adapted to their own
   spelling, with the mechanisms of their attested loans (intentional output change above the forms already in

@@ -33,8 +33,8 @@ dotnet add package omy.Utils.NumberToString --version 2.0.0-rc.2
 | BG, BG-BG | Bulgarian | ✓ plugin, gendered | ✓ 15 min, 12 h | gender (standalone/masculine/feminine/neuter) | local | Unverified compound round thousands/millions fail closed. Short scale with `милиард`; Cyrillic Conway names above (`SCALE-SHORT-CYRILLIC`, `кватуор`), unbounded. `хиляди`, count forms `милиона`/`милиарда` (NTS-30B) and `трилиона`… (NTS-30C); `и` before the last component of every numeral phrase: `двадесет и едно`, `хиляда и сто`, `двадесет и една хиляди` (NTS-30D) |
 | HR, HR-HR | Croatian | ✓ declarative (last word) + range plugin | ✓ 15 min, 12 h | — | local | Masculine nominative ordinals only; round scale ordinals other than tisućiti (1 000), milijunti (1 000 000) and milijarditi (1 000 000 000) fail closed, including 10^12 and above |
 | HU, HU-HU | Hungarian | ✓ plugin (int range) | ✓ 15 min, 12 h | — | local | Ordinal of zero *nulladik* (NTS-29) |
-| CS, CS-CZ | Czech | ✓ plugin, gender × case | ✓ 15 min, 12 h | gender × case | local | Ordinals verified up to 9 999 (round millions/milliards: one only). `tisíc`/`milion`/`miliarda` agree with their multiplier (NTS-30B), so do the generated `biliony`/`biliardy`… (NTS-30C); Latin Conway prefixes `quadri-` (NTS-36) |
-| SK, SK-SK | Slovak | ✓ plugin, gender × case | ✓ 15 min, 12 h | gender × case | local | Ordinals verified up to 9 999 and one million. Cardinals in the PSP one-word spelling (`dvadsaťdva`, `päťsto`, `dvetisíc`), `milión`/`miliarda` agree (NTS-30B), so do the generated `bilióny`/`biliárd`… (NTS-30C); Latin Conway prefixes `quadri-` (NTS-36) |
+| CS, CS-CZ | Czech | ✓ plugin, gender × case | ✓ 15 min, 12 h | gender × case | local | Ordinals verified up to 9 999 (round millions/milliards: one only). `tisíc`/`milion`/`miliarda` agree with their multiplier (NTS-30B), so do the generated `biliony`/`biliardy`… (NTS-30C); Conway names in Czech spelling `kvadrilion`, `oktilion`, `kvatuordecilion` (NTS-36) |
+| SK, SK-SK | Slovak | ✓ plugin, gender × case | ✓ 15 min, 12 h | gender × case | local | Ordinals verified up to 9 999 and one million. Cardinals in the PSP one-word spelling (`dvadsaťdva`, `päťsto`, `dvetisíc`), `milión`/`miliarda` agree (NTS-30B), so do the generated `bilióny`/`biliárd`… (NTS-30C); Conway names in Slovak spelling `kvadrilión`, `kvintiliarda`, `oktilión` (NTS-36) |
 | PL | Polish | ✓ plugin + declarative (1–999 999; round thousands to 99 000, NTS-28) | ✓ 5 min, 12 h | rodzaj × przypadek | local | tysiąc/tysiące/tysięcy agree with their multiplier (NTS-27); cardinals to 999 999; no ordinal of zero |
 | RU | Russian | ✓ declarative + plugin for the one-word round values (zero: `нулевой`; 0–999 999 999, NTS-28) | ✓ 15 min, 12 h | gender × case | local | тысяча, миллион, миллиард agree with their multiplier (две тысячи, пять миллионов; NTS-27). Short scale with `миллиард`; Cyrillic Conway names above (`SCALE-SHORT-CYRILLIC`), unbounded, agreeing with their multiplier (два триллиона; NTS-30C) |
 | UK, UK-UA | Ukrainian | ✓ plugin, gender × case | ✓ 15 min, 12 h | gender × case | local | Round thousands, millions and milliards with a multiplier of 1–89 (NTS-28, §38). Short scale with `мільярд`; Ukrainian-spelled Conway names above (`вігінтильйон`), unbounded. `тисяча`/`мільйон`/`мільярд` agree with their multiplier (NTS-30B), so do the generated names (два трильйони; NTS-30C) |
@@ -1234,13 +1234,17 @@ NumberToStringConverter.GetConverter("CS").ConvertFraction(1, 23, "case=genitiv"
 |--------|----------|---------|
 | `UkrainianOrdinalLanguageSpecifics` | UK | feminine numerator; ordinal denominator agreeing with the last component of the numerator: feminine singular after *одна* (also *двадцять одна*), genitive plural otherwise (Правопис 2019 §107); every case, the numerator declined in every part (§105) |
 | `BulgarianOrdinalLanguageSpecifics` | BG | feminine numerator; ordinal denominator, feminine singular after one, plural otherwise (also *двадесет и една*); *една четвърт* |
-| `CzechOrdinalLanguageSpecifics` | CS | fraction nouns of the IJP (2–20, round tens, 100, 1000, 100 000, 10^6, 10^9), genitive plural after a compound numerator, every case; otherwise *lomeno* + the instrumental, every part declined, up to 999 999 999 999 (*dvě lomeno třemi*, *jedna lomeno tisícem jednou*), nominative only |
-| `SlovakOrdinalLanguageSpecifics` | SK | fraction nouns (2–20, round tens, 100, 1000, 10^6, 10^9) with their full paradigm, genitive plural after a compound or *nula*, every case; otherwise, up to 999 999 999 999, *lomené* + the instrumental of the last component (*jedna lomené sto štyridsiatimi dvoma*, *jedna lomené dvoma miliónmi*) or, when it is indeclinable, *lomené číslom* + cardinal (*jedna lomené číslom dvesto*), nominative only |
+| `CzechOrdinalLanguageSpecifics` | CS | fraction nouns of the IJP (2–20, round tens, 100, 1000, 100 000, 10^6, 10^9), genitive plural after a compound numerator, every case; otherwise *lomeno* + the instrumental, every part declined (*dvě lomeno třemi*, *jedna lomeno tisícem jednou*, *jedna lomeno pěti biliardami*), nominative only |
+| `SlovakOrdinalLanguageSpecifics` | SK | fraction nouns (2–20, round tens, 100, 1000, 10^6, 10^9) with their full paradigm, genitive plural after a compound or *nula*, every case; otherwise *lomené* + the instrumental of the last component (*jedna lomené sto štyridsiatimi dvoma*, *jedna lomené dvoma miliónmi*, *jedna lomené jedným biliónom*) or, when it is indeclinable, *lomené číslom* + cardinal (*jedna lomené číslom dvesto*), nominative only |
 
-Denominator one, zero numerators in UK and BG (and in every oblique case), the CS/SK slash readings in an oblique case,
-the oblique cases of a CS compound numerator ending in *jedna*, a CS
-multiplier ending in one (21 000), and values from 10^12 fail closed. `Convert` itself keeps no case. Sources:
-`docs/NTS-08-linguistic-sources.md`, sections NTS-30H, NTS-39 and NTS-40/41.
+From 10^12 the CS and SK plugins decline the scale nouns the converter generates (NTS-42 F: *jednomu bilionu třetin*,
+*dvoma biliónmi tretín*): the case forms are configuration keys of the language's `<GeneratedScaleForm>` (see
+[Generated scale forms](#generated-scale-forms--generatedscaleform)), so the plugins hold no Conway name. Denominator
+one, zero numerators in UK and BG (and in every oblique case), the CS/SK slash readings in an oblique case, the oblique
+cases of a CS compound numerator ending in *jedna*, a CS multiplier ending in one (21 000, 21 × 10^12), the SK genitive
+singular of a generated *-ón* noun (*bilión -a* but *trilión* unattested), and the UK values from 10^12 fail closed.
+`Convert` itself keeps no case. Sources: `docs/NTS-08-linguistic-sources.md`, sections NTS-30H, NTS-39, NTS-40/41 and
+NTS-36/42 F.
 
 ### `GermanNumberToStringLanguageSpecifics`
 
@@ -1990,6 +1994,11 @@ attaches the forms to a **suffix family** instead: every generated scale whose n
   index, non-empty forms, forced dimensions and values declared by the language, and every key the
   selector returns for the possible multipliers (probed once under the language defaults; a key reached
   only under a caller variant still throws `UNTS007` at conversion). `baseOn` merges by suffix index.
+- `<Forms>` may hold keys the selector never returns. The CS and SK configurations add the case keys
+  `singular.<case>` and `plural.<case>` (`nominative`, `genitive`, `dative`, `accusative`, `locative`,
+  `instrumental`: `<Form key="plural.dative" value="onům" />`), which their built-in fraction plugins read
+  through the converter to decline the generated nouns (NTS-42 F); a key not declared is a form without
+  source, and that reading fails closed. Cardinals ignore these keys.
 - Programmatic: `NumberToStringConverterOptions.GeneratedScaleForms` (`IReadOnlyDictionary<int,
   GeneratedScaleForm>`), exposed read-only by the converter. A `GeneratedScaleForm` is immutable
   (`Forms`, `Selector`, `MultiplierForcedVariants`); a clone may replace `Scale`, the names are

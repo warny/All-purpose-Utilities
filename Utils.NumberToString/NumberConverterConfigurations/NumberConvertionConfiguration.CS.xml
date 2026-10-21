@@ -62,6 +62,63 @@
                 <!-- Czech: "tisíc" alone for 1000; "jedna tisíc" → "tisíc" via Replacement -->
                 <Scale value="1" string="tisíc" />
             </StaticNames>
+            <!-- NTS-36: the SCALE-LONG Conway tables in Czech spelling. Attested (IJP, ÚJČ AV ČR, entries bilion,
+                 trilion, triliarda, kvadrilion, kvintilion, sextilion, septilion, biliarda): qu is written kv
+                 (kvadrilion, kvintilion), x and the other letters are kept (sextilion, septilion). The other
+                 components follow the spelling rules of the domesticated Latin loans, each attested in the IJP:
+                 qu → kv (kvartet, kvadragesima: kvadragint-), c read [k] → k (oktet, oktáva: okti-, okto,
+                 oktogint-, oktingenti), c read [ts] kept (decimetr, centimetr: deci, centi, ducenti, trecenti,
+                 sescenti), x kept (sexta: sexti, sexagint-), a Latin double consonant simplified (atribut <
+                 attributum: kvatuor). Conway's construction and linking markers are unchanged (NTS-24); only the
+                 spelling of the components differs from SCALE-LONG. -->
+            <Scale0Prefixes>
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="mi" />
+                <Digit digit="2" string="bi" />
+                <Digit digit="3" string="tri" />
+                <Digit digit="4" string="kvadri" />
+                <Digit digit="5" string="kvinti" />
+                <Digit digit="6" string="sexti" />
+                <Digit digit="7" string="septi" />
+                <Digit digit="8" string="okti" />
+                <Digit digit="9" string="noni" />
+            </Scale0Prefixes>
+            <UnitsPrefixes>
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="un" />
+                <Digit digit="2" string="duo" />
+                <Digit digit="3" string="tre(s)" />
+                <Digit digit="4" string="kvatuor" />
+                <Digit digit="5" string="kvinkva" />
+                <Digit digit="6" string="se(xs)" />
+                <Digit digit="7" string="septe(mn)" />
+                <Digit digit="8" string="okto" />
+                <Digit digit="9" string="nove(mn)" />
+            </UnitsPrefixes>
+            <TensPrefixes>
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="(n)deci" />
+                <Digit digit="2" string="(ms)viginti" />
+                <Digit digit="3" string="(ns)trigint[a|-illi=>i]" />
+                <Digit digit="4" string="(ns)kvadragint[a|-illi=>i]" />
+                <Digit digit="5" string="(ns)kvinkvagint[a|-illi=>i]" />
+                <Digit digit="6" string="(n)sexagint[a|-illi=>i]" />
+                <Digit digit="7" string="(n)septuagint[a|-illi=>i]" />
+                <Digit digit="8" string="(mxs)oktogint[a|-illi=>i]" />
+                <Digit digit="9" string="nonagint[a|-illi=>i]" />
+            </TensPrefixes>
+            <HundredsPrefixes>
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="(nxs)centi" />
+                <Digit digit="2" string="(n)ducenti" />
+                <Digit digit="3" string="(ns)trecenti" />
+                <Digit digit="4" string="(ns)kvadringenti" />
+                <Digit digit="5" string="(ns)kvingenti" />
+                <Digit digit="6" string="(n)sescenti" />
+                <Digit digit="7" string="(n)septingenti" />
+                <Digit digit="8" string="(mxs)oktingenti" />
+                <Digit digit="9" string="nongenti" />
+            </HundredsPrefixes>
             <!-- NTS-30B: nominative singular after one, nominative plural after 2-4, genitive plural otherwise,
                  including the compounds (Internetová jazyková příručka, ÚJČ AV ČR, "Počítaný předmět po
                  číslovkách": after dvacet jeden / dvacet dva the genitive is "more common and more natural";
@@ -95,12 +152,30 @@
                  bilion, trilion, kvadrilion, biliarda: 23 biliard dolarů). After a compound the genitive
                  construction keeps the counting form of the numeral, as for milion and miliarda above
                  (IJP "Počítaný předmět po číslovkách": dvacet jedna žáků; "Členění čísel": dvacet dva
-                 korunám): dvacet dva biliard. Only the exact multipliers 1-4 agree in gender. -->
+                 korunám): dvacet dva biliard. Only the exact multipliers 1-4 agree in gender.
+                 NTS-42 F: the singular.* and plural.* keys are the cases the fraction plugin declines
+                 (CzechOrdinalLanguageSpecifics, through the converter: the plugin holds no Conway name). They
+                 are the IJP paradigms of the family, identical for every attested member, the prefix never
+                 touching the ending: bilion, trilion, kvadrilion, kvintilion, sextilion (2. -u, 3. -u, 6. -u,
+                 7. -em; pl. -y, -ů, -ům, -y, -ech, -y; septilion also 6. septilioně), biliarda, triliarda
+                 (pattern žena: 2. -y, 3. -ě, 4. -u, 6. -ě, 7. -ou; pl. -y, -0, -ám, -y, -ách, -ami). -->
             <GeneratedScaleForm suffix="0" formSelector="CzechSlovakPluralLexicalFormSelector">
                 <Forms>
                     <Form key="one" value="on" forceVariants="gender=mužský" />
                     <Form key="few" value="ony" />
                     <Form key="other" value="onů" />
+                    <Form key="singular.nominative" value="on" />
+                    <Form key="singular.genitive" value="onu" />
+                    <Form key="singular.dative" value="onu" />
+                    <Form key="singular.accusative" value="on" />
+                    <Form key="singular.locative" value="onu" />
+                    <Form key="singular.instrumental" value="onem" />
+                    <Form key="plural.nominative" value="ony" />
+                    <Form key="plural.genitive" value="onů" />
+                    <Form key="plural.dative" value="onům" />
+                    <Form key="plural.accusative" value="ony" />
+                    <Form key="plural.locative" value="onech" />
+                    <Form key="plural.instrumental" value="ony" />
                 </Forms>
             </GeneratedScaleForm>
             <GeneratedScaleForm suffix="1" formSelector="CzechSlovakPluralLexicalFormSelector">
@@ -108,6 +183,18 @@
                     <Form key="one" value="arda" forceVariants="gender=ženský" />
                     <Form key="few" value="ardy" forceVariants="gender=ženský" />
                     <Form key="other" value="ard" />
+                    <Form key="singular.nominative" value="arda" />
+                    <Form key="singular.genitive" value="ardy" />
+                    <Form key="singular.dative" value="ardě" />
+                    <Form key="singular.accusative" value="ardu" />
+                    <Form key="singular.locative" value="ardě" />
+                    <Form key="singular.instrumental" value="ardou" />
+                    <Form key="plural.nominative" value="ardy" />
+                    <Form key="plural.genitive" value="ard" />
+                    <Form key="plural.dative" value="ardám" />
+                    <Form key="plural.accusative" value="ardy" />
+                    <Form key="plural.locative" value="ardách" />
+                    <Form key="plural.instrumental" value="ardami" />
                 </Forms>
             </GeneratedScaleForm>
         </NumberScale>

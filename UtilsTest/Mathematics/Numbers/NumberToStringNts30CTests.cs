@@ -667,13 +667,13 @@ public class NumberToStringNts30CTests
     /// <returns>The key.</returns>
     private static string WestSlavicKey(int value) => new CzechSlovakPluralLexicalFormSelector().SelectForm(new LexicalFormContext(value, new Dictionary<string, string>()));
 
-    /// <summary>Czech -on scales (10^12, 10^18, 10^24, prefix 10 at 10^60, prefix 1000 at 10^6000); the Conway prefixes keep their Latin spelling (quadri-).</summary>
+    /// <summary>Czech -on scales (10^12, 10^18, 10^24, prefix 10 at 10^60, prefix 1000 at 10^6000); the Conway prefixes in Czech spelling (kvadri-, NTS-36).</summary>
     private static readonly GeneratedScale[] CzechOnScales =
-        [new(4, "bili"), new(6, "trili"), new(8, "quadrili"), new(20, "decili"), new(2000, "milinili")];
+        [new(4, "bili"), new(6, "trili"), new(8, "kvadrili"), new(20, "decili"), new(2000, "milinili")];
 
     /// <summary>Czech -arda scales (10^15, 10^21, 10^27, 10^63, 10^6003).</summary>
     private static readonly GeneratedScale[] CzechArdScales =
-        [new(5, "bili"), new(7, "trili"), new(9, "quadrili"), new(21, "decili"), new(2001, "milinili")];
+        [new(5, "bili"), new(7, "trili"), new(9, "kvadrili"), new(21, "decili"), new(2001, "milinili")];
 
     /// <summary>
     /// Czech -on family: masculine bilion (jeden bilion, dva biliony, pět bilionů); after a compound the
@@ -705,13 +705,13 @@ public class NumberToStringNts30CTests
 
     // ----- Slovak --------------------------------------------------------------------------------
 
-    /// <summary>Slovak -ón scales.</summary>
+    /// <summary>Slovak -ón scales (Conway prefixes in Slovak spelling, kvadri-, NTS-36).</summary>
     private static readonly GeneratedScale[] SlovakOnScales =
-        [new(4, "bili"), new(6, "trili"), new(8, "quadrili"), new(20, "decili"), new(2000, "milinili")];
+        [new(4, "bili"), new(6, "trili"), new(8, "kvadrili"), new(20, "decili"), new(2000, "milinili")];
 
     /// <summary>Slovak -arda scales.</summary>
     private static readonly GeneratedScale[] SlovakArdScales =
-        [new(5, "bili"), new(7, "trili"), new(9, "quadrili"), new(21, "decili"), new(2001, "milinili")];
+        [new(5, "bili"), new(7, "trili"), new(9, "kvadrili"), new(21, "decili"), new(2001, "milinili")];
 
     /// <summary>Slovak -ón family: bilión, dva bilióny, päť biliónov; an indeclinable one-word compound governs the genitive.</summary>
     [TestMethod]

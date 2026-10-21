@@ -28,8 +28,8 @@ describes any capability.
 | BG | BG, BG-BG | SCALE-SHORT-CYRILLIC (NTS-25A; was SCALE-LONG) | Yes | `BulgarianOrdinalLanguageSpecifics` (int range, gendered) | Yes | 15 / 12 | `gender` (standalone/masculine/feminine/neuter) | **Consulted**: ezik.bg, “Числително име” (`хиляда сто и втори`, gender endings); dumite-bg.com, entry `двехиляден` | Round thousands with a multi-word multiplier and round millions above one are declined (unverified compound adjectives); NTS-30B: *хиляди*, *милиона*, *милиарда* after a multiplier, *един милион*; NTS-30D: *и* before the last component of every numeral phrase (*двадесет и едно*, *хиляда и сто*, *двадесет и една хиляди*); NTS-30H: fractions with the ordinal denominator (*една втора*, *две трети*, *една четвърт*, *седем осми*); NTS-39: plural after a compound ending in *една* (*сто и една хилядни*) |
 | HR | HR, HR-HR | SCALE-LONG | Yes (repaired) | Declarative last-word rules + `CroatianOrdinalLanguageSpecifics` (rejects unverified round scales) | Yes | 15 / 12 | none | **Consulted**: Hrvatski pravopis (IHJJ), “Višerječnice”, rule 31 (`tisuću jedan`, `tisuću tristo jedanaest`, `tri tisuće sedamsto trideset tri`, `milijun petsto trideset tisuća`, `dvije milijarde trideset tri milijuna …`; ordinals `tisuću prvi`, `tri tisuće sedamsto trideset treći`); Hrvatski jezični portal, entries `tisućiti`, `milijunti`, `milijarditi`. Clock **validated (weakest evidence, documented decision)**: Školski rječnik hrvatskoga jezika (*sat*, *sata*, *sati*); lets-learn.eu (`pola deset`, `petnaest do devet`) | Masculine nominative ordinals only; every round scale value other than the lexical units 1 000 / 1 000 000 / 1 000 000 000 fails closed as an ordinal. A single thousand followed by a remainder is `tisuću` wherever it stands (`milijun tisuću jedan`) |
 | HU | HU, HU-HU | SCALE-LONG | Yes (repaired) | `HungarianOrdinalLanguageSpecifics` (int range) | Yes | 15 / 12 | none | **Corrected** (NTS-08 final): AkH12 §291; MTA "Számok" tool (AkH12-292); Giay & Nádor 1998 (clock) | The former `suffix="."` pseudo-ordinals are gone; NTS-08: A single million or milliard keeps *egy* (*egymilliomodik*) |
-| CS | CS, CS-CZ | SCALE-LONG | Yes | `CzechOrdinalLanguageSpecifics` (gender × case) | Yes | 15 / 12 | `gender` (standalone/mužský/ženský/střední) × `case` | **Validated** (NTS-08 final): IJP (ÚJČ AV ČR) id 785, 791 and slovník; cs.wiktionary paradigms; Masaryk University and CZECH ONLINE (clock) | Ordinals verified up to 9 999; round millions/milliards only for one; NTS-30B: *tisíc/milion/miliarda* agree (*dva tisíce, jeden milion, dvě miliardy, pět milionů*; IJP id 792); NTS-30H: fractions with the IJP fraction nouns (*jedna třetina, dvě třetiny, pět sedmin*); NTS-39: every IJP noun, genitive plural after compounds (*dvacet dva třetin*), *lomeno* + instrumental for 2–999 (*jedna lomeno dvaceti třemi*) |
-| SK | SK, SK-SK | SCALE-LONG | Yes | `SlovakOrdinalLanguageSpecifics` (gender × case) | Yes | 15 / 12 | `gender` (mužský/ženský/stredný) × `case` | **Validated** (NTS-08 final): JÚĽŠ SAV (KSSJ, PSP, OGS) for the declension and the clock (*štvrť na*, *pol*, *tri štvrte na*); teraz.sk | Ordinals verified up to 9 999 and one million; NTS-30B: cardinals in the PSP one-word spelling (*dvadsaťdva, päťsto, dvetisíc*), *milióny/miliardy* agree; NTS-30H: fractions with the fraction nouns (*jedna tretina, dve tretiny, päť tretín*); NTS-39: full noun paradigms, *dvadsaťdva tretín*, *nula tretín*, *lomené* + instrumental of the last component (*sto štyridsiatimi dvoma*) or *lomené číslom* when it is indeclinable, up to 999 999 |
+| CS | CS, CS-CZ | SCALE-LONG | Yes | `CzechOrdinalLanguageSpecifics` (gender × case) | Yes | 15 / 12 | `gender` (standalone/mužský/ženský/střední) × `case` | **Validated** (NTS-08 final): IJP (ÚJČ AV ČR) id 785, 791 and slovník; cs.wiktionary paradigms; Masaryk University and CZECH ONLINE (clock) | Ordinals verified up to 9 999; round millions/milliards only for one; NTS-30B: *tisíc/milion/miliarda* agree (*dva tisíce, jeden milion, dvě miliardy, pět milionů*; IJP id 792); NTS-30H: fractions with the IJP fraction nouns (*jedna třetina, dvě třetiny, pět sedmin*); NTS-39: every IJP noun, genitive plural after compounds (*dvacet dva třetin*), *lomeno* + instrumental for 2–999 (*jedna lomeno dvaceti třemi*); NTS-36: Conway names in Czech spelling (*kvadrilion*, *oktilion*, *kvatuordecilion*); NTS-42 F: fractions from 10^12 decline the converter's generated nouns (*jednomu bilionu třetin*, *jedna lomeno pěti biliardami*) |
+| SK | SK, SK-SK | SCALE-LONG | Yes | `SlovakOrdinalLanguageSpecifics` (gender × case) | Yes | 15 / 12 | `gender` (mužský/ženský/stredný) × `case` | **Validated** (NTS-08 final): JÚĽŠ SAV (KSSJ, PSP, OGS) for the declension and the clock (*štvrť na*, *pol*, *tri štvrte na*); teraz.sk | Ordinals verified up to 9 999 and one million; NTS-30B: cardinals in the PSP one-word spelling (*dvadsaťdva, päťsto, dvetisíc*), *milióny/miliardy* agree; NTS-30H: fractions with the fraction nouns (*jedna tretina, dve tretiny, päť tretín*); NTS-39: full noun paradigms, *dvadsaťdva tretín*, *nula tretín*, *lomené* + instrumental of the last component (*sto štyridsiatimi dvoma*) or *lomené číslom* when it is indeclinable, up to 999 999; NTS-36: Conway names in Slovak spelling (*kvadrilión*, *kvintiliarda*, *oktilión*); NTS-42 F: fractions from 10^12 decline the converter's generated nouns (*jednému biliónu tretín*, *jedna lomené dvoma biliónmi*), the genitive singular of *-ón* fail-closed |
 | PL | PL | none | Yes (existing) | `PolishOrdinalLanguageSpecifics` + declarative | Yes | 5 / 12 | rodzaj × przypadek | **Corrected** (NTS-08 final): ZPE (MEN) "Odmiana liczebnika i zaimka"; PWN (*wpół do*, *za pięć dwunasta*); Babbel | —; NTS-08: Ordinals 1–1999 (1000–1999 rebuilt); from 2000 fail closed |
 | RU | RU | SCALE-SHORT-CYRILLIC (NTS-25A; was SCALE-LONG) | Yes (existing) | Declarative + `RussianOrdinalLanguageSpecifics` (NTS-08 domain guard) | Yes | 15 / 12 | gender × case | **Validated** (NTS-08 final): Правила (2006) §132–133; Ожегов, Ушаков, Ефремова (clock) | Ordinal of zero `нулевой` (NTS-14); NTS-08: Ordinals 0–1999; from 2000 fail closed |
 | UK | UK, UK-UA | SCALE-SHORT-CYRILLIC (NTS-25A; was SCALE-LONG) | Yes | `UkrainianOrdinalLanguageSpecifics` (gender × case) | Yes | 15 / 12 | `gender` × `case` (Ukrainian values) | **Corrected** (NTS-08 final): Український правопис 2019 §38; goroh.pp.ua paradigms; Антоненко-Давидович (clock) | Round thousands verified up to 10 000; ASCII apostrophe as in the cardinals; NTS-08: Single million/milliard without *один*; round thousands up to 10 000 only; NTS-30B: *тисяча/мільйон/мільярд* agree (*дві тисячі, два мільйони, п'ять мільйонів*); NTS-30H: fractions after Правопис 2019 §107 (*одна третя, дві третіх, дев'ять десятих*); NTS-39: singular after a compound ending in *одна* (*тридцять одна сота*) |
@@ -58,6 +58,68 @@ describes any capability.
 | ZU | ZU | none | **Deferred** | — | Yes | 15 / 12 | none | **Validated** (NTS-08 final, two sources): Unisa *Learn online Zulu* Theme 4; DBE *IsiZulu Grade 4 and 5 Mathematics Terminology* | Hour forms are literal ClockTime patterns; they do not enable ordinals |
 | EE | EE | SCALE-SHORT (scale tables only, NTS-23) | Yes (NTS-20): cardinal + `-lia` on the last element, `gbãtɔ` for 1 | Declarative + `ZeroOrdinalUnsupportedLanguageSpecifics` | **Deferred** | — | none | **Consulted** (NTS-20): Dzablu-Kumah, *Basic Ewe for Foreign Students*; Biblica Open Ewe Contemporary Scriptures; *Ewe Basic Course* 1968; Peace Corps Togo 2010; Wiktionary | Cardinals unbounded (NTS-23): static `akpe`, then the Conway-Wechsler short scale `miliɔn`, `biliɔn`, `triliɔn` (sourced anchors), `quadriliɔn` … (project extrapolation), each before its standalone multiplier (`multiplierPosition="afterScale"`); zero ordinal unsupported |
 | WO | WO | none | Yes (`-éel`, NTS-16, NTS-19) | Declarative + `WolofOrdinalLanguageSpecifics` | **Deferred** | — | none | No consistent source found | Cardinals unbounded (NTS-21): static `junni`, then the long-scale Conway-Wechsler names `milyoŋ`, `milyaar` (attested anchors), `bilyoŋ`, `bilyaar` … (project extrapolation in Wolof spelling); ordinals 1–999 999 only, no ordinal of zero nor of the round thousands |
+
+## NTS-36 and NTS-42 F — Czech and Slovak generated scales (2026-10-20)
+
+Scope: NTS-36 (the spelling of the Conway names CS and SK generate from 10^12) and NTS-42 family F (the CS and SK
+oblique fractions and slash readings from 10^12, which need those names in a case). Old/new outputs and the regression
+dump: `DONE-2026-10-20.md`. Evidence levels: **attested** (the form itself is in the source), **rule** (a normative
+spelling or morphological rule), **productive deduction** (a rule applied mechanically to a class it is established
+for, with no contradicting source), **fail-closed** (insufficient evidence; the reading throws). The library's own
+output is never evidence.
+
+| # | Language | Source | What it establishes |
+|---|---|---|---|
+| 1 | CS | IJP (ÚJČ AV ČR), entries *bilion*, *trilion*, *kvadrilion*, *kvintilion*, *sextilion*, *septilion* (<https://prirucka.ujc.cas.cz/?slovo=kvadrilion> …) | **attested** names (*kvadrilion* "bilion bilionů (10^24)", *kvintilion*, *sextilion* "milion kvintilionů (10^36)", *septilion*; each with the variant *-lión*) and their paradigms, m. neživ.: 2. *-u*, 3. *-u*, 4. = 1., 6. *-u* (*septilion* also *septilioně*), 7. *-em*; pl. *-y*, *-ů*, *-ům*, *-y*, *-ech*, *-y* |
+| 2 | CS | IJP, entries *biliarda*, *triliarda* | **attested** feminine paradigms (pattern *žena*): *biliardy, biliardě, biliardu, biliardě, biliardou*; pl. *biliardy, biliard, biliardám, biliardy, biliardách, biliardami*; *triliarda* "miliarda bilionů (10^21)" with the same endings |
+| 3 | CS | IJP, entries *kvartet*, *kvadragesima*, *oktet*, *sexta*, *atribut* (*z lat.*) | **rule** (spelling of domesticated Latin loans): *qu* → *kv* (*kvartet*, *kvadragesima*), *c* read [k] → *k* (*oktet*), *x* kept (*sexta*), a Latin double consonant simplified (*atribut* < *attributum*); *c* read [ts] kept (*decimetr*, *centimetr*) |
+| 4 | CS | IJP: no entry for *oktilion*, *decilion*, *centilion* | the names from 10^48 are not listed: **productive deduction** (AGENTS.md, Conway scale names) |
+| 5 | SK | KSSJ 4 (2003), *bilión -a m. čísl. zákl. milión miliónov* (slovnik.aktuality.sk, Krátky slovník) | **attested** *bilión*, a numeral declined like *milión*, genitive singular *-a* |
+| 6 | SK | Slovník cudzích slov online (slovnik.aktuality.sk; Ringier Slovakia Media & R. Andraščík, not the academic SCS) | **attested** names without grammatical marks: *biliarda* "tisíc biliónov", *trilión*, *triliarda* "miliarda biliónov", *kvadrilión* "bilión biliónov", *kvadriliarda* "číslo 10^27", *kvintilión* (10^30), *sextilión* (10^36), *septilión* (10^42); *oktilión*, *decilión*, *centilión* not listed. Non-institutional: corroboration of the *kv-* series, not its inflection |
+| 7 | SK | KSSJ 4 / PSP 2013, entries *kvadrant*, *kvinta*, *kvinteto*, *oktáva*, *okteto*, *oktán*, *sexta*, *sexteto*, *deciliter*, *centiliter* | **rule** (same spelling of Latin loans as #3): *kv*, *okt*, *x* kept, *c* [ts] kept; a double consonant simplified (*atribút*) |
+| 8 | SK | *Morfológia slovenského jazyka* (1966), 101, 329–330 | **rule**: *milión* follows *dub* (*miliónu, milióne, miliónom*; pl. *miliónov, miliónom, miliónoch, miliónmi*), *miliarda* follows *žena*; the genitive singular of an inanimate *dub* noun is lexical (*-a* or *-u*) |
+
+**NTS-36 — the Conway tables.** CS and SK inherited the Latin `SCALE-LONG` tables (*quadrilion*, *quintiliarda*,
+*octilion*, *quattuordecilion*). Each language now overrides the four tables (`Scale0Prefixes`, `UnitsPrefixes`,
+`TensPrefixes`, `HundredsPrefixes`) with its own spelling of the same components; the Conway construction, its linking
+markers and the junction `li` are unchanged, and so are the suffix families and their `forceVariants` (NTS-30C). Every
+table differs from `SCALE-LONG` (the units hold *kvatuor*, *kvinkva*, *okto*), so `baseOn` cannot override less than a
+whole table; CS and SK each keep their own copy, each sourced separately (#1–#4, #5–#7), rather than a shared base
+that would assert their identity.
+
+| Component | SCALE-LONG | CS, SK | Evidence |
+|---|---|---|---|
+| Scale0 4, 5 | *quadri*, *quinti* | *kvadri*, *kvinti* | **attested** (#1, #6) |
+| Scale0 6, 7, 9 | *sexti*, *septi*, *noni* | unchanged | **attested** *sextilion*, *septilion* (#1, #6); *noni* unchanged by the rules |
+| Scale0 8 | *octi* | *okti* | **rule** #3, #7 (*oktet*, *oktáva*) — productive deduction for *oktilion* |
+| Units 4, 5, 8 | *quattuor*, *quinqua*, *octo* | *kvatuor*, *kvinkva*, *okto* | **rule** #3, #7 (*kv*, *okt*, geminate simplified) — productive deduction |
+| Tens 4, 5, 8 | *quadragint*, *quinquagint*, *octogint* | *kvadragint*, *kvinkvagint*, *oktogint* | **rule** #3, #7 (*kvadragesima*) — productive deduction |
+| Hundreds 4, 5, 8 | *quadringenti*, *quingenti*, *octingenti* | *kvadringenti*, *kvingenti*, *oktingenti* | **rule** #3, #7 — productive deduction |
+| every *c* before *e*/*i*, every *x* | *deci*, *centi*, *ducenti*, *sexagint* … | unchanged | **rule** #3, #7 (*decimetr*, *deciliter*, *sexta*) |
+
+The weakest point is *kvatuor* (10^84 *kvatuordecilion*): no Czech or Slovak form of *quattuor* was found; the
+simplified geminate applies the rule of the domesticated Latin loans (*atribut*), which the *kv-* respelling shows these
+names to be. Recorded as a productive deduction, not an attestation.
+
+**NTS-42 F — the declined generated nouns.** The paradigms are those of the suffix family, not of a scale: every
+attested member of a family shares the same endings (#1, #2 for CS; #5, #8 for SK), the Conway prefix never touches the
+ending. The configuration declares them as twelve case keys (`singular.genitive`, `plural.dative` …) on the
+`<GeneratedScaleForm>` of the family, beside the count keys; the fraction plugin reads them through the converter, so the
+names it declines are the ones the converter writes (no second Conway spelling in the plugins).
+
+- CS: every key of both families: **attested** for *bilion*–*septilion* and *biliarda*, *triliarda* (#1, #2);
+  **productive deduction** above. *septilion*'s second locative *septilioně* is not used: *-u* is the only locative of
+  every other member.
+- SK: the *-ón* family follows *milión* (#5: *bilión*, numeral, "milión miliónov"; #8: pattern *dub*): *biliónu*,
+  *bilióne*, *biliónom*; pl. *biliónov*, *biliónom*, *biliónoch*, *biliónmi* — **productive deduction** from the
+  attested class; the *-arda* family follows *miliarda* (*žena*, #8) — **productive deduction** as in NTS-30C. The
+  genitive singular of the *-ón* family is **fail-closed**: lexical in *dub* (#8), attested for *bilión -a* only (#5);
+  no key is declared, so *jedného bilióna tretín* throws rather than guess *-a* for *trilión*.
+
+The construction rules are unchanged: CS declines every part (NTS-40), SK the last component only (NTS-40, NTS-44); a
+generated noun stands where *milion*/*milión* stood (singular after one, plural after the other multipliers, a counted
+noun in the genitive plural after it). Still closed: NTS-42 A, B (CS *dvacet jedna bilionů* in an oblique case or a
+*lomeno* reading, as for *milion*), D and E.
 
 ## NTS-40 and NTS-41 — oblique fractions and the large slash readings (2026-10-16)
 
@@ -118,7 +180,8 @@ fraction without a fraction noun **fails closed** (NTS-42).
 
 **Remaining closures (NTS-42).** CS: an oblique compound numerator ending in *jedna* (only its nominative is sourced),
 a multiplier ending in one (21 000) in *lomeno* or an oblique case. SK: the oblique numerator ending in a bare *jeden*
-(101) was opened by NTS-44. UK, CS, SK: a zero numerator in an oblique case (no source); 10^12 and above. Denominator one stays closed
+(101) was opened by NTS-44. UK, CS, SK: a zero numerator in an oblique case (no source). From 10^12: UK still closed;
+CS and SK opened by NTS-42 F (see above), but the SK genitive singular of a generated *-ón* noun. Denominator one stays closed
 everywhere (NTS-39). BG has no NTS-40 item and is byte-identical.
 
 ## NTS-39 — the fraction domains NTS-30H left closed (2026-10-16)
@@ -513,7 +576,7 @@ outside NTS-30C and stays byte-identical.
 
 **Conway spelling unchanged.** CS and SK still generate the Latin *quadri-*, *quinti-* prefixes (*quadrilion*,
 *quintiliarda*), where the IJP writes *kvadrilion* and the Slovak series *kvadrilión*, *kvintiliarda*. NTS-30C
-inflects these names correctly but does not respell them: NTS-36.
+inflects these names correctly but does not respell them: NTS-36, closed on 2026-10-20 (see "NTS-36 and NTS-42 F").
 
 ## NTS-30B — low scale nouns of Ukrainian, Bulgarian, Czech and Slovak (2026-10-14)
 
