@@ -25,7 +25,7 @@
             MessagePack. 2.5.302 is the latest 2.x patch (fixed in 2.5.301) - deliberately staying
             on the already-resolved 2.x line rather than jumping to the breaking MessagePack 3.x.
         -->
-        <PackageReference Include="MessagePack" Version="2.5.302" />
+        <PackageReference Include="MessagePack" Version="2.5.303" />
     </ItemGroup>
 
     <ItemGroup>
