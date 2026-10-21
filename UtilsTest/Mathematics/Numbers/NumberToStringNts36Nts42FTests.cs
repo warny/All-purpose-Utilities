@@ -198,18 +198,20 @@ public class NumberToStringNts36Nts42FTests
         => Assert.AreEqual(expected, Get("CS").ConvertFraction(BigInteger.One, BigInteger.Parse(denominator)));
 
     /// <summary>
-    /// What stays closed in Czech: NTS-42 A (a compound ending in <c>jedna</c>, 10^12 + 1) and B (a multiplier ending
-    /// in one after the tens or hundreds, 21 and 101 × 10^12), D and E; the boundary below 10^12 is unchanged.
+    /// What stays closed in Czech: D and E; NTS-42 A (a compound ending in <c>jedna</c>, 10^12 + 1) and B (a multiplier
+    /// ending in one after the tens or hundreds, 21 and 101 × 10^12) were opened by NTS-45 over the generated nouns too
+    /// (<see cref="NumberToStringNts45Tests"/>); the boundary below 10^12 is unchanged.
     /// </summary>
     [TestMethod]
     public void Nts42F_Czech_StillClosed()
     {
         var cs = Get("CS");
-        Assert.ThrowsExactly<NotSupportedException>(() => cs.ConvertFraction(E(1, 12) + 1, 3, "case=dativ"), "A");
-        Assert.ThrowsExactly<NotSupportedException>(() => cs.ConvertFraction(E(21, 12), 3, "case=dativ"), "B");
-        Assert.ThrowsExactly<NotSupportedException>(() => cs.ConvertFraction(E(101, 12), 3, "case=genitiv"), "B");
-        Assert.ThrowsExactly<NotSupportedException>(() => cs.ConvertFraction(BigInteger.One, E(21, 12)), "B lomeno");
+        Assert.AreEqual("jednomu bilionu jedné třetině", cs.ConvertFraction(E(1, 12) + 1, 3, "case=dativ"), "A (NTS-45)");
+        Assert.AreEqual("dvaceti jednomu bilionu třetin", cs.ConvertFraction(E(21, 12), 3, "case=dativ"), "B (NTS-45)");
+        Assert.AreEqual("sto jednoho bilionu třetin", cs.ConvertFraction(E(101, 12), 3, "case=genitiv"), "B (NTS-45)");
+        Assert.AreEqual("jedna lomeno dvaceti jedním bilionem", cs.ConvertFraction(BigInteger.One, E(21, 12)), "B lomeno (NTS-45)");
         Assert.ThrowsExactly<NotSupportedException>(() => cs.ConvertFraction(BigInteger.One, E(1, 12), "case=dativ"), "D");
+        Assert.ThrowsExactly<NotSupportedException>(() => cs.ConvertFraction(BigInteger.Zero, 3, "case=dativ"), "E");
         Assert.AreEqual("jednomu milionu třetin", cs.ConvertFraction(1_000_000, 3, "case=dativ"));
     }
 
@@ -312,8 +314,8 @@ public class NumberToStringNts36Nts42FTests
 
     /// <summary>
     /// A multiplier ending in one after the tens or hundreds: Slovak keeps it in its absolute form before the declined scale
-    /// noun, as before <c>milión</c> (Morfológia 330: <i>s päť, osem, dvadsaťdva miliónmi</i>; NTS-41); Czech stays closed
-    /// (NTS-42 B), in the oblique cases as in the <c>lomeno</c> reading.
+    /// noun, as before <c>milión</c> (Morfológia 330: <i>s päť, osem, dvadsaťdva miliónmi</i>; NTS-41); Czech declines it
+    /// in agreement with the scale noun since NTS-45 (NTS-42 B), in the oblique cases as in the <c>lomeno</c> reading.
     /// </summary>
     [TestMethod]
     public void Nts42F_MultiplierEndingInOne()
@@ -326,7 +328,7 @@ public class NumberToStringNts36Nts42FTests
             sk.ConvertFraction(E(101, 12), 3, "case=datív"));
         var cs = Get("CS");
         Assert.AreEqual("sto jedna bilionů třetin", cs.ConvertFraction(E(101, 12), 3, "case=akuzativ"));
-        Assert.ThrowsExactly<NotSupportedException>(() => cs.ConvertFraction(BigInteger.One, E(101, 12)), "B lomeno");
+        Assert.AreEqual("jedna lomeno sto jedním bilionem", cs.ConvertFraction(BigInteger.One, E(101, 12)), "B lomeno (NTS-45)");
     }
 
     /// <summary>The feminine family above <c>biliarda</c>: <c>triliarda</c> after two, in both languages.</summary>

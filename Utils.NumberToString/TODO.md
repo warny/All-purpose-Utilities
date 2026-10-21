@@ -1,6 +1,9 @@
 # Utils.NumberToString — Current backlog
 
-Re-audited on 2026-10-20 after closing NTS-36 (Czech and Slovak Conway names in their own spelling: `kvadrilion`,
+Re-audited on 2026-10-21 after NTS-45 (NTS-42 families A, B and E/SK closed: Czech compounds and multipliers ending
+in *jedna* declined in the oblique cases and in *lomeno*, `dvaceti jedné setiny`, `dvaceti jednomu tisíci třetin`,
+`jedna lomeno dvaceti jedním tisícem`; Slovak zero with a fraction noun in every case, `nula tretinám`; D and E/CS
+re-audited and kept closed; `DONE-2026-10-21.md`), on 2026-10-20 after closing NTS-36 (Czech and Slovak Conway names in their own spelling: `kvadrilion`,
 `oktilion`, `kvatuordecilion`, `kvadrilión`, `kvintiliarda`) and NTS-42 family F for CS and SK (fractions from 10^12
 declining the generated scale nouns read from the converter: `jednomu bilionu třetin`, `jedna lomeno pěti biliardami`,
 `dvoma biliónmi tretín`; the UK part stays open; `DONE-2026-10-20.md`), on 2026-10-19 after closing NTS-44 (Slovak oblique fractions whose numerator ends in a bare *jeden*, read
@@ -83,29 +86,40 @@ classification.
     zero-group rendering and a normative source.
   - ES currency: `uno euro` for DPD *un euro* (apocope before a noun); the caller-defined currency wording does
     not force the attributive form.
-- **NTS-42 — the UK, CS and SK fraction readings NTS-40/41 left closed.** Each one fails closed for a named missing
+- **NTS-42 — the UK, CS and SK fraction readings NTS-40/41 left closed.** Still open: D (CS/SK), E/CS, E/UK, the UK
+  part of F and the SK genitive singular of a generated *-ón* noun. Each one fails closed for a named missing
   piece of evidence (`DONE-2026-10-16(1).md`). Audited on 2026-10-19 (`DONE-2026-10-19(1).md`): every family reproduced
   as a deliberate `NotSupportedException` of the language plugin, none silently wrong, no engine defect (zero and the
   case reach the plugin unchanged); every candidate reading of the first five items is representable by the plugin
   contract (`NumeratorText`), so they stay open on linguistic evidence only, the last one on a design dependency.
   Levels of evidence revised the same day after an independent source search. Closures pinned by
   `NumberToStringNts42Tests` (characterization tests, not a grammatical specification):
-  - CS, oblique cases of a compound numerator ending in *jedna* (21/100, 101/3, 1001/3 in the genitive): **partially
-    documented**. The IJP gives both nominative agreements and three declension strategies for multi-word numerals;
-    corpus examples attest the singular agreement in oblique cases (*devadesáti jednoho roku*, *po sto jednom roce*),
-    and the inverted *jednadvaceti* declines (21–99 only). Missing: a source choosing one strategy for a counted fraction
-    noun.
-  - CS, a multiplier ending in one after the tens or hundreds (21 000, 101 000, 31 000 000) in the *lomeno* reading and
-    in the oblique cases: **partially documented**; even the nominative varies (*dvacet jedna / dvacet jeden tisíc*), and
-    the agreement of *tisíc/milion/miliarda* after it outside the nominative is not sourced.
+  - ~~A — CS, oblique cases of a compound numerator ending in *jedna* (21/100, 101/3, 1001/3, 10^12 + 1)~~: **closed by
+    NTS-45** (`DONE-2026-10-21.md`): every part declined (IJP strategy 1), the final *jedna* agreeing with the feminine
+    fraction noun, which stands in the singular of the case (*dvaceti jedné setiny*, *sto jednou třetinou*, *tisíce
+    jedné třetiny*).
+  - ~~B — CS, a multiplier ending in one after the tens or hundreds (21 000, 101 000, 31 000 000, 21 × 10^12) in the
+    oblique cases and in *lomeno*~~: **closed by NTS-45**, same rule as A, the one agreeing with the scale noun
+    (*dvaceti jednomu tisíci třetin*, *dvaceti jedné miliardě třetin*, *jedna lomeno dvaceti jedním tisícem*).
   - ~~SK, oblique cases of a numerator ending in a bare *jeden* after a larger group (101/3, 1 000 001/3)~~:
     **documented (rule + construction type)**, opened by **NTS-44** (`DONE-2026-10-19(2).md`).
-  - CS and SK, the *lomeno*/*lomené* readings in an oblique case: **not established**. *lomeno* is invariable and
-    governs the instrumental; no source reads the whole phrase under a governing case (*dvěma lomeno třemi* and an
-    undeclined *dvě lomeno třemi* are both plausible).
-  - UK, CS and SK, a zero numerator in an oblique case: **lexical declension documented** (*нуль … нулем*, *nula …
-    nulou*), **combination not established**: no source reads a declined zero with a fraction noun or a *lomeno*
-    phrase; UK has no zero fraction even in the nominative.
+  - D — CS and SK, the *lomeno*/*lomené* readings under an external case (2/3 → *s … lomeno třemi*): **not
+    established**, re-audited by NTS-45. The internal structure *X lomeno/lomené Y(instr.)* is sourced (Prandstetter
+    1938; Ondrus 1968, SR 1978); the open question is the form of the first operand X when the whole phrase is governed
+    by a preposition or a case: declined (*s dvěma lomeno třemi*, *s dvoma lomené troma*) or kept in the nominative of the
+    arithmetic term (*s dvě lomeno třemi*, *s dva lomené troma*). Needed: one attestation of a whole slash phrase under
+    an external case, or a normative statement; inferring X from the ordinary cardinal declension is not enough. Applies
+    also to a zero numerator over a denominator without a fraction noun (SK *nula lomené dvadsiatimi troma* in an oblique
+    case).
+  - ~~E/SK — a Slovak zero numerator with a fraction noun in an oblique case~~: **closed by NTS-45**: *nula*
+    indeclinable before a counted noun, the noun takes the case (Peciar, SR 23, 1958; Kultúra slova 36, 2002: *pri
+    nula stupňoch*): *nula tretinám*, *nula polovicami*.
+  - E/CS — a Czech zero numerator in an oblique case (0/3 → *nula třetinám*?): **usage attested, not normative**.
+    Usage has *při nula stupních*, but the IJP, ASCS, SSČ and SSJČ decline *nula* as a feminine noun (*nuly, nule,
+    nulou*) and quote it as a quantifier only in the nominative (*nula celá pět desetin*; IJP "Počítaný předmět":
+    *nula celá dva metrů*); no Czech source states the Slovak rule (indeclinable quantifier, noun in the case). Needed: a
+    Czech normative or academic statement, or an IJP/poradna answer on *nula* + counted noun in an oblique case.
+  - E/UK — a Ukrainian zero numerator: no zero fraction even in the nominative; untouched by NTS-45.
   - ~~CS and SK denominators, and CS and SK oblique numerators, from 10^12~~: **closed by NTS-42 F**
     (`DONE-2026-10-20.md`): the case forms are `singular.<case>` / `plural.<case>` keys of the `<GeneratedScaleForm>`
     families, read by the plugins through the converter (internal `IScaleNounSource`). Left closed inside F: the Slovak

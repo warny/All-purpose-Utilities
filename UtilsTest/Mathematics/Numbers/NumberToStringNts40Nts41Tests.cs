@@ -167,18 +167,19 @@ public class NumberToStringNts40Nts41Tests
     [DataRow(1_000_000_000L, 3L, "case=akuzativ", "jednu miliardu třetin")]
     [DataRow(22L, 100L, "case=akuzativ", "dvacet dva setin")]
     [DataRow(21L, 100L, "case=akuzativ", "dvacet jedna setin")]
+    [DataRow(21L, 100L, "case=genitiv", "dvaceti jedné setiny")]
+    [DataRow(101L, 3L, "case=dativ", "sto jedné třetině")]
+    [DataRow(1001L, 3L, "case=instrumentál", "tisícem jednou třetinou")]
+    [DataRow(21_000L, 3L, "case=genitiv", "dvaceti jednoho tisíce třetin")]
     public void Czech_CompoundNumerators(long numerator, long denominator, string variant, string expected)
         => Assert.AreEqual(expected, Get("CS").ConvertFraction(numerator, denominator, variant));
 
     /// <summary>
-    /// Still closed: a compound numerator ending in <c>jedna</c> outside the accusative (the IJP gives only its nominative),
-    /// a multiplier ending in one, zero, and the <c>lomeno</c> reading in an oblique case (no source declines it).
+    /// Still closed: zero and the <c>lomeno</c> reading in an oblique case (no source reads it under an external case).
+    /// A compound numerator ending in <c>jedna</c> and a multiplier ending in one, closed here by NTS-40, were opened by
+    /// NTS-45 (<see cref="NumberToStringNts45Tests"/>; exact readings in <see cref="Czech_CompoundNumerators"/>).
     /// </summary>
     [TestMethod]
-    [DataRow(21L, 100L, "case=genitiv")]
-    [DataRow(101L, 3L, "case=dativ")]
-    [DataRow(1001L, 3L, "case=instrumentál")]
-    [DataRow(21_000L, 3L, "case=genitiv")]
     [DataRow(0L, 3L, "case=akuzativ")]
     [DataRow(1L, 23L, "case=instrumentál")]
     [DataRow(2L, 365L, "case=genitiv")]
@@ -211,6 +212,7 @@ public class NumberToStringNts40Nts41Tests
     [DataRow(2L, 2L, "case=datív", "dvom poloviciam")]
     [DataRow(5L, 2L, "case=lokál", "piatich poloviciach")]
     [DataRow(1L, 1000L, "case=akuzatív", "jednu tisícinu")]
+    [DataRow(0L, 3L, "case=akuzatív", "nula tretín")]
     public void Slovak_NounCases(long numerator, long denominator, string variant, string expected)
         => Assert.AreEqual(expected, Get("SK").ConvertFraction(numerator, denominator, variant));
 
@@ -245,11 +247,12 @@ public class NumberToStringNts40Nts41Tests
         => Assert.AreEqual(expected, Get("SK").ConvertFraction(numerator, denominator, variant));
 
     /// <summary>
-    /// Still closed: zero and the <c>lomené</c> reading in an oblique case. The bare final <c>jeden</c> (101, 1 000 001)
-    /// closed here by NTS-40 was opened by NTS-44 (<c>NumberToStringNts44Tests</c>).
+    /// Still closed: the <c>lomené</c> reading in an oblique case, a zero numerator included. The bare final <c>jeden</c>
+    /// (101, 1 000 001) closed here by NTS-40 was opened by NTS-44 (<c>NumberToStringNts44Tests</c>), zero over a
+    /// fraction noun by NTS-45 (<see cref="Slovak_NounCases"/>: <c>nula tretín</c>).
     /// </summary>
     [TestMethod]
-    [DataRow(0L, 3L, "case=akuzatív")]
+    [DataRow(0L, 23L, "case=akuzatív")]
     [DataRow(1L, 23L, "case=inštrumentál")]
     [DataRow(1L, 2_000_003L, "case=genitív")]
     public void Slovak_ObliqueStillClosed(long numerator, long denominator, string variant)
@@ -458,7 +461,7 @@ public class NumberToStringNts40Nts41Tests
 
     /// <summary>
     /// The slash readings beyond 10^12, closed by NTS-41, follow the same rules since NTS-42 F (the scale nouns read from
-    /// the converter); a CS multiplier ending in one after the tens stays closed there as below (NTS-42 B).
+    /// the converter); a CS multiplier ending in one after the tens declines there as below since NTS-45 (NTS-42 B).
     /// </summary>
     [TestMethod]
     public void Large_OpenedByNts42F()
@@ -466,7 +469,7 @@ public class NumberToStringNts40Nts41Tests
         Assert.AreEqual("jedna lomeno jedním bilionem jednou", Get("CS").ConvertFraction(1, 1_000_000_000_001));
         Assert.AreEqual("jedna lomené číslom jeden bilión jeden", Get("SK").ConvertFraction(1, 1_000_000_000_001));
         Assert.AreEqual("jedna lomeno jedním kvintilionem třemi", Get("CS").ConvertFraction(BigInteger.One, BigInteger.Pow(10, 30) + 3));
-        Assert.ThrowsExactly<NotSupportedException>(() => Get("CS").ConvertFraction(1, 21_000_000_000_000));
+        Assert.AreEqual("jedna lomeno dvaceti jedním bilionem", Get("CS").ConvertFraction(1, 21_000_000_000_000));
     }
 
     /// <summary>The fraction form of <c>Convert(Number)</c> uses the same readings.</summary>

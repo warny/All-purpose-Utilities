@@ -59,6 +59,53 @@ describes any capability.
 | EE | EE | SCALE-SHORT (scale tables only, NTS-23) | Yes (NTS-20): cardinal + `-lia` on the last element, `gbãtɔ` for 1 | Declarative + `ZeroOrdinalUnsupportedLanguageSpecifics` | **Deferred** | — | none | **Consulted** (NTS-20): Dzablu-Kumah, *Basic Ewe for Foreign Students*; Biblica Open Ewe Contemporary Scriptures; *Ewe Basic Course* 1968; Peace Corps Togo 2010; Wiktionary | Cardinals unbounded (NTS-23): static `akpe`, then the Conway-Wechsler short scale `miliɔn`, `biliɔn`, `triliɔn` (sourced anchors), `quadriliɔn` … (project extrapolation), each before its standalone multiplier (`multiplierPosition="afterScale"`); zero ordinal unsupported |
 | WO | WO | none | Yes (`-éel`, NTS-16, NTS-19) | Declarative + `WolofOrdinalLanguageSpecifics` | **Deferred** | — | none | No consistent source found | Cardinals unbounded (NTS-21): static `junni`, then the long-scale Conway-Wechsler names `milyoŋ`, `milyaar` (attested anchors), `bilyoŋ`, `bilyaar` … (project extrapolation in Wolof spelling); ordinals 1–999 999 only, no ordinal of zero nor of the round thousands |
 
+## NTS-45 — NTS-42 families A, B, D and E for Czech and Slovak (2026-10-21)
+
+Scope: the CS/SK closures NTS-42 kept after F. Old/new outputs and the dump: `DONE-2026-10-21.md`. Evidence levels as in
+the NTS-36 section below.
+
+| # | Language | Source | What it establishes |
+|---|---|---|---|
+| 1 | CS | IJP, "Členění čísel, víceslovné číslovkové výrazy" (<https://prirucka.ujc.cas.cz/?id=791>) | **rule**: every part of a multi-word numeral may be declined, the strategy the CS plugin uses (*před třemi sty šedesáti pěti lety*, *bez tisíce osmi set čtyřiceti sedmi korun*) |
+| 2 | CS | IJP, "Počítaný předmět po číslovkách" (<https://prirucka.ujc.cas.cz/?id=792>) | **rule**: after a compound ending in one the noun agrees with the last member (*dvacet jeden žák*) or is in the genitive (*dvacet jedna žáků*, "běžnější"); *nula* quoted as a quantifier in the nominative only (*nula/žádná celá dva metrů*) |
+| 3 | CS | J. Žďárek, "Sto jeden žák, či sto jedna žáků", ÚČJTK FF UK, 2009 (ČNK excerpts) | **attested** oblique agreement with a final *jeden*: *dožil se devadesáti jednoho roku*, *po sto jednom roce*, *sto padesát jedním hlasem*; the singular prevails after 101 and 1001 |
+| 4 | CS | IJP / ASCS / SSČ / SSJČ, entry *nula* (<https://prirucka.ujc.cas.cz/?slovo=nula>) | *nula* is a feminine noun of the pattern *žena* (*nuly, nule, nulu, nulou*); quantifier examples in the nominative only (*nula celá pět desetin*); **no rule** for *nula* + counted noun in an oblique case |
+| 5 | SK | Š. Peciar, "Nula celých, či nula celá?", *Slovenská reč* 23 (1958), 2, 117–118 (<https://www.juls.savba.sk/ediela/sr/1958/2/sr1958-2-lq.pdf>, p. 55 of the PDF) | **rule + attested**: "nesklonnosť výrazu nula v spojení s podst. menom dobre vidno z nepriamych pádov": *ochladiť na nula stupňov* (not *na nulu*), *z nula percent* (not *z nuly*), *s nula celými* (not *s nulou*); like *sto*, *tisíc*, the number stays and the noun "stojí za ním" changes (*pred sto rohmi*) |
+| 6 | SK | *Kultúra slova* 36 (2002), 5 (<https://www.juls.savba.sk/ediela/ks/2002/5/ks2002-5.html>) | **rule + attested**: *nula* as a noun declines (*napísať nulu*, *dva stupne nad nulou*), "tvar nula v spojení s počítaným predmetom neskloňuje": *nula stupňov*, *pri nula stupňoch* |
+| 7 | SK | Š. Peciar, "O používaní zlomkových výrazov", *Slovenská reč* 41 (1976), 4 (<https://www.juls.savba.sk/ediela/sr/1976/4/sr1976-4-lq.pdf>) | **attested**: *0,5 = nula celých (a) päť desatín*, citing #5; the slash reading in isolation only (*1/3 = jedna lomené troma*, *5/7 = päť lomené siedmimi*, not *lomeno*): nothing on a whole slash phrase under a case (D) |
+| 8 | CS | E. Prandstetter, *Naše řeč* 22 (1938), 78–86 | **attested** internal slash structure *X lomeno Y(instr.)* only (see NTS-40/41) |
+| 9 | SK | P. Ondrus, *Slovenská reč* 1968, 2; *Slovenská reč* 43 (1978), 6 | **attested** internal slash structure only: *jedna lomené dvoma*, *jeden lomené sto štyridsiatimi dvoma*, *dvanásť lomené štyridsiatimi piatimi* |
+
+**A and B — one rule.** A *jeden/jedna* ending a compound (A: 21, 101, 1001, 10^12 + 1) or a scale multiplier (B: 21 000,
+101 000, 31 000 000, 21 × 10^12) is declined with every other part (#1) and agrees with what it counts: the feminine
+fraction noun (*jedné*, *jednou*), the gender of the scale noun after a multiplier (*tisíc*, *milion*, *bilion*
+masculine: *jednomu tisíci*, *jedním milionem*; *miliarda*, *biliarda* feminine: *jedné miliardě*), the noun then in the
+singular of the case (#2 agreement with the last member, attested in the oblique cases by #3). One private helper
+(`FinalOne`) serves numerators, multipliers and *lomeno* denominators. Level: **rule + attested construction**; the
+fraction-noun combination itself is an **application** of the rule (no source quotes *dvaceti jedné třetiny*). The
+nominative and accusative keep the counting form and the genitive plural (*dvacet jedna třetin*, *dvacet jedna tisíc*;
+#2, the "běžnější" construction). In *lomeno* the denominator is an instrumental: a multiplier's one agrees with its scale
+noun (*jedna lomeno dvaceti jedním tisícem*), a final *jedna* of the whole denominator stays the arithmetic feminine
+*jednou* (NTS-41). The inverted *jednadvaceti* (also allowed by #1) is not the configuration's word order and has no
+form for 101: not used.
+
+**D — still not established.** Searched again (IJP, ÚJČ poradna database, Naše řeč, Slovenská reč, Kultúra slova
+1986–2019 issues, school and university mathematics pages): every source reads the slash phrase in isolation (#7, #8,
+#9).
+No sentence was found where a whole *X lomeno Y* / *X lomené Y* phrase is governed by a preposition or a case. The
+unresolved question is the form of X under an external case: declined (*s dvěma lomeno třemi*, *s dvoma lomené troma*)
+or kept as the nominative arithmetic term (*s dvě lomeno třemi*, *s dva lomené troma*). The ordinary cardinal declension
+is not evidence for an operator phrase: **fail-closed**.
+
+**E/SK — opened.** #5 and #6 state the rule for a counted noun in the oblique cases; #5 includes the accusative (*na nula
+stupňov*: the genitive plural of the direct case). Applied to the fraction nouns with the paradigms already held:
+*nula tretín* (genitive, accusative), *nula tretinám*, *nula tretinách*, *nula tretinami*; *nula polovíc*, *nula
+poloviciam*. A zero over a denominator without a fraction noun is a slash reading: closed with D.
+
+**E/CS — still closed.** Usage has an indeclinable *nula* (*při nula stupních*), but no Czech normative source states it
+(#2, #4): the dictionaries decline *nula* as a noun, and *nulou* by lexical declension would be precisely the analysis #5
+rejects for Slovak. Level: **usage attested, not normative** — below the project's threshold.
+
 ## NTS-36 and NTS-42 F — Czech and Slovak generated scales (2026-10-20)
 
 Scope: NTS-36 (the spelling of the Conway names CS and SK generate from 10^12) and NTS-42 family F (the CS and SK

@@ -1240,11 +1240,13 @@ NumberToStringConverter.GetConverter("CS").ConvertFraction(1, 23, "case=genitiv"
 From 10^12 the CS and SK plugins decline the scale nouns the converter generates (NTS-42 F: *jednomu bilionu třetin*,
 *dvoma biliónmi tretín*): the case forms are configuration keys of the language's `<GeneratedScaleForm>` (see
 [Generated scale forms](#generated-scale-forms--generatedscaleform)), so the plugins hold no Conway name. Denominator
-one, zero numerators in UK and BG (and in every oblique case), the CS/SK slash readings in an oblique case, the oblique
-cases of a CS compound numerator ending in *jedna*, a CS multiplier ending in one (21 000, 21 × 10^12), the SK genitive
+A CS compound or multiplier ending in *jedna* declines it in the oblique cases, agreeing with what it counts, the noun
+then in the singular of the case (NTS-45: *dvaceti jedné setiny*, *dvaceti jednomu tisíci třetin*, *jedna lomeno dvaceti
+jedním tisícem*); a SK zero keeps *nula* and declines the fraction noun (*nula tretinám*). Denominator one, zero
+numerators in UK and BG, a CS zero in an oblique case, the CS/SK slash readings in an oblique case, the SK genitive
 singular of a generated *-ón* noun (*bilión -a* but *trilión* unattested), and the UK values from 10^12 fail closed.
-`Convert` itself keeps no case. Sources: `docs/NTS-08-linguistic-sources.md`, sections NTS-30H, NTS-39, NTS-40/41 and
-NTS-36/42 F.
+`Convert` itself keeps no case. Sources: `docs/NTS-08-linguistic-sources.md`, sections NTS-30H, NTS-39, NTS-40/41,
+NTS-36/42 F and NTS-45.
 
 ### `GermanNumberToStringLanguageSpecifics`
 

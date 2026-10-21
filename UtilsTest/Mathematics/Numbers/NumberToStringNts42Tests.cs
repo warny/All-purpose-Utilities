@@ -17,7 +17,8 @@ namespace UtilsTest.NumberToString;
 /// unnoticed), and the generic boundary between the engine and the plugin. A change that opens a family on a sourced
 /// reading is expected to update the matching test. The level of evidence of each family (documented, partially
 /// documented, not established) is in <c>DONE-2026-10-19(1).md</c>. Family C has since been opened by NTS-44
-/// (<c>NumberToStringNts44Tests</c>).
+/// (<c>NumberToStringNts44Tests</c>), F for CS and SK by NTS-42 F (<c>NumberToStringNts36Nts42FTests</c>), A, B and the
+/// Slovak part of E by NTS-45 (<c>NumberToStringNts45Tests</c>, <c>DONE-2026-10-21.md</c>).
 /// </para>
 /// </summary>
 [TestClass]
@@ -49,10 +50,12 @@ public class NumberToStringNts42Tests
     // ===== A — CS compound numerator ending in jedna ================================================
 
     /// <summary>
-    /// Family A (characterization): a compound numerator ending in <c>jedna</c> is not implemented in the oblique cases,
-    /// after the tens, the hundreds or a scale group, whatever the caller's gender. Partially documented: the IJP gives
-    /// the nominative agreements (<i>dvacet jeden žák</i> / <i>dvacet jedna žáků</i>) and three declension strategies
-    /// for multi-word numerals, but no source chooses one for a compound ending in <i>jedna</i> with a fraction noun.
+    /// Family A, opened by NTS-45: a compound numerator ending in <c>jedna</c>, closed in the oblique cases when this
+    /// audit ran, now declines every part, its <c>jedna</c> agreeing with the feminine fraction noun in the singular of
+    /// the case (IJP: every part declined, the noun agreeing with the last member of the compound; corpus: <i>devadesáti
+    /// jednoho roku</i>, <i>po sto jednom roce</i>). This keeps the family's values pinned as open in every oblique case,
+    /// ending in the singular noun, whatever the caller's gender; the exact readings are specified by
+    /// <c>NumberToStringNts45Tests</c>.
     /// </summary>
     [TestMethod]
     [DataRow(21L, 3L)]
@@ -63,11 +66,19 @@ public class NumberToStringNts42Tests
     [DataRow(1001L, 3L)]
     [DataRow(1021L, 100L)]
     [DataRow(1_000_001L, 3L)]
-    public void A_CzechCompoundEndingInJedna_ClosedInTheObliqueCases(long numerator, long denominator)
+    public void A_CzechCompoundEndingInJedna_OpenedByNts45(long numerator, long denominator)
     {
-        AssertClosed("CS", numerator, denominator, s_czechObliqueCases);
+        string stem = Get("CS").ConvertFraction(1, denominator)["jedna ".Length..^1];
+        string[] singular = ["y", "ě", "ě", "ou"];
+        string[] one = [" jedné ", " jedné ", " jedné ", " jednou "];
+        for (int i = 0; i < s_czechObliqueCases.Length; i++)
+        {
+            string reading = Get("CS").ConvertFraction(numerator, denominator, s_czechObliqueCases[i]);
+            StringAssert.EndsWith(reading, one[i] + stem + singular[i], s_czechObliqueCases[i]);
+        }
+        string dative = Get("CS").ConvertFraction(numerator, denominator, "case=dativ");
         foreach (string gender in s_czechGenders)
-            Assert.ThrowsExactly<NotSupportedException>(() => Get("CS").ConvertFraction(numerator, denominator, "case=dativ", gender));
+            Assert.AreEqual(dative, Get("CS").ConvertFraction(numerator, denominator, "case=dativ", gender), gender);
     }
 
     /// <summary>
@@ -85,25 +96,26 @@ public class NumberToStringNts42Tests
     // ===== B — CS multiplier ending in one ==========================================================
 
     /// <summary>
-    /// Family B (characterization): a multiplier ending in one after the tens or hundreds (<c>dvacet jedna tisíc</c>) is
-    /// not implemented outside the nominative and accusative, before <c>tisíc</c>, <c>milion</c> and <c>miliarda</c>
-    /// alike: in the oblique cases of a noun fraction and in the instrumental of the <c>lomeno</c> reading. Partially
-    /// documented: the IJP rules for the scale nouns and multi-word numerals apply, but even the nominative of the
-    /// multiplier varies (<i>dvacet jedna tisíc</i> / <i>dvacet jeden tisíc</i>), and no oblique example is sourced.
+    /// Family B, opened by NTS-45: a multiplier ending in one after the tens or hundreds (<c>dvacet jedna tisíc</c>),
+    /// closed outside the nominative and accusative when this audit ran, now declines with the rule of family A, its one
+    /// agreeing with the scale noun (masculine <c>tisíc</c>, <c>milion</c>; feminine <c>miliarda</c>), which stands in the
+    /// singular of the case: in the oblique cases of a noun fraction and in the instrumental of the <c>lomeno</c> reading.
+    /// This keeps the family's values pinned as open; the exact readings are specified by <c>NumberToStringNts45Tests</c>.
     /// </summary>
     [TestMethod]
-    [DataRow(21_000L)]
-    [DataRow(31_000L)]
-    [DataRow(101_000L)]
-    [DataRow(121_000L)]
-    [DataRow(21_000_000L)]
-    [DataRow(101_000_000L)]
-    [DataRow(21_000_000_000L)]
-    [DataRow(21_000_000_001L)]
-    public void B_CzechMultiplierEndingInOne_Closed(long value)
+    [DataRow(21_000L, " jedním tisícem")]
+    [DataRow(31_000L, " jedním tisícem")]
+    [DataRow(101_000L, " jedním tisícem")]
+    [DataRow(121_000L, " jedním tisícem")]
+    [DataRow(21_000_000L, " jedním milionem")]
+    [DataRow(101_000_000L, " jedním milionem")]
+    [DataRow(21_000_000_000L, " jednou miliardou")]
+    [DataRow(21_000_000_001L, " jednou miliardou jednou")]
+    public void B_CzechMultiplierEndingInOne_OpenedByNts45(long value, string instrumentalEnd)
     {
-        AssertClosed("CS", value, 3, s_czechObliqueCases);
-        Assert.ThrowsExactly<NotSupportedException>(() => Get("CS").ConvertFraction(1, value), "lomeno " + value);
+        foreach (string variant in s_czechObliqueCases)
+            Assert.IsFalse(string.IsNullOrWhiteSpace(Get("CS").ConvertFraction(value, 3, variant)), variant);
+        StringAssert.EndsWith(Get("CS").ConvertFraction(1, value), instrumentalEnd, "lomeno " + value);
     }
 
     /// <summary>
@@ -192,10 +204,11 @@ public class NumberToStringNts42Tests
     // ===== E — zero numerator under an oblique case =================================================
 
     /// <summary>
-    /// Family E (characterization): a zero numerator is not implemented in any oblique case, with or without a fraction
-    /// noun, while the current nominatives stay open (CS <c>nula lomeno třemi</c>, SK <c>nula tretín</c>; UK has none,
-    /// NTS-39). The lexical declension of <c>нуль</c>/<c>nula</c> is documented; its combination with a fraction noun or
-    /// a <i>lomeno</i> phrase in an oblique case is not.
+    /// Family E (characterization): a zero numerator is not implemented in any oblique case in CS and UK, with or without
+    /// a fraction noun, nor in SK with a <i>lomené</i> phrase (family D), while the current nominatives stay open (CS
+    /// <c>nula lomeno třemi</c>, SK <c>nula tretín</c>; UK has none, NTS-39). SK zero over a fraction noun was opened by
+    /// NTS-45 (Peciar, Slovenská reč 23, 1958: <i>nula</i> indeclinable with a counted noun, <i>s nula celými</i>): it
+    /// reads in every oblique case, <c>nula</c> unchanged (exact readings in <c>NumberToStringNts45Tests</c>).
     /// </summary>
     [TestMethod]
     public void E_ZeroNumerator_ClosedInEveryObliqueCase()
@@ -204,8 +217,14 @@ public class NumberToStringNts42Tests
         foreach (long denominator in denominators)
         {
             AssertClosed("CS", 0, denominator, [.. s_czechObliqueCases, "case=akuzativ"]);
-            AssertClosed("SK", 0, denominator, [.. s_slovakObliqueCases, "case=akuzatív"]);
             AssertClosed("UK", 0, denominator, s_ukrainianObliqueCases);
+            if (denominator == 23)
+                AssertClosed("SK", 0, denominator, [.. s_slovakObliqueCases, "case=akuzatív"]);
+            else
+            {
+                foreach (string variant in s_slovakObliqueCases)
+                    StringAssert.StartsWith(Get("SK").ConvertFraction(0, denominator, variant), "nula ", variant);
+            }
         }
         Assert.AreEqual("nula lomeno třemi", Get("CS").ConvertFraction(0, 3));
         Assert.AreEqual("nula tretín", Get("SK").ConvertFraction(0, 3));
@@ -215,23 +234,27 @@ public class NumberToStringNts42Tests
     /// <summary>
     /// Family E, engine boundary: the generic engine does not special-case zero. A zero numerator reaches the language's
     /// <see cref="IFractionLanguageSpecifics"/> with the caller's case, exactly as a non-zero one does, and the closure is
-    /// the plugin's answer turned into the engine's <see cref="NotSupportedException"/>.
+    /// the plugin's answer turned into the engine's <see cref="NotSupportedException"/> — or, for SK since NTS-45, the
+    /// plugin's reading.
     /// </summary>
     [TestMethod]
-    [DataRow("UK", "case=давальний", "давальний")]
-    [DataRow("CS", "case=dativ", "dativ")]
-    [DataRow("SK", "case=datív", "datív")]
-    public void E_ZeroReachesThePluginWithTheCase(string culture, string variant, string caseValue)
+    [DataRow("UK", "case=давальний", "давальний", false)]
+    [DataRow("CS", "case=dativ", "dativ", false)]
+    [DataRow("SK", "case=datív", "datív", true)]
+    public void E_ZeroReachesThePluginWithTheCase(string culture, string variant, string caseValue, bool answered)
     {
         NumberToStringConverter source = Get(culture);
         var recorder = new RecordingFractionSpecifics(source.LanguageSpecifics);
         var converter = new NumberToStringConverter(new NumberToStringConverterOptions(source) { LanguageSpecifics = recorder });
 
-        Assert.ThrowsExactly<NotSupportedException>(() => converter.ConvertFraction(0, 3, variant));
+        if (answered)
+            Assert.AreEqual(Get(culture).ConvertFraction(0, 3, variant), converter.ConvertFraction(0, 3, variant));
+        else
+            Assert.ThrowsExactly<NotSupportedException>(() => converter.ConvertFraction(0, 3, variant));
         Assert.AreEqual(1, recorder.Calls.Count, "the plugin is asked exactly once");
         Assert.AreEqual(BigInteger.Zero, recorder.Calls[0].Numerator);
         Assert.AreEqual(caseValue, recorder.Calls[0].Variants["case"]);
-        Assert.IsFalse(recorder.Calls[0].Answered);
+        Assert.AreEqual(answered, recorder.Calls[0].Answered);
 
         Assert.AreEqual(Get(culture).ConvertFraction(2, 3, variant), converter.ConvertFraction(2, 3, variant));
         Assert.AreEqual(2, recorder.Calls.Count);
@@ -294,9 +317,9 @@ public class NumberToStringNts42Tests
 
     /// <summary>
     /// Family F, CS and SK (characterization): opened by NTS-42 F, the exact readings being pinned by
-    /// <c>NumberToStringNts36Nts42FTests</c>. The family's numerators read in every oblique case but the closures that
-    /// remain documented: CS 10^12 + 1 (family A, a compound ending in <c>jedna</c>) and the SK genitive singular of a
-    /// generated <c>-ón</c> noun (<c>bilión</c>, <c>kvadrilión</c>: lexical ending).
+    /// <c>NumberToStringNts36Nts42FTests</c>. The family's numerators read in every oblique case but the closure that
+    /// remains documented: the SK genitive singular of a generated <c>-ón</c> noun (<c>bilión</c>, <c>kvadrilión</c>:
+    /// lexical ending); CS 10^12 + 1 (family A) reads since NTS-45.
     /// </summary>
     [TestMethod]
     [DataRow("CS")]
@@ -310,9 +333,8 @@ public class NumberToStringNts42Tests
         {
             foreach (string variant in cases)
             {
-                bool closed = language == "CS"
-                    ? numerator == first + 1
-                    : variant == "case=genitív" && (numerator == first || numerator == BigInteger.Pow(10, 24));
+                bool closed = language == "SK"
+                    && variant == "case=genitív" && (numerator == first || numerator == BigInteger.Pow(10, 24));
                 if (closed)
                     AssertClosed(language, numerator, 3, [variant]);
                 else
@@ -323,7 +345,8 @@ public class NumberToStringNts42Tests
 
     /// <summary>
     /// Family F: the CS and SK slash denominators decline beyond 999 999 999 999 since NTS-42 F (exact readings in
-    /// <c>NumberToStringNts36Nts42FTests</c>); a CS multiplier ending in one after the tens stays closed (family B).
+    /// <c>NumberToStringNts36Nts42FTests</c>); a CS multiplier ending in one after the tens declines since NTS-45
+    /// (family B).
     /// </summary>
     [TestMethod]
     [DataRow("CS")]
@@ -337,7 +360,7 @@ public class NumberToStringNts42Tests
         foreach (BigInteger denominator in denominators)
             StringAssert.StartsWith(Get(language).ConvertFraction(BigInteger.One, denominator), prefix, denominator.ToString());
         if (language == "CS")
-            Assert.ThrowsExactly<NotSupportedException>(() => Get(language).ConvertFraction(BigInteger.One, 21 * first), "B");
+            Assert.AreEqual("jedna lomeno dvaceti jedním bilionem", Get(language).ConvertFraction(BigInteger.One, 21 * first), "B");
     }
 
     /// <summary>
