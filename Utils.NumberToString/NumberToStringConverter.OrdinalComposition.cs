@@ -205,7 +205,8 @@ namespace Utils.NumberToString
         /// Builds the text whose ordinal transformation gives the ordinal of a round scale value covered
         /// by an <see cref="OrdinalScaleRule"/>: the singular scale noun alone for a multiplier of one,
         /// otherwise the multiplier's cardinal in its ordinal base (see <see cref="DigitType.OrdinalBaseString"/>),
-        /// the rule's separator and the singular scale noun.
+        /// the rule's separator and the singular scale noun. Under paired scales the multiplier of a named scale spans
+        /// both groups of its pair (up to 999 999 for the million), exactly as in the cardinal.
         /// </summary>
         /// <param name="number">The non-negative ordinal value.</param>
         /// <param name="activeVariants">The resolved variant query (multiplier cardinal and scale noun).</param>
@@ -224,6 +225,10 @@ namespace Utils.NumberToString
             {
                 long unit = _decimalPowersOfTen[index * _scaleGroupDigits];
                 if (number < unit) continue;
+                // The unnamed upper half of a pair (NumberScale.PairedScalesFrom) is read inside the multiplier of the
+                // named scale below it, as in the cardinal: 10^9 is a round value of millón whose multiplier is 1000
+                // (Spanish milmillonésimo, NTS-38).
+                if (Scale.IsPairedUpperScale(index)) continue;
                 if (_ordinalScaleByIndex[index] is not { } rule || number % unit != 0) return false;
                 long multiplier = number / unit;
                 // The round ordinal is built on the singular noun whatever the multiplier: that one selected form

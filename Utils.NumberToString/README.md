@@ -38,7 +38,7 @@ dotnet add package omy.Utils.NumberToString --version 2.0.0-rc.2
 | PL | Polish | ✓ plugin + declarative (1–999 999; round thousands to 99 000, NTS-28) | ✓ 5 min, 12 h | rodzaj × przypadek | local | tysiąc/tysiące/tysięcy agree with their multiplier (NTS-27); cardinals to 999 999; no ordinal of zero |
 | RU | Russian | ✓ declarative + plugin for the one-word round values (zero: `нулевой`; 0–999 999 999, NTS-28) | ✓ 15 min, 12 h | gender × case | local | тысяча, миллион, миллиард agree with their multiplier (две тысячи, пять миллионов; NTS-27). Short scale with `миллиард`; Cyrillic Conway names above (`SCALE-SHORT-CYRILLIC`), unbounded, agreeing with their multiplier (два триллиона; NTS-30C) |
 | UK, UK-UA | Ukrainian | ✓ plugin, gender × case | ✓ 15 min, 12 h | gender × case | local | Round thousands, millions and milliards with a multiplier of 1–89 (NTS-28, §38). Short scale with `мільярд`; Ukrainian-spelled Conway names above (`вігінтильйон`), unbounded. `тисяча`/`мільйон`/`мільярд` agree with their multiplier (NTS-30B), so do the generated names (два трильйони; NTS-30C) |
-| ES | Spanish | ✓ declarative, composed (1–999 999 999, NTS-28) | ✓ 5 min, 12 h | gender × form | local | Apocope before mil/millón (veintiún mil, un millón; NTS-27); million multipliers up to six digits (dos mil quinientos millones, mil un millones; NTS-30F), masculine whatever the caller's gender (quinientos millones; NTS-30G); no ordinal of zero |
+| ES | Spanish | ✓ declarative, composed (1–999 999 999 999, NTS-28; `milmillonésimo` from 10^9, NTS-38) | ✓ 5 min, 12 h | gender × form | local | Apocope before mil/millón (veintiún mil, un millón; NTS-27); million multipliers up to six digits (dos mil quinientos millones, mil un millones; NTS-30F), masculine whatever the caller's gender (quinientos millones; NTS-30G); currency numerals attributive (un euro, veintiún euros; `<Currency forceVariants>`, NTS-30); no ordinal of zero |
 | IT | Italian | ✓ validated productive forms through round trilione: 1–1999 except 1110–1910, round thousands to 999000, round multiples of milione/miliardo/bilione/biliardo/trilione; selected sourced analytic compounds (1010, 100001–100009) (`<OrdinalStem>`, `<OrdinalComposition>`, `<OrdinalScale>`, domain-guard plugin) | ✓ 5 min, 12 h | gender | local | Unsourced ordinals fail closed by design: zero, 1110–1910, the other non-round thousands above 1999 and the non-round values from a million (no canonical form established); millions are separate nouns joined by `e` ("due milioni e centomila") |
 | PT | Portuguese | ✓ declarative, composed (1–1999, NTS-28) | ✓ 5 min, 12 h (direct "e …") | gender | local | Deliberate direct numeric reading (no "para"/"menos" constructions); PT-PT/PT-BR not split; no ordinal of zero |
 | GL, gl-ES | Galician | ✓ declarative, gender on the last element (1–1999, NTS-28) | ✓ 5 min, 12 h | gender | local | No ordinal of zero |
@@ -55,10 +55,10 @@ dotnet add package omy.Utils.NumberToString --version 2.0.0-rc.2
 | JA | Japanese | ✓ prefix 第 (whole cardinal domain, NTS-28) | ✓ 5 min, 12 h | — | local | Counts by 万, 億, 兆 without spaces, to 9999兆 (NTS-27); no 午前/午後 |
 | KO | Korean | ✓ prefix 제 (whole cardinal domain, NTS-28) | ✓ 5 min, 12 h | — | local | Counts by 만, 억, 조, spaced by units of 만 (한글 맞춤법 제44항), to 9999조 (NTS-27); native hour words only in ClockTime; no 오전/오후 |
 | ZH | Chinese | ✓ prefix 第 (whole cardinal domain, NTS-28) | ✓ 15 min, 12 h | — | local | Counts by 万 and 亿 with 零 and 一十 (NTS-27), below 万亿; `两` only in ClockTime; no 上午/下午 |
-| VN, VI, VI-VN | Vietnamese | ✓ prefix thứ (cardinal domain except a whole zero class, NTS-28) | ✓ 15 min, 12 h | — | local | A class after a higher class is read in full ("hai nghìn không trăm linh năm", NTS-27); a whole zero class is skipped, not read "không nghìn" (NTS-30); no sáng/chiều/tối |
+| VN, VI, VI-VN | Vietnamese | ✓ prefix thứ (cardinal domain except two consecutive zero classes, NTS-28, NTS-30) | ✓ 15 min, 12 h | — | local | A class after a higher class is read in full ("hai nghìn không trăm linh năm", NTS-27); a whole zero class between two non-zero classes is read "không nghìn" (năm mươi triệu không nghìn một trăm linh hai; `internalZeroGroupString`, NTS-30); no sáng/chiều/tối |
 | ID, ID-ID | Indonesian | ✓ plugin | ✓ 5 min, 12 h | — | local | No day-part wording. Conway in Indonesian spelling, `li` + `un` (`kuadriliun`, `desiliun`, 10^3003 `miliniliun`), unbounded |
 | MS, MS-MY | Malay (lapan, bilion, trilion) | ✓ plugin | ✓ 5 min, 12 h, own section | — | child of ID | No day-part wording. Indonesian Conway tables with suffix `on` (`kuadrilion`, `desilion`), unbounded |
-| EU, eu-ES | Basque | ✓ declarative (1–999 999 999, NTS-28) | ✓ 15 min, 12 h | — | local | Euskaltzaindia rules 7 and 203: mila eta bat, mila berrehun eta bat, milioi bat (NTS-27); million multipliers up to six digits (bi mila eta bostehun milioi; NTS-30F); one eta before the last group (hirurogei milioi berrehun mila eta bat; NTS-30G); clock-case forms only in ClockTime |
+| EU, eu-ES | Basque | ✓ declarative (1–999 999 999 999, NTS-28, NTS-38: milioigarren, mila milioigarren after rule 203 §5) | ✓ 15 min, 12 h | — | local | Euskaltzaindia rules 7 and 203: mila eta bat, mila berrehun eta bat, milioi bat (NTS-27); million multipliers up to six digits (bi mila eta bostehun milioi; NTS-30F); one eta before the last group (hirurogei milioi berrehun mila eta bat; NTS-30G); clock-case forms only in ClockTime |
 | SW, SW-KE, SW-TZ | Swahili | — deferred (noun-class concord) | ✓ 15 min, 12 h, six-hour offset | — | local | No asubuhi/mchana/jioni/usiku. Conway short scale in Swahili spelling, `li` + `oni` (`kwadrilioni`, `sekstilioni`, `desilioni`, 10^3003 `milinilioni`), unbounded |
 | ZU | Zulu | — deferred (noun-class policy) | ✓ 15 min, 12 h | — | local | Hour forms only in ClockTime |
 | EE | Ewe | ✓ declarative `-lia` on the last element, first `gbãtɔ` + zero guard | — deferred (no sourced minute convention) | — | local | Large scales: short Conway-Wechsler scale (`baseOn="SCALE-SHORT"`, unbounded); `akpe`/`miliɔn`/`biliɔn`/`triliɔn` sourced, higher `-liɔn` names (`quadriliɔn`, `quintiliɔn` …) productively generated, not individually attested. Scale noun first: `akpe eve` = 2000, `biliɔn alafa eve` = 200 000 000 000 (`multiplierPosition="afterScale"`); no ordinal of zero |
@@ -851,13 +851,31 @@ fr.ConvertCurrency(21m, euro);   // "vingt-et-un euros"
 fr.ConvertCurrency(21m, livre);  // "vingt-et-une livres"
 ```
 
+A language may also force variants on every currency numeral, because it governs the currency noun (NTS-30):
+`<Currency forceVariants="…" />` in the `<Language>`, `NumberToStringConverterOptions.CurrencyForcedVariants`, read
+back as `NumberToStringConverter.CurrencyForcedVariants`. Spanish declares `form=attributive`, so the masculine
+apocope of DPD "uno" §2.2 applies to any caller-defined masculine currency, unit and subunit alike. Precedence, from
+the weakest: the caller's variants, the language's currency context, the `CurrencyDefinition`'s own forced variants:
+
+```csharp
+var es = NumberToStringConverter.GetConverter("ES");    // <Currency forceVariants="form=attributive" />
+var eur = new CurrencyDefinition { UnitSingular = "euro", UnitPlural = "euros", SubunitSingular = "céntimo", SubunitPlural = "céntimos", Connector = "con" };
+es.ConvertCurrency(1m, eur);        // "un euro"
+es.ConvertCurrency(21.31m, eur);    // "veintiún euros con treinta y un céntimos"
+es.ConvertCurrency(1m, eur, "form=standalone");   // "un euro"   (the context overrides the caller)
+var peseta = new CurrencyDefinition { UnitSingular = "peseta", UnitPlural = "pesetas", SubunitSingular = "céntimo", SubunitPlural = "céntimos", Connector = "con",
+    UnitForcedVariants = ForcedVariantSet.Create(("gender", "femenino")) };
+es.ConvertCurrency(21m, peseta);    // "veintiuna pesetas"   (the currency overrides the context)
+es.Convert(21);                     // "veintiuno"           (standalone cardinals unchanged)
+```
+
 ### Configuring ForcedVariants
 
 - **XML**: `forceVariants="dimension=value"` or `forceVariants="dimension=value,dimension2=value2"`
-  on `<Unit>` (inside `<TimeUnits>`) or `<Fraction>`, reusing the same
+  on `<Unit>` (inside `<TimeUnits>`), `<Fraction>` or `<Currency>`, reusing the same
   `dimension=value` vocabulary as caller-supplied variants.
 - **Programmatic**: `NumberToStringConverterOptions.TimeUnitForcedVariants` /
-  `FractionForcedVariants` (keyed like `TimeUnits`/`Fractions`), or
+  `FractionForcedVariants` (keyed like `TimeUnits`/`Fractions`), `CurrencyForcedVariants`, or
   `CurrencyDefinition.UnitForcedVariants`/`SubunitForcedVariants` — all typed
   `ForcedVariantSet`, built via `ForcedVariantSet.Create(("dimension", "value"), ...)`.
 
@@ -871,7 +889,7 @@ forcing it twice through the canonical name alone.
 
 Unknown dimensions/values, malformed syntax, and duplicate dimensions are
 rejected deterministically (`NumberToStringConfigurationException`) — for
-time units and fraction terms at converter construction time, and for
+time units, fraction terms and the `<Currency>` context at converter construction time, and for
 `CurrencyDefinition` at the start of `ConvertCurrency`, before any fragment is
 rendered.
 
@@ -1410,6 +1428,7 @@ on the same language register the same converter under several codes.
 | `scaleConnector` / `scaleConnectorThreshold` | | Word inserted between a group's text and its scale name (thousand/million/…) when the group's value is at or above the threshold (e.g. Romanian 20 000 → "douăzeci **de** mii" — `scaleConnector="de" scaleConnectorThreshold="20"`). |
 | `finalComponentConnector` | | Word placed before the last additive component of every numeral phrase (NTS-30D). A phrase is the multiplier of a scale group, or the whole number whose components are its non-zero groups: inside a group the word precedes the last non-zero position, once (an `Exception` such as 15 is one component); between groups it precedes the last non-zero group when that group is a single component. Bulgarian `finalComponentConnector="и"`: 21 → "двадесет **и** едно", 121 → "сто двадесет **и** едно", 1100 → "хиляда **и** сто", 1121 → "хиляда сто двадесет **и** едно", 21 000 → "двадесет **и** една хиляди". Inherited through `baseOn`; an explicit empty value removes it. Rejected together with `groupConnector`, `finalGroupConnector`, `intraGroupConnector` or a `Fusion`, which rewrite the same junctions. Programmatic: `NumberToStringConverterOptions.FinalComponentConnector`, read back as `NumberToStringConverter.FinalComponentConnector`. |
 | `finalGroupConnector` | | Word placed **between groups only**, before the last non-zero group of every numeral phrase, whatever that group holds (NTS-30G). It never enters a group, so the connectors inside a group stay those of the `buildString`s (unlike `finalComponentConnector`, which also joins the components of a group). The other inter-group junctions keep `groupConnector` (below its threshold) or `groupSeparator`; a paired multiplier (`pairedScalesFrom`) is a phrase of its own. Basque `finalGroupConnector="eta"` (Euskaltzaindia rule 203): 60 200 001 → "hirurogei milioi berrehun mila **eta** bat", 2 700 000 → "bi milioi **eta** zazpiehun mila". Inherited through `baseOn`; an explicit empty value removes it. Rejected together with `finalComponentConnector`, which also claims that junction; combines with `groupConnector`, `intraGroupConnector`, `scaleConnector` and `Fusion`. Programmatic: `NumberToStringConverterOptions.FinalGroupConnector`, read back as `NumberToStringConverter.FinalGroupConnector`. |
+| `internalZeroGroupString` | | Multiplier text of a **whole zero group** lying between a higher and a lower non-zero group (NTS-30). The group is then rendered like any other: this literal in place of its digits, its scale noun (in the form the scale selects for a count of zero), the group triggers, the scale replacements and the group-with-scale triggers. Every internal zero group is rendered, consecutive ones included; leading and trailing zero groups never are. It differs from the zero positions of a non-zero group (`innerString`/`innerBuildString`: Vietnamese *không trăm*, *linh*). Vietnamese `internalZeroGroupString="không"` (SGK Toán 4): 50 000 102 → "năm mươi triệu **không nghìn** một trăm linh hai", 50 000 000 → "năm mươi triệu". Inherited through `baseOn`; an explicit empty value removes it. Programmatic: `NumberToStringConverterOptions.InternalZeroGroupString`, read back as `NumberToStringConverter.InternalZeroGroupString`. |
 | `multiplierPosition` | | `beforeScale` (default, "two thousand") or `afterScale`: the scale noun precedes its multiplier (Ewe 2000 → "akpe eve"). See [`<Groups onScale>` and `multiplierPosition`](#groups-onscale--multiplier-tables-and-multiplierposition). |
 
 The final-component connector (NTS-30D) marks one junction per numeral phrase, walking outward from the last
@@ -1435,6 +1454,17 @@ eu.Convert(2_700_000);      // "bi milioi eta zazpiehun mila"
 eu.Convert(1_201);          // "mila berrehun eta bat"
 eu.Convert(2_500_001_001);  // "bi mila eta bostehun milioi mila eta bat" (the multiplier's own eta, then the final one)
 eu.FinalGroupConnector;     // "eta"
+```
+
+The internal zero group (NTS-30) reads a whole zero class that lies between two non-zero classes; the zero hundreds
+and tens of a non-zero class keep their inner forms:
+
+```csharp
+var vn = NumberToStringConverter.GetConverter("VN");     // internalZeroGroupString="không"
+vn.Convert(50_000_102);     // "năm mươi triệu không nghìn một trăm linh hai"
+vn.Convert(3_000_013);      // "ba triệu không nghìn không trăm mười ba"     (whole class, then không trăm)
+vn.Convert(50_000_000);     // "năm mươi triệu"                              (trailing zero classes are silent)
+vn.ConvertOrdinal(1_000_005); // "thứ một triệu không nghìn không trăm linh năm"
 ```
 
 ---
@@ -2389,6 +2419,10 @@ a **round scale value** — multiplier × scale unit, every lower group zero —
   extra rule (`duemilionesima`).
 - Only the highest scale of the value is considered. Whole-number `<OrdinalException>` entries and
   `<OrdinalComposition>` keep precedence. Cardinals are never affected.
+- Under [`pairedScalesFrom`](#paired-scales--pairedscalesfrom) the unnamed upper half of a pair is read, as in the
+  cardinal, inside the multiplier of the named scale below it (NTS-38): with Spanish `pairedScalesFrom="2"`,
+  1 000 000 000 is `mil` × `millón` → `milmillonésimo`; with Basque `<OrdinalScale scales="2" multiplierSeparator=" " />`,
+  `milioigarren`, `bi milioigarren`, `mila milioigarren`.
 - `baseOn`: a derived language declaring `<OrdinalScale>` replaces the inherited list. Programmatic:
   `NumberToStringConverterOptions.OrdinalScaleRules` (`OrdinalScaleRule(Scales, MultiplierSeparator)`),
   snapshotted by the converter (`OrdinalScaleRules`).

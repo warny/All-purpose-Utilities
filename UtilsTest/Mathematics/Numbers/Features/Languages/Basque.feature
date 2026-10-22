@@ -128,9 +128,8 @@ Examples:
 # NTS-08 validation: Euskaltzaindia, rule 18 "Ordinalen eta banatzaileen idazkera": bigarren,
 # hirugarren, laugarren, bosgarren (not bostgarren), hamabosgarren, hogeita batgarren, hogeita
 # bosgarren, hirurogeita hamabosgarren, ehungarren, milagarren. Rule 7 "Zenbakien idazkeraz" gives
-# only "zero"/"huts" for 0 (no ordinal is attested). Since NTS-27 the cardinals above 1000 follow rule 7
-# ("mila eta bat", "milioi bat"), but no source settles their ordinal ("mila eta batgarren"?): the guard
-# stays (NTS-28) and these ordinals fail closed.
+# only "zero"/"huts" for 0. NTS-38: rule 203 §5 settles the ordinals of the whole cardinal domain (to
+# 999 999 999 999); zero (rule 203 lists "zerogarren", NTS-50) and the values beyond the cardinal fail closed.
 Scenario Outline: Basque ordinals outside the validated domain are not supported
     Given I use the "EU" number converter
     When I attempt to convert the ordinal number <number>
@@ -139,12 +138,13 @@ Scenario Outline: Basque ordinals outside the validated domain are not supported
 Examples:
     | number |
     | 0 |
-    | 1000000000 |
+    | 1000000000000 |
 
 # NTS-28: Euskaltzaindia rule 18: the ordinal is the cardinal written in letters followed by -garren ("…
 # ehungarren, milagarren …"), batgarren separate from the preceding part; on the NTS-27 cardinal (rule 7) the
-# ordinal covers 1-999 999 999. The cardinal composes mila milioi since NTS-30F, but the ordinals from the
-# milliard are not audited and stay closed.
+# ordinal covers 1-999 999 999. NTS-38: Euskaltzaindia rule 203 §5 reduces the round million to its noun
+# ("1 000 000. milioigarren", "2 000 000. bi milioigarren", "1 000 001.: milioi bat eta batgarren") and its
+# general rule extends the domain to the milliard, "mila milioi" since NTS-30F.
 Scenario Outline: NTS-28 Basque ordinals above a thousand
     Given I use the "EU" number converter
     When I convert the ordinal number <number>
@@ -156,8 +156,11 @@ Examples:
     | 1201 | mila berrehun eta batgarren |
     | 2000 | bi milagarren |
     | 2005 | bi mila eta bosgarren |
-    | 1000000 | milioi batgarren |
+    | 1000000 | milioigarren |
     | 2000000 | bi milioigarren |
+    | 1000001 | milioi bat eta batgarren |
+    | 1000000000 | mila milioigarren |
+    | 1000000001 | mila milioi eta batgarren |
 
 Scenario: Ordinal conversion is supported
     Given I use the "EU" number converter

@@ -279,6 +279,25 @@ public sealed class NumberToStringConverterOptions
     public string? FinalGroupConnector { get; set; }
 
     /// <summary>
+    /// Multiplier text of a whole zero group that lies between a higher and a lower non-zero group (e.g. <c>"không"</c>
+    /// for Vietnamese: 50 000 102 → <c>năm mươi triệu không nghìn một trăm linh hai</c>). Such a group is then rendered
+    /// like any other group, this text taking the place of its digits: followed by its scale noun (in the form the scale selects for a count of zero), through the group
+    /// triggers, the scale replacements and the group-with-scale triggers. Every internal zero group is rendered,
+    /// consecutive ones included; leading and trailing zero groups never are (<c>năm mươi triệu</c>). <see langword="null"/>
+    /// or white space (the default): zero groups are skipped.
+    /// </summary>
+    public string? InternalZeroGroupString { get; set; }
+
+    /// <summary>
+    /// Variants forced on the numeral of every currency amount, unit and subunit, because it governs the currency noun
+    /// (e.g. <c>form=attributive</c> for Spanish: <c>un euro</c>, <c>veintiún euros</c>). Precedence, from the weakest:
+    /// the caller's variants, then these, then the <see cref="CurrencyDefinition.UnitForcedVariants"/> or
+    /// <see cref="CurrencyDefinition.SubunitForcedVariants"/> of the currency. <see langword="null"/> or
+    /// <see cref="ForcedVariantSet.Empty"/> (the default): nothing is forced.
+    /// </summary>
+    public ForcedVariantSet? CurrencyForcedVariants { get; set; }
+
+    /// <summary>
     /// Time units keyed by canonical name ("hour", "minute", "second"),
     /// each with singular, plural, and an optional count-1 override for grammatical gender.
     /// Required for Convert(TimeSpan/TimeOnly).
@@ -485,6 +504,8 @@ public sealed class NumberToStringConverterOptions
         ScaleConnectorThreshold = source.ScaleConnectorThreshold;
         FinalComponentConnector = source.FinalComponentConnector;
         FinalGroupConnector = source.FinalGroupConnector;
+        InternalZeroGroupString = source.InternalZeroGroupString;
+        CurrencyForcedVariants = source.CurrencyForcedVariants;
         TimeUnits = source.TimeUnits;
         TimeUnitForcedVariants = source.TimeUnitForcedVariants;
         // Use the override-only internal snapshots, not the effective TimeUnitForms/

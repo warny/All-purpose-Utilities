@@ -118,12 +118,14 @@ Examples:
     | 1000000 |  | millonésimo |
     | 2000000 |  | dosmillonésimo |
     | 1000001 |  | millonésimo primero |
+    | 1000000000 |  | milmillonésimo |
+    | 1000000001 | gender=femenino | milmillonésima primera |
     | -31 |  | menos trigésimo primero |
 
 # NTS-28: the DPD prefixes "the multiplying cardinal" without saying how a cardinal that varies (apocope of
 # uno, feminine -cientas) or is written in several words (ciento cincuenta) is soldered: those round
-# thousands and millions fail closed, as do zero (no ordinal) and the milliard and above (milmillonésimo is
-# attested; the cardinal composes its million multiplier since NTS-30F, but those ordinals are not yet audited).
+# thousands and millions fail closed, as do zero (no ordinal) and, from the milliard (NTS-38), the multipliers of
+# millón written in several words (dos mil millones); milmillonésimo itself is formed (DPD §2d).
 Scenario Outline: Spanish ordinals outside the validated domain are not supported
     Given I use the variants "<variants>"
     When I attempt to convert the ordinal number <number>
@@ -136,7 +138,7 @@ Examples:
     | 150000 |  |
     | 200000 | gender=femenino |
     | 21000000 |  |
-    | 1000000000 |  |
+    | 2000000000 |  |
     | 2021000 |  |
 
 Scenario Outline: Decimal numbers
@@ -203,6 +205,7 @@ Examples:
     | 10 | gender=femenino | décima |
     | 20 | gender=femenino | vigésima |
 
+# NTS-30, DPD "uno" §2.2: the numeral governing the currency noun is attributive (un euro, veintiún euros).
 Scenario Outline: Caller-defined currency wording
     Given I use this currency definition
         | property         | value     |
@@ -216,9 +219,11 @@ Scenario Outline: Caller-defined currency wording
 
 Examples:
     | amount | expected                         |
-    | 1      | uno euro                         |
+    | 1      | un euro                          |
     | 2      | dos euros                        |
-    | 1.50   | uno euro con cincuenta céntimos  |
+    | 1.50   | un euro con cincuenta céntimos   |
+    | 21     | veintiún euros                   |
+    | 31.21  | treinta y un euros con veintiún céntimos |
 
 Scenario: Castilian aliases preserve decimal wording
     Then the "ES" and "es-ES" converters produce the same decimal wording for 21.4

@@ -268,6 +268,7 @@ namespace Utils.NumberToString
             _scaleConnectorThreshold = options.ScaleConnectorThreshold;
             _finalComponentConnector = string.IsNullOrWhiteSpace(options.FinalComponentConnector) ? null : options.FinalComponentConnector;
             _finalGroupConnector = string.IsNullOrWhiteSpace(options.FinalGroupConnector) ? null : options.FinalGroupConnector;
+            _internalZeroGroupString = string.IsNullOrWhiteSpace(options.InternalZeroGroupString) ? null : options.InternalZeroGroupString;
             ValidateFinalComponentConnector();
             // Needs the group tables, Exceptions and the intra-group connector: edge validation renders
             // the actual lower constituents of each table through ConvertGroup.
@@ -364,6 +365,8 @@ namespace Utils.NumberToString
             // which exist solely to support safe cloning.
             _timeUnitFormsPublic = _timeUnits.ToImmutableDictionary(kv => kv.Key, kv => kv.Value.Forms);
             _timeUnitFormSelectorsPublic = _timeUnits.ToImmutableDictionary(kv => kv.Key, kv => kv.Value.Selector);
+
+            _currencyForcedVariants = CanonicalizeForcedVariants(options.CurrencyForcedVariants ?? ForcedVariantSet.Empty, "Currency");
 
             _fractionForcedVariants = _fractionForcedVariants.ToImmutableDictionary(
                 kv => kv.Key,
@@ -668,6 +671,20 @@ namespace Utils.NumberToString
         /// </summary>
         public string? FinalGroupConnector => _finalGroupConnector;
 
+        /// <summary>
+        /// Gets the multiplier text of a whole zero group read between a higher and a lower non-zero group (e.g. "không"
+        /// for Vietnamese), or <see langword="null"/> when such groups are skipped
+        /// (see <see cref="NumberToStringConverterOptions.InternalZeroGroupString"/>).
+        /// </summary>
+        public string? InternalZeroGroupString => _internalZeroGroupString;
+
+        /// <summary>
+        /// Gets the canonicalized variants forced on the numeral of every currency amount (e.g. <c>form=attributive</c>
+        /// for Spanish), or <see cref="ForcedVariantSet.Empty"/> when the language forces none
+        /// (see <see cref="NumberToStringConverterOptions.CurrencyForcedVariants"/>).
+        /// </summary>
+        public ForcedVariantSet CurrencyForcedVariants => _currencyForcedVariants;
+
         /// <inheritdoc/>
         public bool SupportsTimeConversion => _timeUnits.Count > 0;
 
@@ -812,6 +829,10 @@ namespace Utils.NumberToString
         private readonly string? _finalComponentConnector;
         /// <summary>The inter-group connector before the last non-zero group, or <see langword="null"/> (see <see cref="FinalGroupConnector"/>).</summary>
         private readonly string? _finalGroupConnector;
+        /// <summary>The multiplier text of an internal zero group, or <see langword="null"/> (see <see cref="InternalZeroGroupString"/>).</summary>
+        private readonly string? _internalZeroGroupString;
+        /// <summary>The canonicalized variants forced on currency numerals (see <see cref="CurrencyForcedVariants"/>).</summary>
+        private readonly ForcedVariantSet _currencyForcedVariants;
         private readonly ImmutableDictionary<int, ForcedVariantSet> _fractionForcedVariants;
         /// <summary>Lazily computed text of each pronounced decimal digit (see <see cref="DecimalDigitTexts"/>).</summary>
         private string[]? _decimalDigitTexts;
@@ -1490,6 +1511,9 @@ namespace Utils.NumberToString
             var groupsValues = new Stack<(string text, long numericValue, bool shielded, bool hasFinalConnector, List<string>? innerShielded)>();
 
             BigInteger remaining = abs;
+            // Whether a group below the current one is non-zero: with the higher non-zero group implied by the loop
+            // condition, a zero group is then internal (NTS-30, InternalZeroGroupString).
+            bool lowerNonZero = false;
             while (remaining != 0)
             {
                 int width = GetGroupWidth(groupNumber);
@@ -1500,7 +1524,11 @@ namespace Utils.NumberToString
                     ? groupValue * _groupDivisors[Math.Min(groupNumber + 1, _groupDivisors.Length - 1)]
                     : groupValue;
                 var group = (long)(remaining % multiplierDivisor);
-                if (group != 0)
+                // A whole zero group between two non-zero groups is rendered when the language configures its text
+                // (Vietnamese "không nghìn"); a leading zero group never exists here and a trailing one has no lower
+                // non-zero group, so neither is rendered.
+                bool internalZero = group == 0 && _internalZeroGroupString != null && lowerNonZero && remaining >= multiplierDivisor;
+                if (group != 0 || internalZero)
                 {
                     // A group preceded by a higher non-zero group renders its leading positions with the
                     // inner forms of the digits (innerString/innerBuildString), when the tables declare any.
@@ -1520,7 +1548,15 @@ namespace Utils.NumberToString
                     string digits;
                     bool hasFinalConnector;
                     List<string>? innerShielded = null;
-                    if (group < groupValue)
+                    if (internalZero)
+                    {
+                        // The configured text stands for the digits of the zero group: a literal, so the digit
+                        // tables and the variant rules of a multiplier do not apply; the group triggers and every
+                        // pass below (scale noun, scale replacements, group-with-scale triggers) do.
+                        digits = ApplyTriggers(_internalZeroGroupString!, TriggerAt.Group, groupNumber, groupQuery);
+                        hasFinalConnector = false;
+                    }
+                    else if (group < groupValue)
                     {
                         // The multiplier of a scale covered by a scoped Groups uses that table.
                         digits = ConvertGroup(GetGroupTable(groupNumber), width, group, hasHigherGroup, out hasFinalConnector,
@@ -1569,6 +1605,7 @@ namespace Utils.NumberToString
 
                     groupsValues.Push((resValue.Trim(), group, forced, hasFinalConnector, innerShielded));
                 }
+                lowerNonZero |= group != 0;
                 remaining /= multiplierDivisor;
                 groupNumber += paired ? 2 : 1;
             }
@@ -2748,13 +2785,16 @@ namespace Utils.NumberToString
             var baseQuery = BuildVariantQuery(variants);
 
             string unitName = units == BigInteger.One ? currency.UnitSingular : currency.UnitPlural;
-            string result = BuildCardinalFragment(units, canonicalUnitForced.Overlay(baseQuery)) + Separator + unitName;
+            // The numeral governs the currency noun: the language's currency context overlays the caller's variants,
+            // and the currency's own constraints (its gender, for instance) overlay both.
+            var currencyQuery = _currencyForcedVariants.Overlay(baseQuery);
+            string result = BuildCardinalFragment(units, canonicalUnitForced.Overlay(currencyQuery)) + Separator + unitName;
 
             if (subunits > 0)
             {
                 string subunitName = subunits == 1 ? currency.SubunitSingular : currency.SubunitPlural;
                 // Subunits are a sub-expression; do not check MaxNumber for them.
-                string subunitsText = BuildCardinalFragment(subunits, canonicalSubunitForced.Overlay(baseQuery)) + Separator + subunitName;
+                string subunitsText = BuildCardinalFragment(subunits, canonicalSubunitForced.Overlay(currencyQuery)) + Separator + subunitName;
                 result = result + Separator + currency.Connector + Separator + subunitsText;
             }
 

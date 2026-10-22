@@ -153,6 +153,12 @@
                         <OrdinalException value="1" string="lehenengo" />
                         <!-- NTS-08, Euskaltzaindia rule 18: bosgarren, hamabosgarren, hogeita bosgarren (not bostgarren). -->
                         <OrdinalStem from="bost" to="bos" />
+                        <!-- NTS-38, Euskaltzaindia rule 203 (2025) §5: "-garren atzizkia atxikitzen zaio zenbatzaile
+                             kardinalari", but the round million is "1 000 000. milioigarren" (not *milioi batgarren) and
+                             "2 000 000. bi milioigarren", whereas "1 000 001.: milioi bat eta batgarren" keeps the
+                             cardinal. A round value of milioi is therefore its noun, after its multiplier when it is not
+                             one; the multiplier spans the pair (pairedScalesFrom 2): mila milioigarren (10^9). -->
+                        <OrdinalScale scales="2" multiplierSeparator=" " />
                 </Ordinals>
                 <!-- Sareko Euskal Gramatika (EHU), "Orduak nola eman euskaraz": definite whole hours (ordu bata,
                      ordu biak, hirurak), bare numeral before "eta erdiak" (ordu bat eta erdiak), "eta laurden",

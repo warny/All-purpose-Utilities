@@ -9,6 +9,7 @@
         decimalSeparator="phẩy"
         fractionSeparator="trên"
         maxNumber="999999999999"
+        internalZeroGroupString="không"
     >
         <Culture>VN</Culture>
         <Culture>VI</Culture>
@@ -57,6 +58,11 @@
                 <Digit digit="9" string="chín trăm" buildString="chín trăm *" />
             </Group>
         </Groups>
+        <!-- NTS-30: a whole zero class between two non-zero classes is read "không" + class name (internalZeroGroupString):
+             SGK Toán 4, Chân trời sáng tạo, Bài 25, model "307 000 262 Đọc số: Ba trăm linh bảy triệu không nghìn hai trăm
+             sáu mươi hai", "Ba triệu không nghìn không trăm mười ba: 3 000 013"; the method reads class by class
+             ("lần lượt từ lớp triệu, lớp nghìn, lớp đơn vị"). A trailing zero class is not read ("5 000 000 đọc là: Năm
+             triệu"). Distinct from the zero hundreds "không trăm" and the zero tens "linh" of a non-zero class (Groups). -->
         <!-- Vietnamese number names are standardized only up to tỷ (10^9).
              Beyond tỷ there is no established native system; maxNumber caps conversion at 10^12-1.
              Note: "một triệu" / "một tỷ" are correct Vietnamese (no drop of "một" for these scales). -->

@@ -1100,6 +1100,21 @@ public class LexicalFormEntry
 }
 
 /// <summary>
+/// Holds the currency-phrase configuration of a language, used by <c>ConvertCurrency</c>.
+/// </summary>
+public class CurrencyType
+{
+    /// <summary>
+    /// Comma-separated <c>dimension=value</c> pairs forced on the numeral of every currency amount (unit and subunit),
+    /// which governs the currency noun, e.g. <c>"form=attributive"</c> for Spanish (un euro, veintiún euros). The
+    /// variants of a <c>CurrencyDefinition</c> (its gender, for instance) take precedence over them, and they take
+    /// precedence over the caller's variants. Absent: nothing is forced.
+    /// </summary>
+    [XmlAttribute("forceVariants")]
+    public string? ForceVariants { get; set; }
+}
+
+/// <summary>
 /// Holds date-format configuration for a language.
 /// </summary>
 public class DateFormatType
@@ -1396,6 +1411,22 @@ public class LanguageType
     /// </summary>
     [XmlAttribute("finalGroupConnector")]
     public string? FinalGroupConnector { get; set; }
+
+    /// <summary>
+    /// Gets or sets the multiplier text of a whole zero group read between a higher and a lower non-zero group: the
+    /// group is then rendered as this text followed by its scale noun. Example: "không" for Vietnamese (năm mươi triệu
+    /// không nghìn một trăm linh hai, 50 000 102). <see langword="null"/> when absent: inherited through
+    /// <c>baseOn</c>, otherwise such groups are skipped; an explicit empty value removes it.
+    /// </summary>
+    [XmlAttribute("internalZeroGroupString")]
+    public string? InternalZeroGroupString { get; set; }
+
+    /// <summary>
+    /// Gets or sets the currency-phrase configuration (the variants of a numeral governing a currency noun).
+    /// <see langword="null"/> when absent: inherited through <c>baseOn</c>, otherwise none.
+    /// </summary>
+    [XmlElement(ElementName = "Currency")]
+    public CurrencyType? Currency { get; set; }
 
     /// <summary>Gets or sets the time-unit configuration (hours, minutes, seconds).</summary>
     [XmlElement(ElementName = "TimeUnits")]

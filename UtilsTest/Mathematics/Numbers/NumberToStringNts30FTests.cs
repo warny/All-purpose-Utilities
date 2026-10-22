@@ -217,21 +217,21 @@ public class NumberToStringNts30FTests
         Assert.AreEqual("veintiún mil un millones sobre siete", ES.Convert(new Utils.Numerics.Number(21_001_000_000, 7)));
         Assert.AreEqual("bat zati mila eta bat milioi", EU.Convert(new Utils.Numerics.Number(1, 1_001_000_000)));
 
-        // The currency wording is caller-defined (ES "uno euro" is a separate NTS-30 item): only the cardinal is pinned.
+        // The currency wording is caller-defined (the ES attributive apocope, NTS-30, does not touch this amount): only the cardinal is pinned.
         var euro = new CurrencyDefinition { UnitSingular = "euro", UnitPlural = "euros", SubunitSingular = "céntimo", SubunitPlural = "céntimos", Connector = "con" };
         StringAssert.StartsWith(ES.ConvertCurrency(2_500_000_000.50m, euro), "dos mil quinientos millones euros");
         StringAssert.StartsWith(EU.ConvertCurrency(2_500_000_000.50m, euro), "bi mila eta bostehun milioi euros");
     }
 
-    /// <summary>The ordinal guards are unchanged: the milliard stays closed, the supported ordinals are identical.</summary>
+    /// <summary>
+    /// The supported ordinals are identical. NTS-30F kept the milliard closed; NTS-38 opened it on its own sources
+    /// (<c>milmillonésimo</c>, <c>mila milioigarren</c>, see <c>NumberToStringNts30Nts38Tests</c>): only the Spanish
+    /// multiplier written in several words stays closed.
+    /// </summary>
     [TestMethod]
     public void Ordinals_Unchanged()
     {
-        foreach (var converter in new[] { ES, EU })
-        {
-            Assert.ThrowsExactly<NotSupportedException>(() => converter.ConvertOrdinal(1_000_000_000L));
-            Assert.ThrowsExactly<NotSupportedException>(() => converter.ConvertOrdinal(2_500_000_000L));
-        }
+        Assert.ThrowsExactly<NotSupportedException>(() => ES.ConvertOrdinal(2_500_000_000L));
         Assert.AreEqual("millonésimo", ES.ConvertOrdinal(1_000_000));
         Assert.AreEqual("dosmillonésimo", ES.ConvertOrdinal(2_000_000));
         Assert.AreEqual("bi milioigarren", EU.ConvertOrdinal(2_000_000));
