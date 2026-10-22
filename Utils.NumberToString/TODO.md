@@ -2,7 +2,8 @@
 
 Re-audited on 2026-10-22 after NTS-33 (French ordinals derived from the base of their last constituent: `deux
 centième`, `deux millionième`, `trois cent millionième`, the fractions keeping `deux centièmes`; generic
-`ordinalBaseString`; NTS-48 opened) and the documentary closure of NTS-26 (Wolof `ñaari téeméeri milyoŋ` retained as
+`ordinalBaseString`), NTS-48 (French *vingt*/*cent* agreement: `quatre-vingts`, `deux cent mille`, `deux cents
+millions`, through `<Groups onScale="1">`; NTS-49 opened) and the documentary closure of NTS-26 (Wolof `ñaari téeméeri milyoŋ` retained as
 attested variation; `docs/NTS-26-wolof-nested-linker-choice.md`; `DONE-2026-10-22.md`), on 2026-10-21 after NTS-47 (NTS-42 closed: the SK genitive singular of a generated *-ón* noun opened,
 `jedného trilióna tretín`, `jedného kvadrilióna tretín`, after the PSP *bilión, trilión, kvadrilión, kvintilión -a*; D
 and E/CS closed as deliberately unsupported, `docs/NTS-42-deliberate-closures.md`; `DONE-2026-10-21(2).md`), after NTS-46
@@ -107,14 +108,11 @@ classification.
   productive inflection after the multiplier (*dwa miliony*, *pięć milionów*, *dwadzieścia dwa miliony*: the
   `PolishPluralLexicalFormSelector` rule, through `<GeneratedScaleForm>` for the generated families), the multiplier
   grammar, and a source audit (WSJP PAN, SJP PWN).
-- **NTS-48 — French cardinal agreement of *cent* and *vingt* before *mille*.** Found by NTS-33, not fixed (NTS-33
-  left every cardinal byte-identical): FR and FR-be write `deux cents mille` (200 000) for *deux cent mille* (OQLF
-  "Pluriel de vingt, de cent et de mille": *cent* takes an *s* only when "pas immédiatement suivi d'un autre
-  déterminant numéral", and *mille* is one), FR-be `quatre-vingts mille`; FR writes `quatre-vingt` (80) for
-  *quatre-vingts*, while FR-be writes it. The ordinals built on these cardinals inherit the defect
-  (`deux cents millième`, `deux cents mille unième`). Before `million`, OQLF writes *cinq cents millions* (FR
-  `quatre-vingt millions` to audit against it) while the CCDMD list of the 1990 spelling gives *cinq-cent-millions*:
-  the variation must be settled before changing the multiplier of a scale noun.
+- **NTS-49 — French 81 and the spacing of the *soixante-dix*/*quatre-vingt* compounds.** Found by NTS-48, not fixed:
+  FR writes `quatre vingt et un` (81) for *quatre-vingt-un* (no *et* after *quatre-vingt*: OQLF, CCDMD), and spells
+  the same compounds inconsistently (`soixante-dix` and `quatre-vingt dix` alone, `soixante dix sept`, `quatre vingt
+  deux` through `buildString`, `quatre-vingt onze` through `<Exceptions>`). Needs a decision on the project's
+  hyphenation policy (traditional hyphens below 100, or the historical spaces) before any change.
 - **NTS-34 — decimal reading audit of the other languages.** Opened by NTS-30A, which audited FR and EN only.
   Every other language reads its decimals digit by digit with no limit, no named fraction and no mixed-number
   connector, none of which is linguistically validated: per language, whether named decimal fractions exist
@@ -126,7 +124,7 @@ classification.
   (2022) shows to be ambiguous with *vingt cinq-millièmes*.
 
 
-NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-28, NTS-29, NTS-30A, NTS-30B, NTS-30C, NTS-30D, NTS-30E, NTS-30F, NTS-30G, NTS-30H, NTS-31, NTS-32, NTS-33, NTS-37, NTS-39, NTS-40, NTS-41 and NTS-42 are closed:
+NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-28, NTS-29, NTS-30A, NTS-30B, NTS-30C, NTS-30D, NTS-30E, NTS-30F, NTS-30G, NTS-30H, NTS-31, NTS-32, NTS-33, NTS-37, NTS-39, NTS-40, NTS-41, NTS-42 and NTS-48 are closed:
 
 - NTS-01 — XSD validation: `DONE-2026-08-21.md`.
 - NTS-02 — initialization isolation: `DONE-2026-08-21.md`.
@@ -303,7 +301,14 @@ NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-28, NTS-29, NTS-30A, N
   (`millionième`, `deux millionième`, `trois cent millionième`, `dix milliardième`, `deux billionième`), the masculine
   generated nouns forcing `gender=masculin` on the multiplier (`vingt et un millionième` in the feminine). Fractions
   unchanged (`deux centièmes`, `deux millionièmes`), cardinals byte-identical, non-round ordinals keep their leading
-  groups cardinal (`deux millions unième`); NTS-48 opened: `DONE-2026-10-22.md`.
+  groups cardinal (`deux millions unième`): `DONE-2026-10-22.md`.
+- NTS-48 (opened by NTS-33): French *vingt* and *cent* agree when multiplied and ending the number or before the nouns
+  *million*/*milliard*, and stay invariable before *mille* (OQLF "Pluriel de vingt, de cent et de mille"): FR `80` →
+  `quatre-vingts` (with `ordinalBaseString="quatre-vingt"`, so `quatre-vingtième` is kept), `200 000` → `deux cent
+  mille`, `80 000` → `quatre-vingt mille`, `200 000 000` → `deux cents millions` unchanged. Configuration only: the
+  existing `<Groups onScale="1">` primitive renders the multiplier of *mille*, redeclared by FR-be (`septante`,
+  `nonante`) and FR-ch (`huitante`) to replace the inherited FR table; no engine change. NTS-49 opened:
+  `DONE-2026-10-22.md`.
 - NTS-26 — **closed by documentation / attested variation; current output retained intentionally.** The Wolof nested
   multipliers keep the inner genitive *-i* (`ñaari téeméeri milyoŋ`, Guérin's genitive analysis); the form without it
   is attested too (Wolof Ajami Reader p. 192, Gaye 1980, Kosogorova 2023), decree 2005-992 does not settle the chain.

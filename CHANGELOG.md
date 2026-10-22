@@ -19,6 +19,14 @@ All notable changes to this project will be documented in this file.
   lowest group of a cardinal-based ordinal, or the multiplier of an `<OrdinalScale>` value). Absent: historical
   behaviour; an empty or blank value is rejected.
 
+### Fixed — `omy.Utils.NumberToString` (NTS-48: French *vingt*/*cent* agreement)
+- French cardinals agree *vingt* and *cent* after the OQLF rule: `quatre-vingts` (80, was `quatre-vingt`),
+  `cent quatre-vingts`, `quatre-vingts millions`, and invariable before *mille*: `deux cent mille` (was `deux cents
+  mille`), FR-be `quatre-vingt mille` (was `quatre-vingts mille`); `deux cents millions` is unchanged. Fraction
+  numerators, decimals, currencies, years and the ordinals built on these cardinals follow (`quatre-vingts
+  dix-millièmes`, `deux cent millième`). Configuration only, through the existing `<Groups onScale="1">` tables,
+  redeclared by FR-be and FR-ch with their own tens; no engine or API change.
+
 ### Changed — `omy.Utils.NumberToString` (NTS-26 closed by documentation)
 - No output change. The Wolof nested multipliers keep the inner genitive `-i` (`ñaari téeméeri milyoŋ`) as a retained
   library convention: the form without it is attested as well (Wolof Ajami Reader, Gaye 1980, Kosogorova 2023), so

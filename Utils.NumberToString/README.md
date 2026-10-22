@@ -21,7 +21,7 @@ dotnet add package omy.Utils.NumberToString --version 2.0.0-rc.2
 |------|----------|----------|-------------------------|----------|-------------------|-------------------|
 | EN, EN-us | English | ✓ declarative | ✓ 5 min, 12 h | — | local | No day-part wording; only midnight/noon are special |
 | EN-GB, EN-uk | British English | ✓ inherited | ✓ inherited | — | child of EN | Same as EN |
-| FR, FR-fr, FR-ca | French | ✓ declarative; ordinals derived from the base of the last constituent (`deux centième`, `deux millionième`, `trois cent millionième`; `ordinalBaseString`, `<OrdinalScale>`) | ✓ 5 min, 24 h | gender | local | — |
+| FR, FR-fr, FR-ca | French | ✓ declarative; ordinals derived from the base of the last constituent (`deux centième`, `deux millionième`, `trois cent millionième`; `ordinalBaseString`, `<OrdinalScale>`) | ✓ 5 min, 24 h | gender | local | *vingt*/*cent* agree except before *mille* (`quatre-vingts`, `deux cents millions`, `deux cent mille`; `<Groups onScale="1">`) |
 | FR-be | Belgian French (septante / quatre-vingts / nonante) | ✓ merged | ✓ inherited | gender | child of FR | — |
 | FR-ch | Swiss French (septante / huitante / nonante) | ✓ inherited | ✓ inherited | gender | child of FR | No cantonal `octante` |
 | DE, de-DE, de-AT | German | ✓ declarative (zero: `nullte`, Duden) | ✓ 5 min, 12 h | genus × kasus | local | — |
@@ -1546,7 +1546,12 @@ Two independent primitives describe how a scale multiplier (the "two" of "two th
 | `multiplierPosition` | how the multiplier is **assembled** with the scale noun (before or after it) |
 
 A language declares one default `<Groups>` and, only when the multiplier of some scales is built
-with a different grammar than the standalone cardinal, extra `<Groups onScale="…">` tables:
+with a different grammar than the standalone cardinal, extra `<Groups onScale="…">` tables.
+French uses one for the multiplier of *mille* (NTS-48): *vingt* and *cent* agree when they end the number or
+precede *million* (`quatre-vingts`, `deux cents millions`) but not before *mille* (`deux cent mille`), so
+`<Groups onScale="1">` repeats the default tables with `quatre-vingt` and `deux cent` … `neuf cent`. FR-be and
+FR-ch redeclare the same range with their own tens, since a redeclared default `<Groups>` does not replace an
+inherited scoped table. Generic shape:
 
 ```xml
 <Language … multiplierPosition="afterScale">

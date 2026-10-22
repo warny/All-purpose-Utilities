@@ -44,6 +44,48 @@
                 <Digit digit="9" string="neuf cents" buildString="neuf cent *" ordinalBaseString="neuf cent" />
             </Group>
         </Groups>
+        <!-- NTS-48: the multiplier of mille. vingt and cent take an s when they are multiplied and end the number
+             (quatre-vingts, deux cents) or precede the nouns million and milliard (deux cents millions), and stay
+             invariable before another numeral, mille included (OQLF, "Pluriel de vingt, de cent et de mille": trois cent
+             mille): this table renders the multiplier of scale 1 only. -->
+        <Groups onScale="1">
+            <Group level="1">
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="un" />
+                <Digit digit="2" string="deux" />
+                <Digit digit="3" string="trois" />
+                <Digit digit="4" string="quatre" />
+                <Digit digit="5" string="cinq" />
+                <Digit digit="6" string="six" />
+                <Digit digit="7" string="sept" />
+                <Digit digit="8" string="huit" />
+                <Digit digit="9" string="neuf" />
+            </Group>
+            <Group level="2">
+                <Digit digit="0" string="" buildString="*" />
+                <Digit digit="1" string="dix" buildString="dix *" />
+                <Digit digit="2" string="vingt" buildString="vingt *" />
+                <Digit digit="3" string="trente" buildString="trente *" />
+                <Digit digit="4" string="quarante" buildString="quarante *" />
+                <Digit digit="5" string="cinquante" buildString="cinquante *" />
+                <Digit digit="6" string="soixante" buildString="soixante *" />
+                <Digit digit="7" string="septante" buildString="septante *" />
+                <Digit digit="8" string="quatre-vingt" buildString="quatre-vingt *" />
+                <Digit digit="9" string="nonante" buildString="nonante *" />
+            </Group>
+            <Group level="3">
+                <Digit digit="0" string="" buildString="*" />
+                <Digit digit="1" string="cent" buildString="cent *" />
+                <Digit digit="2" string="deux cent" buildString="deux cent *" />
+                <Digit digit="3" string="trois cent" buildString="trois cent *" />
+                <Digit digit="4" string="quatre cent" buildString="quatre cent *" />
+                <Digit digit="5" string="cinq cent" buildString="cinq cent *" />
+                <Digit digit="6" string="six cent" buildString="six cent *" />
+                <Digit digit="7" string="sept cent" buildString="sept cent *" />
+                <Digit digit="8" string="huit cent" buildString="huit cent *" />
+                <Digit digit="9" string="neuf cent" buildString="neuf cent *" />
+            </Group>
+        </Groups>
         <Exceptions>
             <Number value="1" string="un" />
             <Number value="11" string="onze" />
