@@ -89,7 +89,7 @@ public class NumberToStringNts43Tests
     /// </summary>
     [TestMethod]
     [DataRow("FR", 1L, "gender=feminin", "UNE")]
-    [DataRow("FR", 21L, "gender=feminin", "VINGT ET UNE")]
+    [DataRow("FR", 21L, "gender=feminin", "VINGT-ET-UNE")]
     [DataRow("ES", 21L, "gender=femenino", "VEINTIUNA")]
     [DataRow("ES", 200L, "gender=femenino", "DOSCIENTAS")]
     [DataRow("ES", 21L, "form=attributive", "VEINTIÚN")]
@@ -194,9 +194,9 @@ public class NumberToStringNts43Tests
     {
         NumberToStringConverter converter = Upper("FR");
         Assert.AreEqual("UNE heure UNE minute DEUX secondes", converter.Convert(new TimeSpan(1, 1, 2)));
-        Assert.AreEqual("DEUX heures VINGT ET UNE minutes UNE seconde", converter.Convert(new TimeSpan(2, 21, 1)));
+        Assert.AreEqual("DEUX heures VINGT-ET-UNE minutes UNE seconde", converter.Convert(new TimeSpan(2, 21, 1)));
         Assert.AreEqual("UNE heure", converter.Convert(new TimeOnly(1, 0)));
-        Assert.AreEqual("DEUX heures VINGT ET UNE minutes", converter.Convert(new TimeOnly(2, 21)));
+        Assert.AreEqual("DEUX heures VINGT-ET-UNE minutes", converter.Convert(new TimeOnly(2, 21)));
         // Spanish hora is feminine too, its minuto masculine (apocope before the noun).
         Assert.AreEqual("UNA hora UN minuto DOS segundos", Upper("ES").Convert(new TimeSpan(1, 1, 2)));
     }
@@ -219,8 +219,8 @@ public class NumberToStringNts43Tests
             SubunitForcedVariants = ForcedVariantSet.Create(("gender", "feminin")),
         };
 
-        Assert.AreEqual("vingt et un units and vingt et une cents", Get("FR").ConvertCurrency(21.21m, currency));
-        Assert.AreEqual("VINGT ET UN units and VINGT ET UNE cents", Upper("FR").ConvertCurrency(21.21m, currency));
+        Assert.AreEqual("vingt-et-un units and vingt-et-une cents", Get("FR").ConvertCurrency(21.21m, currency));
+        Assert.AreEqual("VINGT-ET-UN units and VINGT-ET-UNE cents", Upper("FR").ConvertCurrency(21.21m, currency));
     }
 
     /// <summary>
@@ -236,9 +236,9 @@ public class NumberToStringNts43Tests
             FractionForcedVariants = new Dictionary<int, ForcedVariantSet> { [3] = ForcedVariantSet.Create(("gender", "feminin")) },
         });
 
-        StringAssert.StartsWith(converter.ConvertFraction(21, 1000), "VINGT ET UNE ");
-        StringAssert.EndsWith(converter.Convert(21.021m), "VINGT ET UNE MILLIÈMES");
-        StringAssert.StartsWith(converter.Convert(21.021m), "VINGT ET UN ");
+        StringAssert.StartsWith(converter.ConvertFraction(21, 1000), "VINGT-ET-UNE ");
+        StringAssert.EndsWith(converter.Convert(21.021m), "VINGT-ET-UNE MILLIÈMES");
+        StringAssert.StartsWith(converter.Convert(21.021m), "VINGT-ET-UN ");
     }
 
     /// <summary>

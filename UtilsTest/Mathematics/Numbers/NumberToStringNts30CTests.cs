@@ -589,7 +589,7 @@ public class NumberToStringNts30CTests
     [TestMethod]
     public void OtherLanguages_DeclareNoGeneratedForm()
     {
-        foreach (string culture in new[] { "PL", "HR", "EN", "FR", "DE", "IT", "ES", "SR", "SL" })
+        foreach (string culture in new[] { "PL", "HR", "EN", "DE", "IT", "ES", "SR", "SL" })
             Assert.AreEqual(0, NumberToStringConverter.GetConverter(culture).GeneratedScaleForms.Count, culture);
         Assert.AreEqual(999999, (int)NumberToStringConverter.GetConverter("PL").MaxNumber!.Value);
     }

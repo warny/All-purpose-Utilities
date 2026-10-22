@@ -764,8 +764,8 @@ Answers to the audit questions:
 3. Around the scale nouns the ordinal is formed on *million*/*milliard* (*millionième*, *milliardième*), with *dix-*/
    *cent-* hyphenated before it; no authoritative attestation was found from the billion (10^12) up.
 4. The existing ordinal machinery cannot generate them: `ConvertOrdinal(10000)` writes `dix millième` (the FR
-   configuration spells numerals without hyphens) and keeps the plural of a multiplied scale noun (`deux millionsième`,
-   NTS-33).
+   configuration spelled numerals without hyphens until NTS-49) and keeps the plural of a multiplied scale noun (`deux millionsième`,
+   NTS-33; fixed on 2026-10-22 for the ordinals, `deux millionième`, the fraction table being unchanged).
 5. Hence a static `<Fractions>` table, which is also what `ConvertFraction` uses for powers of ten.
 6. Range configured: 1–11 digits.
 
@@ -1653,6 +1653,28 @@ The task's working matrix was a starting point; wherever a consulted source disa
 needs. The ID/MS plugins are cross-checked against the XML cardinals (`ordinal(n) == "ke" +
 cardinal(n)`); the other plugins are pinned by `NumberToStringOrdinalPluginTests` (largest
 supported value, round scales, fail-closed range) and by the language `.feature` files.
+
+## NTS-33 — French ordinal bases (2026-10-22)
+
+- OQLF, "Écriture des fractions" (<https://vitrinelinguistique.oqlf.gouv.qc.ca/25138/la-typographie/nombres/ecriture-des-fractions>):
+  cardinals *cent, deux cents, trois cents*; ordinals *centième, deux centième, trois centième* ("le trois centième
+  candidat (300e)"); fraction denominators *un centième (1/100), les trois centièmes (3/100), un trois-centième
+  (1/300)*; "le nom dénominateur s'accorde avec le nom numérateur".
+- OQLF, "Pluriel de vingt, de cent et de mille" (<https://vitrinelinguistique.oqlf.gouv.qc.ca/21532/la-grammaire/les-determinants/determinants-numeraux/pluriel-de-vingt-de-cent-et-de-mille>):
+  *vingt* and *cent* are invariable "lorsqu'ils ont une valeur ordinale" (*la page deux cent*, *la page trois cent
+  quatre-vingt*, *le paragraphe quatre-vingt*); "Cinq cents millions … (Million est un nom, donc cent est variable.)".
+- CCDMD, numeral list (<https://ro.ccdmd.qc.ca/regles/soudure-traitdunion/numeraux/liste>): rank *la deux-centième
+  fois*, *la deux-millionième fois*, *le six-milliardième habitant*; fractions *deux centièmes*, *deux millionièmes*,
+  *six milliardièmes*; *million* "prend un s dès qu'il y en a deux ou plus (peu importe qu'il termine ou non le nombre)".
+- Larousse, *millionième* (<https://www.larousse.fr/dictionnaires/francais/millioni%C3%A8me/51493>): adj. num. ord.
+  ("Qui occupe un rang marqué par le nombre 1 million") and n.m. (fraction).
+
+Applied: the hundreds 2–9 (and FR-be *quatre-vingts*) declare `ordinalBaseString`; the round values from the million
+are formed on the singular noun by `<OrdinalScale scales="2..6">`, whose masculine nouns force `gender=masculin` on the
+multiplier. No source gives a compound non-round ordinal such as *deux millions unième*: the leading groups keep their
+cardinal form (the CCDMD rule for *million* above). Spacing: since NTS-49 (same day) the French numerals follow the
+1990 rectified spelling, every element hyphenated (`deux-centième`, `deux-millionième`, `deux-millions-unième`);
+sources in `DONE-2026-10-22.md`, section NTS-49.
 
 ## Source links
 

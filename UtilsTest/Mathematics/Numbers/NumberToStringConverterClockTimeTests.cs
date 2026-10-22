@@ -42,7 +42,7 @@ public class NumberToStringConverterClockTimeTests
     {
         var converter = NumberToStringConverter.GetConverter("FR");
         string result = converter.ConvertClockTime(new DateTime(2025, 1, 1, 23, 58, 0));
-        Assert.AreEqual("deux janvier deux mille vingt cinq minuit", result);
+        Assert.AreEqual("deux janvier deux-mille-vingt-cinq minuit", result);
     }
 
     /// <summary>Verifies call options can disable special-hour replacement without overload ambiguity.</summary>
@@ -297,10 +297,10 @@ public class NumberToStringConverterClockTimeTests
         };
 
         var converter = new NumberToStringConverter(options);
-        Assert.AreEqual("vingt et une/vingt et un", converter.ConvertClockTime(new TimeOnly(21, 21), "gender=masculin"));
+        Assert.AreEqual("vingt-et-une/vingt-et-un", converter.ConvertClockTime(new TimeOnly(21, 21), "gender=masculin"));
         ClockTimeRule snapshot = converter.ClockTime!.Rules[0];
         Assert.AreNotSame(options.ClockTime.Rules[0], snapshot);
-        Assert.AreEqual("vingt et une/vingt et un", new NumberToStringConverter(new NumberToStringConverterOptions(converter))
+        Assert.AreEqual("vingt-et-une/vingt-et-un", new NumberToStringConverter(new NumberToStringConverterOptions(converter))
             .ConvertClockTime(new TimeOnly(21, 21), "gender=masculin"));
     }
 

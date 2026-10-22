@@ -161,6 +161,13 @@
           fukki milyoŋ", "juróomi milyaar" (Wolof Ajami Reader). The other multipliers 1-999 apply the
           same NTS-19 rule productively ("fukk ak benni milyoŋ").
         -->
+        <!--
+             NTS-26 closed: nested hundred/thousand multipliers show attested
+             variation with and without the inner genitive -i. The current
+             form with -i is intentionally retained as the library default;
+             it is not a known defect.
+             See docs/NTS-26-wolof-nested-linker-choice.md before reopening.
+        -->
         <Trigger executeAt="groupWithScale">
             <Replace from="(?&lt;!\S)(ñaar|ñett|ñent|juróom|fukk|téeméer) (\S+(?:yoŋ|yaar))$" to="${1}i ${2}" regex="true" />
             <Replace from="(?&lt;= )benn (\S+(?:yoŋ|yaar))$" to="benni ${1}" regex="true" />

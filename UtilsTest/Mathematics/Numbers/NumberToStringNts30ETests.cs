@@ -382,7 +382,9 @@ public class NumberToStringNts30ETests
         {
             var converter = NumberToStringConverter.GetConverter(culture);
             if (culture.StartsWith("FI", StringComparison.OrdinalIgnoreCase)) continue;
-            Assert.AreEqual(converter.Separator, converter.Scale.MultiplierSeparator ?? converter.Separator, culture);
+            // NTS-49: the French configurations deliberately hyphenate the junction (1990 spelling: deux-millions).
+            string expectedJunction = culture.StartsWith("FR", StringComparison.OrdinalIgnoreCase) ? "-" : converter.Separator;
+            Assert.AreEqual(expectedJunction, converter.Scale.MultiplierSeparator ?? converter.Separator, culture);
             Assert.AreEqual(0, converter.ScaleFormMultiplierSeparators.Count, culture);
         }
     }

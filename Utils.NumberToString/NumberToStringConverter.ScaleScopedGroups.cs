@@ -76,6 +76,7 @@ namespace Utils.NumberToString
             BuildString = digit.BuildString,
             InnerString = digit.InnerString,
             InnerBuildString = digit.InnerBuildString,
+            OrdinalBaseString = digit.OrdinalBaseString,
             Fusions = digit.Fusions?.Select(f => f is null ? null! : new FusionType
             {
                 For = f.For,

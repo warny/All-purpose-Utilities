@@ -4,6 +4,42 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed — `omy.Utils.NumberToString` (NTS-33: French ordinals derived from base forms)
+- French ordinals are derived from the base of their last constituent instead of the agreed cardinal: `deux centième`
+  (was `deux centsième`), `deux millionième` (was `deux millionsième`), `trois cent millionième` (was `trois cents
+  millionsième`), `dix milliardième`, `deux billionième`, and `millionième`, `milliardième` for the round scale values
+  of one (was `un millionième`, the fraction reading). Belgian French also derives `cent quatre-vingtième` and
+  `quatre-vingt millionième` (was `cent quatre-vingtsième`). The feminine keeps a masculine multiplier before the
+  masculine scale nouns (`vingt et un millionième`). Cardinals, fractions (`deux centièmes`, `deux millionièmes`),
+  decimals, currencies, dates and times are byte-identical; non-round ordinals keep their leading groups cardinal
+  (`deux millions unième`). Sources: OQLF (*Écriture des fractions*; *Pluriel de vingt, de cent et de mille*), CCDMD,
+  Larousse.
+- Added the optional `ordinalBaseString` attribute of `<Digit>` (public `DigitType.OrdinalBaseString`, additive): the
+  derivational base used instead of `string` when the digit ends the constituent an ordinal is derived from (the
+  lowest group of a cardinal-based ordinal, or the multiplier of an `<OrdinalScale>` value). Absent: historical
+  behaviour; an empty or blank value is rejected.
+
+### Fixed — `omy.Utils.NumberToString` (NTS-48: French *vingt*/*cent* agreement)
+- French cardinals agree *vingt* and *cent* after the OQLF rule: `quatre-vingts` (80, was `quatre-vingt`),
+  `cent quatre-vingts`, `quatre-vingts millions`, and invariable before *mille*: `deux cent mille` (was `deux cents
+  mille`), FR-be `quatre-vingt mille` (was `quatre-vingts mille`); `deux cents millions` is unchanged. Fraction
+  numerators, decimals, currencies, years and the ordinals built on these cardinals follow (`quatre-vingts
+  dix-millièmes`, `deux cent millième`). Configuration only, through the existing `<Groups onScale="1">` tables,
+  redeclared by FR-be and FR-ch with their own tens; no engine or API change.
+
+### Changed — `omy.Utils.NumberToString` (NTS-49: French numerals in the 1990 rectified spelling)
+- **Output change for every French compound numeral (FR, FR-be, FR-ch).** Every element of a numeral is joined by a
+  hyphen, after rule 1 of the 1990 spelling rectifications ("Les numéraux composés sont systématiquement reliés par des
+  traits d'union"): `vingt-et-un`, `dix-sept`, `deux-cent-mille`, `deux-millions-trois-cent-mille`, `deux-millionième`,
+  `mille-neuf-cent-quatre-vingts`. The words around the numeral keep their spaces (`vingt-cinq millièmes`,
+  `vingt-et-un virgule cinq dixièmes`, `moins vingt-deux`, `vingt-et-un euros`). FR 81 is `quatre-vingt-un` (was
+  `quatre vingt et un`) and 71 `soixante-et-onze` (was `soixante onze`). Configuration only; no API change.
+
+### Changed — `omy.Utils.NumberToString` (NTS-26 closed by documentation)
+- No output change. The Wolof nested multipliers keep the inner genitive `-i` (`ñaari téeméeri milyoŋ`) as a retained
+  library convention: the form without it is attested as well (Wolof Ajami Reader, Gaye 1980, Kosogorova 2023), so
+  the evidence shows variation, not a defect. See `Utils.NumberToString/docs/NTS-26-wolof-nested-linker-choice.md`.
+
 ### Added — `omy.Utils.NumberToString`
 - Added the `<OrdinalScale scales multiplierSeparator>` ordinal primitive (XSD `OrdinalScaleType`,
   additive `OrdinalScaleRule` record, `NumberToStringConverterOptions.OrdinalScaleRules`, converter

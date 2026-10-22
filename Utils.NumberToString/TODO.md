@@ -1,6 +1,11 @@
 # Utils.NumberToString — Current backlog
 
-Re-audited on 2026-10-21 after NTS-47 (NTS-42 closed: the SK genitive singular of a generated *-ón* noun opened,
+Re-audited on 2026-10-22 after NTS-33 (French ordinals derived from the base of their last constituent: `deux
+centième`, `deux millionième`, `trois cent millionième`, the fractions keeping `deux centièmes`; generic
+`ordinalBaseString`), NTS-48 (French *vingt*/*cent* agreement: `quatre-vingts`, `deux cent mille`, `deux cents
+millions`, through `<Groups onScale="1">`), NTS-49 (French numerals in the 1990 rectified spelling, every element hyphenated:
+`vingt-et-un`, `quatre-vingt-un`, `soixante-et-onze`, `deux-cent-mille`, `deux-millions-un`) and the documentary closure of NTS-26 (Wolof `ñaari téeméeri milyoŋ` retained as
+attested variation; `docs/NTS-26-wolof-nested-linker-choice.md`; `DONE-2026-10-22.md`), on 2026-10-21 after NTS-47 (NTS-42 closed: the SK genitive singular of a generated *-ón* noun opened,
 `jedného trilióna tretín`, `jedného kvadrilióna tretín`, after the PSP *bilión, trilión, kvadrilión, kvintilión -a*; D
 and E/CS closed as deliberately unsupported, `docs/NTS-42-deliberate-closures.md`; `DONE-2026-10-21(2).md`), after NTS-46
 (NTS-42 E/UK and F/UK closed: the Ukrainian zero numerator declined as a noun
@@ -104,12 +109,6 @@ classification.
   productive inflection after the multiplier (*dwa miliony*, *pięć milionów*, *dwadzieścia dwa miliony*: the
   `PolishPluralLexicalFormSelector` rule, through `<GeneratedScaleForm>` for the generated families), the multiplier
   grammar, and a source audit (WSJP PAN, SJP PWN).
-- **NTS-33 — French ordinals keep the plural `-s` of a multiplied scale noun.** Found by NTS-30A, not fixed:
-  `ConvertOrdinal` gives `deux centsième` (200), `trois cents millionsième` (300 000 000), `deux millionsième`,
-  `dix milliardsième`, `deux billionsième` for *deux centième*, *trois cent millionième*, *deux millionième*,
-  *dix milliardième*, *deux billionième*: the ordinal suffix is appended to the plural cardinal form (`cents`,
-  `millions`, `milliards`), and the plural `cents` before a scale noun is kept as well. The decimal fraction
-  names (`dix-millième(s)`, `millionième(s)` …) are separate strings and are not affected.
 - **NTS-34 — decimal reading audit of the other languages.** Opened by NTS-30A, which audited FR and EN only.
   Every other language reads its decimals digit by digit with no limit, no named fraction and no mixed-number
   connector, none of which is linguistically validated: per language, whether named decimal fractions exist
@@ -117,28 +116,11 @@ classification.
   automatic digit-by-digit reading needs a limit (`decimalDigitByDigitMaxDigits`), and the word for a pronounced
   decimal 0 (the configured `zero`, e.g. EE `naneke o`). Also: HU writes the decimal digits without a separator
   (`egyegészkettőöt`); FR beyond 11 digits and EN beyond 5 have no sourced denominator (*billionième*,
-  *millionth*); the FR numerators are written without hyphens (`vingt cinq millièmes`), which the Académie
-  (2022) shows to be ambiguous with *vingt cinq-millièmes*.
-- **NTS-26 — Wolof connective `-i` inside nested numeral multipliers.** Re-audited 2026-10-11:
-  the evidence supports **real variation**, not a demonstrated defect in the current default. The current
-  configuration writes the multiplier of `téeméer` with `-i` (`juróom ñenti téeméer` 900) and keeps that
-  connective when the hundreds phrase is itself the multiplier of a higher scale
-  (`juróom ñenti téeméeri milyoŋ`). This analysis is supported by Guérin (CNRS/LLACAN), who describes the
-  multiples of hundreds and thousands as genitive constructions and gives nested forms such as
-  `ñaar-i téeméer-i dërëm`; pedagogical sources also attest forms such as `juróom ñaari téeméer`,
-  `ñenti téeméer` and `ñaari junni`. Conversely, the Wolof Ajami Reader (Ngom et al., Boston University,
-  2025, p. 192) writes `juróom ñent téeméeri milyoŋ` and `juróom ñaar téeméeri milyoŋ`, i.e. without the
-  inner `-i` before `téeméer`; Kosogorova 2023 and Gaye 1980 also record forms without that connective
-  (Gaye treats `-i` as optional with `ñaar`). The decree 2005-992 establishes the general attached
-  `-u/-i` genitive linker but does not settle these nested numeral chains. **Do not change the default output
-  from NTS-19/NTS-21 on the present evidence.** Next step, if pursued: targeted corpus work on
-  `... téeméeri milyoŋ/milyaar` and comparable nested hundreds, to determine whether the two patterns are
-  dialectal/register variants, context-dependent, or freely optional. Only if that evidence justifies it,
-  consider a variant dimension; avoid a silent default change because it would affect many byte-stable Wolof
-  cardinals below and above a million.
+  *millionth*). (The FR numerator ambiguity *vingt cinq millièmes* / *vingt cinq-millièmes* was removed by NTS-49:
+  `vingt-cinq millièmes`.)
 
 
-NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-25, NTS-27, NTS-28, NTS-29, NTS-30A, NTS-30B, NTS-30C, NTS-30D, NTS-30E, NTS-30F, NTS-30G, NTS-30H, NTS-31, NTS-32, NTS-37, NTS-39, NTS-40, NTS-41 and NTS-42 are closed:
+NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-28, NTS-29, NTS-30A, NTS-30B, NTS-30C, NTS-30D, NTS-30E, NTS-30F, NTS-30G, NTS-30H, NTS-31, NTS-32, NTS-33, NTS-37, NTS-39, NTS-40, NTS-41, NTS-42, NTS-48 and NTS-49 are closed:
 
 - NTS-01 — XSD validation: `DONE-2026-08-21.md`.
 - NTS-02 — initialization isolation: `DONE-2026-08-21.md`.
@@ -307,6 +289,35 @@ NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-25, NTS-27, NTS-28, NT
   established (no source shows the first operand of a whole *lomeno*/*lomené* phrase under an external case), E/CS
   is attested variation (NovaMorf: *záruka na nula/nulu vadných bodů*). They throw `NotSupportedException` by
   decision; see `docs/NTS-42-deliberate-closures.md` before reopening either.
+- NTS-33 (opened by NTS-30A): French ordinals are derived from the base of their last constituent, not from the
+  agreed cardinal. New generic derivational base `ordinalBaseString` on `<Digit>` (`DigitType.OrdinalBaseString`),
+  used only by the lowest group of a cardinal-based ordinal and by the multiplier of an `<OrdinalScale>` value: FR,
+  FR-be, FR-ch hundreds `deux cents` → `deux centième`, FR-be `quatre-vingts` → `cent quatre-vingtième`. The round
+  values from the million are built from their singular scale noun by `<OrdinalScale scales="2..6">`
+  (`millionième`, `deux millionième`, `trois cent millionième`, `dix milliardième`, `deux billionième`), the masculine
+  generated nouns forcing `gender=masculin` on the multiplier (`vingt et un millionième` in the feminine). Fractions
+  unchanged (`deux centièmes`, `deux millionièmes`), cardinals byte-identical, non-round ordinals keep their leading
+  groups cardinal (`deux millions unième`): `DONE-2026-10-22.md`.
+- NTS-48 (opened by NTS-33): French *vingt* and *cent* agree when multiplied and ending the number or before the nouns
+  *million*/*milliard*, and stay invariable before *mille* (OQLF "Pluriel de vingt, de cent et de mille"): FR `80` →
+  `quatre-vingts` (with `ordinalBaseString="quatre-vingt"`, so `quatre-vingtième` is kept), `200 000` → `deux cent
+  mille`, `80 000` → `quatre-vingt mille`, `200 000 000` → `deux cents millions` unchanged. Configuration only: the
+  existing `<Groups onScale="1">` primitive renders the multiplier of *mille*, redeclared by FR-be (`septante`,
+  `nonante`) and FR-ch (`huitante`) to replace the inherited FR table; no engine change. NTS-49 opened:
+  `DONE-2026-10-22.md`.
+- NTS-49 (opened by NTS-48): FR, FR-be and FR-ch write their numerals in the 1990 rectified spelling (Rectifications
+  de l'orthographe, JO 6 December 1990, rule 1; CCDMD numeral list), by user decision: every element of the numeral
+  is hyphenated, *et*, *cent*, *mille* and the scale nouns included (`vingt-et-un`, `deux-cent-mille`,
+  `deux-millions-trois-cent-mille`, `deux-millionième`); FR 81 `quatre-vingt-un` (was `quatre vingt et un`) and 71
+  `soixante-et-onze` (was `soixante onze`). The words around the numeral keep their spaces (`vingt-cinq millièmes`,
+  `vingt-et-un virgule cinq dixièmes`, `vingt-et-un euros`). Configuration only: hyphens in the digit tables and
+  exceptions, `NumberScale`/`OrdinalScale multiplierSeparator="-"`, one `Replacement` for the group junction:
+  `DONE-2026-10-22.md`.
+- NTS-26 — **closed by documentation / attested variation; current output retained intentionally.** The Wolof nested
+  multipliers keep the inner genitive *-i* (`ñaari téeméeri milyoŋ`, Guérin's genitive analysis); the form without it
+  is attested too (Wolof Ajami Reader p. 192, Gaye 1980, Kosogorova 2023), decree 2005-992 does not settle the chain.
+  No output change, no variant dimension; reopening criteria in `docs/NTS-26-wolof-nested-linker-choice.md`:
+  `DONE-2026-10-22.md`.
 
 Full multi-form plural systems (Russian/Slavic count-dependent noun forms,
 Arabic dual/paucal/plural categories) were long deliberately out of scope — the
