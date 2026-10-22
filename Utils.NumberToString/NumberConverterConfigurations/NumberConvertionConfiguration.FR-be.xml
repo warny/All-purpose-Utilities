@@ -17,31 +17,31 @@
             </Group>
             <Group level="2">
                 <Digit digit="0" string="" buildString="*" />
-                <Digit digit="1" string="dix" buildString="dix *" />
-                <Digit digit="2" string="vingt" buildString="vingt *" />
-                <Digit digit="3" string="trente" buildString="trente *" />
-                <Digit digit="4" string="quarante" buildString="quarante *" />
-                <Digit digit="5" string="cinquante" buildString="cinquante *" />
-                <Digit digit="6" string="soixante" buildString="soixante *" />
-                <Digit digit="7" string="septante" buildString="septante *" />
+                <Digit digit="1" string="dix" buildString="dix-*" />
+                <Digit digit="2" string="vingt" buildString="vingt-*" />
+                <Digit digit="3" string="trente" buildString="trente-*" />
+                <Digit digit="4" string="quarante" buildString="quarante-*" />
+                <Digit digit="5" string="cinquante" buildString="cinquante-*" />
+                <Digit digit="6" string="soixante" buildString="soixante-*" />
+                <Digit digit="7" string="septante" buildString="septante-*" />
                 <!-- NTS-33: quatre-vingts is invariable with an ordinal value (OQLF: la page trois cent quatre-vingt),
                      hence the ordinal base: cent quatre-vingtième, quatre-vingt millionième. -->
-                <Digit digit="8" string="quatre-vingts" buildString="quatre-vingt *" ordinalBaseString="quatre-vingt" />
-                <Digit digit="9" string="nonante" buildString="nonante *" />
+                <Digit digit="8" string="quatre-vingts" buildString="quatre-vingt-*" ordinalBaseString="quatre-vingt" />
+                <Digit digit="9" string="nonante" buildString="nonante-*" />
             </Group>
             <!-- NTS-33: the Groups replace the inherited ones, so the ordinal bases of the hundreds are redeclared
                  (deux cents → deux centième); OrdinalScale is inherited from FR. -->
             <Group level="3">
                 <Digit digit="0" string="" buildString="*" />
-                <Digit digit="1" string="cent" buildString="cent *" />
-                <Digit digit="2" string="deux cents" buildString="deux cent *" ordinalBaseString="deux cent" />
-                <Digit digit="3" string="trois cents" buildString="trois cent *" ordinalBaseString="trois cent" />
-                <Digit digit="4" string="quatre cents" buildString="quatre cent *" ordinalBaseString="quatre cent" />
-                <Digit digit="5" string="cinq cents" buildString="cinq cent *" ordinalBaseString="cinq cent" />
-                <Digit digit="6" string="six cents" buildString="six cent *" ordinalBaseString="six cent" />
-                <Digit digit="7" string="sept cents" buildString="sept cent *" ordinalBaseString="sept cent" />
-                <Digit digit="8" string="huit cents" buildString="huit cent *" ordinalBaseString="huit cent" />
-                <Digit digit="9" string="neuf cents" buildString="neuf cent *" ordinalBaseString="neuf cent" />
+                <Digit digit="1" string="cent" buildString="cent-*" />
+                <Digit digit="2" string="deux-cents" buildString="deux-cent-*" ordinalBaseString="deux-cent" />
+                <Digit digit="3" string="trois-cents" buildString="trois-cent-*" ordinalBaseString="trois-cent" />
+                <Digit digit="4" string="quatre-cents" buildString="quatre-cent-*" ordinalBaseString="quatre-cent" />
+                <Digit digit="5" string="cinq-cents" buildString="cinq-cent-*" ordinalBaseString="cinq-cent" />
+                <Digit digit="6" string="six-cents" buildString="six-cent-*" ordinalBaseString="six-cent" />
+                <Digit digit="7" string="sept-cents" buildString="sept-cent-*" ordinalBaseString="sept-cent" />
+                <Digit digit="8" string="huit-cents" buildString="huit-cent-*" ordinalBaseString="huit-cent" />
+                <Digit digit="9" string="neuf-cents" buildString="neuf-cent-*" ordinalBaseString="neuf-cent" />
             </Group>
         </Groups>
         <!-- NTS-48: the multiplier of mille. vingt and cent take an s when they are multiplied and end the number
@@ -63,27 +63,27 @@
             </Group>
             <Group level="2">
                 <Digit digit="0" string="" buildString="*" />
-                <Digit digit="1" string="dix" buildString="dix *" />
-                <Digit digit="2" string="vingt" buildString="vingt *" />
-                <Digit digit="3" string="trente" buildString="trente *" />
-                <Digit digit="4" string="quarante" buildString="quarante *" />
-                <Digit digit="5" string="cinquante" buildString="cinquante *" />
-                <Digit digit="6" string="soixante" buildString="soixante *" />
-                <Digit digit="7" string="septante" buildString="septante *" />
-                <Digit digit="8" string="quatre-vingt" buildString="quatre-vingt *" />
-                <Digit digit="9" string="nonante" buildString="nonante *" />
+                <Digit digit="1" string="dix" buildString="dix-*" />
+                <Digit digit="2" string="vingt" buildString="vingt-*" />
+                <Digit digit="3" string="trente" buildString="trente-*" />
+                <Digit digit="4" string="quarante" buildString="quarante-*" />
+                <Digit digit="5" string="cinquante" buildString="cinquante-*" />
+                <Digit digit="6" string="soixante" buildString="soixante-*" />
+                <Digit digit="7" string="septante" buildString="septante-*" />
+                <Digit digit="8" string="quatre-vingt" buildString="quatre-vingt-*" />
+                <Digit digit="9" string="nonante" buildString="nonante-*" />
             </Group>
             <Group level="3">
                 <Digit digit="0" string="" buildString="*" />
-                <Digit digit="1" string="cent" buildString="cent *" />
-                <Digit digit="2" string="deux cent" buildString="deux cent *" />
-                <Digit digit="3" string="trois cent" buildString="trois cent *" />
-                <Digit digit="4" string="quatre cent" buildString="quatre cent *" />
-                <Digit digit="5" string="cinq cent" buildString="cinq cent *" />
-                <Digit digit="6" string="six cent" buildString="six cent *" />
-                <Digit digit="7" string="sept cent" buildString="sept cent *" />
-                <Digit digit="8" string="huit cent" buildString="huit cent *" />
-                <Digit digit="9" string="neuf cent" buildString="neuf cent *" />
+                <Digit digit="1" string="cent" buildString="cent-*" />
+                <Digit digit="2" string="deux-cent" buildString="deux-cent-*" />
+                <Digit digit="3" string="trois-cent" buildString="trois-cent-*" />
+                <Digit digit="4" string="quatre-cent" buildString="quatre-cent-*" />
+                <Digit digit="5" string="cinq-cent" buildString="cinq-cent-*" />
+                <Digit digit="6" string="six-cent" buildString="six-cent-*" />
+                <Digit digit="7" string="sept-cent" buildString="sept-cent-*" />
+                <Digit digit="8" string="huit-cent" buildString="huit-cent-*" />
+                <Digit digit="9" string="neuf-cent" buildString="neuf-cent-*" />
             </Group>
         </Groups>
         <Exceptions>
@@ -94,13 +94,13 @@
             <Number value="14" string="quatorze" />
             <Number value="15" string="quinze" />
             <Number value="16" string="seize" />
-            <Number value="21" string="vingt et un" />
-            <Number value="31" string="trente et un" />
-            <Number value="41" string="quarante et un" />
-            <Number value="51" string="cinquante et un" />
-            <Number value="61" string="soixante et un" />
-            <Number value="71" string="septante et un" />
-            <Number value="91" string="nonante et un" />
+            <Number value="21" string="vingt-et-un" />
+            <Number value="31" string="trente-et-un" />
+            <Number value="41" string="quarante-et-un" />
+            <Number value="51" string="cinquante-et-un" />
+            <Number value="61" string="soixante-et-un" />
+            <Number value="71" string="septante-et-un" />
+            <Number value="91" string="nonante-et-un" />
         </Exceptions>
         <Ordinals>
             <OrdinalException value="80" string="quatre-vingtième" />

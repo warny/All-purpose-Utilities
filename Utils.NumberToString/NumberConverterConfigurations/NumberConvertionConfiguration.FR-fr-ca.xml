@@ -17,7 +17,7 @@
 		<Groups>
 			<Group level="1">
 				<Digit digit="0" string="" />
-				<Digit digit="1" string="et un" />
+				<Digit digit="1" string="et-un" />
 				<Digit digit="2" string="deux" />
 				<Digit digit="3" string="trois" />
 				<Digit digit="4" string="quatre" />
@@ -29,27 +29,27 @@
 			</Group>
 			<Group level="2">
 				<Digit digit="0" string="" buildString="*" />
-				<Digit digit="1" string="dix" buildString="dix *" />
-				<Digit digit="2" string="vingt" buildString="vingt *" />
-				<Digit digit="3" string="trente" buildString="trente *" />
-				<Digit digit="4" string="quarante" buildString="quarante *" />
-				<Digit digit="5" string="cinquante" buildString="cinquante *" />
-				<Digit digit="6" string="soixante" buildString="soixante *" />
-				<Digit digit="7" string="soixante-dix" buildString="soixante dix *" />
-				<Digit digit="8" string="quatre-vingts" buildString="quatre vingt *" ordinalBaseString="quatre-vingt" />
-				<Digit digit="9" string="quatre-vingt dix" buildString="quatre vingt dix *" />
+				<Digit digit="1" string="dix" buildString="dix-*" />
+				<Digit digit="2" string="vingt" buildString="vingt-*" />
+				<Digit digit="3" string="trente" buildString="trente-*" />
+				<Digit digit="4" string="quarante" buildString="quarante-*" />
+				<Digit digit="5" string="cinquante" buildString="cinquante-*" />
+				<Digit digit="6" string="soixante" buildString="soixante-*" />
+				<Digit digit="7" string="soixante-dix" buildString="soixante-dix-*" />
+				<Digit digit="8" string="quatre-vingts" buildString="quatre-vingt-*" ordinalBaseString="quatre-vingt" />
+				<Digit digit="9" string="quatre-vingt-dix" buildString="quatre-vingt-dix-*" />
 			</Group>
 			<Group level="3">
 				<Digit digit="0" string="" buildString="*" />
-				<Digit digit="1" string="cent" buildString="cent *" />
-				<Digit digit="2" string="deux cents" buildString="deux cent *" ordinalBaseString="deux cent" />
-				<Digit digit="3" string="trois cents" buildString="trois cent *" ordinalBaseString="trois cent" />
-				<Digit digit="4" string="quatre cents" buildString="quatre cent *" ordinalBaseString="quatre cent" />
-				<Digit digit="5" string="cinq cents" buildString="cinq cent *" ordinalBaseString="cinq cent" />
-				<Digit digit="6" string="six cents" buildString="six cent *" ordinalBaseString="six cent" />
-				<Digit digit="7" string="sept cents" buildString="sept cent *" ordinalBaseString="sept cent" />
-				<Digit digit="8" string="huit cents" buildString="huit cent *" ordinalBaseString="huit cent" />
-				<Digit digit="9" string="neuf cents" buildString="neuf cent *" ordinalBaseString="neuf cent" />
+				<Digit digit="1" string="cent" buildString="cent-*" />
+				<Digit digit="2" string="deux-cents" buildString="deux-cent-*" ordinalBaseString="deux-cent" />
+				<Digit digit="3" string="trois-cents" buildString="trois-cent-*" ordinalBaseString="trois-cent" />
+				<Digit digit="4" string="quatre-cents" buildString="quatre-cent-*" ordinalBaseString="quatre-cent" />
+				<Digit digit="5" string="cinq-cents" buildString="cinq-cent-*" ordinalBaseString="cinq-cent" />
+				<Digit digit="6" string="six-cents" buildString="six-cent-*" ordinalBaseString="six-cent" />
+				<Digit digit="7" string="sept-cents" buildString="sept-cent-*" ordinalBaseString="sept-cent" />
+				<Digit digit="8" string="huit-cents" buildString="huit-cent-*" ordinalBaseString="huit-cent" />
+				<Digit digit="9" string="neuf-cents" buildString="neuf-cent-*" ordinalBaseString="neuf-cent" />
 			</Group>
 		</Groups>
 		<!-- NTS-48: the multiplier of mille. vingt and cent take an s when they are multiplied and end the number
@@ -59,7 +59,7 @@
 		<Groups onScale="1">
 			<Group level="1">
 				<Digit digit="0" string="" />
-				<Digit digit="1" string="et un" />
+				<Digit digit="1" string="et-un" />
 				<Digit digit="2" string="deux" />
 				<Digit digit="3" string="trois" />
 				<Digit digit="4" string="quatre" />
@@ -71,30 +71,30 @@
 			</Group>
 			<Group level="2">
 				<Digit digit="0" string="" buildString="*" />
-				<Digit digit="1" string="dix" buildString="dix *" />
-				<Digit digit="2" string="vingt" buildString="vingt *" />
-				<Digit digit="3" string="trente" buildString="trente *" />
-				<Digit digit="4" string="quarante" buildString="quarante *" />
-				<Digit digit="5" string="cinquante" buildString="cinquante *" />
-				<Digit digit="6" string="soixante" buildString="soixante *" />
-				<Digit digit="7" string="soixante-dix" buildString="soixante dix *" />
-				<Digit digit="8" string="quatre-vingt" buildString="quatre vingt *" />
-				<Digit digit="9" string="quatre-vingt dix" buildString="quatre vingt dix *" />
+				<Digit digit="1" string="dix" buildString="dix-*" />
+				<Digit digit="2" string="vingt" buildString="vingt-*" />
+				<Digit digit="3" string="trente" buildString="trente-*" />
+				<Digit digit="4" string="quarante" buildString="quarante-*" />
+				<Digit digit="5" string="cinquante" buildString="cinquante-*" />
+				<Digit digit="6" string="soixante" buildString="soixante-*" />
+				<Digit digit="7" string="soixante-dix" buildString="soixante-dix-*" />
+				<Digit digit="8" string="quatre-vingt" buildString="quatre-vingt-*" />
+				<Digit digit="9" string="quatre-vingt-dix" buildString="quatre-vingt-dix-*" />
 			</Group>
 			<Group level="3">
 				<Digit digit="0" string="" buildString="*" />
-				<Digit digit="1" string="cent" buildString="cent *" />
-				<Digit digit="2" string="deux cent" buildString="deux cent *" />
-				<Digit digit="3" string="trois cent" buildString="trois cent *" />
-				<Digit digit="4" string="quatre cent" buildString="quatre cent *" />
-				<Digit digit="5" string="cinq cent" buildString="cinq cent *" />
-				<Digit digit="6" string="six cent" buildString="six cent *" />
-				<Digit digit="7" string="sept cent" buildString="sept cent *" />
-				<Digit digit="8" string="huit cent" buildString="huit cent *" />
-				<Digit digit="9" string="neuf cent" buildString="neuf cent *" />
+				<Digit digit="1" string="cent" buildString="cent-*" />
+				<Digit digit="2" string="deux-cent" buildString="deux-cent-*" />
+				<Digit digit="3" string="trois-cent" buildString="trois-cent-*" />
+				<Digit digit="4" string="quatre-cent" buildString="quatre-cent-*" />
+				<Digit digit="5" string="cinq-cent" buildString="cinq-cent-*" />
+				<Digit digit="6" string="six-cent" buildString="six-cent-*" />
+				<Digit digit="7" string="sept-cent" buildString="sept-cent-*" />
+				<Digit digit="8" string="huit-cent" buildString="huit-cent-*" />
+				<Digit digit="9" string="neuf-cent" buildString="neuf-cent-*" />
 			</Group>
 		</Groups>
-		<NumberScale firstLetterUpperCase="false">
+		<NumberScale firstLetterUpperCase="false" multiplierSeparator="-">
 			<StaticNames>
 				<Scale value="0" string=""/>
 				<Scale value="1" string="mille"/>
@@ -105,8 +105,8 @@
 			</Suffixes>
 			<!-- NTS-33: million, milliard and the generated nouns are masculine nouns (OQLF "Pluriel de vingt, de cent
 			     et de mille": "Million est un nom"), so their multiplier stays masculine whatever the caller's gender:
-			     vingt et un millions, and the round ordinal built on the multiplier alone (OrdinalScale below)
-			     vingt et un millionième, never vingt et une. Same singular/plural fragments as the suffixes above. -->
+			     vingt-et-un-millions, and the round ordinal built on the multiplier alone (OrdinalScale below)
+			     vingt-et-un-millionième, never vingt-et-une. Same singular/plural fragments as the suffixes above. -->
 			<GeneratedScaleForm suffix="0">
 				<Forms>
 					<Form key="singular" value="on" forceVariants="gender=masculin" />
@@ -121,7 +121,15 @@
 			</GeneratedScaleForm>
 		</NumberScale>
 		<Replacements>
-			<Replacement oldValue="un mille" newValue="mille" onScale="1" onValue="1" />
+			<Replacement oldValue="un-mille" newValue="mille" onScale="1" onValue="1" />
+			<!-- NTS-49: 1990 rectified spelling, rule 1: "Les numéraux composés sont systématiquement reliés par des
+			     traits d'union" (RENOUVO; orthographe-recommandee.info: vingt-et-un, deux-cents, un-million-cent; CCDMD:
+			     deux-millions-trois-cent-mille). The scale nouns are hyphenated after these examples, although some
+			     summaries say million and milliard, being nouns, are not concerned. The digit tables and the
+			     exceptions carry their own hyphens and NumberScale multiplierSeparator joins a multiplier to its scale noun;
+			     this rule joins the groups, the only junction written with the language separator. Replacements only
+			     see the numeral (ConvertRaw), never the words around it (virgule, sur, moins, units, currencies). -->
+			<Replacement oldValue=" " newValue="-" scope="Anywhere" />
 		</Replacements>
 		<Exceptions>
 			<Number value="1" string="un" />
@@ -131,24 +139,26 @@
 			<Number value="14" string="quatorze" />
 			<Number value="15" string="quinze" />
 			<Number value="16" string="seize" />
-			<Number value="71" string="soixante onze" />
-			<Number value="72" string="soixante douze" />
-			<Number value="73" string="soixante treize" />
-			<Number value="74" string="soixante quatorze" />
-			<Number value="75" string="soixante quinze" />
-			<Number value="76" string="soixante seize" />
-			<Number value="77" string="soixante dix sept" />
-			<Number value="78" string="soixante dix huit" />
-			<Number value="79" string="soixante dix neuf" />
-			<Number value="91" string="quatre-vingt onze" />
-			<Number value="92" string="quatre-vingt douze" />
-			<Number value="93" string="quatre-vingt treize" />
-			<Number value="94" string="quatre-vingt quatorze" />
-			<Number value="95" string="quatre-vingt quinze" />
-			<Number value="96" string="quatre-vingt seize" />
-			<Number value="97" string="quatre-vingt dix sept" />
-			<Number value="98" string="quatre-vingt dix huit" />
-			<Number value="99" string="quatre-vingt dix neuf" />
+			<Number value="71" string="soixante-et-onze" />
+			<!-- NTS-49: no et after quatre-vingt (quatre-vingt-un), unlike the other tens (vingt-et-un, soixante-et-onze). -->
+			<Number value="81" string="quatre-vingt-un" />
+			<Number value="72" string="soixante-douze" />
+			<Number value="73" string="soixante-treize" />
+			<Number value="74" string="soixante-quatorze" />
+			<Number value="75" string="soixante-quinze" />
+			<Number value="76" string="soixante-seize" />
+			<Number value="77" string="soixante-dix-sept" />
+			<Number value="78" string="soixante-dix-huit" />
+			<Number value="79" string="soixante-dix-neuf" />
+			<Number value="91" string="quatre-vingt-onze" />
+			<Number value="92" string="quatre-vingt-douze" />
+			<Number value="93" string="quatre-vingt-treize" />
+			<Number value="94" string="quatre-vingt-quatorze" />
+			<Number value="95" string="quatre-vingt-quinze" />
+			<Number value="96" string="quatre-vingt-seize" />
+			<Number value="97" string="quatre-vingt-dix-sept" />
+			<Number value="98" string="quatre-vingt-dix-huit" />
+			<Number value="99" string="quatre-vingt-dix-neuf" />
 		</Exceptions>
 		<Fractions>
 			<Fraction digits="1" string="dixième(s)" />
@@ -178,15 +188,15 @@
 			<Ordinal from="cinq" to="cinquième" />
 			<Ordinal from="neuf" to="neuvième" />
 			<!-- NTS-33: an ordinal is derived from the base of its last constituent, not from the agreed cardinal.
-			     The hundreds declare it on their Digit (ordinalBaseString="deux cent": deux cents → deux centième;
+			     The hundreds declare it on their Digit (ordinalBaseString="deux-cent": deux-cents → deux-centième;
 			     OQLF "Écriture des fractions": centième, deux centième, trois centième; "Pluriel de vingt, de cent et
 			     de mille": vingt and cent are invariable with an ordinal value). A round value from the million is
 			     formed on the singular scale noun (Larousse millionième, adj. num. ord.; CCDMD la deux-millionième
-			     fois, le six-milliardième habitant), its multiplier in that base: millionième, deux millionième,
-			     trois cent millionième, dix milliardième. Scales 2..6 are every scale a long reaches (trillion,
-			     10^18). The thousands keep the cardinal path, which already gives the invariable mille (deux
-			     millième). A non-round ordinal keeps its leading groups cardinal (deux millions unième). -->
-			<OrdinalScale scales="2..6" multiplierSeparator=" " />
+			     fois, le six-milliardième habitant), its multiplier in that base: millionième, deux-millionième,
+			     trois-cent-millionième, dix-milliardième (NTS-49 hyphens). Scales 2..6 are every scale a long reaches (trillion,
+			     10^18). The thousands keep the cardinal path, which already gives the invariable mille (deux-
+			     millième). A non-round ordinal keeps its leading groups cardinal (deux-millions-unième). -->
+			<OrdinalScale scales="2..6" multiplierSeparator="-" />
 		</Ordinals>
 		<Variants>
 			<Dimension name="gender" localName="genre" values="masculin,feminin" />

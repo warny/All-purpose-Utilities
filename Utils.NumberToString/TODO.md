@@ -3,7 +3,8 @@
 Re-audited on 2026-10-22 after NTS-33 (French ordinals derived from the base of their last constituent: `deux
 centième`, `deux millionième`, `trois cent millionième`, the fractions keeping `deux centièmes`; generic
 `ordinalBaseString`), NTS-48 (French *vingt*/*cent* agreement: `quatre-vingts`, `deux cent mille`, `deux cents
-millions`, through `<Groups onScale="1">`; NTS-49 opened) and the documentary closure of NTS-26 (Wolof `ñaari téeméeri milyoŋ` retained as
+millions`, through `<Groups onScale="1">`), NTS-49 (French numerals in the 1990 rectified spelling, every element hyphenated:
+`vingt-et-un`, `quatre-vingt-un`, `soixante-et-onze`, `deux-cent-mille`, `deux-millions-un`) and the documentary closure of NTS-26 (Wolof `ñaari téeméeri milyoŋ` retained as
 attested variation; `docs/NTS-26-wolof-nested-linker-choice.md`; `DONE-2026-10-22.md`), on 2026-10-21 after NTS-47 (NTS-42 closed: the SK genitive singular of a generated *-ón* noun opened,
 `jedného trilióna tretín`, `jedného kvadrilióna tretín`, after the PSP *bilión, trilión, kvadrilión, kvintilión -a*; D
 and E/CS closed as deliberately unsupported, `docs/NTS-42-deliberate-closures.md`; `DONE-2026-10-21(2).md`), after NTS-46
@@ -108,11 +109,6 @@ classification.
   productive inflection after the multiplier (*dwa miliony*, *pięć milionów*, *dwadzieścia dwa miliony*: the
   `PolishPluralLexicalFormSelector` rule, through `<GeneratedScaleForm>` for the generated families), the multiplier
   grammar, and a source audit (WSJP PAN, SJP PWN).
-- **NTS-49 — French 81 and the spacing of the *soixante-dix*/*quatre-vingt* compounds.** Found by NTS-48, not fixed:
-  FR writes `quatre vingt et un` (81) for *quatre-vingt-un* (no *et* after *quatre-vingt*: OQLF, CCDMD), and spells
-  the same compounds inconsistently (`soixante-dix` and `quatre-vingt dix` alone, `soixante dix sept`, `quatre vingt
-  deux` through `buildString`, `quatre-vingt onze` through `<Exceptions>`). Needs a decision on the project's
-  hyphenation policy (traditional hyphens below 100, or the historical spaces) before any change.
 - **NTS-34 — decimal reading audit of the other languages.** Opened by NTS-30A, which audited FR and EN only.
   Every other language reads its decimals digit by digit with no limit, no named fraction and no mixed-number
   connector, none of which is linguistically validated: per language, whether named decimal fractions exist
@@ -120,11 +116,11 @@ classification.
   automatic digit-by-digit reading needs a limit (`decimalDigitByDigitMaxDigits`), and the word for a pronounced
   decimal 0 (the configured `zero`, e.g. EE `naneke o`). Also: HU writes the decimal digits without a separator
   (`egyegészkettőöt`); FR beyond 11 digits and EN beyond 5 have no sourced denominator (*billionième*,
-  *millionth*); the FR numerators are written without hyphens (`vingt cinq millièmes`), which the Académie
-  (2022) shows to be ambiguous with *vingt cinq-millièmes*.
+  *millionth*). (The FR numerator ambiguity *vingt cinq millièmes* / *vingt cinq-millièmes* was removed by NTS-49:
+  `vingt-cinq millièmes`.)
 
 
-NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-28, NTS-29, NTS-30A, NTS-30B, NTS-30C, NTS-30D, NTS-30E, NTS-30F, NTS-30G, NTS-30H, NTS-31, NTS-32, NTS-33, NTS-37, NTS-39, NTS-40, NTS-41, NTS-42 and NTS-48 are closed:
+NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-28, NTS-29, NTS-30A, NTS-30B, NTS-30C, NTS-30D, NTS-30E, NTS-30F, NTS-30G, NTS-30H, NTS-31, NTS-32, NTS-33, NTS-37, NTS-39, NTS-40, NTS-41, NTS-42, NTS-48 and NTS-49 are closed:
 
 - NTS-01 — XSD validation: `DONE-2026-08-21.md`.
 - NTS-02 — initialization isolation: `DONE-2026-08-21.md`.
@@ -308,6 +304,14 @@ NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-28, NTS-29, NTS-30A, N
   mille`, `80 000` → `quatre-vingt mille`, `200 000 000` → `deux cents millions` unchanged. Configuration only: the
   existing `<Groups onScale="1">` primitive renders the multiplier of *mille*, redeclared by FR-be (`septante`,
   `nonante`) and FR-ch (`huitante`) to replace the inherited FR table; no engine change. NTS-49 opened:
+  `DONE-2026-10-22.md`.
+- NTS-49 (opened by NTS-48): FR, FR-be and FR-ch write their numerals in the 1990 rectified spelling (Rectifications
+  de l'orthographe, JO 6 December 1990, rule 1; CCDMD numeral list), by user decision: every element of the numeral
+  is hyphenated, *et*, *cent*, *mille* and the scale nouns included (`vingt-et-un`, `deux-cent-mille`,
+  `deux-millions-trois-cent-mille`, `deux-millionième`); FR 81 `quatre-vingt-un` (was `quatre vingt et un`) and 71
+  `soixante-et-onze` (was `soixante onze`). The words around the numeral keep their spaces (`vingt-cinq millièmes`,
+  `vingt-et-un virgule cinq dixièmes`, `vingt-et-un euros`). Configuration only: hyphens in the digit tables and
+  exceptions, `NumberScale`/`OrdinalScale multiplierSeparator="-"`, one `Replacement` for the group junction:
   `DONE-2026-10-22.md`.
 - NTS-26 — **closed by documentation / attested variation; current output retained intentionally.** The Wolof nested
   multipliers keep the inner genitive *-i* (`ñaari téeméeri milyoŋ`, Guérin's genitive analysis); the form without it

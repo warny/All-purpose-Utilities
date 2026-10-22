@@ -149,8 +149,8 @@ public class NumberToStringNts30Tests
     [DataRow("EN", "21.005", "twenty-one point five thousandths")]
     [DataRow("EN", "0.05", "zero point five hundredths")]
     [DataRow("EN", "-21.05", "minus twenty-one point five hundredths")]
-    [DataRow("FR", "21.05", "vingt et un virgule cinq centièmes")]
-    [DataRow("FR", "21.505", "vingt et un virgule cinq cent cinq millièmes")]
+    [DataRow("FR", "21.05", "vingt-et-un virgule cinq centièmes")]
+    [DataRow("FR", "21.505", "vingt-et-un virgule cinq-cent-cinq millièmes")]
     [DataRow("FR", "0.05", "zéro virgule cinq centièmes")]
     public void LanguageDefault_NamedFractions_AreUnchanged(string language, string number, string expected)
         => Assert.AreEqual(expected, Get(language).Convert(D(number)));
@@ -161,7 +161,7 @@ public class NumberToStringNts30Tests
     {
         Assert.AreEqual("twenty-one point zero hundredth", Get("EN").Convert(21m, 2));
         Assert.AreEqual("twenty-one point five hundred thousandths", Get("EN").Convert(21.5m, 3));
-        Assert.AreEqual("vingt et un virgule zéro centième", Get("FR").Convert(21m, 2));
+        Assert.AreEqual("vingt-et-un virgule zéro centième", Get("FR").Convert(21m, 2));
     }
 
     /// <summary>
@@ -174,7 +174,7 @@ public class NumberToStringNts30Tests
     [TestMethod]
     [DataRow("FR", "0.0001", "zéro virgule un dix-millième")]
     [DataRow("FR", "100.0001", "cent virgule un dix-millième")]
-    [DataRow("FR", "21.0005", "vingt et un virgule cinq dix-millièmes")]
+    [DataRow("FR", "21.0005", "vingt-et-un virgule cinq dix-millièmes")]
     [DataRow("FR", "0.00001", "zéro virgule un cent-millième")]
     [DataRow("FR", "0.000001", "zéro virgule un millionième")]
     [DataRow("FR", "0.000003", "zéro virgule trois millionièmes")]
@@ -184,7 +184,7 @@ public class NumberToStringNts30Tests
     [DataRow("FR", "0.0000000001", "zéro virgule un dix-milliardième")]
     [DataRow("FR", "0.00000000001", "zéro virgule un cent-milliardième")]
     [DataRow("FR-be", "0.0001", "zéro virgule un dix-millième")]
-    [DataRow("FR-ch", "0.00071", "zéro virgule septante et un cent-millièmes")]
+    [DataRow("FR-ch", "0.00071", "zéro virgule septante-et-un cent-millièmes")]
     [DataRow("FR-ca", "0.000001", "zéro virgule un millionième")]
     public void LanguageDefault_French_NamesTheDenominatorThroughTheMilliard(string language, string number, string expected)
         => Assert.AreEqual(expected, Get(language).Convert(D(number)));
@@ -212,7 +212,7 @@ public class NumberToStringNts30Tests
     [TestMethod]
     public void ConvertFraction_PowerOfTen_UsesTheNamedDenominators()
     {
-        Assert.AreEqual("deux mille cinq dix-millièmes", Get("FR").ConvertFraction(2005, 10000));
+        Assert.AreEqual("deux-mille-cinq dix-millièmes", Get("FR").ConvertFraction(2005, 10000));
         Assert.AreEqual("un millionième", Get("FR").ConvertFraction(1, 1000000));
         Assert.AreEqual("seven ten-thousandths", Get("EN").ConvertFraction(7, 10000));
     }
@@ -225,9 +225,9 @@ public class NumberToStringNts30Tests
     /// <param name="expected">Expected text.</param>
     [TestMethod]
     [DataRow("FR", "0.0001", "zéro virgule zéro zéro zéro un")]
-    [DataRow("FR", "21.05", "vingt et un virgule zéro cinq")]
-    [DataRow("FR", "21.505", "vingt et un virgule cinq zéro cinq")]
-    [DataRow("FR", "-21.05", "moins vingt et un virgule zéro cinq")]
+    [DataRow("FR", "21.05", "vingt-et-un virgule zéro cinq")]
+    [DataRow("FR", "21.505", "vingt-et-un virgule cinq zéro cinq")]
+    [DataRow("FR", "-21.05", "moins vingt-et-un virgule zéro cinq")]
     [DataRow("EN", "21.005", "twenty-one point zero zero five")]
     [DataRow("NL", "21.05", "eenentwintig komma nul vijf")]
     [DataRow("NL", "21.005", "eenentwintig komma nul nul vijf")]
@@ -242,7 +242,7 @@ public class NumberToStringNts30Tests
     public void DigitByDigit_MandatoryDigits()
     {
         var options = Mode(DecimalReadingMode.DigitByDigit);
-        Assert.AreEqual("vingt et un virgule cinq zéro zéro", Get("FR").Convert(21.5m, 3, options));
+        Assert.AreEqual("vingt-et-un virgule cinq zéro zéro", Get("FR").Convert(21.5m, 3, options));
         Assert.AreEqual("eenentwintig komma vijf nul nul", Get("NL").Convert(21.5m, 3, options));
         Assert.AreEqual("twenty-one point zero zero", Get("EN").Convert(21m, 2, options));
     }
@@ -268,7 +268,7 @@ public class NumberToStringNts30Tests
     [DataRow("FR", "2.0001", "deux et un dix-millième")]
     [DataRow("FR", "-0.0001", "moins un dix-millième")]
     [DataRow("FR", "-2.0001", "moins deux et un dix-millième")]
-    [DataRow("FR-ch", "71.71", "septante et un et septante et un centièmes")]
+    [DataRow("FR-ch", "71.71", "septante-et-un et septante-et-un centièmes")]
     [DataRow("EN", "0.05", "five hundredths")]
     [DataRow("EN", "5.24", "five and twenty-four hundredths")]
     [DataRow("EN", "2.0001", "two and one ten-thousandth")]
@@ -281,7 +281,7 @@ public class NumberToStringNts30Tests
     public void MathematicalFraction_MandatoryDigits_KeepThePrecision()
     {
         var options = Mode(DecimalReadingMode.MathematicalFraction);
-        Assert.AreEqual("vingt et un et cinq cents millièmes", Get("FR").Convert(21.5m, 3, options));
+        Assert.AreEqual("vingt-et-un et cinq-cents millièmes", Get("FR").Convert(21.5m, 3, options));
         Assert.AreEqual("twenty-one and five hundred thousandths", Get("EN").Convert(21.5m, 3, options));
     }
 
@@ -318,7 +318,7 @@ public class NumberToStringNts30Tests
     [DataRow(DecimalReadingMode.MathematicalFraction)]
     public void OmitZeroDecimals_SuppressesTheZeroDecimalPart_InEveryMode(DecimalReadingMode mode)
     {
-        Assert.AreEqual("vingt et un", Get("FR").Convert(21m, 2, Mode(mode, omitZeroDecimals: true)));
+        Assert.AreEqual("vingt-et-un", Get("FR").Convert(21m, 2, Mode(mode, omitZeroDecimals: true)));
         Assert.AreEqual("eenentwintig", Get("NL").Convert(21m, 2, Mode(mode, omitZeroDecimals: true)));
         Assert.AreEqual("零", Get("JA").Convert(0m, 2, Mode(mode, omitZeroDecimals: true)));
     }

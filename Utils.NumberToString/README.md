@@ -21,7 +21,7 @@ dotnet add package omy.Utils.NumberToString --version 2.0.0-rc.2
 |------|----------|----------|-------------------------|----------|-------------------|-------------------|
 | EN, EN-us | English | ✓ declarative | ✓ 5 min, 12 h | — | local | No day-part wording; only midnight/noon are special |
 | EN-GB, EN-uk | British English | ✓ inherited | ✓ inherited | — | child of EN | Same as EN |
-| FR, FR-fr, FR-ca | French | ✓ declarative; ordinals derived from the base of the last constituent (`deux centième`, `deux millionième`, `trois cent millionième`; `ordinalBaseString`, `<OrdinalScale>`) | ✓ 5 min, 24 h | gender | local | *vingt*/*cent* agree except before *mille* (`quatre-vingts`, `deux cents millions`, `deux cent mille`; `<Groups onScale="1">`) |
+| FR, FR-fr, FR-ca | French | ✓ declarative; ordinals derived from the base of the last constituent (`deux-centième`, `deux-millionième`, `trois-cent-millionième`; `ordinalBaseString`, `<OrdinalScale>`); 1990 rectified spelling, every element hyphenated (`vingt-et-un`, `deux-cent-mille`, `deux-millions`, NTS-49) | ✓ 5 min, 24 h | gender | local | *vingt*/*cent* agree except before *mille* (`quatre-vingts`, `deux cents millions`, `deux cent mille`; `<Groups onScale="1">`) |
 | FR-be | Belgian French (septante / quatre-vingts / nonante) | ✓ merged | ✓ inherited | gender | child of FR | — |
 | FR-ch | Swiss French (septante / huitante / nonante) | ✓ inherited | ✓ inherited | gender | child of FR | No cantonal `octante` |
 | DE, de-DE, de-AT | German | ✓ declarative (zero: `nullte`, Duden) | ✓ 5 min, 12 h | genus × kasus | local | — |
@@ -85,8 +85,8 @@ en.Convert(42);         // "forty-two"
 en.Convert(-7);         // "minus seven"
 en.Convert(1_000_000);  // "one million"
 
-fr.Convert(21);         // "vingt et un"
-fr.Convert(1_000_000);  // "un million"
+fr.Convert(21);         // "vingt-et-un"
+fr.Convert(1_000_000);  // "un-million"
 
 de.Convert(1);          // "eins"
 de.Convert(1_000_000);  // "eine Million"   ← GermanNumberToStringLanguageSpecifics
@@ -118,7 +118,7 @@ fr.Convert(0.0001m, -1, new DecimalFormatOptions { ReadingMode = DecimalReadingM
 var math = new DecimalFormatOptions { ReadingMode = DecimalReadingMode.MathematicalFraction };
 fr.Convert(0.0002m, -1, math);  // "deux dix-millièmes"
 fr.Convert(2.4m, -1, math);     // "deux et quatre dixièmes"   ← mixedFractionSeparator="et"
-fr.Convert(21.5m, 3, math);     // "vingt et un et cinq cents millièmes" (the requested precision is kept)
+fr.Convert(21.5m, 3, math);     // "vingt-et-un et cinq-cents millièmes" (the requested precision is kept)
 ```
 
 | Mode | Reads | Fails with `NotSupportedException` when |
@@ -159,12 +159,12 @@ fr.ConvertOrdinal(1);    // "premier"       ← whole-number exception
 fr.ConvertOrdinal(2);    // "deuxième"
 fr.ConvertOrdinal(5);    // "cinquième"     ← word rule: cinq → cinquième
 fr.ConvertOrdinal(9);    // "neuvième"      ← word rule: neuf → neuvième
-fr.ConvertOrdinal(21);   // "vingt et unième"
+fr.ConvertOrdinal(21);   // "vingt-et-unième"
 fr.ConvertOrdinal(1000); // "millième"      ← removeTrailing="e" + suffix ième
-fr.ConvertOrdinal(200);  // "deux centième" ← ordinalBaseString: the cardinal is "deux cents" (NTS-33)
-fr.ConvertOrdinal(2_000_000);   // "deux millionième"       ← OrdinalScale: singular noun, not "millions"
-fr.ConvertOrdinal(300_000_000); // "trois cent millionième" ← multiplier rendered in its ordinal base
-fr.ConvertOrdinal(2_000_001);   // "deux millions unième"   ← leading groups stay cardinal
+fr.ConvertOrdinal(200);  // "deux-centième" ← ordinalBaseString: the cardinal is "deux-cents" (NTS-33)
+fr.ConvertOrdinal(2_000_000);   // "deux-millionième"       ← OrdinalScale: singular noun, not "millions"
+fr.ConvertOrdinal(300_000_000); // "trois-cent-millionième" ← multiplier rendered in its ordinal base
+fr.ConvertOrdinal(2_000_001);   // "deux-millions-unième"   ← leading groups stay cardinal
 fr.ConvertFraction(2, 100);     // "deux centièmes"         ← fractions keep their own plural nouns
 ```
 
@@ -172,7 +172,7 @@ fr.ConvertFraction(2, 100);     // "deux centièmes"         ← fractions keep 
 NumberToStringConverter frBe = NumberToStringConverter.GetConverter("FR-be");
 
 frBe.ConvertOrdinal(1);   // "premier"           ← exception
-frBe.ConvertOrdinal(71);  // "septante et unième" ← Belgian 70 + word rule for "un"
+frBe.ConvertOrdinal(71);  // "septante-et-unième" ← Belgian 70 + word rule for "un"
 frBe.ConvertOrdinal(80);  // "quatre-vingtième"   ← FR-be ordinal exception (not derived from "quatre-vingts")
 frBe.ConvertOrdinal(90);  // "nonantième"
 
@@ -338,18 +338,18 @@ NumberToStringConverter fr = NumberToStringConverter.GetConverter("FR");
 
 // No parameter → masculine (first value = default)
 fr.Convert(1);   // "un"
-fr.Convert(21);  // "vingt et un"
+fr.Convert(21);  // "vingt-et-un"
 
 // Explicit feminine
 fr.Convert(1,  "gender=feminin");   // "une"
-fr.Convert(21, "gender=feminin");   // "vingt et une"
-fr.Convert(31, "gender=feminin");   // "trente et une"
-fr.Convert(61, "gender=feminin");   // "soixante et une"
+fr.Convert(21, "gender=feminin");   // "vingt-et-une"
+fr.Convert(31, "gender=feminin");   // "trente-et-une"
+fr.Convert(61, "gender=feminin");   // "soixante-et-une"
 
 // Replacement applies to the LAST word only
 // "million" is not replaced even in feminine
-fr.Convert(1_000_000, "gender=feminin");    // "un million"
-fr.Convert(1_000_021, "gender=feminin");    // "un million vingt et une"
+fr.Convert(1_000_000, "gender=feminin");    // "un-million"
+fr.Convert(1_000_021, "gender=feminin");    // "un-million-vingt-et-une"
 ```
 
 ### Listing available variants for a language
@@ -493,16 +493,16 @@ dimension (masculin/féminin) is available.
 ```csharp
 NumberToStringConverter frBe = NumberToStringConverter.GetConverter("FR-be");
 
-frBe.Convert(71);                   // "septante et un"
-frBe.Convert(71, "gender=feminin"); // "septante et une"
-frBe.Convert(81, "gender=feminin"); // "quatre-vingt une"
-frBe.Convert(91, "gender=feminin"); // "nonante et une"
+frBe.Convert(71);                   // "septante-et-un"
+frBe.Convert(71, "gender=feminin"); // "septante-et-une"
+frBe.Convert(81, "gender=feminin"); // "quatre-vingt-une"
+frBe.Convert(91, "gender=feminin"); // "nonante-et-une"
 
 NumberToStringConverter frCh = NumberToStringConverter.GetConverter("FR-ch");
-frCh.Convert(81, "gender=feminin"); // "huitante et une"
+frCh.Convert(81, "gender=feminin"); // "huitante-et-une"
 
-// "un million" → last word = "million" → no replacement
-frBe.Convert(1_000_000, "gender=feminin"); // "un million"
+// "un-million" → last word = "million" → no replacement
+frBe.Convert(1_000_000, "gender=feminin"); // "un-million"
 ```
 
 ### German — genus × kasus
@@ -726,7 +726,7 @@ var euro = new CurrencyDefinition
 
 NumberToStringConverter fr = NumberToStringConverter.GetConverter("FR");
 fr.ConvertCurrency(1m,     euro);  // "un euro"
-fr.ConvertCurrency(21.50m, euro);  // "vingt et un euros et cinquante centimes"
+fr.ConvertCurrency(21.50m, euro);  // "vingt-et-un euros et cinquante centimes"
 fr.ConvertCurrency(-5.01m, euro);  // "moins cinq euros et un centime"
 
 var dollar = new CurrencyDefinition
@@ -759,8 +759,8 @@ render as `vingt et une heures`, not `vingt et un heures` — but the caller of
 ```csharp
 NumberToStringConverter fr = NumberToStringConverter.GetConverter("FR");
 
-fr.Convert(21);                       // "vingt et un"        (ordinary cardinal: masculine default)
-fr.Convert(TimeSpan.FromHours(21));   // "vingt et une heures" (the "hour" unit forces gender=feminin)
+fr.Convert(21);                       // "vingt-et-un"        (ordinary cardinal: masculine default)
+fr.Convert(TimeSpan.FromHours(21));   // "vingt-et-une heures" (the "hour" unit forces gender=feminin)
 ```
 
 No caller variant is required — the built-in French configuration declares
@@ -781,7 +781,7 @@ A constituent forcing `gender` does not erase a caller-supplied `case`:
 ```csharp
 // "gender=masculin" from the caller does not override the hour unit's
 // intrinsic gender=feminin — the constituent wins locally ("forced means forced").
-fr.Convert(TimeSpan.FromHours(21), "gender=masculin"); // still "vingt et une heures"
+fr.Convert(TimeSpan.FromHours(21), "gender=masculin"); // still "vingt-et-une heures"
 ```
 
 ### Locality — no leakage
@@ -847,8 +847,8 @@ var livre = new CurrencyDefinition
     UnitForcedVariants = ForcedVariantSet.Create(("gender", "feminin")),
 };
 
-fr.ConvertCurrency(21m, euro);   // "vingt et un euros"
-fr.ConvertCurrency(21m, livre);  // "vingt et une livres"
+fr.ConvertCurrency(21m, euro);   // "vingt-et-un euros"
+fr.ConvertCurrency(21m, livre);  // "vingt-et-une livres"
 ```
 
 ### Configuring ForcedVariants
@@ -1278,17 +1278,17 @@ Round a number to N most significant digits before converting, using standard ro
 ```csharp
 NumberToStringConverter fr = NumberToStringConverter.GetConverter("FR");
 
-fr.Convert(123456789);        // "cent vingt trois millions quatre cent cinquante six mille sept cent quatre-vingt-neuf"
-fr.Convert(123456789, 3);     // "cent vingt trois millions"         (→ 123 000 000)
-fr.Convert(123456789, 2);     // "cent vingt millions"               (→ 120 000 000)
-fr.Convert(123456789, 1);     // "cent millions"                     (→ 100 000 000)
+fr.Convert(123456789);        // "cent-vingt-trois-millions-quatre-cent-cinquante-six-mille-sept-cent-quatre-vingt-neuf"
+fr.Convert(123456789, 3);     // "cent-vingt-trois-millions"         (→ 123 000 000)
+fr.Convert(123456789, 2);     // "cent-vingt-millions"               (→ 120 000 000)
+fr.Convert(123456789, 1);     // "cent-millions"                     (→ 100 000 000)
 ```
 
 The rounding is done by `MathEx.RoundToSignificantDigits` (from `omy.Utils.Mathematics`) and then
 delegates to the normal `Convert` pipeline, so variants work as expected:
 
 ```csharp
-fr.Convert(123456789, 3, "gender=feminin"); // "cent vingt trois millions" (no gender change at this scale)
+fr.Convert(123456789, 3, "gender=feminin"); // "cent-vingt-trois-millions" (no gender change at this scale)
 ```
 
 ---
@@ -1500,8 +1500,8 @@ Each `<Digit digit="N" string="…" buildString="…"/>`:
   historical behaviour; an empty or blank value is rejected. French declares it on its agreed hundreds:
 
 ```xml
-<Digit digit="2" string="deux cents" buildString="deux cent *" ordinalBaseString="deux cent" />
-<!-- 200 "deux cents"; 200e "deux centième"; 300 000 000e "trois cent millionième"; 2/100 "deux centièmes" -->
+<Digit digit="2" string="deux-cents" buildString="deux-cent-*" ordinalBaseString="deux-cent" />
+<!-- 200 "deux-cents"; 200e "deux-centième"; 300 000 000e "trois-cent-millionième"; 2/100 "deux centièmes" -->
 ```
 
 ```xml
@@ -1548,8 +1548,8 @@ Two independent primitives describe how a scale multiplier (the "two" of "two th
 A language declares one default `<Groups>` and, only when the multiplier of some scales is built
 with a different grammar than the standalone cardinal, extra `<Groups onScale="…">` tables.
 French uses one for the multiplier of *mille* (NTS-48): *vingt* and *cent* agree when they end the number or
-precede *million* (`quatre-vingts`, `deux cents millions`) but not before *mille* (`deux cent mille`), so
-`<Groups onScale="1">` repeats the default tables with `quatre-vingt` and `deux cent` … `neuf cent`. FR-be and
+precede *million* (`quatre-vingts`, `deux-cents-millions`) but not before *mille* (`deux-cent-mille`), so
+`<Groups onScale="1">` repeats the default tables with `quatre-vingt` and `deux-cent` … `neuf-cent`. FR-be and
 FR-ch redeclare the same range with their own tens, since a redeclared default `<Groups>` does not replace an
 inherited scoped table. Generic shape:
 
@@ -2377,7 +2377,7 @@ a **round scale value** — multiplier × scale unit, every lower group zero —
   and may be empty.
 - The multiplier is rendered like its standalone cardinal with the caller's variants, in its
   **ordinal base** (NTS-33): its last digits take their `ordinalBaseString` when the tables declare one
-  (French `trois cents` → `trois cent` + `million` → `trois cent millionième`), never an ordinal of their
+  (French `trois-cents` → `trois-cent` + `million` → `trois-cent-millionième`), never an ordinal of their
   own; without `ordinalBaseString` it is exactly the standalone cardinal. When the selected scale form
   forces variants on its multiplier, those win (French `million` forces `gender=masculin`: the feminine
   ordinal of 21 000 000 is `vingt et un millionième`). The

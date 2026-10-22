@@ -156,8 +156,8 @@
                     That constituent is the lowest group of a cardinal-based ordinal, or the whole multiplier
                     of a round value formed by OrdinalScale. Typical use: an agreed cardinal form whose
                     agreement does not survive the derivation (French
-                    &lt;Digit digit="2" string="deux cents" buildString="deux cent *" ordinalBaseString="deux cent" /&gt;:
-                    200 "deux cents" but 200e "deux centième", 200 000 000e "deux cent millionième").
+                    &lt;Digit digit="2" string="deux-cents" buildString="deux-cent-*" ordinalBaseString="deux-cent" /&gt;:
+                    200 "deux-cents" but 200e "deux-centième", 200 000 000e "deux-cent-millionième").
                     Never used by cardinals, fractions, decimals, currencies, years or times; the leading
                     groups of a non-round ordinal keep their cardinal form; "buildString" is unchanged.
                     Absent: "string" is used, which is the historical behaviour. An empty or blank value is

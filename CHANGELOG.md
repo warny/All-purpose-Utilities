@@ -27,6 +27,14 @@ All notable changes to this project will be documented in this file.
   dix-millièmes`, `deux cent millième`). Configuration only, through the existing `<Groups onScale="1">` tables,
   redeclared by FR-be and FR-ch with their own tens; no engine or API change.
 
+### Changed — `omy.Utils.NumberToString` (NTS-49: French numerals in the 1990 rectified spelling)
+- **Output change for every French compound numeral (FR, FR-be, FR-ch).** Every element of a numeral is joined by a
+  hyphen, after rule 1 of the 1990 spelling rectifications ("Les numéraux composés sont systématiquement reliés par des
+  traits d'union"): `vingt-et-un`, `dix-sept`, `deux-cent-mille`, `deux-millions-trois-cent-mille`, `deux-millionième`,
+  `mille-neuf-cent-quatre-vingts`. The words around the numeral keep their spaces (`vingt-cinq millièmes`,
+  `vingt-et-un virgule cinq dixièmes`, `moins vingt-deux`, `vingt-et-un euros`). FR 81 is `quatre-vingt-un` (was
+  `quatre vingt et un`) and 71 `soixante-et-onze` (was `soixante onze`). Configuration only; no API change.
+
 ### Changed — `omy.Utils.NumberToString` (NTS-26 closed by documentation)
 - No output change. The Wolof nested multipliers keep the inner genitive `-i` (`ñaari téeméeri milyoŋ`) as a retained
   library convention: the form without it is attested as well (Wolof Ajami Reader, Gaye 1980, Kosogorova 2023), so

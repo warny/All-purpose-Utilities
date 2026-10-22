@@ -764,7 +764,7 @@ Answers to the audit questions:
 3. Around the scale nouns the ordinal is formed on *million*/*milliard* (*millionième*, *milliardième*), with *dix-*/
    *cent-* hyphenated before it; no authoritative attestation was found from the billion (10^12) up.
 4. The existing ordinal machinery cannot generate them: `ConvertOrdinal(10000)` writes `dix millième` (the FR
-   configuration spells numerals without hyphens) and keeps the plural of a multiplied scale noun (`deux millionsième`,
+   configuration spelled numerals without hyphens until NTS-49) and keeps the plural of a multiplied scale noun (`deux millionsième`,
    NTS-33; fixed on 2026-10-22 for the ordinals, `deux millionième`, the fraction table being unchanged).
 5. Hence a static `<Fractions>` table, which is also what `ConvertFraction` uses for powers of ten.
 6. Range configured: 1–11 digits.
@@ -1672,7 +1672,9 @@ supported value, round scales, fail-closed range) and by the language `.feature`
 Applied: the hundreds 2–9 (and FR-be *quatre-vingts*) declare `ordinalBaseString`; the round values from the million
 are formed on the singular noun by `<OrdinalScale scales="2..6">`, whose masculine nouns force `gender=masculin` on the
 multiplier. No source gives a compound non-round ordinal such as *deux millions unième*: the leading groups keep their
-cardinal form (the CCDMD rule for *million* above). The project keeps its historical spacing (no hyphens).
+cardinal form (the CCDMD rule for *million* above). Spacing: since NTS-49 (same day) the French numerals follow the
+1990 rectified spelling, every element hyphenated (`deux-centième`, `deux-millionième`, `deux-millions-unième`);
+sources in `DONE-2026-10-22.md`, section NTS-49.
 
 ## Source links
 

@@ -33,11 +33,11 @@ public class NumberToStringNts33Tests
     /// <param name="number">The ordinal value.</param>
     /// <param name="expected">The expected ordinal.</param>
     [TestMethod]
-    [DataRow(200L, "deux centième")]
-    [DataRow(300_000_000L, "trois cent millionième")]
-    [DataRow(2_000_000L, "deux millionième")]
-    [DataRow(10_000_000_000L, "dix milliardième")]
-    [DataRow(2_000_000_000_000L, "deux billionième")]
+    [DataRow(200L, "deux-centième")]
+    [DataRow(300_000_000L, "trois-cent-millionième")]
+    [DataRow(2_000_000L, "deux-millionième")]
+    [DataRow(10_000_000_000L, "dix-milliardième")]
+    [DataRow(2_000_000_000_000L, "deux-billionième")]
     public void French_HistoricalCases(long number, string expected)
         => Assert.AreEqual(expected, Get("FR").ConvertOrdinal(number));
 
@@ -49,15 +49,15 @@ public class NumberToStringNts33Tests
     /// <param name="expected">The expected ordinal.</param>
     [TestMethod]
     [DataRow("FR", 100L, "centième")]
-    [DataRow("FR", 200L, "deux centième")]
-    [DataRow("FR", 300L, "trois centième")]
-    [DataRow("FR", 500L, "cinq centième")]
-    [DataRow("FR", 900L, "neuf centième")]
-    [DataRow("FR-ca", 200L, "deux centième")]
-    [DataRow("FR-be", 200L, "deux centième")]
-    [DataRow("FR-be", 900L, "neuf centième")]
-    [DataRow("FR-ch", 200L, "deux centième")]
-    [DataRow("FR-ch", 900L, "neuf centième")]
+    [DataRow("FR", 200L, "deux-centième")]
+    [DataRow("FR", 300L, "trois-centième")]
+    [DataRow("FR", 500L, "cinq-centième")]
+    [DataRow("FR", 900L, "neuf-centième")]
+    [DataRow("FR-ca", 200L, "deux-centième")]
+    [DataRow("FR-be", 200L, "deux-centième")]
+    [DataRow("FR-be", 900L, "neuf-centième")]
+    [DataRow("FR-ch", 200L, "deux-centième")]
+    [DataRow("FR-ch", 900L, "neuf-centième")]
     public void French_ExactHundreds(string language, long number, string expected)
         => Assert.AreEqual(expected, Get(language).ConvertOrdinal(number));
 
@@ -68,14 +68,14 @@ public class NumberToStringNts33Tests
     /// <param name="number">The ordinal value.</param>
     /// <param name="expected">The expected ordinal.</param>
     [TestMethod]
-    [DataRow(201L, "deux cent unième")]
-    [DataRow(220L, "deux cent vingtième")]
-    [DataRow(250L, "deux cent cinquantième")]
-    [DataRow(299L, "deux cent quatre-vingt dix neuvième")]
-    [DataRow(301L, "trois cent unième")]
-    [DataRow(999L, "neuf cent quatre-vingt dix neuvième")]
-    [DataRow(1_200L, "mille deux centième")]
-    [DataRow(2_000_200L, "deux millions deux centième")]
+    [DataRow(201L, "deux-cent-unième")]
+    [DataRow(220L, "deux-cent-vingtième")]
+    [DataRow(250L, "deux-cent-cinquantième")]
+    [DataRow(299L, "deux-cent-quatre-vingt-dix-neuvième")]
+    [DataRow(301L, "trois-cent-unième")]
+    [DataRow(999L, "neuf-cent-quatre-vingt-dix-neuvième")]
+    [DataRow(1_200L, "mille-deux-centième")]
+    [DataRow(2_000_200L, "deux-millions-deux-centième")]
     public void French_HundredNeighbours(long number, string expected)
         => Assert.AreEqual(expected, Get("FR").ConvertOrdinal(number));
 
@@ -90,26 +90,26 @@ public class NumberToStringNts33Tests
     /// <param name="expected">The expected ordinal.</param>
     [TestMethod]
     [DataRow(1_000L, "millième")]
-    [DataRow(2_000L, "deux millième")]
+    [DataRow(2_000L, "deux-millième")]
     [DataRow(1_000_000L, "millionième")]
-    [DataRow(2_000_000L, "deux millionième")]
-    [DataRow(3_000_000L, "trois millionième")]
-    [DataRow(17_000_000L, "dix sept millionième")]
-    [DataRow(200_000_000L, "deux cent millionième")]
-    [DataRow(300_000_000L, "trois cent millionième")]
+    [DataRow(2_000_000L, "deux-millionième")]
+    [DataRow(3_000_000L, "trois-millionième")]
+    [DataRow(17_000_000L, "dix-sept-millionième")]
+    [DataRow(200_000_000L, "deux-cent-millionième")]
+    [DataRow(300_000_000L, "trois-cent-millionième")]
     [DataRow(1_000_000_000L, "milliardième")]
-    [DataRow(2_000_000_000L, "deux milliardième")]
-    [DataRow(6_000_000_000L, "six milliardième")]
-    [DataRow(10_000_000_000L, "dix milliardième")]
-    [DataRow(200_000_000_000L, "deux cent milliardième")]
+    [DataRow(2_000_000_000L, "deux-milliardième")]
+    [DataRow(6_000_000_000L, "six-milliardième")]
+    [DataRow(10_000_000_000L, "dix-milliardième")]
+    [DataRow(200_000_000_000L, "deux-cent-milliardième")]
     [DataRow(1_000_000_000_000L, "billionième")]
-    [DataRow(2_000_000_000_000L, "deux billionième")]
-    [DataRow(300_000_000_000_000L, "trois cent billionième")]
+    [DataRow(2_000_000_000_000L, "deux-billionième")]
+    [DataRow(300_000_000_000_000L, "trois-cent-billionième")]
     [DataRow(1_000_000_000_000_000L, "billiardième")]
-    [DataRow(2_000_000_000_000_000L, "deux billiardième")]
+    [DataRow(2_000_000_000_000_000L, "deux-billiardième")]
     [DataRow(1_000_000_000_000_000_000L, "trillionième")]
-    [DataRow(2_000_000_000_000_000_000L, "deux trillionième")]
-    [DataRow(9_000_000_000_000_000_000L, "neuf trillionième")]
+    [DataRow(2_000_000_000_000_000_000L, "deux-trillionième")]
+    [DataRow(9_000_000_000_000_000_000L, "neuf-trillionième")]
     public void French_RoundScales(long number, string expected)
         => Assert.AreEqual(expected, Get("FR").ConvertOrdinal(number));
 
@@ -122,10 +122,10 @@ public class NumberToStringNts33Tests
     [TestMethod]
     [DataRow(1L, "première")]
     [DataRow(1_000_000L, "millionième")]
-    [DataRow(2_000_000L, "deux millionième")]
-    [DataRow(21_000_000L, "vingt et un millionième")]
-    [DataRow(201_000_000L, "deux cent un millionième")]
-    [DataRow(21_000_000_000L, "vingt et un milliardième")]
+    [DataRow(2_000_000L, "deux-millionième")]
+    [DataRow(21_000_000L, "vingt-et-un-millionième")]
+    [DataRow(201_000_000L, "deux-cent-un-millionième")]
+    [DataRow(21_000_000_000L, "vingt-et-un-milliardième")]
     public void French_RoundScales_Feminine(long number, string expected)
         => Assert.AreEqual(expected, Get("FR").ConvertOrdinal(number, "gender=feminin"));
 
@@ -134,12 +134,12 @@ public class NumberToStringNts33Tests
     /// <param name="number">The ordinal value.</param>
     /// <param name="expected">The expected ordinal.</param>
     [TestMethod]
-    [DataRow("FR-ca", 2_000_000L, "deux millionième")]
+    [DataRow("FR-ca", 2_000_000L, "deux-millionième")]
     [DataRow("FR-be", 1_000_000L, "millionième")]
-    [DataRow("FR-be", 300_000_000L, "trois cent millionième")]
-    [DataRow("FR-be", 2_000_000_000L, "deux milliardième")]
-    [DataRow("FR-ch", 300_000_000L, "trois cent millionième")]
-    [DataRow("FR-ch", 80_000_000L, "huitante millionième")]
+    [DataRow("FR-be", 300_000_000L, "trois-cent-millionième")]
+    [DataRow("FR-be", 2_000_000_000L, "deux-milliardième")]
+    [DataRow("FR-ch", 300_000_000L, "trois-cent-millionième")]
+    [DataRow("FR-ch", 80_000_000L, "huitante-millionième")]
     public void FrenchRegional_RoundScales(string language, long number, string expected)
         => Assert.AreEqual(expected, Get(language).ConvertOrdinal(number));
 
@@ -151,11 +151,11 @@ public class NumberToStringNts33Tests
     /// <param name="expected">The expected ordinal.</param>
     [TestMethod]
     [DataRow(80L, "quatre-vingtième")]
-    [DataRow(180L, "cent quatre-vingtième")]
-    [DataRow(280L, "deux cent quatre-vingtième")]
-    [DataRow(1_080L, "mille quatre-vingtième")]
-    [DataRow(80_000_000L, "quatre-vingt millionième")]
-    [DataRow(81L, "quatre-vingt unième")]
+    [DataRow(180L, "cent-quatre-vingtième")]
+    [DataRow(280L, "deux-cent-quatre-vingtième")]
+    [DataRow(1_080L, "mille-quatre-vingtième")]
+    [DataRow(80_000_000L, "quatre-vingt-millionième")]
+    [DataRow(81L, "quatre-vingt-unième")]
     public void Belgian_QuatreVingts(long number, string expected)
         => Assert.AreEqual(expected, Get("FR-be").ConvertOrdinal(number));
 
@@ -169,12 +169,12 @@ public class NumberToStringNts33Tests
     /// <param name="number">The ordinal value.</param>
     /// <param name="expected">The expected ordinal.</param>
     [TestMethod]
-    [DataRow(2_000_001L, "deux millions unième")]
-    [DataRow(200_000_001L, "deux cents millions unième")]
-    [DataRow(300_000_001L, "trois cents millions unième")]
-    [DataRow(2_000_000_001L, "deux milliards unième")]
-    [DataRow(2_000_000_000_001L, "deux billions unième")]
-    [DataRow(1_001_000L, "un million millième")]
+    [DataRow(2_000_001L, "deux-millions-unième")]
+    [DataRow(200_000_001L, "deux-cents-millions-unième")]
+    [DataRow(300_000_001L, "trois-cents-millions-unième")]
+    [DataRow(2_000_000_001L, "deux-milliards-unième")]
+    [DataRow(2_000_000_000_001L, "deux-billions-unième")]
+    [DataRow(1_001_000L, "un-million-millième")]
     public void French_NonRound_KeepLeadingCardinalGroups(long number, string expected)
         => Assert.AreEqual(expected, Get("FR").ConvertOrdinal(number));
 
@@ -185,13 +185,13 @@ public class NumberToStringNts33Tests
     /// <param name="number">The cardinal value.</param>
     /// <param name="expected">The expected cardinal.</param>
     [TestMethod]
-    [DataRow("FR", 200L, "deux cents")]
-    [DataRow("FR", 300_000_000L, "trois cents millions")]
-    [DataRow("FR", 2_000_000L, "deux millions")]
-    [DataRow("FR", 10_000_000_000L, "dix milliards")]
-    [DataRow("FR", 2_000_000_000_000L, "deux billions")]
+    [DataRow("FR", 200L, "deux-cents")]
+    [DataRow("FR", 300_000_000L, "trois-cents-millions")]
+    [DataRow("FR", 2_000_000L, "deux-millions")]
+    [DataRow("FR", 10_000_000_000L, "dix-milliards")]
+    [DataRow("FR", 2_000_000_000_000L, "deux-billions")]
     [DataRow("FR-be", 80L, "quatre-vingts")]
-    [DataRow("FR-be", 180L, "cent quatre-vingts")]
+    [DataRow("FR-be", 180L, "cent-quatre-vingts")]
     public void French_CardinalsUnchanged(string language, long number, string expected)
         => Assert.AreEqual(expected, Get(language).Convert(new BigInteger(number)));
 
@@ -221,7 +221,7 @@ public class NumberToStringNts33Tests
 
         Assert.AreEqual("zéro virgule deux centièmes", Get("FR").Convert(0.02m));
         Assert.AreEqual("zéro virgule deux millionièmes", Get("FR").Convert(0.000002m));
-        Assert.AreEqual("vingt et un et cinq cents millièmes", Get("FR").Convert(21.5m, 3, math));
+        Assert.AreEqual("vingt-et-un et cinq-cents millièmes", Get("FR").Convert(21.5m, 3, math));
     }
 
     /// <summary>The French configuration declares the base on the agreed hundreds only.</summary>
@@ -231,8 +231,8 @@ public class NumberToStringNts33Tests
         var hundreds = Get("FR").Groups[3];
 
         Assert.IsNull(hundreds[1].OrdinalBaseString);
-        Assert.AreEqual("deux cent", hundreds[2].OrdinalBaseString);
-        Assert.AreEqual("neuf cent", hundreds[9].OrdinalBaseString);
+        Assert.AreEqual("deux-cent", hundreds[2].OrdinalBaseString);
+        Assert.AreEqual("neuf-cent", hundreds[9].OrdinalBaseString);
         Assert.IsTrue(Get("FR").Groups[1].Values.All(d => d.OrdinalBaseString is null));
         Assert.AreEqual("quatre-vingt", Get("FR-be").Groups[2][8].OrdinalBaseString);
         // The generated scale nouns force the masculine on their multiplier (million is a masculine noun).
@@ -426,6 +426,6 @@ public class NumberToStringNts33Tests
 
         Assert.AreEqual("fooX", converters[inheriting].ConvertOrdinal(3));
         // FR-be and FR-ch redeclare their Groups and therefore their own bases.
-        Assert.AreEqual("deux centième", Get("FR-ch").ConvertOrdinal(200));
+        Assert.AreEqual("deux-centième", Get("FR-ch").ConvertOrdinal(200));
     }
 }
