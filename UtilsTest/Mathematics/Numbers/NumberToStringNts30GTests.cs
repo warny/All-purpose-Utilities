@@ -432,7 +432,7 @@ public class NumberToStringNts30GTests
         Assert.IsNull(method.Invoke(Build(variants: GenderRules), []));
         Assert.IsNull(method.Invoke(Build(scaleContent: """<ScaleForm scale="2"><Forms><Form key="plural" value="millions" /></Forms></ScaleForm>""", variants: GenderRules), []),
             "an exact form forcing nothing allocates nothing");
-        Assert.IsNull(method.Invoke(Get("FR"), []), "a built-in language using neither primitive");
+        Assert.IsNull(method.Invoke(Get("EN"), []), "a built-in language using neither primitive");
     }
 
     /// <summary>On a paired scale the forced variants render the complete two-group multiplier.</summary>

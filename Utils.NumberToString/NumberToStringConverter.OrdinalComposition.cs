@@ -204,7 +204,8 @@ namespace Utils.NumberToString
         /// <summary>
         /// Builds the text whose ordinal transformation gives the ordinal of a round scale value covered
         /// by an <see cref="OrdinalScaleRule"/>: the singular scale noun alone for a multiplier of one,
-        /// otherwise the multiplier's cardinal, the rule's separator and the singular scale noun.
+        /// otherwise the multiplier's cardinal in its ordinal base (see <see cref="DigitType.OrdinalBaseString"/>),
+        /// the rule's separator and the singular scale noun.
         /// </summary>
         /// <param name="number">The non-negative ordinal value.</param>
         /// <param name="activeVariants">The resolved variant query (multiplier cardinal and scale noun).</param>
@@ -233,15 +234,17 @@ namespace Utils.NumberToString
                     text = noun;
                     return true;
                 }
-                // The multiplier is rendered exactly like its standalone cardinal: ConvertRaw (which
-                // already applies the scale-specific variant rules), then the global variant rules
+                // The multiplier belongs to the constituent the ordinal is derived from (trois cent + million →
+                // trois cent millionième, NTS-33), so it is rendered in its ordinal base: like its standalone cardinal,
+                // except that its last digits take their OrdinalBaseString when the tables configure one (never an
+                // ordinal of its own). ConvertRaw already applies the scale-specific variant rules, then the global variant rules
                 // evaluated against the multiplier itself (onValue included). ApplyVariantRules skips
                 // the onScale rules, so nothing is applied twice. The variants the singular form forces
                 // (exact or generated scale form) render it, and its forced inner groups are shielded from
                 // the pass run with another query.
                 var multiplierQuery = forced.IsEmpty ? activeVariants : forced.Overlay(activeVariants);
                 var inner = NewShieldedGroups();
-                string multiplierText = ConvertRaw(multiplier, multiplierQuery, inner);
+                string multiplierText = ConvertRaw(multiplier, multiplierQuery, inner, ordinalBase: true);
                 multiplierText = ApplyShielded(multiplierText, inner, raw => ApplyVariantRules(raw, multiplierQuery, multiplier));
                 if (!forced.IsEmpty) shieldedGroups?.Add(multiplierText);
                 else if (inner is { Count: > 0 }) shieldedGroups?.AddRange(inner);

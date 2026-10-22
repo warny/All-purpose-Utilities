@@ -253,6 +253,26 @@ public class NumberToStringNts21Tests
         => Assert.AreEqual(expected, Wolof.Convert(number));
 
     /// <summary>
+    /// NTS-26, closed by decision: a nested hundreds multiplier keeps the inner genitive -i before téeméer as well as
+    /// the outer one before the scale (Guérin: ñaar-i téeméer-i dërëm). The form without the inner linker is attested too
+    /// (Wolof Ajami Reader p. 192: juróom ñaar téeméeri milyoŋ), so the current output is a retained library convention,
+    /// not a defect. See docs/NTS-26-wolof-nested-linker-choice.md before changing any of these strings.
+    /// </summary>
+    /// <param name="number">The cardinal value.</param>
+    /// <param name="expected">The retained cardinal.</param>
+    [TestMethod]
+    [DataRow(200L, "ñaari téeméer")]
+    [DataRow(900L, "juróom ñenti téeméer")]
+    [DataRow(200_000L, "ñaari téeméeri junni")]
+    [DataRow(900_000L, "juróom ñenti téeméeri junni")]
+    [DataRow(200_000_000L, "ñaari téeméeri milyoŋ")]
+    [DataRow(700_000_000L, "juróom ñaari téeméeri milyoŋ")]
+    [DataRow(900_000_000L, "juróom ñenti téeméeri milyoŋ")]
+    [DataRow(200_000_000_000L, "ñaari téeméeri milyaar")]
+    public void Wolof_NestedLinker_Nts26_RetainedByDecision(long number, string expected)
+        => Assert.AreEqual(expected, Wolof.Convert(number));
+
+    /// <summary>
     /// The ordinal domain stays 1..999999 (NTS-16/NTS-19): no ordinal from a million is established, so the guard
     /// rejects it although the cardinal now exists.
     /// </summary>

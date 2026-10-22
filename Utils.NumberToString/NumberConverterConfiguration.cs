@@ -390,6 +390,17 @@ public class DigitType
     public string? InnerBuildString { get; set; }
 
     /// <summary>
+    /// Gets or sets the optional derivational base of the digit: the literal used instead of
+    /// <see cref="StringValue"/> (and of <see cref="InnerString"/>) when the digit stands alone at the end of
+    /// the constituent an ordinal is derived from, i.e. the lowest group of a cardinal-based ordinal or the
+    /// multiplier of a round scale ordinal (French <c>deux cents</c> → <c>deux cent</c> → <c>deux centième</c>).
+    /// <see langword="null"/> keeps <see cref="StringValue"/>; an empty or blank value is rejected.
+    /// Never used outside ordinals.
+    /// </summary>
+    [XmlAttribute("ordinalBaseString")]
+    public string? OrdinalBaseString { get; set; }
+
+    /// <summary>
     /// Gets or sets the morphological fusion rules applied when this digit is composed with the
     /// text of its lower sub-group (see <see cref="FusionType"/>). <see langword="null"/> or empty
     /// means the digit always composes through <see cref="BuildString"/>.

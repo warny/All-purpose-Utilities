@@ -1473,7 +1473,13 @@ namespace Utils.NumberToString
         /// scale form (exact or generated) forced variants on its multiplier, so that the whole-number passes
         /// run with the caller's query can leave it untouched (see <see cref="ApplyShielded"/>).
         /// </param>
-        private string ConvertRaw(BigInteger abs, IReadOnlyDictionary<string, string>? variantQuery = null, List<string>? shieldedGroups = null)
+        /// <param name="ordinalBase">
+        /// Whether the text is the base an ordinal is derived from: the lowest group, which holds the last
+        /// constituent, then renders its standalone digits with their <see cref="DigitType.OrdinalBaseString"/>, when
+        /// configured (NTS-33). The leading groups keep their cardinal forms.
+        /// </param>
+        private string ConvertRaw(BigInteger abs, IReadOnlyDictionary<string, string>? variantQuery = null, List<string>? shieldedGroups = null,
+            bool ordinalBase = false)
         {
             if (abs.Between(long.MinValue, long.MaxValue) && Exceptions.TryGetValue((long)abs, out var exValue))
                 return exValue;
@@ -1517,7 +1523,8 @@ namespace Utils.NumberToString
                     if (group < groupValue)
                     {
                         // The multiplier of a scale covered by a scoped Groups uses that table.
-                        digits = ConvertGroup(GetGroupTable(groupNumber), width, group, hasHigherGroup, out hasFinalConnector);
+                        digits = ConvertGroup(GetGroupTable(groupNumber), width, group, hasHigherGroup, out hasFinalConnector,
+                            ordinalBase && groupNumber == 0);
                         digits = ApplyTriggers(digits, TriggerAt.Group, groupNumber, groupQuery);
                         if (forced)
                             digits = ApplyVariantRules(digits, groupQuery!, group);
@@ -1530,7 +1537,7 @@ namespace Utils.NumberToString
                         // shielded, from the multiplier's variant rules when this group is forced, otherwise from
                         // the whole-number passes (propagated in assembly order when the group is popped).
                         var nested = NewShieldedGroups();
-                        digits = ConvertRaw(group, groupQuery, nested);
+                        digits = ConvertRaw(group, groupQuery, nested, ordinalBase && groupNumber == 0);
                         digits = ApplyTriggers(digits, TriggerAt.Group, groupNumber, groupQuery);
                         if (forced)
                             digits = ApplyShielded(digits, nested, text => ApplyVariantRules(text, groupQuery!, group));
@@ -2295,8 +2302,13 @@ namespace Utils.NumberToString
         /// part receives it; every outer junction then sees the flag and composes normally. An exception (e.g. 15)
         /// or a single digit is one component and reports <see langword="false"/>.
         /// </param>
+        /// <param name="ordinalBase">
+        /// Whether the group holds the last constituent of an ordinal base: a digit standing alone (no lower text)
+        /// then uses its <see cref="DigitType.OrdinalBaseString"/>, when configured, instead of its standalone form.
+        /// </param>
         /// <returns>The group text (empty for level 0).</returns>
-        private string ConvertGroup(GroupTable table, int groupNumber, long number, bool afterNonZero, out bool hasFinalConnector)
+        private string ConvertGroup(GroupTable table, int groupNumber, long number, bool afterNonZero, out bool hasFinalConnector,
+            bool ordinalBase = false)
         {
             hasFinalConnector = false;
             var groups = table.Digits;
@@ -2335,12 +2347,15 @@ namespace Utils.NumberToString
             var (groupValue, remainder) = long.DivRem(number, group);
 
             // The lower positions follow a non-zero digit as soon as this one or a higher one is non-zero.
-            var leftText = ConvertGroup(table, groupNumber - 1, remainder, afterNonZero || groupValue != 0, out bool lowerHasFinalConnector);
+            var leftText = ConvertGroup(table, groupNumber - 1, remainder, afterNonZero || groupValue != 0, out bool lowerHasFinalConnector, ordinalBase);
             var valueText = groups[groupNumber][groupValue];
             string stringValue = afterNonZero && valueText.InnerString != null ? valueText.InnerString : valueText.StringValue;
             string buildString = afterNonZero && valueText.InnerBuildString != null ? valueText.InnerBuildString : valueText.BuildString;
 
-            if (string.IsNullOrEmpty(leftText)) return stringValue;
+            // A digit standing alone ends its group; in an ordinal base it is the constituent the ordinal is derived
+            // from, whose derivational base replaces the agreed standalone form (deux cents → deux cent → deux centième).
+            if (string.IsNullOrEmpty(leftText))
+                return ordinalBase && valueText.OrdinalBaseString != null ? valueText.OrdinalBaseString : stringValue;
 
             // A configured <Fusion> replaces buildString for this junction (validated at load to
             // never overlap the intra-group connector below). "leftText" is the lower sub-group,
@@ -2641,7 +2656,7 @@ namespace Utils.NumberToString
                 if (!TryBuildRoundScaleText(number, activeVariants, shieldedGroups, out raw))
                 {
                     var shielded = NewShieldedGroups();
-                    raw = number == 0 ? Zero : ConvertRaw((BigInteger)number, activeVariants, shielded);
+                    raw = number == 0 ? Zero : ConvertRaw((BigInteger)number, activeVariants, shielded, ordinalBase: true);
                     raw = ApplyShielded(raw, shielded, text => ApplyVariantRules(text, activeVariants, number));
                     if (shielded is { Count: > 0 }) shieldedGroups?.AddRange(shielded);
                 }
@@ -2789,6 +2804,9 @@ namespace Utils.NumberToString
                     if (!digitValues.Add(dt.Digit))
                         throw new ArgumentException(
                             $"Group {key} has duplicate digit value {dt.Digit}.", paramName);
+                    if (dt.OrdinalBaseString != null && string.IsNullOrWhiteSpace(dt.OrdinalBaseString))
+                        throw new ArgumentException(
+                            $"Group {key} digit {dt.Digit} has an empty ordinalBaseString; omit the attribute to keep the standalone form.", paramName);
                 }
             }
         }

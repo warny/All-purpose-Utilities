@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed — `omy.Utils.NumberToString` (NTS-33: French ordinals derived from base forms)
+- French ordinals are derived from the base of their last constituent instead of the agreed cardinal: `deux centième`
+  (was `deux centsième`), `deux millionième` (was `deux millionsième`), `trois cent millionième` (was `trois cents
+  millionsième`), `dix milliardième`, `deux billionième`, and `millionième`, `milliardième` for the round scale values
+  of one (was `un millionième`, the fraction reading). Belgian French also derives `cent quatre-vingtième` and
+  `quatre-vingt millionième` (was `cent quatre-vingtsième`). The feminine keeps a masculine multiplier before the
+  masculine scale nouns (`vingt et un millionième`). Cardinals, fractions (`deux centièmes`, `deux millionièmes`),
+  decimals, currencies, dates and times are byte-identical; non-round ordinals keep their leading groups cardinal
+  (`deux millions unième`). Sources: OQLF (*Écriture des fractions*; *Pluriel de vingt, de cent et de mille*), CCDMD,
+  Larousse.
+- Added the optional `ordinalBaseString` attribute of `<Digit>` (public `DigitType.OrdinalBaseString`, additive): the
+  derivational base used instead of `string` when the digit ends the constituent an ordinal is derived from (the
+  lowest group of a cardinal-based ordinal, or the multiplier of an `<OrdinalScale>` value). Absent: historical
+  behaviour; an empty or blank value is rejected.
+
+### Changed — `omy.Utils.NumberToString` (NTS-26 closed by documentation)
+- No output change. The Wolof nested multipliers keep the inner genitive `-i` (`ñaari téeméeri milyoŋ`) as a retained
+  library convention: the form without it is attested as well (Wolof Ajami Reader, Gaye 1980, Kosogorova 2023), so
+  the evidence shows variation, not a defect. See `Utils.NumberToString/docs/NTS-26-wolof-nested-linker-choice.md`.
+
 ### Added — `omy.Utils.NumberToString`
 - Added the `<OrdinalScale scales multiplierSeparator>` ordinal primitive (XSD `OrdinalScaleType`,
   additive `OrdinalScaleRule` record, `NumberToStringConverterOptions.OrdinalScaleRules`, converter

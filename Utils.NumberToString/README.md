@@ -21,7 +21,7 @@ dotnet add package omy.Utils.NumberToString --version 2.0.0-rc.2
 |------|----------|----------|-------------------------|----------|-------------------|-------------------|
 | EN, EN-us | English | ✓ declarative | ✓ 5 min, 12 h | — | local | No day-part wording; only midnight/noon are special |
 | EN-GB, EN-uk | British English | ✓ inherited | ✓ inherited | — | child of EN | Same as EN |
-| FR, FR-fr, FR-ca | French | ✓ declarative | ✓ 5 min, 24 h | gender | local | — |
+| FR, FR-fr, FR-ca | French | ✓ declarative; ordinals derived from the base of the last constituent (`deux centième`, `deux millionième`, `trois cent millionième`; `ordinalBaseString`, `<OrdinalScale>`) | ✓ 5 min, 24 h | gender | local | — |
 | FR-be | Belgian French (septante / quatre-vingts / nonante) | ✓ merged | ✓ inherited | gender | child of FR | — |
 | FR-ch | Swiss French (septante / huitante / nonante) | ✓ inherited | ✓ inherited | gender | child of FR | No cantonal `octante` |
 | DE, de-DE, de-AT | German | ✓ declarative (zero: `nullte`, Duden) | ✓ 5 min, 12 h | genus × kasus | local | — |
@@ -161,6 +161,11 @@ fr.ConvertOrdinal(5);    // "cinquième"     ← word rule: cinq → cinquième
 fr.ConvertOrdinal(9);    // "neuvième"      ← word rule: neuf → neuvième
 fr.ConvertOrdinal(21);   // "vingt et unième"
 fr.ConvertOrdinal(1000); // "millième"      ← removeTrailing="e" + suffix ième
+fr.ConvertOrdinal(200);  // "deux centième" ← ordinalBaseString: the cardinal is "deux cents" (NTS-33)
+fr.ConvertOrdinal(2_000_000);   // "deux millionième"       ← OrdinalScale: singular noun, not "millions"
+fr.ConvertOrdinal(300_000_000); // "trois cent millionième" ← multiplier rendered in its ordinal base
+fr.ConvertOrdinal(2_000_001);   // "deux millions unième"   ← leading groups stay cardinal
+fr.ConvertFraction(2, 100);     // "deux centièmes"         ← fractions keep their own plural nouns
 ```
 
 ```csharp
@@ -1329,8 +1334,9 @@ number
   → IOrdinalLanguageSpecifics plugin (when configured; may form the ordinal or reject the value)
   → OrdinalExceptions      (integer-level early exit, e.g. 1 → "premier")
   → OrdinalComposition     (ordinal(head) + separator + ordinal(tail), each part from the plugin step again)
-  → OrdinalScale           (round scale value: multiplier cardinal + singular scale noun, instead of the two steps below)
-  → ConvertRaw + Triggers group/groupWithScale (same as cardinal)
+  → OrdinalScale           (round scale value: multiplier in its ordinal base + singular scale noun, instead of the two steps below)
+  → ConvertRaw + Triggers group/groupWithScale (same as cardinal, except that the lowest group renders its
+                            standalone digits with their ordinalBaseString, when configured)
   → ApplyVariantRules      (default variant values)
   → ordinal Replacements   (base, then the selected ordinal variant; ordinal-only)
   → ApplyOrdinalTransform  (exact word rules, OrdinalStem / removeTrailing + suffix on last word)
@@ -1486,6 +1492,17 @@ Each `<Digit digit="N" string="…" buildString="…"/>`:
   significant group the leading zeros keep `buildString`, so the inner forms render only *skipped*
   positions. A digit's `<Fusion>` rules are validated against its `string` and, when declared, its
   `innerString` (both must accept a `removeLeft`):
+- `ordinalBaseString` (optional, NTS-33) — the derivational base of the digit: used instead of `string` (and of
+  `innerString`) when the digit stands alone at the end of the constituent an ordinal is derived from, i.e. the
+  lowest group of a cardinal-based ordinal or the whole multiplier of an
+  [`<OrdinalScale>`](#ordinals-of-round-scale-values--ordinalscale) value. It never reaches cardinals, fractions,
+  decimals, currencies, years or times, nor the leading groups of a non-round ordinal. Absent: `string`, the
+  historical behaviour; an empty or blank value is rejected. French declares it on its agreed hundreds:
+
+```xml
+<Digit digit="2" string="deux cents" buildString="deux cent *" ordinalBaseString="deux cent" />
+<!-- 200 "deux cents"; 200e "deux centième"; 300 000 000e "trois cent millionième"; 2/100 "deux centièmes" -->
+```
 
 ```xml
 <!-- Vietnamese: zero hundreds of a class that follows a higher class, "linh" before a lone unit -->
@@ -2353,7 +2370,12 @@ a **round scale value** — multiplier × scale unit, every lower group zero —
 - `scales` uses the range syntax (`2`, `2..4`, `2..`); every index must be ≥ 1 and nameable by the
   `<NumberScale>`, and two rules must not cover the same index. `multiplierSeparator` is required
   and may be empty.
-- The multiplier is rendered exactly like its standalone cardinal with the caller's variants: the
+- The multiplier is rendered like its standalone cardinal with the caller's variants, in its
+  **ordinal base** (NTS-33): its last digits take their `ordinalBaseString` when the tables declare one
+  (French `trois cents` → `trois cent` + `million` → `trois cent millionième`), never an ordinal of their
+  own; without `ordinalBaseString` it is exactly the standalone cardinal. When the selected scale form
+  forces variants on its multiplier, those win (French `million` forces `gender=masculin`: the feminine
+  ordinal of 21 000 000 is `vingt et un millionième`). The
   cardinal `<Variants>` rules apply to it (scale-specific ones inside the cardinal, global ones
   afterwards, `onValue` evaluated against the multiplier). The noun is the singular scale word
   (through `<ScaleForm>` when configured); the cardinal variant rules are not applied to the
