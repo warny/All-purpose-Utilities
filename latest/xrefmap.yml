@@ -62222,6 +62222,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.DigitType.InnerString
   nameWithType: DigitType.InnerString
+- uid: Utils.NumberToString.DigitType.OrdinalBaseString
+  name: OrdinalBaseString
+  href: api/Utils.NumberToString.DigitType.html#Utils_NumberToString_DigitType_OrdinalBaseString
+  commentId: P:Utils.NumberToString.DigitType.OrdinalBaseString
+  fullName: Utils.NumberToString.DigitType.OrdinalBaseString
+  nameWithType: DigitType.OrdinalBaseString
+- uid: Utils.NumberToString.DigitType.OrdinalBaseString*
+  name: OrdinalBaseString
+  href: api/Utils.NumberToString.DigitType.html#Utils_NumberToString_DigitType_OrdinalBaseString_
+  commentId: Overload:Utils.NumberToString.DigitType.OrdinalBaseString
+  isSpec: "True"
+  fullName: Utils.NumberToString.DigitType.OrdinalBaseString
+  nameWithType: DigitType.OrdinalBaseString
 - uid: Utils.NumberToString.DigitType.StringValue
   name: StringValue
   href: api/Utils.NumberToString.DigitType.html#Utils_NumberToString_DigitType_StringValue
