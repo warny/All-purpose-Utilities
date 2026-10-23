@@ -59,6 +59,65 @@ describes any capability.
 | EE | EE | SCALE-SHORT (scale tables only, NTS-23) | Yes (NTS-20): cardinal + `-lia` on the last element, `gbãtɔ` for 1 | Declarative + `ZeroOrdinalUnsupportedLanguageSpecifics` | **Deferred** | — | none | **Consulted** (NTS-20): Dzablu-Kumah, *Basic Ewe for Foreign Students*; Biblica Open Ewe Contemporary Scriptures; *Ewe Basic Course* 1968; Peace Corps Togo 2010; Wiktionary | Cardinals unbounded (NTS-23): static `akpe`, then the Conway-Wechsler short scale `miliɔn`, `biliɔn`, `triliɔn` (sourced anchors), `quadriliɔn` … (project extrapolation), each before its standalone multiplier (`multiplierPosition="afterScale"`); zero ordinal unsupported |
 | WO | WO | none | Yes (`-éel`, NTS-16, NTS-19) | Declarative + `WolofOrdinalLanguageSpecifics` | **Deferred** | — | none | No consistent source found | Cardinals unbounded (NTS-21): static `junni`, then the long-scale Conway-Wechsler names `milyoŋ`, `milyaar` (attested anchors), `bilyoŋ`, `bilyaar` … (project extrapolation in Wolof spelling); ordinals 1–999 999 only, no ordinal of zero nor of the round thousands |
 
+## NTS-52 — the connector between a currency numeral and its noun: FR, CA, GL, RO, PT (2026-10-23)
+
+Sources read during the pass (pages fetched with curl and read verbatim; GALR quoted in full by the Diacritica column).
+
+### French *de* / *d'* after *million*, *milliard*
+
+| # | Source | Quoted text | Use |
+|---|---|---|---|
+| 1 | Académie française, Dictionnaire, 9th ed., "million" (<https://www.dictionnaire-academie.fr/article/A9M2187>) | "Mille fois mille. Une ville d'un million d'habitants. Ce pays exporte chaque année des millions de tonnes d'acier. Sa fortune s'élève à plusieurs millions d'euros." | *million* is a noun; *d'euros* |
+| 2 | Académie française, Dictionnaire, 9th ed., "milliard" (<https://www.dictionnaire-academie.fr/article/A9M2175>) | "Mille millions […]. Un budget de plusieurs milliards de francs, de livres, d'euros." | *de* before a consonant, *d'* before a vowel |
+| 3 | OQLF, Banque de dépannage linguistique, "Écriture de million et de milliard" (<https://vitrinelinguistique.oqlf.gouv.qc.ca/21647/la-typographie/nombres/ecriture-de-million-et-de-milliard>) | "Les noms million et milliard prennent la marque du pluriel lorsque le nombre les précédant est égal ou supérieur à deux. Ils sont suivis par la préposition de (ou par la forme élidée d'). […] 5 242 101 l (se lit : cinq millions deux cent quarante-deux mille cent un litres) 5 551 000 000 $ (se lit : cinq milliards cinq cent cinquante et un millions de dollars […])" | the connector follows a numeral **ending** on the scale noun (structural), not one ending on another cardinal |
+| 4 | OQLF, Grand dictionnaire terminologique, "euro" (<https://vitrinelinguistique.oqlf.gouv.qc.ca/fiche-gdt/fiche/8371822/euro>) | "un million d'euros (ou 1 M € ou 1 MEUR) et non un million €" | *un million d'euros* |
+
+The elided form is chosen on the configured vowels only (accented ones included: *d'écus*). *h* is not listed: a mute and
+an aspirated *h* cannot be told apart from the spelling of a caller-defined noun (*d'heures*, but *de hamsters*), so a
+noun in *h* keeps the full *de*; no lexical list is kept in the engine. *y* is not listed (*de yens*). The numeral keeps its NTS-49 hyphenated spelling
+(*un-million d'euros*).
+
+### Catalan *de* / *d'* after *milió*
+
+| # | Source | Quoted text | Use |
+|---|---|---|---|
+| 5 | UOC, Servei Lingüístic, "Escriptura dels numerals" (<https://www.uoc.edu/ca/serveis/llengua-estil/convencions/escriptura-numerals>) | "Cal recordar que els numerals milió, bilió, trilió i quadrilió s'enllacen amb el substantiu que determinen mitjançant la preposició de." "Tenien un pressupost de dos milions d'euros [però: Tenien un pressupost d'1.265.250 euros]." | *de* after a numeral ending on *milió*; *d'euros* |
+| 6 | UOC, Servei Lingüístic, "L'apòstrof" (<https://www.uoc.edu/ca/serveis/llengua-estil/criteris/ortografia/apostrof>) | "de s'apostrofa davant de totes les vocals (també precedides de h muda): d'herba, d'altres, d'asimetries, d'universitat"; "no s'apostrofa […] davant de i i u consonants: de iens, de iod"; "el iogurt, el uombat"; "la hiena" | elision before a vowel or a mute *h*; not before a consonantal *i*/*u* |
+| 7 | UB, Llibre d'estil, apostrophe rules (<https://www.ub.edu/llibre-estil/criteri.php?id=1274>) | "el iode; el hiat; el iogurt; el uadi; el ioga; el io-io" | further consonantal onsets |
+
+The consonantal onsets (*ia, ie, io, iu, ua, ue, uo* and the same after *h*) are a second two-constraint substitution
+declared **before** the elided one: both match *iens* or *hienes*, and at equal specificity the first declared wins.
+The onset list is graphic, like the Italian `exceptBeforeNoun`: *io* also covers the rare vocalic *ió*.
+
+### Galician *de* after *millón*
+
+| # | Source | Quoted text | Use |
+|---|---|---|---|
+| 8 | Real Academia Galega, Dicionario, "millón" (<https://academia.gal/dicionario/-/termo/busca/mill%C3%B3n>) | "substantivo masculino 1 Mil veces mil. Na Terra habitan millóns e millóns de persoas. Tocoulle un millón de euros no sorteo da lotaría primitiva." | *millón* is a noun; *un millón de euros*, never elided |
+
+### Romanian *de* from twenty
+
+| # | Source | Quoted text | Use |
+|---|---|---|---|
+| 9 | Academia Română, Gramatica limbii române (GALR), 2005, vol. I, pp. 296–297, quoted in Diacritica, "Regula zilei: 20 ani, 20 de ani" (<https://diacritica.wordpress.com/2011/02/09/regula-zilei-20-ani-20-de-ani/>) | "a. Structura [numeral cardinal + substantiv] este proprie numeralelor cuprinse între unu şi nouăsprezece şi compuselor cu aceste numerale situate pe ultimul loc (cinci eleve, o sută treisprezece cărţi, două milioane trei sute opt lei). b. Structura [numeral cardinal + prepoziţia de + substantiv] se utilizează când determinantul este un numeral compus de la douăzeci în sus, cu excepţia celor de la punctul a: douăzeci de cărţi, o sută treizeci şi doi de copii, cinci mii două sute de lei)." | *de* from 20, except after a compound whose last two digits are 1–19 |
+| 10 | Republica.ro, "Unu, doi sau trei «i»?" (<https://republica.ro/unu-doi-sau-trei-i>) | "se leagă de substantiv prin de numeralele începând cu douăzeci, cu excepția celor compuse cu un numeral de la unu la nouăsprezece la sfârșit: douăzeci de cărți, o sută cincizeci și cinci de cărți (dar nouăsprezece cărţi, o sută cincisprezece cărți)" | the same rule, corroborated |
+
+DOOM 3 itself could not be fetched; GALR, the Academy grammar, is the normative statement used. The rule is on the
+count, not on the scale structure: `numberRange="1..19" numberModulo="100" value=""` declared before `numberRange="20.."
+value="de"` (both one constraint, the first declared wins), so *o sută unu euro*, *o sută nouăsprezece euro*, *o sută
+douăzeci de euro*, *două milioane trei sute opt euro*, *un milion de euro*. The NTS-52 `numberModulo` was added for this
+rule (user decision): a plain range cannot express "the last two digits". It is distinct from `scaleConnector`, which
+acts inside the numeral (*douăzeci de mii*).
+
+### Portuguese (audit only)
+
+| # | Source | Quoted text | Use |
+|---|---|---|---|
+| 11 | Priberam, Dicionário, "milhão" (<https://dicionario.priberam.org/milh%C3%A3o>) | "milhão — nome masculino. Mil vezes mil (10⁶)"; in its definitions: "equivalente a um milhão de ciclos", "um milhão de joules" | *milhão* is a noun taking *de* |
+
+The rule is attested, but PT declares `maxNumber="999999"`: no currency unit amount can end on *milhão*, so nothing is
+configured and every supported output is unchanged; opening the Portuguese million is outside NTS-52.
+
 ## NTS-50 and NTS-51 — Basque zero ordinal, Spanish and Italian currency phrases (2026-10-23)
 
 Sources read during the pass (pages fetched with curl and read verbatim; rule 203 as read for NTS-38). The Italian

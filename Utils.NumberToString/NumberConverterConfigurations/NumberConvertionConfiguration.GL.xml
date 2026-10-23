@@ -208,6 +208,15 @@
 				<Replacement oldValue="douscentos" newValue="douscentas" scope="Anywhere" />
 			</Variant>
 		</Variants>
+		<!-- NTS-52: millón is a noun (Real Academia Galega, Dicionario, "millón": "substantivo masculino. Mil veces mil.
+			 Na Terra habitan millóns e millóns de persoas. Tocoulle un millón de euros no sorteo da lotaría primitiva").
+			 "de" follows a numeral ending on a scale noun (scale 2 on), never elided: un millón de euros, dous millóns de
+			 euros, but un millón douscentos mil euros, un millón un euros. -->
+		<Currency>
+			<NounConnector default="">
+				<Substitution terminalScales="2.." value="de" />
+			</NounConnector>
+		</Currency>
 		<TimeUnits>
 			<!-- "hora" is feminine; forceVariants applies the existing gender=feminino
 			     cardinal rules ("un"->"unha", "dous"->"dúas") to the hour numeral without

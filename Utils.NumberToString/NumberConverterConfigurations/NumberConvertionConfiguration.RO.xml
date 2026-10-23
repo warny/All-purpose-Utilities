@@ -111,6 +111,22 @@
         <!-- DOOM ordinals (al doilea, al douăzeci și unulea, al o sutălea / a doua, a o suta):
              see RomanianOrdinalLanguageSpecifics. -->
         <LanguageSpecifics>RomanianOrdinalLanguageSpecifics</LanguageSpecifics>
+        <!-- NTS-52: the numeral governing the currency noun. Academia Română, Gramatica limbii române (GALR, 2005),
+             vol. I, pp. 296-297: "a. Structura [numeral cardinal + substantiv] este proprie numeralelor cuprinse între
+             unu şi nouăsprezece şi compuselor cu aceste numerale situate pe ultimul loc (cinci eleve, o sută treisprezece
+             cărţi, două milioane trei sute opt lei). b. Structura [numeral cardinal + prepoziţia de + substantiv] se
+             utilizează când determinantul este un numeral compus de la douăzeci în sus, cu excepţia celor de la punctul
+             a: douăzeci de cărţi, o sută treizeci şi doi de copii, cinci mii două sute de lei". So "de" from 20, except
+             when the last two digits are 1-19 (the compound ends on one to nineteen): douăzeci de euro, o sută de euro,
+             un milion de euro, but o sută unu euro, o sută nouăsprezece euro, două milioane trei sute opt lei. The
+             exception is declared first: both rules have one constraint, and the first declared wins. This connector
+             is distinct from scaleConnector, which acts inside the numeral (douăzeci de mii). -->
+        <Currency>
+            <NounConnector default="">
+                <Substitution numberRange="1..19" numberModulo="100" value="" />
+                <Substitution numberRange="20.." value="de" />
+            </NounConnector>
+        </Currency>
         <!-- Quarter-hour 12-hour clock without day-part wording: "ora două", "unu și un sfert",
              "unu și jumătate", "două fără un sfert". The hour takes the feminine numeral (două,
              douăsprezece) except one, which keeps "unu" ("ora unu"). -->

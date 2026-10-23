@@ -155,6 +155,24 @@
 				<Replacement oldValue="dos-cents" newValue="dues-centes" scope="Anywhere" />
 			</Variant>
 		</Variants>
+		<!-- NTS-52: milió and the higher scales are nouns introducing the counted noun with "de" (UOC, Servei
+			 Lingüístic, "Escriptura dels numerals": "Tenien un pressupost de dos milions d'euros [però: Tenien un
+			 pressupost d'1.265.250 euros]"). The preposition is elided before a vowel or a mute h, but not before a
+			 consonantal i or u (UOC, "L'apòstrof": "de s'apostrofa davant de totes les vocals (també precedides de h
+			 muda): d'herba, d'altres, d'asimetries, d'universitat"; "no s'apostrofa [...] davant de i i u consonants: de
+			 iens, de iod"; consonantal onsets also in "el iogurt, el uombat", "la hiena"; UB, Llibre d'estil: "el iode;
+			 el hiat; el iogurt; el uadi; el ioga"). Catalan h is mute in native words, so it is listed. The consonantal
+			 onsets are declared before the elision: both have two constraints, and at equal specificity the first
+			 declared wins (de iens, de hienes). So: un milió de pessetes, dos milions d'euros, but un milió dos-cents mil
+			 euros, un milió un euros. -->
+		<Currency>
+			<NounConnector default="">
+				<Substitution terminalScales="2.." value="de" />
+				<Substitution terminalScales="2.." beforeNoun="ia,ie,io,iu,ua,ue,uo,hia,hie,hio,hiu,hua,hue,huo" value="de" />
+				<Substitution terminalScales="2.." beforeNoun="a,à,e,è,é,i,í,ï,o,ò,ó,u,ú,ü,h"
+				              value="d'" nounSeparator="" />
+			</NounConnector>
+		</Currency>
 		<ClockTime step="15" hourCycle="12">
 			<Rule range="0" displayHourRange="1" hourOffset="0" hourForm="cardinal" hourForceVariants="gender=femení" pattern="la {hour} en punt" />
 			<Rule range="0" displayHourRange="2-12" hourOffset="0" hourForm="cardinal" hourForceVariants="gender=femení" pattern="les {hour} en punt" />

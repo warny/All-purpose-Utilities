@@ -1538,6 +1538,37 @@ namespace Utils.NumberToString
                 return rules;
             }
 
+            CurrencyNounConnector? ParseCurrencyNounConnector(CurrencyNounConnectorType? element)
+            {
+                if (element is null) return null;
+                var substitutions = new List<CurrencyNounConnectorRule>();
+                foreach (var s in element.Substitutions ?? [])
+                {
+                    string where = $"[{languageIdentifier}] Currency NounConnector substitution '{s.Value}'";
+                    substitutions.Add(new CurrencyNounConnectorRule(
+                        s.Value,
+                        s.NounSeparator,
+                        ParseCurrencyRange(s.TerminalScales, where, "terminalScales"),
+                        ParseCurrencyRange(s.NumberRange, where, "numberRange"),
+                        s.NumberModulo == 0 ? null : s.NumberModulo,
+                        string.IsNullOrWhiteSpace(s.BeforeNoun) ? null : s.BeforeNoun.Split(',').Select(p => p.Trim())));
+                }
+                return new CurrencyNounConnector(element.Default ?? "", element.NounSeparator, substitutions);
+            }
+
+            static IntRange<long>? ParseCurrencyRange(string? expression, string where, string attribute)
+            {
+                if (expression is null) return null;
+                try
+                {
+                    return NumberToStringConverter.ParseRangeExpression(expression);
+                }
+                catch (Exception exception) when (exception is FormatException or OverflowException or ArgumentException or InvalidOperationException)
+                {
+                    throw new ArgumentException($"{where}: {attribute}=\"{expression}\" cannot be parsed ({exception.Message}).", attribute, exception);
+                }
+            }
+
             static IReadOnlyList<NumberToStringConverter.VariantDimension> ParseVariantDimensions(VariantsType variants) =>
                 variants?.Dimensions?
                     .Select(d => new NumberToStringConverter.VariantDimension(
@@ -2079,6 +2110,7 @@ namespace Utils.NumberToString
                 CurrencyTerminalScales = string.IsNullOrWhiteSpace(language.Currency?.TerminalScales)
                     ? null
                     : language.Currency!.TerminalScales,
+                CurrencyNounConnector = ParseCurrencyNounConnector(language.Currency?.NounConnector),
                 CurrencyReplacements = ParseCurrencyReplacements(language.Currency?.Replacements),
                 // Every <ScaleForm> registers its scale (with empty forms when it only names a
                 // selector) so that its index is validated; selectors are resolved here, once.

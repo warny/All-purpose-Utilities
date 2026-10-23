@@ -298,13 +298,25 @@ public sealed class NumberToStringConverterOptions
     public ForcedVariantSet? CurrencyForcedVariants { get; set; }
 
     /// <summary>
-    /// Text placed between the numeral of a currency amount (unit or subunit) and its noun when the numeral ends on the
-    /// noun of a scale covered by <see cref="CurrencyTerminalScales"/> (e.g. <c>"de"</c> for Spanish: <c>un millón de
-    /// euros</c>, <c>dos mil millones de euros</c>; but <c>un millón doscientos mil euros</c>, <c>un millón un euros</c>).
-    /// The decision is structural: the numeral ends on a scale noun when its lowest non-zero group is not the units
-    /// group (the multiplier of a paired scale counts as one group at its named scale); a whole-number exception, a zero
-    /// count or a language placing the multiplier after the scale noun never ends on one. <see langword="null"/> (the
-    /// default): no connector.
+    /// The connector between the numeral of a currency amount (unit and subunit) and the noun it governs (NTS-52): a
+    /// default and contextual substitutions on the terminal scale of the numeral, its count and the beginning of the
+    /// noun, the most specific substitution winning and the first declared at equal specificity (e.g. French: default
+    /// none, <c>de</c> after a numeral ending on <c>million</c>, <c>d'</c> without separator when the noun also begins
+    /// with a vowel: <c>un-million de francs</c>, <c>un-million d'euros</c>). <see langword="null"/> (the default): no
+    /// connector. Cannot be combined with the legacy <see cref="CurrencyTerminalScaleConnector"/> shorthand.
+    /// </summary>
+    public CurrencyNounConnector? CurrencyNounConnector { get; set; }
+
+    /// <summary>
+    /// Legacy shorthand (NTS-51) for a <see cref="CurrencyNounConnector"/> with an empty default and a single
+    /// substitution on <see cref="CurrencyTerminalScales"/>, with the standard separator: text placed between the
+    /// numeral of a currency amount (unit or subunit) and its noun when the numeral ends on the noun of a covered scale
+    /// (e.g. <c>"de"</c>: <c>un millón de euros</c>, <c>dos mil millones de euros</c>; but <c>un millón doscientos mil
+    /// euros</c>, <c>un millón un euros</c>). The decision is structural: the numeral ends on a scale noun when its
+    /// lowest non-zero group is not the units group (the multiplier of a paired scale counts as one group at its named
+    /// scale); a whole-number exception, a zero count or a language placing the multiplier after the scale noun never
+    /// ends on one. Setting it together with <see cref="CurrencyNounConnector"/> is rejected. <see langword="null"/>
+    /// (the default): no connector.
     /// </summary>
     public string? CurrencyTerminalScaleConnector { get; set; }
 
@@ -535,6 +547,9 @@ public sealed class NumberToStringConverterOptions
         CurrencyForcedVariants = source.CurrencyForcedVariants;
         CurrencyTerminalScaleConnector = source.CurrencyTerminalScaleConnector;
         CurrencyTerminalScales = source.CurrencyTerminalScales;
+        // Immutable, and the configured one only (never the connector synthesized from the legacy shorthand), so the
+        // copy never sets both models.
+        CurrencyNounConnector = source.CurrencyNounConnector;
         CurrencyReplacements = source.CurrencyReplacements;
         TimeUnits = source.TimeUnits;
         TimeUnitForcedVariants = source.TimeUnitForcedVariants;

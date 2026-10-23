@@ -1114,19 +1114,27 @@ public class CurrencyType
     public string? ForceVariants { get; set; }
 
     /// <summary>
-    /// Text placed between the numeral and the currency noun when the numeral ends on the noun of a scale covered by
-    /// <see cref="TerminalScales"/> (NTS-51), e.g. <c>"de"</c> for Spanish: <c>un millón de euros</c>, <c>dos mil
-    /// millones de euros</c>, but <c>un millón doscientos mil euros</c> and <c>un millón un euros</c>. Absent: none.
+    /// Legacy shorthand (NTS-51) for a <see cref="NounConnector"/> with a single substitution on
+    /// <see cref="TerminalScales"/>: text placed between the numeral and the currency noun when the numeral ends on the
+    /// noun of a covered scale, e.g. <c>"de"</c>: <c>un millón de euros</c>, but <c>un millón doscientos mil euros</c>.
+    /// Cannot be combined with <see cref="NounConnector"/>. Absent: none.
     /// </summary>
     [XmlAttribute("terminalScaleConnector")]
     public string? TerminalScaleConnector { get; set; }
 
     /// <summary>
-    /// The scale indices (range syntax, e.g. <c>"2.."</c>) whose noun, ending the numeral, takes
+    /// The scale indices (range syntax, e.g. <c>"2.."</c>) whose noun, ending the numeral, takes the legacy
     /// <see cref="TerminalScaleConnector"/>. Required with it, forbidden without it.
     /// </summary>
     [XmlAttribute("terminalScales")]
     public string? TerminalScales { get; set; }
+
+    /// <summary>
+    /// The connector between the numeral of a currency amount and its noun (NTS-52): a default and contextual
+    /// substitutions. Absent: no connector.
+    /// </summary>
+    [XmlElement("NounConnector")]
+    public CurrencyNounConnectorType? NounConnector { get; set; }
 
     /// <summary>
     /// Replacements applied to the rendered numeral of a currency amount before the noun (NTS-51), e.g. Italian
@@ -1149,6 +1157,73 @@ public class CurrencyReplacementType : ReplacementType
     /// </summary>
     [XmlAttribute("exceptBeforeNoun")]
     public string? ExceptBeforeNoun { get; set; }
+}
+
+/// <summary>
+/// XML element <c>&lt;NounConnector&gt;</c> of <c>&lt;Currency&gt;</c> (NTS-52): the connector between the numeral of a
+/// currency amount and its noun, as a default and the <c>&lt;Substitution&gt;</c> children that differ from it.
+/// </summary>
+public class CurrencyNounConnectorType
+{
+    /// <summary>The connector applying when no substitution matches. Absent or empty: none.</summary>
+    [XmlAttribute("default")]
+    public string? Default { get; set; }
+
+    /// <summary>
+    /// The text between the default connector and the noun. Absent: the language's separator.
+    /// </summary>
+    [XmlAttribute("nounSeparator")]
+    public string? NounSeparator { get; set; }
+
+    /// <summary>The contextual substitutions, in declaration order (authoritative at equal specificity).</summary>
+    [XmlElement("Substitution")]
+    public List<CurrencyNounConnectorSubstitutionType>? Substitutions { get; set; }
+}
+
+/// <summary>
+/// XML element <c>&lt;Substitution&gt;</c> of <c>&lt;NounConnector&gt;</c> (NTS-52): a connector applying when every
+/// declared constraint holds; at least one of <see cref="TerminalScales"/>, <see cref="NumberRange"/> and
+/// <see cref="BeforeNoun"/> is required.
+/// </summary>
+public class CurrencyNounConnectorSubstitutionType
+{
+    /// <summary>The connector (empty for none), e.g. <c>"de"</c>, <c>"d'"</c>.</summary>
+    [XmlAttribute("value")]
+    public string Value { get; set; } = "";
+
+    /// <summary>The text between the connector and the noun, e.g. <c>""</c> after <c>d'</c>. Absent: the language's separator.</summary>
+    [XmlAttribute("nounSeparator")]
+    public string? NounSeparator { get; set; }
+
+    /// <summary>The scale indices (range syntax, at least 1, e.g. <c>"2.."</c>) the numeral must end on. Absent: no condition.</summary>
+    [XmlAttribute("terminalScales")]
+    public string? TerminalScales { get; set; }
+
+    /// <summary>The counts (range syntax, e.g. <c>"20.."</c>) of the amount. Absent: no condition.</summary>
+    [XmlAttribute("numberRange")]
+    public string? NumberRange { get; set; }
+
+    /// <summary>
+    /// When positive, <see cref="NumberRange"/> is tested against the count modulo this value (e.g. 100: its last two
+    /// digits). 0 (absent): the count itself.
+    /// </summary>
+    [XmlAttribute("numberModulo")]
+    public long NumberModulo { get; set; }
+
+    /// <summary>
+    /// Tells <see cref="XmlSerializer"/> to write <c>numberModulo</c> only when it is set: the XSD declares an integer of
+    /// at least 2, so the default 0 is left out.
+    /// </summary>
+    /// <returns><see langword="true"/> when <see cref="NumberModulo"/> is not 0.</returns>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public bool ShouldSerializeNumberModulo() => NumberModulo != 0;
+
+    /// <summary>
+    /// Comma-separated beginnings of the currency noun (compared ignoring case), one of which must begin it, e.g.
+    /// <c>"a,e,i,o,u"</c>. Absent: no condition.
+    /// </summary>
+    [XmlAttribute("beforeNoun")]
+    public string? BeforeNoun { get; set; }
 }
 
 /// <summary>
