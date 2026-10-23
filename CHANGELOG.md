@@ -9,10 +9,13 @@ All notable changes to this project will be documented in this file.
   milions cent mil*): `dos milions` (was `dos milións`). 10^9 is `mil milions` (DIEC2 "miliard"; was `un mil milió`),
   the multiplier of *milió* being a complete cardinal through the ES/EU `pairedScalesFrom="2"`: `dos mil cinc-cents
   milions` (was `dos mil milións cinc-cents milións`), `mil un milions`, `mil milions d'euros`. The ordinals of the round
-  millions are `milionèsim`, `dos milionèsim`, `mil milionèsim`, feminine `milionèsima` (DIEC2, Ortografia §4.4.3.4;
-  were `un milióè`, `dos miliónsè`, `un mil milióè`).
+  millions are `milionè`, `dos milionè`, `mil milionè`, feminine `milionena` (the IEC attests `milionè` and
+  `milionèsim`, GBU §18.5, and prefers the `-è` series, GIEC §17.2.5; were `un milióè`, `dos miliónsè`, `un mil
+  milióè`). Under `gender=femení` the multiplier of the masculine *milió* stays masculine (GEIEC §12.3.2): `dos-cents
+  milions`, `dos-cents milionena` (was `dues-centes milions`); the thousands keep agreeing (`dues-centes mil`).
 - Galician (GL, gl-ES): 10^9 is `mil millóns` (RAG, "eón"; was `un mil millón`), `dous mil cincocentos millóns`, `mil
-  millóns de euros`, through the same pairing.
+  millóns de euros`, through the same pairing; under `gender=feminino` the multiplier of *millón* stays masculine:
+  `douscentos millóns` (was `douscentas millóns`).
 - Romanian (RO, RO-RO) no longer inserts `de` between a scale multiplier ending on one to nineteen and its noun (GALR
   2005): `o sută nouăsprezece mii` (was `o sută nouăsprezece de mii`), `o sută unu milioane`; `o sută douăzeci de mii`
   is unchanged. One before a currency noun takes its attributive form (DEX, "unu"): `un euro`, `un leu și un ban`, `o

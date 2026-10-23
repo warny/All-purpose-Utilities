@@ -150,6 +150,21 @@ public class NumberToStringNts53Tests
         Assert.AreEqual("dous millóns", converter.Convert(2_000_000, "gender=feminino"));
     }
 
+    /// <summary>
+    /// <c>millón</c> is masculine (RAG "millón") and governs its multiplier whatever the gender of the counted noun; the
+    /// thousands below it keep agreeing.
+    /// </summary>
+    [TestMethod]
+    public void Galician_Feminine_MultiplierOfMillonStaysMasculine()
+    {
+        var converter = Get("GL");
+        Assert.AreEqual("douscentos millóns", converter.Convert(200_000_000, "gender=feminino"));
+        Assert.AreEqual("douscentos mil millóns", converter.Convert(200_000_000_000, "gender=feminino"));
+        Assert.AreEqual("douscentos millóns douscentas mil", converter.Convert(200_200_000, "gender=feminino"));
+        Assert.AreEqual("douscentas mil", converter.Convert(200_000, "gender=feminino"));
+        Assert.AreEqual("douscentos millóns", Get("gl-ES").Convert(200_000_000, "gender=feminino"));
+    }
+
     /// <summary>A numeral ending on the paired <c>millón</c> keeps the NTS-52 connector.</summary>
     [TestMethod]
     [DataRow("1000000000", "mil millóns de euros")]
@@ -169,24 +184,48 @@ public class NumberToStringNts53Tests
     }
 
     /// <summary>
-    /// The ordinal of <c>milió</c> is <c>milionèsim</c> (DIEC2 "milionèsim -a"), its compounds written separately on
-    /// the cardinal (Ortografia catalana §4.4.3.4: <c>cent milionèsim (de cent milions)</c>, <c>mil bilionèsim (de mil
-    /// bilions)</c>); the master text (<c>un milióè</c>, <c>dos miliónsè</c>, <c>un mil milióè</c>) had no source.
+    /// The ordinal of <c>milió</c>: the IEC attests <c>milionè - milionena</c> and <c>milionèsim - milionèsima</c> (GBU
+    /// §18.5, quadre 18.6) and prefers the <c>-è/-ena</c> series (GIEC §17.2.5), which the rest of the Catalan series
+    /// already uses (<c>milè</c>); the multiples are written on the cardinal (GIEC §17.2.5: <c>cent milionèsim</c>,
+    /// <c>mil bilionèsim</c>). The master text (<c>un milióè</c>, <c>dos miliónsè</c>, <c>un mil milióè</c>) was neither.
     /// </summary>
     [TestMethod]
-    [DataRow("CA", 1_000_000L, "gender=masculí", "milionèsim")]
-    [DataRow("CA", 2_000_000L, "gender=masculí", "dos milionèsim")]
-    [DataRow("CA", 100_000_000L, "gender=masculí", "cent milionèsim")]
-    [DataRow("CA", 21_000_000L, "gender=masculí", "vint-i-un milionèsim")]
-    [DataRow("CA", 1_000_000_000L, "gender=masculí", "mil milionèsim")]
-    [DataRow("CA", 2_500_000_000L, "gender=masculí", "dos mil cinc-cents milionèsim")]
-    [DataRow("CA", 1_000_000L, "gender=femení", "milionèsima")]
-    [DataRow("CA", 2_000_000L, "gender=femení", "dos milionèsima")]
-    [DataRow("CA", 1_000_000_000L, "gender=femení", "mil milionèsima")]
-    [DataRow("ca-ES-valencia", 1_000_000L, "gender=masculí", "milionèsim")]
-    [DataRow("ca-ES-valencia", 1_000_000_000L, "gender=femení", "mil milionèsima")]
+    [DataRow("CA", 1_000_000L, "gender=masculí", "milionè")]
+    [DataRow("CA", 2_000_000L, "gender=masculí", "dos milionè")]
+    [DataRow("CA", 100_000_000L, "gender=masculí", "cent milionè")]
+    [DataRow("CA", 21_000_000L, "gender=masculí", "vint-i-un milionè")]
+    [DataRow("CA", 200_000_000L, "gender=masculí", "dos-cents milionè")]
+    [DataRow("CA", 1_000_000_000L, "gender=masculí", "mil milionè")]
+    [DataRow("CA", 2_500_000_000L, "gender=masculí", "dos mil cinc-cents milionè")]
+    [DataRow("CA", 1_000_000L, "gender=femení", "milionena")]
+    [DataRow("CA", 2_000_000L, "gender=femení", "dos milionena")]
+    [DataRow("CA", 1_000_000_000L, "gender=femení", "mil milionena")]
+    [DataRow("ca-ES-valencia", 1_000_000L, "gender=masculí", "milionè")]
+    [DataRow("ca-ES-valencia", 1_000_000_000L, "gender=femení", "mil milionena")]
     public void Catalan_Ordinals_Millions(string language, long number, string variant, string expected)
         => Assert.AreEqual(expected, Get(language).ConvertOrdinal(number, variant));
+
+    /// <summary>
+    /// <c>milió</c> is masculine and governs its multiplier whatever the gender of the counted noun (GEIEC §12.3.2:
+    /// <c>una dos-cents mil milionèsima (part) de segon</c>): the feminine falls on the ordinal suffix, never on
+    /// <c>dos-cents</c>; the thousands below the million keep agreeing with the counted noun.
+    /// </summary>
+    [TestMethod]
+    public void Catalan_Feminine_MultiplierOfMilioStaysMasculine()
+    {
+        var converter = Get("CA");
+        Assert.AreEqual("dos-cents milionena", converter.ConvertOrdinal(200_000_000, "gender=femení"));
+        Assert.AreEqual("dos-cents mil milionena", converter.ConvertOrdinal(200_000_000_000, "gender=femení"));
+        Assert.AreEqual("dos-cents milions", converter.Convert(200_000_000, "gender=femení"));
+        Assert.AreEqual("dos-cents un milions", converter.Convert(201_000_000, "gender=femení"));
+        Assert.AreEqual("dos-cents mil milions", converter.Convert(200_000_000_000, "gender=femení"));
+        Assert.AreEqual("dos-cents milions dues-centes mil", converter.Convert(200_200_000, "gender=femení"));
+        Assert.AreEqual("dues-centes mil", converter.Convert(200_000, "gender=femení"));
+        Assert.AreEqual("dues-centes", converter.Convert(200, "gender=femení"));
+        Assert.AreEqual("dos-cents milions de pessetes", Amount("CA", "200000000",
+            Currency("pesseta", "pessetes", "i", "cèntim", "cèntims", ("gender", "femení"))));
+        Assert.AreEqual("dos-cents milions", Get("ca-ES-valencia").Convert(200_000_000, "gender=femení"));
+    }
 
     /// <summary>The other Catalan ordinals keep their master output.</summary>
     [TestMethod]

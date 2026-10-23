@@ -905,12 +905,14 @@ public class NumberToStringNts30GTests
     // ===== regression ================================================================================
 
     /// <summary>
-    /// Every built-in language other than Spanish declares no forcing exact scale form, and every language other than
-    /// Basque no final-group connector: their outputs cannot depend on either primitive.
+    /// Every built-in language other than Spanish, Catalan and Galician (whose million keeps a masculine multiplier,
+    /// NTS-30G and NTS-53) declares no forcing exact scale form, and every language other than Basque no final-group
+    /// connector: their outputs cannot depend on either primitive.
     /// </summary>
     [TestMethod]
     public void BuiltInLanguages_OnlySpanishAndBasqueOptIn()
     {
+        string[] forcing = ["ES", "CA", "ca-ES", "ca-ES-valencia", "GL", "gl-ES"];
         var field = typeof(NumberToStringConverter).GetField("CachedConfigurations", BindingFlags.NonPublic | BindingFlags.Static)!;
         _ = Get("EN");
         var cache = (System.Collections.IDictionary)field.GetValue(null)!;
@@ -919,9 +921,9 @@ public class NumberToStringNts30GTests
         {
             var converter = (NumberToStringConverter)entry.Value!;
             string language = (string)entry.Key;
-            bool spanish = language.Equals("ES", StringComparison.OrdinalIgnoreCase);
+            bool forces = forcing.Contains(language, StringComparer.OrdinalIgnoreCase);
             bool basque = language.Equals("EU", StringComparison.OrdinalIgnoreCase) || language.Equals("eu-ES", StringComparison.OrdinalIgnoreCase);
-            Assert.AreEqual(spanish, converter.ScaleFormMultiplierForcedVariants.Count != 0, language);
+            Assert.AreEqual(forces, converter.ScaleFormMultiplierForcedVariants.Count != 0, language);
             Assert.AreEqual(basque, converter.FinalGroupConnector != null, language);
             checkedLanguages++;
         }

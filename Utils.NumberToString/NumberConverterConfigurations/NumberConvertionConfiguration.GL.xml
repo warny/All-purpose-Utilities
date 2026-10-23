@@ -64,6 +64,16 @@
                         <Suffixes>
                                 <Suffix>(ón|óns)</Suffix>
                         </Suffixes>
+                        <!-- NTS-53 (NTS-55): millón is a masculine noun (RAG "millón": substantivo masculino) and
+                             governs its multiplier, whatever the gender of the counted noun: douscentos millóns under
+                             gender=feminino, while the lower groups keep agreeing (douscentas mil persoas). Same
+                             mechanism as ES (NTS-30G). -->
+                        <ScaleForm scale="2">
+                                <Forms>
+                                        <Form key="singular" value="millón" forceVariants="gender=masculino" />
+                                        <Form key="plural" value="millóns" forceVariants="gender=masculino" />
+                                </Forms>
+                        </ScaleForm>
                 </NumberScale>
                 <Replacements>
                         <Replacement oldValue="un mil" newValue="mil" onScale="1" onValue="1" />

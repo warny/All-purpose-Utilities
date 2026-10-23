@@ -51,7 +51,7 @@ describes any capability.
 | VN | VN, VI, VI-VN | none | Yes (repaired: `thứ tư`) | Declarative + `VietnameseOrdinalLanguageSpecifics` (NTS-08 domain guard) | Yes | 15 / 12 | none | **Validated** (NTS-08 final): vtudien Việt-Việt (tư, thứ, giờ, rưỡi, kém) | No sáng/chiều/tối; NTS-08: Ordinals 0–999; NTS-30: a whole zero class between two non-zero classes read *không nghìn* (SGK Toán 4) |
 | ID | ID, ID-ID | SCALE-SHORT | Yes | `IndonesianOrdinalLanguageSpecifics` (`long`) | Yes | 5 / 12 | none | KBBI entries `pertama`, `lewat`, `setengah`, `kurang` | Half hour refers to the following hour |
 | MS | MS, MS-MY | ID | Yes | `MalayOrdinalLanguageSpecifics` (`long`) | Yes, replaces parent | 5 / 12 | none | DBP PRPM entries `lapan`, `pukul`, `suku`, `setengah`, `bilion`, `trilion` | Half hour keeps the current hour |
-| CA | CA, ca-ES | none | Yes | Declarative | Yes | 15 / 12 | `gender=femení` forced on `{hour}` | IEC, *Gramàtica essencial*, §31.2; Optimot | Traditional quarters only; no ordinal of zero (NTS-14); NTS-53: *dos milions*, *mil milions* (IEC Ortografia §4.4.2.2a, DIEC2 "miliard"), scales paired from the million, ordinals *milionèsim*, *mil milionèsim* (DIEC2, Ortografia §4.4.3.4) |
+| CA | CA, ca-ES | none | Yes | Declarative | Yes | 15 / 12 | `gender=femení` forced on `{hour}` | IEC, *Gramàtica essencial*, §31.2; Optimot | Traditional quarters only; no ordinal of zero (NTS-14); NTS-53: *dos milions*, *mil milions* (IEC Ortografia §4.4.2.2a, DIEC2 "miliard"), scales paired from the million, ordinals *milionè*, *mil milionè* (GBU §18.5, GIEC §17.2.5), multiplier of *milió* masculine (GEIEC §12.3.2) |
 | CA-valencia | ca-ES-valencia | CA | Inherited | Declarative | Yes, replaces parent | 5 / 12 | `una` forced; invariable `dos` in ClockTime only | AVL, *Gramàtica normativa valenciana*, §32.2; AVL glossary `dos` | `dos` limited to ConvertClockTime |
 | EU | EU, eu-ES | none | Yes (existing) | Declarative + `BasqueOrdinalLanguageSpecifics` (NTS-08 domain guard) | Yes | 15 / 12 | none | **Corrected** (NTS-08 final): Euskaltzaindia rules 7 and 18; Sareko Euskal Gramatika (clock) | Clock-case forms are literal per hour; cardinals unchanged; NTS-08: Ordinals 1–1000 (*bosgarren*); zero and > 1000 fail closed; NTS-30G: one *eta* before the last group of each numeral phrase (rule 203 §4: *hirurogei milioi berrehun mila eta bat*); NTS-38: ordinals after rule 203 §5 (*milioigarren*, *mila milioigarren*) to 999 999 999 999; NTS-50: *zerogarren* (rule 203 §5) |
 | SW | SW, SW-KE, SW-TZ | SCALE-SHORT | **Deferred** | — | Yes | 15 / 12, `hourOffset=-6` | none | **Consulted**: Five Colleges LangMedia, “Swahili – Tanzania – Telling Time”; SpokenSwahili, “Telling the time in Swahili” | No day-part words (asubuhi, mchana, jioni, usiku) |
@@ -64,7 +64,7 @@ describes any capability.
 Sources read during the pass (IEC pages fetched through their public APIs, `api-oiec.iec.cat` and `dlc.iec.cat`, and
 read verbatim; RAG, DEX and DOOM pages fetched and read verbatim).
 
-### Catalan *milions*, *mil milions*, *milionèsim*
+### Catalan *milions*, *mil milions*, *milionè*
 
 | # | Source | Quoted text | Use |
 |---|---|---|---|
@@ -73,7 +73,10 @@ read verbatim; RAG, DEX and DOOM pages fetched and read verbatim).
 | 3 | IEC, DIEC2, "miliard" | "miliard m. Mil milions." | 10^9 = *mil milions*: no name of its own in the numeral |
 | 4 | IEC, DIEC2, "bilió", "trilió" | "bilió m. Milió de milions." "trilió m. Milió de bilions." | long scale: the next named scale is 10^12 |
 | 5 | IEC, *Ortografia catalana*, §4.4.3.4, "Els derivats de les locucions i dels sintagmes lliures" | "Els numerals ordinals i fraccionaris compostos acabats en ‑èsim/‑èsim(a) s'escriuen amb els components separats, atès que són compostos previsibles: deu mil·lèsim (de deu mil), cent milionèsim (de cent milions), mil bilionèsim (de mil bilions), etc." | *mil bilions* (10^15): the multiplier of a named scale covers its thousands (pairing); ordinals *cent milionèsim* |
-| 6 | IEC, DIEC2, "milionèsim" | "milionèsim -a 1 adj. Que, en una sèrie, en té 999.999 davant seu." (no entry *milionè*, unlike "milè -ena adj. i m. Mil·lèsim.") | ordinal *milionèsim*, *milionèsima* |
+| 6 | IEC, *Gramàtica bàsica i d'ús* (GBU), §18.5 "Els numerals ordinals", quadre 18.6 (<https://gbu.iec.cat/text/18.5>, text served by `api-gbu.iec.cat/api/text_by_cody?codi=18.5`) | "1.000 milè - milena mil·lèsim - mil·lèsima 1.000.000 milionè - milionena milionèsim - milionèsima 1.000.000.000.000 bilionè - bilionena bilionèsim - bilionèsima" | two attested ordinal series for *milió* |
+| 6a | IEC, *Gramàtica de la llengua catalana* (GIEC), §17.2.5 "Els numerals ordinals" (<https://giec.iec.cat/textgramatica/codi/17.2.5.>, text served by `api-giec.iec.cat/TextGramatica/17.2.5.`) | "En general, són preferibles els ordinals en ‑er/‑er(a) i en ‑è/‑en(a) a les formes simples corresponents, mentre que els ordinals en ‑èsim/‑èsim(a) són d'ús poc freqüent […]. Com en el cas dels derivats en ‑è/‑en(a), segueixen les convencions gràfiques dels cardinals els múltiples de mil·lèsim, milionèsim, bilionèsim, etc.: deu mil·lèsim, cent milionèsim, mil bilionèsim." | the *-è/-ena* series is preferred; multiples written on the cardinal |
+| 6b | IEC, *Gramàtica essencial* (GEIEC), §12.3.2 "Els numerals fraccionaris" (<https://geiec.iec.cat/text/12.3.2>, text served by `api-geiec.iec.cat/api/text_by_cody?codi=12.3.2`) | "una dos-cents mil milionèsima (part) de segon enfront de un dos-cents mil milionèsim de segon" | the multiplier of *milió* stays masculine (*dos-cents*) under a feminine |
+| 6c | IEC, DIEC2, "milionèsim", "milè" | "milionèsim -a 1 adj. Que, en una sèrie, en té 999.999 davant seu."; "milè -ena adj. i m. Mil·lèsim." (the DIEC2 has no entry *milionè*, which the GBU and the GIEC nevertheless attest) | the *-èsim* variant |
 | 7 | IEC, *Revista de Tecnologia*, núm. 10 (2022), p. 4-9, R. López de Mántaras, "Intel·ligència artificial: de la màgia a la realitat" (<https://revistes.iec.cat/index.php/RTEC>) | "finançaria amb dos mil milions de dòlars un programa […]" | a multiplier above one: *dos mil milions* |
 | 8 | UPC, Serveis Lingüístics, "Com s'escriuen els nombres" (<https://www.upc.edu/slt/ca/redaccio-i-comunicacio/recursos-redaccio/criteris-linguistics/nombres>) | "Les desenes, les centenes o els milers de milions s'escriuen amb xifres i amb el mot milions. […] El miliard és un terme que designa la noció 'mil milions'." | the thousands of millions are counted in *milions* |
 
@@ -86,10 +89,18 @@ declares no prefix table and `maxNumber="999999999999"`: no generated scale exis
 single `Suffixes` entry stays inert (a future opening must declare one suffix per half of a pair, as FI does, since
 `TryGetDynamicScaleInfo` counts the unnamed upper halves). Valencian inherits everything through `baseOn`.
 
-The Catalan ordinal of a round number of millions had no source and produced *un milióè*, *dos miliónsè*, *un mil
-milióè*; after #5/#6 (user decision during NTS-53) it is *milionèsim*, *dos milionèsim*, *mil milionèsim*, feminine
-*milionèsima*: an `OrdinalException` for 10^6 (the single million drops its *un*, like *milè*) and a word rule on
-*milions*.
+The Catalan ordinal of a round number of millions produced *un milióè*, *dos miliónsè*, *un mil milióè*. The IEC
+attests two series, *milionè - milionena* and *milionèsim - milionèsima* (#6), and prefers the first (#6a); the rest of
+the Catalan series already uses it (*milè*, *centè*). By project decision (user, after the review of #659 corrected a
+first version that read the absence of a DIEC2 entry *milionè* as its non-existence) NTS-53 selects *milionè*:
+*milionè*, *dos milionè*, *mil milionè*, feminine *milionena*: an `OrdinalException` for 10^6 (the single million drops
+its *un*, like *milè*) and a word rule on *milions*.
+
+*milió* is masculine and governs its multiplier whatever the gender of the counted noun (#6b): `<ScaleForm scale="2">`
+forces `gender=masculí` on that multiplier, as ES does since NTS-30G (*quinientos millones de personas*). Under
+`gender=femení`: *dos-cents milions*, *dos-cents mil milions*, *dos-cents milionena*, *dos-cents milions de pessetes*
+(was *dues-centes milions*), while the thousands keep agreeing (*dos-cents milions dues-centes mil*). This was opened
+as NTS-55 and closed in NTS-53 at the review of #659, since the new feminine ordinals exposed it.
 
 ### Galician *mil millóns*
 
@@ -103,7 +114,9 @@ The *Boletín da Real Academia Galega* no. 362 occurrence *dous mil millóns de 
 verified: the RAG bulletin archive returned HTTP 502 throughout the pass. A multiplier above one follows from the
 pairing (the multiplier of *millón* is a complete cardinal, #9/#10); it is not presented as directly sourced. GL drops the
 static scale 3 `mil mill(ón|óns)` for `pairedScalesFrom="2"`: *mil millóns*, *dous mil millóns*, *dous mil cincocentos
-millóns*. Same inert suffix as CA; the GL ordinal guard (1–1999) is unchanged.
+millóns*. Same inert suffix as CA; the GL ordinal guard (1–1999) is unchanged. *millón* is masculine (#11, RAG:
+"substantivo masculino"): the same `<ScaleForm scale="2">` forces `gender=masculino` on its multiplier, *douscentos
+millóns* under `gender=feminino` (was *douscentas millóns*), *douscentos millóns douscentas mil*.
 
 ### Romanian scale connector and currency *un* / *o*
 
@@ -127,8 +140,8 @@ the currency numeral alone takes `<Currency><Replacement oldValue="unu" newValue
 untouched.
 
 Out of scope, opened: NTS-54 (RO multiplier agreement with the feminine *mie* and the neuter plurals *milioane*,
-*miliarde*: *o sută doi mii*, *douăzeci și doi de mii*, *doisprezece mii*, where DOOM 3 #14 writes *două mii*) and
-NTS-55 (CA/GL feminine multiplier of the masculine *milió*/*millón*: *dues-centes milions*, *douscentas millóns*).
+*miliarde*: *o sută doi mii*, *douăzeci și doi de mii*, *doisprezece mii*, where DOOM 3 #14 writes *două mii*). NTS-55
+(CA/GL feminine multiplier of *milió*/*millón*) was opened and closed within NTS-53 (see above).
 
 ## NTS-52 — the connector between a currency numeral and its noun: FR, CA, GL, RO, PT (2026-10-23)
 
@@ -1926,6 +1939,7 @@ sources in `DONE-2026-10-22.md`, section NTS-49.
 - Institut d'Estudis Catalans grammar: <https://geiec.iec.cat/>
 - NTS-53: IEC *Ortografia catalana* (text API): <https://api-oiec.iec.cat/TextOrtografia/4.4.3.4>; site <https://oiec.iec.cat/>
 - NTS-53: IEC DIEC2, entries *milió*, *miliard*, *bilió*, *trilió*, *milionèsim*, *milè*: <https://dlc.iec.cat/>
+- NTS-53: IEC GBU §18.5 <https://gbu.iec.cat/text/18.5>; GIEC §17.2.5 <https://giec.iec.cat/textgramatica/codi/17.2.5.>; GEIEC §12.3.2 <https://geiec.iec.cat/text/12.3.2>
 - NTS-53: IEC *Revista de Tecnologia* 10 (2022): <https://revistes.iec.cat/index.php/RTEC/article/download/150079/147841/178487>
 - NTS-53: RAG, Dicionario, *eón*, *billón*: <https://academia.gal/dicionario/-/termo/eón>, <https://academia.gal/dicionario/-/termo/billón>
 - NTS-53: DEX, *unu*: <https://dexonline.ro/definitie/unu>; DOOM 3, Studiu introductiv: <https://doom.lingv.ro/studiu_introductiv_complet>

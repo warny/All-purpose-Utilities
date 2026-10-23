@@ -2,10 +2,11 @@
 
 Re-audited on 2026-10-23 after NTS-53 (closed: Catalan plural *milions* and 10^9 *mil milions* (IEC Ortografia
 §4.4.2.2a, DIEC2 "miliard"), Galician *mil millóns* (RAG "eón"), both through the ES/EU `pairedScalesFrom="2"`, Catalan
-ordinals *milionèsim*, *mil milionèsim* (DIEC2, Ortografia §4.4.3.4; user decision); Romanian scale connector refined by
+ordinals *milionè*, *mil milionè* (GBU §18.5, GIEC §17.2.5; user decision) and the masculine multiplier of *milió* /
+*millón* under a feminine (GEIEC §12.3.2, NTS-55 closed with it); Romanian scale connector refined by
 the generic `<ScaleConnector>` (no *de* after a multiplier ending on 1–19, GALR: *o sută nouăsprezece mii*, the public
 `ScaleConnector`/`ScaleConnectorThreshold` kept at `de`/20) and currency *un euro*, *o liră* (DEX "unu") through
-`<Currency><Replacement scope="Standalone">`; no multi-group replacement; NTS-54 and NTS-55 opened;
+`<Currency><Replacement scope="Standalone">`; no multi-group replacement; NTS-54 opened;
 `DONE-2026-10-23(3).md`), after NTS-52 (closed: one declarative connector between a currency numeral and its noun,
 `<Currency><NounConnector>` with a default and substitutions on the terminal scale, the count and the beginning of the
 noun, the most specific winning and the first declared at equal specificity; French `un-million d'euros`, `un-million
@@ -115,11 +116,6 @@ classification.
   replacements): `o sută doi mii`, `douăzeci și doi de mii`, `douăzeci și doi de milioane`, and `doisprezece mii`
   (pinned by `Romanian.feature`) where *douăsprezece mii* is expected; the form of a compound ending on one before
   *mii* (*douăzeci și unu* / *una de mii*) is to be sourced. The NTS-53 connector rule is independent of the form.
-- **NTS-55 — Catalan and Galician feminine multiplier of the masculine *milió* / *millón*.** Opened by NTS-53. Under
-  `gender=femení` / `gender=feminino` the multiplier of the masculine noun is feminised: `dues-centes milions`,
-  `dues-centes mil milions`, `douscentas millóns` (DIEC2 "milió" m.; RAG "millón" s.m.), the defect NTS-30G fixed for
-  Spanish with `<ScaleForm scale="2">` forcing the masculine on the multiplier. The thousands keep agreeing with the
-  counted noun.
 - **NTS-35 — Polish cardinals above 999 999.** Excluded from NTS-30C: PL declares `maxNumber="999999"`, so no
   generated scale is part of its public domain and NTS-30C configured none. Opening the domain needs, together: the
   Polish long-scale names (*milion*, *miliard*, *bilion*, *biliard* …, not the current generated spelling), their
@@ -372,13 +368,15 @@ NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-28, NTS-29, NTS-30, NT
 - NTS-53 (opened by NTS-52) — **closed**. CA `milió(ns)` → `mili(ó|ons)`: *dos milions* (IEC Ortografia §4.4.2.2a,
   DIEC2); CA and GL static scale 3 `mil milió(ns)` / `mil mill(ón|óns)` removed for `pairedScalesFrom="2"`: *mil
   milions*, *dos mil cinc-cents milions*, *mil millóns* (DIEC2 "miliard", IEC Revista de Tecnologia 10, UPC; RAG "eón",
-  "billón"); no generated scale exists in either (no prefix table, domain below 10^12). CA ordinals *milionèsim*, *dos
-  milionèsim*, *mil milionèsim* (DIEC2 "milionèsim", Ortografia §4.4.3.4), replacing the unsourced *un milióè* (user
-  decision). RO: generic `<ScaleConnector default><Substitution value numberRange numberModulo scales>` (most specific
+  "billón"); no generated scale exists in either (no prefix table, domain below 10^12). CA ordinals *milionè*, *dos
+  milionè*, *mil milionè*, feminine *milionena* (GBU §18.5 attests *milionè* and *milionèsim*, GIEC §17.2.5 prefers
+  the *-è* series; user decision), replacing *un milióè*. NTS-55 (opened then closed in the same PR, at review): the
+  multiplier of the masculine *milió* / *millón* stays masculine under a feminine (GEIEC §12.3.2 *una dos-cents mil
+  milionèsima*), `<ScaleForm scale="2" forceVariants>` as ES NTS-30G: *dos-cents milions*, *douscentos millóns*. RO: generic `<ScaleConnector default><Substitution value numberRange numberModulo scales>` (most specific
   wins, first declared at equal specificity, decided on the whole multiplier, a paired one included) refining the kept
   `scaleConnector="de"` shorthand (*o sută nouăsprezece mii*, *o sută douăzeci de mii*, GALR); currency *un* / *o*
   through two Standalone `<Currency><Replacement>` (DEX "unu", DOOM 3 §4.1.5), the cardinal *unu* unchanged. No
-  multi-group replacement was needed. NTS-54 and NTS-55 opened: `DONE-2026-10-23(3).md`.
+  multi-group replacement was needed. NTS-54 opened: `DONE-2026-10-23(3).md`.
 
 Full multi-form plural systems (Russian/Slavic count-dependent noun forms,
 Arabic dual/paucal/plural categories) were long deliberately out of scope — the

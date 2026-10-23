@@ -69,6 +69,16 @@
                         <Suffixes>
                                 <Suffix>(ó|ons)</Suffix>
                         </Suffixes>
+                        <!-- NTS-53 (NTS-55): milió is a masculine noun (DIEC2 "milió" m.) and governs its multiplier,
+                             whatever the gender of the counted noun: "una dos-cents mil milionèsima (part) de segon"
+                             (GEIEC §12.3.2), so dos-cents milions, dos-cents mil milions under gender=femení, while the
+                             lower groups keep agreeing (dues-centes mil persones). Same mechanism as ES (NTS-30G). -->
+                        <ScaleForm scale="2">
+                                <Forms>
+                                        <Form key="singular" value="milió" forceVariants="gender=masculí" />
+                                        <Form key="plural" value="milions" forceVariants="gender=masculí" />
+                                </Forms>
+                        </ScaleForm>
                 </NumberScale>
                 <Replacements>
                         <Replacement oldValue="un mil" newValue="mil" onScale="1" onValue="1" />
@@ -116,13 +126,15 @@
 			<Ordinal from="disset"  to="dissetè" />
 			<Ordinal from="divuit"  to="divuitè" />
 			<Ordinal from="dinou"   to="dinovè" />
-			<!-- NTS-53: the ordinal of milió is milionèsim (DIEC2 "milionèsim -a": "Que, en una sèrie, en té 999.999
-			     davant seu"; there is no *milionè, unlike milè), its compounds written separately on the cardinal
-			     (Ortografia catalana §4.4.3.4: "cent milionèsim (de cent milions), mil bilionèsim (de mil bilions)"):
-			     milionèsim, dos milionèsim, mil milionèsim, dos mil cinc-cents milionèsim. Like milè for mil, the
-			     single million drops its "un". -->
-			<OrdinalException value="1000000" string="milionèsim" />
-			<Ordinal from="milions" to="milionèsim" />
+			<!-- NTS-53: the IEC attests two ordinal series for milió, "milionè - milionena" and "milionèsim -
+			     milionèsima" (GBU §18.5, quadre 18.6, row 1.000.000), and prefers the first: "En general, són
+			     preferibles els ordinals en -er/-er(a) i en -è/-en(a) [...], mentre que els ordinals en -èsim/-èsim(a)
+			     són d'ús poc freqüent" (GIEC §17.2.5). The -è series is kept, consistent with milè, centè (project
+			     decision). Its multiples follow the cardinal (GIEC §17.2.5: "deu mil·lèsim, cent milionèsim, mil
+			     bilionèsim"): milionè, dos milionè, mil milionè, dos mil cinc-cents milionè; like milè for mil, the
+			     single million drops its "un". The multiplier stays masculine (ScaleForm above). -->
+			<OrdinalException value="1000000" string="milionè" />
+			<Ordinal from="milions" to="milionè" />
 
 			<!-- Feminine variant -->
 			<OrdinalVariants>
@@ -149,9 +161,9 @@
 					<Ordinal from="dinou"   to="dinovena" />
 					<!-- "dos→dues" via cardinal femení: map the feminized form to the feminine ordinal -->
 					<Ordinal from="dues"    to="dosena" />
-					<!-- NTS-53: milionèsima (DIEC2 "milionèsim -a"). -->
-					<OrdinalException value="1000000" string="milionèsima" />
-					<Ordinal from="milions" to="milionèsima" />
+					<!-- NTS-53: milionena (GBU §18.5, quadre 18.6). -->
+					<OrdinalException value="1000000" string="milionena" />
+					<Ordinal from="milions" to="milionena" />
 				</Variant>
 			</OrdinalVariants>
 		</Ordinals>
