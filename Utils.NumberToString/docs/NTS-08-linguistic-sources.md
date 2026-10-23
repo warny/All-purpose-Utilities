@@ -61,7 +61,8 @@ describes any capability.
 
 ## NTS-50 and NTS-51 — Basque zero ordinal, Spanish and Italian currency phrases (2026-10-23)
 
-Sources read during the pass (pages fetched with curl and read verbatim; rule 203 as read for NTS-38).
+Sources read during the pass (pages fetched with curl and read verbatim; rule 203 as read for NTS-38). The Italian
+*di* (sources #10, #11) was added during the review of #657.
 
 ### NTS-50, Basque ordinal of zero
 
@@ -99,8 +100,20 @@ non-zero group), never a test on the text.
 
 The replacement therefore targets the numeral *uno* alone (scope Standalone), only in a currency amount. A graphic
 onset list approximates the phonological rule: *ia*, *ie*, *io*, *iu* and *y* for the semiconsonantal *i*, every *s* +
-consonant spelled with a Latin letter (*sh* included: "lo shampoo", source #8). Italian also writes *un milione di
-euro*; that connector is not configured here (see NTS-52).
+consonant spelled with a Latin letter (*sh* included: "lo shampoo", source #8).
+
+### NTS-51, Italian *di* after a numeral ending on *milione*
+
+| # | Source | Quoted text | Use |
+|---|---|---|---|
+| 10 | Treccani, vocabolario, "milione" (<https://www.treccani.it/vocabolario/milione/>) | "Unità del settimo ordine nel sistema di numerazione decimale, equivalente a mille migliaia (numericamente 1.000.000, ovvero 10 6 ): un m. di sterline; la città ha superato i quattro milioni di abitanti. Usato assol., s'intende in genere un milione di euro" | *milione* is a noun introducing the counted noun with *di*: *un milione di euro*, *due milioni di euro* |
+| 11 | Treccani, vocabolario, "miliardo" (<https://www.treccani.it/vocabolario/miliardo/>) | "Unità del decimo ordine nel sistema di numerazione decimale, equivalente a mille milioni (numericamente 1.000.000.000, ovvero 10 9 ): un m. di molecole; dotare di impianti idrici un m. di abitanti del Terzo Mondo" | the same construction from *miliardo* on: `terminalScales="2.."` |
+
+The NTS-14 sources (Treccani, "numerali [prontuario]": *Milione e miliardo sono nomi*, followed by *e* and another
+cardinal when the figure is not round) fix the structure: the connector follows a numeral whose lowest non-zero
+group is a scale noun (*un milione di euro*, *un miliardo e un milione di euro*), never one ending on another cardinal
+(*un milione e uno euro*, *due milioni e centomila euro*); *mille*/*-mila* (scale 1) is soldered and adjectival
+(*mille euro*). Same primitive as Spanish, configuration only.
 
 ## NTS-30 and NTS-38 — Vietnamese zero classes, Spanish currency numerals, Spanish and Basque ordinals (2026-10-23)
 

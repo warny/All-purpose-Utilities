@@ -297,8 +297,13 @@
 			 but uno scellino, uno zloty, uno yen. Only the numeral "uno" itself (Standalone): its compounds "tendono a
 			 rimanere invariati: ventuno banchi, trentuno case, centouno invitati, milleuno / mille e uno ascoltatrici, un
 			 milione e uno cittadini" (Treccani, "uno, numerali composti con"), so ventuno euro, un milione e uno euro. A
-			 feminine currency (gender=femminile) already reads "una" and is not matched. -->
-		<Currency>
+			 feminine currency (gender=femminile) already reads "una" and is not matched.
+			 Milione, miliardo and the higher scales are nouns: a numeral ending on one introduces the counted noun with
+			 "di". Treccani, "milione": "un m. di sterline; la città ha superato i quattro milioni di abitanti. Usato
+			 assol., s'intende in genere un milione di euro"; "miliardo": "un m. di molecole". Decided on the structure
+			 (terminalScales="2..", from milione): un milione di euro, due miliardi di euro, but un milione e uno euro,
+			 due milioni e centomila euro, mille euro. -->
+		<Currency terminalScaleConnector="di" terminalScales="2..">
 			<Replacement oldValue="uno" newValue="un" scope="Standalone"
 			             exceptBeforeNoun="z,x,y,ia,ie,io,iu,gn,ps,sb,sc,sd,sf,sg,sh,sk,sl,sm,sn,sp,sq,sr,st,sv,sw,sz" />
 		</Currency>

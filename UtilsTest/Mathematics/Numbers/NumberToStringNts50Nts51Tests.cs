@@ -19,7 +19,8 @@ namespace UtilsTest.NumberToString;
 /// <item><description>
 /// NTS-51/IT: <c>uno</c> alone before a masculine noun is <c>un</c> under the rules of the article <c>il/lo</c>
 /// (Treccani, "uno": <c>un uomo</c>, <c>uno scolaro</c>); its compounds stay invariable (Treccani, "uno, numerali
-/// composti con": <c>ventuno banchi</c>, <c>un milione e uno cittadini</c>).
+/// composti con": <c>ventuno banchi</c>, <c>un milione e uno cittadini</c>); a numeral ending on <c>milione</c>,
+/// <c>miliardo</c> … introduces the counted noun with <c>di</c> (Treccani, "milione": <c>un milione di euro</c>).
 /// </description></item>
 /// </list>
 /// Sources: <c>docs/NTS-08-linguistic-sources.md</c>, NTS-50/NTS-51 section.
@@ -175,6 +176,46 @@ public class NumberToStringNts50Nts51Tests
     public void Italian_Currency_CompoundsInvariable(string amount, string expected)
         => Assert.AreEqual(expected, Get("IT").ConvertCurrency(decimal.Parse(amount, System.Globalization.CultureInfo.InvariantCulture), Italian("euro")));
 
+    /// <summary>
+    /// A numeral ending on a scale noun introduces the counted noun with <c>di</c> (Treccani, "milione": <c>un milione
+    /// di euro</c>, <c>i quattro milioni di abitanti</c>; "miliardo": <c>un miliardo di molecole</c>); a numeral ending
+    /// on another cardinal keeps the noun directly.
+    /// </summary>
+    [TestMethod]
+    [DataRow("1000000", "un milione di euro")]
+    [DataRow("2000000", "due milioni di euro")]
+    [DataRow("21000000", "ventuno milioni di euro")]
+    [DataRow("1000000000", "un miliardo di euro")]
+    [DataRow("2000000000", "due miliardi di euro")]
+    [DataRow("1001000000", "un miliardo e un milione di euro")]
+    [DataRow("1000000000000", "un bilione di euro")]
+    [DataRow("1000000.50", "un milione di euro e cinquanta centesimi")]
+    [DataRow("-2000000", "meno due milioni di euro")]
+    [DataRow("1000001", "un milione e uno euro")]
+    [DataRow("2100000", "due milioni e centomila euro")]
+    [DataRow("1001000", "un milione e mille euro")]
+    [DataRow("1000", "mille euro")]
+    [DataRow("21000", "ventunomila euro")]
+    public void Italian_Currency_Di(string amount, string expected)
+        => Assert.AreEqual(expected, Get("IT").ConvertCurrency(decimal.Parse(amount, System.Globalization.CultureInfo.InvariantCulture), Italian("euro")));
+
+    /// <summary>The connector does not depend on the onset of the noun nor on its gender.</summary>
+    [TestMethod]
+    public void Italian_Currency_Di_AnyNoun()
+    {
+        var lira = new CurrencyDefinition
+        {
+            UnitSingular = "lira", UnitPlural = "lire", SubunitSingular = "centesimo", SubunitPlural = "centesimi", Connector = "e",
+            UnitForcedVariants = ForcedVariantSet.Create(("gender", "femminile")),
+        };
+        Assert.AreEqual("un milione di lire", Get("IT").ConvertCurrency(1_000_000m, lira));
+        var scellino = new CurrencyDefinition
+        {
+            UnitSingular = "scellino", UnitPlural = "scellini", SubunitSingular = "centesimo", SubunitPlural = "centesimi", Connector = "e",
+        };
+        Assert.AreEqual("due milioni di scellini", Get("IT").ConvertCurrency(2_000_000m, scellino));
+    }
+
     /// <summary>A feminine currency keeps <c>una</c>.</summary>
     [TestMethod]
     public void Italian_Currency_Feminine()
@@ -199,5 +240,8 @@ public class NumberToStringNts50Nts51Tests
         Assert.AreEqual("primo", converter.ConvertOrdinal(1));
         Assert.AreEqual("ventunesimo", converter.ConvertOrdinal(21));
         Assert.AreEqual("una", converter.Convert(1, "gender=femminile"));
+        Assert.AreEqual("un milione", converter.Convert(1_000_000));
+        Assert.AreEqual("due miliardi", converter.Convert(2_000_000_000));
+        Assert.AreEqual("milionesimo", converter.ConvertOrdinal(1_000_000));
     }
 }

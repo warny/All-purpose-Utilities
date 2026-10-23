@@ -875,7 +875,8 @@ Two further `<Currency>` options shape the phrase itself (NTS-51); neither touch
   placed between the numeral and the noun when the numeral **ends** on the noun of a listed scale. The decision is
   structural, from the groups of the amount and not from its text: its lowest non-zero group must not be the units
   (a paired multiplier, `pairedScalesFrom`, is one group at its named scale). Spanish `terminalScaleConnector="de"
-  terminalScales="2.."` after DPD "cardinales" §6, since *millón* is a noun.
+  terminalScales="2.."` after DPD "cardinales" §6, since *millón* is a noun; Italian `terminalScaleConnector="di"
+  terminalScales="2.."` after Treccani, "milione".
 - `<Replacement>` children (`CurrencyReplacements`, `CurrencyReplacementRule`): replacements of the rendered numeral,
   applied after its variants and before the noun, optionally blocked before the nouns beginning with one of
   `exceptBeforeNoun` (ignoring case). Italian apocopates *uno* alone before a noun taking the article *il* (Treccani,
@@ -892,10 +893,13 @@ es.ConvertCurrency(1_200_000m, eur);      // "un millón doscientos mil euros"
 es.ConvertCurrency(1_000_001m, eur);      // "un millón un euros"
 
 var it = NumberToStringConverter.GetConverter("IT");
-// <Currency><Replacement oldValue="uno" newValue="un" scope="Standalone" exceptBeforeNoun="z,x,y,…,gn,ps,sb,sc,…" /></Currency>
+// <Currency terminalScaleConnector="di" terminalScales="2..">
+//     <Replacement oldValue="uno" newValue="un" scope="Standalone" exceptBeforeNoun="z,x,y,…,gn,ps,sb,sc,…" /></Currency>
 var euro = new CurrencyDefinition { UnitSingular = "euro", UnitPlural = "euro", SubunitSingular = "centesimo", SubunitPlural = "centesimi", Connector = "e" };
 it.ConvertCurrency(1.01m, euro);          // "un euro e un centesimo"
 it.ConvertCurrency(21m, euro);            // "ventuno euro"
+it.ConvertCurrency(1_000_000m, euro);     // "un milione di euro"
+it.ConvertCurrency(1_000_001m, euro);     // "un milione e uno euro"
 it.ConvertCurrency(1m, new CurrencyDefinition { UnitSingular = "zloty", UnitPlural = "zloty", SubunitSingular = "grosz", SubunitPlural = "groszy" });
                                           // "uno zloty"
 it.Convert(1);                            // "uno"

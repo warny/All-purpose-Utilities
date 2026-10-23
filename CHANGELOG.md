@@ -18,6 +18,9 @@ All notable changes to this project will be documented in this file.
 - Italian apocopates the currency numeral *uno* alone before a noun taking the article *il* (Treccani, "uno"): `un
   euro` (was `uno euro`), `un euro e un centesimo`; `uno scellino`, `uno zloty`, `uno yen` keep it, and the compounds
   stay invariable: `ventuno euro`, `un milione e uno euro`. Standalone cardinals, ordinals and clocks are unchanged.
+- Italian introduces the currency noun with `di` after a numeral ending on *milione*, *miliardo* … (Treccani,
+  "milione", "miliardo"): `un milione di euro` (was `un milione euro`), `due miliardi di euro`, `un miliardo e un
+  milione di euro`; `un milione e uno euro`, `due milioni e centomila euro`, `mille euro` are unchanged.
 - Added to `<Currency>` (public `CurrencyType`, additive): the `terminalScaleConnector` and `terminalScales`
   attributes (`NumberToStringConverterOptions` and `NumberToStringConverter.CurrencyTerminalScaleConnector`,
   `CurrencyTerminalScales`): a connector between the numeral and the noun when the numeral ends, structurally, on a
