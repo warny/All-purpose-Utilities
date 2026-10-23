@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Class CurrencyNounConnector | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Class CurrencyNounConnector | omy.Utils Documentation ">
+      
+      <meta name="description" content="The connector between the numeral of a currency amount (unit or subunit) and the currency noun it governs (NTS-52): a default, then the contextual  that differ from it. Spanish un mill&#243;n de euros, French un-million d&#39;euros / un-million de francs, Romanian douăzeci de lei.">
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_NumberToString_CurrencyNounConnector.md&amp;value=---%0Auid%3A%20Utils.NumberToString.CurrencyNounConnector%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="ManagedReference">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="Utils.NumberToString.CurrencyNounConnector">
+
+
+
+  <h1 id="Utils_NumberToString_CurrencyNounConnector" data-uid="Utils.NumberToString.CurrencyNounConnector" class="text-break">
+Class CurrencyNounConnector  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/CurrencyNounConnector.cs/#L24"><i class="bi bi-code-slash"></i></a>
+  </h1>
+
+  <div class="facts text-secondary">
+    <dl><dt>Namespace</dt><dd><span class="xref">Utils</span>.<a class="xref" href="Utils.NumberToString.html">NumberToString</a></dd></dl>
+  <dl><dt>Assembly</dt><dd>Utils.NumberToString.dll</dd></dl>
+  </div>
+
+  <div class="markdown summary"><p>The connector between the numeral of a currency amount (unit or subunit) and the currency noun it governs (NTS-52):
+a default, then the contextual <a class="xref" href="Utils.NumberToString.CurrencyNounConnector.html#Utils_NumberToString_CurrencyNounConnector_Substitutions">Substitutions</a> that differ from it. Spanish <code>un millón de euros</code>,
+French <code>un-million d'euros</code> / <code>un-million de francs</code>, Romanian <code>douăzeci de lei</code>.</p>
+</div>
+  <div class="markdown conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public sealed class CurrencyNounConnector</code></pre>
+  </div>
+
+
+
+
+  <dl class="typelist inheritance">
+    <dt>Inheritance</dt>
+    <dd>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></div>
+      <div><span class="xref">CurrencyNounConnector</span></div>
+    </dd>
+  </dl>
+
+
+
+  <dl class="typelist inheritedMembers">
+    <dt>Inherited Members</dt>
+    <dd>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)">object.Equals(object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)">object.Equals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gethashcode">object.GetHashCode()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gettype">object.GetType()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.referenceequals">object.ReferenceEquals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.tostring">object.ToString()</a>
+    </div>
+  </dd></dl>
+
+  <dl class="typelist extensionMethods">
+    <dt>Extension Methods</dt>
+    <dd>
+  <div>
+      <a class="xref" href="Utils.Data.DataUtils.html#Utils_Data_DataUtils_ToDbValue_System_Object_">DataUtils.ToDbValue(object?)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Mathematics.MathEx.html#Utils_Mathematics_MathEx_Clamp__1___0___0___0_System_Collections_Generic_IComparer___0__">MathEx.Clamp&lt;T&gt;(T, T, T, IComparer&lt;T&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Failure__1___0_">FluentExtensions.Failure&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsEqualTo__2___0___1_">FluentExtensions.IsEqualTo&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsGreaterOrEqualsThan__2___0___1_">FluentExtensions.IsGreaterOrEqualsThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsGreaterThan__2___0___1_">FluentExtensions.IsGreaterThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsIn__1___0___0___">FluentExtensions.IsIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsLowerOrEqualsThan__2___0___1_">FluentExtensions.IsLowerOrEqualsThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsLowerThan__2___0___1_">FluentExtensions.IsLowerThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNotIn__1___0___0___">FluentExtensions.IsNotIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNotNull__1___0_">FluentExtensions.IsNotNull&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNull__1___0_">FluentExtensions.IsNull&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Success__1___0_">FluentExtensions.Success&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Test__1___0_System_Func___0_System_Boolean__">FluentExtensions.Test&lt;T&gt;(T, Func&lt;T, bool&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Between__1___0_System_Collections_Generic_IComparer___0____0___0_">ObjectUtils.Between&lt;T&gt;(T, IComparer&lt;T&gt;, T, T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Between__1___0_System_Collections_Generic_IComparer___0____0___0_System_Boolean_System_Boolean_">ObjectUtils.Between&lt;T&gt;(T, IComparer&lt;T&gt;, T, T, bool, bool)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0_System_Threading_Tasks_Task___1___System_Func_System_Threading_Tasks_Task___1___">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Task&lt;Result&gt;&gt;, Func&lt;Task&lt;Result&gt;&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0_System_Threading_Tasks_Task___1_____1_">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Task&lt;Result&gt;&gt;, Result)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0___1__System_Func___1__">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Func&lt;Result&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0___1____1_">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Result)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Do__2___0_System_Func___0___1__System_Func___1__">ObjectUtils.Do&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Func&lt;Result&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Do__2___0_System_Func___0___1____1_">ObjectUtils.Do&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Result)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_In__1___0___0___">ObjectUtils.In&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_NotIn__1___0___0___">ObjectUtils.NotIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustBe__1___0_System_Func___0_System_Boolean__System_String_System_String_">Validations.ArgMustBe&lt;T&gt;(T, Func&lt;T, bool&gt;, string, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustNotBe__1___0_System_Func___0_System_Boolean__System_String_System_String_">Validations.ArgMustNotBe&lt;T&gt;(T, Func&lt;T, bool&gt;, string, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_Arg__1___0_System_String_">Validations.Arg&lt;T&gt;(T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ValueMustNotBeNull__1___0_System_String_">Validations.ValueMustNotBeNull&lt;T&gt;(T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_Variable__1___0_System_String_">Validations.Variable&lt;T&gt;(T, string)</a>
+  </div>
+  </dd></dl>
+
+
+
+  <h2 id="Utils_NumberToString_CurrencyNounConnector_remarks">Remarks</h2>
+  <div class="markdown level0 remarks"><p>
+For each amount, the substitutions whose constraints are all satisfied are collected; the one with the greatest
+<a class="xref" href="Utils.NumberToString.CurrencyNounConnectorRule.html#Utils_NumberToString_CurrencyNounConnectorRule_Specificity">Specificity</a> wins and, at equal specificity, the first declared wins (the
+declaration order is authoritative, never an ambiguity error). With no match the default applies.
+</p>
+<p>
+The amount is assembled as <code>numeral + Separator + noun</code> when the selected connector is empty, otherwise as
+<code>numeral + Separator + connector + nounSeparator + noun</code>, the noun separator defaulting to the language's
+<code>Separator</code>. Instances are immutable; the substitutions are copied in the order supplied.
+</p>
+</div>
+
+
+  <h2 class="section" id="constructors">Constructors
+</h2>
+
+
+  <a id="Utils_NumberToString_CurrencyNounConnector__ctor_" data-uid="Utils.NumberToString.CurrencyNounConnector.#ctor*"></a>
+
+  <h3 id="Utils_NumberToString_CurrencyNounConnector__ctor_System_String_System_String_System_Collections_Generic_IEnumerable_Utils_NumberToString_CurrencyNounConnectorRule__" data-uid="Utils.NumberToString.CurrencyNounConnector.#ctor(System.String,System.String,System.Collections.Generic.IEnumerable{Utils.NumberToString.CurrencyNounConnectorRule})">
+  CurrencyNounConnector(string, string?, IEnumerable&lt;CurrencyNounConnectorRule&gt;?)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/CurrencyNounConnector.cs/#L37"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.NumberToString.CurrencyNounConnector.html">CurrencyNounConnector</a> class.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public CurrencyNounConnector(string defaultValue = &quot;&quot;, string? defaultNounSeparator = null, IEnumerable&lt;CurrencyNounConnectorRule&gt;? substitutions = null)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>defaultValue</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>The connector applying when no substitution matches; empty (the default) for none.</p>
+</dd>
+    <dt><code>defaultNounSeparator</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd><p>The text between the default connector and the noun, or <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> for the language's
+<code>Separator</code>. Ignored when <code class="paramref">defaultValue</code> is empty.</p>
+</dd>
+    <dt><code>substitutions</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1">IEnumerable</a>&lt;<a class="xref" href="Utils.NumberToString.CurrencyNounConnectorRule.html">CurrencyNounConnectorRule</a>&gt;</dt>
+    <dd><p>The contextual substitutions, in declaration order, or <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> for none.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p><code class="paramref">defaultValue</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a></dt>
+    <dd><p><code class="paramref">defaultValue</code> is white space, or a substitution is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+  </dl>
+
+
+
+  <h2 class="section" id="properties">Properties
+</h2>
+
+
+  <a id="Utils_NumberToString_CurrencyNounConnector_Default_" data-uid="Utils.NumberToString.CurrencyNounConnector.Default*"></a>
+
+  <h3 id="Utils_NumberToString_CurrencyNounConnector_Default" data-uid="Utils.NumberToString.CurrencyNounConnector.Default">
+  Default
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/CurrencyNounConnector.cs/#L55"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the connector applying when no substitution matches (empty for none).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string Default { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_NumberToString_CurrencyNounConnector_DefaultNounSeparator_" data-uid="Utils.NumberToString.CurrencyNounConnector.DefaultNounSeparator*"></a>
+
+  <h3 id="Utils_NumberToString_CurrencyNounConnector_DefaultNounSeparator" data-uid="Utils.NumberToString.CurrencyNounConnector.DefaultNounSeparator">
+  DefaultNounSeparator
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/CurrencyNounConnector.cs/#L61"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the text between the default connector and the noun, or <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> for the language's
+<code>Separator</code>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string? DefaultNounSeparator { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.string">string</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_NumberToString_CurrencyNounConnector_Substitutions_" data-uid="Utils.NumberToString.CurrencyNounConnector.Substitutions*"></a>
+
+  <h3 id="Utils_NumberToString_CurrencyNounConnector_Substitutions" data-uid="Utils.NumberToString.CurrencyNounConnector.Substitutions">
+  Substitutions
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/CurrencyNounConnector.cs/#L64"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the contextual substitutions, in declaration order.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public IReadOnlyList&lt;CurrencyNounConnectorRule&gt; Substitutions { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlylist-1">IReadOnlyList</a>&lt;<a class="xref" href="Utils.NumberToString.CurrencyNounConnectorRule.html">CurrencyNounConnectorRule</a>&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/CurrencyNounConnector.cs/#L24" class="edit-link">Edit this page</a>
+        </div>
+
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

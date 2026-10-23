@@ -8707,6 +8707,62 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.CurrencyNounConnector.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.CurrencyNounConnector.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.CurrencyNounConnector",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.CurrencyNounConnector.yml\" sourcestartlinenumber=\"1\">The connector between the numeral of a currency amount (unit or subunit) and the currency noun it governs (NTS-52):\na default, then the contextual <xref href=\"Utils.NumberToString.CurrencyNounConnector.Substitutions\" data-throw-if-not-resolved=\"false\"></xref> that differ from it. Spanish <code>un millón de euros</code>,\nFrench <code>un-million d'euros</code> / <code>un-million de francs</code>, Romanian <code>douăzeci de lei</code>.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.CurrencyNounConnectorRule.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.CurrencyNounConnectorRule.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.CurrencyNounConnectorRule",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.CurrencyNounConnectorRule.yml\" sourcestartlinenumber=\"1\">A contextual substitution of the currency noun connector (NTS-52): the text placed between the numeral of a currency\namount and the noun it governs when every constraint of the rule is satisfied, e.g. French <code>d'</code> with no\nseparator before a noun beginning with a vowel after a numeral ending on <code>million</code>: <code>un-million d'euros</code>.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.CurrencyNounConnectorSubstitutionType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.CurrencyNounConnectorSubstitutionType.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.CurrencyNounConnectorSubstitutionType",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.CurrencyNounConnectorSubstitutionType.yml\" sourcestartlinenumber=\"1\">XML element <code>&lt;Substitution&gt;</code> of <code>&lt;NounConnector&gt;</code> (NTS-52): a connector applying when every\ndeclared constraint holds; at least one of <xref href=\"Utils.NumberToString.CurrencyNounConnectorSubstitutionType.TerminalScales\" data-throw-if-not-resolved=\"false\"></xref>, <xref href=\"Utils.NumberToString.CurrencyNounConnectorSubstitutionType.NumberRange\" data-throw-if-not-resolved=\"false\"></xref> and\n<xref href=\"Utils.NumberToString.CurrencyNounConnectorSubstitutionType.BeforeNoun\" data-throw-if-not-resolved=\"false\"></xref> is required.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.CurrencyNounConnectorType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.CurrencyNounConnectorType.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.CurrencyNounConnectorType",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.CurrencyNounConnectorType.yml\" sourcestartlinenumber=\"1\">XML element <code>&lt;NounConnector&gt;</code> of <code>&lt;Currency&gt;</code> (NTS-52): the connector between the numeral of a\ncurrency amount and its noun, as a default and the <code>&lt;Substitution&gt;</code> children that differ from it.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.NumberToString.CurrencyReplacementRule.yml",
       "output": {
         ".html": {

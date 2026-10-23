@@ -279,11 +279,44 @@ precedence over the caller's variants. Absent: nothing is forced.</p>
 
 
 
+  <a id="Utils_NumberToString_CurrencyType_NounConnector_" data-uid="Utils.NumberToString.CurrencyType.NounConnector*"></a>
+
+  <h3 id="Utils_NumberToString_CurrencyType_NounConnector" data-uid="Utils.NumberToString.CurrencyType.NounConnector">
+  NounConnector
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L1136"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>The connector between the numeral of a currency amount and its noun (NTS-52): a default and contextual
+substitutions. Absent: no connector.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public CurrencyNounConnectorType? NounConnector { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.NumberToString.CurrencyNounConnectorType.html">CurrencyNounConnectorType</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
   <a id="Utils_NumberToString_CurrencyType_Replacements_" data-uid="Utils.NumberToString.CurrencyType.Replacements*"></a>
 
   <h3 id="Utils_NumberToString_CurrencyType_Replacements" data-uid="Utils.NumberToString.CurrencyType.Replacements">
   Replacements
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L1135"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L1143"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Replacements applied to the rendered numeral of a currency amount before the noun (NTS-51), e.g. Italian
@@ -316,12 +349,13 @@ precedence over the caller's variants. Absent: nothing is forced.</p>
 
   <h3 id="Utils_NumberToString_CurrencyType_TerminalScaleConnector" data-uid="Utils.NumberToString.CurrencyType.TerminalScaleConnector">
   TerminalScaleConnector
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L1121"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L1122"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Text placed between the numeral and the currency noun when the numeral ends on the noun of a scale covered by
-<a class="xref" href="Utils.NumberToString.CurrencyType.html#Utils_NumberToString_CurrencyType_TerminalScales">TerminalScales</a> (NTS-51), e.g. <code>&quot;de&quot;</code> for Spanish: <code>un millón de euros</code>, <code>dos mil
-millones de euros</code>, but <code>un millón doscientos mil euros</code> and <code>un millón un euros</code>. Absent: none.</p>
+  <div class="markdown level1 summary"><p>Legacy shorthand (NTS-51) for a <a class="xref" href="Utils.NumberToString.CurrencyType.html#Utils_NumberToString_CurrencyType_NounConnector">NounConnector</a> with a single substitution on
+<a class="xref" href="Utils.NumberToString.CurrencyType.html#Utils_NumberToString_CurrencyType_TerminalScales">TerminalScales</a>: text placed between the numeral and the currency noun when the numeral ends on the
+noun of a covered scale, e.g. <code>&quot;de&quot;</code>: <code>un millón de euros</code>, but <code>un millón doscientos mil euros</code>.
+Cannot be combined with <a class="xref" href="Utils.NumberToString.CurrencyType.html#Utils_NumberToString_CurrencyType_NounConnector">NounConnector</a>. Absent: none.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -350,10 +384,10 @@ millones de euros</code>, but <code>un millón doscientos mil euros</code> and <
 
   <h3 id="Utils_NumberToString_CurrencyType_TerminalScales" data-uid="Utils.NumberToString.CurrencyType.TerminalScales">
   TerminalScales
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L1128"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberConverterConfiguration.cs/#L1129"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>The scale indices (range syntax, e.g. <code>&quot;2..&quot;</code>) whose noun, ending the numeral, takes
+  <div class="markdown level1 summary"><p>The scale indices (range syntax, e.g. <code>&quot;2..&quot;</code>) whose noun, ending the numeral, takes the legacy
 <a class="xref" href="Utils.NumberToString.CurrencyType.html#Utils_NumberToString_CurrencyType_TerminalScaleConnector">TerminalScaleConnector</a>. Required with it, forbidden without it.</p>
 </div>
   <div class="markdown level1 conceptual"></div>

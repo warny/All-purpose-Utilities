@@ -181,6 +181,33 @@ verified, so this plugin rejects it instead of letting a cardinal or invented fo
 </dd>
     </dl>
     <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.CurrencyNounConnector.html">CurrencyNounConnector</a></dt>
+      <dd><p>The connector between the numeral of a currency amount (unit or subunit) and the currency noun it governs (NTS-52):
+a default, then the contextual <a class="xref" href="Utils.NumberToString.CurrencyNounConnector.html#Utils_NumberToString_CurrencyNounConnector_Substitutions">Substitutions</a> that differ from it. Spanish <code>un millón de euros</code>,
+French <code>un-million d'euros</code> / <code>un-million de francs</code>, Romanian <code>douăzeci de lei</code>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.CurrencyNounConnectorRule.html">CurrencyNounConnectorRule</a></dt>
+      <dd><p>A contextual substitution of the currency noun connector (NTS-52): the text placed between the numeral of a currency
+amount and the noun it governs when every constraint of the rule is satisfied, e.g. French <code>d'</code> with no
+separator before a noun beginning with a vowel after a numeral ending on <code>million</code>: <code>un-million d'euros</code>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.CurrencyNounConnectorSubstitutionType.html">CurrencyNounConnectorSubstitutionType</a></dt>
+      <dd><p>XML element <code>&lt;Substitution&gt;</code> of <code>&lt;NounConnector&gt;</code> (NTS-52): a connector applying when every
+declared constraint holds; at least one of <a class="xref" href="Utils.NumberToString.CurrencyNounConnectorSubstitutionType.html#Utils_NumberToString_CurrencyNounConnectorSubstitutionType_TerminalScales">TerminalScales</a>, <a class="xref" href="Utils.NumberToString.CurrencyNounConnectorSubstitutionType.html#Utils_NumberToString_CurrencyNounConnectorSubstitutionType_NumberRange">NumberRange</a> and
+<a class="xref" href="Utils.NumberToString.CurrencyNounConnectorSubstitutionType.html#Utils_NumberToString_CurrencyNounConnectorSubstitutionType_BeforeNoun">BeforeNoun</a> is required.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.CurrencyNounConnectorType.html">CurrencyNounConnectorType</a></dt>
+      <dd><p>XML element <code>&lt;NounConnector&gt;</code> of <code>&lt;Currency&gt;</code> (NTS-52): the connector between the numeral of a
+currency amount and its noun, as a default and the <code>&lt;Substitution&gt;</code> children that differ from it.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
       <dt><a class="xref" href="Utils.NumberToString.CurrencyReplacementRule.html">CurrencyReplacementRule</a></dt>
       <dd><p>A replacement applied to the numeral of a currency amount (unit or subunit) once it is rendered, before the currency
 noun is appended (NTS-51): Italian <code>uno</code> → <code>un</code> (<code>un euro</code>). It never touches a cardinal, an ordinal
