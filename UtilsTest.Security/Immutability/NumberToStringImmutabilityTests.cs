@@ -64,16 +64,10 @@ public sealed class NumberToStringImmutabilityTests
         var euro = new CurrencyDefinition { UnitSingular = "euro", UnitPlural = "euros", SubunitSingular = "céntimo", SubunitPlural = "céntimos" };
         var esOptions = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("ES"));
         var es = new NumberToStringConverter(esOptions);
-        // NTS-52: Spanish declares its "de" as a NounConnector substitution, no longer through the legacy shorthand.
-        var connector = es.CurrencyNounConnector;
-        esOptions.CurrencyNounConnector = null;
         esOptions.CurrencyTerminalScaleConnector = "del";
         esOptions.CurrencyTerminalScales = "1..";
-        Assert.IsNull(es.CurrencyTerminalScaleConnector);
-        Assert.IsNull(es.CurrencyTerminalScales);
-        Assert.IsNotNull(connector);
-        Assert.AreSame(connector, es.CurrencyNounConnector);
-        Assert.AreEqual("de", es.CurrencyNounConnector!.Substitutions[0].Value);
+        Assert.AreEqual("de", es.CurrencyTerminalScaleConnector);
+        Assert.AreEqual("2..", es.CurrencyTerminalScales);
         Assert.AreEqual("un millón de euros", es.ConvertCurrency(1_000_000m, euro));
         Assert.AreEqual("mil euros", es.ConvertCurrency(1_000m, euro));
 

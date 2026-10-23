@@ -21,7 +21,7 @@ namespace UtilsTest.NumberToString;
 /// RO (and RO-RO): <c>de</c> from 20, except when the last two digits are 1 to 19 (GALR 2005, vol. I, pp. 296-297).
 /// </description></item>
 /// <item><description>PT: attested (Priberam, "milhão") but outside the cardinal domain, unchanged.</description></item>
-/// <item><description>ES and IT: migrated from the NTS-51 shorthand, identical output.</description></item>
+/// <item><description>ES and IT: kept on the NTS-51 shorthand (public getters unchanged), identical output.</description></item>
 /// </list>
 /// Sources: <c>docs/NTS-08-linguistic-sources.md</c>, NTS-52 section.
 /// </summary>
@@ -274,20 +274,33 @@ public class NumberToStringNts52Tests
         Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => Amount("PT", "1000000", euro));
     }
 
-    // ===== ES, IT ====================================================================================
+    // ===== ES, IT (NTS-51 shorthand) =================================================================
 
-    /// <summary>Spanish and Italian are declared through the NounConnector, with the NTS-51 output.</summary>
+    /// <summary>
+    /// Spanish and Italian keep the NTS-51 shorthand, so its public getters keep their #657 values (and so do the
+    /// clones); the shorthand runs through the same noun-connector engine, with the NTS-51 output.
+    /// </summary>
     [TestMethod]
-    public void Spanish_Italian_Migrated()
+    [DataRow("ES", "de")]
+    [DataRow("IT", "di")]
+    public void Spanish_Italian_LegacyShorthand(string language, string connector)
+    {
+        var converter = Get(language);
+        Assert.AreEqual(connector, converter.CurrencyTerminalScaleConnector);
+        Assert.AreEqual("2..", converter.CurrencyTerminalScales);
+        Assert.IsNull(converter.CurrencyNounConnector);
+        var clone = new NumberToStringConverter(new NumberToStringConverterOptions(converter));
+        Assert.AreEqual(connector, clone.CurrencyTerminalScaleConnector);
+        Assert.AreEqual("2..", clone.CurrencyTerminalScales);
+        Assert.IsNull(clone.CurrencyNounConnector);
+    }
+
+    /// <summary>The Spanish and Italian currency phrases are those of NTS-51.</summary>
+    [TestMethod]
+    public void Spanish_Italian_Output()
     {
         var spanishEuro = Currency("euro", "euros", "con", "céntimo", "céntimos");
         var italianEuro = Currency("euro", "euro", "e", "centesimo", "centesimi");
-        foreach (string language in new[] { "ES", "IT" })
-        {
-            var converter = Get(language);
-            Assert.IsNull(converter.CurrencyTerminalScaleConnector, language);
-            Assert.AreEqual(1, converter.CurrencyNounConnector!.Substitutions.Count, language);
-        }
         Assert.AreEqual("un millón de euros", Amount("ES", "1000000", spanishEuro));
         Assert.AreEqual("mil millones de euros", Amount("ES", "1000000000", spanishEuro));
         Assert.AreEqual("un millón doscientos mil euros", Amount("ES", "1200000", spanishEuro));

@@ -4,7 +4,7 @@ Re-audited on 2026-10-23 after NTS-52 (closed: one declarative connector between
 `<Currency><NounConnector>` with a default and substitutions on the terminal scale, the count and the beginning of the
 noun, the most specific winning and the first declared at equal specificity; French `un-million d'euros`, `un-million
 de francs`, Catalan `un milió d'euros`, `un milió de iens`, Galician `un millón de euros`, Romanian `douăzeci de euro`
-but `o sută unu euro` after GALR; Portuguese audited, out of domain; ES/IT migrated byte-identically; NTS-53 opened;
+but `o sută unu euro` after GALR; Portuguese audited, out of domain; ES/IT kept on the NTS-51 shorthand, unchanged; NTS-53 opened;
 `DONE-2026-10-23(2).md`), after NTS-50 (closed: Basque `zerogarren`, Euskaltzaindia rule 203 §5, by the general
 rule; only the domain guard changed) and NTS-51 (closed: Spanish `un millón de euros`, `dos mil quinientos millones de
 euros` after DPD `cardinales` §6, through the generic structural `<Currency terminalScaleConnector>`; Italian `un
@@ -103,13 +103,15 @@ classification.
 
 ## Open items
 
-- **NTS-53 — cardinal defects observed by the NTS-52 dump (CA, GL, RO).** Distinct from the noun connector, which
-  NTS-52 closed, and outside its scope (cardinal grammar). Catalan writes the plural of *milió* `milións`
+- **NTS-53 — numeral defects observed by the NTS-52 dump (CA, GL, RO).** Distinct from the noun connector, which
+  NTS-52 closed, and outside its scope (cardinal grammar, numeral form). Catalan writes the plural of *milió* `milións`
   (`dos milións`) where the UOC, "Escriptura dels numerals", writes *dos milions d'euros* (NTS-08 sources, NTS-52 #5);
   Catalan and Galician read 10^9 `un mil milió` / `un mil millón` (to be sourced: *mil milions*, *mil millóns*, the
-  `pairedScalesFrom` of ES/EU being the candidate primitive); Romanian reads one before a noun `unu` (`unu euro`,
-  `unu leu`) where the attributive form is *un* / *o* (to be sourced), and its internal `scaleConnector` applies `de`
-  after a multiplier ending on 1–19 (`o sută unu de mii`), against the GALR rule quoted for NTS-52 (#9).
+  `pairedScalesFrom` of ES/EU being the candidate primitive); Romanian's internal `scaleConnector` applies `de` after a
+  multiplier ending on 1–19 (`o sută unu de mii`), against the GALR rule quoted for NTS-52 (#9). Also observed, through
+  `ConvertCurrency` only: Romanian one before a currency noun reads `unu` (`unu euro`, `unu leu`) where the attributive
+  form would be *un* / *o* (to be sourced); the audit decides whether it is an attributive-cardinal defect or a
+  currency-context one (like the ES `<Currency forceVariants>` of NTS-30), before choosing where to fix it.
 - **NTS-35 — Polish cardinals above 999 999.** Excluded from NTS-30C: PL declares `maxNumber="999999"`, so no
   generated scale is part of its public domain and NTS-30C configured none. Opening the domain needs, together: the
   Polish long-scale names (*milion*, *miliard*, *bilion*, *biliard* …, not the current generated spelling), their
@@ -356,7 +358,8 @@ NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-28, NTS-29, NTS-30, NT
   beforeNoun>` (most specific wins, first declared at equal specificity). FR family `de`/`d'` (Académie française,
   OQLF), CA family `de`/`d'` with the consonantal *i*/*u* declared first (UOC, UB), GL `de` (RAG), RO `de` from 20
   except after a compound ending on 1–19 (GALR 2005, `numberModulo`, user decision); PT attested (Priberam) but out of
-  its 999 999 domain, documented only; ES/IT migrated, byte-identical; the NTS-51 attributes kept as a shorthand. NTS-53
+  its 999 999 domain, documented only; the NTS-51 attributes kept as a shorthand, and ES/IT kept on it so that their
+  public getters (`de`, `di`) and output are unchanged. NTS-53
   opened: `DONE-2026-10-23(2).md`.
 
 Full multi-form plural systems (Russian/Slavic count-dependent noun forms,

@@ -16,7 +16,8 @@ All notable changes to this project will be documented in this file.
   (GALR 2005): `douăzeci de euro`, `o sută de euro`, `un milion de euro`, `doi lei și douăzeci de bani`; `o sută unu
   euro`, `o sută nouăsprezece euro`, `două milioane trei sute opt lei` keep the noun directly.
 - Portuguese is audited only: *um milhão de* is attested (Priberam), but the cardinal domain stops at 999 999, so no
-  output changed. Spanish and Italian are migrated to the new element with byte-identical output.
+  output changed. Spanish and Italian keep the NTS-51 shorthand, so their output and their public
+  `CurrencyTerminalScaleConnector` (`de`, `di`) are unchanged.
 - Added `<Currency><NounConnector default nounSeparator><Substitution value nounSeparator terminalScales numberRange
   numberModulo beforeNoun /></NounConnector>` (public `CurrencyNounConnector`, `CurrencyNounConnectorRule`,
   `CurrencyNounConnectorType`, `CurrencyNounConnectorSubstitutionType`, `CurrencyType.NounConnector`,
