@@ -51,12 +51,15 @@
                                 <Digit digit="9" string="novecentos" buildString="novecentos *" />
                         </Group>
                 </Groups>
-                <NumberScale firstLetterUpperCase="false">
+                <!-- NTS-53: 10^9 has no name of its own in the numeral: it is "mil millóns" (RAG, Dicionario, "eón":
+                     "equivalente a mil millóns de anos"), the multiplier of millón being a complete cardinal of up to
+                     six digits, so the scales are paired from the million (pairedScalesFrom 2), like ES and EU. The
+                     long scale continues the same way: billón = "Un millón de millóns" (RAG, Dicionario, "billón"). -->
+                <NumberScale firstLetterUpperCase="false" pairedScalesFrom="2">
                         <StaticNames>
                                 <Scale value="0" string="" />
                                 <Scale value="1" string="mil" />
                                 <Scale value="2" string="mill(ón|óns)" />
-                                <Scale value="3" string="mil mill(ón|óns)" />
                         </StaticNames>
                         <Suffixes>
                                 <Suffix>(ón|óns)</Suffix>

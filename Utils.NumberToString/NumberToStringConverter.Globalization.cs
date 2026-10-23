@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
@@ -822,6 +822,7 @@ namespace Utils.NumberToString
             IntraGroupConnectorThresholdString = model.IntraGroupConnectorThresholdString,
             ScaleConnector = model.ScaleConnector,
             ScaleConnectorThresholdString = model.ScaleConnectorThresholdString,
+            ScaleConnectorRules = model.ScaleConnectorRules,
             FinalComponentConnector = model.FinalComponentConnector,
             FinalGroupConnector = model.FinalGroupConnector,
             InternalZeroGroupString = model.InternalZeroGroupString,
@@ -999,6 +1000,7 @@ namespace Utils.NumberToString
                 IntraGroupConnectorThresholdString = overriding.IntraGroupConnectorThresholdString ?? inherited.IntraGroupConnectorThresholdString,
                 ScaleConnector = overriding.ScaleConnector ?? inherited.ScaleConnector,
                 ScaleConnectorThresholdString = overriding.ScaleConnectorThresholdString ?? inherited.ScaleConnectorThresholdString,
+                ScaleConnectorRules = overriding.ScaleConnectorRules ?? inherited.ScaleConnectorRules,
                 FinalComponentConnector = overriding.FinalComponentConnector ?? inherited.FinalComponentConnector,
                 FinalGroupConnector = overriding.FinalGroupConnector ?? inherited.FinalGroupConnector,
                 InternalZeroGroupString = overriding.InternalZeroGroupString ?? inherited.InternalZeroGroupString,
@@ -1178,6 +1180,7 @@ namespace Utils.NumberToString
             IntraGroupConnectorThresholdString = definition.IntraGroupConnectorThresholdString,
             ScaleConnector = definition.ScaleConnector,
             ScaleConnectorThresholdString = definition.ScaleConnectorThresholdString,
+            ScaleConnectorRules = definition.ScaleConnectorRules,
             FinalComponentConnector = definition.FinalComponentConnector,
             FinalGroupConnector = definition.FinalGroupConnector,
             InternalZeroGroupString = definition.InternalZeroGroupString,
@@ -1538,6 +1541,22 @@ namespace Utils.NumberToString
                 return rules;
             }
 
+            ScaleConnectorRules? ParseScaleConnectorRules(ScaleConnectorType? element)
+            {
+                if (element is null) return null;
+                var substitutions = new List<ScaleConnectorRule>();
+                foreach (var s in element.Substitutions ?? [])
+                {
+                    string where = $"[{languageIdentifier}] ScaleConnector substitution '{s.Value}'";
+                    substitutions.Add(new ScaleConnectorRule(
+                        s.Value,
+                        ParseConnectorRange(s.NumberRange, where, "numberRange"),
+                        s.NumberModulo == 0 ? null : s.NumberModulo,
+                        ParseConnectorRange(s.Scales, where, "scales")));
+                }
+                return new ScaleConnectorRules(element.Default ?? "", substitutions);
+            }
+
             CurrencyNounConnector? ParseCurrencyNounConnector(CurrencyNounConnectorType? element)
             {
                 if (element is null) return null;
@@ -1548,15 +1567,15 @@ namespace Utils.NumberToString
                     substitutions.Add(new CurrencyNounConnectorRule(
                         s.Value,
                         s.NounSeparator,
-                        ParseCurrencyRange(s.TerminalScales, where, "terminalScales"),
-                        ParseCurrencyRange(s.NumberRange, where, "numberRange"),
+                        ParseConnectorRange(s.TerminalScales, where, "terminalScales"),
+                        ParseConnectorRange(s.NumberRange, where, "numberRange"),
                         s.NumberModulo == 0 ? null : s.NumberModulo,
                         string.IsNullOrWhiteSpace(s.BeforeNoun) ? null : s.BeforeNoun.Split(',').Select(p => p.Trim())));
                 }
                 return new CurrencyNounConnector(element.Default ?? "", element.NounSeparator, substitutions);
             }
 
-            static IntRange<long>? ParseCurrencyRange(string? expression, string where, string attribute)
+            static IntRange<long>? ParseConnectorRange(string? expression, string where, string attribute)
             {
                 if (expression is null) return null;
                 try
@@ -2091,6 +2110,7 @@ namespace Utils.NumberToString
                 IntraGroupConnectorThreshold = language.IntraGroupConnectorThreshold,
                 ScaleConnector = language.ScaleConnector,
                 ScaleConnectorThreshold = language.ScaleConnectorThreshold,
+                ScaleConnectorRules = ParseScaleConnectorRules(language.ScaleConnectorRules),
                 FinalComponentConnector = string.IsNullOrWhiteSpace(language.FinalComponentConnector)
                     ? null
                     : language.FinalComponentConnector,

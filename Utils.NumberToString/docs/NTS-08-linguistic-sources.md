@@ -36,8 +36,8 @@ describes any capability.
 | ES | ES | none | Yes (existing) | Declarative + `SpanishOrdinalLanguageSpecifics` (NTS-08 domain guard) | Yes | 5 / 12 | gender × form | **Corrected** (NTS-08 final): RAE/ASALE DPD "ordinales" and "hora" | Exact `Convert(TimeOnly)` unchanged; NTS-08: Ordinals 1–29, round tens, 100, 1000; cardinals 22/23/26 accented; other values fail closed; NTS-30G: the multiplier of *millón/millones* is masculine under any caller gender (DLE *millón*, DPD "cardinales" §3, §6); NTS-30: currency numerals attributive (DPD "uno" §2.2, *un euro*); NTS-38: ordinals from 10^9 (DPD "ordinales" §2d, *milmillonésimo*); NTS-51: *de* after a currency numeral ending on *millón* (DPD "cardinales" §6, *un millón de euros*) |
 | IT | IT | SCALE-LONG | Yes: 1–1999 except 1110–1910, round thousands 2000–999000, 100001–100009, round multiples of milione/miliardo/bilione/biliardo/trilione | Declarative `<OrdinalStem>`, `<OrdinalComposition>`, `<OrdinalScale>` + `ItalianOrdinalLanguageSpecifics` (domain guard) | Yes | 5 / 12 | gender | Clock **validated** (NTS-08 final): Treccani vocabolario *ora²* (full five-minute table); Accademia della Crusca (`l'una e mezzo`, `le due meno un quarto`, `le otto meno venti`) | Cardinals soldered with `<Fusion>` (NTS-10); compound ordinals by `<OrdinalStem>` (NTS-13, see below), analytic 1010 and 100001–100009 (NTS-15) and round scale ordinals through trilione (NTS-17, NTS-18) (see below); zero, 1110–1910, the other non-round thousands above 1999 and the non-round values from a million deliberately fail closed as ordinals (Italian closure, see below); millions and above are separate nouns joined by `e` (NTS-14, see below); NTS-51: a currency amount of one reads *un* before a noun taking *il* (Treccani "uno": *un euro*, *uno scellino*), compounds invariable (*ventuno euro*) |
 | PT | PT | none | Yes (existing) | Declarative + `PortugueseOrdinalLanguageSpecifics` (NTS-08 domain guard) | Yes | 5 / 12 | gender | **Corrected** (NTS-08 final): Priberam; Ciberdúvidas "Minutos para a hora", "Eram duas horas da tarde" | Deliberate direct numeric reading; `para`/`menos` constructions not produced; PT-PT/PT-BR not split; NTS-08: European Portuguese clock (*menos* after the half hour); ordinals 1–20, round tens, 100, 1000 |
-| GL | GL, gl-ES | none | Yes (existing) | Declarative + `GalicianOrdinalLanguageSpecifics` (NTS-08 domain guard) | Yes | 5 / 12 | gender | **Corrected** (NTS-08 final): RAG/ILG NOMIG 2003 §16.2; RAG dictionary; Xunta *Aula de Galego 1* (clock) | —; NTS-08: Ordinals 1–20, round tens, 100, 1000 |
-| RO | RO, RO-RO | none | Yes | `RomanianOrdinalLanguageSpecifics` (DOOM) | Yes | 15 / 12 | `gen` | **Consulted**: dexonline/DOOM entries `sutălea` (`al (o) sutălea`, `a (o) suta`, `al două sutelea`) and `miilea` (`al o miilea`, `a o mia`, `al două miilea`); reference usage for the clock (`ora două`, `două fără un sfert`) | Ordinals up to 999 999 and one million (masculine); round `de mii` thousands declined |
+| GL | GL, gl-ES | none | Yes (existing) | Declarative + `GalicianOrdinalLanguageSpecifics` (NTS-08 domain guard) | Yes | 5 / 12 | gender | **Corrected** (NTS-08 final): RAG/ILG NOMIG 2003 §16.2; RAG dictionary; Xunta *Aula de Galego 1* (clock) | —; NTS-08: Ordinals 1–20, round tens, 100, 1000; NTS-53: 10^9 is *mil millóns* (RAG "eón"), scales paired from the million |
+| RO | RO, RO-RO | none | Yes | `RomanianOrdinalLanguageSpecifics` (DOOM) | Yes | 15 / 12 | `gen` | **Consulted**: dexonline/DOOM entries `sutălea` (`al (o) sutălea`, `a (o) suta`, `al două sutelea`) and `miilea` (`al o miilea`, `a o mia`, `al două miilea`); reference usage for the clock (`ora două`, `două fără un sfert`) | Ordinals up to 999 999 and one million (masculine); round `de mii` thousands declined; NTS-53: no *de* after a scale multiplier ending on 1–19 (GALR: *o sută nouăsprezece mii*), currency *un euro*, *o liră* (DEX "unu") |
 | EL | EL | none | Yes (existing) | Declarative + `GreekOrdinalLanguageSpecifics` (NTS-08 domain guard) | Yes | 15 / 12 | gender (feminine cardinals added) | **Corrected** (NTS-08 final): Λεξικό της Κοινής Νεοελληνικής (ordinals, μισός, παρά) | Masculine cardinals (`ένας`) not modelled; feminine cardinal words mirrored in ordinal rules so ordinals are unchanged; NTS-08: Ordinals 1–20, round tens and hundreds, 1000; 13–19 agree in both parts |
 | FI | FI | none | Yes (existing) | Declarative + `FinnishOrdinalLanguageSpecifics` (NTS-08 domain guard) | Yes | 15 / 12 | case | **Validated** (NTS-08 final): Aalto University "Numeroiden taivutus"; Kielitoimiston sanakirja; OPH | —; NTS-08: Ordinals: nominative only, 0–20, round tens and hundreds, 1000; NTS-30E: one word inside a group and multiplier + *tuhat/tuhatta* (*kaksikymmentäyksi*, *kaksituhatta*), one space between groups, every component inflected in the partitive and genitive (Kielitoimiston ohjepankki) |
 | AR | AR | none | Yes, 1–99, 100, 1000 | Declarative 1–19 + `ArabicOrdinalLanguageSpecifics` | Yes | 15 / 12 | gender | **Consulted** (clock): LibreTexts, *Introduction to Arabic II*, 5.6 “Ordinal Number and Telling Time” (feminine ordinal hours, `الواحدة` for one, `الحادية عشرة`, `الثانية عشرة`, quarter/half/quarter-to); search summaries of OpenArabic/Noor Sisters (`والربع`, `والنصف`, `إلا ربعًا`, next hour after subtraction). Ordinals **validated** (NTS-08 final): LibreTexts 5.6 (1–12); M. Bussey after EMSA (11–19, 20–99, المئة, الألف) | Contract = indefinite short nominative without article; other ordinals above 99 fail closed; the thousands take the attached `و` connector (NTS-10) and the form their multiplier governs (NTS-14, see below). LibreTexts writes `وربع` / `إلا ربع`; the configuration keeps `والربع` / `إلا ربعًا` |
@@ -51,13 +51,84 @@ describes any capability.
 | VN | VN, VI, VI-VN | none | Yes (repaired: `thứ tư`) | Declarative + `VietnameseOrdinalLanguageSpecifics` (NTS-08 domain guard) | Yes | 15 / 12 | none | **Validated** (NTS-08 final): vtudien Việt-Việt (tư, thứ, giờ, rưỡi, kém) | No sáng/chiều/tối; NTS-08: Ordinals 0–999; NTS-30: a whole zero class between two non-zero classes read *không nghìn* (SGK Toán 4) |
 | ID | ID, ID-ID | SCALE-SHORT | Yes | `IndonesianOrdinalLanguageSpecifics` (`long`) | Yes | 5 / 12 | none | KBBI entries `pertama`, `lewat`, `setengah`, `kurang` | Half hour refers to the following hour |
 | MS | MS, MS-MY | ID | Yes | `MalayOrdinalLanguageSpecifics` (`long`) | Yes, replaces parent | 5 / 12 | none | DBP PRPM entries `lapan`, `pukul`, `suku`, `setengah`, `bilion`, `trilion` | Half hour keeps the current hour |
-| CA | CA, ca-ES | none | Yes | Declarative | Yes | 15 / 12 | `gender=femení` forced on `{hour}` | IEC, *Gramàtica essencial*, §31.2; Optimot | Traditional quarters only; no ordinal of zero (NTS-14) |
+| CA | CA, ca-ES | none | Yes | Declarative | Yes | 15 / 12 | `gender=femení` forced on `{hour}` | IEC, *Gramàtica essencial*, §31.2; Optimot | Traditional quarters only; no ordinal of zero (NTS-14); NTS-53: *dos milions*, *mil milions* (IEC Ortografia §4.4.2.2a, DIEC2 "miliard"), scales paired from the million, ordinals *milionèsim*, *mil milionèsim* (DIEC2, Ortografia §4.4.3.4) |
 | CA-valencia | ca-ES-valencia | CA | Inherited | Declarative | Yes, replaces parent | 5 / 12 | `una` forced; invariable `dos` in ClockTime only | AVL, *Gramàtica normativa valenciana*, §32.2; AVL glossary `dos` | `dos` limited to ConvertClockTime |
 | EU | EU, eu-ES | none | Yes (existing) | Declarative + `BasqueOrdinalLanguageSpecifics` (NTS-08 domain guard) | Yes | 15 / 12 | none | **Corrected** (NTS-08 final): Euskaltzaindia rules 7 and 18; Sareko Euskal Gramatika (clock) | Clock-case forms are literal per hour; cardinals unchanged; NTS-08: Ordinals 1–1000 (*bosgarren*); zero and > 1000 fail closed; NTS-30G: one *eta* before the last group of each numeral phrase (rule 203 §4: *hirurogei milioi berrehun mila eta bat*); NTS-38: ordinals after rule 203 §5 (*milioigarren*, *mila milioigarren*) to 999 999 999 999; NTS-50: *zerogarren* (rule 203 §5) |
 | SW | SW, SW-KE, SW-TZ | SCALE-SHORT | **Deferred** | — | Yes | 15 / 12, `hourOffset=-6` | none | **Consulted**: Five Colleges LangMedia, “Swahili – Tanzania – Telling Time”; SpokenSwahili, “Telling the time in Swahili” | No day-part words (asubuhi, mchana, jioni, usiku) |
 | ZU | ZU | none | **Deferred** | — | Yes | 15 / 12 | none | **Validated** (NTS-08 final, two sources): Unisa *Learn online Zulu* Theme 4; DBE *IsiZulu Grade 4 and 5 Mathematics Terminology* | Hour forms are literal ClockTime patterns; they do not enable ordinals |
 | EE | EE | SCALE-SHORT (scale tables only, NTS-23) | Yes (NTS-20): cardinal + `-lia` on the last element, `gbãtɔ` for 1 | Declarative + `ZeroOrdinalUnsupportedLanguageSpecifics` | **Deferred** | — | none | **Consulted** (NTS-20): Dzablu-Kumah, *Basic Ewe for Foreign Students*; Biblica Open Ewe Contemporary Scriptures; *Ewe Basic Course* 1968; Peace Corps Togo 2010; Wiktionary | Cardinals unbounded (NTS-23): static `akpe`, then the Conway-Wechsler short scale `miliɔn`, `biliɔn`, `triliɔn` (sourced anchors), `quadriliɔn` … (project extrapolation), each before its standalone multiplier (`multiplierPosition="afterScale"`); zero ordinal unsupported |
 | WO | WO | none | Yes (`-éel`, NTS-16, NTS-19) | Declarative + `WolofOrdinalLanguageSpecifics` | **Deferred** | — | none | No consistent source found | Cardinals unbounded (NTS-21): static `junni`, then the long-scale Conway-Wechsler names `milyoŋ`, `milyaar` (attested anchors), `bilyoŋ`, `bilyaar` … (project extrapolation in Wolof spelling); ordinals 1–999 999 only, no ordinal of zero nor of the round thousands |
+
+## NTS-53 — Catalan, Galician and Romanian numeral defects observed by the NTS-52 dump (2026-10-23)
+
+Sources read during the pass (IEC pages fetched through their public APIs, `api-oiec.iec.cat` and `dlc.iec.cat`, and
+read verbatim; RAG, DEX and DOOM pages fetched and read verbatim).
+
+### Catalan *milions*, *mil milions*, *milionèsim*
+
+| # | Source | Quoted text | Use |
+|---|---|---|---|
+| 1 | IEC, *Ortografia catalana*, §4.4.2.2a, "Ús del guionet en mots compostos" (<https://oiec.iec.cat/textortografia/codi/4.4.2.2h>, text served by `api-oiec.iec.cat/TextOrtografia`) | "En la resta de casos, els numerals compostos s'escriuen amb els constituents separats per espais: cent dos, dos mil, dos milions cent mil; cent dosè, dos milè." | plural *milions* (not *milións*); constituents separated |
+| 2 | IEC, DIEC2, "milió" (<https://dlc.iec.cat/Results?DecEntradaText=milió>) | "milió 1 m. Mil milers. Un milió d'euros. Dos milions d'habitants." | *milió* / *milions* |
+| 3 | IEC, DIEC2, "miliard" | "miliard m. Mil milions." | 10^9 = *mil milions*: no name of its own in the numeral |
+| 4 | IEC, DIEC2, "bilió", "trilió" | "bilió m. Milió de milions." "trilió m. Milió de bilions." | long scale: the next named scale is 10^12 |
+| 5 | IEC, *Ortografia catalana*, §4.4.3.4, "Els derivats de les locucions i dels sintagmes lliures" | "Els numerals ordinals i fraccionaris compostos acabats en ‑èsim/‑èsim(a) s'escriuen amb els components separats, atès que són compostos previsibles: deu mil·lèsim (de deu mil), cent milionèsim (de cent milions), mil bilionèsim (de mil bilions), etc." | *mil bilions* (10^15): the multiplier of a named scale covers its thousands (pairing); ordinals *cent milionèsim* |
+| 6 | IEC, DIEC2, "milionèsim" | "milionèsim -a 1 adj. Que, en una sèrie, en té 999.999 davant seu." (no entry *milionè*, unlike "milè -ena adj. i m. Mil·lèsim.") | ordinal *milionèsim*, *milionèsima* |
+| 7 | IEC, *Revista de Tecnologia*, núm. 10 (2022), p. 4-9, R. López de Mántaras, "Intel·ligència artificial: de la màgia a la realitat" (<https://revistes.iec.cat/index.php/RTEC>) | "finançaria amb dos mil milions de dòlars un programa […]" | a multiplier above one: *dos mil milions* |
+| 8 | UPC, Serveis Lingüístics, "Com s'escriuen els nombres" (<https://www.upc.edu/slt/ca/redaccio-i-comunicacio/recursos-redaccio/criteris-linguistics/nombres>) | "Les desenes, les centenes o els milers de milions s'escriuen amb xifres i amb el mot milions. […] El miliard és un terme que designa la noció 'mil milions'." | the thousands of millions are counted in *milions* |
+
+The plural was written `milió(ns)`, which appends *ns* to the singular (*milións*); the scale now alternates its whole
+ending, `mili(ó|ons)`. 10^9 was a static scale 3 `mil milió(ns)` that the engine multiplied like any noun (*un mil
+milió*, *dos mil milións cinc-cents milións*); it is removed and the scales are paired from the million
+(`pairedScalesFrom="2"`, the ES/EU primitive of NTS-30F): *mil milions*, *dos mil cinc-cents milions*, *mil un
+milions*, *mil milions un*. The long scale of #4/#5 is exactly that pairing (*bilió*, *mil bilions*, *trilió*), but CA
+declares no prefix table and `maxNumber="999999999999"`: no generated scale exists before or after NTS-53, and its
+single `Suffixes` entry stays inert (a future opening must declare one suffix per half of a pair, as FI does, since
+`TryGetDynamicScaleInfo` counts the unnamed upper halves). Valencian inherits everything through `baseOn`.
+
+The Catalan ordinal of a round number of millions had no source and produced *un milióè*, *dos miliónsè*, *un mil
+milióè*; after #5/#6 (user decision during NTS-53) it is *milionèsim*, *dos milionèsim*, *mil milionèsim*, feminine
+*milionèsima*: an `OrdinalException` for 10^6 (the single million drops its *un*, like *milè*) and a word rule on
+*milions*.
+
+### Galician *mil millóns*
+
+| # | Source | Quoted text | Use |
+|---|---|---|---|
+| 9 | RAG, Dicionario, "eón" (<https://academia.gal/dicionario/-/termo/eón>) | "Unidade de tempo xeolóxico de rango superior á era, equivalente a mil millóns de anos." | 10^9 = *mil millóns* |
+| 10 | RAG, Dicionario, "billón" (<https://academia.gal/dicionario/-/termo/billón>) | "billón1 substantivo masculino Un millón de millóns. No firmamento hai centos de billóns de estrelas." | long scale (10^12 named) |
+| 11 | RAG, Dicionario, "millón" (NTS-52 #8) | "Na Terra habitan millóns e millóns de persoas." | *millón* / *millóns* |
+
+The *Boletín da Real Academia Galega* no. 362 occurrence *dous mil millóns de seres* named by the ticket could not be
+verified: the RAG bulletin archive returned HTTP 502 throughout the pass. A multiplier above one follows from the
+pairing (the multiplier of *millón* is a complete cardinal, #9/#10); it is not presented as directly sourced. GL drops the
+static scale 3 `mil mill(ón|óns)` for `pairedScalesFrom="2"`: *mil millóns*, *dous mil millóns*, *dous mil cincocentos
+millóns*. Same inert suffix as CA; the GL ordinal guard (1–1999) is unchanged.
+
+### Romanian scale connector and currency *un* / *o*
+
+| # | Source | Quoted text | Use |
+|---|---|---|---|
+| 12 | GALR 2005, vol. I, pp. 296–297 (NTS-52 #9) | "Structura [numeral cardinal + substantiv] este proprie numeralelor cuprinse între unu şi nouăsprezece şi compuselor cu aceste numerale situate pe ultimul loc […]" | no *de* after a scale multiplier whose last two digits are 1–19 |
+| 13 | DEX '09, "unu" (<https://dexonline.ro/definitie/unu>) | "Când precedă un substantiv are forma un, o" — "Are un an." (DEX '98: "Cînd însoțește un substantiv are forma un, o") | attributive *un* / *o* before a noun |
+| 14 | DOOM 3, *Studiu introductiv*, §4.1.5 "Scrierea numeralelor compuse" (<https://doom.lingv.ro/studiu_introductiv_complet>) | "Se scriu în cuvinte separate unele serii de numerale mai puțin sudate: 1. cardinale: seriile douăzeci și unu...; o sută, două sute...; o mie, două mii, douăzeci de mii...; un milion...; o sută unu...; o mie unu..." | the compounds keep *unu*; *douăzeci de mii* |
+
+The scale multiplier governs its noun like any noun (#12): `scaleConnectorThreshold="20"` inserted *de* after every
+multiplier from 20 (*o sută unu de mii*, *o sută nouăsprezece de milioane*). The legacy attributes are kept (the public
+`ScaleConnector`/`ScaleConnectorThreshold` stay `de`/20) and refined by the generic `<ScaleConnector>` element:
+`<Substitution numberRange="1..19" numberModulo="100" value="" />`, decided on the whole multiplier: *o sută nouăsprezece
+mii*, *două sute trei milioane*, *o sută douăzeci de mii*, *o sută treizeci și trei de milioane*. The university study
+"Utilizarea prepoziției de pe lângă numerale" named by the ticket could not be located; GALR is quoted through
+Diacritica as in NTS-52.
+
+One before a currency noun is the numeral accompanying it (#13), so the cardinal (*unu*, *una*, #14) is unchanged and
+the currency numeral alone takes `<Currency><Replacement oldValue="unu" newValue="un" scope="Standalone" />` and
+`oldValue="una" newValue="o"`: *un euro*, *un leu și un ban*, *o liră*; *douăzeci și unu de euro*, *o sută unu euro*
+untouched.
+
+Out of scope, opened: NTS-54 (RO multiplier agreement with the feminine *mie* and the neuter plurals *milioane*,
+*miliarde*: *o sută doi mii*, *douăzeci și doi de mii*, *doisprezece mii*, where DOOM 3 #14 writes *două mii*) and
+NTS-55 (CA/GL feminine multiplier of the masculine *milió*/*millón*: *dues-centes milions*, *douscentas millóns*).
 
 ## NTS-52 — the connector between a currency numeral and its noun: FR, CA, GL, RO, PT (2026-10-23)
 
@@ -1853,6 +1924,11 @@ sources in `DONE-2026-10-22.md`, section NTS-49.
 - Cambridge Dictionary: <https://dictionary.cambridge.org/grammar/british-grammar/time>
 - Office québécois de la langue française: <https://vitrinelinguistique.oqlf.gouv.qc.ca/>
 - Institut d'Estudis Catalans grammar: <https://geiec.iec.cat/>
+- NTS-53: IEC *Ortografia catalana* (text API): <https://api-oiec.iec.cat/TextOrtografia/4.4.3.4>; site <https://oiec.iec.cat/>
+- NTS-53: IEC DIEC2, entries *milió*, *miliard*, *bilió*, *trilió*, *milionèsim*, *milè*: <https://dlc.iec.cat/>
+- NTS-53: IEC *Revista de Tecnologia* 10 (2022): <https://revistes.iec.cat/index.php/RTEC/article/download/150079/147841/178487>
+- NTS-53: RAG, Dicionario, *eón*, *billón*: <https://academia.gal/dicionario/-/termo/eón>, <https://academia.gal/dicionario/-/termo/billón>
+- NTS-53: DEX, *unu*: <https://dexonline.ro/definitie/unu>; DOOM 3, Studiu introductiv: <https://doom.lingv.ro/studiu_introductiv_complet>
 - AVL glossary, entry `dos`: <https://www.avl.gva.es/glossari/dos/>
 - KBBI: <https://kbbi.kemdikbud.go.id/>
 - Dewan Bahasa dan Pustaka PRPM: <https://prpm.dbp.gov.my/>

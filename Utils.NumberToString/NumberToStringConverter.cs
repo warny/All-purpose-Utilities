@@ -266,6 +266,7 @@ namespace Utils.NumberToString
             _intraGroupConnectorThreshold = options.IntraGroupConnectorThreshold;
             _scaleConnector = options.ScaleConnector;
             _scaleConnectorThreshold = options.ScaleConnectorThreshold;
+            _scaleConnectorRules = options.ScaleConnectorRules;
             _finalComponentConnector = string.IsNullOrWhiteSpace(options.FinalComponentConnector) ? null : options.FinalComponentConnector;
             _finalGroupConnector = string.IsNullOrWhiteSpace(options.FinalGroupConnector) ? null : options.FinalGroupConnector;
             _internalZeroGroupString = string.IsNullOrWhiteSpace(options.InternalZeroGroupString) ? null : options.InternalZeroGroupString;
@@ -665,6 +666,14 @@ namespace Utils.NumberToString
         public int ScaleConnectorThreshold => (int)_scaleConnectorThreshold;
 
         /// <summary>
+        /// Gets the configured contextual scale connector (NTS-53), or <see langword="null"/> when only the legacy
+        /// <see cref="ScaleConnector"/> shorthand applies (see <see cref="NumberToStringConverterOptions.ScaleConnectorRules"/>).
+        /// The shorthand keeps being reported by <see cref="ScaleConnector"/> and <see cref="ScaleConnectorThreshold"/>,
+        /// never merged into this instance, so a clone through <see cref="NumberToStringConverterOptions"/> is identical.
+        /// </summary>
+        public ScaleConnectorRules? ScaleConnectorRules => _scaleConnectorRules;
+
+        /// <summary>
         /// Gets the connector placed before the last additive component of every numeral phrase (e.g. "и" for
         /// Bulgarian), or <see langword="null"/> when the language declares none
         /// (see <see cref="NumberToStringConverterOptions.FinalComponentConnector"/>).
@@ -862,6 +871,8 @@ namespace Utils.NumberToString
         private readonly long _intraGroupConnectorThreshold;
         private readonly string? _scaleConnector;
         private readonly long _scaleConnectorThreshold;
+        /// <summary>The contextual scale connector, or <see langword="null"/> (see <see cref="ScaleConnectorRules"/>).</summary>
+        private readonly ScaleConnectorRules? _scaleConnectorRules;
         private readonly string? _finalComponentConnector;
         /// <summary>The inter-group connector before the last non-zero group, or <see langword="null"/> (see <see cref="FinalGroupConnector"/>).</summary>
         private readonly string? _finalGroupConnector;
@@ -1630,9 +1641,11 @@ namespace Utils.NumberToString
                             innerShielded = nested;
                         hasFinalConnector = true;
                     }
-                    // The scale connector keeps its historical formatting; otherwise the multiplier/scale junction applies.
-                    string scaleJoin = (_scaleConnector != null && groupNumber > 0 && group >= _scaleConnectorThreshold)
-                        ? Separator + _scaleConnector + Separator
+                    // A selected scale connector keeps its historical formatting; otherwise the multiplier/scale junction
+                    // applies. Decided on the whole multiplier (a paired one included), never on the rendered text.
+                    string? scaleConnector = groupNumber > 0 ? SelectScaleConnector(groupNumber, group) : null;
+                    string scaleJoin = scaleConnector != null
+                        ? Separator + scaleConnector + Separator
                         : GetMultiplierSeparator(groupNumber);
                     // Only append the separator+scale when there is actually a scale name.
                     // If scaleName is empty (group 0 / units), appending scaleJoin would leave a
@@ -1686,6 +1699,37 @@ namespace Utils.NumberToString
             }
 
             return ApplyReplacements(result.ToString(), numericValue: (BigInteger?)abs);
+        }
+
+        /// <summary>
+        /// Selects the connector between the multiplier of a scale group and its scale noun (NTS-53): among the
+        /// <see cref="ScaleConnectorRules"/> substitutions whose constraints all hold, the most specific wins, the first
+        /// declared at equal specificity; otherwise the legacy <see cref="ScaleConnector"/> when the multiplier reaches
+        /// <see cref="ScaleConnectorThreshold"/> (the shorthand acting as the last declared substitution); otherwise the
+        /// default of <see cref="ScaleConnectorRules"/>.
+        /// </summary>
+        /// <param name="scale">The scale index of the group (at least 1).</param>
+        /// <param name="multiplier">The value of the whole multiplier of the group, a paired multiplier included.</param>
+        /// <returns>
+        /// The connector, or <see langword="null"/> for none (an empty substitution or default). The legacy shorthand is
+        /// returned as configured, as before NTS-53.
+        /// </returns>
+        private string? SelectScaleConnector(int scale, long multiplier)
+        {
+            var rules = _scaleConnectorRules;
+            if (rules is not null)
+            {
+                ScaleConnectorRule? selected = null;
+                foreach (var rule in rules.Substitutions)
+                {
+                    // Strictly greater: at equal specificity the rule declared first keeps its place.
+                    if (selected is not null && rule.Specificity <= selected.Specificity) continue;
+                    if (rule.Matches(scale, multiplier)) selected = rule;
+                }
+                if (selected is not null) return selected.Value.Length == 0 ? null : selected.Value;
+            }
+            if (_scaleConnector != null && multiplier >= _scaleConnectorThreshold) return _scaleConnector;
+            return string.IsNullOrEmpty(rules?.Default) ? null : rules.Default;
         }
 
         /// <summary>

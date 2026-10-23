@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Globalization;
 using System.Linq;
 using Utils.Range;
 
@@ -25,9 +24,6 @@ namespace Utils.NumberToString;
 /// </remarks>
 public sealed class CurrencyNounConnectorRule
 {
-    /// <summary>The values below one, which no scale index may cover (scale 0, the units, has no noun).</summary>
-    private static readonly IntRange<long> s_belowOne = NumberToStringConverter.ParseRangeExpression("..0");
-
     /// <summary>Initializes a new instance of the <see cref="CurrencyNounConnectorRule"/> class.</summary>
     /// <param name="value">
     /// The connector placed after the numeral and its <c>Separator</c>, e.g. <c>"de"</c> or <c>"d'"</c>; empty for no
@@ -70,16 +66,16 @@ public sealed class CurrencyNounConnectorRule
             throw new ArgumentException("The currency noun connector must not be white space.", nameof(value));
         if (terminalScales is not null)
         {
-            if (IsEmpty(terminalScales))
+            if (ConnectorRangeChecks.IsEmpty(terminalScales))
                 throw new ArgumentException("The terminal scales of a currency noun connector cover no scale.", nameof(terminalScales));
-            if (!IsEmpty(terminalScales & s_belowOne))
+            if (ConnectorRangeChecks.CoversBelowOne(terminalScales))
                 throw new ArgumentException("The terminal scales of a currency noun connector must all be at least 1.", nameof(terminalScales));
         }
         if (numberRange is not null)
         {
-            if (IsEmpty(numberRange))
+            if (ConnectorRangeChecks.IsEmpty(numberRange))
                 throw new ArgumentException("The number range of a currency noun connector covers no value.", nameof(numberRange));
-            if (CoversNegative(numberRange))
+            if (ConnectorRangeChecks.CoversNegative(numberRange))
                 throw new ArgumentException("The number range of a currency noun connector must not cover a negative value.", nameof(numberRange));
         }
         if (numberModulo is long modulo)
@@ -88,8 +84,7 @@ public sealed class CurrencyNounConnectorRule
                 throw new ArgumentException("The number modulo of a currency noun connector must be at least 2.", nameof(numberModulo));
             if (numberRange is null)
                 throw new ArgumentException("The number modulo of a currency noun connector requires a number range.", nameof(numberModulo));
-            var residues = NumberToStringConverter.ParseRangeExpression($"0..{(modulo - 1).ToString(CultureInfo.InvariantCulture)}");
-            if (IsEmpty(numberRange & residues))
+            if (ConnectorRangeChecks.CoversNoResidue(numberRange, modulo))
                 throw new ArgumentException($"The number range of a currency noun connector covers no value modulo {modulo}.", nameof(numberRange));
         }
         var prefixes = (beforeNoun ?? []).ToImmutableArray();
@@ -137,25 +132,4 @@ public sealed class CurrencyNounConnectorRule
     /// separator counts.
     /// </summary>
     public int Specificity => (TerminalScales is null ? 0 : 1) + (NumberRange is null ? 0 : 1) + (BeforeNoun.Count == 0 ? 0 : 1);
-
-    /// <summary>
-    /// Determines whether <paramref name="range"/> covers no value, without enumerating it (an open bound cannot be
-    /// enumerated): an empty range has no interval in its canonical form.
-    /// </summary>
-    /// <param name="range">The range to test.</param>
-    /// <returns><see langword="true"/> when the range is empty.</returns>
-    private static bool IsEmpty(IntRange<long> range) => string.IsNullOrEmpty(range.ToString(null, CultureInfo.InvariantCulture));
-
-    /// <summary>
-    /// Determines whether <paramref name="range"/> covers a negative value: its part at or below zero is more than zero
-    /// itself. The intersection with <c>..0</c> is used rather than a difference or a complement, which do not handle
-    /// an open lower bound.
-    /// </summary>
-    /// <param name="range">The range to test.</param>
-    /// <returns><see langword="true"/> when a negative value is covered.</returns>
-    private static bool CoversNegative(IntRange<long> range)
-    {
-        string nonPositive = (range & s_belowOne).ToString(null, CultureInfo.InvariantCulture) ?? "";
-        return nonPositive.Length > 0 && nonPositive != "0";
-    }
 }

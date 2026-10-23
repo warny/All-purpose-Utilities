@@ -652,6 +652,71 @@
         </xs:attribute>
     </xs:complexType>
 
+    <xs:complexType name="ScaleConnectorSubstitutionType">
+        <xs:annotation>
+            <xs:documentation>
+                NTS-53. A connector applying between the multiplier of a scale group and its scale noun when every
+                declared constraint holds: numberRange (optionally modulo numberModulo) and scales; at least one is
+                required (checked by the loader). The substitution with the most constraints wins; at equal
+                specificity the first declared wins.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="value" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>The connector ("de"); empty for none (the historical multiplier/scale junction).</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="numberRange" type="CurrencyCountRangeType" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    The values of the whole multiplier of the group (a paired multiplier included): "20.." for
+                    Romanian douăzeci de mii.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="numberModulo" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Tests numberRange against the multiplier modulo this value (at least 2; requires numberRange):
+                    numberRange="1..19" numberModulo="100" for the multipliers ending in one to nineteen.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:simpleType>
+                <xs:restriction base="xs:long">
+                    <xs:minInclusive value="2" />
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+        <xs:attribute name="scales" type="CurrencyScaleRangeType" use="optional">
+            <xs:annotation>
+                <xs:documentation>The scale indices of the group (at least 1): "2.." for million and above.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="ScaleConnectorType">
+        <xs:annotation>
+            <xs:documentation>
+                NTS-53. The connector between the multiplier of a scale group and its scale noun: a default, then
+                the Substitution children that differ from it, in an authoritative order. It refines the legacy
+                scaleConnector/scaleConnectorThreshold attributes, which act as its last declared substitution
+                (numberRange="threshold.."). Example (Romanian, GALR):
+                    &lt;ScaleConnector default=""&gt;
+                        &lt;Substitution numberRange="1..19" numberModulo="100" value="" /&gt;
+                        &lt;Substitution numberRange="20.." value="de" /&gt;
+                    &lt;/ScaleConnector&gt;
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="Substitution" type="ScaleConnectorSubstitutionType" minOccurs="0" maxOccurs="unbounded" />
+        </xs:sequence>
+        <xs:attribute name="default" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>The connector applying when nothing else matches. Absent or empty: none.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
     <xs:complexType name="CurrencyNounConnectorType">
         <xs:annotation>
             <xs:documentation>
@@ -2154,6 +2219,16 @@
                                 </xs:complexType>
                             </xs:element>
 
+                            <xs:element name="ScaleConnector" type="ScaleConnectorType" minOccurs="0">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        NTS-53. Contextual connector between the multiplier of a scale group and its
+                                        scale noun, refining the scaleConnector attribute. Inherited through baseOn
+                                        unless redeclared (a declared element replaces the inherited one as a whole).
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:element>
+
                             <xs:element name="Currency" minOccurs="0">
                                 <xs:annotation>
                                     <xs:documentation>
@@ -2761,6 +2836,8 @@
                                     name when the group's numeric value is at or above scaleConnectorThreshold.
                                     Example: "de" for Romanian — "douăzeci de mii" (20 000).
                                     Omit when no connector is needed between multiplier and scale name.
+                                    NTS-53: refined by the ScaleConnector element, whose declared substitutions
+                                    take precedence over it (it acts as their last declared substitution).
                                 </xs:documentation>
                             </xs:annotation>
                         </xs:attribute>

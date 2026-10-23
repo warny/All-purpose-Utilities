@@ -7,7 +7,8 @@
       The default gender (no variant) is masculine.
 
       scaleConnector="de" inserts "de" between the multiplier and the scale name when the
-      multiplier is ≥ 20 (douăzeci de mii, o sută de milioane, etc.).
+      multiplier is ≥ 20 (douăzeci de mii, o sută de milioane, etc.), except after a multiplier
+      whose last two digits are 1-19 (NTS-53, the ScaleConnector element below).
     -->
     <Language
         groupSize="3"
@@ -108,6 +109,15 @@
                 <Replacement oldValue="doisprezece" newValue="douăsprezece" scope="LastWord" />
             </Variant>
         </Variants>
+        <!-- NTS-53: the multiplier governs its scale noun like any noun (GALR 2005, vol. I, pp. 296-297, quoted at the
+             NTS-52 Currency element below): no "de" after one to nineteen "and the compounds with these numerals in
+             last position", "de" from twenty otherwise. The scaleConnector shorthand ("de" from 20) is kept, so the
+             public ScaleConnector/ScaleConnectorThreshold keep their values; this substitution refines it and, being
+             declared, takes precedence over it: o sută nouăsprezece mii, două sute trei milioane, but o sută douăzeci
+             de mii, o sută treizeci și trei de milioane. Decided on the whole multiplier, never on the text. -->
+        <ScaleConnector default="">
+            <Substitution numberRange="1..19" numberModulo="100" value="" />
+        </ScaleConnector>
         <!-- DOOM ordinals (al doilea, al douăzeci și unulea, al o sutălea / a doua, a o suta):
              see RomanianOrdinalLanguageSpecifics. -->
         <LanguageSpecifics>RomanianOrdinalLanguageSpecifics</LanguageSpecifics>
@@ -121,11 +131,19 @@
              un milion de euro, but o sută unu euro, o sută nouăsprezece euro, două milioane trei sute opt lei. The
              exception is declared first: both rules have one constraint, and the first declared wins. This connector
              is distinct from scaleConnector, which acts inside the numeral (douăzeci de mii). -->
+        <!-- NTS-53: a currency amount of one is the numeral accompanying its noun, which takes the attributive form
+             un (masculine, neuter) / o (feminine): DEX '09, "unu": "Când precedă un substantiv are forma un, o" ("Are
+             un an"). The standalone cardinal keeps unu/una (DOOM 3, Studiu introductiv §4.1.5: "douăzeci și unu",
+             "o sută unu", "o mie unu", against "un milion", "o mie"), so the rule is local to the currency numeral and
+             Standalone: the gender variant has already given unu or una (a feminine CurrencyDefinition or the
+             caller's gen=feminin), and a compound (douăzeci și unu de euro, o sută unu euro) is never touched. -->
         <Currency>
             <NounConnector default="">
                 <Substitution numberRange="1..19" numberModulo="100" value="" />
                 <Substitution numberRange="20.." value="de" />
             </NounConnector>
+            <Replacement oldValue="unu" newValue="un" scope="Standalone" />
+            <Replacement oldValue="una" newValue="o" scope="Standalone" />
         </Currency>
         <!-- Quarter-hour 12-hour clock without day-part wording: "ora două", "unu și un sfert",
              "unu și jumătate", "două fără un sfert". The hour takes the feminine numeral (două,

@@ -41,9 +41,9 @@ dotnet add package omy.Utils.NumberToString --version 2.0.0-rc.2
 | ES | Spanish | ✓ declarative, composed (1–999 999 999 999, NTS-28; `milmillonésimo` from 10^9, NTS-38) | ✓ 5 min, 12 h | gender × form | local | Apocope before mil/millón (veintiún mil, un millón; NTS-27); million multipliers up to six digits (dos mil quinientos millones, mil un millones; NTS-30F), masculine whatever the caller's gender (quinientos millones; NTS-30G); currency numerals attributive (un euro, veintiún euros; `<Currency forceVariants>`, NTS-30); a currency amount ending on millón takes de (un millón de euros, dos mil millones de euros, but un millón doscientos mil euros; `<Currency terminalScaleConnector>`, NTS-51, the shorthand of a `<NounConnector>` substitution, NTS-52); no ordinal of zero |
 | IT | Italian | ✓ validated productive forms through round trilione: 1–1999 except 1110–1910, round thousands to 999000, round multiples of milione/miliardo/bilione/biliardo/trilione; selected sourced analytic compounds (1010, 100001–100009) (`<OrdinalStem>`, `<OrdinalComposition>`, `<OrdinalScale>`, domain-guard plugin) | ✓ 5 min, 12 h | gender | local | Unsourced ordinals fail closed by design: zero, 1110–1910, the other non-round thousands above 1999 and the non-round values from a million (no canonical form established); millions are separate nouns joined by `e` ("due milioni e centomila"); a currency amount of one reads un before a noun taking il (un euro, but uno scellino, uno zloty) and its compounds stay invariable (ventuno euro; `<Currency><Replacement exceptBeforeNoun>`, NTS-51); un milione di euro (`<Currency terminalScaleConnector="di">`, NTS-51) |
 | PT | Portuguese | ✓ declarative, composed (1–1999, NTS-28) | ✓ 5 min, 12 h (direct "e …") | gender | local | Deliberate direct numeric reading (no "para"/"menos" constructions); PT-PT/PT-BR not split; no ordinal of zero; cardinals to 999 999, so *um milhão de* (Priberam) is outside the domain (NTS-52) |
-| GL, gl-ES | Galician | ✓ declarative, gender on the last element (1–1999, NTS-28) | ✓ 5 min, 12 h | gender | local | No ordinal of zero; `un millón de euros` (`<NounConnector>`, NTS-52) |
-| RO, RO-RO | Romanian | ✓ plugin (DOOM) | ✓ 15 min, 12 h | gen | local | Ordinals up to 999 999 and one million (masculine); a currency noun after 20 and above takes de, except after a compound ending on 1–19 (`douăzeci de lei`, `o sută nouăsprezece lei`; GALR, `<NounConnector numberModulo>`, NTS-52) |
-| CA, ca-ES, ca-ES-valencia | Catalan | ✓ declarative | ✓ 15 min, 12 h | gender | local | Traditional quarters only; no ordinal of zero; `un milió de pessetes`, `un milió d'euros` (`<NounConnector>`, NTS-52) |
+| GL, gl-ES | Galician | ✓ declarative, gender on the last element (1–1999, NTS-28) | ✓ 5 min, 12 h | gender | local | No ordinal of zero; `un millón de euros` (`<NounConnector>`, NTS-52); 10^9 `mil millóns`, `dous mil millóns` (RAG "eón"; `pairedScalesFrom="2"`, NTS-53) |
+| RO, RO-RO | Romanian | ✓ plugin (DOOM) | ✓ 15 min, 12 h | gen | local | Ordinals up to 999 999 and one million (masculine); a currency noun after 20 and above takes de, except after a compound ending on 1–19 (`douăzeci de lei`, `o sută nouăsprezece lei`; GALR, `<NounConnector numberModulo>`, NTS-52); no de inside the numeral after a multiplier ending on 1–19 (`o sută nouăsprezece mii`, `o sută douăzeci de mii`; GALR, `<ScaleConnector>`, NTS-53); currency `un euro`, `o liră` (DEX "unu"; `<Currency><Replacement>`, NTS-53) |
+| CA, ca-ES, ca-ES-valencia | Catalan | ✓ declarative | ✓ 15 min, 12 h | gender | local | Traditional quarters only; no ordinal of zero; `un milió de pessetes`, `un milió d'euros` (`<NounConnector>`, NTS-52); `dos milions`, 10^9 `mil milions`, `dos mil cinc-cents milions` (IEC Ortografia §4.4.2.2a, DIEC2; `pairedScalesFrom="2"`), ordinals `milionèsim`, `mil milionèsim` (NTS-53) |
 | ca-ES-valencia | Valencian | ✓ inherited | ✓ 5 min, 12 h, own section | gender | child of CA | Invariable `dos` in ClockTime only |
 | EL | Greek | ✓ declarative, composed (1–1999, NTS-28) | ✓ 15 min, 12 h | gender | local | Masculine cardinal forms (ένας) not modelled; no ordinal of zero |
 | FI | Finnish | ✓ declarative (zero: nollas; nominative 0–1 999 999, NTS-28, NTS-37) | ✓ 15 min, 12 h | case | local (long scale from SCALE-LONG) | Inflected ordinals and ordinals from 2 000 000 fail closed (unsourced); cardinals unbounded, paired scales without *-ljardi* (NTS-37) |
@@ -1487,7 +1487,7 @@ on the same language register the same converter under several codes.
 | `baseOn` | | Culture code of a base language to inherit from. All settings are inherited and can be selectively overridden. Chains (A → B → C) are supported; the base must appear earlier in the same file or in a previously loaded file. An empty element (e.g. `<Replacements />`) explicitly overrides the base with an empty list. |
 | `groupConnector` / `groupConnectorThreshold` | | Word inserted between the last two groups when the lowest group's value is below the threshold (e.g. English "one thousand **and** one" — `groupConnector="and" groupConnectorThreshold="100"`). |
 | `intraGroupConnector` / `intraGroupConnectorThreshold` | | Word inserted between the hundreds digit and the remainder within a group of 3, when hundreds are present and the remainder is below the threshold (e.g. 101 → "một trăm **linh** một" with `intraGroupConnector="linh" intraGroupConnectorThreshold="10"`; since NTS-27 the Vietnamese configuration uses `innerBuildString="linh *"` instead, which also reaches the zero hundreds of a class after the thousands). |
-| `scaleConnector` / `scaleConnectorThreshold` | | Word inserted between a group's text and its scale name (thousand/million/…) when the group's value is at or above the threshold (e.g. Romanian 20 000 → "douăzeci **de** mii" — `scaleConnector="de" scaleConnectorThreshold="20"`). |
+| `scaleConnector` / `scaleConnectorThreshold` | | Word inserted between a group's text and its scale name (thousand/million/…) when the group's value is at or above the threshold (e.g. Romanian 20 000 → "douăzeci **de** mii" — `scaleConnector="de" scaleConnectorThreshold="20"`). Refined by the `<ScaleConnector>` element (NTS-53, see "Multiplier/scale junction"), whose declared substitutions take precedence over it. |
 | `finalComponentConnector` | | Word placed before the last additive component of every numeral phrase (NTS-30D). A phrase is the multiplier of a scale group, or the whole number whose components are its non-zero groups: inside a group the word precedes the last non-zero position, once (an `Exception` such as 15 is one component); between groups it precedes the last non-zero group when that group is a single component. Bulgarian `finalComponentConnector="и"`: 21 → "двадесет **и** едно", 121 → "сто двадесет **и** едно", 1100 → "хиляда **и** сто", 1121 → "хиляда сто двадесет **и** едно", 21 000 → "двадесет **и** една хиляди". Inherited through `baseOn`; an explicit empty value removes it. Rejected together with `groupConnector`, `finalGroupConnector`, `intraGroupConnector` or a `Fusion`, which rewrite the same junctions. Programmatic: `NumberToStringConverterOptions.FinalComponentConnector`, read back as `NumberToStringConverter.FinalComponentConnector`. |
 | `finalGroupConnector` | | Word placed **between groups only**, before the last non-zero group of every numeral phrase, whatever that group holds (NTS-30G). It never enters a group, so the connectors inside a group stay those of the `buildString`s (unlike `finalComponentConnector`, which also joins the components of a group). The other inter-group junctions keep `groupConnector` (below its threshold) or `groupSeparator`; a paired multiplier (`pairedScalesFrom`) is a phrase of its own. Basque `finalGroupConnector="eta"` (Euskaltzaindia rule 203): 60 200 001 → "hirurogei milioi berrehun mila **eta** bat", 2 700 000 → "bi milioi **eta** zazpiehun mila". Inherited through `baseOn`; an explicit empty value removes it. Rejected together with `finalComponentConnector`, which also claims that junction; combines with `groupConnector`, `intraGroupConnector`, `scaleConnector` and `Fusion`. Programmatic: `NumberToStringConverterOptions.FinalGroupConnector`, read back as `NumberToStringConverter.FinalGroupConnector`. |
 | `internalZeroGroupString` | | Multiplier text of a **whole zero group** lying between a higher and a lower non-zero group (NTS-30). The group is then rendered like any other: this literal in place of its digits, its scale noun (in the form the scale selects for a count of zero), the group triggers, the scale replacements and the group-with-scale triggers. Every internal zero group is rendered, consecutive ones included; leading and trailing zero groups never are. It differs from the zero positions of a non-zero group (`innerString`/`innerBuildString`: Vietnamese *không trăm*, *linh*). Vietnamese `internalZeroGroupString="không"` (SGK Toán 4): 50 000 102 → "năm mươi triệu **không nghìn** một trăm linh hai", 50 000 000 → "năm mươi triệu". Inherited through `baseOn`; an explicit empty value removes it. Programmatic: `NumberToStringConverterOptions.InternalZeroGroupString`, read back as `NumberToStringConverter.InternalZeroGroupString`. |
@@ -2007,6 +2007,32 @@ Inside a group, the digit `buildString` decides alone (`kaksikymmentä*` writes 
   `separator` remains for programmatic and custom configurations that set neither.
 - `scaleConnector`, when its threshold is reached, keeps its own formatting (`separator` + connector +
   `separator`, Romanian `douăzeci de mii`); below the threshold the junction above applies.
+- `<ScaleConnector default="">` (NTS-53; `ScaleConnectorRules`, `ScaleConnectorRule`) chooses that connector by
+  context: `<Substitution value numberRange numberModulo scales>` children, each with at least one of
+  `numberRange` (the value of the **whole** multiplier, a paired multiplier included; `numberModulo` ≥ 2 tests it
+  modulo that value and is not a constraint of its own) and `scales` (the scale index). Among the matching
+  substitutions the one with the most constraints wins, the first declared at equal specificity; otherwise the
+  `scaleConnector` shorthand when its threshold is reached (it acts as the last declared substitution,
+  `numberRange="threshold.."`), otherwise `default`. A non-empty connector keeps the formatting above; an empty one
+  leaves the multiplier/scale junction. The public `ScaleConnector`/`ScaleConnectorThreshold` report the shorthand
+  only, so a language refining it keeps their values. Inherited through `baseOn` unless redeclared (replaced as a
+  whole). Romanian, after GALR (no *de* after one to nineteen "and the compounds with these numerals in last
+  position"):
+
+```xml
+<Language scaleConnector="de" scaleConnectorThreshold="20" …>
+    <ScaleConnector default="">
+        <Substitution numberRange="1..19" numberModulo="100" value="" />
+    </ScaleConnector>
+</Language>
+```
+
+```csharp
+var ro = NumberToStringConverter.GetConverter("RO");
+ro.Convert(119_000);   // "o sută nouăsprezece mii"
+ro.Convert(120_000);   // "o sută douăzeci de mii"
+ro.ScaleConnector;     // "de" (the shorthand, unchanged)
+```
 - `baseOn`: an absent attribute inherits, an explicit value — empty included — replaces. A child
   `<ScaleForm scale="…">` replaces the inherited entry of its scale as a whole, its junction included.
 - Programmatic: `new NumberScale(…) { MultiplierSeparator = " " }` and
@@ -2065,12 +2091,18 @@ fi.Scale.GetScaleName(5);               // throws InvalidOperationException (10^
 
 Spanish and Basque pair from the million with static names only (NTS-30F): 10^9 is *mil millones* / *mila
 milioi*, a thousand times the million, so the whole multiplier of *millón* / *milioi* is one cardinal and keeps its
-own apocope and connectors.
+own apocope and connectors. Catalan and Galician do the same since NTS-53 (*mil milions*, DIEC2 "miliard"; *mil
+millóns*, RAG "eón"), replacing a static scale 3 `mil milió(ns)` that the engine multiplied like a noun (*un mil
+milió*). A language that pairs with a single generated suffix would number its generated names on every index (the
+upper halves included), so a paired language that opens generated scales declares one suffix per half, as Finnish
+does.
 
 ```csharp
 NumberToStringConverter.GetConverter("ES").Convert(2_500_000_000);  // "dos mil quinientos millones"
 NumberToStringConverter.GetConverter("ES").Convert(1_001_000_000);  // "mil un millones"
 NumberToStringConverter.GetConverter("EU").Convert(2_500_000_000);  // "bi mila eta bostehun milioi"
+NumberToStringConverter.GetConverter("CA").Convert(2_500_000_000);  // "dos mil cinc-cents milions"
+NumberToStringConverter.GetConverter("GL").Convert(1_000_000_000);  // "mil millóns"
 ```
 
 #### Generated scale forms — `<GeneratedScaleForm>`

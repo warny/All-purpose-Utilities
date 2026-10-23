@@ -116,6 +116,32 @@ public sealed class NumberToStringImmutabilityTests
         Assert.AreEqual("mille euros", fr.ConvertCurrency(1_000m, euro));
     }
 
+    /// <summary>
+    /// NTS-53: the scale connector snapshots its substitutions in the order supplied; mutating the source sequence or the
+    /// options afterwards changes neither the rules nor the converter, and no mutable list is exposed.
+    /// </summary>
+    [TestMethod]
+    public void ScaleConnectorRules_SourceMutationAfterConstruction_DoesNotChangeConverter()
+    {
+        var list = new List<ScaleConnectorRule>
+        {
+            new("", NumberToStringConverter.ParseRangeExpression("1..19"), 100),
+        };
+        var rules = new ScaleConnectorRules("", list);
+        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("RO")) { ScaleConnectorRules = rules };
+        var ro = new NumberToStringConverter(options);
+        list.Clear();
+        list.Add(new ScaleConnectorRule("XX", NumberToStringConverter.ParseRangeExpression("0..")));
+        options.ScaleConnectorRules = new ScaleConnectorRules("YY");
+        options.ScaleConnector = "ZZ";
+        Assert.AreSame(rules, ro.ScaleConnectorRules);
+        Assert.AreEqual(1, rules.Substitutions.Count);
+        Assert.IsFalse(rules.Substitutions is List<ScaleConnectorRule>, "The rules must not expose a mutable list.");
+        Assert.AreEqual("de", ro.ScaleConnector);
+        Assert.AreEqual("o sută nouăsprezece mii", ro.Convert(119_000));
+        Assert.AreEqual("o sută douăzeci de mii", ro.Convert(120_000));
+    }
+
     /// <summary>Mutating the source ordinal stem rule list after construction does not affect the converter snapshot.</summary>
     [TestMethod]
     public void OrdinalStem_SourceMutationAfterConstruction_DoesNotChangeConverter()

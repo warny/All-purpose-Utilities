@@ -4,6 +4,29 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed — `omy.Utils.NumberToString` (NTS-53 closed: Catalan, Galician and Romanian numerals)
+- Catalan (CA, ca-ES, ca-ES-valencia) writes the plural of *milió* `milions` (IEC, Ortografia catalana §4.4.2.2a: *dos
+  milions cent mil*): `dos milions` (was `dos milións`). 10^9 is `mil milions` (DIEC2 "miliard"; was `un mil milió`),
+  the multiplier of *milió* being a complete cardinal through the ES/EU `pairedScalesFrom="2"`: `dos mil cinc-cents
+  milions` (was `dos mil milións cinc-cents milións`), `mil un milions`, `mil milions d'euros`. The ordinals of the round
+  millions are `milionèsim`, `dos milionèsim`, `mil milionèsim`, feminine `milionèsima` (DIEC2, Ortografia §4.4.3.4;
+  were `un milióè`, `dos miliónsè`, `un mil milióè`).
+- Galician (GL, gl-ES): 10^9 is `mil millóns` (RAG, "eón"; was `un mil millón`), `dous mil cincocentos millóns`, `mil
+  millóns de euros`, through the same pairing.
+- Romanian (RO, RO-RO) no longer inserts `de` between a scale multiplier ending on one to nineteen and its noun (GALR
+  2005): `o sută nouăsprezece mii` (was `o sută nouăsprezece de mii`), `o sută unu milioane`; `o sută douăzeci de mii`
+  is unchanged. One before a currency noun takes its attributive form (DEX, "unu"): `un euro`, `un leu și un ban`, `o
+  liră` (were `unu euro`, `una liră`); the cardinal `unu` and the compounds (`douăzeci și unu de euro`, `o sută unu
+  euro`) are unchanged.
+- Added `<ScaleConnector default><Substitution value numberRange numberModulo scales /></ScaleConnector>` (public
+  `ScaleConnectorRules`, `ScaleConnectorRule`, `ScaleConnectorType`, `ScaleConnectorSubstitutionType`,
+  `LanguageType.ScaleConnectorRules`, `NumberToStringConverterOptions.ScaleConnectorRules`,
+  `NumberToStringConverter.ScaleConnectorRules`; additive): the connector between a scale multiplier and its noun,
+  decided on the whole multiplier (a paired one included) and the scale; the most specific substitution wins, the
+  first declared at equal specificity. The `scaleConnector`/`scaleConnectorThreshold` attributes and options keep their
+  meaning and act as its last declared substitution, so Romanian keeps `ScaleConnector == "de"` and
+  `ScaleConnectorThreshold == 20`. No other converter's output changed (dump of the 74 converters).
+
 ### Fixed — `omy.Utils.NumberToString` (NTS-52 closed: currency noun connectors)
 - French (FR, FR-fr, FR-ca, FR-be, FR-ch) introduces the currency noun with `de` after a numeral ending on *million*,
   *milliard* …, elided before a vowel (Académie française, OQLF): `un-million d'euros` (was `un-million euros`),

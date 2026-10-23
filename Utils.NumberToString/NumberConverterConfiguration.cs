@@ -1227,6 +1227,60 @@ public class CurrencyNounConnectorSubstitutionType
 }
 
 /// <summary>
+/// XML element <c>&lt;ScaleConnector&gt;</c> of <c>&lt;Language&gt;</c> (NTS-53): the connector between the multiplier
+/// of a scale group and its scale noun, as a default and the <c>&lt;Substitution&gt;</c> children that differ from it.
+/// It refines the legacy <c>scaleConnector</c>/<c>scaleConnectorThreshold</c> attributes, which act as its last
+/// declared substitution.
+/// </summary>
+public class ScaleConnectorType
+{
+    /// <summary>The connector applying when nothing else matches. Absent or empty: none.</summary>
+    [XmlAttribute("default")]
+    public string? Default { get; set; }
+
+    /// <summary>The contextual substitutions, in declaration order (authoritative at equal specificity).</summary>
+    [XmlElement("Substitution")]
+    public List<ScaleConnectorSubstitutionType>? Substitutions { get; set; }
+}
+
+/// <summary>
+/// XML element <c>&lt;Substitution&gt;</c> of <c>&lt;ScaleConnector&gt;</c> (NTS-53): a connector applying when every
+/// declared constraint holds; at least one of <see cref="NumberRange"/> and <see cref="Scales"/> is required.
+/// </summary>
+public class ScaleConnectorSubstitutionType
+{
+    /// <summary>The connector (empty for none), e.g. <c>"de"</c>.</summary>
+    [XmlAttribute("value")]
+    public string Value { get; set; } = "";
+
+    /// <summary>
+    /// The values (range syntax, e.g. <c>"20.."</c>) of the whole multiplier of the group, a paired multiplier included.
+    /// Absent: no condition.
+    /// </summary>
+    [XmlAttribute("numberRange")]
+    public string? NumberRange { get; set; }
+
+    /// <summary>
+    /// When positive, <see cref="NumberRange"/> is tested against the multiplier modulo this value (e.g. 100: its last
+    /// two digits). 0 (absent): the multiplier itself.
+    /// </summary>
+    [XmlAttribute("numberModulo")]
+    public long NumberModulo { get; set; }
+
+    /// <summary>
+    /// Tells <see cref="XmlSerializer"/> to write <c>numberModulo</c> only when it is set: the XSD declares an integer of
+    /// at least 2, so the default 0 is left out.
+    /// </summary>
+    /// <returns><see langword="true"/> when <see cref="NumberModulo"/> is not 0.</returns>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public bool ShouldSerializeNumberModulo() => NumberModulo != 0;
+
+    /// <summary>The scale indices (range syntax, at least 1, e.g. <c>"2.."</c>) of the group. Absent: no condition.</summary>
+    [XmlAttribute("scales")]
+    public string? Scales { get; set; }
+}
+
+/// <summary>
 /// Holds date-format configuration for a language.
 /// </summary>
 public class DateFormatType
@@ -1505,6 +1559,14 @@ public class LanguageType
     [XmlIgnore]
     public int ScaleConnectorThreshold =>
         int.TryParse(ScaleConnectorThresholdString, out var n) ? n : 20;
+
+    /// <summary>
+    /// Gets or sets the contextual scale connector (NTS-53), refining <see cref="ScaleConnector"/>: a default and
+    /// substitutions on the multiplier (optionally modulo) and the scale. <see langword="null"/> when absent: inherited
+    /// through <c>baseOn</c>, otherwise only the <see cref="ScaleConnector"/> shorthand.
+    /// </summary>
+    [XmlElement(ElementName = "ScaleConnector")]
+    public ScaleConnectorType? ScaleConnectorRules { get; set; }
 
     /// <summary>
     /// Gets or sets the connector placed before the last additive component of every numeral phrase: the last
