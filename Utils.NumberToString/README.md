@@ -21,7 +21,7 @@ dotnet add package omy.Utils.NumberToString --version 2.0.0-rc.2
 |------|----------|----------|-------------------------|----------|-------------------|-------------------|
 | EN, EN-us | English | ✓ declarative | ✓ 5 min, 12 h | — | local | No day-part wording; only midnight/noon are special |
 | EN-GB, EN-uk | British English | ✓ inherited | ✓ inherited | — | child of EN | Same as EN |
-| FR, FR-fr, FR-ca | French | ✓ declarative; ordinals derived from the base of the last constituent (`deux-centième`, `deux-millionième`, `trois-cent-millionième`; `ordinalBaseString`, `<OrdinalScale>`); 1990 rectified spelling, every element hyphenated (`vingt-et-un`, `deux-cent-mille`, `deux-millions`, NTS-49) | ✓ 5 min, 24 h | gender | local | *vingt*/*cent* agree except before *mille* (`quatre-vingts`, `deux cents millions`, `deux cent mille`; `<Groups onScale="1">`) |
+| FR, FR-fr, FR-ca | French | ✓ declarative; ordinals derived from the base of the last constituent (`deux-centième`, `deux-millionième`, `trois-cent-millionième`; `ordinalBaseString`, `<OrdinalScale>`); 1990 rectified spelling, every element hyphenated (`vingt-et-un`, `deux-cent-mille`, `deux-millions`, NTS-49) | ✓ 5 min, 24 h | gender | local | *vingt*/*cent* agree except before *mille* (`quatre-vingts`, `deux cents millions`, `deux cent mille`; `<Groups onScale="1">`); a currency amount ending on a scale noun takes de, elided before a vowel (`un-million de francs`, `deux-millions d'euros`; `<NounConnector>`, NTS-52) |
 | FR-be | Belgian French (septante / quatre-vingts / nonante) | ✓ merged | ✓ inherited | gender | child of FR | — |
 | FR-ch | Swiss French (septante / huitante / nonante) | ✓ inherited | ✓ inherited | gender | child of FR | No cantonal `octante` |
 | DE, de-DE, de-AT | German | ✓ declarative (zero: `nullte`, Duden) | ✓ 5 min, 12 h | genus × kasus | local | — |
@@ -38,12 +38,12 @@ dotnet add package omy.Utils.NumberToString --version 2.0.0-rc.2
 | PL | Polish | ✓ plugin + declarative (1–999 999; round thousands to 99 000, NTS-28) | ✓ 5 min, 12 h | rodzaj × przypadek | local | tysiąc/tysiące/tysięcy agree with their multiplier (NTS-27); cardinals to 999 999; no ordinal of zero |
 | RU | Russian | ✓ declarative + plugin for the one-word round values (zero: `нулевой`; 0–999 999 999, NTS-28) | ✓ 15 min, 12 h | gender × case | local | тысяча, миллион, миллиард agree with their multiplier (две тысячи, пять миллионов; NTS-27). Short scale with `миллиард`; Cyrillic Conway names above (`SCALE-SHORT-CYRILLIC`), unbounded, agreeing with their multiplier (два триллиона; NTS-30C) |
 | UK, UK-UA | Ukrainian | ✓ plugin, gender × case | ✓ 15 min, 12 h | gender × case | local | Round thousands, millions and milliards with a multiplier of 1–89 (NTS-28, §38). Short scale with `мільярд`; Ukrainian-spelled Conway names above (`вігінтильйон`), unbounded. `тисяча`/`мільйон`/`мільярд` agree with their multiplier (NTS-30B), so do the generated names (два трильйони; NTS-30C) |
-| ES | Spanish | ✓ declarative, composed (1–999 999 999 999, NTS-28; `milmillonésimo` from 10^9, NTS-38) | ✓ 5 min, 12 h | gender × form | local | Apocope before mil/millón (veintiún mil, un millón; NTS-27); million multipliers up to six digits (dos mil quinientos millones, mil un millones; NTS-30F), masculine whatever the caller's gender (quinientos millones; NTS-30G); currency numerals attributive (un euro, veintiún euros; `<Currency forceVariants>`, NTS-30); a currency amount ending on millón takes de (un millón de euros, dos mil millones de euros, but un millón doscientos mil euros; `<Currency terminalScaleConnector>`, NTS-51); no ordinal of zero |
-| IT | Italian | ✓ validated productive forms through round trilione: 1–1999 except 1110–1910, round thousands to 999000, round multiples of milione/miliardo/bilione/biliardo/trilione; selected sourced analytic compounds (1010, 100001–100009) (`<OrdinalStem>`, `<OrdinalComposition>`, `<OrdinalScale>`, domain-guard plugin) | ✓ 5 min, 12 h | gender | local | Unsourced ordinals fail closed by design: zero, 1110–1910, the other non-round thousands above 1999 and the non-round values from a million (no canonical form established); millions are separate nouns joined by `e` ("due milioni e centomila"); a currency amount of one reads un before a noun taking il (un euro, but uno scellino, uno zloty) and its compounds stay invariable (ventuno euro; `<Currency><Replacement exceptBeforeNoun>`, NTS-51) |
-| PT | Portuguese | ✓ declarative, composed (1–1999, NTS-28) | ✓ 5 min, 12 h (direct "e …") | gender | local | Deliberate direct numeric reading (no "para"/"menos" constructions); PT-PT/PT-BR not split; no ordinal of zero |
-| GL, gl-ES | Galician | ✓ declarative, gender on the last element (1–1999, NTS-28) | ✓ 5 min, 12 h | gender | local | No ordinal of zero |
-| RO, RO-RO | Romanian | ✓ plugin (DOOM) | ✓ 15 min, 12 h | gen | local | Ordinals up to 999 999 and one million (masculine) |
-| CA, ca-ES | Catalan | ✓ declarative | ✓ 15 min, 12 h | gender | local | Traditional quarters only; no ordinal of zero |
+| ES | Spanish | ✓ declarative, composed (1–999 999 999 999, NTS-28; `milmillonésimo` from 10^9, NTS-38) | ✓ 5 min, 12 h | gender × form | local | Apocope before mil/millón (veintiún mil, un millón; NTS-27); million multipliers up to six digits (dos mil quinientos millones, mil un millones; NTS-30F), masculine whatever the caller's gender (quinientos millones; NTS-30G); currency numerals attributive (un euro, veintiún euros; `<Currency forceVariants>`, NTS-30); a currency amount ending on millón takes de (un millón de euros, dos mil millones de euros, but un millón doscientos mil euros; `<Currency><NounConnector>`, NTS-51, NTS-52); no ordinal of zero |
+| IT | Italian | ✓ validated productive forms through round trilione: 1–1999 except 1110–1910, round thousands to 999000, round multiples of milione/miliardo/bilione/biliardo/trilione; selected sourced analytic compounds (1010, 100001–100009) (`<OrdinalStem>`, `<OrdinalComposition>`, `<OrdinalScale>`, domain-guard plugin) | ✓ 5 min, 12 h | gender | local | Unsourced ordinals fail closed by design: zero, 1110–1910, the other non-round thousands above 1999 and the non-round values from a million (no canonical form established); millions are separate nouns joined by `e` ("due milioni e centomila"); a currency amount of one reads un before a noun taking il (un euro, but uno scellino, uno zloty) and its compounds stay invariable (ventuno euro; `<Currency><Replacement exceptBeforeNoun>`, NTS-51); un milione di euro (`<NounConnector>`, NTS-52) |
+| PT | Portuguese | ✓ declarative, composed (1–1999, NTS-28) | ✓ 5 min, 12 h (direct "e …") | gender | local | Deliberate direct numeric reading (no "para"/"menos" constructions); PT-PT/PT-BR not split; no ordinal of zero; cardinals to 999 999, so *um milhão de* (Priberam) is outside the domain (NTS-52) |
+| GL, gl-ES | Galician | ✓ declarative, gender on the last element (1–1999, NTS-28) | ✓ 5 min, 12 h | gender | local | No ordinal of zero; `un millón de euros` (`<NounConnector>`, NTS-52) |
+| RO, RO-RO | Romanian | ✓ plugin (DOOM) | ✓ 15 min, 12 h | gen | local | Ordinals up to 999 999 and one million (masculine); a currency noun after 20 and above takes de, except after a compound ending on 1–19 (`douăzeci de lei`, `o sută nouăsprezece lei`; GALR, `<NounConnector numberModulo>`, NTS-52) |
+| CA, ca-ES, ca-ES-valencia | Catalan | ✓ declarative | ✓ 15 min, 12 h | gender | local | Traditional quarters only; no ordinal of zero; `un milió de pessetes`, `un milió d'euros` (`<NounConnector>`, NTS-52) |
 | ca-ES-valencia | Valencian | ✓ inherited | ✓ 5 min, 12 h, own section | gender | child of CA | Invariable `dos` in ClockTime only |
 | EL | Greek | ✓ declarative, composed (1–1999, NTS-28) | ✓ 15 min, 12 h | gender | local | Masculine cardinal forms (ένας) not modelled; no ordinal of zero |
 | FI | Finnish | ✓ declarative (zero: nollas; nominative 0–1 999 999, NTS-28, NTS-37) | ✓ 15 min, 12 h | case | local (long scale from SCALE-LONG) | Inflected ordinals and ordinals from 2 000 000 fail closed (unsourced); cardinals unbounded, paired scales without *-ljardi* (NTS-37) |
@@ -869,22 +869,32 @@ es.ConvertCurrency(21m, peseta);    // "veintiuna pesetas"   (the currency overr
 es.Convert(21);                     // "veintiuno"           (standalone cardinals unchanged)
 ```
 
-Two further `<Currency>` options shape the phrase itself (NTS-51); neither touches any other conversion:
+Two further `<Currency>` options shape the phrase itself (NTS-51, NTS-52); neither touches any other conversion:
 
-- `terminalScaleConnector` with `terminalScales` (`CurrencyTerminalScaleConnector`, `CurrencyTerminalScales`): a word
-  placed between the numeral and the noun when the numeral **ends** on the noun of a listed scale. The decision is
-  structural, from the groups of the amount and not from its text: its lowest non-zero group must not be the units
-  (a paired multiplier, `pairedScalesFrom`, is one group at its named scale). Spanish `terminalScaleConnector="de"
-  terminalScales="2.."` after DPD "cardinales" §6, since *millón* is a noun; Italian `terminalScaleConnector="di"
-  terminalScales="2.."` after Treccani, "milione".
+- `<NounConnector>` (`CurrencyNounConnector`, `CurrencyNounConnectorRule`): the text between the numeral and the noun it
+  governs, as a `default` (empty: none) and `<Substitution>` children that differ from it. A substitution declares a
+  `value` (empty: no connector), an optional `nounSeparator` (`""` after an elided `d'`; the language's separator by
+  default) and one to three constraints:
+  - `terminalScales`: the scale noun the numeral **ends** on, decided on its group structure and not on its text (its
+    lowest non-zero group; a paired multiplier, `pairedScalesFrom`, is one group at its named scale);
+  - `numberRange`: the count of the amount (unit and subunit each on its own count), optionally modulo `numberModulo`;
+  - `beforeNoun`: comma-separated beginnings of the noun (ignoring case); no linguistic category is inferred.
+
+  The matching substitution with the most constraints wins; at equal specificity the **first declared** wins (the order
+  is authoritative, never an ambiguity error); with no match the default applies. Spanish `de` and Italian `di` on
+  `terminalScales="2.."` (DPD "cardinales" §6, Treccani "milione"); French and Catalan `de`, elided `d'` before a vowel
+  (Académie française, OQLF; UOC, with the consonantal *i*/*u* declared first); Galician `de` (RAG); Romanian `de` from
+  20 except after a compound ending on 1–19 (GALR 2005: `numberRange="1..19" numberModulo="100" value=""` declared
+  before `numberRange="20.." value="de"`). The NTS-51 attributes `terminalScaleConnector`/`terminalScales` remain as a
+  shorthand for one such substitution; combining them with `<NounConnector>` is rejected.
 - `<Replacement>` children (`CurrencyReplacements`, `CurrencyReplacementRule`): replacements of the rendered numeral,
   applied after its variants and before the noun, optionally blocked before the nouns beginning with one of
   `exceptBeforeNoun` (ignoring case). Italian apocopates *uno* alone before a noun taking the article *il* (Treccani,
   "uno"), its compounds staying invariable.
 
 Each amount, unit then subunit, is built in this order: caller variants < `forceVariants` < `CurrencyDefinition`
-variants; the cardinal; the replacements; the connector; the noun. A `<Currency>` declared in a `baseOn` child replaces
-the parent's as a whole.
+variants; the cardinal; the replacements; the separator; the noun connector; the noun. A `<Currency>` declared in a
+`baseOn` child replaces the parent's as a whole.
 
 ```csharp
 es.ConvertCurrency(1_000_000m, eur);      // "un millón de euros"
@@ -892,8 +902,24 @@ es.ConvertCurrency(2_500_000_000m, eur);  // "dos mil quinientos millones de eur
 es.ConvertCurrency(1_200_000m, eur);      // "un millón doscientos mil euros"
 es.ConvertCurrency(1_000_001m, eur);      // "un millón un euros"
 
+var fr = NumberToStringConverter.GetConverter("FR");
+// <NounConnector default="">
+//     <Substitution terminalScales="2.." value="de" />
+//     <Substitution terminalScales="2.." beforeNoun="a,à,â,…,u,ù,û,ü" value="d'" nounSeparator="" /></NounConnector>
+var francs = new CurrencyDefinition { UnitSingular = "franc", UnitPlural = "francs", SubunitSingular = "centime", SubunitPlural = "centimes", Connector = "et" };
+var euros = new CurrencyDefinition { UnitSingular = "euro", UnitPlural = "euros", SubunitSingular = "centime", SubunitPlural = "centimes", Connector = "et" };
+fr.ConvertCurrency(2_000_000m, euros);    // "deux-millions d'euros"
+fr.ConvertCurrency(1_000_000m, francs);   // "un-million de francs"
+fr.ConvertCurrency(1_200_000m, euros);    // "un-million-deux-cent-mille euros"
+
+var ro = NumberToStringConverter.GetConverter("RO");
+var lei = new CurrencyDefinition { UnitSingular = "leu", UnitPlural = "lei", SubunitSingular = "ban", SubunitPlural = "bani", Connector = "și" };
+ro.ConvertCurrency(120m, lei);            // "o sută douăzeci de lei"
+ro.ConvertCurrency(119m, lei);            // "o sută nouăsprezece lei"
+ro.ConvertCurrency(2.20m, lei);           // "doi lei și douăzeci de bani"
+
 var it = NumberToStringConverter.GetConverter("IT");
-// <Currency terminalScaleConnector="di" terminalScales="2..">
+// <Currency><NounConnector default=""><Substitution terminalScales="2.." value="di" /></NounConnector>
 //     <Replacement oldValue="uno" newValue="un" scope="Standalone" exceptBeforeNoun="z,x,y,…,gn,ps,sb,sc,…" /></Currency>
 var euro = new CurrencyDefinition { UnitSingular = "euro", UnitPlural = "euro", SubunitSingular = "centesimo", SubunitPlural = "centesimi", Connector = "e" };
 it.ConvertCurrency(1.01m, euro);          // "un euro e un centesimo"

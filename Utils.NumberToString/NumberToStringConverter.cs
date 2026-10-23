@@ -370,6 +370,9 @@ namespace Utils.NumberToString
             (_currencyTerminalScaleConnector, _currencyTerminalScales) =
                 CompileCurrencyTerminalScales(options.CurrencyTerminalScaleConnector, options.CurrencyTerminalScales);
             CurrencyTerminalScales = _currencyTerminalScales is null ? null : options.CurrencyTerminalScales;
+            _currencyNounConnector = options.CurrencyNounConnector;
+            _effectiveCurrencyNounConnector = CompileCurrencyNounConnector(
+                _currencyNounConnector, _currencyTerminalScaleConnector, _currencyTerminalScales);
             _currencyReplacements = CompileCurrencyReplacements(options.CurrencyReplacements);
 
             _fractionForcedVariants = _fractionForcedVariants.ToImmutableDictionary(
@@ -690,17 +693,26 @@ namespace Utils.NumberToString
         public ForcedVariantSet CurrencyForcedVariants => _currencyForcedVariants;
 
         /// <summary>
-        /// Gets the text placed between a currency numeral ending on a scale of <see cref="CurrencyTerminalScales"/> and
-        /// its noun (e.g. <c>"de"</c> for Spanish), or <see langword="null"/>
-        /// (see <see cref="NumberToStringConverterOptions.CurrencyTerminalScaleConnector"/>).
+        /// Gets the legacy (NTS-51) connector placed between a currency numeral ending on a scale of
+        /// <see cref="CurrencyTerminalScales"/> and its noun, or <see langword="null"/> when it was not configured through
+        /// that shorthand (see <see cref="NumberToStringConverterOptions.CurrencyTerminalScaleConnector"/>; a
+        /// <see cref="CurrencyNounConnector"/> is reported there instead).
         /// </summary>
         public string? CurrencyTerminalScaleConnector => _currencyTerminalScaleConnector;
 
         /// <summary>
-        /// Gets the range expression of the scales taking <see cref="CurrencyTerminalScaleConnector"/>, or
+        /// Gets the range expression of the scales taking the legacy <see cref="CurrencyTerminalScaleConnector"/>, or
         /// <see langword="null"/> (see <see cref="NumberToStringConverterOptions.CurrencyTerminalScales"/>).
         /// </summary>
         public string? CurrencyTerminalScales { get; }
+
+        /// <summary>
+        /// Gets the connector between a currency numeral and its noun configured as a default with contextual
+        /// substitutions (NTS-52), or <see langword="null"/> when none is configured that way
+        /// (see <see cref="NumberToStringConverterOptions.CurrencyNounConnector"/>). The legacy
+        /// <see cref="CurrencyTerminalScaleConnector"/> shorthand is not reported here.
+        /// </summary>
+        public CurrencyNounConnector? CurrencyNounConnector => _currencyNounConnector;
 
         /// <summary>
         /// Gets the replacements applied to the numeral of a currency amount before its noun (e.g. Italian <c>uno</c> →
@@ -861,6 +873,13 @@ namespace Utils.NumberToString
         private readonly string? _currencyTerminalScaleConnector;
         /// <summary>The scales taking <see cref="_currencyTerminalScaleConnector"/>, or <see langword="null"/>.</summary>
         private readonly IntRange<long>? _currencyTerminalScales;
+        /// <summary>The configured currency noun connector, or <see langword="null"/> (see <see cref="CurrencyNounConnector"/>).</summary>
+        private readonly CurrencyNounConnector? _currencyNounConnector;
+        /// <summary>
+        /// The connector actually applied: <see cref="_currencyNounConnector"/>, or the one synthesized from the legacy
+        /// terminal-scale shorthand, or <see langword="null"/> for none.
+        /// </summary>
+        private readonly CurrencyNounConnector? _effectiveCurrencyNounConnector;
         /// <summary>The validated snapshot of the currency numeral replacements (see <see cref="CurrencyReplacements"/>).</summary>
         private readonly ImmutableArray<CurrencyReplacementRule> _currencyReplacements;
         private readonly ImmutableDictionary<int, ForcedVariantSet> _fractionForcedVariants;
@@ -2832,11 +2851,11 @@ namespace Utils.NumberToString
         }
 
         /// <summary>
-        /// Builds one currency amount, unit or subunit: the numeral governing the noun, then the noun (NTS-30, NTS-51).
-        /// In order: the cardinal fragment rendered with <paramref name="query"/> (caller, language currency context and
-        /// currency variants already overlaid), the <see cref="CurrencyReplacements"/> that apply before
-        /// <paramref name="noun"/>, the <see cref="CurrencyTerminalScaleConnector"/> when the numeral ends on a scale of
-        /// <see cref="CurrencyTerminalScales"/>, then the noun.
+        /// Builds one currency amount, unit or subunit: the numeral governing the noun, then the noun (NTS-30, NTS-51,
+        /// NTS-52). In order: the cardinal fragment rendered with <paramref name="query"/> (caller, language currency
+        /// context and currency variants already overlaid), the <see cref="CurrencyReplacements"/> that apply before
+        /// <paramref name="noun"/>, then <see cref="Separator"/> and the noun junction
+        /// (<see cref="BuildCurrencyNounJunction"/>).
         /// </summary>
         /// <param name="count">The non-negative count.</param>
         /// <param name="query">The effective variant query of the numeral.</param>
@@ -2848,10 +2867,62 @@ namespace Utils.NumberToString
             foreach (var rule in _currencyReplacements)
                 if (rule.AppliesBefore(noun))
                     numeral = ApplyVariantReplacement(numeral, rule.Replacement);
-            if (_currencyTerminalScaleConnector != null && GetTerminalScaleIndex(count) is int scale
-                && _currencyTerminalScales!.Contains(scale))
-                numeral = numeral + Separator + _currencyTerminalScaleConnector;
-            return numeral + Separator + noun;
+            return numeral + Separator + BuildCurrencyNounJunction(count, noun);
+        }
+
+        /// <summary>
+        /// Builds what follows the numeral of a currency amount and its <see cref="Separator"/> (NTS-52): the noun alone
+        /// when the selected connector is empty, otherwise the connector, its noun separator (the
+        /// <see cref="Separator"/> by default) and the noun. The connector is the effective
+        /// <see cref="CurrencyNounConnector"/> resolved for this amount: among its substitutions whose constraints all
+        /// hold, the most specific wins, the first declared at equal specificity; the default otherwise. The decision
+        /// reads the count and its group structure (<see cref="GetTerminalScaleIndex"/>), and the noun only through the
+        /// declared <see cref="CurrencyNounConnectorRule.BeforeNoun"/> beginnings; never the rendered numeral.
+        /// </summary>
+        /// <param name="count">The non-negative count of the amount, unit or subunit.</param>
+        /// <param name="noun">The currency noun the numeral governs.</param>
+        /// <returns>The junction text, ending with the noun.</returns>
+        private string BuildCurrencyNounJunction(BigInteger count, string noun)
+        {
+            var connector = _effectiveCurrencyNounConnector;
+            if (connector is null) return noun;
+
+            string value = connector.Default;
+            string? nounSeparator = connector.DefaultNounSeparator;
+            int best = 0;
+            int? terminalScale = null;
+            bool terminalScaleKnown = false;
+            foreach (var rule in connector.Substitutions)
+            {
+                // Strictly greater: at equal specificity the rule declared first keeps its place.
+                int specificity = rule.Specificity;
+                if (specificity <= best) continue;
+                if (rule.TerminalScales is not null)
+                {
+                    if (!terminalScaleKnown)
+                    {
+                        terminalScale = GetTerminalScaleIndex(count);
+                        terminalScaleKnown = true;
+                    }
+                    if (terminalScale is not int scale || !rule.TerminalScales.Contains((long)scale)) continue;
+                }
+                if (rule.NumberRange is not null
+                    && !rule.NumberRange.Contains(rule.NumberModulo is long modulo ? BigInteger.Remainder(count, modulo) : count))
+                    continue;
+                if (rule.BeforeNoun.Count > 0 && !BeginsWithAny(noun, rule.BeforeNoun)) continue;
+                value = rule.Value;
+                nounSeparator = rule.NounSeparator;
+                best = specificity;
+            }
+            return value.Length == 0 ? noun : value + (nounSeparator ?? Separator) + noun;
+
+            static bool BeginsWithAny(string text, IReadOnlyList<string> prefixes)
+            {
+                foreach (string prefix in prefixes)
+                    if (text.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                        return true;
+                return false;
+            }
         }
 
         /// <summary>
@@ -2921,6 +2992,29 @@ namespace Utils.NumberToString
                 throw new ArgumentException($"CurrencyTerminalScales \"{scales}\": the range covers no scale.",
                     nameof(NumberToStringConverterOptions.CurrencyTerminalScales));
             return (connector, range);
+        }
+
+        /// <summary>
+        /// Determines the currency noun connector actually applied (NTS-52): the configured
+        /// <see cref="NumberToStringConverterOptions.CurrencyNounConnector"/>, or the one equivalent to the legacy
+        /// terminal-scale shorthand (an empty default and one substitution on its scales, with the standard separator).
+        /// The two models are never mixed.
+        /// </summary>
+        /// <param name="configured">The configured connector, or <see langword="null"/>.</param>
+        /// <param name="legacyConnector">The validated legacy connector, or <see langword="null"/>.</param>
+        /// <param name="legacyScales">The validated legacy scales, or <see langword="null"/>.</param>
+        /// <returns>The effective connector, or <see langword="null"/> when none is configured.</returns>
+        /// <exception cref="ArgumentException">Both the connector and the legacy shorthand are configured.</exception>
+        private static CurrencyNounConnector? CompileCurrencyNounConnector(
+            CurrencyNounConnector? configured, string? legacyConnector, IntRange<long>? legacyScales)
+        {
+            if (legacyConnector is null) return configured;
+            if (configured is not null)
+                throw new ArgumentException(
+                    "CurrencyNounConnector and the legacy CurrencyTerminalScaleConnector/CurrencyTerminalScales cannot be " +
+                    "combined: declare the terminal-scale connector as a substitution of the noun connector.",
+                    nameof(NumberToStringConverterOptions.CurrencyNounConnector));
+            return new CurrencyNounConnector(substitutions: [new CurrencyNounConnectorRule(legacyConnector, terminalScales: legacyScales)]);
         }
 
         /// <summary>Validates and snapshots the currency numeral replacements (see <see cref="CurrencyReplacements"/>).</summary>

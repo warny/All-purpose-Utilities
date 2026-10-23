@@ -302,8 +302,12 @@
 			 "di". Treccani, "milione": "un m. di sterline; la città ha superato i quattro milioni di abitanti. Usato
 			 assol., s'intende in genere un milione di euro"; "miliardo": "un m. di molecole". Decided on the structure
 			 (terminalScales="2..", from milione): un milione di euro, due miliardi di euro, but un milione e uno euro,
-			 due milioni e centomila euro, mille euro. -->
-		<Currency terminalScaleConnector="di" terminalScales="2..">
+			 due milioni e centomila euro, mille euro. NTS-52: declared as a NounConnector substitution, identical
+			 output. -->
+		<Currency>
+			<NounConnector default="">
+				<Substitution terminalScales="2.." value="di" />
+			</NounConnector>
 			<Replacement oldValue="uno" newValue="un" scope="Standalone"
 			             exceptBeforeNoun="z,x,y,ia,ie,io,iu,gn,ps,sb,sc,sd,sf,sg,sh,sk,sl,sm,sn,sp,sq,sr,st,sv,sw,sz" />
 		</Currency>

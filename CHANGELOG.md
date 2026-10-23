@@ -4,6 +4,27 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed — `omy.Utils.NumberToString` (NTS-52 closed: currency noun connectors)
+- French (FR, FR-fr, FR-ca, FR-be, FR-ch) introduces the currency noun with `de` after a numeral ending on *million*,
+  *milliard* …, elided before a vowel (Académie française, OQLF): `un-million d'euros` (was `un-million euros`),
+  `deux-millions d'euros`, `un-million de francs`, `deux-milliards-cinq-cents-millions d'euros`; `un-million-deux-cent-mille
+  euros`, `un-million-un euros` are unchanged.
+- Catalan (CA, ca-ES, ca-ES-valencia) likewise, elided before a vowel or a mute *h* but not before a consonantal *i*/*u*
+  (UOC): `un milió d'euros`, `un milió de pessetes`, `un milió d'hores`, `un milió de iens`.
+- Galician (GL, gl-ES) introduces it with `de` (RAG, "millón"): `un millón de euros`, `dous millóns de euros`.
+- Romanian (RO, RO-RO) introduces the noun with `de` from twenty, except after a compound ending on one to nineteen
+  (GALR 2005): `douăzeci de euro`, `o sută de euro`, `un milion de euro`, `doi lei și douăzeci de bani`; `o sută unu
+  euro`, `o sută nouăsprezece euro`, `două milioane trei sute opt lei` keep the noun directly.
+- Portuguese is audited only: *um milhão de* is attested (Priberam), but the cardinal domain stops at 999 999, so no
+  output changed. Spanish and Italian are migrated to the new element with byte-identical output.
+- Added `<Currency><NounConnector default nounSeparator><Substitution value nounSeparator terminalScales numberRange
+  numberModulo beforeNoun /></NounConnector>` (public `CurrencyNounConnector`, `CurrencyNounConnectorRule`,
+  `CurrencyNounConnectorType`, `CurrencyNounConnectorSubstitutionType`, `CurrencyType.NounConnector`,
+  `NumberToStringConverterOptions.CurrencyNounConnector`, `NumberToStringConverter.CurrencyNounConnector`; additive): a
+  default connector and contextual substitutions; the matching substitution with the most constraints wins, the first
+  declared at equal specificity. The NTS-51 `terminalScaleConnector`/`terminalScales` attributes and options remain as
+  a shorthand for one substitution; combining them with a `NounConnector` is rejected.
+
 ### Fixed — `omy.Utils.NumberToString` (NTS-50 closed: Basque ordinal of zero)
 - Basque forms the ordinal of zero, `zerogarren` (EU and eu-ES, previously `NotSupportedException`), listed by
   Euskaltzaindia rule 203 (2025) §5. It is the general rule (the cardinal `zero` + `-garren`); only the domain guard

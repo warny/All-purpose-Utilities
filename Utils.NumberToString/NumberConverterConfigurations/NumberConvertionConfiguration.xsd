@@ -556,6 +556,130 @@
         </xs:attribute>
     </xs:complexType>
 
+    <xs:simpleType name="CurrencyScaleRangeType">
+        <xs:annotation>
+            <xs:documentation>
+                NTS-52. A range expression of scale indices, every value at least 1: "2", "2..4", "2..",
+                "2,4..". Scale 0 (the units) has no noun, so neither "0" nor an open lower bound is accepted.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:pattern value="[1-9][0-9]*(\.\.([1-9][0-9]*)?)?(\s*,\s*[1-9][0-9]*(\.\.([1-9][0-9]*)?)?)*" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="CurrencyCountRangeType">
+        <xs:annotation>
+            <xs:documentation>
+                NTS-52. A range expression of non-negative counts: "20", "1..19", "20..", "..19", "0,20..".
+            </xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:pattern value="([0-9]+(\.\.([0-9]+)?)?|\.\.[0-9]+)(\s*,\s*([0-9]+(\.\.([0-9]+)?)?|\.\.[0-9]+))*" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="CurrencyNounPrefixListType">
+        <xs:annotation>
+            <xs:documentation>
+                NTS-52. Comma-separated beginnings of a currency noun, none empty: "a,e,i,o,u".
+            </xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:pattern value="[^,\s]+(\s*,\s*[^,\s]+)*" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="CurrencyNounConnectorSubstitutionType">
+        <xs:annotation>
+            <xs:documentation>
+                NTS-52. A connector applying between the numeral of a currency amount and its noun when every
+                declared constraint holds: terminalScales, numberRange (optionally modulo numberModulo) and
+                beforeNoun; at least one is required (checked by the loader). The substitution with the most
+                constraints wins; at equal specificity the first declared wins.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="value" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>The connector ("de", "d'"); empty for no connector (numeral, separator, noun).</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="nounSeparator" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    The text between the connector and the noun: "" after an elided "d'" (un-million d'euros).
+                    Absent: the language's separator.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="terminalScales" type="CurrencyScaleRangeType" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    The scale the numeral must end on, decided on its group structure (the scale of its lowest
+                    non-zero group; a paired multiplier is one group at its named scale): "2.." for million and
+                    above — un millón de euros, but un millón doscientos mil euros, un millón un euros.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="numberRange" type="CurrencyCountRangeType" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    The counts of the amount (unit or subunit, each decided on its own count): "20.." for
+                    Romanian douăzeci de lei.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="numberModulo" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Tests numberRange against the count modulo this value (at least 2; requires numberRange):
+                    numberRange="1..19" numberModulo="100" for the compounds ending in one to nineteen.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:simpleType>
+                <xs:restriction base="xs:long">
+                    <xs:minInclusive value="2" />
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+        <xs:attribute name="beforeNoun" type="CurrencyNounPrefixListType" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Comma-separated beginnings of the currency noun (compared ignoring case), one of which must
+                    begin it. No linguistic category is inferred: the listed strings only.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="CurrencyNounConnectorType">
+        <xs:annotation>
+            <xs:documentation>
+                NTS-52. The connector between the numeral of a currency amount and the noun it governs: a
+                default, then the Substitution children that differ from it, in an authoritative order.
+                Assembly: numeral + separator + noun when the selected connector is empty, otherwise numeral +
+                separator + connector + nounSeparator + noun. Example (French):
+                    &lt;NounConnector default=""&gt;
+                        &lt;Substitution terminalScales="2.." value="de" /&gt;
+                        &lt;Substitution terminalScales="2.." beforeNoun="a,e,i,o,u" value="d'" nounSeparator="" /&gt;
+                    &lt;/NounConnector&gt;
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="Substitution" type="CurrencyNounConnectorSubstitutionType" minOccurs="0" maxOccurs="unbounded" />
+        </xs:sequence>
+        <xs:attribute name="default" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>The connector applying when no substitution matches. Absent or empty: none.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="nounSeparator" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>The text between the default connector and the noun. Absent: the language's separator.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
     <xs:complexType name="ReplacementsListType">
         <xs:annotation>
             <xs:documentation>An ordered list of Replacement rules.</xs:documentation>
@@ -2033,18 +2157,20 @@
                             <xs:element name="Currency" minOccurs="0">
                                 <xs:annotation>
                                     <xs:documentation>
-                                        NTS-30, NTS-51. Currency-phrase configuration for ConvertCurrency. Inherited
-                                        through baseOn unless redeclared: a declared element replaces the inherited one
-                                        as a whole (attributes and Replacement children), so a derived language repeats
-                                        every option it keeps. Each amount (unit, then subunit) is built in this order:
-                                        the caller's variants, overlaid by forceVariants, overlaid by the variants of
-                                        the CurrencyDefinition; the cardinal rendered with them; the Replacement
-                                        children, in order, that apply before the noun; terminalScaleConnector when the
-                                        numeral ends on a scale of terminalScales; then the currency noun.
+                                        NTS-30, NTS-51, NTS-52. Currency-phrase configuration for ConvertCurrency.
+                                        Inherited through baseOn unless redeclared: a declared element replaces the
+                                        inherited one as a whole (attributes, NounConnector and Replacement children),
+                                        so a derived language repeats every option it keeps. Each amount (unit, then
+                                        subunit) is built in this order: the caller's variants, overlaid by
+                                        forceVariants, overlaid by the variants of the CurrencyDefinition; the cardinal
+                                        rendered with them; the Replacement children, in order, that apply before the
+                                        noun; the separator; the NounConnector junction (or the legacy
+                                        terminalScaleConnector); then the currency noun.
                                     </xs:documentation>
                                 </xs:annotation>
                                 <xs:complexType>
                                     <xs:sequence>
+                                        <xs:element name="NounConnector" type="CurrencyNounConnectorType" minOccurs="0" />
                                         <xs:element name="Replacement" type="CurrencyReplacementType" minOccurs="0" maxOccurs="unbounded" />
                                     </xs:sequence>
                                     <xs:attribute name="forceVariants" type="xs:string" use="optional">
@@ -2063,9 +2189,10 @@
                                     <xs:attribute name="terminalScaleConnector" type="xs:string" use="optional">
                                         <xs:annotation>
                                             <xs:documentation>
-                                                NTS-51. Text placed between the numeral of an amount (unit or subunit)
-                                                and the currency noun when the numeral ends on the noun of a scale listed
-                                                in terminalScales. Example: "de" for Spanish (DPD "cardinales" §6) —
+                                                NTS-51, legacy shorthand for a NounConnector with one substitution on
+                                                terminalScales; cannot be combined with NounConnector. Text placed
+                                                between the numeral of an amount (unit or subunit) and the currency noun
+                                                when the numeral ends on the noun of a scale listed in terminalScales. Example: "de" for Spanish (DPD "cardinales" §6) —
                                                 "un millón de euros", "dos mil millones de euros", but "un millón
                                                 doscientos mil euros" and "un millón un euros". The decision is
                                                 structural: the numeral ends on a scale noun when its lowest non-zero

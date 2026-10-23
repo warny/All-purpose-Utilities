@@ -64,10 +64,16 @@ public sealed class NumberToStringImmutabilityTests
         var euro = new CurrencyDefinition { UnitSingular = "euro", UnitPlural = "euros", SubunitSingular = "céntimo", SubunitPlural = "céntimos" };
         var esOptions = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("ES"));
         var es = new NumberToStringConverter(esOptions);
+        // NTS-52: Spanish declares its "de" as a NounConnector substitution, no longer through the legacy shorthand.
+        var connector = es.CurrencyNounConnector;
+        esOptions.CurrencyNounConnector = null;
         esOptions.CurrencyTerminalScaleConnector = "del";
         esOptions.CurrencyTerminalScales = "1..";
-        Assert.AreEqual("de", es.CurrencyTerminalScaleConnector);
-        Assert.AreEqual("2..", es.CurrencyTerminalScales);
+        Assert.IsNull(es.CurrencyTerminalScaleConnector);
+        Assert.IsNull(es.CurrencyTerminalScales);
+        Assert.IsNotNull(connector);
+        Assert.AreSame(connector, es.CurrencyNounConnector);
+        Assert.AreEqual("de", es.CurrencyNounConnector!.Substitutions[0].Value);
         Assert.AreEqual("un millón de euros", es.ConvertCurrency(1_000_000m, euro));
         Assert.AreEqual("mil euros", es.ConvertCurrency(1_000m, euro));
 
@@ -81,6 +87,39 @@ public sealed class NumberToStringImmutabilityTests
         Assert.IsFalse(it.CurrencyReplacements is List<CurrencyReplacementRule>, "The converter must not expose a mutable list.");
         Assert.IsFalse(it.CurrencyReplacements[0].ExceptBeforeNoun is List<string>, "The rule must not expose a mutable list.");
         Assert.AreEqual("un euro", it.ConvertCurrency(1m, italianEuro));
+    }
+
+    /// <summary>
+    /// NTS-52: the currency noun connector snapshots its substitutions and their noun beginnings in the order supplied;
+    /// mutating the source sequences or the options afterwards changes neither the connector nor the converter, and no
+    /// mutable list is exposed.
+    /// </summary>
+    [TestMethod]
+    public void CurrencyNounConnector_SourceMutationAfterConstruction_DoesNotChangeConverter()
+    {
+        var euro = new CurrencyDefinition { UnitSingular = "euro", UnitPlural = "euros", SubunitSingular = "centime", SubunitPlural = "centimes" };
+        var franc = new CurrencyDefinition { UnitSingular = "franc", UnitPlural = "francs", SubunitSingular = "centime", SubunitPlural = "centimes" };
+        var scales = NumberToStringConverter.ParseRangeExpression("2..");
+        var prefixes = new List<string> { "e" };
+        var rules = new List<CurrencyNounConnectorRule>
+        {
+            new("de", terminalScales: scales),
+            new("d'", "", scales, beforeNoun: prefixes),
+        };
+        var connector = new CurrencyNounConnector("", null, rules);
+        var options = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("FR")) { CurrencyNounConnector = connector };
+        var fr = new NumberToStringConverter(options);
+        rules.Clear();
+        prefixes[0] = "f";
+        options.CurrencyNounConnector = new CurrencyNounConnector("XX");
+        Assert.AreSame(connector, fr.CurrencyNounConnector);
+        Assert.AreEqual(2, connector.Substitutions.Count);
+        Assert.AreEqual("e", connector.Substitutions[1].BeforeNoun[0]);
+        Assert.IsFalse(connector.Substitutions is List<CurrencyNounConnectorRule>, "The connector must not expose a mutable list.");
+        Assert.IsFalse(connector.Substitutions[1].BeforeNoun is List<string>, "The rule must not expose a mutable list.");
+        Assert.AreEqual("un-million d'euros", fr.ConvertCurrency(1_000_000m, euro));
+        Assert.AreEqual("un-million de francs", fr.ConvertCurrency(1_000_000m, franc));
+        Assert.AreEqual("mille euros", fr.ConvertCurrency(1_000m, euro));
     }
 
     /// <summary>Mutating the source ordinal stem rule list after construction does not affect the converter snapshot.</summary>

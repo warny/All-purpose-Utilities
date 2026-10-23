@@ -1,6 +1,11 @@
 # Utils.NumberToString — Current backlog
 
-Re-audited on 2026-10-23 after NTS-50 (closed: Basque `zerogarren`, Euskaltzaindia rule 203 §5, by the general
+Re-audited on 2026-10-23 after NTS-52 (closed: one declarative connector between a currency numeral and its noun,
+`<Currency><NounConnector>` with a default and substitutions on the terminal scale, the count and the beginning of the
+noun, the most specific winning and the first declared at equal specificity; French `un-million d'euros`, `un-million
+de francs`, Catalan `un milió d'euros`, `un milió de iens`, Galician `un millón de euros`, Romanian `douăzeci de euro`
+but `o sută unu euro` after GALR; Portuguese audited, out of domain; ES/IT migrated byte-identically; NTS-53 opened;
+`DONE-2026-10-23(2).md`), after NTS-50 (closed: Basque `zerogarren`, Euskaltzaindia rule 203 §5, by the general
 rule; only the domain guard changed) and NTS-51 (closed: Spanish `un millón de euros`, `dos mil quinientos millones de
 euros` after DPD `cardinales` §6, through the generic structural `<Currency terminalScaleConnector>`; Italian `un
 euro`, `uno scellino`, `ventuno euro` after Treccani, through the generic `<Currency><Replacement exceptBeforeNoun>`,
@@ -98,12 +103,13 @@ classification.
 
 ## Open items
 
-- **NTS-52 — the counted noun after a scale noun, other languages.** Found by NTS-51, which configured Spanish (*de*)
-  and Italian (*di*, Treccani "milione") through `<Currency terminalScaleConnector terminalScales>`. Observed in the
-  NTS-51 dump: French (`un-million euros`), Catalan (`un milió euros`) and Romanian (`un milion euros`), each to be
-  sourced, plus an audit of the other languages whose large scales are nouns. French and Catalan elide the connector
-  before a vowel (*un million d'euros*), which the primitive cannot express as is: it needs an extension (an elided
-  form chosen on the onset of the noun), and a dump of the currency probes.
+- **NTS-53 — cardinal defects observed by the NTS-52 dump (CA, GL, RO).** Distinct from the noun connector, which
+  NTS-52 closed, and outside its scope (cardinal grammar). Catalan writes the plural of *milió* `milións`
+  (`dos milións`) where the UOC, "Escriptura dels numerals", writes *dos milions d'euros* (NTS-08 sources, NTS-52 #5);
+  Catalan and Galician read 10^9 `un mil milió` / `un mil millón` (to be sourced: *mil milions*, *mil millóns*, the
+  `pairedScalesFrom` of ES/EU being the candidate primitive); Romanian reads one before a noun `unu` (`unu euro`,
+  `unu leu`) where the attributive form is *un* / *o* (to be sourced), and its internal `scaleConnector` applies `de`
+  after a multiplier ending on 1–19 (`o sută unu de mii`), against the GALR rule quoted for NTS-52 (#9).
 - **NTS-35 — Polish cardinals above 999 999.** Excluded from NTS-30C: PL declares `maxNumber="999999"`, so no
   generated scale is part of its public domain and NTS-30C configured none. Opening the domain needs, together: the
   Polish long-scale names (*milion*, *miliard*, *bilion*, *biliard* …, not the current generated spelling), their
@@ -121,7 +127,7 @@ classification.
   `vingt-cinq millièmes`.)
 
 
-NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-28, NTS-29, NTS-30, NTS-30A, NTS-30B, NTS-30C, NTS-30D, NTS-30E, NTS-30F, NTS-30G, NTS-30H, NTS-31, NTS-32, NTS-33, NTS-37, NTS-38, NTS-39, NTS-40, NTS-41, NTS-42, NTS-48, NTS-49, NTS-50 and NTS-51 are closed:
+NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-28, NTS-29, NTS-30, NTS-30A, NTS-30B, NTS-30C, NTS-30D, NTS-30E, NTS-30F, NTS-30G, NTS-30H, NTS-31, NTS-32, NTS-33, NTS-37, NTS-38, NTS-39, NTS-40, NTS-41, NTS-42, NTS-48, NTS-49, NTS-50, NTS-51 and NTS-52 are closed:
 
 - NTS-01 — XSD validation: `DONE-2026-08-21.md`.
 - NTS-02 — initialization isolation: `DONE-2026-08-21.md`.
@@ -345,6 +351,13 @@ NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-28, NTS-29, NTS-30, NT
   <Replacement oldValue="uno" newValue="un" scope="Standalone" exceptBeforeNoun="…">`; no `form` dimension added to
   Italian; *un milione di euro*, *due miliardi di euro* (Treccani "milione", "miliardo") through the same
   `terminalScaleConnector="di" terminalScales="2.."`. NTS-52 opened for the other languages: `DONE-2026-10-23(1).md`.
+- NTS-52 (opened by NTS-51) — **closed**. The NTS-51 terminal-scale connector generalized into one declarative
+  `<Currency><NounConnector default>` with `<Substitution value nounSeparator terminalScales numberRange numberModulo
+  beforeNoun>` (most specific wins, first declared at equal specificity). FR family `de`/`d'` (Académie française,
+  OQLF), CA family `de`/`d'` with the consonantal *i*/*u* declared first (UOC, UB), GL `de` (RAG), RO `de` from 20
+  except after a compound ending on 1–19 (GALR 2005, `numberModulo`, user decision); PT attested (Priberam) but out of
+  its 999 999 domain, documented only; ES/IT migrated, byte-identical; the NTS-51 attributes kept as a shorthand. NTS-53
+  opened: `DONE-2026-10-23(2).md`.
 
 Full multi-form plural systems (Russian/Slavic count-dependent noun forms,
 Arabic dual/paucal/plural categories) were long deliberately out of scope — the

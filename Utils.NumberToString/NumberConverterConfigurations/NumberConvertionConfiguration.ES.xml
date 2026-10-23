@@ -295,8 +295,13 @@
 			 numeral complejo, el sustantivo que expresa la entidad cuantificada no va precedido de preposición: un millón
 			 doscientas mil personas". So "de" follows a numeral ending on the noun of scale 2 (millón/millones; 10^9 is
 			 "mil millones", the paired scale ending on it): un millón de euros, dos mil millones de euros, but un millón
-			 doscientos mil euros, un millón un euros. Mil (scale 1) is a determiner, not a noun: mil euros. -->
-		<Currency forceVariants="form=attributive" terminalScaleConnector="de" terminalScales="2.." />
+			 doscientos mil euros, un millón un euros. Mil (scale 1) is a determiner, not a noun: mil euros.
+			 NTS-52: declared as a NounConnector substitution (no default connector), identical output. -->
+		<Currency forceVariants="form=attributive">
+			<NounConnector default="">
+				<Substitution terminalScales="2.." value="de" />
+			</NounConnector>
+		</Currency>
 		<TimeUnits>
 			<!-- NTS-05: "hora" is feminine; "minuto"/"segundo" are masculine (the language default,
 			     so no gender= override needed). All three force form=attributive, which activates
