@@ -53,6 +53,36 @@ public sealed class NumberToStringImmutabilityTests
         Assert.AreEqual("un euro", es.ConvertCurrency(1m, euro));
     }
 
+    /// <summary>
+    /// NTS-51: changing the currency terminal-scale connector, its scales or the currency replacements of the options
+    /// after construction, or the list the rules came from, does not affect the converter, whose snapshot is exposed
+    /// read-only.
+    /// </summary>
+    [TestMethod]
+    public void CurrencyPhrase_SourceMutationAfterConstruction_DoesNotChangeConverter()
+    {
+        var euro = new CurrencyDefinition { UnitSingular = "euro", UnitPlural = "euros", SubunitSingular = "céntimo", SubunitPlural = "céntimos" };
+        var esOptions = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("ES"));
+        var es = new NumberToStringConverter(esOptions);
+        esOptions.CurrencyTerminalScaleConnector = "del";
+        esOptions.CurrencyTerminalScales = "1..";
+        Assert.AreEqual("de", es.CurrencyTerminalScaleConnector);
+        Assert.AreEqual("2..", es.CurrencyTerminalScales);
+        Assert.AreEqual("un millón de euros", es.ConvertCurrency(1_000_000m, euro));
+        Assert.AreEqual("mil euros", es.ConvertCurrency(1_000m, euro));
+
+        var italianEuro = new CurrencyDefinition { UnitSingular = "euro", UnitPlural = "euro", SubunitSingular = "centesimo", SubunitPlural = "centesimi" };
+        var rules = new List<CurrencyReplacementRule>(NumberToStringConverter.GetConverter("IT").CurrencyReplacements);
+        var itOptions = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("IT")) { CurrencyReplacements = rules };
+        var it = new NumberToStringConverter(itOptions);
+        rules.Clear();
+        itOptions.CurrencyReplacements = [];
+        Assert.AreEqual(1, it.CurrencyReplacements.Count);
+        Assert.IsFalse(it.CurrencyReplacements is List<CurrencyReplacementRule>, "The converter must not expose a mutable list.");
+        Assert.IsFalse(it.CurrencyReplacements[0].ExceptBeforeNoun is List<string>, "The rule must not expose a mutable list.");
+        Assert.AreEqual("un euro", it.ConvertCurrency(1m, italianEuro));
+    }
+
     /// <summary>Mutating the source ordinal stem rule list after construction does not affect the converter snapshot.</summary>
     [TestMethod]
     public void OrdinalStem_SourceMutationAfterConstruction_DoesNotChangeConverter()

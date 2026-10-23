@@ -513,7 +513,8 @@ public sealed class ChineseOrdinalLanguageSpecifics : OrdinalDomainGuardLanguage
 /// reduced to its noun (<c>milioigarren</c>, <c>bi milioigarren</c>; <c>milioi bat eta batgarren</c> for 1 000 001).
 /// NTS-08 validated 1–1000, NTS-28 the millions; NTS-38 corrects the round million and extends the general rule to the
 /// whole cardinal domain, the milliard being <c>mila milioi</c> (rules 7, 203; NTS-30F): <c>mila milioigarren</c>.
-/// Zero stays closed: rule 203 lists <c>0. zerogarren</c>, recorded as NTS-50, not opened here.
+/// NTS-50 opens zero, which the rule 203 table lists as <c>0. zerogarren</c>: the same general rule forms it from the
+/// cardinal <c>zero</c> (the older rule 7 gave only the cardinals <c>zero</c>/<c>huts</c>).
 /// </summary>
 public sealed class BasqueOrdinalLanguageSpecifics : OrdinalDomainGuardLanguageSpecifics
 {
@@ -521,9 +522,9 @@ public sealed class BasqueOrdinalLanguageSpecifics : OrdinalDomainGuardLanguageS
     protected override string LanguageName => "Basque";
 
     /// <inheritdoc />
-    protected override string SupportedDomain => "1–999999999999";
+    protected override string SupportedDomain => "0–999999999999";
 
     /// <inheritdoc />
     protected override bool IsSupported(long number, IReadOnlyDictionary<string, string> activeVariants)
-        => number is >= 1 and <= 999_999_999_999;
+        => number is >= 0 and <= 999_999_999_999;
 }

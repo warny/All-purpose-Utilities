@@ -1522,6 +1522,22 @@ namespace Utils.NumberToString
                 return rules;
             }
 
+            List<CurrencyReplacementRule> ParseCurrencyReplacements(List<CurrencyReplacementType>? list)
+            {
+                var rules = new List<CurrencyReplacementRule>();
+                foreach (var r in list ?? [])
+                {
+                    if (r.NewValue == null || r.FormVariants is { Count: > 0 })
+                        throw new InvalidOperationException(
+                            $"[{languageIdentifier}] Currency replacement for '{r.OldValue}' must declare a newValue; " +
+                            "form-variant children are not supported in currency replacements.");
+                    rules.Add(new CurrencyReplacementRule(
+                        new NumberToStringConverter.ReplacementRule(r.OldValue, r.NewValue, r.Scope, r.OnScale, r.OnValue),
+                        string.IsNullOrWhiteSpace(r.ExceptBeforeNoun) ? null : r.ExceptBeforeNoun.Split(',').Select(p => p.Trim())));
+                }
+                return rules;
+            }
+
             static IReadOnlyList<NumberToStringConverter.VariantDimension> ParseVariantDimensions(VariantsType variants) =>
                 variants?.Dimensions?
                     .Select(d => new NumberToStringConverter.VariantDimension(
@@ -2057,6 +2073,13 @@ namespace Utils.NumberToString
                 CurrencyForcedVariants = string.IsNullOrWhiteSpace(language.Currency?.ForceVariants)
                     ? null
                     : ForcedVariantSet.Parse(language.Currency!.ForceVariants, languageIdentifier, "Currency"),
+                CurrencyTerminalScaleConnector = string.IsNullOrWhiteSpace(language.Currency?.TerminalScaleConnector)
+                    ? null
+                    : language.Currency!.TerminalScaleConnector,
+                CurrencyTerminalScales = string.IsNullOrWhiteSpace(language.Currency?.TerminalScales)
+                    ? null
+                    : language.Currency!.TerminalScales,
+                CurrencyReplacements = ParseCurrencyReplacements(language.Currency?.Replacements),
                 // Every <ScaleForm> registers its scale (with empty forms when it only names a
                 // selector) so that its index is validated; selectors are resolved here, once.
                 ScaleForms = scaleFormEntries.ToDictionary(

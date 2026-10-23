@@ -480,6 +480,9 @@ Examples:
     | 20 | gender=femminile | ventesima |
     | 1000 | gender=femminile | millesima |
 
+# NTS-51, Treccani "uno": uno alone is apocopated to un before a masculine noun taking the article il (un euro);
+# its compounds stay invariable (ventuno euro). Treccani "milione": a numeral ending on a scale noun introduces
+# the counted noun with di (un milione di euro), not one ending on another cardinal (un milione e uno euro).
 Scenario Outline: Caller-defined currency wording
     Given I use this currency definition
         | property         | value      |
@@ -493,9 +496,13 @@ Scenario Outline: Caller-defined currency wording
 
 Examples:
     | amount | expected                            |
-    | 1      | uno euro                            |
+    | 1      | un euro                             |
     | 2      | due euro                            |
-    | 1.50   | uno euro e cinquanta centesimi      |
+    | 1.50   | un euro e cinquanta centesimi       |
+    | 21     | ventuno euro                        |
+    | 1000000 | un milione di euro                 |
+    | 2000000000 | due miliardi di euro            |
+    | 1000001 | un milione e uno euro              |
 
 Scenario: Ordinal conversion is supported
     Given I use the "IT" number converter

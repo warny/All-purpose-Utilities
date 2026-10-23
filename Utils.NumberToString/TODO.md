@@ -1,6 +1,11 @@
 # Utils.NumberToString — Current backlog
 
-Re-audited on 2026-10-23 after NTS-30 (closed: Vietnamese whole zero classes read `không` + class name, `năm mươi triệu
+Re-audited on 2026-10-23 after NTS-50 (closed: Basque `zerogarren`, Euskaltzaindia rule 203 §5, by the general
+rule; only the domain guard changed) and NTS-51 (closed: Spanish `un millón de euros`, `dos mil quinientos millones de
+euros` after DPD `cardinales` §6, through the generic structural `<Currency terminalScaleConnector>`; Italian `un
+euro`, `uno scellino`, `ventuno euro` after Treccani, through the generic `<Currency><Replacement exceptBeforeNoun>`,
+and `un milione di euro` through the same `terminalScaleConnector`;
+NTS-52 opened; `DONE-2026-10-23(1).md`), after NTS-30 (closed: Vietnamese whole zero classes read `không` + class name, `năm mươi triệu
 không nghìn một trăm linh hai`, through the generic `internalZeroGroupString`; Spanish currency numerals attributive, `un
 euro`, `veintiún euros`, through the generic `<Currency forceVariants>`) and NTS-38 (closed: Basque `milioigarren`,
 `mila milioigarren` after Euskaltzaindia rule 203 §5; Spanish `milmillonésimo` after DPD `ordinales` §2d; NTS-50 and
@@ -93,16 +98,12 @@ classification.
 
 ## Open items
 
-- **NTS-50 — Basque ordinal of zero.** Found by NTS-38: Euskaltzaindia rule 203 §5 lists `0. zerogarren` in its
-  ordinal table, whereas `BasqueOrdinalLanguageSpecifics` still closes 0 on the older rule 7 (which gives only
-  *zero*/*huts*). Opening it needs: the guard widened to 0 (the cardinal *zero* + `-garren` should form it), a test
-  of `zerogarren` on EU and eu-ES, and a check that no other surface (fraction, clock) reads the ordinal of zero.
-- **NTS-51 — currency phrases after NTS-30.** Found by NTS-30, outside its item: ES writes `un millón euros`,
-  `dos millones euros` where the counted noun follows *de* after *millón/millones* (DPD `cardinales` §6, already
-  cited by NTS-30G: *un millón de euros*); IT writes `uno euro` (`Italian.feature`) where Italian apocopates *uno*
-  before a masculine noun (to source: Treccani or the Accademia della Crusca). The ES fix needs a currency-phrase
-  connector conditioned on a round scale noun ending the amount; the IT one can reuse `<Currency forceVariants>`
-  once Italian declares a `form` dimension. Each needs a source audit and a dump of the currency probes.
+- **NTS-52 — the counted noun after a scale noun, other languages.** Found by NTS-51, which configured Spanish (*de*)
+  and Italian (*di*, Treccani "milione") through `<Currency terminalScaleConnector terminalScales>`. Observed in the
+  NTS-51 dump: French (`un-million euros`), Catalan (`un milió euros`) and Romanian (`un milion euros`), each to be
+  sourced, plus an audit of the other languages whose large scales are nouns. French and Catalan elide the connector
+  before a vowel (*un million d'euros*), which the primitive cannot express as is: it needs an extension (an elided
+  form chosen on the onset of the noun), and a dump of the currency probes.
 - **NTS-35 — Polish cardinals above 999 999.** Excluded from NTS-30C: PL declares `maxNumber="999999"`, so no
   generated scale is part of its public domain and NTS-30C configured none. Opening the domain needs, together: the
   Polish long-scale names (*milion*, *miliard*, *bilion*, *biliard* …, not the current generated spelling), their
@@ -120,7 +121,7 @@ classification.
   `vingt-cinq millièmes`.)
 
 
-NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-28, NTS-29, NTS-30, NTS-30A, NTS-30B, NTS-30C, NTS-30D, NTS-30E, NTS-30F, NTS-30G, NTS-30H, NTS-31, NTS-32, NTS-33, NTS-37, NTS-38, NTS-39, NTS-40, NTS-41, NTS-42, NTS-48 and NTS-49 are closed:
+NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-28, NTS-29, NTS-30, NTS-30A, NTS-30B, NTS-30C, NTS-30D, NTS-30E, NTS-30F, NTS-30G, NTS-30H, NTS-31, NTS-32, NTS-33, NTS-37, NTS-38, NTS-39, NTS-40, NTS-41, NTS-42, NTS-48, NTS-49, NTS-50 and NTS-51 are closed:
 
 - NTS-01 — XSD validation: `DONE-2026-08-21.md`.
 - NTS-02 — initialization isolation: `DONE-2026-08-21.md`.
@@ -334,6 +335,16 @@ NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-28, NTS-29, NTS-30, NT
   feminine *milmillonésima primera*; a multiplier of *millón* written in several words (*dos mil*, *mil uno*) stays
   closed like *ciento cincuenta* (NTS-28). Generic fix: an `<OrdinalScale>` round value of the unnamed upper half of
   a pair is read at the named scale below it. EU zero (*zerogarren*) left to NTS-50: `DONE-2026-10-23.md`.
+- NTS-50 (opened by NTS-38) — **closed**. Basque ordinal of zero `zerogarren` (Euskaltzaindia rule 203 §5, "0.
+  zerogarren"), formed by the general rule from the cardinal *zero*; only `BasqueOrdinalLanguageSpecifics` changed
+  (domain 0–999 999 999 999), no exception configured: `DONE-2026-10-23(1).md`.
+- NTS-51 (opened by NTS-30) — **closed**. ES: *de* after a currency numeral ending on *millón* (DPD `cardinales` §6:
+  *un millón de euros*, *mil millones de euros*, but *un millón doscientos mil euros*, *un millón un euros*), through
+  `<Currency terminalScaleConnector="de" terminalScales="2..">`, decided on the group structure. IT: *un euro*,
+  *uno scellino*, *ventuno euro* (Treccani "uno", "articolo", "uno, numerali composti con"), through `<Currency>
+  <Replacement oldValue="uno" newValue="un" scope="Standalone" exceptBeforeNoun="…">`; no `form` dimension added to
+  Italian; *un milione di euro*, *due miliardi di euro* (Treccani "milione", "miliardo") through the same
+  `terminalScaleConnector="di" terminalScales="2.."`. NTS-52 opened for the other languages: `DONE-2026-10-23(1).md`.
 
 Full multi-form plural systems (Russian/Slavic count-dependent noun forms,
 Arabic dual/paucal/plural categories) were long deliberately out of scope — the

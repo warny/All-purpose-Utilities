@@ -124,12 +124,14 @@ Examples:
     | 101 |  | ehun eta batgarren |
     | 500 |  | bostehungarren |
     | 600 |  | seiehungarren |
+    | 0 |  | zerogarren |
 
 # NTS-08 validation: Euskaltzaindia, rule 18 "Ordinalen eta banatzaileen idazkera": bigarren,
 # hirugarren, laugarren, bosgarren (not bostgarren), hamabosgarren, hogeita batgarren, hogeita
 # bosgarren, hirurogeita hamabosgarren, ehungarren, milagarren. Rule 7 "Zenbakien idazkeraz" gives
 # only "zero"/"huts" for 0. NTS-38: rule 203 §5 settles the ordinals of the whole cardinal domain (to
-# 999 999 999 999); zero (rule 203 lists "zerogarren", NTS-50) and the values beyond the cardinal fail closed.
+# 999 999 999 999); NTS-50: its table lists "0. zerogarren", the cardinal zero + -garren. The values beyond
+# the cardinal fail closed.
 Scenario Outline: Basque ordinals outside the validated domain are not supported
     Given I use the "EU" number converter
     When I attempt to convert the ordinal number <number>
@@ -137,7 +139,6 @@ Scenario Outline: Basque ordinals outside the validated domain are not supported
 
 Examples:
     | number |
-    | 0 |
     | 1000000000000 |
 
 # NTS-28: Euskaltzaindia rule 18: the ordinal is the cardinal written in letters followed by -garren ("…

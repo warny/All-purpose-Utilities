@@ -38,8 +38,8 @@ dotnet add package omy.Utils.NumberToString --version 2.0.0-rc.2
 | PL | Polish | ✓ plugin + declarative (1–999 999; round thousands to 99 000, NTS-28) | ✓ 5 min, 12 h | rodzaj × przypadek | local | tysiąc/tysiące/tysięcy agree with their multiplier (NTS-27); cardinals to 999 999; no ordinal of zero |
 | RU | Russian | ✓ declarative + plugin for the one-word round values (zero: `нулевой`; 0–999 999 999, NTS-28) | ✓ 15 min, 12 h | gender × case | local | тысяча, миллион, миллиард agree with their multiplier (две тысячи, пять миллионов; NTS-27). Short scale with `миллиард`; Cyrillic Conway names above (`SCALE-SHORT-CYRILLIC`), unbounded, agreeing with their multiplier (два триллиона; NTS-30C) |
 | UK, UK-UA | Ukrainian | ✓ plugin, gender × case | ✓ 15 min, 12 h | gender × case | local | Round thousands, millions and milliards with a multiplier of 1–89 (NTS-28, §38). Short scale with `мільярд`; Ukrainian-spelled Conway names above (`вігінтильйон`), unbounded. `тисяча`/`мільйон`/`мільярд` agree with their multiplier (NTS-30B), so do the generated names (два трильйони; NTS-30C) |
-| ES | Spanish | ✓ declarative, composed (1–999 999 999 999, NTS-28; `milmillonésimo` from 10^9, NTS-38) | ✓ 5 min, 12 h | gender × form | local | Apocope before mil/millón (veintiún mil, un millón; NTS-27); million multipliers up to six digits (dos mil quinientos millones, mil un millones; NTS-30F), masculine whatever the caller's gender (quinientos millones; NTS-30G); currency numerals attributive (un euro, veintiún euros; `<Currency forceVariants>`, NTS-30); no ordinal of zero |
-| IT | Italian | ✓ validated productive forms through round trilione: 1–1999 except 1110–1910, round thousands to 999000, round multiples of milione/miliardo/bilione/biliardo/trilione; selected sourced analytic compounds (1010, 100001–100009) (`<OrdinalStem>`, `<OrdinalComposition>`, `<OrdinalScale>`, domain-guard plugin) | ✓ 5 min, 12 h | gender | local | Unsourced ordinals fail closed by design: zero, 1110–1910, the other non-round thousands above 1999 and the non-round values from a million (no canonical form established); millions are separate nouns joined by `e` ("due milioni e centomila") |
+| ES | Spanish | ✓ declarative, composed (1–999 999 999 999, NTS-28; `milmillonésimo` from 10^9, NTS-38) | ✓ 5 min, 12 h | gender × form | local | Apocope before mil/millón (veintiún mil, un millón; NTS-27); million multipliers up to six digits (dos mil quinientos millones, mil un millones; NTS-30F), masculine whatever the caller's gender (quinientos millones; NTS-30G); currency numerals attributive (un euro, veintiún euros; `<Currency forceVariants>`, NTS-30); a currency amount ending on millón takes de (un millón de euros, dos mil millones de euros, but un millón doscientos mil euros; `<Currency terminalScaleConnector>`, NTS-51); no ordinal of zero |
+| IT | Italian | ✓ validated productive forms through round trilione: 1–1999 except 1110–1910, round thousands to 999000, round multiples of milione/miliardo/bilione/biliardo/trilione; selected sourced analytic compounds (1010, 100001–100009) (`<OrdinalStem>`, `<OrdinalComposition>`, `<OrdinalScale>`, domain-guard plugin) | ✓ 5 min, 12 h | gender | local | Unsourced ordinals fail closed by design: zero, 1110–1910, the other non-round thousands above 1999 and the non-round values from a million (no canonical form established); millions are separate nouns joined by `e` ("due milioni e centomila"); a currency amount of one reads un before a noun taking il (un euro, but uno scellino, uno zloty) and its compounds stay invariable (ventuno euro; `<Currency><Replacement exceptBeforeNoun>`, NTS-51) |
 | PT | Portuguese | ✓ declarative, composed (1–1999, NTS-28) | ✓ 5 min, 12 h (direct "e …") | gender | local | Deliberate direct numeric reading (no "para"/"menos" constructions); PT-PT/PT-BR not split; no ordinal of zero |
 | GL, gl-ES | Galician | ✓ declarative, gender on the last element (1–1999, NTS-28) | ✓ 5 min, 12 h | gender | local | No ordinal of zero |
 | RO, RO-RO | Romanian | ✓ plugin (DOOM) | ✓ 15 min, 12 h | gen | local | Ordinals up to 999 999 and one million (masculine) |
@@ -58,7 +58,7 @@ dotnet add package omy.Utils.NumberToString --version 2.0.0-rc.2
 | VN, VI, VI-VN | Vietnamese | ✓ prefix thứ (cardinal domain except two consecutive zero classes, NTS-28, NTS-30) | ✓ 15 min, 12 h | — | local | A class after a higher class is read in full ("hai nghìn không trăm linh năm", NTS-27); a whole zero class between two non-zero classes is read "không nghìn" (năm mươi triệu không nghìn một trăm linh hai; `internalZeroGroupString`, NTS-30); no sáng/chiều/tối |
 | ID, ID-ID | Indonesian | ✓ plugin | ✓ 5 min, 12 h | — | local | No day-part wording. Conway in Indonesian spelling, `li` + `un` (`kuadriliun`, `desiliun`, 10^3003 `miliniliun`), unbounded |
 | MS, MS-MY | Malay (lapan, bilion, trilion) | ✓ plugin | ✓ 5 min, 12 h, own section | — | child of ID | No day-part wording. Indonesian Conway tables with suffix `on` (`kuadrilion`, `desilion`), unbounded |
-| EU, eu-ES | Basque | ✓ declarative (1–999 999 999 999, NTS-28, NTS-38: milioigarren, mila milioigarren after rule 203 §5) | ✓ 15 min, 12 h | — | local | Euskaltzaindia rules 7 and 203: mila eta bat, mila berrehun eta bat, milioi bat (NTS-27); million multipliers up to six digits (bi mila eta bostehun milioi; NTS-30F); one eta before the last group (hirurogei milioi berrehun mila eta bat; NTS-30G); clock-case forms only in ClockTime |
+| EU, eu-ES | Basque | ✓ declarative (0–999 999 999 999, NTS-28, NTS-38: milioigarren, mila milioigarren after rule 203 §5; NTS-50: zerogarren) | ✓ 15 min, 12 h | — | local | Euskaltzaindia rules 7 and 203: mila eta bat, mila berrehun eta bat, milioi bat (NTS-27); million multipliers up to six digits (bi mila eta bostehun milioi; NTS-30F); one eta before the last group (hirurogei milioi berrehun mila eta bat; NTS-30G); clock-case forms only in ClockTime |
 | SW, SW-KE, SW-TZ | Swahili | — deferred (noun-class concord) | ✓ 15 min, 12 h, six-hour offset | — | local | No asubuhi/mchana/jioni/usiku. Conway short scale in Swahili spelling, `li` + `oni` (`kwadrilioni`, `sekstilioni`, `desilioni`, 10^3003 `milinilioni`), unbounded |
 | ZU | Zulu | — deferred (noun-class policy) | ✓ 15 min, 12 h | — | local | Hour forms only in ClockTime |
 | EE | Ewe | ✓ declarative `-lia` on the last element, first `gbãtɔ` + zero guard | — deferred (no sourced minute convention) | — | local | Large scales: short Conway-Wechsler scale (`baseOn="SCALE-SHORT"`, unbounded); `akpe`/`miliɔn`/`biliɔn`/`triliɔn` sourced, higher `-liɔn` names (`quadriliɔn`, `quintiliɔn` …) productively generated, not individually attested. Scale noun first: `akpe eve` = 2000, `biliɔn alafa eve` = 200 000 000 000 (`multiplierPosition="afterScale"`); no ordinal of zero |
@@ -867,6 +867,42 @@ var peseta = new CurrencyDefinition { UnitSingular = "peseta", UnitPlural = "pes
     UnitForcedVariants = ForcedVariantSet.Create(("gender", "femenino")) };
 es.ConvertCurrency(21m, peseta);    // "veintiuna pesetas"   (the currency overrides the context)
 es.Convert(21);                     // "veintiuno"           (standalone cardinals unchanged)
+```
+
+Two further `<Currency>` options shape the phrase itself (NTS-51); neither touches any other conversion:
+
+- `terminalScaleConnector` with `terminalScales` (`CurrencyTerminalScaleConnector`, `CurrencyTerminalScales`): a word
+  placed between the numeral and the noun when the numeral **ends** on the noun of a listed scale. The decision is
+  structural, from the groups of the amount and not from its text: its lowest non-zero group must not be the units
+  (a paired multiplier, `pairedScalesFrom`, is one group at its named scale). Spanish `terminalScaleConnector="de"
+  terminalScales="2.."` after DPD "cardinales" §6, since *millón* is a noun; Italian `terminalScaleConnector="di"
+  terminalScales="2.."` after Treccani, "milione".
+- `<Replacement>` children (`CurrencyReplacements`, `CurrencyReplacementRule`): replacements of the rendered numeral,
+  applied after its variants and before the noun, optionally blocked before the nouns beginning with one of
+  `exceptBeforeNoun` (ignoring case). Italian apocopates *uno* alone before a noun taking the article *il* (Treccani,
+  "uno"), its compounds staying invariable.
+
+Each amount, unit then subunit, is built in this order: caller variants < `forceVariants` < `CurrencyDefinition`
+variants; the cardinal; the replacements; the connector; the noun. A `<Currency>` declared in a `baseOn` child replaces
+the parent's as a whole.
+
+```csharp
+es.ConvertCurrency(1_000_000m, eur);      // "un millón de euros"
+es.ConvertCurrency(2_500_000_000m, eur);  // "dos mil quinientos millones de euros"
+es.ConvertCurrency(1_200_000m, eur);      // "un millón doscientos mil euros"
+es.ConvertCurrency(1_000_001m, eur);      // "un millón un euros"
+
+var it = NumberToStringConverter.GetConverter("IT");
+// <Currency terminalScaleConnector="di" terminalScales="2..">
+//     <Replacement oldValue="uno" newValue="un" scope="Standalone" exceptBeforeNoun="z,x,y,…,gn,ps,sb,sc,…" /></Currency>
+var euro = new CurrencyDefinition { UnitSingular = "euro", UnitPlural = "euro", SubunitSingular = "centesimo", SubunitPlural = "centesimi", Connector = "e" };
+it.ConvertCurrency(1.01m, euro);          // "un euro e un centesimo"
+it.ConvertCurrency(21m, euro);            // "ventuno euro"
+it.ConvertCurrency(1_000_000m, euro);     // "un milione di euro"
+it.ConvertCurrency(1_000_001m, euro);     // "un milione e uno euro"
+it.ConvertCurrency(1m, new CurrencyDefinition { UnitSingular = "zloty", UnitPlural = "zloty", SubunitSingular = "grosz", SubunitPlural = "groszy" });
+                                          // "uno zloty"
+it.Convert(1);                            // "uno"
 ```
 
 ### Configuring ForcedVariants
