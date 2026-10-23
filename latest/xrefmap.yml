@@ -61576,6 +61576,76 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.CurrencyDefinition.UnitSingular
   nameWithType: CurrencyDefinition.UnitSingular
+- uid: Utils.NumberToString.CurrencyReplacementRule
+  name: CurrencyReplacementRule
+  href: api/Utils.NumberToString.CurrencyReplacementRule.html
+  commentId: T:Utils.NumberToString.CurrencyReplacementRule
+  fullName: Utils.NumberToString.CurrencyReplacementRule
+  nameWithType: CurrencyReplacementRule
+- uid: Utils.NumberToString.CurrencyReplacementRule.#ctor(Utils.NumberToString.NumberToStringConverter.ReplacementRule,System.Collections.Generic.IEnumerable{System.String})
+  name: CurrencyReplacementRule(ReplacementRule, IEnumerable<string>?)
+  href: api/Utils.NumberToString.CurrencyReplacementRule.html#Utils_NumberToString_CurrencyReplacementRule__ctor_Utils_NumberToString_NumberToStringConverter_ReplacementRule_System_Collections_Generic_IEnumerable_System_String__
+  commentId: M:Utils.NumberToString.CurrencyReplacementRule.#ctor(Utils.NumberToString.NumberToStringConverter.ReplacementRule,System.Collections.Generic.IEnumerable{System.String})
+  name.vb: New(ReplacementRule, IEnumerable(Of String))
+  fullName: Utils.NumberToString.CurrencyReplacementRule.CurrencyReplacementRule(Utils.NumberToString.NumberToStringConverter.ReplacementRule, System.Collections.Generic.IEnumerable<string>?)
+  fullName.vb: Utils.NumberToString.CurrencyReplacementRule.New(Utils.NumberToString.NumberToStringConverter.ReplacementRule, System.Collections.Generic.IEnumerable(Of String))
+  nameWithType: CurrencyReplacementRule.CurrencyReplacementRule(NumberToStringConverter.ReplacementRule, IEnumerable<string>?)
+  nameWithType.vb: CurrencyReplacementRule.New(NumberToStringConverter.ReplacementRule, IEnumerable(Of String))
+- uid: Utils.NumberToString.CurrencyReplacementRule.#ctor*
+  name: CurrencyReplacementRule
+  href: api/Utils.NumberToString.CurrencyReplacementRule.html#Utils_NumberToString_CurrencyReplacementRule__ctor_
+  commentId: Overload:Utils.NumberToString.CurrencyReplacementRule.#ctor
+  isSpec: "True"
+  name.vb: New
+  fullName: Utils.NumberToString.CurrencyReplacementRule.CurrencyReplacementRule
+  fullName.vb: Utils.NumberToString.CurrencyReplacementRule.New
+  nameWithType: CurrencyReplacementRule.CurrencyReplacementRule
+  nameWithType.vb: CurrencyReplacementRule.New
+- uid: Utils.NumberToString.CurrencyReplacementRule.ExceptBeforeNoun
+  name: ExceptBeforeNoun
+  href: api/Utils.NumberToString.CurrencyReplacementRule.html#Utils_NumberToString_CurrencyReplacementRule_ExceptBeforeNoun
+  commentId: P:Utils.NumberToString.CurrencyReplacementRule.ExceptBeforeNoun
+  fullName: Utils.NumberToString.CurrencyReplacementRule.ExceptBeforeNoun
+  nameWithType: CurrencyReplacementRule.ExceptBeforeNoun
+- uid: Utils.NumberToString.CurrencyReplacementRule.ExceptBeforeNoun*
+  name: ExceptBeforeNoun
+  href: api/Utils.NumberToString.CurrencyReplacementRule.html#Utils_NumberToString_CurrencyReplacementRule_ExceptBeforeNoun_
+  commentId: Overload:Utils.NumberToString.CurrencyReplacementRule.ExceptBeforeNoun
+  isSpec: "True"
+  fullName: Utils.NumberToString.CurrencyReplacementRule.ExceptBeforeNoun
+  nameWithType: CurrencyReplacementRule.ExceptBeforeNoun
+- uid: Utils.NumberToString.CurrencyReplacementRule.Replacement
+  name: Replacement
+  href: api/Utils.NumberToString.CurrencyReplacementRule.html#Utils_NumberToString_CurrencyReplacementRule_Replacement
+  commentId: P:Utils.NumberToString.CurrencyReplacementRule.Replacement
+  fullName: Utils.NumberToString.CurrencyReplacementRule.Replacement
+  nameWithType: CurrencyReplacementRule.Replacement
+- uid: Utils.NumberToString.CurrencyReplacementRule.Replacement*
+  name: Replacement
+  href: api/Utils.NumberToString.CurrencyReplacementRule.html#Utils_NumberToString_CurrencyReplacementRule_Replacement_
+  commentId: Overload:Utils.NumberToString.CurrencyReplacementRule.Replacement
+  isSpec: "True"
+  fullName: Utils.NumberToString.CurrencyReplacementRule.Replacement
+  nameWithType: CurrencyReplacementRule.Replacement
+- uid: Utils.NumberToString.CurrencyReplacementType
+  name: CurrencyReplacementType
+  href: api/Utils.NumberToString.CurrencyReplacementType.html
+  commentId: T:Utils.NumberToString.CurrencyReplacementType
+  fullName: Utils.NumberToString.CurrencyReplacementType
+  nameWithType: CurrencyReplacementType
+- uid: Utils.NumberToString.CurrencyReplacementType.ExceptBeforeNoun
+  name: ExceptBeforeNoun
+  href: api/Utils.NumberToString.CurrencyReplacementType.html#Utils_NumberToString_CurrencyReplacementType_ExceptBeforeNoun
+  commentId: P:Utils.NumberToString.CurrencyReplacementType.ExceptBeforeNoun
+  fullName: Utils.NumberToString.CurrencyReplacementType.ExceptBeforeNoun
+  nameWithType: CurrencyReplacementType.ExceptBeforeNoun
+- uid: Utils.NumberToString.CurrencyReplacementType.ExceptBeforeNoun*
+  name: ExceptBeforeNoun
+  href: api/Utils.NumberToString.CurrencyReplacementType.html#Utils_NumberToString_CurrencyReplacementType_ExceptBeforeNoun_
+  commentId: Overload:Utils.NumberToString.CurrencyReplacementType.ExceptBeforeNoun
+  isSpec: "True"
+  fullName: Utils.NumberToString.CurrencyReplacementType.ExceptBeforeNoun
+  nameWithType: CurrencyReplacementType.ExceptBeforeNoun
 - uid: Utils.NumberToString.CurrencyType
   name: CurrencyType
   href: api/Utils.NumberToString.CurrencyType.html
@@ -61595,6 +61665,45 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.CurrencyType.ForceVariants
   nameWithType: CurrencyType.ForceVariants
+- uid: Utils.NumberToString.CurrencyType.Replacements
+  name: Replacements
+  href: api/Utils.NumberToString.CurrencyType.html#Utils_NumberToString_CurrencyType_Replacements
+  commentId: P:Utils.NumberToString.CurrencyType.Replacements
+  fullName: Utils.NumberToString.CurrencyType.Replacements
+  nameWithType: CurrencyType.Replacements
+- uid: Utils.NumberToString.CurrencyType.Replacements*
+  name: Replacements
+  href: api/Utils.NumberToString.CurrencyType.html#Utils_NumberToString_CurrencyType_Replacements_
+  commentId: Overload:Utils.NumberToString.CurrencyType.Replacements
+  isSpec: "True"
+  fullName: Utils.NumberToString.CurrencyType.Replacements
+  nameWithType: CurrencyType.Replacements
+- uid: Utils.NumberToString.CurrencyType.TerminalScaleConnector
+  name: TerminalScaleConnector
+  href: api/Utils.NumberToString.CurrencyType.html#Utils_NumberToString_CurrencyType_TerminalScaleConnector
+  commentId: P:Utils.NumberToString.CurrencyType.TerminalScaleConnector
+  fullName: Utils.NumberToString.CurrencyType.TerminalScaleConnector
+  nameWithType: CurrencyType.TerminalScaleConnector
+- uid: Utils.NumberToString.CurrencyType.TerminalScaleConnector*
+  name: TerminalScaleConnector
+  href: api/Utils.NumberToString.CurrencyType.html#Utils_NumberToString_CurrencyType_TerminalScaleConnector_
+  commentId: Overload:Utils.NumberToString.CurrencyType.TerminalScaleConnector
+  isSpec: "True"
+  fullName: Utils.NumberToString.CurrencyType.TerminalScaleConnector
+  nameWithType: CurrencyType.TerminalScaleConnector
+- uid: Utils.NumberToString.CurrencyType.TerminalScales
+  name: TerminalScales
+  href: api/Utils.NumberToString.CurrencyType.html#Utils_NumberToString_CurrencyType_TerminalScales
+  commentId: P:Utils.NumberToString.CurrencyType.TerminalScales
+  fullName: Utils.NumberToString.CurrencyType.TerminalScales
+  nameWithType: CurrencyType.TerminalScales
+- uid: Utils.NumberToString.CurrencyType.TerminalScales*
+  name: TerminalScales
+  href: api/Utils.NumberToString.CurrencyType.html#Utils_NumberToString_CurrencyType_TerminalScales_
+  commentId: Overload:Utils.NumberToString.CurrencyType.TerminalScales
+  isSpec: "True"
+  fullName: Utils.NumberToString.CurrencyType.TerminalScales
+  nameWithType: CurrencyType.TerminalScales
 - uid: Utils.NumberToString.CzechOrdinalLanguageSpecifics
   name: CzechOrdinalLanguageSpecifics
   href: api/Utils.NumberToString.CzechOrdinalLanguageSpecifics.html
@@ -67026,6 +67135,45 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberToStringConverter.CurrencyForcedVariants
   nameWithType: NumberToStringConverter.CurrencyForcedVariants
+- uid: Utils.NumberToString.NumberToStringConverter.CurrencyReplacements
+  name: CurrencyReplacements
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_CurrencyReplacements
+  commentId: P:Utils.NumberToString.NumberToStringConverter.CurrencyReplacements
+  fullName: Utils.NumberToString.NumberToStringConverter.CurrencyReplacements
+  nameWithType: NumberToStringConverter.CurrencyReplacements
+- uid: Utils.NumberToString.NumberToStringConverter.CurrencyReplacements*
+  name: CurrencyReplacements
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_CurrencyReplacements_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverter.CurrencyReplacements
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverter.CurrencyReplacements
+  nameWithType: NumberToStringConverter.CurrencyReplacements
+- uid: Utils.NumberToString.NumberToStringConverter.CurrencyTerminalScaleConnector
+  name: CurrencyTerminalScaleConnector
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_CurrencyTerminalScaleConnector
+  commentId: P:Utils.NumberToString.NumberToStringConverter.CurrencyTerminalScaleConnector
+  fullName: Utils.NumberToString.NumberToStringConverter.CurrencyTerminalScaleConnector
+  nameWithType: NumberToStringConverter.CurrencyTerminalScaleConnector
+- uid: Utils.NumberToString.NumberToStringConverter.CurrencyTerminalScaleConnector*
+  name: CurrencyTerminalScaleConnector
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_CurrencyTerminalScaleConnector_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverter.CurrencyTerminalScaleConnector
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverter.CurrencyTerminalScaleConnector
+  nameWithType: NumberToStringConverter.CurrencyTerminalScaleConnector
+- uid: Utils.NumberToString.NumberToStringConverter.CurrencyTerminalScales
+  name: CurrencyTerminalScales
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_CurrencyTerminalScales
+  commentId: P:Utils.NumberToString.NumberToStringConverter.CurrencyTerminalScales
+  fullName: Utils.NumberToString.NumberToStringConverter.CurrencyTerminalScales
+  nameWithType: NumberToStringConverter.CurrencyTerminalScales
+- uid: Utils.NumberToString.NumberToStringConverter.CurrencyTerminalScales*
+  name: CurrencyTerminalScales
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_CurrencyTerminalScales_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverter.CurrencyTerminalScales
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverter.CurrencyTerminalScales
+  nameWithType: NumberToStringConverter.CurrencyTerminalScales
 - uid: Utils.NumberToString.NumberToStringConverter.DateFirstCardinalDay
   name: DateFirstCardinalDay
   href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_DateFirstCardinalDay
@@ -68782,6 +68930,45 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberToStringConverterOptions.CurrencyForcedVariants
   nameWithType: NumberToStringConverterOptions.CurrencyForcedVariants
+- uid: Utils.NumberToString.NumberToStringConverterOptions.CurrencyReplacements
+  name: CurrencyReplacements
+  href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_CurrencyReplacements
+  commentId: P:Utils.NumberToString.NumberToStringConverterOptions.CurrencyReplacements
+  fullName: Utils.NumberToString.NumberToStringConverterOptions.CurrencyReplacements
+  nameWithType: NumberToStringConverterOptions.CurrencyReplacements
+- uid: Utils.NumberToString.NumberToStringConverterOptions.CurrencyReplacements*
+  name: CurrencyReplacements
+  href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_CurrencyReplacements_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverterOptions.CurrencyReplacements
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverterOptions.CurrencyReplacements
+  nameWithType: NumberToStringConverterOptions.CurrencyReplacements
+- uid: Utils.NumberToString.NumberToStringConverterOptions.CurrencyTerminalScaleConnector
+  name: CurrencyTerminalScaleConnector
+  href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_CurrencyTerminalScaleConnector
+  commentId: P:Utils.NumberToString.NumberToStringConverterOptions.CurrencyTerminalScaleConnector
+  fullName: Utils.NumberToString.NumberToStringConverterOptions.CurrencyTerminalScaleConnector
+  nameWithType: NumberToStringConverterOptions.CurrencyTerminalScaleConnector
+- uid: Utils.NumberToString.NumberToStringConverterOptions.CurrencyTerminalScaleConnector*
+  name: CurrencyTerminalScaleConnector
+  href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_CurrencyTerminalScaleConnector_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverterOptions.CurrencyTerminalScaleConnector
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverterOptions.CurrencyTerminalScaleConnector
+  nameWithType: NumberToStringConverterOptions.CurrencyTerminalScaleConnector
+- uid: Utils.NumberToString.NumberToStringConverterOptions.CurrencyTerminalScales
+  name: CurrencyTerminalScales
+  href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_CurrencyTerminalScales
+  commentId: P:Utils.NumberToString.NumberToStringConverterOptions.CurrencyTerminalScales
+  fullName: Utils.NumberToString.NumberToStringConverterOptions.CurrencyTerminalScales
+  nameWithType: NumberToStringConverterOptions.CurrencyTerminalScales
+- uid: Utils.NumberToString.NumberToStringConverterOptions.CurrencyTerminalScales*
+  name: CurrencyTerminalScales
+  href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_CurrencyTerminalScales_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverterOptions.CurrencyTerminalScales
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverterOptions.CurrencyTerminalScales
+  nameWithType: NumberToStringConverterOptions.CurrencyTerminalScales
 - uid: Utils.NumberToString.NumberToStringConverterOptions.DateFirstCardinalDay
   name: DateFirstCardinalDay
   href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_DateFirstCardinalDay

@@ -6,7 +6,7 @@
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <meta name="title" content="Class BasqueOrdinalLanguageSpecifics | omy.Utils Documentation ">
       
-      <meta name="description" content="Basque ordinal domain. Euskaltzaindia, rule 203 (2025, EBO VI) &#167;5, which supersedes rule 18 on this point: &amp;quot;Oro har, ordinalak eratzeko, -garren atzizkia atxikitzen zaio zenbatzaile kardinalari&amp;quot; (bigarren, bosgarren, hogeita batgarren, milagarren, mila eta batgarren), with the round million reduced to its noun (milioigarren, bi milioigarren; milioi bat eta batgarren for 1 000 001). NTS-08 validated 1–1000, NTS-28 the millions; NTS-38 corrects the round million and extends the general rule to the whole cardinal domain, the milliard being mila milioi (rules 7, 203; NTS-30F): mila milioigarren. Zero stays closed: rule 203 lists 0. zerogarren, recorded as NTS-50, not opened here.">
+      <meta name="description" content="Basque ordinal domain. Euskaltzaindia, rule 203 (2025, EBO VI) &#167;5, which supersedes rule 18 on this point: &amp;quot;Oro har, ordinalak eratzeko, -garren atzizkia atxikitzen zaio zenbatzaile kardinalari&amp;quot; (bigarren, bosgarren, hogeita batgarren, milagarren, mila eta batgarren), with the round million reduced to its noun (milioigarren, bi milioigarren; milioi bat eta batgarren for 1 000 001). NTS-08 validated 1–1000, NTS-28 the millions; NTS-38 corrects the round million and extends the general rule to the whole cardinal domain, the milliard being mila milioi (rules 7, 203; NTS-30F): mila milioigarren. NTS-50 opens zero, which the rule 203 table lists as 0. zerogarren: the same general rule forms it from the cardinal zero (the older rule 7 gave only the cardinals zero/huts).">
       <link rel="icon" href="../favicon.ico">
       <link rel="stylesheet" href="../public/docfx.min.css">
       <link rel="stylesheet" href="../public/main.css">
@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_NumberToString_BasqueOrdinalLanguageSpecifics" data-uid="Utils.NumberToString.BasqueOrdinalLanguageSpecifics" class="text-break">
-Class BasqueOrdinalLanguageSpecifics  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L518"><i class="bi bi-code-slash"></i></a>
+Class BasqueOrdinalLanguageSpecifics  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L519"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -103,7 +103,8 @@ har, ordinalak eratzeko, -garren atzizkia atxikitzen zaio zenbatzaile kardinalar
 reduced to its noun (<code>milioigarren</code>, <code>bi milioigarren</code>; <code>milioi bat eta batgarren</code> for 1 000 001).
 NTS-08 validated 1–1000, NTS-28 the millions; NTS-38 corrects the round million and extends the general rule to the
 whole cardinal domain, the milliard being <code>mila milioi</code> (rules 7, 203; NTS-30F): <code>mila milioigarren</code>.
-Zero stays closed: rule 203 lists <code>0. zerogarren</code>, recorded as NTS-50, not opened here.</p>
+NTS-50 opens zero, which the rule 203 table lists as <code>0. zerogarren</code>: the same general rule forms it from the
+cardinal <code>zero</code> (the older rule 7 gave only the cardinals <code>zero</code>/<code>huts</code>).</p>
 </div>
   <div class="markdown conceptual"></div>
 
@@ -268,7 +269,7 @@ Zero stays closed: rule 203 lists <code>0. zerogarren</code>, recorded as NTS-50
 
   <h3 id="Utils_NumberToString_BasqueOrdinalLanguageSpecifics_LanguageName" data-uid="Utils.NumberToString.BasqueOrdinalLanguageSpecifics.LanguageName">
   LanguageName
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L521"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L522"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the English name of the language, used in the rejection message.</p>
@@ -300,7 +301,7 @@ Zero stays closed: rule 203 lists <code>0. zerogarren</code>, recorded as NTS-50
 
   <h3 id="Utils_NumberToString_BasqueOrdinalLanguageSpecifics_SupportedDomain" data-uid="Utils.NumberToString.BasqueOrdinalLanguageSpecifics.SupportedDomain">
   SupportedDomain
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L524"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L525"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets a short description of the validated domain, used in the rejection message.</p>
@@ -336,7 +337,7 @@ Zero stays closed: rule 203 lists <code>0. zerogarren</code>, recorded as NTS-50
 
   <h3 id="Utils_NumberToString_BasqueOrdinalLanguageSpecifics_IsSupported_System_Int64_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__" data-uid="Utils.NumberToString.BasqueOrdinalLanguageSpecifics.IsSupported(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String})">
   IsSupported(long, IReadOnlyDictionary&lt;string, string&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L527"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L528"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Tells whether the ordinal of a value belongs to the validated domain.</p>
@@ -378,7 +379,7 @@ Zero stays closed: rule 203 lists <code>0. zerogarren</code>, recorded as NTS-50
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L518" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L519" class="edit-link">Edit this page</a>
         </div>
 
 

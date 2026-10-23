@@ -8549,7 +8549,7 @@
       "Uid": null,
       "IsMRef": true,
       "Title": "Utils.NumberToString.BasqueOrdinalLanguageSpecifics",
-      "Summary": "<p sourcefile=\"api/Utils.NumberToString.BasqueOrdinalLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Basque ordinal domain. Euskaltzaindia, rule 203 (2025, EBO VI) §5, which supersedes rule 18 on this point: &quot;Oro\nhar, ordinalak eratzeko, -garren atzizkia atxikitzen zaio zenbatzaile kardinalari&quot; (<code>bigarren</code>,\n<code>bosgarren</code>, <code>hogeita batgarren</code>, <code>milagarren</code>, <code>mila eta batgarren</code>), with the round million\nreduced to its noun (<code>milioigarren</code>, <code>bi milioigarren</code>; <code>milioi bat eta batgarren</code> for 1 000 001).\nNTS-08 validated 1–1000, NTS-28 the millions; NTS-38 corrects the round million and extends the general rule to the\nwhole cardinal domain, the milliard being <code>mila milioi</code> (rules 7, 203; NTS-30F): <code>mila milioigarren</code>.\nZero stays closed: rule 203 lists <code>0. zerogarren</code>, recorded as NTS-50, not opened here.</p>\n"
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.BasqueOrdinalLanguageSpecifics.yml\" sourcestartlinenumber=\"1\">Basque ordinal domain. Euskaltzaindia, rule 203 (2025, EBO VI) §5, which supersedes rule 18 on this point: &quot;Oro\nhar, ordinalak eratzeko, -garren atzizkia atxikitzen zaio zenbatzaile kardinalari&quot; (<code>bigarren</code>,\n<code>bosgarren</code>, <code>hogeita batgarren</code>, <code>milagarren</code>, <code>mila eta batgarren</code>), with the round million\nreduced to its noun (<code>milioigarren</code>, <code>bi milioigarren</code>; <code>milioi bat eta batgarren</code> for 1 000 001).\nNTS-08 validated 1–1000, NTS-28 the millions; NTS-38 corrects the round million and extends the general rule to the\nwhole cardinal domain, the milliard being <code>mila milioi</code> (rules 7, 203; NTS-30F): <code>mila milioigarren</code>.\nNTS-50 opens zero, which the rule 203 table lists as <code>0. zerogarren</code>: the same general rule forms it from the\ncardinal <code>zero</code> (the older rule 7 gave only the cardinals <code>zero</code>/<code>huts</code>).</p>\n"
     },
     {
       "type": "ManagedReference",
@@ -8704,6 +8704,34 @@
       "IsMRef": true,
       "Title": "Utils.NumberToString.CurrencyDefinition",
       "Summary": "<p sourcefile=\"api/Utils.NumberToString.CurrencyDefinition.yml\" sourcestartlinenumber=\"1\">Defines the unit and subunit names used to convert a currency amount to words.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.CurrencyReplacementRule.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.CurrencyReplacementRule.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.CurrencyReplacementRule",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.CurrencyReplacementRule.yml\" sourcestartlinenumber=\"1\">A replacement applied to the numeral of a currency amount (unit or subunit) once it is rendered, before the currency\nnoun is appended (NTS-51): Italian <code>uno</code> → <code>un</code> (<code>un euro</code>). It never touches a cardinal, an ordinal\nor any other conversion.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.CurrencyReplacementType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.CurrencyReplacementType.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.CurrencyReplacementType",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.CurrencyReplacementType.yml\" sourcestartlinenumber=\"1\">A replacement applied to the numeral of a currency amount (see <xref href=\"Utils.NumberToString.CurrencyType.Replacements\" data-throw-if-not-resolved=\"false\"></xref>): the\n<xref href=\"Utils.NumberToString.ReplacementType\" data-throw-if-not-resolved=\"false\"></xref> attributes, without <code>onScale</code>, <code>onValue</code> or variant children, plus an\noptional condition on the currency noun.</p>\n"
     },
     {
       "type": "ManagedReference",

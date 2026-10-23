@@ -118,7 +118,8 @@ har, ordinalak eratzeko, -garren atzizkia atxikitzen zaio zenbatzaile kardinalar
 reduced to its noun (<code>milioigarren</code>, <code>bi milioigarren</code>; <code>milioi bat eta batgarren</code> for 1 000 001).
 NTS-08 validated 1–1000, NTS-28 the millions; NTS-38 corrects the round million and extends the general rule to the
 whole cardinal domain, the milliard being <code>mila milioi</code> (rules 7, 203; NTS-30F): <code>mila milioigarren</code>.
-Zero stays closed: rule 203 lists <code>0. zerogarren</code>, recorded as NTS-50, not opened here.</p>
+NTS-50 opens zero, which the rule 203 table lists as <code>0. zerogarren</code>: the same general rule forms it from the
+cardinal <code>zero</code> (the older rule 7 gave only the cardinals <code>zero</code>/<code>huts</code>).</p>
 </dd>
     </dl>
     <dl class="jumplist">
@@ -177,6 +178,20 @@ verified, so this plugin rejects it instead of letting a cardinal or invented fo
     <dl class="jumplist">
       <dt><a class="xref" href="Utils.NumberToString.CurrencyDefinition.html">CurrencyDefinition</a></dt>
       <dd><p>Defines the unit and subunit names used to convert a currency amount to words.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.CurrencyReplacementRule.html">CurrencyReplacementRule</a></dt>
+      <dd><p>A replacement applied to the numeral of a currency amount (unit or subunit) once it is rendered, before the currency
+noun is appended (NTS-51): Italian <code>uno</code> → <code>un</code> (<code>un euro</code>). It never touches a cardinal, an ordinal
+or any other conversion.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.CurrencyReplacementType.html">CurrencyReplacementType</a></dt>
+      <dd><p>A replacement applied to the numeral of a currency amount (see <a class="xref" href="Utils.NumberToString.CurrencyType.html#Utils_NumberToString_CurrencyType_Replacements">Replacements</a>): the
+<a class="xref" href="Utils.NumberToString.ReplacementType.html">ReplacementType</a> attributes, without <code>onScale</code>, <code>onValue</code> or variant children, plus an
+optional condition on the currency noun.</p>
 </dd>
     </dl>
     <dl class="jumplist">
