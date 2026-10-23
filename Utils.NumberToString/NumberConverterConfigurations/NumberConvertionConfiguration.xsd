@@ -517,6 +517,45 @@
         </xs:attribute>
     </xs:complexType>
 
+    <xs:complexType name="CurrencyReplacementType">
+        <xs:annotation>
+            <xs:documentation>
+                NTS-51. A replacement applied to the rendered numeral of a currency amount (unit or subunit),
+                after its variants and before the currency noun; it never touches another conversion. Same
+                oldValue/newValue/scope semantics as ReplacementType, applied to the whole numeral. onScale,
+                onValue and Variant children have no meaning on a finished numeral and are not accepted.
+
+                Example: Italian "uno" is "un" before a noun taking the article "il" (Treccani, "uno": "un
+                uomo", "uno scolaro"); the compounds stay invariable ("ventuno euro"):
+                    &lt;Replacement oldValue="uno" newValue="un" scope="Standalone"
+                                  exceptBeforeNoun="z,x,y,gn,ps,sb,sc" /&gt;
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="oldValue" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>The text pattern to search for in the numeral.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="newValue" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>The replacement text.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="scope" type="ReplacementScopeType" use="optional">
+            <xs:annotation>
+                <xs:documentation>Where the replacement is applied in the numeral. Defaults to Standalone when omitted.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="exceptBeforeNoun" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Comma-separated beginnings of the currency noun (compared ignoring case) before which the
+                    replacement does not apply. Absent: it always applies.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
     <xs:complexType name="ReplacementsListType">
         <xs:annotation>
             <xs:documentation>An ordered list of Replacement rules.</xs:documentation>
@@ -1994,11 +2033,20 @@
                             <xs:element name="Currency" minOccurs="0">
                                 <xs:annotation>
                                     <xs:documentation>
-                                        NTS-30. Currency-phrase configuration for ConvertCurrency. Inherited through
-                                        baseOn unless redeclared (a declared element replaces the inherited one).
+                                        NTS-30, NTS-51. Currency-phrase configuration for ConvertCurrency. Inherited
+                                        through baseOn unless redeclared: a declared element replaces the inherited one
+                                        as a whole (attributes and Replacement children), so a derived language repeats
+                                        every option it keeps. Each amount (unit, then subunit) is built in this order:
+                                        the caller's variants, overlaid by forceVariants, overlaid by the variants of
+                                        the CurrencyDefinition; the cardinal rendered with them; the Replacement
+                                        children, in order, that apply before the noun; terminalScaleConnector when the
+                                        numeral ends on a scale of terminalScales; then the currency noun.
                                     </xs:documentation>
                                 </xs:annotation>
                                 <xs:complexType>
+                                    <xs:sequence>
+                                        <xs:element name="Replacement" type="CurrencyReplacementType" minOccurs="0" maxOccurs="unbounded" />
+                                    </xs:sequence>
                                     <xs:attribute name="forceVariants" type="xs:string" use="optional">
                                         <xs:annotation>
                                             <xs:documentation>
@@ -2009,6 +2057,32 @@
                                                 the weakest: the caller's variants, these, then the UnitForcedVariants
                                                 or SubunitForcedVariants of the CurrencyDefinition (the gender of a
                                                 feminine currency: "una peseta"). Absent or empty: nothing is forced.
+                                            </xs:documentation>
+                                        </xs:annotation>
+                                    </xs:attribute>
+                                    <xs:attribute name="terminalScaleConnector" type="xs:string" use="optional">
+                                        <xs:annotation>
+                                            <xs:documentation>
+                                                NTS-51. Text placed between the numeral of an amount (unit or subunit)
+                                                and the currency noun when the numeral ends on the noun of a scale listed
+                                                in terminalScales. Example: "de" for Spanish (DPD "cardinales" §6) —
+                                                "un millón de euros", "dos mil millones de euros", but "un millón
+                                                doscientos mil euros" and "un millón un euros". The decision is
+                                                structural: the numeral ends on a scale noun when its lowest non-zero
+                                                group is not the units group; the multiplier of a paired scale
+                                                (pairedScalesFrom) is one group at its named scale, so 10^9 written
+                                                "mil millones" ends on scale 2. A zero count, a whole-number exception
+                                                and a language placing the multiplier after the scale noun never end on
+                                                one. Requires terminalScales.
+                                            </xs:documentation>
+                                        </xs:annotation>
+                                    </xs:attribute>
+                                    <xs:attribute name="terminalScales" type="xs:string" use="optional">
+                                        <xs:annotation>
+                                            <xs:documentation>
+                                                NTS-51. The scale indices (range syntax: "2", "2..4", "2..") whose noun,
+                                                ending the numeral, takes terminalScaleConnector. Required with it,
+                                                forbidden without it; scale 0 (the units) cannot be listed.
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:attribute>

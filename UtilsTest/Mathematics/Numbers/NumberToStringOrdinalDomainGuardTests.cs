@@ -130,7 +130,7 @@ public class NumberToStringOrdinalDomainGuardTests
         Assert.AreEqual("kolmas", converter.ConvertOrdinal(3, "sijamuoto=nominatiivi"));
     }
 
-    /// <summary>Ensures the zero policies of the guarded languages: attested zero ordinals stay, Basque fails closed.</summary>
+    /// <summary>Ensures the zero policies of the guarded languages: attested zero ordinals stay (Basque since NTS-50), Spanish fails closed.</summary>
     /// <param name="culture">The culture of the converter.</param>
     /// <param name="expected">The expected ordinal of zero, or <see langword="null"/> when it must fail closed.</param>
     [TestMethod]
@@ -140,7 +140,7 @@ public class NumberToStringOrdinalDomainGuardTests
     [DataRow("JA", "第零")]
     [DataRow("ZH", "第零")]
     [DataRow("NL", "nulde")]
-    [DataRow("EU", null)]
+    [DataRow("EU", "zerogarren")]
     [DataRow("ES", null)]
     public void GuardedLanguages_ZeroOrdinalPolicy(string culture, string? expected)
     {

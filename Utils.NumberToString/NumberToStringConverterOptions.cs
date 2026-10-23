@@ -298,6 +298,33 @@ public sealed class NumberToStringConverterOptions
     public ForcedVariantSet? CurrencyForcedVariants { get; set; }
 
     /// <summary>
+    /// Text placed between the numeral of a currency amount (unit or subunit) and its noun when the numeral ends on the
+    /// noun of a scale covered by <see cref="CurrencyTerminalScales"/> (e.g. <c>"de"</c> for Spanish: <c>un millón de
+    /// euros</c>, <c>dos mil millones de euros</c>; but <c>un millón doscientos mil euros</c>, <c>un millón un euros</c>).
+    /// The decision is structural: the numeral ends on a scale noun when its lowest non-zero group is not the units
+    /// group (the multiplier of a paired scale counts as one group at its named scale); a whole-number exception, a zero
+    /// count or a language placing the multiplier after the scale noun never ends on one. <see langword="null"/> (the
+    /// default): no connector.
+    /// </summary>
+    public string? CurrencyTerminalScaleConnector { get; set; }
+
+    /// <summary>
+    /// The scale indices whose noun, ending a currency numeral, takes <see cref="CurrencyTerminalScaleConnector"/>, in
+    /// the range syntax of <see cref="NumberToStringConverter.ParseRangeExpression(string)"/> (e.g. <c>"2.."</c>).
+    /// Required with the connector, forbidden without it; scale 0 (the units) cannot be covered.
+    /// </summary>
+    public string? CurrencyTerminalScales { get; set; }
+
+    /// <summary>
+    /// Replacements applied, in order, to the rendered numeral of a currency amount (unit and subunit) before its noun
+    /// is appended (e.g. Italian <c>uno</c> → <c>un</c>, scope <see cref="ReplacementScope.Standalone"/>, except before
+    /// the nouns taking the article <c>lo</c>). They run after the variants of the amount and never touch any other
+    /// conversion. A rule declaring <c>onScale</c> or <c>onValue</c> is rejected. <see langword="null"/> or empty (the
+    /// default): none.
+    /// </summary>
+    public IReadOnlyList<CurrencyReplacementRule>? CurrencyReplacements { get; set; }
+
+    /// <summary>
     /// Time units keyed by canonical name ("hour", "minute", "second"),
     /// each with singular, plural, and an optional count-1 override for grammatical gender.
     /// Required for Convert(TimeSpan/TimeOnly).
@@ -506,6 +533,9 @@ public sealed class NumberToStringConverterOptions
         FinalGroupConnector = source.FinalGroupConnector;
         InternalZeroGroupString = source.InternalZeroGroupString;
         CurrencyForcedVariants = source.CurrencyForcedVariants;
+        CurrencyTerminalScaleConnector = source.CurrencyTerminalScaleConnector;
+        CurrencyTerminalScales = source.CurrencyTerminalScales;
+        CurrencyReplacements = source.CurrencyReplacements;
         TimeUnits = source.TimeUnits;
         TimeUnitForcedVariants = source.TimeUnitForcedVariants;
         // Use the override-only internal snapshots, not the effective TimeUnitForms/

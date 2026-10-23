@@ -1112,6 +1112,43 @@ public class CurrencyType
     /// </summary>
     [XmlAttribute("forceVariants")]
     public string? ForceVariants { get; set; }
+
+    /// <summary>
+    /// Text placed between the numeral and the currency noun when the numeral ends on the noun of a scale covered by
+    /// <see cref="TerminalScales"/> (NTS-51), e.g. <c>"de"</c> for Spanish: <c>un millón de euros</c>, <c>dos mil
+    /// millones de euros</c>, but <c>un millón doscientos mil euros</c> and <c>un millón un euros</c>. Absent: none.
+    /// </summary>
+    [XmlAttribute("terminalScaleConnector")]
+    public string? TerminalScaleConnector { get; set; }
+
+    /// <summary>
+    /// The scale indices (range syntax, e.g. <c>"2.."</c>) whose noun, ending the numeral, takes
+    /// <see cref="TerminalScaleConnector"/>. Required with it, forbidden without it.
+    /// </summary>
+    [XmlAttribute("terminalScales")]
+    public string? TerminalScales { get; set; }
+
+    /// <summary>
+    /// Replacements applied to the rendered numeral of a currency amount before the noun (NTS-51), e.g. Italian
+    /// <c>uno</c> → <c>un</c> except before the nouns taking the article <c>lo</c>.
+    /// </summary>
+    [XmlElement("Replacement")]
+    public List<CurrencyReplacementType>? Replacements { get; set; }
+}
+
+/// <summary>
+/// A replacement applied to the numeral of a currency amount (see <see cref="CurrencyType.Replacements"/>): the
+/// <see cref="ReplacementType"/> attributes, without <c>onScale</c>, <c>onValue</c> or variant children, plus an
+/// optional condition on the currency noun.
+/// </summary>
+public class CurrencyReplacementType : ReplacementType
+{
+    /// <summary>
+    /// Comma-separated beginnings of the currency noun (ignoring case) before which the replacement does not apply,
+    /// e.g. <c>"z,gn,ps,x,y,sb,sc"</c> for Italian (<c>uno zloty</c>, <c>uno scellino</c>). Absent: always applies.
+    /// </summary>
+    [XmlAttribute("exceptBeforeNoun")]
+    public string? ExceptBeforeNoun { get; set; }
 }
 
 /// <summary>

@@ -4,6 +4,28 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed — `omy.Utils.NumberToString` (NTS-50 closed: Basque ordinal of zero)
+- Basque forms the ordinal of zero, `zerogarren` (EU and eu-ES, previously `NotSupportedException`), listed by
+  Euskaltzaindia rule 203 (2025) §5. It is the general rule (the cardinal `zero` + `-garren`); only the domain guard
+  changed, now 0–999 999 999 999. No cardinal, fraction, decimal, clock or currency output changed.
+
+### Fixed — `omy.Utils.NumberToString` (NTS-51 closed: Spanish and Italian currency phrases)
+- Spanish introduces the currency noun with `de` after a numeral ending on *millón* (DPD "cardinales" §6): `un millón
+  de euros` (was `un millón euros`), `dos millones de euros`, `veintiún millones de euros`, `mil millones de euros`,
+  `dos mil quinientos millones de euros`; a numeral ending on another cardinal keeps the noun directly: `un millón
+  doscientos mil euros`, `un millón un euros`, `mil euros`. Feminine currencies keep the masculine noun: `un millón de
+  pesetas`.
+- Italian apocopates the currency numeral *uno* alone before a noun taking the article *il* (Treccani, "uno"): `un
+  euro` (was `uno euro`), `un euro e un centesimo`; `uno scellino`, `uno zloty`, `uno yen` keep it, and the compounds
+  stay invariable: `ventuno euro`, `un milione e uno euro`. Standalone cardinals, ordinals and clocks are unchanged.
+- Added to `<Currency>` (public `CurrencyType`, additive): the `terminalScaleConnector` and `terminalScales`
+  attributes (`NumberToStringConverterOptions` and `NumberToStringConverter.CurrencyTerminalScaleConnector`,
+  `CurrencyTerminalScales`): a connector between the numeral and the noun when the numeral ends, structurally, on a
+  listed scale noun; and `<Replacement>` children (public `CurrencyReplacementType`, `CurrencyReplacementRule`,
+  `CurrencyReplacements`): replacements of the currency numeral only, optionally blocked before nouns beginning with
+  one of `exceptBeforeNoun`. Absent: historical behaviour. A `<Currency>` redeclared through `baseOn` still replaces
+  the parent's as a whole.
+
 ### Fixed — `omy.Utils.NumberToString` (NTS-30 closed: Vietnamese zero classes, Spanish currency apocope)
 - Vietnamese reads a whole zero class between two non-zero classes: `năm mươi triệu không nghìn một trăm linh hai`
   (50 000 102, was `năm mươi triệu một trăm linh hai`), `một triệu không nghìn không trăm linh năm` (SGK Toán 4).

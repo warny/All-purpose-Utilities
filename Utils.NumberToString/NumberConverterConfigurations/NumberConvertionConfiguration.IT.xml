@@ -289,6 +289,19 @@
 			 section). The article is elided for one (l'una) and plural otherwise (le due); {hour} is
 			 forced to the feminine numeral. Five-minute step since the compound cardinals are
 			 orthographic (NTS-10): "e {amount}" after the hour, "meno {amount}" before the next. -->
+		<!-- NTS-51: a currency amount is a numeral governing the currency noun. Treccani, "uno": "Come agg. e come art.,
+			 uno ha al masch. sing. la variante apocopata un, l'uso della quale è regolato dalle stesse norme che regolano
+			 l'uso dell'art. determ. masch. sing. il, rispetto alla sua variante lo: un uomo, un osso, un cane, uno scolaro,
+			 uno zoccolo". Uno stays before the onsets taking lo (Enciclopedia dell'Italiano, "articolo": z, x, i
+			 semiconsonantica, s + consonante, sc, gn, ps; before pn "non c'è rigore", un prevailing): un euro, un dollaro,
+			 but uno scellino, uno zloty, uno yen. Only the numeral "uno" itself (Standalone): its compounds "tendono a
+			 rimanere invariati: ventuno banchi, trentuno case, centouno invitati, milleuno / mille e uno ascoltatrici, un
+			 milione e uno cittadini" (Treccani, "uno, numerali composti con"), so ventuno euro, un milione e uno euro. A
+			 feminine currency (gender=femminile) already reads "una" and is not matched. -->
+		<Currency>
+			<Replacement oldValue="uno" newValue="un" scope="Standalone"
+			             exceptBeforeNoun="z,x,y,ia,ie,io,iu,gn,ps,sb,sc,sd,sf,sg,sh,sk,sl,sm,sn,sp,sq,sr,st,sv,sw,sz" />
+		</Currency>
 		<ClockTime step="5" hourCycle="12">
 			<Rule range="0" displayHourRange="1" hourOffset="0" hourForm="cardinal" hourForceVariants="gender=femminile" pattern="l'{hour}" />
 			<Rule range="0" displayHourRange="2-12" hourOffset="0" hourForm="cardinal" hourForceVariants="gender=femminile" pattern="le {hour}" />

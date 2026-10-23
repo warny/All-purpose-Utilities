@@ -217,9 +217,10 @@ public class NumberToStringNts30FTests
         Assert.AreEqual("veintiún mil un millones sobre siete", ES.Convert(new Utils.Numerics.Number(21_001_000_000, 7)));
         Assert.AreEqual("bat zati mila eta bat milioi", EU.Convert(new Utils.Numerics.Number(1, 1_001_000_000)));
 
-        // The currency wording is caller-defined (the ES attributive apocope, NTS-30, does not touch this amount): only the cardinal is pinned.
+        // The currency wording is caller-defined (the ES attributive apocope, NTS-30, does not touch this amount; the
+        // amount ends on millones, so NTS-51 introduces the noun with "de", DPD "cardinales" §6): only the numeral is pinned.
         var euro = new CurrencyDefinition { UnitSingular = "euro", UnitPlural = "euros", SubunitSingular = "céntimo", SubunitPlural = "céntimos", Connector = "con" };
-        StringAssert.StartsWith(ES.ConvertCurrency(2_500_000_000.50m, euro), "dos mil quinientos millones euros");
+        StringAssert.StartsWith(ES.ConvertCurrency(2_500_000_000.50m, euro), "dos mil quinientos millones de euros");
         StringAssert.StartsWith(EU.ConvertCurrency(2_500_000_000.50m, euro), "bi mila eta bostehun milioi euros");
     }
 

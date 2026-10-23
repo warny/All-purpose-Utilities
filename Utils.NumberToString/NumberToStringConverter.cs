@@ -367,6 +367,10 @@ namespace Utils.NumberToString
             _timeUnitFormSelectorsPublic = _timeUnits.ToImmutableDictionary(kv => kv.Key, kv => kv.Value.Selector);
 
             _currencyForcedVariants = CanonicalizeForcedVariants(options.CurrencyForcedVariants ?? ForcedVariantSet.Empty, "Currency");
+            (_currencyTerminalScaleConnector, _currencyTerminalScales) =
+                CompileCurrencyTerminalScales(options.CurrencyTerminalScaleConnector, options.CurrencyTerminalScales);
+            CurrencyTerminalScales = _currencyTerminalScales is null ? null : options.CurrencyTerminalScales;
+            _currencyReplacements = CompileCurrencyReplacements(options.CurrencyReplacements);
 
             _fractionForcedVariants = _fractionForcedVariants.ToImmutableDictionary(
                 kv => kv.Key,
@@ -685,6 +689,26 @@ namespace Utils.NumberToString
         /// </summary>
         public ForcedVariantSet CurrencyForcedVariants => _currencyForcedVariants;
 
+        /// <summary>
+        /// Gets the text placed between a currency numeral ending on a scale of <see cref="CurrencyTerminalScales"/> and
+        /// its noun (e.g. <c>"de"</c> for Spanish), or <see langword="null"/>
+        /// (see <see cref="NumberToStringConverterOptions.CurrencyTerminalScaleConnector"/>).
+        /// </summary>
+        public string? CurrencyTerminalScaleConnector => _currencyTerminalScaleConnector;
+
+        /// <summary>
+        /// Gets the range expression of the scales taking <see cref="CurrencyTerminalScaleConnector"/>, or
+        /// <see langword="null"/> (see <see cref="NumberToStringConverterOptions.CurrencyTerminalScales"/>).
+        /// </summary>
+        public string? CurrencyTerminalScales { get; }
+
+        /// <summary>
+        /// Gets the replacements applied to the numeral of a currency amount before its noun (e.g. Italian <c>uno</c> →
+        /// <c>un</c>), empty when the language declares none
+        /// (see <see cref="NumberToStringConverterOptions.CurrencyReplacements"/>).
+        /// </summary>
+        public IReadOnlyList<CurrencyReplacementRule> CurrencyReplacements => _currencyReplacements;
+
         /// <inheritdoc/>
         public bool SupportsTimeConversion => _timeUnits.Count > 0;
 
@@ -833,6 +857,12 @@ namespace Utils.NumberToString
         private readonly string? _internalZeroGroupString;
         /// <summary>The canonicalized variants forced on currency numerals (see <see cref="CurrencyForcedVariants"/>).</summary>
         private readonly ForcedVariantSet _currencyForcedVariants;
+        /// <summary>The currency numeral/noun connector after a terminal scale, or <see langword="null"/> (see <see cref="CurrencyTerminalScaleConnector"/>).</summary>
+        private readonly string? _currencyTerminalScaleConnector;
+        /// <summary>The scales taking <see cref="_currencyTerminalScaleConnector"/>, or <see langword="null"/>.</summary>
+        private readonly IntRange<long>? _currencyTerminalScales;
+        /// <summary>The validated snapshot of the currency numeral replacements (see <see cref="CurrencyReplacements"/>).</summary>
+        private readonly ImmutableArray<CurrencyReplacementRule> _currencyReplacements;
         private readonly ImmutableDictionary<int, ForcedVariantSet> _fractionForcedVariants;
         /// <summary>Lazily computed text of each pronounced decimal digit (see <see cref="DecimalDigitTexts"/>).</summary>
         private string[]? _decimalDigitTexts;
@@ -2788,17 +2818,129 @@ namespace Utils.NumberToString
             // The numeral governs the currency noun: the language's currency context overlays the caller's variants,
             // and the currency's own constraints (its gender, for instance) overlay both.
             var currencyQuery = _currencyForcedVariants.Overlay(baseQuery);
-            string result = BuildCardinalFragment(units, canonicalUnitForced.Overlay(currencyQuery)) + Separator + unitName;
+            string result = BuildCurrencyAmount(units, canonicalUnitForced.Overlay(currencyQuery), unitName);
 
             if (subunits > 0)
             {
                 string subunitName = subunits == 1 ? currency.SubunitSingular : currency.SubunitPlural;
                 // Subunits are a sub-expression; do not check MaxNumber for them.
-                string subunitsText = BuildCardinalFragment(subunits, canonicalSubunitForced.Overlay(currencyQuery)) + Separator + subunitName;
+                string subunitsText = BuildCurrencyAmount(subunits, canonicalSubunitForced.Overlay(currencyQuery), subunitName);
                 result = result + Separator + currency.Connector + Separator + subunitsText;
             }
 
             return FinalizePhrase(result, isNegative);
+        }
+
+        /// <summary>
+        /// Builds one currency amount, unit or subunit: the numeral governing the noun, then the noun (NTS-30, NTS-51).
+        /// In order: the cardinal fragment rendered with <paramref name="query"/> (caller, language currency context and
+        /// currency variants already overlaid), the <see cref="CurrencyReplacements"/> that apply before
+        /// <paramref name="noun"/>, the <see cref="CurrencyTerminalScaleConnector"/> when the numeral ends on a scale of
+        /// <see cref="CurrencyTerminalScales"/>, then the noun.
+        /// </summary>
+        /// <param name="count">The non-negative count.</param>
+        /// <param name="query">The effective variant query of the numeral.</param>
+        /// <param name="noun">The currency noun, already in the number the count selects.</param>
+        /// <returns>The unfinalized amount.</returns>
+        private string BuildCurrencyAmount(BigInteger count, IReadOnlyDictionary<string, string> query, string noun)
+        {
+            string numeral = BuildCardinalFragment(count, query);
+            foreach (var rule in _currencyReplacements)
+                if (rule.AppliesBefore(noun))
+                    numeral = ApplyVariantReplacement(numeral, rule.Replacement);
+            if (_currencyTerminalScaleConnector != null && GetTerminalScaleIndex(count) is int scale
+                && _currencyTerminalScales!.Contains(scale))
+                numeral = numeral + Separator + _currencyTerminalScaleConnector;
+            return numeral + Separator + noun;
+        }
+
+        /// <summary>
+        /// Determines on which scale noun the cardinal of <paramref name="number"/> ends, from its group structure and
+        /// not from its text (NTS-51): the scale of its lowest non-zero group, the groups being cut exactly as
+        /// <see cref="ConvertRaw"/> cuts them (<see cref="GroupPattern"/> widths, <see cref="NumberScale.PairedScalesFrom"/>
+        /// pairs read as one group at their named scale). This is the terminal scale, not the highest one: 2 000 000 ends
+        /// on scale 2, 2 500 000 on scale 1, 2 000 001 on no scale.
+        /// </summary>
+        /// <param name="number">The non-negative value.</param>
+        /// <returns>
+        /// The scale index, at least 1, or <see langword="null"/> when the numeral ends on an ordinary group: zero, a
+        /// non-zero units group, a whole-number exception (a literal whose structure is not known), a scale rendered
+        /// without a noun, or a language placing the multiplier after the scale noun (the multiplier then ends the
+        /// numeral).
+        /// </returns>
+        internal int? GetTerminalScaleIndex(BigInteger number)
+        {
+            if (number.Sign <= 0 || ScaleMultiplierPosition == ScaleMultiplierPosition.AfterScale) return null;
+            if (number <= long.MaxValue && Exceptions.ContainsKey((long)number)) return null;
+
+            int groupNumber = 0;
+            BigInteger remaining = number;
+            while (true)
+            {
+                BigInteger groupValue = _groupDivisors[Math.Min(groupNumber, _groupDivisors.Length - 1)];
+                bool paired = Scale.PairedScalesFrom is int pairedFrom && groupNumber >= pairedFrom && ((groupNumber - pairedFrom) & 1) == 0;
+                BigInteger multiplierDivisor = paired
+                    ? groupValue * _groupDivisors[Math.Min(groupNumber + 1, _groupDivisors.Length - 1)]
+                    : groupValue;
+                var group = remaining % multiplierDivisor;
+                if (!group.IsZero)
+                {
+                    if (groupNumber == 0) return null;
+                    string noun = ResolveScaleWord(groupNumber, (long)group, _defaultVariantQuery).Word;
+                    return string.IsNullOrWhiteSpace(noun) ? null : groupNumber;
+                }
+                remaining /= multiplierDivisor;
+                groupNumber += paired ? 2 : 1;
+            }
+        }
+
+        /// <summary>
+        /// Validates the currency terminal-scale connector and its scales (see
+        /// <see cref="NumberToStringConverterOptions.CurrencyTerminalScaleConnector"/>).
+        /// </summary>
+        /// <param name="connector">The connector, or <see langword="null"/>.</param>
+        /// <param name="scales">The range expression of the scales, or <see langword="null"/>.</param>
+        /// <returns>The connector and the parsed scales, both <see langword="null"/> when none is configured.</returns>
+        /// <exception cref="ArgumentException">
+        /// Only one of the two is set, the connector is empty or white space, or the expression is malformed, covers no
+        /// scale or covers a value below 1.
+        /// </exception>
+        private static (string? Connector, IntRange<long>? Scales) CompileCurrencyTerminalScales(string? connector, string? scales)
+        {
+            if (connector is null && scales is null) return (null, null);
+            if (connector is null || scales is null)
+                throw new ArgumentException(
+                    "CurrencyTerminalScaleConnector and CurrencyTerminalScales must be set together.",
+                    nameof(NumberToStringConverterOptions.CurrencyTerminalScaleConnector));
+            if (string.IsNullOrWhiteSpace(connector))
+                throw new ArgumentException("CurrencyTerminalScaleConnector must not be empty or white space.",
+                    nameof(NumberToStringConverterOptions.CurrencyTerminalScaleConnector));
+            // Shared with the ordinal rules: unparsable, or covering a value below 1 (scale 0 has no noun), is rejected.
+            var range = ParseRuleRange(scales, $"CurrencyTerminalScales \"{scales}\"", nameof(NumberToStringConverterOptions.CurrencyTerminalScales));
+            if (IsEmptyRange(range))
+                throw new ArgumentException($"CurrencyTerminalScales \"{scales}\": the range covers no scale.",
+                    nameof(NumberToStringConverterOptions.CurrencyTerminalScales));
+            return (connector, range);
+        }
+
+        /// <summary>Validates and snapshots the currency numeral replacements (see <see cref="CurrencyReplacements"/>).</summary>
+        /// <param name="rules">The configured rules, or <see langword="null"/>.</param>
+        /// <returns>The immutable snapshot.</returns>
+        /// <exception cref="ArgumentException">A rule is <see langword="null"/> or declares <c>onScale</c>/<c>onValue</c>.</exception>
+        private static ImmutableArray<CurrencyReplacementRule> CompileCurrencyReplacements(IReadOnlyList<CurrencyReplacementRule>? rules)
+        {
+            if (rules is null || rules.Count == 0) return [];
+            CurrencyReplacementRule[] snapshot = [.. rules];
+            foreach (var rule in snapshot)
+            {
+                if (rule is null)
+                    throw new ArgumentException("Currency replacements must not be null.", nameof(NumberToStringConverterOptions.CurrencyReplacements));
+                if (rule.Replacement.OnScale is not null || rule.Replacement.OnValue is not null)
+                    throw new ArgumentException(
+                        $"Currency replacement '{rule.Replacement.OldValue}' declares onScale/onValue, which have no meaning on a " +
+                        "finished currency numeral.", nameof(NumberToStringConverterOptions.CurrencyReplacements));
+            }
+            return [.. snapshot];
         }
 
         /// <summary>

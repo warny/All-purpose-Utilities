@@ -131,7 +131,7 @@ public class NumberToStringNts30Nts38Tests
     [DataRow("21.21", "veintiún euros con veintiún céntimos")]
     [DataRow("2.31", "dos euros con treinta y un céntimos")]
     [DataRow("21000001", "veintiún millones un euros")]
-    [DataRow("1000000", "un millón euros")]
+    [DataRow("1000000", "un millón de euros")]
     public void Spanish_Currency_Apocope(string amount, string expected)
         => Assert.AreEqual(expected, Get("ES").ConvertCurrency(decimal.Parse(amount, System.Globalization.CultureInfo.InvariantCulture), Euro));
 
@@ -175,11 +175,14 @@ public class NumberToStringNts30Nts38Tests
         Assert.IsFalse(es.CurrencyForcedVariants.IsEmpty);
     }
 
-    /// <summary>The other languages declare no currency context: their currency numerals are unchanged.</summary>
+    /// <summary>
+    /// The other languages force no currency variants. Italian reads "un euro" since NTS-51, through a currency
+    /// replacement, not a forced variant.
+    /// </summary>
     [TestMethod]
     public void Currency_OtherLanguagesUnchanged()
     {
-        Assert.AreEqual("uno euro", Get("IT").ConvertCurrency(1m, Euro));
+        Assert.AreEqual("un euro", Get("IT").ConvertCurrency(1m, Euro));
         Assert.AreEqual("one euro", Get("EN").ConvertCurrency(1m, Euro));
         foreach (string culture in new[] { "EN", "FR", "IT", "PT", "DE", "VN", "EU" })
             Assert.IsTrue(Get(culture).CurrencyForcedVariants.IsEmpty, culture);
@@ -232,13 +235,13 @@ public class NumberToStringNts30Nts38Tests
     public void Basque_Ordinal_FromMilliard(long value, string expected)
         => Assert.AreEqual(expected, Get("EU").ConvertOrdinal(value));
 
-    /// <summary>Every Basque culture agrees; beyond the cardinal domain the ordinal still fails closed.</summary>
+    /// <summary>Every Basque culture agrees; beyond the cardinal domain the ordinal still fails closed (zero opened by NTS-50).</summary>
     [TestMethod]
     public void Basque_Ordinal_CulturesAndBound()
     {
         Assert.AreEqual("milioigarren", Get("eu-ES").ConvertOrdinal(1_000_000));
         Assert.ThrowsExactly<NotSupportedException>(() => Get("EU").ConvertOrdinal(1_000_000_000_000));
-        Assert.ThrowsExactly<NotSupportedException>(() => Get("EU").ConvertOrdinal(0));
+        Assert.AreEqual("zerogarren", Get("EU").ConvertOrdinal(0));
         Assert.AreEqual("milioi bat", Get("EU").Convert(1_000_000));
     }
 
