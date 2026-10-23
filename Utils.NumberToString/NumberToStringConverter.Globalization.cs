@@ -824,6 +824,8 @@ namespace Utils.NumberToString
             ScaleConnectorThresholdString = model.ScaleConnectorThresholdString,
             FinalComponentConnector = model.FinalComponentConnector,
             FinalGroupConnector = model.FinalGroupConnector,
+            InternalZeroGroupString = model.InternalZeroGroupString,
+            Currency = model.Currency,
             TimeUnits = model.TimeUnits,
             ClockTime = model.ClockTime,
             DateFormat = model.DateFormat,
@@ -999,6 +1001,8 @@ namespace Utils.NumberToString
                 ScaleConnectorThresholdString = overriding.ScaleConnectorThresholdString ?? inherited.ScaleConnectorThresholdString,
                 FinalComponentConnector = overriding.FinalComponentConnector ?? inherited.FinalComponentConnector,
                 FinalGroupConnector = overriding.FinalGroupConnector ?? inherited.FinalGroupConnector,
+                InternalZeroGroupString = overriding.InternalZeroGroupString ?? inherited.InternalZeroGroupString,
+                Currency = overriding.Currency ?? inherited.Currency,
                 TimeUnits = overriding.TimeUnits ?? inherited.TimeUnits,
                 ClockTime = overriding.ClockTime ?? inherited.ClockTime,
                 DateFormat = overriding.DateFormat ?? inherited.DateFormat,
@@ -1176,6 +1180,8 @@ namespace Utils.NumberToString
             ScaleConnectorThresholdString = definition.ScaleConnectorThresholdString,
             FinalComponentConnector = definition.FinalComponentConnector,
             FinalGroupConnector = definition.FinalGroupConnector,
+            InternalZeroGroupString = definition.InternalZeroGroupString,
+            Currency = definition.Currency,
             TimeUnits = definition.TimeUnits,
             ClockTime = definition.ClockTime,
             DateFormat = definition.DateFormat,
@@ -2044,6 +2050,13 @@ namespace Utils.NumberToString
                 FinalGroupConnector = string.IsNullOrWhiteSpace(language.FinalGroupConnector)
                     ? null
                     : language.FinalGroupConnector,
+                InternalZeroGroupString = string.IsNullOrWhiteSpace(language.InternalZeroGroupString)
+                    ? null
+                    : language.InternalZeroGroupString,
+                // Parsed here, validated and canonicalized against the language by the converter.
+                CurrencyForcedVariants = string.IsNullOrWhiteSpace(language.Currency?.ForceVariants)
+                    ? null
+                    : ForcedVariantSet.Parse(language.Currency!.ForceVariants, languageIdentifier, "Currency"),
                 // Every <ScaleForm> registers its scale (with empty forms when it only names a
                 // selector) so that its index is validated; selectors are resolved here, once.
                 ScaleForms = scaleFormEntries.ToDictionary(

@@ -45,7 +45,7 @@ public class NumberToStringOrdinalDomainGuardTests
     /// <param name="culture">The culture of the converter.</param>
     /// <param name="number">A value outside the validated domain.</param>
     [TestMethod]
-    [DataRow("ES", 1_000_000_000L)]
+    [DataRow("ES", 2_000_000_000L)]
     [DataRow("ES", 21_000L)]
     [DataRow("PT", 2000L)]
     [DataRow("GL", 2000L)]
@@ -54,12 +54,12 @@ public class NumberToStringOrdinalDomainGuardTests
     [DataRow("RU", 1_000_000_000L)]
     [DataRow("RU", 21_000L)]
     [DataRow("VN", 1_000_000_000_000L)]
-    [DataRow("VN", 1_000_005L)]
+    [DataRow("VN", 5_000_000_001L)]
     [DataRow("HI", 10_000_000_000_000L)]
     [DataRow("JA", 10_000_000_000_000_000L)]
     [DataRow("KO", 10_000_000_000_000_000L)]
     [DataRow("ZH", 1_000_000_000_000L)]
-    [DataRow("EU", 1_000_000_000L)]
+    [DataRow("EU", 1_000_000_000_000L)]
     [DataRow("PL", 1_000_000L)]
     [DataRow("PL", 100_000L)]
     public void GuardedLanguages_OutsideValidatedDomain_FailClosed(string culture, long number)

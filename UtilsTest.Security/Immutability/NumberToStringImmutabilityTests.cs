@@ -32,6 +32,27 @@ public sealed class NumberToStringImmutabilityTests
         Assert.AreEqual("twenty two", converter.Convert(new BigInteger(22)));
     }
 
+    /// <summary>
+    /// NTS-30: changing the internal-zero-group text and the currency forced variants of the options after construction
+    /// does not affect the converter, whose snapshot is exposed read-only.
+    /// </summary>
+    [TestMethod]
+    public void InternalZeroGroupAndCurrencyContext_SourceMutationAfterConstruction_DoesNotChangeConverter()
+    {
+        var vnOptions = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("VN"));
+        var vn = new NumberToStringConverter(vnOptions);
+        vnOptions.InternalZeroGroupString = null;
+        Assert.AreEqual("không", vn.InternalZeroGroupString);
+        Assert.AreEqual("một triệu không nghìn không trăm linh một", vn.Convert(new BigInteger(1_000_001)));
+
+        var esOptions = new NumberToStringConverterOptions(NumberToStringConverter.GetConverter("ES"));
+        var es = new NumberToStringConverter(esOptions);
+        esOptions.CurrencyForcedVariants = ForcedVariantSet.Empty;
+        var euro = new CurrencyDefinition { UnitSingular = "euro", UnitPlural = "euros", SubunitSingular = "céntimo", SubunitPlural = "céntimos" };
+        Assert.IsFalse(es.CurrencyForcedVariants.IsEmpty);
+        Assert.AreEqual("un euro", es.ConvertCurrency(1m, euro));
+    }
+
     /// <summary>Mutating the source ordinal stem rule list after construction does not affect the converter snapshot.</summary>
     [TestMethod]
     public void OrdinalStem_SourceMutationAfterConstruction_DoesNotChangeConverter()

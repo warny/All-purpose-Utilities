@@ -119,8 +119,8 @@
 			  Convert(21)) or attributive (governing a noun, e.g. a time unit — "veintiún minutos").
 			  Masculine attributive apocope ("uno"->"un", "veintiuno"->"veintiún", "treinta y
 			  uno"->"treinta y un") applies only in the attributive context; standalone cardinals
-			  are unaffected because "standalone" (declared first) is the default. Only time units
-			  force form=attributive today; ordinary Convert(...) calls never do.
+			  are unaffected because "standalone" (declared first) is the default. Time units and
+			  currency amounts (Currency below, NTS-30) force form=attributive; ordinary Convert(...) calls never do.
 			-->
 			<Dimension name="form" localName="forma" values="standalone,attributive" />
 
@@ -276,11 +276,20 @@
 			<OrdinalComposition for="31..99" divisor="10" separator=" " />
 			<OrdinalComposition for="101..999" divisor="100" separator=" " />
 			<OrdinalComposition for="1001..999999" divisor="1000" separator=" " />
-			<OrdinalComposition for="1000001..999999999" divisor="1000000" separator=" " />
+			<!-- NTS-38, DPD §2d: from 10^9 the head is still a round value of millón, whose multiplier spans the pair
+			     (pairedScalesFrom 2): 1 000 000 000 is mil × millón, milmillonésimo (DPD §2d, DLE milmillonésimo), and the
+			     lower orders follow it (milmillonésimo primero). -->
+			<OrdinalComposition for="1000001..999999999999" divisor="1000000" separator=" " />
 			<OrdinalVariants>
 				<Variant type="gender" variant="femenino" suffix="a" />
 			</OrdinalVariants>
 		</Ordinals>
+		<!-- NTS-30: a currency amount is a numeral governing the currency noun, so it takes the attributive form: the
+			 masculine apocope of DPD "uno" §2.2 (un euro, veintiún euros, treinta y un euros, ciento un euros) on the unit
+			 and the subunit alike. The rule belongs to the numeral, not to a word: any caller-defined masculine currency
+			 (peso, dólar) is apocopated, and a feminine one declared through CurrencyDefinition.UnitForcedVariants
+			 (gender=femenino) reads una peseta, veintiuna pesetas. -->
+		<Currency forceVariants="form=attributive" />
 		<TimeUnits>
 			<!-- NTS-05: "hora" is feminine; "minuto"/"segundo" are masculine (the language default,
 			     so no gender= override needed). All three force form=attributive, which activates

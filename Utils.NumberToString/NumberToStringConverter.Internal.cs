@@ -226,6 +226,14 @@ namespace Utils.NumberToString
         [XmlAttribute("finalGroupConnector")]
         public string? FinalGroupConnector { get; set; }
 
+        /// <summary>Gets or sets the multiplier text of a whole zero group read between two non-zero groups.</summary>
+        [XmlAttribute("internalZeroGroupString")]
+        public string? InternalZeroGroupString { get; set; }
+
+        /// <summary>Gets or sets the currency-phrase configuration.</summary>
+        [XmlElement(ElementName = "Currency")]
+        public CurrencyType? Currency { get; set; }
+
         /// <summary>Gets or sets the time-unit configuration.</summary>
         [XmlElement(ElementName = "TimeUnits")]
         public TimeUnitsType? TimeUnits { get; set; }
@@ -366,6 +374,10 @@ namespace Utils.NumberToString
         public string? ScaleConnectorThresholdString { get; init; }
         public string? FinalComponentConnector { get; init; }
         public string? FinalGroupConnector { get; init; }
+        /// <summary>Absent (<see langword="null"/>) inherits; an explicit value replaces, an empty one removes.</summary>
+        public string? InternalZeroGroupString { get; init; }
+        /// <summary>Absent inherits; a declared element replaces the inherited one as a whole.</summary>
+        public CurrencyType? Currency { get; init; }
         public TimeUnitsType? TimeUnits { get; init; }
         public ClockTimeType? ClockTime { get; init; }
         public DateFormatType? DateFormat { get; init; }

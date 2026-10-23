@@ -59,6 +59,23 @@ Examples:
     | 178320005 | một trăm bảy mươi tám triệu ba trăm hai mươi nghìn không trăm linh năm |
     | 400070192 | bốn trăm triệu không trăm bảy mươi nghìn một trăm chín mươi hai |
     | -2005 | âm hai nghìn không trăm linh năm |
+
+# NTS-30: a whole zero class between two non-zero classes is read "không" + class name (SGK Toán 4, Chân trời
+# sáng tạo, Bài 25: "307 000 262 Đọc số: Ba trăm linh bảy triệu không nghìn hai trăm sáu mươi hai", "Ba triệu
+# không nghìn không trăm mười ba: 3 000 013"); a trailing zero class is not read ("5 000 000 đọc là: Năm triệu").
+Scenario Outline: NTS-30 Vietnamese whole zero classes
+    When I convert the cardinal number <number>
+    Then the result is "<expected>"
+
+Examples:
+    | number | expected |
+    | 50000102 | năm mươi triệu không nghìn một trăm linh hai |
+    | 3000013 | ba triệu không nghìn không trăm mười ba |
+    | 307000262 | ba trăm linh bảy triệu không nghìn hai trăm sáu mươi hai |
+    | 1000005 | một triệu không nghìn không trăm linh năm |
+    | 5000000 | năm triệu |
+    | 50001000 | năm mươi triệu không trăm linh một nghìn |
+    | -50000102 | âm năm mươi triệu không nghìn một trăm linh hai |
 Scenario Outline: Ordinal numbers
     When I convert the ordinal number <number>
     Then the result is "<expected>"
@@ -123,8 +140,8 @@ Examples:
 # trong trật tự sắp xếp: hàng thứ nhất". NTS-27 corrected the cardinals from 1000 ("một nghìn", "hai nghìn
 # không trăm linh năm"), but no source settles the ordinal of these values: they still fail closed (NTS-28).
 # NTS-28: vtudien (Việt-Việt), thứ "Đặt trước số từ để chỉ thứ tự": before any numeral; since NTS-27 the cardinal
-# is right from 1000. A number with a whole zero class after a higher class keeps a cardinal defect (the class is
-# skipped instead of "không nghìn", NTS-30): those ordinals still fail closed.
+# is right from 1000. NTS-30: a whole zero class between two non-zero classes is read "không nghìn" (SGK Toán 4);
+# two consecutive such classes are not attested and their ordinals still fail closed.
 Scenario Outline: NTS-28 Vietnamese ordinals from a thousand
     When I convert the ordinal number <number>
     Then the result is "<expected>"
@@ -135,14 +152,15 @@ Examples:
     | 2005 | thứ hai nghìn không trăm linh năm |
     | 1000000 | thứ một triệu |
     | 1001001 | thứ một triệu không trăm linh một nghìn không trăm linh một |
+    | 1000005 | thứ một triệu không nghìn không trăm linh năm |
+    | 50000102 | thứ năm mươi triệu không nghìn một trăm linh hai |
 
-Scenario Outline: Vietnamese ordinals with a skipped zero class are not supported
+Scenario Outline: Vietnamese ordinals with consecutive zero classes are not supported
     When I attempt to convert the ordinal number <number>
     Then conversion is rejected because no ordinal form is available
 
 Examples:
     | number |
-    | 1000005 |
     | 1000000005 |
     | 1000000000000 |
 

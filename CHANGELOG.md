@@ -4,6 +4,34 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed — `omy.Utils.NumberToString` (NTS-30 closed: Vietnamese zero classes, Spanish currency apocope)
+- Vietnamese reads a whole zero class between two non-zero classes: `năm mươi triệu không nghìn một trăm linh hai`
+  (50 000 102, was `năm mươi triệu một trăm linh hai`), `một triệu không nghìn không trăm linh năm` (SGK Toán 4).
+  Trailing zero classes stay silent (`năm mươi triệu`); every composite reusing the cardinal follows (negatives,
+  decimals, fractions, currencies). The ordinals of these values are now formed (`thứ một triệu không nghìn không
+  trăm linh năm`); two consecutive zero classes, read class by class but not attested, keep a closed ordinal.
+- Spanish currency numerals take the attributive apocope of DPD "uno" §2.2: `un euro` (was `uno euro`), `veintiún
+  euros`, `treinta y un euros con veintiún céntimos`, for any caller-defined masculine currency; a feminine currency
+  declared through `CurrencyDefinition.UnitForcedVariants` reads `una peseta`, `veintiuna pesetas`. Standalone
+  cardinals, time units and clocks are unchanged.
+- Added the optional `internalZeroGroupString` attribute of `<Language>` (`NumberToStringConverterOptions` and
+  `NumberToStringConverter.InternalZeroGroupString`, `LanguageType.InternalZeroGroupString`, additive): the multiplier
+  text of a whole zero group between two non-zero groups. Absent: historical behaviour.
+- Added the optional `<Currency forceVariants>` element of `<Language>` (public `CurrencyType`,
+  `LanguageType.Currency`, `NumberToStringConverterOptions.CurrencyForcedVariants`,
+  `NumberToStringConverter.CurrencyForcedVariants`, additive): variants forced on every currency numeral. Precedence:
+  caller variants < language currency context < `CurrencyDefinition` forced variants. Absent: historical behaviour.
+
+### Fixed — `omy.Utils.NumberToString` (NTS-38 closed: Spanish and Basque ordinals from the million)
+- Basque ordinals follow Euskaltzaindia rule 203 (2025) §5: `milioigarren` (1 000 000, was `milioi batgarren`),
+  `bi milioigarren`, `milioi bat eta batgarren`, and are opened to the whole cardinal domain: `mila milioigarren`
+  (10^9), `mila milioi eta batgarren`, `bi mila milioigarren` (previously `NotSupportedException`).
+- Spanish ordinals are opened from 10^9 after DPD "ordinales" §2d and DLE *milmillonésimo*: `milmillonésimo`,
+  `milmillonésimo primero`, feminine `milmillonésima primera`. A multiplier of *millón* written in several words
+  (`dos mil millones`, `mil un millones`) still fails closed, like `ciento cincuenta millones`.
+- `<OrdinalScale>` reads a round value of the unnamed upper half of a pair (`pairedScalesFrom`) at the named scale
+  below it, its multiplier spanning the pair, as the cardinal does. No built-in output changed outside ES and EU.
+
 ### Fixed — `omy.Utils.NumberToString` (NTS-33: French ordinals derived from base forms)
 - French ordinals are derived from the base of their last constituent instead of the agreed cardinal: `deux centième`
   (was `deux centsième`), `deux millionième` (was `deux millionsième`), `trois cent millionième` (was `trois cents

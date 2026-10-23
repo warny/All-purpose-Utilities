@@ -77,12 +77,15 @@ public abstract class OrdinalDomainGuardLanguageSpecifics : INumberToStringLangu
 /// (NTS-08 for 1–29, the round tens, 100 and 1000; NTS-28 for the rest): §1 table and §2–§3, the complex
 /// ordinals juxtapose the simple ones (<c>trigésimo primero</c>, <c>centésimo trigésimo cuarto</c>), the
 /// round hundreds are simple (<c>ducentésimo</c>), the thousands and millions prefix the multiplying
-/// cardinal (<c>dosmilésimo</c>, <c>quinientosmilésimo</c>, <c>dosmillonésimo</c>). The configuration composes
-/// them; this guard admits 1–999 999 999 except the round thousands and millions whose multiplier the DPD does
-/// not show soldered: a multiplier ending in <c>uno</c> (21, 31, 101 …, apocope undetermined), a multiplier
-/// written in several words (150 <c>ciento cincuenta</c>) and, in the feminine, a hundreds multiplier
-/// (<c>doscientas</c>). Zero and the milliard and above (whose cardinal is not composed, NTS-30) fail closed.
-/// A composed value is checked part by part, so a rejected round part rejects the whole ordinal.
+/// cardinal (<c>dosmilésimo</c>, <c>quinientosmilésimo</c>, <c>dosmillonésimo</c>, <c>milmillonésimo</c>). The
+/// configuration composes them; this guard admits the cardinal domain, 1–999 999 999 999 (no <c>billón</c>), except
+/// the round thousands and millions whose multiplier the DPD does not show soldered: a multiplier ending in
+/// <c>uno</c> (21, 31, 101 …, apocope undetermined), a multiplier written in several words (150 <c>ciento
+/// cincuenta</c>, 2000 <c>dos mil</c>, 1001 <c>mil uno</c>) and, in the feminine, a hundreds multiplier
+/// (<c>doscientas</c>). From 10^9 the head is a round value of <c>millón</c> whose multiplier spans the pair
+/// (NTS-30F, <c>pairedScalesFrom</c>): <c>mil</c> is one word (<c>milmillonésimo</c>, DPD §2d, NTS-38), every other
+/// multiplier from 1000 is not. Zero fails closed. A composed value is checked part by part, so a rejected round part
+/// rejects the whole ordinal.
 /// </summary>
 public sealed class SpanishOrdinalLanguageSpecifics : OrdinalDomainGuardLanguageSpecifics
 {
@@ -91,13 +94,13 @@ public sealed class SpanishOrdinalLanguageSpecifics : OrdinalDomainGuardLanguage
 
     /// <inheritdoc />
     protected override string SupportedDomain =>
-        "1–999999999, except round thousands and millions whose multiplier is not a one-word cardinal without " +
+        "1–999999999999, except round thousands and millions whose multiplier is not a one-word cardinal without " +
         "apocope (and, in the feminine, not a hundreds multiplier)";
 
     /// <inheritdoc />
     protected override bool IsSupported(long number, IReadOnlyDictionary<string, string> activeVariants)
     {
-        if (number is < 1 or > 999_999_999) return false;
+        if (number is < 1 or > 999_999_999_999) return false;
         bool feminine = activeVariants.TryGetValue("gender", out string? gender) && gender == "femenino";
         if (number % 1_000_000 == 0) return IsSolderableMultiplier(number / 1_000_000, feminine);
         if (number >= 1_000_000) return true;
@@ -108,16 +111,18 @@ public sealed class SpanishOrdinalLanguageSpecifics : OrdinalDomainGuardLanguage
     /// <summary>
     /// Tells whether a multiplier of mil or millón is one of those the DPD shows soldered to the simple ordinal:
     /// one (the noun alone), a one-word cardinal without a final <c>uno</c> (2–29 except 21, the round tens),
-    /// <c>cien</c>, and the round hundreds in the masculine.
+    /// <c>cien</c>, the round hundreds in the masculine, and <c>mil</c> (only reachable as the paired multiplier of
+    /// millón: <c>milmillonésimo</c>).
     /// </summary>
-    /// <param name="multiplier">The multiplier, between 1 and 999.</param>
+    /// <param name="multiplier">The multiplier: up to 999 for mil, up to 999 999 for the paired millón.</param>
     /// <param name="feminine">Whether the feminine is requested.</param>
     /// <returns><see langword="true"/> when the round ordinal is supported.</returns>
     private static bool IsSolderableMultiplier(long multiplier, bool feminine)
         => multiplier is >= 1 and <= 29 && multiplier != 21
            || IsRoundTen(multiplier)
            || multiplier == 100
-           || IsRoundHundred(multiplier) && !feminine;
+           || IsRoundHundred(multiplier) && !feminine
+           || multiplier == 1000;
 }
 
 /// <summary>
@@ -375,9 +380,11 @@ public sealed class RussianOrdinalLanguageSpecifics : OrdinalDomainGuardLanguage
 /// <summary>
 /// Vietnamese ordinal domain: <c>thứ</c> + cardinal, with the forms <c>thứ nhất</c> and <c>thứ tư</c> (vtudien,
 /// Việt-Việt: thứ "Đặt trước số từ để chỉ thứ tự", before any numeral). NTS-08 validated 0–999; NTS-28 extends the
-/// rule to the NTS-27 cardinal domain (to 999 999 999 999). A number with a whole zero class after a higher class
-/// (1 000 005) still has a cardinal defect (the class is skipped instead of read <c>không nghìn</c>, NTS-30), so
-/// its ordinal fails closed.
+/// rule to the NTS-27 cardinal domain (to 999 999 999 999). Since NTS-30 the cardinal reads a whole zero class between
+/// two non-zero classes (<c>năm mươi triệu không nghìn một trăm linh hai</c>, SGK Toán 4), so these ordinals are
+/// formed (<c>thứ một triệu không nghìn không trăm linh năm</c>). Two consecutive internal zero classes (5 000 000 001,
+/// <c>năm tỷ không triệu không nghìn …</c>) are read class by class by deduction from the textbook method, no example
+/// attesting them: their ordinal fails closed.
 /// </summary>
 public sealed class VietnameseOrdinalLanguageSpecifics : OrdinalDomainGuardLanguageSpecifics
 {
@@ -385,19 +392,22 @@ public sealed class VietnameseOrdinalLanguageSpecifics : OrdinalDomainGuardLangu
     protected override string LanguageName => "Vietnamese";
 
     /// <inheritdoc />
-    protected override string SupportedDomain => "0–999999999999 without a whole zero class after a higher class";
+    protected override string SupportedDomain => "0–999999999999 without two consecutive zero classes between non-zero classes";
 
     /// <inheritdoc />
     protected override bool IsSupported(long number, IReadOnlyDictionary<string, string> activeVariants)
     {
         if (number > 999_999_999_999) return false;
-        // Scan the classes from the units upward: a zero class is a defect when a lower class is non-zero and a
-        // higher class too (it is then an inner class the cardinal skips).
+        // Scan the classes from the units upward: an internal zero class (a lower class non-zero, a higher one too)
+        // is read since NTS-30, but two adjacent ones are not attested.
         bool lowerNonZero = false;
+        bool previousInternalZero = false;
         for (long rest = number; rest >= 1000; rest /= 1000)
         {
             long group = rest % 1000;
-            if (group == 0 && lowerNonZero) return false;
+            bool internalZero = group == 0 && lowerNonZero;
+            if (internalZero && previousInternalZero) return false;
+            previousInternalZero = internalZero;
             lowerNonZero |= group != 0;
         }
         return true;
@@ -497,12 +507,13 @@ public sealed class ChineseOrdinalLanguageSpecifics : OrdinalDomainGuardLanguage
 }
 
 /// <summary>
-/// Basque ordinal domain. Euskaltzaindia, rule 18: the ordinal is the cardinal written in letters followed by
-/// <c>-garren</c> (<c>bigarren</c>, <c>bosgarren</c>, <c>hogeita batgarren</c>, <c>ehungarren</c>, <c>milagarren</c>
-/// …). NTS-08 validated 1–1000; NTS-28 extends the rule to the NTS-27 cardinal (rule 7: <c>mila eta batgarren</c>,
-/// <c>milioi batgarren</c>), to 999 999 999. Zero has no attested ordinal (rule 7 gives only
-/// <c>zero</c>/<c>huts</c>), and from the milliard the cardinal does not compose <c>mila milioi</c> with the
-/// millions (NTS-30); those values fail closed.
+/// Basque ordinal domain. Euskaltzaindia, rule 203 (2025, EBO VI) §5, which supersedes rule 18 on this point: "Oro
+/// har, ordinalak eratzeko, -garren atzizkia atxikitzen zaio zenbatzaile kardinalari" (<c>bigarren</c>,
+/// <c>bosgarren</c>, <c>hogeita batgarren</c>, <c>milagarren</c>, <c>mila eta batgarren</c>), with the round million
+/// reduced to its noun (<c>milioigarren</c>, <c>bi milioigarren</c>; <c>milioi bat eta batgarren</c> for 1 000 001).
+/// NTS-08 validated 1–1000, NTS-28 the millions; NTS-38 corrects the round million and extends the general rule to the
+/// whole cardinal domain, the milliard being <c>mila milioi</c> (rules 7, 203; NTS-30F): <c>mila milioigarren</c>.
+/// Zero stays closed: rule 203 lists <c>0. zerogarren</c>, recorded as NTS-50, not opened here.
 /// </summary>
 public sealed class BasqueOrdinalLanguageSpecifics : OrdinalDomainGuardLanguageSpecifics
 {
@@ -510,9 +521,9 @@ public sealed class BasqueOrdinalLanguageSpecifics : OrdinalDomainGuardLanguageS
     protected override string LanguageName => "Basque";
 
     /// <inheritdoc />
-    protected override string SupportedDomain => "1–999999999";
+    protected override string SupportedDomain => "1–999999999999";
 
     /// <inheritdoc />
     protected override bool IsSupported(long number, IReadOnlyDictionary<string, string> activeVariants)
-        => number is >= 1 and <= 999_999_999;
+        => number is >= 1 and <= 999_999_999_999;
 }

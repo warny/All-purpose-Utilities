@@ -33,7 +33,7 @@ describes any capability.
 | PL | PL | none | Yes (existing) | `PolishOrdinalLanguageSpecifics` + declarative | Yes | 5 / 12 | rodzaj × przypadek | **Corrected** (NTS-08 final): ZPE (MEN) "Odmiana liczebnika i zaimka"; PWN (*wpół do*, *za pięć dwunasta*); Babbel | —; NTS-08: Ordinals 1–1999 (1000–1999 rebuilt); from 2000 fail closed |
 | RU | RU | SCALE-SHORT-CYRILLIC (NTS-25A; was SCALE-LONG) | Yes (existing) | Declarative + `RussianOrdinalLanguageSpecifics` (NTS-08 domain guard) | Yes | 15 / 12 | gender × case | **Validated** (NTS-08 final): Правила (2006) §132–133; Ожегов, Ушаков, Ефремова (clock) | Ordinal of zero `нулевой` (NTS-14); NTS-08: Ordinals 0–1999; from 2000 fail closed |
 | UK | UK, UK-UA | SCALE-SHORT-CYRILLIC (NTS-25A; was SCALE-LONG) | Yes | `UkrainianOrdinalLanguageSpecifics` (gender × case) | Yes | 15 / 12 | `gender` × `case` (Ukrainian values) | **Corrected** (NTS-08 final): Український правопис 2019 §38; goroh.pp.ua paradigms; Антоненко-Давидович (clock) | Round thousands verified up to 10 000; ASCII apostrophe as in the cardinals; NTS-08: Single million/milliard without *один*; round thousands up to 10 000 only; NTS-30B: *тисяча/мільйон/мільярд* agree (*дві тисячі, два мільйони, п'ять мільйонів*); NTS-30H: fractions after Правопис 2019 §107 (*одна третя, дві третіх, дев'ять десятих*); NTS-39: singular after a compound ending in *одна* (*тридцять одна сота*) |
-| ES | ES | none | Yes (existing) | Declarative + `SpanishOrdinalLanguageSpecifics` (NTS-08 domain guard) | Yes | 5 / 12 | gender × form | **Corrected** (NTS-08 final): RAE/ASALE DPD "ordinales" and "hora" | Exact `Convert(TimeOnly)` unchanged; NTS-08: Ordinals 1–29, round tens, 100, 1000; cardinals 22/23/26 accented; other values fail closed; NTS-30G: the multiplier of *millón/millones* is masculine under any caller gender (DLE *millón*, DPD "cardinales" §3, §6) |
+| ES | ES | none | Yes (existing) | Declarative + `SpanishOrdinalLanguageSpecifics` (NTS-08 domain guard) | Yes | 5 / 12 | gender × form | **Corrected** (NTS-08 final): RAE/ASALE DPD "ordinales" and "hora" | Exact `Convert(TimeOnly)` unchanged; NTS-08: Ordinals 1–29, round tens, 100, 1000; cardinals 22/23/26 accented; other values fail closed; NTS-30G: the multiplier of *millón/millones* is masculine under any caller gender (DLE *millón*, DPD "cardinales" §3, §6); NTS-30: currency numerals attributive (DPD "uno" §2.2, *un euro*); NTS-38: ordinals from 10^9 (DPD "ordinales" §2d, *milmillonésimo*) |
 | IT | IT | SCALE-LONG | Yes: 1–1999 except 1110–1910, round thousands 2000–999000, 100001–100009, round multiples of milione/miliardo/bilione/biliardo/trilione | Declarative `<OrdinalStem>`, `<OrdinalComposition>`, `<OrdinalScale>` + `ItalianOrdinalLanguageSpecifics` (domain guard) | Yes | 5 / 12 | gender | Clock **validated** (NTS-08 final): Treccani vocabolario *ora²* (full five-minute table); Accademia della Crusca (`l'una e mezzo`, `le due meno un quarto`, `le otto meno venti`) | Cardinals soldered with `<Fusion>` (NTS-10); compound ordinals by `<OrdinalStem>` (NTS-13, see below), analytic 1010 and 100001–100009 (NTS-15) and round scale ordinals through trilione (NTS-17, NTS-18) (see below); zero, 1110–1910, the other non-round thousands above 1999 and the non-round values from a million deliberately fail closed as ordinals (Italian closure, see below); millions and above are separate nouns joined by `e` (NTS-14, see below) |
 | PT | PT | none | Yes (existing) | Declarative + `PortugueseOrdinalLanguageSpecifics` (NTS-08 domain guard) | Yes | 5 / 12 | gender | **Corrected** (NTS-08 final): Priberam; Ciberdúvidas "Minutos para a hora", "Eram duas horas da tarde" | Deliberate direct numeric reading; `para`/`menos` constructions not produced; PT-PT/PT-BR not split; NTS-08: European Portuguese clock (*menos* after the half hour); ordinals 1–20, round tens, 100, 1000 |
 | GL | GL, gl-ES | none | Yes (existing) | Declarative + `GalicianOrdinalLanguageSpecifics` (NTS-08 domain guard) | Yes | 5 / 12 | gender | **Corrected** (NTS-08 final): RAG/ILG NOMIG 2003 §16.2; RAG dictionary; Xunta *Aula de Galego 1* (clock) | —; NTS-08: Ordinals 1–20, round tens, 100, 1000 |
@@ -48,16 +48,73 @@ describes any capability.
 | JA | JA | none | Yes (existing, prefix 第) | Declarative + `JapaneseOrdinalLanguageSpecifics` (NTS-08 domain guard) | Yes | 5 / 12 | none | **Validated** (NTS-08 final): デジタル大辞泉 (第, 半) | No 午前/午後; NTS-08: Ordinals 0–1000 |
 | KO | KO | none | Yes (existing, prefix 제) | Declarative + `KoreanOrdinalLanguageSpecifics` (NTS-08 domain guard) | Yes | 5 / 12 | none | **Consulted**: National Institute of Korean Language (국립국어원), answer “몇 시, 몇 분으로 띄어 씁니다” (시 and 분 are dependent unit nouns); Hangeul Matchumbeop art. 43 (unit nouns spaced; attached `두시 삼십분` only allowed with numerals/order) | Native hour words are literal ClockTime patterns (all twelve tested); no 오전/오후; NTS-08: Ordinals 0–1000 (NTS-08) |
 | ZH | ZH | none | Yes (existing, prefix 第) | Declarative + `ChineseOrdinalLanguageSpecifics` (NTS-08 domain guard) | Yes | 15 / 12 | none | **Validated** (NTS-08 final): 汉典 (第, 两, 点, 刻); elon.io | `两` only for the displayed hour 2; quarter-hour step avoids single-digit minutes (`零五分`); no 上午/下午; NTS-08: Ordinals 0–100 and round hundreds |
-| VN | VN, VI, VI-VN | none | Yes (repaired: `thứ tư`) | Declarative + `VietnameseOrdinalLanguageSpecifics` (NTS-08 domain guard) | Yes | 15 / 12 | none | **Validated** (NTS-08 final): vtudien Việt-Việt (tư, thứ, giờ, rưỡi, kém) | No sáng/chiều/tối; NTS-08: Ordinals 0–999 |
+| VN | VN, VI, VI-VN | none | Yes (repaired: `thứ tư`) | Declarative + `VietnameseOrdinalLanguageSpecifics` (NTS-08 domain guard) | Yes | 15 / 12 | none | **Validated** (NTS-08 final): vtudien Việt-Việt (tư, thứ, giờ, rưỡi, kém) | No sáng/chiều/tối; NTS-08: Ordinals 0–999; NTS-30: a whole zero class between two non-zero classes read *không nghìn* (SGK Toán 4) |
 | ID | ID, ID-ID | SCALE-SHORT | Yes | `IndonesianOrdinalLanguageSpecifics` (`long`) | Yes | 5 / 12 | none | KBBI entries `pertama`, `lewat`, `setengah`, `kurang` | Half hour refers to the following hour |
 | MS | MS, MS-MY | ID | Yes | `MalayOrdinalLanguageSpecifics` (`long`) | Yes, replaces parent | 5 / 12 | none | DBP PRPM entries `lapan`, `pukul`, `suku`, `setengah`, `bilion`, `trilion` | Half hour keeps the current hour |
 | CA | CA, ca-ES | none | Yes | Declarative | Yes | 15 / 12 | `gender=femení` forced on `{hour}` | IEC, *Gramàtica essencial*, §31.2; Optimot | Traditional quarters only; no ordinal of zero (NTS-14) |
 | CA-valencia | ca-ES-valencia | CA | Inherited | Declarative | Yes, replaces parent | 5 / 12 | `una` forced; invariable `dos` in ClockTime only | AVL, *Gramàtica normativa valenciana*, §32.2; AVL glossary `dos` | `dos` limited to ConvertClockTime |
-| EU | EU, eu-ES | none | Yes (existing) | Declarative + `BasqueOrdinalLanguageSpecifics` (NTS-08 domain guard) | Yes | 15 / 12 | none | **Corrected** (NTS-08 final): Euskaltzaindia rules 7 and 18; Sareko Euskal Gramatika (clock) | Clock-case forms are literal per hour; cardinals unchanged; NTS-08: Ordinals 1–1000 (*bosgarren*); zero and > 1000 fail closed; NTS-30G: one *eta* before the last group of each numeral phrase (rule 203 §4: *hirurogei milioi berrehun mila eta bat*) |
+| EU | EU, eu-ES | none | Yes (existing) | Declarative + `BasqueOrdinalLanguageSpecifics` (NTS-08 domain guard) | Yes | 15 / 12 | none | **Corrected** (NTS-08 final): Euskaltzaindia rules 7 and 18; Sareko Euskal Gramatika (clock) | Clock-case forms are literal per hour; cardinals unchanged; NTS-08: Ordinals 1–1000 (*bosgarren*); zero and > 1000 fail closed; NTS-30G: one *eta* before the last group of each numeral phrase (rule 203 §4: *hirurogei milioi berrehun mila eta bat*); NTS-38: ordinals after rule 203 §5 (*milioigarren*, *mila milioigarren*) to 999 999 999 999 |
 | SW | SW, SW-KE, SW-TZ | SCALE-SHORT | **Deferred** | — | Yes | 15 / 12, `hourOffset=-6` | none | **Consulted**: Five Colleges LangMedia, “Swahili – Tanzania – Telling Time”; SpokenSwahili, “Telling the time in Swahili” | No day-part words (asubuhi, mchana, jioni, usiku) |
 | ZU | ZU | none | **Deferred** | — | Yes | 15 / 12 | none | **Validated** (NTS-08 final, two sources): Unisa *Learn online Zulu* Theme 4; DBE *IsiZulu Grade 4 and 5 Mathematics Terminology* | Hour forms are literal ClockTime patterns; they do not enable ordinals |
 | EE | EE | SCALE-SHORT (scale tables only, NTS-23) | Yes (NTS-20): cardinal + `-lia` on the last element, `gbãtɔ` for 1 | Declarative + `ZeroOrdinalUnsupportedLanguageSpecifics` | **Deferred** | — | none | **Consulted** (NTS-20): Dzablu-Kumah, *Basic Ewe for Foreign Students*; Biblica Open Ewe Contemporary Scriptures; *Ewe Basic Course* 1968; Peace Corps Togo 2010; Wiktionary | Cardinals unbounded (NTS-23): static `akpe`, then the Conway-Wechsler short scale `miliɔn`, `biliɔn`, `triliɔn` (sourced anchors), `quadriliɔn` … (project extrapolation), each before its standalone multiplier (`multiplierPosition="afterScale"`); zero ordinal unsupported |
 | WO | WO | none | Yes (`-éel`, NTS-16, NTS-19) | Declarative + `WolofOrdinalLanguageSpecifics` | **Deferred** | — | none | No consistent source found | Cardinals unbounded (NTS-21): static `junni`, then the long-scale Conway-Wechsler names `milyoŋ`, `milyaar` (attested anchors), `bilyoŋ`, `bilyaar` … (project extrapolation in Wolof spelling); ordinals 1–999 999 only, no ordinal of zero nor of the round thousands |
+
+## NTS-30 and NTS-38 — Vietnamese zero classes, Spanish currency numerals, Spanish and Basque ordinals (2026-10-23)
+
+Sources read during the pass (pages fetched with curl and read verbatim; rule 203 extracted locally from the PDF).
+
+### NTS-30, Vietnamese whole zero class
+
+| # | Source | Quoted text | Use |
+|---|---|---|---|
+| 1 | SGK Toán 4, Chân trời sáng tạo, Bài 25 "Triệu – Lớp triệu", p. 60, Thực hành 2, as reproduced by loigiaihay.com (<https://loigiaihay.com/toan-lop-4-trang-60-bai-25-trieu-lop-trieu-sgk-chan-troi-sang-tao-a136800.html>) | "Mẫu: 307 000 262 Đọc số: Ba trăm linh bảy triệu không nghìn hai trăm sáu mươi hai"; "68 000 742 đọc là: Sáu mươi tám triệu không nghìn bảy trăm bốn mươi hai"; "Năm mươi triệu không nghìn một trăm linh hai: 50 000 102" | the textbook's own model reads a whole zero class *không* + class name |
+| 2 | Same lesson, Luyện tập 2 and the method note | "c) Ba triệu không nghìn không trăm mười ba: 3 000 013"; "Viết số theo từng lớp, lần lượt từ lớp triệu, lớp nghìn, lớp đơn vị"; "5 000 000 đọc là: Năm triệu" | the zero class, then the zero hundreds of the next class; class-by-class method; a trailing zero class is silent |
+| 3 | VietJack, same lesson (<https://vietjack.com/toan-4-ct/viet-cac-so-nam-muoi-trieu-khong-nghin-mot-tram-linh-hai.jsp>, <https://vietjack.com/toan-4-ct/viet-cac-so-ba-trieu-khong-nghin-khong-tram-muoi-ba.jsp>) | "Giải Toán lớp 4 trang 60 Bài 2: Viết các số: Năm mươi triệu không nghìn một trăm linh hai."; "Giải Toán lớp 4 trang 61 Bài 2: Viết các số sau: Ba triệu không nghìn không trăm mười ba." | second publisher of the same keys |
+| 4 | SGK Toán 4, Kết nối tri thức, as reproduced by loigiaihay.com (<https://loigiaihay.com/bai-tap-282221.html>) | "Hai trăm mười triệu không nghìn ba trăm ba mươi lăm." | the same reading in another textbook series |
+
+No normative body publishes Vietnamese number reading: these are pedagogical sources, as for NTS-27. They distinguish
+three phenomena: a whole zero class (*không nghìn*, internalZeroGroupString, new), the zero hundreds of a non-zero
+class after a higher class (*không trăm*, innerBuildString, NTS-27) and the zero tens before a lone unit (*linh*,
+innerBuildString, NTS-27). Attested: one zero *nghìn* class between *triệu* and the units. Deduced from the
+class-by-class method (#2), not attested by an example: a zero *triệu* class under *tỷ* (*năm tỷ không triệu không
+trăm linh một nghìn*) and two consecutive zero classes (*năm tỷ không triệu không nghìn không trăm linh một*). The
+cardinal reads them by the method (the previous output, which skipped them, contradicted it); the ordinal guard opens
+a single internal zero class and keeps two consecutive ones closed.
+
+### NTS-30, Spanish currency numerals
+
+| # | Source | Quoted text | Use |
+|---|---|---|---|
+| 5 | RAE/ASALE, DPD "uno" §2.2 (<https://www.rae.es/dpd/uno>) | "Cuando el numeral uno funciona como determinante antepuesto a un sustantivo masculino, se apocopa en la forma un […] Estas mismas leyes de la apócope rigen cuando uno, una es componente de numerales complejos, escritos en una o en varias palabras: Tengo veintiún años" | the apocope belongs to the numeral governing a masculine noun, whatever the noun |
+| 6 | DPD "uno" §2.3 | "treinta y un kilos, veintiuna toneladas (no ⊗ veintiún toneladas)" | a feminine noun takes *una*, *veintiuna*: the gender stays the currency's (CurrencyDefinition.UnitForcedVariants) |
+
+### NTS-38, Basque ordinals
+
+| # | Source | Quoted text | Use |
+|---|---|---|---|
+| 7 | Euskaltzaindia, rule 203, *Euskara Batuaren Ortotipografia (EBO) (VI). Zenbakizko adierazpenak* (2025), §5 (<https://www.euskaltzaindia.eus/dok/arauak/Araua_0203.pdf>, p. 24) | "Oro har, ordinalak eratzeko, -garren atzizkia atxikitzen zaio zenbatzaile kardinalari." | the general, productive rule |
+| 8 | Rule 203 §5, ordinal table (pp. 24–26) | "0. zerogarren"; "1000. milagarren"; "1001. mila eta batgarren"; "1002. mila eta bigarren"; "10 000. hamar milagarren"; "100 000. ehun milagarren"; "1 000 000. milioigarren"; "2 000 000. bi milioigarren" | the round million is its noun (no *bat*); *zerogarren* recorded as NTS-50 |
+| 9 | Rule 203 §5, p. 26 | "101.: ehun eta batgarren; 121.: ehun eta hogeita batgarren; 201.: berrehun eta batgarren; 1001.: mila eta batgarren; 1 000 001.: milioi bat eta batgarren" | a non-round value keeps the cardinal and suffixes its last word |
+
+Rule 203 supersedes rule 18 (used by NTS-08/NTS-28) on this point. Attested: the table to *bi milioigarren* and
+*milioi bat eta batgarren*. Deduced from the general rule (#7) applied to the cardinal of rules 7 and 203 (*mila
+milioi*, NTS-30F): the other millions and the milliards (*hamar milioigarren*, *mila milioigarren*, *mila milioi eta
+batgarren*, *bi mila milioigarren*). The only departure from the general rule (the dropped *bat* of the round million)
+is the OrdinalScale noun-alone form, which the rule's table gives.
+
+### NTS-38, Spanish ordinals
+
+| # | Source | Quoted text | Use |
+|---|---|---|---|
+| 10 | RAE/ASALE, DPD "ordinales" §2a (<https://www.rae.es/dpd/ordinales>) | "También son simples los ordinales correspondientes a 1000 y a las potencias superiores, que se forman añadiendo al numeral cardinal correspondiente la terminación -ésimo: milésimo, millonésimo, billonésimo" | simple ordinals of the powers |
+| 11 | DPD "ordinales" §2d | "Los ordinales complejos de la serie de los millares, los millones, los billones, etc., en la práctica poco o nada usados, se forman prefijando al ordinal simple el cardinal que lo multiplica, y posponiendo los ordinales correspondientes a los órdenes inferiores: dosmilésimo (2000.º), tresmilésimo tricentésimo cuadragésimo quinto (3345.º), quinientosmilésimo (500 000.º), milmillonésimo (1 000 000 000.º)" | *milmillonésimo*; lower orders after the head |
+| 12 | DPD "ordinales" §3 | "si se escriben en dos palabras, ambos componentes son variables: vigésima primera" | feminine *milmillonésima primera* |
+| 13 | DLE, *milmillonésimo* (<https://dle.rae.es/milmillonésimo>) | "2. adj. Que ocupa en una serie el lugar número mil millones." | the ordinal sense of the lexical entry |
+
+Attested: *milmillonésimo*. Deduced from §2d: the composed values headed by it (*milmillonésimo primero*,
+*milmillonésimo dosmilésimo*). Closed as before (NTS-28): every multiplier the DPD does not show soldered, i.e. a
+multiplier of *millón* written in several words from 1001 on (*dos mil*, *mil uno*, *veintiún mil*), one ending in
+*uno*, and a feminine hundreds multiplier. *billonésimo* (10^12) lies beyond the Spanish cardinal domain.
 
 ## NTS-47 — last audit of NTS-42: SK generated *-ón* genitive, D and E/CS (2026-10-21)
 
@@ -860,9 +917,9 @@ dispositions: `DONE-2026-10-11.md`. The guards still bound every unsourced famil
 | JA | 第 "数を表す語に付いて、ものの順序を表す" (any numeral) | デジタル大辞泉 (NTS-08) | **Widened** to the cardinal domain (10^16 − 1) |
 | KO | 제 + Sino-Korean numeral (제삼 항) | 한글 맞춤법 제43항 (NTS-08) | **Widened** to the cardinal domain (10^16 − 1) |
 | ZH | 第 "用於整數數詞之前" (any integer numeral) | 國語辭典 via 汉典 (NTS-08) | **Widened** to the cardinal domain (10^12 − 1) |
-| VN | thứ "Đặt trước số từ để chỉ thứ tự" | vtudien Việt-Việt | **Widened** to the cardinal domain, except a whole zero class (NTS-30) |
+| VN | thứ "Đặt trước số từ để chỉ thứ tự" | vtudien Việt-Việt | **Widened** to the cardinal domain, except a whole zero class (NTS-30; opened by NTS-30 on 2026-10-23, except two consecutive zero classes) |
 | HI | §180 (इ) "सौ से ऊपर की संख्याओं में पिछले शब्द के अंत में वाँ लगाते हैं" | Kamta Prasad Guru, हिंदी व्याकरण (hi.wikisource) | **Widened** to the cardinal domain (एक लाखवाँ, एक करोड़वाँ) |
-| EU | Ordinal = cardinal in letters + *-garren* ("… ehungarren, milagarren …"), *batgarren* separate | Euskaltzaindia rule 18 (PDF) | **Widened** to 1–999 999 999 (≥ 10^9 NTS-30; the cardinal is composed since NTS-30F, the ordinals stay closed) |
+| EU | Ordinal = cardinal in letters + *-garren* ("… ehungarren, milagarren …"), *batgarren* separate | Euskaltzaindia rule 18 (PDF) | **Widened** to 1–999 999 999 (≥ 10^9 NTS-30; the cardinal is composed since NTS-30F; opened by NTS-38 on rule 203 §5, which also corrects *milioigarren*) |
 
 ## NTS-27 — cardinal corrections (2026-10-10)
 
@@ -875,7 +932,7 @@ are unchanged; the cardinals no longer block them (NTS-28). Details and old/new 
 | SV | Numbers below a million are one word (*tjugofem*, *femtusentrettio*, *trehundranittiofemtusen*); *miljon*, *miljard* stand apart (*tjugosex miljarder femhundraåttiosju miljoner*); after the tens *en* before a counted word (*tjugoen kilo*, *etthundratjugoen tallrikar*), *tjugoett* for the number itself; three identical consonants: one dropped | Språkrådet (Isof), Frågelådan 27138, 21216, 31080 | **Corrected**: `etthundraett`, `tvåtusen`, `tjugoentusen`, `etthundraettusen`, `en miljon`, `tjugoen miljoner`. Choice: *etthundra* (attested in 21216) rather than *hundra*; *tusen* for 1000 kept |
 | PL | *tysiąc* after one alone, *tysiące* after 2–4 (not 12–14, also at the end of a compound), *tysięcy* otherwise | SJP PWN *tysiąc* (*trzy tysiące, sześć tysięcy*); PWN Poradnia 16446 (*osiemnaście tysięcy*, *pięć milionów czterysta dwadzieścia sześć tysięcy*); Unicode CLDR plural rules, pl | **Corrected** (`PolishPluralLexicalFormSelector`) |
 | RU | *тысяча* feminine (*одна тысяча*, *две тысячи*); *тысяча/миллион/миллиард*: singular after …1 (not …11), genitive singular after …2–4 (not …12–14), genitive plural otherwise | Unicode CLDR plural rules, ru; ru.wiktionary *тысяча* | **Corrected** (`RussianPluralLexicalFormSelector`, scales 1–3); generated names from *триллион* not agreed (NTS-30) |
-| VN | 1000 is *một nghìn*; a class after a higher class is read with its zero hundreds (*không trăm*) and *linh* before a lone unit | SGK Toán 4 solution keys: vietjack.com (p. 15 ex. 2, *bốn trăm triệu không trăm bảy … nghìn một trăm chín mươi hai*), loigiaihay.com (*… nghìn không trăm linh năm*) | **Corrected**. Pedagogical sources only (no normative body publishes number reading); a whole zero class read *không nghìn* in the same keys is not built (NTS-30) |
+| VN | 1000 is *một nghìn*; a class after a higher class is read with its zero hundreds (*không trăm*) and *linh* before a lone unit | SGK Toán 4 solution keys: vietjack.com (p. 15 ex. 2, *bốn trăm triệu không trăm bảy … nghìn một trăm chín mươi hai*), loigiaihay.com (*… nghìn không trăm linh năm*) | **Corrected**. Pedagogical sources only (no normative body publishes number reading); a whole zero class read *không nghìn* in the same keys is not built (NTS-30; built by NTS-30 on 2026-10-23) |
 | JA | Groups of four digits with 万, 億, 兆; 一 not said before 百, 十, optional before 千 (kept: 千); no spaces | ja.wikipedia *漢数字* (命数法 section) | **Corrected**; to 9999兆 |
 | KO | Counting by 만, 억, 조, spaced by units of 만 only (*십이억 삼천사백오십육만 칠천팔백구십팔*); 일 not written before 십, 백, 천; written before 만/억/조 (*일억 삼천만*) | 한글 맞춤법 제44항 via 국립국어원 새국어소식 (2004) | **Corrected**; to 9999조. The multiplier one of 만 (*일만* vs colloquial *만*) is a documented choice |
 | ZH | Counting by 万, 亿; one 零 for a run of skipped positions, none at the end of a group; 十 keeps 一 except at the head (一百一十) | AllSet Learning, Chinese Grammar Wiki, *Zeros in numbers* | **Corrected**; below 万亿 (10^12), which needs a multiplier counted by 万 itself. `两` stays a ClockTime literal |

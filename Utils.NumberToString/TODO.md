@@ -1,6 +1,10 @@
 # Utils.NumberToString — Current backlog
 
-Re-audited on 2026-10-22 after NTS-33 (French ordinals derived from the base of their last constituent: `deux
+Re-audited on 2026-10-23 after NTS-30 (closed: Vietnamese whole zero classes read `không` + class name, `năm mươi triệu
+không nghìn một trăm linh hai`, through the generic `internalZeroGroupString`; Spanish currency numerals attributive, `un
+euro`, `veintiún euros`, through the generic `<Currency forceVariants>`) and NTS-38 (closed: Basque `milioigarren`,
+`mila milioigarren` after Euskaltzaindia rule 203 §5; Spanish `milmillonésimo` after DPD `ordinales` §2d; NTS-50 and
+NTS-51 opened; `DONE-2026-10-23.md`), on 2026-10-22 after NTS-33 (French ordinals derived from the base of their last constituent: `deux
 centième`, `deux millionième`, `trois cent millionième`, the fractions keeping `deux centièmes`; generic
 `ordinalBaseString`), NTS-48 (French *vingt*/*cent* agreement: `quatre-vingts`, `deux cent mille`, `deux cents
 millions`, through `<Groups onScale="1">`), NTS-49 (French numerals in the 1990 rectified spelling, every element hyphenated:
@@ -89,20 +93,16 @@ classification.
 
 ## Open items
 
-- **NTS-30 — cardinal defects found by NTS-27 and NTS-28 outside their lists.** Recorded, not fixed (the ES/EU
-  long-scale item was fixed by NTS-30F, `DONE-2026-10-15(1).md`; the EU *eta* and ES feminine million items by
-  NTS-30G, `DONE-2026-10-15(2).md`; the UK, BG, CS, SK fractions by NTS-30H, `DONE-2026-10-15(3).md`):
-  - VN: a whole zero class after a higher class is skipped (`một triệu không trăm linh một`), whereas the
-    SGK Toán 4 solution keys read it `không nghìn` (*năm mươi triệu không nghìn một trăm linh hai*); needs a
-    zero-group rendering and a normative source.
-  - ES currency: `uno euro` for DPD *un euro* (apocope before a noun); the caller-defined currency wording does
-    not force the attributive form.
-- **NTS-38 — ES and EU ordinals from the million, after NTS-30F.** Opened by NTS-30F, which left every ordinal
-  byte-identical. EU: `ConvertOrdinal(1 000 000)` gives `milioi batgarren`, whereas Euskaltzaindia rule 203 §5
-  writes *milioigarren* (and *milioi bat eta batgarren* for 1 000 001, *bi milioigarren* for 2 000 000); rule 203
-  is newer than the rule 18 audited by NTS-08/NTS-28 and may settle more ordinals. ES and EU: the ordinals from
-  10^9 stay closed by `SpanishOrdinalLanguageSpecifics` / `BasqueOrdinalLanguageSpecifics` although the cardinal is
-  now composed (DPD "ordinales" attests *milmillonésimo*); opening them needs their own audit.
+- **NTS-50 — Basque ordinal of zero.** Found by NTS-38: Euskaltzaindia rule 203 §5 lists `0. zerogarren` in its
+  ordinal table, whereas `BasqueOrdinalLanguageSpecifics` still closes 0 on the older rule 7 (which gives only
+  *zero*/*huts*). Opening it needs: the guard widened to 0 (the cardinal *zero* + `-garren` should form it), a test
+  of `zerogarren` on EU and eu-ES, and a check that no other surface (fraction, clock) reads the ordinal of zero.
+- **NTS-51 — currency phrases after NTS-30.** Found by NTS-30, outside its item: ES writes `un millón euros`,
+  `dos millones euros` where the counted noun follows *de* after *millón/millones* (DPD `cardinales` §6, already
+  cited by NTS-30G: *un millón de euros*); IT writes `uno euro` (`Italian.feature`) where Italian apocopates *uno*
+  before a masculine noun (to source: Treccani or the Accademia della Crusca). The ES fix needs a currency-phrase
+  connector conditioned on a round scale noun ending the amount; the IT one can reuse `<Currency forceVariants>`
+  once Italian declares a `form` dimension. Each needs a source audit and a dump of the currency probes.
 - **NTS-35 — Polish cardinals above 999 999.** Excluded from NTS-30C: PL declares `maxNumber="999999"`, so no
   generated scale is part of its public domain and NTS-30C configured none. Opening the domain needs, together: the
   Polish long-scale names (*milion*, *miliard*, *bilion*, *biliard* …, not the current generated spelling), their
@@ -120,7 +120,7 @@ classification.
   `vingt-cinq millièmes`.)
 
 
-NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-28, NTS-29, NTS-30A, NTS-30B, NTS-30C, NTS-30D, NTS-30E, NTS-30F, NTS-30G, NTS-30H, NTS-31, NTS-32, NTS-33, NTS-37, NTS-39, NTS-40, NTS-41, NTS-42, NTS-48 and NTS-49 are closed:
+NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-28, NTS-29, NTS-30, NTS-30A, NTS-30B, NTS-30C, NTS-30D, NTS-30E, NTS-30F, NTS-30G, NTS-30H, NTS-31, NTS-32, NTS-33, NTS-37, NTS-38, NTS-39, NTS-40, NTS-41, NTS-42, NTS-48 and NTS-49 are closed:
 
 - NTS-01 — XSD validation: `DONE-2026-08-21.md`.
 - NTS-02 — initialization isolation: `DONE-2026-08-21.md`.
@@ -318,6 +318,22 @@ NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-28, NTS-29, NTS-30A, N
   is attested too (Wolof Ajami Reader p. 192, Gaye 1980, Kosogorova 2023), decree 2005-992 does not settle the chain.
   No output change, no variant dimension; reopening criteria in `docs/NTS-26-wolof-nested-linker-choice.md`:
   `DONE-2026-10-22.md`.
+- NTS-30 (cardinal defects found by NTS-27 and NTS-28; its other items closed by NTS-30A to NTS-30H) — **closed**
+  with its last two items. VN: a whole zero class between two non-zero classes is read *không* + class name (SGK
+  Toán 4, Chân trời sáng tạo, Bài 25: *307 000 262 Đọc số: Ba trăm linh bảy triệu không nghìn hai trăm sáu mươi hai*,
+  *Ba triệu không nghìn không trăm mười ba*), through the new generic `internalZeroGroupString` (rendered only between
+  two non-zero groups, every such group, a literal followed by its scale noun); the Vietnamese ordinal guard opens
+  them, consecutive zero classes (deduced, not attested) staying closed. ES currency: the numeral governing the
+  currency noun is attributive (DPD `uno` §2.2: *un euro*, *veintiún euros*, *treinta y un euros*), through the new
+  generic `<Currency forceVariants="form=attributive">` (caller variants < language context < `CurrencyDefinition`):
+  `DONE-2026-10-23.md`.
+- NTS-38 (opened by NTS-30F) — **closed**. EU after Euskaltzaindia rule 203 (2025) §5, which supersedes rule 18:
+  *milioigarren*, *bi milioigarren*, *milioi bat eta batgarren* (`<OrdinalScale scales="2">`), and by its general
+  rule (-garren on the cardinal) the whole cardinal domain to 999 999 999 999 (*mila milioigarren*, *bi mila
+  milioigarren*). ES after DPD `ordinales` §2d and DLE *milmillonésimo*: *milmillonésimo*, *milmillonésimo primero*,
+  feminine *milmillonésima primera*; a multiplier of *millón* written in several words (*dos mil*, *mil uno*) stays
+  closed like *ciento cincuenta* (NTS-28). Generic fix: an `<OrdinalScale>` round value of the unnamed upper half of
+  a pair is read at the named scale below it. EU zero (*zerogarren*) left to NTS-50: `DONE-2026-10-23.md`.
 
 Full multi-form plural systems (Russian/Slavic count-dependent noun forms,
 Arabic dual/paucal/plural categories) were long deliberately out of scope — the

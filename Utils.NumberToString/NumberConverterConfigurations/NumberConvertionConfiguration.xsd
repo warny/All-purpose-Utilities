@@ -1991,6 +1991,30 @@
                                 </xs:complexType>
                             </xs:element>
 
+                            <xs:element name="Currency" minOccurs="0">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        NTS-30. Currency-phrase configuration for ConvertCurrency. Inherited through
+                                        baseOn unless redeclared (a declared element replaces the inherited one).
+                                    </xs:documentation>
+                                </xs:annotation>
+                                <xs:complexType>
+                                    <xs:attribute name="forceVariants" type="xs:string" use="optional">
+                                        <xs:annotation>
+                                            <xs:documentation>
+                                                Comma-separated dimension=value pairs forced on the numeral of every
+                                                currency amount, unit and subunit, because it governs the currency
+                                                noun. Example: "form=attributive" for Spanish — 1 → "un euro", 21 →
+                                                "veintiún euros" (the masculine attributive apocope). Precedence, from
+                                                the weakest: the caller's variants, these, then the UnitForcedVariants
+                                                or SubunitForcedVariants of the CurrencyDefinition (the gender of a
+                                                feminine currency: "una peseta"). Absent or empty: nothing is forced.
+                                            </xs:documentation>
+                                        </xs:annotation>
+                                    </xs:attribute>
+                                </xs:complexType>
+                            </xs:element>
+
                             <xs:element name="TimeUnits" minOccurs="0">
                                 <xs:annotation>
                                     <xs:documentation>
@@ -2273,7 +2297,7 @@
                                         value wins; omitted child attributes inherit from the base.
                                       - Sections replaced as a whole when the child declares them
                                         (Groups, Exceptions, Replacements, Fractions, DecimalDigits, Variants,
-                                        YearFormat, Multiplicatives, TimeUnits, ClockTime, DateFormat,
+                                        YearFormat, Multiplicatives, Currency, TimeUnits, ClockTime, DateFormat,
                                         LanguageSpecifics); omitted sections are inherited. An empty
                                         element (e.g. &lt;Replacements /&gt;) explicitly overrides the
                                         base with an empty list.
@@ -2487,6 +2511,23 @@
                                     zazpiehun mila". Inherited through baseOn unless redeclared; an explicit empty
                                     value removes it. Cannot be combined with finalComponentConnector, which also
                                     claims the junction before the last group (rejected at load).
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="internalZeroGroupString" type="xs:string" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    NTS-30. Multiplier text of a whole zero group that lies between a higher and a
+                                    lower non-zero group. Such a group is then rendered like any other group, this
+                                    text taking the place of its digits: followed by its scale noun, through the
+                                    group triggers, the scale replacements and the group-with-scale triggers.
+                                    Every internal zero group is rendered, consecutive ones included; leading and
+                                    trailing zero groups never are. Unlike a zero position inside a non-zero group
+                                    (innerString/innerBuildString), the whole group is read. Example: "không" for
+                                    Vietnamese — 50 000 102 → "năm mươi triệu không nghìn một trăm linh hai",
+                                    50 000 000 → "năm mươi triệu". Absent: zero groups are skipped (historical
+                                    behaviour). Inherited through baseOn unless redeclared; an explicit empty value
+                                    removes it.
                                 </xs:documentation>
                             </xs:annotation>
                         </xs:attribute>
