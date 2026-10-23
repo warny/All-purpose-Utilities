@@ -6,7 +6,7 @@
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <meta name="title" content="Class VietnameseOrdinalLanguageSpecifics | omy.Utils Documentation ">
       
-      <meta name="description" content="Vietnamese ordinal domain: thứ + cardinal, with the forms thứ nhất and thứ tư (vtudien, Việt-Việt: thứ &amp;quot;Đặt trước số từ để chỉ thứ tự&amp;quot;, before any numeral). NTS-08 validated 0–999; NTS-28 extends the rule to the NTS-27 cardinal domain (to 999 999 999 999). A number with a whole zero class after a higher class (1 000 005) still has a cardinal defect (the class is skipped instead of read kh&#244;ng ngh&#236;n, NTS-30), so its ordinal fails closed.">
+      <meta name="description" content="Vietnamese ordinal domain: thứ + cardinal, with the forms thứ nhất and thứ tư (vtudien, Việt-Việt: thứ &amp;quot;Đặt trước số từ để chỉ thứ tự&amp;quot;, before any numeral). NTS-08 validated 0–999; NTS-28 extends the rule to the NTS-27 cardinal domain (to 999 999 999 999). Since NTS-30 the cardinal reads a whole zero class between two non-zero classes (năm mươi triệu kh&#244;ng ngh&#236;n một trăm linh hai, SGK To&#225;n 4), so these ordinals are formed (thứ một triệu kh&#244;ng ngh&#236;n kh&#244;ng trăm linh năm). Two consecutive internal zero classes (5 000 000 001, năm tỷ kh&#244;ng triệu kh&#244;ng ngh&#236;n …) are read class by class by deduction from the textbook method, no example attesting them: their ordinal fails closed.">
       <link rel="icon" href="../favicon.ico">
       <link rel="stylesheet" href="../public/docfx.min.css">
       <link rel="stylesheet" href="../public/main.css">
@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_NumberToString_VietnameseOrdinalLanguageSpecifics" data-uid="Utils.NumberToString.VietnameseOrdinalLanguageSpecifics" class="text-break">
-Class VietnameseOrdinalLanguageSpecifics  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L382"><i class="bi bi-code-slash"></i></a>
+Class VietnameseOrdinalLanguageSpecifics  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L389"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -99,9 +99,11 @@ Class VietnameseOrdinalLanguageSpecifics  <a class="header-action link-secondary
 
   <div class="markdown summary"><p>Vietnamese ordinal domain: <code>thứ</code> + cardinal, with the forms <code>thứ nhất</code> and <code>thứ tư</code> (vtudien,
 Việt-Việt: thứ &quot;Đặt trước số từ để chỉ thứ tự&quot;, before any numeral). NTS-08 validated 0–999; NTS-28 extends the
-rule to the NTS-27 cardinal domain (to 999 999 999 999). A number with a whole zero class after a higher class
-(1 000 005) still has a cardinal defect (the class is skipped instead of read <code>không nghìn</code>, NTS-30), so
-its ordinal fails closed.</p>
+rule to the NTS-27 cardinal domain (to 999 999 999 999). Since NTS-30 the cardinal reads a whole zero class between
+two non-zero classes (<code>năm mươi triệu không nghìn một trăm linh hai</code>, SGK Toán 4), so these ordinals are
+formed (<code>thứ một triệu không nghìn không trăm linh năm</code>). Two consecutive internal zero classes (5 000 000 001,
+<code>năm tỷ không triệu không nghìn …</code>) are read class by class by deduction from the textbook method, no example
+attesting them: their ordinal fails closed.</p>
 </div>
   <div class="markdown conceptual"></div>
 
@@ -266,7 +268,7 @@ its ordinal fails closed.</p>
 
   <h3 id="Utils_NumberToString_VietnameseOrdinalLanguageSpecifics_LanguageName" data-uid="Utils.NumberToString.VietnameseOrdinalLanguageSpecifics.LanguageName">
   LanguageName
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L385"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L392"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the English name of the language, used in the rejection message.</p>
@@ -298,7 +300,7 @@ its ordinal fails closed.</p>
 
   <h3 id="Utils_NumberToString_VietnameseOrdinalLanguageSpecifics_SupportedDomain" data-uid="Utils.NumberToString.VietnameseOrdinalLanguageSpecifics.SupportedDomain">
   SupportedDomain
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L388"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L395"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets a short description of the validated domain, used in the rejection message.</p>
@@ -334,7 +336,7 @@ its ordinal fails closed.</p>
 
   <h3 id="Utils_NumberToString_VietnameseOrdinalLanguageSpecifics_IsSupported_System_Int64_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__" data-uid="Utils.NumberToString.VietnameseOrdinalLanguageSpecifics.IsSupported(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String})">
   IsSupported(long, IReadOnlyDictionary&lt;string, string&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L391"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L398"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Tells whether the ordinal of a value belongs to the validated domain.</p>
@@ -376,7 +378,7 @@ its ordinal fails closed.</p>
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L382" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/OrdinalDomainGuardLanguageSpecifics.cs/#L389" class="edit-link">Edit this page</a>
         </div>
 
 

@@ -61576,6 +61576,25 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.CurrencyDefinition.UnitSingular
   nameWithType: CurrencyDefinition.UnitSingular
+- uid: Utils.NumberToString.CurrencyType
+  name: CurrencyType
+  href: api/Utils.NumberToString.CurrencyType.html
+  commentId: T:Utils.NumberToString.CurrencyType
+  fullName: Utils.NumberToString.CurrencyType
+  nameWithType: CurrencyType
+- uid: Utils.NumberToString.CurrencyType.ForceVariants
+  name: ForceVariants
+  href: api/Utils.NumberToString.CurrencyType.html#Utils_NumberToString_CurrencyType_ForceVariants
+  commentId: P:Utils.NumberToString.CurrencyType.ForceVariants
+  fullName: Utils.NumberToString.CurrencyType.ForceVariants
+  nameWithType: CurrencyType.ForceVariants
+- uid: Utils.NumberToString.CurrencyType.ForceVariants*
+  name: ForceVariants
+  href: api/Utils.NumberToString.CurrencyType.html#Utils_NumberToString_CurrencyType_ForceVariants_
+  commentId: Overload:Utils.NumberToString.CurrencyType.ForceVariants
+  isSpec: "True"
+  fullName: Utils.NumberToString.CurrencyType.ForceVariants
+  nameWithType: CurrencyType.ForceVariants
 - uid: Utils.NumberToString.CzechOrdinalLanguageSpecifics
   name: CzechOrdinalLanguageSpecifics
   href: api/Utils.NumberToString.CzechOrdinalLanguageSpecifics.html
@@ -64135,6 +64154,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.LanguageType.Cultures
   nameWithType: LanguageType.Cultures
+- uid: Utils.NumberToString.LanguageType.Currency
+  name: Currency
+  href: api/Utils.NumberToString.LanguageType.html#Utils_NumberToString_LanguageType_Currency
+  commentId: P:Utils.NumberToString.LanguageType.Currency
+  fullName: Utils.NumberToString.LanguageType.Currency
+  nameWithType: LanguageType.Currency
+- uid: Utils.NumberToString.LanguageType.Currency*
+  name: Currency
+  href: api/Utils.NumberToString.LanguageType.html#Utils_NumberToString_LanguageType_Currency_
+  commentId: Overload:Utils.NumberToString.LanguageType.Currency
+  isSpec: "True"
+  fullName: Utils.NumberToString.LanguageType.Currency
+  nameWithType: LanguageType.Currency
 - uid: Utils.NumberToString.LanguageType.DateFormat
   name: DateFormat
   href: api/Utils.NumberToString.LanguageType.html#Utils_NumberToString_LanguageType_DateFormat
@@ -64343,6 +64375,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.LanguageType.Groups
   nameWithType: LanguageType.Groups
+- uid: Utils.NumberToString.LanguageType.InternalZeroGroupString
+  name: InternalZeroGroupString
+  href: api/Utils.NumberToString.LanguageType.html#Utils_NumberToString_LanguageType_InternalZeroGroupString
+  commentId: P:Utils.NumberToString.LanguageType.InternalZeroGroupString
+  fullName: Utils.NumberToString.LanguageType.InternalZeroGroupString
+  nameWithType: LanguageType.InternalZeroGroupString
+- uid: Utils.NumberToString.LanguageType.InternalZeroGroupString*
+  name: InternalZeroGroupString
+  href: api/Utils.NumberToString.LanguageType.html#Utils_NumberToString_LanguageType_InternalZeroGroupString_
+  commentId: Overload:Utils.NumberToString.LanguageType.InternalZeroGroupString
+  isSpec: "True"
+  fullName: Utils.NumberToString.LanguageType.InternalZeroGroupString
+  nameWithType: LanguageType.InternalZeroGroupString
 - uid: Utils.NumberToString.LanguageType.IntraGroupConnector
   name: IntraGroupConnector
   href: api/Utils.NumberToString.LanguageType.html#Utils_NumberToString_LanguageType_IntraGroupConnector
@@ -64674,6 +64719,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.LanguageXmlModel.Cultures
   nameWithType: LanguageXmlModel.Cultures
+- uid: Utils.NumberToString.LanguageXmlModel.Currency
+  name: Currency
+  href: api/Utils.NumberToString.LanguageXmlModel.html#Utils_NumberToString_LanguageXmlModel_Currency
+  commentId: P:Utils.NumberToString.LanguageXmlModel.Currency
+  fullName: Utils.NumberToString.LanguageXmlModel.Currency
+  nameWithType: LanguageXmlModel.Currency
+- uid: Utils.NumberToString.LanguageXmlModel.Currency*
+  name: Currency
+  href: api/Utils.NumberToString.LanguageXmlModel.html#Utils_NumberToString_LanguageXmlModel_Currency_
+  commentId: Overload:Utils.NumberToString.LanguageXmlModel.Currency
+  isSpec: "True"
+  fullName: Utils.NumberToString.LanguageXmlModel.Currency
+  nameWithType: LanguageXmlModel.Currency
 - uid: Utils.NumberToString.LanguageXmlModel.DateFormat
   name: DateFormat
   href: api/Utils.NumberToString.LanguageXmlModel.html#Utils_NumberToString_LanguageXmlModel_DateFormat
@@ -64895,6 +64953,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.LanguageXmlModel.GroupsElements
   nameWithType: LanguageXmlModel.GroupsElements
+- uid: Utils.NumberToString.LanguageXmlModel.InternalZeroGroupString
+  name: InternalZeroGroupString
+  href: api/Utils.NumberToString.LanguageXmlModel.html#Utils_NumberToString_LanguageXmlModel_InternalZeroGroupString
+  commentId: P:Utils.NumberToString.LanguageXmlModel.InternalZeroGroupString
+  fullName: Utils.NumberToString.LanguageXmlModel.InternalZeroGroupString
+  nameWithType: LanguageXmlModel.InternalZeroGroupString
+- uid: Utils.NumberToString.LanguageXmlModel.InternalZeroGroupString*
+  name: InternalZeroGroupString
+  href: api/Utils.NumberToString.LanguageXmlModel.html#Utils_NumberToString_LanguageXmlModel_InternalZeroGroupString_
+  commentId: Overload:Utils.NumberToString.LanguageXmlModel.InternalZeroGroupString
+  isSpec: "True"
+  fullName: Utils.NumberToString.LanguageXmlModel.InternalZeroGroupString
+  nameWithType: LanguageXmlModel.InternalZeroGroupString
 - uid: Utils.NumberToString.LanguageXmlModel.IntraGroupConnector
   name: IntraGroupConnector
   href: api/Utils.NumberToString.LanguageXmlModel.html#Utils_NumberToString_LanguageXmlModel_IntraGroupConnector
@@ -66942,6 +67013,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberToStringConverter.ConvertYear
   nameWithType: NumberToStringConverter.ConvertYear
+- uid: Utils.NumberToString.NumberToStringConverter.CurrencyForcedVariants
+  name: CurrencyForcedVariants
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_CurrencyForcedVariants
+  commentId: P:Utils.NumberToString.NumberToStringConverter.CurrencyForcedVariants
+  fullName: Utils.NumberToString.NumberToStringConverter.CurrencyForcedVariants
+  nameWithType: NumberToStringConverter.CurrencyForcedVariants
+- uid: Utils.NumberToString.NumberToStringConverter.CurrencyForcedVariants*
+  name: CurrencyForcedVariants
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_CurrencyForcedVariants_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverter.CurrencyForcedVariants
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverter.CurrencyForcedVariants
+  nameWithType: NumberToStringConverter.CurrencyForcedVariants
 - uid: Utils.NumberToString.NumberToStringConverter.DateFirstCardinalDay
   name: DateFirstCardinalDay
   href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_DateFirstCardinalDay
@@ -67240,6 +67324,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberToStringConverter.InitializeConfigurations
   nameWithType: NumberToStringConverter.InitializeConfigurations
+- uid: Utils.NumberToString.NumberToStringConverter.InternalZeroGroupString
+  name: InternalZeroGroupString
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_InternalZeroGroupString
+  commentId: P:Utils.NumberToString.NumberToStringConverter.InternalZeroGroupString
+  fullName: Utils.NumberToString.NumberToStringConverter.InternalZeroGroupString
+  nameWithType: NumberToStringConverter.InternalZeroGroupString
+- uid: Utils.NumberToString.NumberToStringConverter.InternalZeroGroupString*
+  name: InternalZeroGroupString
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_InternalZeroGroupString_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverter.InternalZeroGroupString
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverter.InternalZeroGroupString
+  nameWithType: NumberToStringConverter.InternalZeroGroupString
 - uid: Utils.NumberToString.NumberToStringConverter.IntraGroupConnector
   name: IntraGroupConnector
   href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_IntraGroupConnector
@@ -68672,6 +68769,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberToStringConverterOptions.ClockTime
   nameWithType: NumberToStringConverterOptions.ClockTime
+- uid: Utils.NumberToString.NumberToStringConverterOptions.CurrencyForcedVariants
+  name: CurrencyForcedVariants
+  href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_CurrencyForcedVariants
+  commentId: P:Utils.NumberToString.NumberToStringConverterOptions.CurrencyForcedVariants
+  fullName: Utils.NumberToString.NumberToStringConverterOptions.CurrencyForcedVariants
+  nameWithType: NumberToStringConverterOptions.CurrencyForcedVariants
+- uid: Utils.NumberToString.NumberToStringConverterOptions.CurrencyForcedVariants*
+  name: CurrencyForcedVariants
+  href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_CurrencyForcedVariants_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverterOptions.CurrencyForcedVariants
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverterOptions.CurrencyForcedVariants
+  nameWithType: NumberToStringConverterOptions.CurrencyForcedVariants
 - uid: Utils.NumberToString.NumberToStringConverterOptions.DateFirstCardinalDay
   name: DateFirstCardinalDay
   href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_DateFirstCardinalDay
@@ -68954,6 +69064,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberToStringConverterOptions.Groups
   nameWithType: NumberToStringConverterOptions.Groups
+- uid: Utils.NumberToString.NumberToStringConverterOptions.InternalZeroGroupString
+  name: InternalZeroGroupString
+  href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_InternalZeroGroupString
+  commentId: P:Utils.NumberToString.NumberToStringConverterOptions.InternalZeroGroupString
+  fullName: Utils.NumberToString.NumberToStringConverterOptions.InternalZeroGroupString
+  nameWithType: NumberToStringConverterOptions.InternalZeroGroupString
+- uid: Utils.NumberToString.NumberToStringConverterOptions.InternalZeroGroupString*
+  name: InternalZeroGroupString
+  href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_InternalZeroGroupString_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverterOptions.InternalZeroGroupString
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverterOptions.InternalZeroGroupString
+  nameWithType: NumberToStringConverterOptions.InternalZeroGroupString
 - uid: Utils.NumberToString.NumberToStringConverterOptions.IntraGroupConnector
   name: IntraGroupConnector
   href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_IntraGroupConnector

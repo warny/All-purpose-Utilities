@@ -112,12 +112,13 @@ the rule of the counted noun (تمييز العدد): the noun agrees with the l
     </dl>
     <dl class="jumplist">
       <dt><a class="xref" href="Utils.NumberToString.BasqueOrdinalLanguageSpecifics.html">BasqueOrdinalLanguageSpecifics</a></dt>
-      <dd><p>Basque ordinal domain. Euskaltzaindia, rule 18: the ordinal is the cardinal written in letters followed by
-<code>-garren</code> (<code>bigarren</code>, <code>bosgarren</code>, <code>hogeita batgarren</code>, <code>ehungarren</code>, <code>milagarren</code>
-…). NTS-08 validated 1–1000; NTS-28 extends the rule to the NTS-27 cardinal (rule 7: <code>mila eta batgarren</code>,
-<code>milioi batgarren</code>), to 999 999 999. Zero has no attested ordinal (rule 7 gives only
-<code>zero</code>/<code>huts</code>), and from the milliard the cardinal does not compose <code>mila milioi</code> with the
-millions (NTS-30); those values fail closed.</p>
+      <dd><p>Basque ordinal domain. Euskaltzaindia, rule 203 (2025, EBO VI) §5, which supersedes rule 18 on this point: &quot;Oro
+har, ordinalak eratzeko, -garren atzizkia atxikitzen zaio zenbatzaile kardinalari&quot; (<code>bigarren</code>,
+<code>bosgarren</code>, <code>hogeita batgarren</code>, <code>milagarren</code>, <code>mila eta batgarren</code>), with the round million
+reduced to its noun (<code>milioigarren</code>, <code>bi milioigarren</code>; <code>milioi bat eta batgarren</code> for 1 000 001).
+NTS-08 validated 1–1000, NTS-28 the millions; NTS-38 corrects the round million and extends the general rule to the
+whole cardinal domain, the milliard being <code>mila milioi</code> (rules 7, 203; NTS-30F): <code>mila milioigarren</code>.
+Zero stays closed: rule 203 lists <code>0. zerogarren</code>, recorded as NTS-50, not opened here.</p>
 </dd>
     </dl>
     <dl class="jumplist">
@@ -176,6 +177,11 @@ verified, so this plugin rejects it instead of letting a cardinal or invented fo
     <dl class="jumplist">
       <dt><a class="xref" href="Utils.NumberToString.CurrencyDefinition.html">CurrencyDefinition</a></dt>
       <dd><p>Defines the unit and subunit names used to convert a currency amount to words.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.CurrencyType.html">CurrencyType</a></dt>
+      <dd><p>Holds the currency-phrase configuration of a language, used by <code>ConvertCurrency</code>.</p>
 </dd>
     </dl>
     <dl class="jumplist">
@@ -792,12 +798,15 @@ compound thousands above 9999 are declined because their written forms were not 
 (NTS-08 for 1–29, the round tens, 100 and 1000; NTS-28 for the rest): §1 table and §2–§3, the complex
 ordinals juxtapose the simple ones (<code>trigésimo primero</code>, <code>centésimo trigésimo cuarto</code>), the
 round hundreds are simple (<code>ducentésimo</code>), the thousands and millions prefix the multiplying
-cardinal (<code>dosmilésimo</code>, <code>quinientosmilésimo</code>, <code>dosmillonésimo</code>). The configuration composes
-them; this guard admits 1–999 999 999 except the round thousands and millions whose multiplier the DPD does
-not show soldered: a multiplier ending in <code>uno</code> (21, 31, 101 …, apocope undetermined), a multiplier
-written in several words (150 <code>ciento cincuenta</code>) and, in the feminine, a hundreds multiplier
-(<code>doscientas</code>). Zero and the milliard and above (whose cardinal is not composed, NTS-30) fail closed.
-A composed value is checked part by part, so a rejected round part rejects the whole ordinal.</p>
+cardinal (<code>dosmilésimo</code>, <code>quinientosmilésimo</code>, <code>dosmillonésimo</code>, <code>milmillonésimo</code>). The
+configuration composes them; this guard admits the cardinal domain, 1–999 999 999 999 (no <code>billón</code>), except
+the round thousands and millions whose multiplier the DPD does not show soldered: a multiplier ending in
+<code>uno</code> (21, 31, 101 …, apocope undetermined), a multiplier written in several words (150 <code>ciento
+cincuenta</code>, 2000 <code>dos mil</code>, 1001 <code>mil uno</code>) and, in the feminine, a hundreds multiplier
+(<code>doscientas</code>). From 10^9 the head is a round value of <code>millón</code> whose multiplier spans the pair
+(NTS-30F, <code>pairedScalesFrom</code>): <code>mil</code> is one word (<code>milmillonésimo</code>, DPD §2d, NTS-38), every other
+multiplier from 1000 is not. Zero fails closed. A composed value is checked part by part, so a rejected round part
+rejects the whole ordinal.</p>
 </dd>
     </dl>
     <dl class="jumplist">
@@ -898,9 +907,11 @@ and the list of variant rules.</p>
       <dt><a class="xref" href="Utils.NumberToString.VietnameseOrdinalLanguageSpecifics.html">VietnameseOrdinalLanguageSpecifics</a></dt>
       <dd><p>Vietnamese ordinal domain: <code>thứ</code> + cardinal, with the forms <code>thứ nhất</code> and <code>thứ tư</code> (vtudien,
 Việt-Việt: thứ &quot;Đặt trước số từ để chỉ thứ tự&quot;, before any numeral). NTS-08 validated 0–999; NTS-28 extends the
-rule to the NTS-27 cardinal domain (to 999 999 999 999). A number with a whole zero class after a higher class
-(1 000 005) still has a cardinal defect (the class is skipped instead of read <code>không nghìn</code>, NTS-30), so
-its ordinal fails closed.</p>
+rule to the NTS-27 cardinal domain (to 999 999 999 999). Since NTS-30 the cardinal reads a whole zero class between
+two non-zero classes (<code>năm mươi triệu không nghìn một trăm linh hai</code>, SGK Toán 4), so these ordinals are
+formed (<code>thứ một triệu không nghìn không trăm linh năm</code>). Two consecutive internal zero classes (5 000 000 001,
+<code>năm tỷ không triệu không nghìn …</code>) are read class by class by deduction from the textbook method, no example
+attesting them: their ordinal fails closed.</p>
 </dd>
     </dl>
     <dl class="jumplist">
