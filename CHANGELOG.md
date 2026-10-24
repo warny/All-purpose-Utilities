@@ -20,6 +20,29 @@ All notable changes to this project will be documented in this file.
   read-only snapshot of the culture's `DateTimeFormat`: changing the culture or its calendar afterwards no longer
   reaches it.
 
+### Changed — `omy.Utils.NumberToString` (NTS-54, NTS-35 and NTS-34 closed: no open NumberToString item remains)
+- **Behavioural change — decimals (NTS-34).** `DecimalReadingMode.LanguageDefault` (the default of `Convert(decimal)`,
+  `Convert(double)` and `Convert(decimal, int, …)`) now throws `NotSupportedException` for a non-empty decimal part in
+  the languages where no source establishes the automatic digit-by-digit reading, or where the normative reading
+  cannot be rendered (declined fraction nouns, the decimal part read as a number): AR, BG, CA, CS, EE, EL, EU, FA, FI,
+  GL, HE, HI, HR, HU, ID, MS, IT, JA, KO, NL, PL, PT, RO, RU, SK, SV, SW, TR, UK, VN, WO, ZU and their regional
+  cultures, through `decimalDigitByDigitMaxDigits="0"`. Before: `NL` `Convert(21.05m)` = `eenentwintig komma nul vijf`;
+  now: `NotSupportedException`. Callers wanting that reading request it: `Convert(21.05m, -1, new DecimalFormatOptions {
+  ReadingMode = DecimalReadingMode.DigitByDigit })` returns the same text as before. Integers, `DecimalSuffix` and
+  `OmitZeroDecimals` are unaffected. DE, DA, NO, ES and ZH keep their digit-by-digit reading (sourced), FR and EN their
+  named fractions. Matrix and sources: `Utils.NumberToString/docs/NTS-34-decimal-reading-audit.md`.
+- Romanian (RO, RO-RO): a scale multiplier agrees with its noun (NTS-54). Before *mii* (feminine) the whole multiplier
+  is feminine: `douăsprezece mii` (was `doisprezece mii`; DOOM 2 §6.4), `douăzeci și două de mii`, `o sută două mii`,
+  `douăzeci și una de mii` (was `douăzeci și unu de mii`; majority spelling, consistent with the existing ordinals).
+  Before the neuter *milioane* / *miliarde*: `douăzeci și două de milioane`, `douăsprezece miliarde`, `douăzeci și unu
+  de milioane` (unchanged). New value `neutru` of the `gen` dimension (one masculine, two feminine). The `de`
+  connector is unchanged.
+- Polish (PL): cardinals above 999 999 on the long scale (NTS-35; SJP PWN, Wielki słownik ortograficzny PWN): `jeden
+  milion`, `dwa miliony`, `pięć milionów`, `dwadzieścia dwa miliardy`, `jeden bilion`, `jeden biliard`, `jeden
+  kwadrylion`, `jeden nonilion`, … without upper bound (`MaxNumber` is now `null`; was 999 999). The ordinals keep
+  their validated domain (1–999 999): the million and above still throw `NotSupportedException`.
+- Configuration only: no public type or member added or removed.
+
 ### Fixed — `omy.Utils.NumberToString` (NTS-53 closed: Catalan, Galician and Romanian numerals)
 - Catalan (CA, ca-ES, ca-ES-valencia) writes the plural of *milió* `milions` (IEC, Ortografia catalana §4.4.2.2a: *dos
   milions cent mil*): `dos milions` (was `dos milións`). 10^9 is `mil milions` (DIEC2 "miliard"; was `un mil milió`),

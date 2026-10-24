@@ -4,7 +4,8 @@
       Romanian (RO) cardinals.
 
       Gender: "unu/una" (1m/f) and "doi/două" (2m/f) are tracked via the gender variant.
-      The default gender (no variant) is masculine.
+      The default gender (no variant) is masculine; "neutru" counts a neuter plural noun (unu, două).
+      The multiplier of mii is forced feminine, that of milioane/miliarde neuter (NTS-54, ScaleForm below).
 
       scaleConnector="de" inserts "de" between the multiplier and the scale name when the
       multiplier is ≥ 20 (douăzeci de mii, o sută de milioane, etc.), except after a multiplier
