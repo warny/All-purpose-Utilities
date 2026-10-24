@@ -20,7 +20,7 @@ All notable changes to this project will be documented in this file.
   read-only snapshot of the culture's `DateTimeFormat`: changing the culture or its calendar afterwards no longer
   reaches it.
 
-### Changed — `omy.Utils.NumberToString` (NTS-54, NTS-35 and NTS-34 closed: no open NumberToString item remains)
+### Changed — `omy.Utils.NumberToString` (NTS-54, NTS-35, NTS-34 and NTS-56 closed: no open NumberToString item remains)
 - **Behavioural change — decimals (NTS-34).** `DecimalReadingMode.LanguageDefault` (the default of `Convert(decimal)`,
   `Convert(double)` and `Convert(decimal, int, …)`) now throws `NotSupportedException` for a non-empty decimal part in
   the languages where no source establishes the automatic digit-by-digit reading, or where the normative reading
@@ -33,7 +33,9 @@ All notable changes to this project will be documented in this file.
   named fractions. Matrix and sources: `Utils.NumberToString/docs/NTS-34-decimal-reading-audit.md`.
 - Romanian (RO, RO-RO): a scale multiplier agrees with its noun (NTS-54). Before *mii* (feminine) the whole multiplier
   is feminine: `douăsprezece mii` (was `doisprezece mii`; DOOM 2 §6.4), `douăzeci și două de mii`, `o sută două mii`,
-  `douăzeci și una de mii` (was `douăzeci și unu de mii`; majority spelling, consistent with the existing ordinals).
+  `douăzeci și una de mii` (was `douăzeci și unu de mii`), `o sută una mii` (was `o sută unu mii`): a final *unu*
+  agrees with *mii* even after a hundred (Institute of Linguistics of the Romanian Academy, CNA reports 2010: *o sută
+  şaizeci şi una de mii de lei*, *o sută una zile*), as the existing ordinals already wrote.
   Before the neuter *milioane* / *miliarde*: `douăzeci și două de milioane`, `douăsprezece miliarde`, `douăzeci și unu
   de milioane` (unchanged). New value `neutru` of the `gen` dimension (one masculine, two feminine). The `de`
   connector is unchanged.
@@ -41,6 +43,11 @@ All notable changes to this project will be documented in this file.
   milion`, `dwa miliony`, `pięć milionów`, `dwadzieścia dwa miliardy`, `jeden bilion`, `jeden biliard`, `jeden
   kwadrylion`, `jeden nonilion`, … without upper bound (`MaxNumber` is now `null`; was 999 999). The ordinals keep
   their validated domain (1–999 999): the million and above still throw `NotSupportedException`.
+- Danish (DA, DA-DK) and Norwegian Bokmål (NO, NB, NB-NO): the compound tens 21–99 are one word (NTS-56; Dansk
+  Sprognævn "Talord under 100 skrives i ét ord", Bokmålsordboka *tjueen*): `enogtyve` (was `en og tyve`),
+  `nioghalvfems`, `fire hundrede og niogtyve`, `enogtyve tusind`; `tjueen` (was `tjue en`), `nittini`, `ett hundre
+  tjueen`, `tjueen tusen`. The digit-by-digit decimals carry the corrected integer part (`enogtyve komma nul fem`,
+  `tjueen komma null fem`). Ordinals were already fused and are unchanged.
 - Configuration only: no public type or member added or removed.
 
 ### Fixed — `omy.Utils.NumberToString` (NTS-53 closed: Catalan, Galician and Romanian numerals)

@@ -1,10 +1,12 @@
 # Utils.NumberToString — Current backlog
 
-Re-audited on 2026-10-24 after the final backlog pass, **which leaves no open NTS item**: NTS-54 (closed: the
+Re-audited on 2026-10-24/25 after the final backlog pass, **which leaves no open NTS item**: NTS-54 (closed: the
 Romanian scale multiplier agrees with its noun, feminine before *mii*, `douăsprezece mii`, `douăzeci și două de mii`,
-`douăzeci și una de mii`, neuter before *milioane*/*miliarde*, `douăzeci și două de milioane`, `douăzeci și unu de
-milioane`; DOOM 3, DOOM 2 §6.4, corpus sample and user decision; `<ScaleForm forceVariants>` and the new `gen=neutru`
-value), NTS-35 (closed: Polish long-scale cardinals without bound, `jeden milion`, `dwa miliony`, `pięć miliardów`,
+`douăzeci și una de mii`, `o sută una mii`, neuter before *milioane*/*miliarde*, `douăzeci și două de milioane`,
+`douăzeci și unu de milioane`; DOOM 3, DOOM 2 §6.4, the Institute of Linguistics of the Romanian Academy (CNA reports
+2010: `o sută şaizeci şi una de mii de lei`, `o sută una zile`); `<ScaleForm forceVariants>` and the new `gen=neutru`
+value), NTS-56 (closed: Danish and Norwegian compound tens in one word, `enogtyve`, `tjueen`; Dansk Sprognævn,
+Bokmålsordboka), NTS-35 (closed: Polish long-scale cardinals without bound, `jeden milion`, `dwa miliony`, `pięć miliardów`,
 `kwadrylion`; SJP PWN, WSO PWN; `<GeneratedScaleForm>` with `PolishPluralLexicalFormSelector`; ordinals kept to
 999 999) and NTS-34 (closed: decimal reading of every language audited; A DE, DA, NO, ES, ZH unchanged, B FR, EN
 unchanged, the C and D languages fail closed under `LanguageDefault` with `decimalDigitByDigitMaxDigits="0"`, the
@@ -119,10 +121,10 @@ classification.
 
 ## Open items
 
-None. There is no remaining open NTS item as of the 2026-10-24 audit (`DONE-2026-10-24.md`).
+None. There is no remaining open NTS item as of the 2026-10-24/25 audit (`DONE-2026-10-24.md`).
 
 
-NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-28, NTS-29, NTS-30, NTS-30A, NTS-30B, NTS-30C, NTS-30D, NTS-30E, NTS-30F, NTS-30G, NTS-30H, NTS-31, NTS-32, NTS-33, NTS-34, NTS-35, NTS-37, NTS-38, NTS-39, NTS-40, NTS-41, NTS-42, NTS-48, NTS-49, NTS-50, NTS-51, NTS-52, NTS-53, NTS-54 and NTS-55 are closed:
+NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-28, NTS-29, NTS-30, NTS-30A, NTS-30B, NTS-30C, NTS-30D, NTS-30E, NTS-30F, NTS-30G, NTS-30H, NTS-31, NTS-32, NTS-33, NTS-34, NTS-35, NTS-37, NTS-38, NTS-39, NTS-40, NTS-41, NTS-42, NTS-48, NTS-49, NTS-50, NTS-51, NTS-52, NTS-53, NTS-54, NTS-55 and NTS-56 are closed:
 
 - NTS-01 — XSD validation: `DONE-2026-08-21.md`.
 - NTS-02 — initialization isolation: `DONE-2026-08-21.md`.
@@ -368,8 +370,9 @@ NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-28, NTS-29, NTS-30, NT
   multi-group replacement was needed. NTS-54 opened: `DONE-2026-10-23(3).md`.
 - NTS-54 (opened by NTS-53) — **closed**. The Romanian scale multiplier agrees with its noun on its last constituent,
   whatever the caller's gender: feminine before *mie*/*mii* (DEX '09 s. f.; DOOM 3 *două mii*, *douăzeci și doi, f.
-  douăzeci și două*; DOOM 2 §6.4 *douăsprezece mii de lei*), *douăzeci și una de mii*, *o sută una mii* after a corpus
-  sample (ro.wikisource + ro.wikipedia, 11 against 2) and the existing ordinals (user decision); neuter before
+  douăzeci și două*; DOOM 2 §6.4 *douăsprezece mii de lei*), *douăzeci și una de mii*, *o sută una mii*: a final *unu*
+  agrees even after a hundred (Institute of Linguistics of the Romanian Academy, CNA reports 2010: *o sută şaizeci şi
+  una de mii de lei*, *o sută una zile*; a review's *o sută unu mii* withdrawn, its source not found); neuter before
   *milion*/*miliard* (DOOM 3 s. n.; *două puncte* num. + s. n. pl.), one masculine and two feminine: *douăzeci și unu de
   milioane*, *douăzeci și două de milioane*, *douăsprezece miliarde*. Configuration only: `<ScaleForm scale="1..3">`
   forcing `gen=feminin` / the new `gen=neutru`; the NTS-53 connector, ordinals and clock unchanged:
@@ -383,6 +386,10 @@ NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-28, NTS-29, NTS-30, NT
   (`docs/NTS-34-decimal-reading-audit.md`): A (digit by digit attested, unchanged) DE, DA, NO, ES, ZH; B (named
   fractions) FR, EN; C (normative reading not representable) and D (no source) fail closed under `LanguageDefault`
   (`decimalDigitByDigitMaxDigits="0"`), the caller's `DigitByDigit` unchanged. No new primitive: `DONE-2026-10-24.md`.
+- NTS-56 (opened by the review of #660, observed during NTS-34) — **closed**. The Danish and Norwegian compound tens
+  are one word: DA *enogtyve* … *nioghalvfems*, *hundrede og niogtyve* (Dansk Sprognævn, "Talord under 100 skrives i ét
+  ord"), NO *tjueen* … *nittini*, invariable (Bokmålsordboka). Configuration only (`buildString`); the ordinal plugins
+  already fused them; the Norwegian hundreds (*ett*, *og*) unsourced and unchanged: `DONE-2026-10-24.md`.
 
 Full multi-form plural systems (Russian/Slavic count-dependent noun forms,
 Arabic dual/paucal/plural categories) were long deliberately out of scope — the

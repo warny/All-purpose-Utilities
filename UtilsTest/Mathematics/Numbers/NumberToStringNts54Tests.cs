@@ -12,8 +12,10 @@ namespace UtilsTest.NumberToString;
 /// <c>mie</c> / <c>mii</c> is feminine (DEX '09 "mie": num. card., s. f.): the whole multiplier takes the feminine forms
 /// on its last constituent, <c>două mii</c> (DOOM 3, Studiu introductiv §4.1.5), <c>douăsprezece mii de lei</c> (DOOM 2,
 /// Normele §6.4), <c>douăzeci și două de mii</c> (DOOM 3 "douăzeci și doi": num. m., f. douăzeci și două), and
-/// <c>douăzeci și una de mii</c>, the majority spelling of a corpus sample (ro.wikisource and ro.wikipedia: 11 against 2;
-/// user decision) and the form the Romanian ordinals already write (<c>al douăzeci și una de mii unulea</c>).
+/// <c>douăzeci și una de mii</c>, <c>o sută una mii</c>: a final <c>unu</c> agrees even after a hundred (Institute of
+/// Linguistics of the Romanian Academy, CNA monitoring reports 2010: <c>o sută şaizeci şi una de mii de lei</c>,
+/// <c>şase sute treizeci şi una de mii de oameni</c>, <c>o sută una zile</c>), the form the Romanian ordinals already
+/// write (<c>al douăzeci și una de mii unulea</c>).
 /// </description></item>
 /// <item><description>
 /// <c>milion</c> and <c>miliard</c> are neuter (DOOM 3 "milion": s. n., pl. milioane): a neuter plural counts with the
@@ -61,7 +63,9 @@ public class NumberToStringNts54Tests
     [DataRow(121_000L, "o sută douăzeci și una de mii")]
     [DataRow(122_000L, "o sută douăzeci și două de mii")]
     [DataRow(132_000L, "o sută treizeci și două de mii")]
+    [DataRow(161_000L, "o sută șaizeci și una de mii")]
     [DataRow(202_000L, "două sute două mii")]
+    [DataRow(631_000L, "șase sute treizeci și una de mii")]
     [DataRow(212_000L, "două sute douăsprezece mii")]
     public void Thousands_FeminineMultiplier(long number, string expected) => Assert.AreEqual(expected, Get().Convert(number));
 
