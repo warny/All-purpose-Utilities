@@ -29,15 +29,16 @@
                 <Digit digit="0" string="" buildString="*" />
                 <!-- 11–19 are handled as Exceptions; ti is the fallback for plain 10 -->
                 <Digit digit="1" string="ti" buildString="ti*" />
-                <!-- Danish tens use "og" connector: "en og tyve" = 21 -->
-                <Digit digit="2" string="tyve" buildString="* og tyve" />
-                <Digit digit="3" string="tredive" buildString="* og tredive" />
-                <Digit digit="4" string="fyrre" buildString="* og fyrre" />
-                <Digit digit="5" string="halvtreds" buildString="* og halvtreds" />
-                <Digit digit="6" string="tres" buildString="* og tres" />
-                <Digit digit="7" string="halvfjerds" buildString="* og halvfjerds" />
-                <Digit digit="8" string="firs" buildString="* og firs" />
-                <Digit digit="9" string="halvfems" buildString="* og halvfems" />
+                <!-- NTS-56: the compound tens are one word, "enogtyve" = 21 (Dansk Sprognævn, "Et eller flere ord":
+                     "Talord under 100 skrives i ét ord: ... femogtyve"; Den Danske Ordbog "enogtyve"). -->
+                <Digit digit="2" string="tyve" buildString="*ogtyve" />
+                <Digit digit="3" string="tredive" buildString="*ogtredive" />
+                <Digit digit="4" string="fyrre" buildString="*ogfyrre" />
+                <Digit digit="5" string="halvtreds" buildString="*oghalvtreds" />
+                <Digit digit="6" string="tres" buildString="*ogtres" />
+                <Digit digit="7" string="halvfjerds" buildString="*oghalvfjerds" />
+                <Digit digit="8" string="firs" buildString="*ogfirs" />
+                <Digit digit="9" string="halvfems" buildString="*oghalvfems" />
             </Group>
             <Group level="3">
                 <Digit digit="0" string="" buildString="*" />

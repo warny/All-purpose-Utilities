@@ -28,16 +28,18 @@
             </Group>
             <Group level="2">
                 <Digit digit="0" string="" buildString="*" />
-                <!-- 11–19 are handled as Exceptions; ti* is the fallback -->
+                <!-- 11–19 are handled as Exceptions; ti* is the fallback.
+                     NTS-56: the compound tens are one word, "tjueen" = 21, "tjueto" = 22 (Bokmålsordboka,
+                     Språkrådet / University of Bergen: one invariable form). -->
                 <Digit digit="1" string="ti" buildString="ti*" />
-                <Digit digit="2" string="tjue" buildString="tjue *" />
-                <Digit digit="3" string="tretti" buildString="tretti *" />
-                <Digit digit="4" string="førti" buildString="førti *" />
-                <Digit digit="5" string="femti" buildString="femti *" />
-                <Digit digit="6" string="seksti" buildString="seksti *" />
-                <Digit digit="7" string="sytti" buildString="sytti *" />
-                <Digit digit="8" string="åtti" buildString="åtti *" />
-                <Digit digit="9" string="nitti" buildString="nitti *" />
+                <Digit digit="2" string="tjue" buildString="tjue*" />
+                <Digit digit="3" string="tretti" buildString="tretti*" />
+                <Digit digit="4" string="førti" buildString="førti*" />
+                <Digit digit="5" string="femti" buildString="femti*" />
+                <Digit digit="6" string="seksti" buildString="seksti*" />
+                <Digit digit="7" string="sytti" buildString="sytti*" />
+                <Digit digit="8" string="åtti" buildString="åtti*" />
+                <Digit digit="9" string="nitti" buildString="nitti*" />
             </Group>
             <Group level="3">
                 <Digit digit="0" string="" buildString="*" />
