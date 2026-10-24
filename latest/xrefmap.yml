@@ -64988,6 +64988,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.LanguageType.ScaleConnector
   nameWithType: LanguageType.ScaleConnector
+- uid: Utils.NumberToString.LanguageType.ScaleConnectorRules
+  name: ScaleConnectorRules
+  href: api/Utils.NumberToString.LanguageType.html#Utils_NumberToString_LanguageType_ScaleConnectorRules
+  commentId: P:Utils.NumberToString.LanguageType.ScaleConnectorRules
+  fullName: Utils.NumberToString.LanguageType.ScaleConnectorRules
+  nameWithType: LanguageType.ScaleConnectorRules
+- uid: Utils.NumberToString.LanguageType.ScaleConnectorRules*
+  name: ScaleConnectorRules
+  href: api/Utils.NumberToString.LanguageType.html#Utils_NumberToString_LanguageType_ScaleConnectorRules_
+  commentId: Overload:Utils.NumberToString.LanguageType.ScaleConnectorRules
+  isSpec: "True"
+  fullName: Utils.NumberToString.LanguageType.ScaleConnectorRules
+  nameWithType: LanguageType.ScaleConnectorRules
 - uid: Utils.NumberToString.LanguageType.ScaleConnectorThreshold
   name: ScaleConnectorThreshold
   href: api/Utils.NumberToString.LanguageType.html#Utils_NumberToString_LanguageType_ScaleConnectorThreshold
@@ -65553,6 +65566,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.LanguageXmlModel.ScaleConnector
   nameWithType: LanguageXmlModel.ScaleConnector
+- uid: Utils.NumberToString.LanguageXmlModel.ScaleConnectorRules
+  name: ScaleConnectorRules
+  href: api/Utils.NumberToString.LanguageXmlModel.html#Utils_NumberToString_LanguageXmlModel_ScaleConnectorRules
+  commentId: P:Utils.NumberToString.LanguageXmlModel.ScaleConnectorRules
+  fullName: Utils.NumberToString.LanguageXmlModel.ScaleConnectorRules
+  nameWithType: LanguageXmlModel.ScaleConnectorRules
+- uid: Utils.NumberToString.LanguageXmlModel.ScaleConnectorRules*
+  name: ScaleConnectorRules
+  href: api/Utils.NumberToString.LanguageXmlModel.html#Utils_NumberToString_LanguageXmlModel_ScaleConnectorRules_
+  commentId: Overload:Utils.NumberToString.LanguageXmlModel.ScaleConnectorRules
+  isSpec: "True"
+  fullName: Utils.NumberToString.LanguageXmlModel.ScaleConnectorRules
+  nameWithType: LanguageXmlModel.ScaleConnectorRules
 - uid: Utils.NumberToString.LanguageXmlModel.ScaleConnectorThresholdString
   name: ScaleConnectorThresholdString
   href: api/Utils.NumberToString.LanguageXmlModel.html#Utils_NumberToString_LanguageXmlModel_ScaleConnectorThresholdString
@@ -68472,6 +68498,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberToStringConverter.ScaleConnector
   nameWithType: NumberToStringConverter.ScaleConnector
+- uid: Utils.NumberToString.NumberToStringConverter.ScaleConnectorRules
+  name: ScaleConnectorRules
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_ScaleConnectorRules
+  commentId: P:Utils.NumberToString.NumberToStringConverter.ScaleConnectorRules
+  fullName: Utils.NumberToString.NumberToStringConverter.ScaleConnectorRules
+  nameWithType: NumberToStringConverter.ScaleConnectorRules
+- uid: Utils.NumberToString.NumberToStringConverter.ScaleConnectorRules*
+  name: ScaleConnectorRules
+  href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_ScaleConnectorRules_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverter.ScaleConnectorRules
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverter.ScaleConnectorRules
+  nameWithType: NumberToStringConverter.ScaleConnectorRules
 - uid: Utils.NumberToString.NumberToStringConverter.ScaleConnectorThreshold
   name: ScaleConnectorThreshold
   href: api/Utils.NumberToString.NumberToStringConverter.html#Utils_NumberToString_NumberToStringConverter_ScaleConnectorThreshold
@@ -69898,6 +69937,19 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.NumberToStringConverterOptions.ScaleConnector
   nameWithType: NumberToStringConverterOptions.ScaleConnector
+- uid: Utils.NumberToString.NumberToStringConverterOptions.ScaleConnectorRules
+  name: ScaleConnectorRules
+  href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_ScaleConnectorRules
+  commentId: P:Utils.NumberToString.NumberToStringConverterOptions.ScaleConnectorRules
+  fullName: Utils.NumberToString.NumberToStringConverterOptions.ScaleConnectorRules
+  nameWithType: NumberToStringConverterOptions.ScaleConnectorRules
+- uid: Utils.NumberToString.NumberToStringConverterOptions.ScaleConnectorRules*
+  name: ScaleConnectorRules
+  href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_ScaleConnectorRules_
+  commentId: Overload:Utils.NumberToString.NumberToStringConverterOptions.ScaleConnectorRules
+  isSpec: "True"
+  fullName: Utils.NumberToString.NumberToStringConverterOptions.ScaleConnectorRules
+  nameWithType: NumberToStringConverterOptions.ScaleConnectorRules
 - uid: Utils.NumberToString.NumberToStringConverterOptions.ScaleConnectorThreshold
   name: ScaleConnectorThreshold
   href: api/Utils.NumberToString.NumberToStringConverterOptions.html#Utils_NumberToString_NumberToStringConverterOptions_ScaleConnectorThreshold
@@ -71421,6 +71473,237 @@ references:
   isSpec: "True"
   fullName: Utils.NumberToString.RussianPluralLexicalFormSelector.SelectForm
   nameWithType: RussianPluralLexicalFormSelector.SelectForm
+- uid: Utils.NumberToString.ScaleConnectorRule
+  name: ScaleConnectorRule
+  href: api/Utils.NumberToString.ScaleConnectorRule.html
+  commentId: T:Utils.NumberToString.ScaleConnectorRule
+  fullName: Utils.NumberToString.ScaleConnectorRule
+  nameWithType: ScaleConnectorRule
+- uid: Utils.NumberToString.ScaleConnectorRule.#ctor(System.String,Utils.Range.IntRange{System.Int64},System.Nullable{System.Int64},Utils.Range.IntRange{System.Int64})
+  name: ScaleConnectorRule(string, IntRange<long>?, long?, IntRange<long>?)
+  href: api/Utils.NumberToString.ScaleConnectorRule.html#Utils_NumberToString_ScaleConnectorRule__ctor_System_String_Utils_Range_IntRange_System_Int64__System_Nullable_System_Int64__Utils_Range_IntRange_System_Int64__
+  commentId: M:Utils.NumberToString.ScaleConnectorRule.#ctor(System.String,Utils.Range.IntRange{System.Int64},System.Nullable{System.Int64},Utils.Range.IntRange{System.Int64})
+  name.vb: New(String, IntRange(Of Long), Long?, IntRange(Of Long))
+  fullName: Utils.NumberToString.ScaleConnectorRule.ScaleConnectorRule(string, Utils.Range.IntRange<long>?, long?, Utils.Range.IntRange<long>?)
+  fullName.vb: Utils.NumberToString.ScaleConnectorRule.New(String, Utils.Range.IntRange(Of Long), Long?, Utils.Range.IntRange(Of Long))
+  nameWithType: ScaleConnectorRule.ScaleConnectorRule(string, IntRange<long>?, long?, IntRange<long>?)
+  nameWithType.vb: ScaleConnectorRule.New(String, IntRange(Of Long), Long?, IntRange(Of Long))
+- uid: Utils.NumberToString.ScaleConnectorRule.#ctor*
+  name: ScaleConnectorRule
+  href: api/Utils.NumberToString.ScaleConnectorRule.html#Utils_NumberToString_ScaleConnectorRule__ctor_
+  commentId: Overload:Utils.NumberToString.ScaleConnectorRule.#ctor
+  isSpec: "True"
+  name.vb: New
+  fullName: Utils.NumberToString.ScaleConnectorRule.ScaleConnectorRule
+  fullName.vb: Utils.NumberToString.ScaleConnectorRule.New
+  nameWithType: ScaleConnectorRule.ScaleConnectorRule
+  nameWithType.vb: ScaleConnectorRule.New
+- uid: Utils.NumberToString.ScaleConnectorRule.NumberModulo
+  name: NumberModulo
+  href: api/Utils.NumberToString.ScaleConnectorRule.html#Utils_NumberToString_ScaleConnectorRule_NumberModulo
+  commentId: P:Utils.NumberToString.ScaleConnectorRule.NumberModulo
+  fullName: Utils.NumberToString.ScaleConnectorRule.NumberModulo
+  nameWithType: ScaleConnectorRule.NumberModulo
+- uid: Utils.NumberToString.ScaleConnectorRule.NumberModulo*
+  name: NumberModulo
+  href: api/Utils.NumberToString.ScaleConnectorRule.html#Utils_NumberToString_ScaleConnectorRule_NumberModulo_
+  commentId: Overload:Utils.NumberToString.ScaleConnectorRule.NumberModulo
+  isSpec: "True"
+  fullName: Utils.NumberToString.ScaleConnectorRule.NumberModulo
+  nameWithType: ScaleConnectorRule.NumberModulo
+- uid: Utils.NumberToString.ScaleConnectorRule.NumberRange
+  name: NumberRange
+  href: api/Utils.NumberToString.ScaleConnectorRule.html#Utils_NumberToString_ScaleConnectorRule_NumberRange
+  commentId: P:Utils.NumberToString.ScaleConnectorRule.NumberRange
+  fullName: Utils.NumberToString.ScaleConnectorRule.NumberRange
+  nameWithType: ScaleConnectorRule.NumberRange
+- uid: Utils.NumberToString.ScaleConnectorRule.NumberRange*
+  name: NumberRange
+  href: api/Utils.NumberToString.ScaleConnectorRule.html#Utils_NumberToString_ScaleConnectorRule_NumberRange_
+  commentId: Overload:Utils.NumberToString.ScaleConnectorRule.NumberRange
+  isSpec: "True"
+  fullName: Utils.NumberToString.ScaleConnectorRule.NumberRange
+  nameWithType: ScaleConnectorRule.NumberRange
+- uid: Utils.NumberToString.ScaleConnectorRule.Scales
+  name: Scales
+  href: api/Utils.NumberToString.ScaleConnectorRule.html#Utils_NumberToString_ScaleConnectorRule_Scales
+  commentId: P:Utils.NumberToString.ScaleConnectorRule.Scales
+  fullName: Utils.NumberToString.ScaleConnectorRule.Scales
+  nameWithType: ScaleConnectorRule.Scales
+- uid: Utils.NumberToString.ScaleConnectorRule.Scales*
+  name: Scales
+  href: api/Utils.NumberToString.ScaleConnectorRule.html#Utils_NumberToString_ScaleConnectorRule_Scales_
+  commentId: Overload:Utils.NumberToString.ScaleConnectorRule.Scales
+  isSpec: "True"
+  fullName: Utils.NumberToString.ScaleConnectorRule.Scales
+  nameWithType: ScaleConnectorRule.Scales
+- uid: Utils.NumberToString.ScaleConnectorRule.Specificity
+  name: Specificity
+  href: api/Utils.NumberToString.ScaleConnectorRule.html#Utils_NumberToString_ScaleConnectorRule_Specificity
+  commentId: P:Utils.NumberToString.ScaleConnectorRule.Specificity
+  fullName: Utils.NumberToString.ScaleConnectorRule.Specificity
+  nameWithType: ScaleConnectorRule.Specificity
+- uid: Utils.NumberToString.ScaleConnectorRule.Specificity*
+  name: Specificity
+  href: api/Utils.NumberToString.ScaleConnectorRule.html#Utils_NumberToString_ScaleConnectorRule_Specificity_
+  commentId: Overload:Utils.NumberToString.ScaleConnectorRule.Specificity
+  isSpec: "True"
+  fullName: Utils.NumberToString.ScaleConnectorRule.Specificity
+  nameWithType: ScaleConnectorRule.Specificity
+- uid: Utils.NumberToString.ScaleConnectorRule.Value
+  name: Value
+  href: api/Utils.NumberToString.ScaleConnectorRule.html#Utils_NumberToString_ScaleConnectorRule_Value
+  commentId: P:Utils.NumberToString.ScaleConnectorRule.Value
+  fullName: Utils.NumberToString.ScaleConnectorRule.Value
+  nameWithType: ScaleConnectorRule.Value
+- uid: Utils.NumberToString.ScaleConnectorRule.Value*
+  name: Value
+  href: api/Utils.NumberToString.ScaleConnectorRule.html#Utils_NumberToString_ScaleConnectorRule_Value_
+  commentId: Overload:Utils.NumberToString.ScaleConnectorRule.Value
+  isSpec: "True"
+  fullName: Utils.NumberToString.ScaleConnectorRule.Value
+  nameWithType: ScaleConnectorRule.Value
+- uid: Utils.NumberToString.ScaleConnectorRules
+  name: ScaleConnectorRules
+  href: api/Utils.NumberToString.ScaleConnectorRules.html
+  commentId: T:Utils.NumberToString.ScaleConnectorRules
+  fullName: Utils.NumberToString.ScaleConnectorRules
+  nameWithType: ScaleConnectorRules
+- uid: Utils.NumberToString.ScaleConnectorRules.#ctor(System.String,System.Collections.Generic.IEnumerable{Utils.NumberToString.ScaleConnectorRule})
+  name: ScaleConnectorRules(string, IEnumerable<ScaleConnectorRule>?)
+  href: api/Utils.NumberToString.ScaleConnectorRules.html#Utils_NumberToString_ScaleConnectorRules__ctor_System_String_System_Collections_Generic_IEnumerable_Utils_NumberToString_ScaleConnectorRule__
+  commentId: M:Utils.NumberToString.ScaleConnectorRules.#ctor(System.String,System.Collections.Generic.IEnumerable{Utils.NumberToString.ScaleConnectorRule})
+  name.vb: New(String, IEnumerable(Of ScaleConnectorRule))
+  fullName: Utils.NumberToString.ScaleConnectorRules.ScaleConnectorRules(string, System.Collections.Generic.IEnumerable<Utils.NumberToString.ScaleConnectorRule>?)
+  fullName.vb: Utils.NumberToString.ScaleConnectorRules.New(String, System.Collections.Generic.IEnumerable(Of Utils.NumberToString.ScaleConnectorRule))
+  nameWithType: ScaleConnectorRules.ScaleConnectorRules(string, IEnumerable<ScaleConnectorRule>?)
+  nameWithType.vb: ScaleConnectorRules.New(String, IEnumerable(Of ScaleConnectorRule))
+- uid: Utils.NumberToString.ScaleConnectorRules.#ctor*
+  name: ScaleConnectorRules
+  href: api/Utils.NumberToString.ScaleConnectorRules.html#Utils_NumberToString_ScaleConnectorRules__ctor_
+  commentId: Overload:Utils.NumberToString.ScaleConnectorRules.#ctor
+  isSpec: "True"
+  name.vb: New
+  fullName: Utils.NumberToString.ScaleConnectorRules.ScaleConnectorRules
+  fullName.vb: Utils.NumberToString.ScaleConnectorRules.New
+  nameWithType: ScaleConnectorRules.ScaleConnectorRules
+  nameWithType.vb: ScaleConnectorRules.New
+- uid: Utils.NumberToString.ScaleConnectorRules.Default
+  name: Default
+  href: api/Utils.NumberToString.ScaleConnectorRules.html#Utils_NumberToString_ScaleConnectorRules_Default
+  commentId: P:Utils.NumberToString.ScaleConnectorRules.Default
+  fullName: Utils.NumberToString.ScaleConnectorRules.Default
+  nameWithType: ScaleConnectorRules.Default
+- uid: Utils.NumberToString.ScaleConnectorRules.Default*
+  name: Default
+  href: api/Utils.NumberToString.ScaleConnectorRules.html#Utils_NumberToString_ScaleConnectorRules_Default_
+  commentId: Overload:Utils.NumberToString.ScaleConnectorRules.Default
+  isSpec: "True"
+  fullName: Utils.NumberToString.ScaleConnectorRules.Default
+  nameWithType: ScaleConnectorRules.Default
+- uid: Utils.NumberToString.ScaleConnectorRules.Substitutions
+  name: Substitutions
+  href: api/Utils.NumberToString.ScaleConnectorRules.html#Utils_NumberToString_ScaleConnectorRules_Substitutions
+  commentId: P:Utils.NumberToString.ScaleConnectorRules.Substitutions
+  fullName: Utils.NumberToString.ScaleConnectorRules.Substitutions
+  nameWithType: ScaleConnectorRules.Substitutions
+- uid: Utils.NumberToString.ScaleConnectorRules.Substitutions*
+  name: Substitutions
+  href: api/Utils.NumberToString.ScaleConnectorRules.html#Utils_NumberToString_ScaleConnectorRules_Substitutions_
+  commentId: Overload:Utils.NumberToString.ScaleConnectorRules.Substitutions
+  isSpec: "True"
+  fullName: Utils.NumberToString.ScaleConnectorRules.Substitutions
+  nameWithType: ScaleConnectorRules.Substitutions
+- uid: Utils.NumberToString.ScaleConnectorSubstitutionType
+  name: ScaleConnectorSubstitutionType
+  href: api/Utils.NumberToString.ScaleConnectorSubstitutionType.html
+  commentId: T:Utils.NumberToString.ScaleConnectorSubstitutionType
+  fullName: Utils.NumberToString.ScaleConnectorSubstitutionType
+  nameWithType: ScaleConnectorSubstitutionType
+- uid: Utils.NumberToString.ScaleConnectorSubstitutionType.NumberModulo
+  name: NumberModulo
+  href: api/Utils.NumberToString.ScaleConnectorSubstitutionType.html#Utils_NumberToString_ScaleConnectorSubstitutionType_NumberModulo
+  commentId: P:Utils.NumberToString.ScaleConnectorSubstitutionType.NumberModulo
+  fullName: Utils.NumberToString.ScaleConnectorSubstitutionType.NumberModulo
+  nameWithType: ScaleConnectorSubstitutionType.NumberModulo
+- uid: Utils.NumberToString.ScaleConnectorSubstitutionType.NumberModulo*
+  name: NumberModulo
+  href: api/Utils.NumberToString.ScaleConnectorSubstitutionType.html#Utils_NumberToString_ScaleConnectorSubstitutionType_NumberModulo_
+  commentId: Overload:Utils.NumberToString.ScaleConnectorSubstitutionType.NumberModulo
+  isSpec: "True"
+  fullName: Utils.NumberToString.ScaleConnectorSubstitutionType.NumberModulo
+  nameWithType: ScaleConnectorSubstitutionType.NumberModulo
+- uid: Utils.NumberToString.ScaleConnectorSubstitutionType.NumberRange
+  name: NumberRange
+  href: api/Utils.NumberToString.ScaleConnectorSubstitutionType.html#Utils_NumberToString_ScaleConnectorSubstitutionType_NumberRange
+  commentId: P:Utils.NumberToString.ScaleConnectorSubstitutionType.NumberRange
+  fullName: Utils.NumberToString.ScaleConnectorSubstitutionType.NumberRange
+  nameWithType: ScaleConnectorSubstitutionType.NumberRange
+- uid: Utils.NumberToString.ScaleConnectorSubstitutionType.NumberRange*
+  name: NumberRange
+  href: api/Utils.NumberToString.ScaleConnectorSubstitutionType.html#Utils_NumberToString_ScaleConnectorSubstitutionType_NumberRange_
+  commentId: Overload:Utils.NumberToString.ScaleConnectorSubstitutionType.NumberRange
+  isSpec: "True"
+  fullName: Utils.NumberToString.ScaleConnectorSubstitutionType.NumberRange
+  nameWithType: ScaleConnectorSubstitutionType.NumberRange
+- uid: Utils.NumberToString.ScaleConnectorSubstitutionType.Scales
+  name: Scales
+  href: api/Utils.NumberToString.ScaleConnectorSubstitutionType.html#Utils_NumberToString_ScaleConnectorSubstitutionType_Scales
+  commentId: P:Utils.NumberToString.ScaleConnectorSubstitutionType.Scales
+  fullName: Utils.NumberToString.ScaleConnectorSubstitutionType.Scales
+  nameWithType: ScaleConnectorSubstitutionType.Scales
+- uid: Utils.NumberToString.ScaleConnectorSubstitutionType.Scales*
+  name: Scales
+  href: api/Utils.NumberToString.ScaleConnectorSubstitutionType.html#Utils_NumberToString_ScaleConnectorSubstitutionType_Scales_
+  commentId: Overload:Utils.NumberToString.ScaleConnectorSubstitutionType.Scales
+  isSpec: "True"
+  fullName: Utils.NumberToString.ScaleConnectorSubstitutionType.Scales
+  nameWithType: ScaleConnectorSubstitutionType.Scales
+- uid: Utils.NumberToString.ScaleConnectorSubstitutionType.Value
+  name: Value
+  href: api/Utils.NumberToString.ScaleConnectorSubstitutionType.html#Utils_NumberToString_ScaleConnectorSubstitutionType_Value
+  commentId: P:Utils.NumberToString.ScaleConnectorSubstitutionType.Value
+  fullName: Utils.NumberToString.ScaleConnectorSubstitutionType.Value
+  nameWithType: ScaleConnectorSubstitutionType.Value
+- uid: Utils.NumberToString.ScaleConnectorSubstitutionType.Value*
+  name: Value
+  href: api/Utils.NumberToString.ScaleConnectorSubstitutionType.html#Utils_NumberToString_ScaleConnectorSubstitutionType_Value_
+  commentId: Overload:Utils.NumberToString.ScaleConnectorSubstitutionType.Value
+  isSpec: "True"
+  fullName: Utils.NumberToString.ScaleConnectorSubstitutionType.Value
+  nameWithType: ScaleConnectorSubstitutionType.Value
+- uid: Utils.NumberToString.ScaleConnectorType
+  name: ScaleConnectorType
+  href: api/Utils.NumberToString.ScaleConnectorType.html
+  commentId: T:Utils.NumberToString.ScaleConnectorType
+  fullName: Utils.NumberToString.ScaleConnectorType
+  nameWithType: ScaleConnectorType
+- uid: Utils.NumberToString.ScaleConnectorType.Default
+  name: Default
+  href: api/Utils.NumberToString.ScaleConnectorType.html#Utils_NumberToString_ScaleConnectorType_Default
+  commentId: P:Utils.NumberToString.ScaleConnectorType.Default
+  fullName: Utils.NumberToString.ScaleConnectorType.Default
+  nameWithType: ScaleConnectorType.Default
+- uid: Utils.NumberToString.ScaleConnectorType.Default*
+  name: Default
+  href: api/Utils.NumberToString.ScaleConnectorType.html#Utils_NumberToString_ScaleConnectorType_Default_
+  commentId: Overload:Utils.NumberToString.ScaleConnectorType.Default
+  isSpec: "True"
+  fullName: Utils.NumberToString.ScaleConnectorType.Default
+  nameWithType: ScaleConnectorType.Default
+- uid: Utils.NumberToString.ScaleConnectorType.Substitutions
+  name: Substitutions
+  href: api/Utils.NumberToString.ScaleConnectorType.html#Utils_NumberToString_ScaleConnectorType_Substitutions
+  commentId: P:Utils.NumberToString.ScaleConnectorType.Substitutions
+  fullName: Utils.NumberToString.ScaleConnectorType.Substitutions
+  nameWithType: ScaleConnectorType.Substitutions
+- uid: Utils.NumberToString.ScaleConnectorType.Substitutions*
+  name: Substitutions
+  href: api/Utils.NumberToString.ScaleConnectorType.html#Utils_NumberToString_ScaleConnectorType_Substitutions_
+  commentId: Overload:Utils.NumberToString.ScaleConnectorType.Substitutions
+  isSpec: "True"
+  fullName: Utils.NumberToString.ScaleConnectorType.Substitutions
+  nameWithType: ScaleConnectorType.Substitutions
 - uid: Utils.NumberToString.ScaleFormEntry
   name: ScaleFormEntry
   href: api/Utils.NumberToString.ScaleFormEntry.html

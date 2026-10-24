@@ -284,7 +284,7 @@ requires public types; it is not part of the intended public configuration surfa
 
   <h3 id="Utils_NumberToString_LanguageXmlModel_ClockTime" data-uid="Utils.NumberToString.LanguageXmlModel.ClockTime">
   ClockTime
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.Internal.cs/#L242"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.Internal.cs/#L246"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets or sets idiomatic clock-time formatting.</p>
@@ -348,7 +348,7 @@ requires public types; it is not part of the intended public configuration surfa
 
   <h3 id="Utils_NumberToString_LanguageXmlModel_Currency" data-uid="Utils.NumberToString.LanguageXmlModel.Currency">
   Currency
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.Internal.cs/#L234"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.Internal.cs/#L238"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets or sets the currency-phrase configuration.</p>
@@ -380,7 +380,7 @@ requires public types; it is not part of the intended public configuration surfa
 
   <h3 id="Utils_NumberToString_LanguageXmlModel_DateFormat" data-uid="Utils.NumberToString.LanguageXmlModel.DateFormat">
   DateFormat
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.Internal.cs/#L246"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.Internal.cs/#L250"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets or sets the date-format configuration.</p>
@@ -541,7 +541,7 @@ requires public types; it is not part of the intended public configuration surfa
 
   <h3 id="Utils_NumberToString_LanguageXmlModel_FinalComponentConnector" data-uid="Utils.NumberToString.LanguageXmlModel.FinalComponentConnector">
   FinalComponentConnector
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.Internal.cs/#L222"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.Internal.cs/#L226"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets or sets the connector placed before the last additive component of every numeral phrase.</p>
@@ -573,7 +573,7 @@ requires public types; it is not part of the intended public configuration surfa
 
   <h3 id="Utils_NumberToString_LanguageXmlModel_FinalGroupConnector" data-uid="Utils.NumberToString.LanguageXmlModel.FinalGroupConnector">
   FinalGroupConnector
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.Internal.cs/#L226"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.Internal.cs/#L230"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets or sets the connector placed between groups only, before the last non-zero group of every numeral phrase.</p>
@@ -930,7 +930,7 @@ and the scale-scoped ones, in document order.</p>
 
   <h3 id="Utils_NumberToString_LanguageXmlModel_InternalZeroGroupString" data-uid="Utils.NumberToString.LanguageXmlModel.InternalZeroGroupString">
   InternalZeroGroupString
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.Internal.cs/#L230"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.Internal.cs/#L234"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets or sets the multiplier text of a whole zero group read between two non-zero groups.</p>
@@ -1342,6 +1342,38 @@ and the scale-scoped ones, in document order.</p>
 
 
 
+  <a id="Utils_NumberToString_LanguageXmlModel_ScaleConnectorRules_" data-uid="Utils.NumberToString.LanguageXmlModel.ScaleConnectorRules*"></a>
+
+  <h3 id="Utils_NumberToString_LanguageXmlModel_ScaleConnectorRules" data-uid="Utils.NumberToString.LanguageXmlModel.ScaleConnectorRules">
+  ScaleConnectorRules
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.Internal.cs/#L222"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets or sets the contextual scale connector (NTS-53).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ScaleConnectorType? ScaleConnectorRules { get; set; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.NumberToString.ScaleConnectorType.html">ScaleConnectorType</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
   <a id="Utils_NumberToString_LanguageXmlModel_ScaleConnectorThresholdString_" data-uid="Utils.NumberToString.LanguageXmlModel.ScaleConnectorThresholdString*"></a>
 
   <h3 id="Utils_NumberToString_LanguageXmlModel_ScaleConnectorThresholdString" data-uid="Utils.NumberToString.LanguageXmlModel.ScaleConnectorThresholdString">
@@ -1410,7 +1442,7 @@ and the scale-scoped ones, in document order.</p>
 
   <h3 id="Utils_NumberToString_LanguageXmlModel_TimeUnits" data-uid="Utils.NumberToString.LanguageXmlModel.TimeUnits">
   TimeUnits
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.Internal.cs/#L238"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/NumberToStringConverter.Internal.cs/#L242"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets or sets the time-unit configuration.</p>

@@ -10093,6 +10093,62 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.ScaleConnectorRule.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.ScaleConnectorRule.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.ScaleConnectorRule",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.ScaleConnectorRule.yml\" sourcestartlinenumber=\"1\">A contextual substitution of the scale connector (NTS-53): the word placed between the multiplier of a scale group\nand its scale noun when every constraint of the rule is satisfied, e.g. Romanian <code>de</code> from twenty\n(<code>douăzeci de mii</code>) and no connector after a multiplier whose last two digits are one to nineteen\n(<code>o sută nouăsprezece mii</code>).</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.ScaleConnectorRules.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.ScaleConnectorRules.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.ScaleConnectorRules",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.ScaleConnectorRules.yml\" sourcestartlinenumber=\"1\">The connector between the multiplier of a scale group and its scale noun (NTS-53): a default, then the contextual\n<xref href=\"Utils.NumberToString.ScaleConnectorRules.Substitutions\" data-throw-if-not-resolved=\"false\"></xref> that differ from it. Romanian, after the Academy grammar (GALR 2005): <code>de</code> from\ntwenty (<code>douăzeci de mii</code>, <code>o sută douăzeci de mii</code>) except after a multiplier whose last two digits are one\nto nineteen (<code>o sută nouăsprezece mii</code>).</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.ScaleConnectorSubstitutionType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.ScaleConnectorSubstitutionType.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.ScaleConnectorSubstitutionType",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.ScaleConnectorSubstitutionType.yml\" sourcestartlinenumber=\"1\">XML element <code>&lt;Substitution&gt;</code> of <code>&lt;ScaleConnector&gt;</code> (NTS-53): a connector applying when every\ndeclared constraint holds; at least one of <xref href=\"Utils.NumberToString.ScaleConnectorSubstitutionType.NumberRange\" data-throw-if-not-resolved=\"false\"></xref> and <xref href=\"Utils.NumberToString.ScaleConnectorSubstitutionType.Scales\" data-throw-if-not-resolved=\"false\"></xref> is required.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.NumberToString.ScaleConnectorType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.NumberToString.ScaleConnectorType.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.NumberToString.ScaleConnectorType",
+      "Summary": "<p sourcefile=\"api/Utils.NumberToString.ScaleConnectorType.yml\" sourcestartlinenumber=\"1\">XML element <code>&lt;ScaleConnector&gt;</code> of <code>&lt;Language&gt;</code> (NTS-53): the connector between the multiplier\nof a scale group and its scale noun, as a default and the <code>&lt;Substitution&gt;</code> children that differ from it.\nIt refines the legacy <code>scaleConnector</code>/<code>scaleConnectorThreshold</code> attributes, which act as its last\ndeclared substitution.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.NumberToString.ScaleFormEntry.yml",
       "output": {
         ".html": {

@@ -785,6 +785,36 @@ multiplier) following the Unicode CLDR cardinal plural rules of <code>ru</code> 
 </dd>
     </dl>
     <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.ScaleConnectorRule.html">ScaleConnectorRule</a></dt>
+      <dd><p>A contextual substitution of the scale connector (NTS-53): the word placed between the multiplier of a scale group
+and its scale noun when every constraint of the rule is satisfied, e.g. Romanian <code>de</code> from twenty
+(<code>douăzeci de mii</code>) and no connector after a multiplier whose last two digits are one to nineteen
+(<code>o sută nouăsprezece mii</code>).</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.ScaleConnectorRules.html">ScaleConnectorRules</a></dt>
+      <dd><p>The connector between the multiplier of a scale group and its scale noun (NTS-53): a default, then the contextual
+<a class="xref" href="Utils.NumberToString.ScaleConnectorRules.html#Utils_NumberToString_ScaleConnectorRules_Substitutions">Substitutions</a> that differ from it. Romanian, after the Academy grammar (GALR 2005): <code>de</code> from
+twenty (<code>douăzeci de mii</code>, <code>o sută douăzeci de mii</code>) except after a multiplier whose last two digits are one
+to nineteen (<code>o sută nouăsprezece mii</code>).</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.ScaleConnectorSubstitutionType.html">ScaleConnectorSubstitutionType</a></dt>
+      <dd><p>XML element <code>&lt;Substitution&gt;</code> of <code>&lt;ScaleConnector&gt;</code> (NTS-53): a connector applying when every
+declared constraint holds; at least one of <a class="xref" href="Utils.NumberToString.ScaleConnectorSubstitutionType.html#Utils_NumberToString_ScaleConnectorSubstitutionType_NumberRange">NumberRange</a> and <a class="xref" href="Utils.NumberToString.ScaleConnectorSubstitutionType.html#Utils_NumberToString_ScaleConnectorSubstitutionType_Scales">Scales</a> is required.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.NumberToString.ScaleConnectorType.html">ScaleConnectorType</a></dt>
+      <dd><p>XML element <code>&lt;ScaleConnector&gt;</code> of <code>&lt;Language&gt;</code> (NTS-53): the connector between the multiplier
+of a scale group and its scale noun, as a default and the <code>&lt;Substitution&gt;</code> children that differ from it.
+It refines the legacy <code>scaleConnector</code>/<code>scaleConnectorThreshold</code> attributes, which act as its last
+declared substitution.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
       <dt><a class="xref" href="Utils.NumberToString.ScaleFormEntry.html">ScaleFormEntry</a></dt>
       <dd><p>XML element <code>&lt;ScaleForm scale=&quot;…&quot;&gt;</code> inside <code>&lt;NumberScale&gt;</code>: declares the named
 lexical forms of one scale noun (e.g. the Arabic dual/plural/accusative forms of &quot;thousand&quot;) and
