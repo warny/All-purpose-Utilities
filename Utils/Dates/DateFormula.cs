@@ -27,8 +27,12 @@ public static class DateFormula
     /// <summary>Cache for compiled formulas.</summary>
     private static readonly Dictionary<FormulaCacheKey, Func<DateTime, DateTime>> _cache = [];
 
-    /// <summary>Represents a unique key for the formula cache.</summary>
-    private sealed record FormulaCacheKey(IDateFormulaLanguageProvider Provider, string CultureName, string Formula, ICalendarProvider? CalendarProvider);
+    /// <summary>
+    /// Represents a unique key for the formula cache. The compiled delegate captures the culture's selected calendar and
+    /// first day of the week, so two cultures with the same name but a different calendar (a clone with another
+    /// <see cref="DateTimeFormatInfo.Calendar"/>) must not share an entry.
+    /// </summary>
+    private sealed record FormulaCacheKey(IDateFormulaLanguageProvider Provider, string CultureName, Type CalendarType, DayOfWeek FirstDayOfWeek, string Formula, ICalendarProvider? CalendarProvider);
 
     /// <summary>
     /// Retrieves a compiled formula from the cache or compiles it if missing.
@@ -40,7 +44,7 @@ public static class DateFormula
     /// <returns>A delegate computing the date from a base value.</returns>
     private static Func<DateTime, DateTime> GetCompiledFormula(string formula, IDateFormulaLanguageProvider provider, CultureInfo culture, ICalendarProvider? calendarProvider)
     {
-        var key = new FormulaCacheKey(provider, culture.Name, formula, calendarProvider);
+        var key = new FormulaCacheKey(provider, culture.Name, culture.DateTimeFormat.Calendar.GetType(), culture.DateTimeFormat.FirstDayOfWeek, formula, calendarProvider);
         lock (_cache)
         {
             return _cache.GetOrAdd(key, () => Compile(formula, provider, culture, calendarProvider));
@@ -148,7 +152,9 @@ public static class DateFormula
         };
         if (methodName is null) return expr;
 
-        var calendarExpression = Expression.Constant(culture.Calendar);
+        // The selected calendar (DateTimeFormat.Calendar), not the culture's default one (CultureInfo.Calendar), so that a
+        // caller can choose one of the culture's optional calendars.
+        var calendarExpression = Expression.Constant(culture.DateTimeFormat.Calendar);
         return Expression.Call(
                 calendarExpression,
                 typeof(Calendar).GetMethod(methodName, BindingFlags.Public | BindingFlags.Instance)!,

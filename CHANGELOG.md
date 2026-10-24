@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed — `omy.Utils` (dates: the culture's selected calendar)
+- `DateFormula` (`Calculate`, `Compile`, `ToExpression`) and `DateUtils.StartOf` / `EndOf` with a `CultureInfo` (and the
+  `DayOfWeek` overloads, on the current culture) now use the culture's selected calendar,
+  `CultureInfo.DateTimeFormat.Calendar`, instead of its default calendar `CultureInfo.Calendar`; the first day of the
+  week was already read from `DateTimeFormat`, and the `DateTimeFormatInfo` overloads already used its calendar. A
+  caller can now choose one of the culture's optional calendars on a clone: with `ar-SA` and `UmAlQuraCalendar`,
+  `new DateTime(2023, 3, 15).Calculate("NS+1Y", culture)` is 2023-03-23 on every platform, with `GregorianCalendar`
+  2023-04-01. Before, the platform's default calendar of the culture always applied (`ar-SA`: Umm al-Qura on Windows,
+  Gregorian with the Linux ICU data). Unchanged for a culture whose calendar was not changed; for the current culture
+  on Windows, a calendar chosen in the user's regional settings now applies.
+- The compiled-formula cache distinguishes the calendar and the first day of the week, so two cultures with the same
+  name but a different selection no longer share a cached delegate.
+
 ### Fixed — `omy.Utils.NumberToString` (NTS-53 closed: Catalan, Galician and Romanian numerals)
 - Catalan (CA, ca-ES, ca-ES-valencia) writes the plural of *milió* `milions` (IEC, Ortografia catalana §4.4.2.2a: *dos
   milions cent mil*): `dos milions` (was `dos milións`). 10^9 is `mil milions` (DIEC2 "miliard"; was `un mil milió`),
