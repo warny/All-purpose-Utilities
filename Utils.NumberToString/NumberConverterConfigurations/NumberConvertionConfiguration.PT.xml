@@ -7,10 +7,12 @@
         zero="zero"
         minus="menos *"
         decimalSeparator="vírgula"
+        decimalDigitByDigitMaxDigits="0"
         fractionSeparator="sobre"
 
                 maxNumber="999999"
         >
+		<!-- NTS-34: no automatic decimal reading (C: school readings: dois inteiros e quatro centésimos, cinco vírgula cinquenta e três (a number); docs/NTS-34-decimal-reading-audit.md). LanguageDefault throws NotSupportedException for a decimal part; DecimalReadingMode.DigitByDigit, requested by the caller, is unchanged. -->
 		<Culture>PT</Culture>
 		<Groups>
 			<Group level="1">

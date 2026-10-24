@@ -8,7 +8,9 @@
         zero="нуль"
         minus="мінус *"
         decimalSeparator="кома"
+        decimalDigitByDigitMaxDigits="0"
     >
+        <!-- NTS-34: no automatic decimal reading (C: school readings: дев'ять цілих одна десята, declined fraction nouns; docs/NTS-34-decimal-reading-audit.md). LanguageDefault throws NotSupportedException for a decimal part; DecimalReadingMode.DigitByDigit, requested by the caller, is unchanged. -->
         <Culture>UK</Culture>
         <Culture>UK-UA</Culture>
         <Groups>

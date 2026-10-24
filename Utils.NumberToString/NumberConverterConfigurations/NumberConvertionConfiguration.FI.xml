@@ -17,8 +17,10 @@
         zero="nolla"
         minus="miinus *"
         decimalSeparator="pilkku"
+        decimalDigitByDigitMaxDigits="0"
         fractionSeparator="yli"
     >
+        <!-- NTS-34: no automatic decimal reading (D: no Kotus statement on the reading of several decimal digits; docs/NTS-34-decimal-reading-audit.md). LanguageDefault throws NotSupportedException for a decimal part; DecimalReadingMode.DigitByDigit, requested by the caller, is unchanged. -->
         <Culture>FI</Culture>
         <Groups>
             <Group level="1">

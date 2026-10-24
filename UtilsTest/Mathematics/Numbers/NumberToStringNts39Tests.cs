@@ -510,7 +510,7 @@ public class NumberToStringNts39Tests
         Assert.AreEqual("dvadsaťdva", Get("SK").Convert(22));
         Assert.AreEqual("dvacet dva", Get("CS").Convert(22));
         Assert.AreEqual("třetí", Get("CS").ConvertOrdinal(3));
-        Assert.AreEqual("jedna celá dva", Get("CS").Convert(1.2m));
+        Assert.AreEqual("jedna celá dva", Get("CS").Convert(1.2m, -1, new DecimalFormatOptions { ReadingMode = DecimalReadingMode.DigitByDigit }));
         Assert.AreEqual("двадесет и едно", Get("BG").Convert(21));
         Assert.AreEqual("третя", Get("UK").ConvertOrdinal(3, "gender=жіночий"));
     }

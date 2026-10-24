@@ -7,8 +7,10 @@
         zero="zero"
         minus="minus *"
         decimalSeparator="przecinek"
+        decimalDigitByDigitMaxDigits="0"
         fractionSeparator="przez"
         >
+        <!-- NTS-34: no automatic decimal reading (C: ZPE (Ministry of Education): trzy i cztery dziesiąte, dwadzieścia pięć setnych, declined fraction nouns; docs/NTS-34-decimal-reading-audit.md). LanguageDefault throws NotSupportedException for a decimal part; DecimalReadingMode.DigitByDigit, requested by the caller, is unchanged. -->
         <Culture>PL</Culture>
         <Groups>
             <Group level="1">

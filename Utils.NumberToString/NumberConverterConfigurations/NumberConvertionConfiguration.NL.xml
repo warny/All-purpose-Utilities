@@ -8,8 +8,10 @@
         zero="nul"
         minus="min *"
         decimalSeparator="komma"
+        decimalDigitByDigitMaxDigits="0"
         fractionSeparator="op"
         >
+        <!-- NTS-34: no automatic decimal reading (D: no Taalunie or ANS statement; primary-school sites only; docs/NTS-34-decimal-reading-audit.md). LanguageDefault throws NotSupportedException for a decimal part; DecimalReadingMode.DigitByDigit, requested by the caller, is unchanged. -->
         <Culture>NL</Culture>
         <Groups>
             <Group level="1">

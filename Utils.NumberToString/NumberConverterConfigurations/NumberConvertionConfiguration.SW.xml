@@ -8,8 +8,10 @@
         zero="sifuri"
         minus="hasi *"
         decimalSeparator="nukta"
+        decimalDigitByDigitMaxDigits="0"
         fractionSeparator="kwa"
     >
+        <!-- NTS-34: no automatic decimal reading (D: the TIE textbooks could not be read; no other authority found; docs/NTS-34-decimal-reading-audit.md). LanguageDefault throws NotSupportedException for a decimal part; DecimalReadingMode.DigitByDigit, requested by the caller, is unchanged. -->
         <Culture>SW</Culture>
         <Culture>SW-KE</Culture>
         <Culture>SW-TZ</Culture>

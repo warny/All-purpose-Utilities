@@ -10,9 +10,11 @@
         zero="零"
         minus="マイナス *"
         decimalSeparator="点"
+        decimalDigitByDigitMaxDigits="0"
         fractionSeparator="割る"
         maxNumber="9999999999999999"
     >
+		<!-- NTS-34: no automatic decimal reading (D: no MEXT or institutional statement on the reading found; docs/NTS-34-decimal-reading-audit.md). LanguageDefault throws NotSupportedException for a decimal part; DecimalReadingMode.DigitByDigit, requested by the caller, is unchanged. -->
 		<Culture>JA</Culture>
 		<Groups>
 			<Group level="1">

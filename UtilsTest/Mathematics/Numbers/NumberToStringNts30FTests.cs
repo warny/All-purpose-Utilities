@@ -211,7 +211,7 @@ public class NumberToStringNts30FTests
         Assert.AreEqual("menos dos mil quinientos millones", ES.Convert(-2_500_000_000L));
         Assert.AreEqual("ken bi mila eta bostehun milioi", EU.Convert(-2_500_000_000L));
         Assert.AreEqual("dos mil quinientos millones coma cinco", ES.Convert(2_500_000_000.5m));
-        Assert.AreEqual("mila eta bat milioi koma bi bost", EU.Convert(1_001_000_000.25m));
+        Assert.AreEqual("mila eta bat milioi koma bi bost", EU.Convert(1_001_000_000.25m, -1, new DecimalFormatOptions { ReadingMode = DecimalReadingMode.DigitByDigit }));
         Assert.AreEqual("uno sobre mil un millones", ES.ConvertFraction(1, 1_001_000_000));
         Assert.AreEqual("bi mila eta bostehun milioi zati hiru", EU.ConvertFraction(2_500_000_000, 3));
         Assert.AreEqual("veintiún mil un millones sobre siete", ES.Convert(new Utils.Numerics.Number(21_001_000_000, 7)));

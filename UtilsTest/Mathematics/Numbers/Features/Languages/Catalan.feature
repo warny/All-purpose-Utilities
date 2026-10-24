@@ -16,7 +16,8 @@ Examples:
 
 Scenario Outline: Catalan decimal numbers
     Given I use the "ca-ES" number converter
-    When I convert the decimal number <number>
+    # NTS-34: no validated automatic decimal reading (LanguageDefault fails closed); the explicit digit-by-digit reading is pinned.
+    When I convert the decimal number <number> digit by digit
     Then the result is "<expected>"
 
 Examples:

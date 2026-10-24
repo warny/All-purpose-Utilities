@@ -11,10 +11,12 @@
         zero="शून्य"
         minus="माइनस *"
         decimalSeparator="दशमलव"
+        decimalDigitByDigitMaxDigits="0"
         fractionSeparator="बटे"
 
                 maxNumber="9999999999999"
         >
+        <!-- NTS-34: no automatic decimal reading (D: no NCERT or Central Hindi Directorate statement found; docs/NTS-34-decimal-reading-audit.md). LanguageDefault throws NotSupportedException for a decimal part; DecimalReadingMode.DigitByDigit, requested by the caller, is unchanged. -->
         <Culture>HI</Culture>
         <Groups>
             <Group level="1">

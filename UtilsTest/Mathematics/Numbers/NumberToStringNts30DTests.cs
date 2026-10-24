@@ -552,11 +552,11 @@ public class NumberToStringNts30DTests
     public void Bulgarian_Decimals()
     {
         var converter = Get("BG");
-        Assert.AreEqual("двадесет и едно цяло пет", converter.Convert(21.5m));
-        Assert.AreEqual("сто и едно цяло пет", converter.Convert(101.5m));
+        Assert.AreEqual("двадесет и едно цяло пет", converter.Convert(21.5m, -1, new DecimalFormatOptions { ReadingMode = DecimalReadingMode.DigitByDigit }));
+        Assert.AreEqual("сто и едно цяло пет", converter.Convert(101.5m, -1, new DecimalFormatOptions { ReadingMode = DecimalReadingMode.DigitByDigit }));
         Assert.AreEqual("сто и едно цяло пет",
             converter.Convert(101.5m, -1, new DecimalFormatOptions { ReadingMode = DecimalReadingMode.DigitByDigit }));
-        Assert.AreEqual("сто двадесет и едно цяло две едно", converter.Convert(121.21m));
+        Assert.AreEqual("сто двадесет и едно цяло две едно", converter.Convert(121.21m, -1, new DecimalFormatOptions { ReadingMode = DecimalReadingMode.DigitByDigit }));
     }
 
     /// <summary>

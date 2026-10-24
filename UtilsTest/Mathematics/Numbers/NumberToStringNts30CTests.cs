@@ -821,8 +821,8 @@ public class NumberToStringNts30CTests
     public void CompositeSurfaces_UseTheCorrectedGeneratedNoun()
     {
         var russian = NumberToStringConverter.GetConverter("RU");
-        StringAssert.StartsWith(russian.Convert(2000000000000.5m), "два триллиона");
+        StringAssert.StartsWith(russian.Convert(2000000000000.5m, -1, new DecimalFormatOptions { ReadingMode = DecimalReadingMode.DigitByDigit }), "два триллиона");
         var czech = NumberToStringConverter.GetConverter("CS");
-        StringAssert.StartsWith(czech.Convert(2000000000000000.25m), "dvě biliardy");
+        StringAssert.StartsWith(czech.Convert(2000000000000000.25m, -1, new DecimalFormatOptions { ReadingMode = DecimalReadingMode.DigitByDigit }), "dvě biliardy");
     }
 }

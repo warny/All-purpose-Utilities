@@ -100,6 +100,14 @@ public sealed class NumberToStringLanguageSteps
     [When("I convert the decimal number {word}")]
     public void WhenIConvertTheDecimalNumber(string number) => result = Converter.Convert(decimal.Parse(number, CultureInfo.InvariantCulture), variants);
 
+    /// <summary>
+    /// Converts an invariant decimal reading every decimal digit (<see cref="DecimalReadingMode.DigitByDigit"/>, requested
+    /// explicitly): the reading of a language whose automatic decimal reading NTS-34 closed.
+    /// </summary>
+    [When("I convert the decimal number {word} digit by digit")]
+    public void WhenIConvertTheDecimalNumberDigitByDigit(string number) => result = ConcreteConverter.Convert(
+        decimal.Parse(number, CultureInfo.InvariantCulture), -1, new DecimalFormatOptions { ReadingMode = DecimalReadingMode.DigitByDigit }, variants);
+
     /// <summary>Converts an invariant currency amount through the public API.</summary>
     [When("I convert the currency amount {word}")]
     public void WhenIConvertTheCurrencyAmount(string number) => result = Converter.ConvertCurrency(

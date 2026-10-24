@@ -7,10 +7,12 @@
                 zero="zero"
                 minus="menys *"
                 decimalSeparator="coma"
+                decimalDigitByDigitMaxDigits="0"
                 fractionSeparator="partit per"
 
                 maxNumber="999999999999"
         >
+                <!-- NTS-34: no automatic decimal reading (C: the school readings are vuit unitats i quaranta-cinc centèsimes or vuit coma quaranta-cinc, never the digits; docs/NTS-34-decimal-reading-audit.md). LanguageDefault throws NotSupportedException for a decimal part; DecimalReadingMode.DigitByDigit, requested by the caller, is unchanged. -->
                 <Culture>CA</Culture>
                 <Culture>ca-ES</Culture>
                 <Groups>

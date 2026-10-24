@@ -556,7 +556,7 @@ public class NumberToStringNts30ETests
     {
         Assert.AreEqual("miinus kaksikymmentäyksi", FI.Convert(-21));
         Assert.AreEqual("miinus kaksikymmentäyksituhatta", FI.Convert(-21000));
-        Assert.AreEqual("kaksikymmentäyksi pilkku viisi", FI.Convert(21.5m));
+        Assert.AreEqual("kaksikymmentäyksi pilkku viisi", FI.Convert(21.5m, -1, new DecimalFormatOptions { ReadingMode = DecimalReadingMode.DigitByDigit }));
         Assert.AreEqual("kaksikymmentäyksi pilkku viisi seitsemän",
             FI.Convert(21.57m, -1, new DecimalFormatOptions { ReadingMode = DecimalReadingMode.DigitByDigit }));
         Assert.AreEqual("kaksikymmentäyksi yli satayksi", FI.ConvertFraction(21, 101));

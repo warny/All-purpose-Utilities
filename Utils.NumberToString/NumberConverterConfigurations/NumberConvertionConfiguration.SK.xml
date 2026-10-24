@@ -8,7 +8,9 @@
         zero="nula"
         minus="mínus *"
         decimalSeparator="celá"
+        decimalDigitByDigitMaxDigits="0"
     >
+        <!-- NTS-34: no automatic decimal reading (C: JÚĽŠ language advisory: dve celé (a) tri desatiny, päť celých, declined forms; docs/NTS-34-decimal-reading-audit.md). LanguageDefault throws NotSupportedException for a decimal part; DecimalReadingMode.DigitByDigit, requested by the caller, is unchanged. -->
         <Culture>SK</Culture>
         <Culture>SK-SK</Culture>
         <!-- NTS-30B, Pravidlá slovenského pravopisu (JÚĽŠ SAV, 3rd ed. 2000, "Písanie slov osobitne a

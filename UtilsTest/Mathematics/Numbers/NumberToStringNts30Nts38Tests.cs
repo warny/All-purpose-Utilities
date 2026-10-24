@@ -97,7 +97,7 @@ public class NumberToStringNts30Nts38Tests
             Assert.AreEqual("năm mươi triệu không nghìn một trăm linh hai", Get(culture).Convert(50_000_102));
         var vn = Get("VN");
         Assert.AreEqual("âm năm mươi triệu không nghìn một trăm linh hai", vn.Convert(-50_000_102));
-        Assert.AreEqual("năm mươi triệu không nghìn một trăm linh hai phẩy năm", vn.Convert(50_000_102.5m));
+        Assert.AreEqual("năm mươi triệu không nghìn một trăm linh hai phẩy năm", vn.Convert(50_000_102.5m, -1, new DecimalFormatOptions { ReadingMode = DecimalReadingMode.DigitByDigit }));
     }
 
     /// <summary>The ordinal is thứ + cardinal on the values whose cardinal is now formed (NTS-28 rule).</summary>

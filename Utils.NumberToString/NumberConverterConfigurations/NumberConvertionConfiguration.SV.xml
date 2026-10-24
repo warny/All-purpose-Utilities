@@ -8,8 +8,10 @@
         zero="noll"
         minus="minus *"
         decimalSeparator="komma"
+        decimalDigitByDigitMaxDigits="0"
         fractionSeparator="över"
     >
+        <!-- NTS-34: no automatic decimal reading (C: Isof, Frågelådan: 10,85 läser ut det tio komma åttiofem (the decimal part read as a number); docs/NTS-34-decimal-reading-audit.md). LanguageDefault throws NotSupportedException for a decimal part; DecimalReadingMode.DigitByDigit, requested by the caller, is unchanged. -->
         <Culture>SV</Culture>
         <Culture>SV-SE</Culture>
         <Groups>
