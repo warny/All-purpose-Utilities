@@ -18,7 +18,7 @@ Examples:
     | 11 | elleve |
     | 19 | nitten |
     | 20 | tjue |
-    | 21 | tjue en |
+    | 21 | tjueen |
     | 100 | ett hundre |
     | 1000 | tusen |
     | 2000 | to tusen |

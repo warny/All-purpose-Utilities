@@ -19,10 +19,10 @@ Examples:
     | 12 | tolv |
     | 19 | nitten |
     | 20 | tyve |
-    | 21 | en og tyve |
+    | 21 | enogtyve |
     | 30 | tredive |
     | 50 | halvtreds |
-    | 99 | ni og halvfems |
+    | 99 | nioghalvfems |
     | 100 | hundrede |
     | 101 | hundrede og en |
     | 200 | to hundrede |
