@@ -255,6 +255,17 @@ public sealed class NumberToStringConverterOptions
     public int ScaleConnectorThreshold { get; set; } = 20;
 
     /// <summary>
+    /// The connector between the multiplier of a scale group and its scale noun as a default and contextual
+    /// substitutions on the whole multiplier (optionally modulo) and the scale index, the most specific substitution
+    /// winning and the first declared at equal specificity (NTS-53; e.g. Romanian: no connector after a multiplier whose
+    /// last two digits are 1–19, <c>o sută nouăsprezece mii</c>). It refines the legacy <see cref="ScaleConnector"/>
+    /// shorthand, which keeps its meaning and acts as the last declared substitution (<c>numberRange="threshold.."</c>):
+    /// every substitution declared here takes precedence over it, and the default applies when neither matches.
+    /// <see langword="null"/> (the default): only the shorthand, unchanged.
+    /// </summary>
+    public ScaleConnectorRules? ScaleConnectorRules { get; set; }
+
+    /// <summary>
     /// Connector placed before the last additive component of every numeral phrase (e.g. <c>"и"</c> for Bulgarian:
     /// <c>двадесет и едно</c>, <c>сто двадесет и едно</c>, <c>хиляда и сто</c>, <c>двадесет и една хиляди</c>).
     /// A phrase is the multiplier of a scale group, or the whole number whose components are its groups: inside a
@@ -541,6 +552,8 @@ public sealed class NumberToStringConverterOptions
         IntraGroupConnectorThreshold = source.IntraGroupConnectorThreshold;
         ScaleConnector = source.ScaleConnector;
         ScaleConnectorThreshold = source.ScaleConnectorThreshold;
+        // Immutable: the configured instance is shared, never a synthesized one, so the shorthand is not duplicated.
+        ScaleConnectorRules = source.ScaleConnectorRules;
         FinalComponentConnector = source.FinalComponentConnector;
         FinalGroupConnector = source.FinalGroupConnector;
         InternalZeroGroupString = source.InternalZeroGroupString;

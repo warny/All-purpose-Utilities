@@ -218,6 +218,10 @@ namespace Utils.NumberToString
         [XmlAttribute("scaleConnectorThreshold")]
         public string? ScaleConnectorThresholdString { get; set; }
 
+        /// <summary>Gets or sets the contextual scale connector (NTS-53).</summary>
+        [XmlElement(ElementName = "ScaleConnector")]
+        public ScaleConnectorType? ScaleConnectorRules { get; set; }
+
         /// <summary>Gets or sets the connector placed before the last additive component of every numeral phrase.</summary>
         [XmlAttribute("finalComponentConnector")]
         public string? FinalComponentConnector { get; set; }
@@ -372,6 +376,8 @@ namespace Utils.NumberToString
         public string? IntraGroupConnectorThresholdString { get; init; }
         public string? ScaleConnector { get; init; }
         public string? ScaleConnectorThresholdString { get; init; }
+        /// <summary>Absent inherits; a declared element replaces the inherited one as a whole.</summary>
+        public ScaleConnectorType? ScaleConnectorRules { get; init; }
         public string? FinalComponentConnector { get; init; }
         public string? FinalGroupConnector { get; init; }
         /// <summary>Absent (<see langword="null"/>) inherits; an explicit value replaces, an empty one removes.</summary>

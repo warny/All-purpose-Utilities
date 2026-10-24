@@ -416,13 +416,14 @@ public class NumberToStringNts37Tests
 
     /// <summary>
     /// The built-in languages that pair their scales: Finnish from 10^12 (NTS-37), Spanish and Basque from the million
-    /// (NTS-30F: mil millones, mila milioi); no other built-in language pairs.
+    /// (NTS-30F: mil millones, mila milioi), Catalan and Galician from the million (NTS-53: mil milions, mil millóns); no
+    /// other built-in language pairs.
     /// </summary>
     [TestMethod]
     public void BuiltIn_PairedLanguagesArePinned()
     {
-        string[] cultures = ["AR", "BG", "CA", "ca-ES-valencia", "CS", "DA", "DE", "de-CH", "EE", "EL", "EN", "EN-GB", "FA",
-            "FR", "FR-be", "FR-ca", "FR-ch", "GL", "HE", "HI", "HR", "HU", "ID", "IT", "JA", "KO", "MS", "NL", "NO", "PL", "PT",
+        string[] cultures = ["AR", "BG", "CS", "DA", "DE", "de-CH", "EE", "EL", "EN", "EN-GB", "FA",
+            "FR", "FR-be", "FR-ca", "FR-ch", "HE", "HI", "HR", "HU", "ID", "IT", "JA", "KO", "MS", "NL", "NO", "PL", "PT",
             "RO", "RU", "SCALE-LONG", "SCALE-SHORT", "SCALE-SHORT-CYRILLIC", "SK", "SV", "SW", "TR", "UK", "VN", "WO", "ZH", "ZU"];
         foreach (string culture in cultures)
             Assert.IsNull(NumberToStringConverter.GetConverter(culture).Scale.PairedScalesFrom, culture);
@@ -430,6 +431,8 @@ public class NumberToStringNts37Tests
         Assert.AreEqual(2, NumberToStringConverter.GetConverter("ES").Scale.PairedScalesFrom);
         Assert.AreEqual(2, NumberToStringConverter.GetConverter("EU").Scale.PairedScalesFrom);
         Assert.AreEqual(2, NumberToStringConverter.GetConverter("eu-ES").Scale.PairedScalesFrom);
+        foreach (string culture in new[] { "CA", "ca-ES", "ca-ES-valencia", "GL", "gl-ES" })
+            Assert.AreEqual(2, NumberToStringConverter.GetConverter(culture).Scale.PairedScalesFrom, culture);
     }
 
     // ===== Finnish: large-scale names ================================================================
