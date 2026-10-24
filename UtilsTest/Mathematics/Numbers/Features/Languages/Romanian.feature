@@ -34,7 +34,7 @@ Examples:
     | 1000 | o mie |
     | 2000 | două mii |
     | 10000 | zece mii |
-    | 12000 | doisprezece mii |
+    | 12000 | douăsprezece mii |
     | 19000 | nouăsprezece mii |
     | 20000 | douăzeci de mii |
     | 100000 | o sută de mii |
