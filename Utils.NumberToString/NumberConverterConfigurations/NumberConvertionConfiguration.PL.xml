@@ -8,8 +8,6 @@
         minus="minus *"
         decimalSeparator="przecinek"
         fractionSeparator="przez"
-
-                maxNumber="999999"
         >
         <Culture>PL</Culture>
         <Groups>
@@ -50,14 +48,80 @@
                 <Digit digit="9" string="dziewięćset" buildString="dziewięćset *" />
             </Group>
         </Groups>
-        <NumberScale firstLetterUpperCase="false">
+        <!-- NTS-35: long scale (SJP PWN: bilion "w Polsce […] milion milionów", biliard "tysiąc bilionów", trylion
+             "milion bilionów", tryliard "tysiąc trylionów", kwadrylion "w Polsce […] bilion bilionów"; WSJP PAN milion,
+             miliard, bilion, biliard, trylion), with groupSeparator="li" (single l): mi+li+on = milion, mi+li+ard =
+             miliard, bi+li+on = bilion, try+li+ard = tryliard. Unbounded cardinals; the ordinals keep their own
+             validated domain (PolishOrdinalLanguageSpecifics, 1-999 999). -->
+        <NumberScale firstLetterUpperCase="false" multiplierSeparator=" " groupSeparator="li">
             <StaticNames>
                 <Scale value="0" string="" />
                 <Scale value="1" string="tysiąc" />
             </StaticNames>
             <Suffixes>
-                <Suffix>milion</Suffix>
+                <Suffix>on</Suffix>
+                <Suffix>ard</Suffix>
             </Suffixes>
+            <!-- NTS-35: the Conway components in Polish spelling. Attested (SJP PWN and the Wielki słownik ortograficzny
+                 PWN): milion, miliard, bilion, biliard, trylion, tryliard, kwadrylion, kwintylion, sekstylion, septylion,
+                 oktylion, nonilion (WSO: "nonilion […] a. nonylion", the first form kept), decylion, undecylion,
+                 duodecylion. They establish the spelling of the domesticated Latin components, applied to the others:
+                 Latin i after t, r and c is written y (kwintylion, sekstylion, septylion, oktylion, trylion, kwadrylion,
+                 decylion, undecylion; also centymetr), qu is written kw (kwadrylion, kwintylion), x is written ks
+                 (sekstylion), c read [k] is written k (oktylion), v is written w (Polish wiza, nowela; viginti → wiginty-,
+                 novem → nowem), a Latin double consonant is simplified (atrybut < attributum: kwatuor), mi-, bi-, noni-
+                 and the other letters are kept (milion, bilion, nonilion, duodecylion). Conway's construction and
+                 linking markers are unchanged (NTS-24), the two-letter x written as the marker list "ks"
+                 (NTS-25A): se(ks,s) + (n,ks,s)centy = sekscenty-. Higher names are the productive extension (AGENTS.md,
+                 Conway scale names): tredecylion, kwatuordecylion, wigintylion, trygintylion, centylion. -->
+            <Scale0Prefixes>
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="mi" />
+                <Digit digit="2" string="bi" />
+                <Digit digit="3" string="try" />
+                <Digit digit="4" string="kwadry" />
+                <Digit digit="5" string="kwinty" />
+                <Digit digit="6" string="seksty" />
+                <Digit digit="7" string="septy" />
+                <Digit digit="8" string="okty" />
+                <Digit digit="9" string="noni" />
+            </Scale0Prefixes>
+            <UnitsPrefixes>
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="un" />
+                <Digit digit="2" string="duo" />
+                <Digit digit="3" string="tre(s)" />
+                <Digit digit="4" string="kwatuor" />
+                <Digit digit="5" string="kwinkwa" />
+                <Digit digit="6" string="se(ks,s)" />
+                <Digit digit="7" string="septe(mn)" />
+                <Digit digit="8" string="okto" />
+                <Digit digit="9" string="nowe(mn)" />
+            </UnitsPrefixes>
+            <TensPrefixes>
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="(n)decy" />
+                <Digit digit="2" string="(ms)wiginty" />
+                <Digit digit="3" string="(ns)trygint[a|-illi=>y]" />
+                <Digit digit="4" string="(ns)kwadragint[a|-illi=>y]" />
+                <Digit digit="5" string="(ns)kwinkwagint[a|-illi=>y]" />
+                <Digit digit="6" string="(n)seksagint[a|-illi=>y]" />
+                <Digit digit="7" string="(n)septuagint[a|-illi=>y]" />
+                <Digit digit="8" string="(m,ks,s)oktogint[a|-illi=>y]" />
+                <Digit digit="9" string="nonagint[a|-illi=>y]" />
+            </TensPrefixes>
+            <HundredsPrefixes>
+                <Digit digit="0" string="" />
+                <Digit digit="1" string="(n,ks,s)centy" />
+                <Digit digit="2" string="(n)ducenty" />
+                <Digit digit="3" string="(ns)trecenty" />
+                <Digit digit="4" string="(ns)kwadryngenty" />
+                <Digit digit="5" string="(ns)kwingenty" />
+                <Digit digit="6" string="(n)sescenty" />
+                <Digit digit="7" string="(n)septyngenty" />
+                <Digit digit="8" string="(m,ks,s)oktyngenty" />
+                <Digit digit="9" string="nongenty" />
+            </HundredsPrefixes>
             <!-- NTS-27: tysiąc after one alone, tysiące after 2-4 except 12-14 (also at the end of a compound,
                  dwadzieścia dwa tysiące), tysięcy otherwise (SJP PWN "tysiąc": trzy tysiące, sześć tysięcy;
                  Unicode CLDR plural rules, pl). PolishPluralLexicalFormSelector returns the key. -->
@@ -68,6 +132,27 @@
                     <Form key="many" value="tysięcy" />
                 </Forms>
             </ScaleForm>
+            <!-- NTS-35: both families are masculine inanimate nouns inflected like tysiąc after their multiplier, by
+                 the same CLDR rule (PolishPluralLexicalFormSelector: one = 1 alone, few = 2-4 except 12-14, also at the
+                 end of a compound, many otherwise). Wielki słownik ortograficzny PWN: "bilion -na, -nie; -ny, -nów",
+                 "trylion -na; -ny, -nów", "kwadrylion -na; -ny, -nów", "sekstylion -na; -ny, -nów", "biliard -rda,
+                 -rdzie; -rdy, -rdów": jeden bilion, dwa biliony, pięć bilionów, dwadzieścia dwa biliony; jeden miliard,
+                 dwa miliardy, pięć miliardów. jeden is kept before the counted noun (jeden milion), the elision being
+                 the tysiąc rule only. -->
+            <GeneratedScaleForm suffix="0" formSelector="PolishPluralLexicalFormSelector">
+                <Forms>
+                    <Form key="one" value="on" />
+                    <Form key="few" value="ony" />
+                    <Form key="many" value="onów" />
+                </Forms>
+            </GeneratedScaleForm>
+            <GeneratedScaleForm suffix="1" formSelector="PolishPluralLexicalFormSelector">
+                <Forms>
+                    <Form key="one" value="ard" />
+                    <Form key="few" value="ardy" />
+                    <Form key="many" value="ardów" />
+                </Forms>
+            </GeneratedScaleForm>
         </NumberScale>
         <LanguageSpecifics>PolishOrdinalLanguageSpecifics</LanguageSpecifics>
         <Replacements>
