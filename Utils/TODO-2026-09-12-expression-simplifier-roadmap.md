@@ -3689,9 +3689,233 @@ removed before these measurements.
 - Repeated free parameters tie in the S4 order by design, so their relative order can change between public passes
   (`x - y - z`).
 - Still open, pre-existing and unchanged:
-  - `x + NaN` throws `OverflowException` in `AdditionOfEqualsElements`;
+  - `x + NaN` throws `OverflowException` in `AdditionOfEqualsElements` (fixed in S5 P11);
   - H-family factoring returns unfolded coefficient sums (`(((2 + 3) + 4) + 5) * x`), folded only by a second pass;
   - CPU stays exponential when an opaque user-code term sorts at the tail of a long chain (B10 ~6-7 s on both).
+
+#### S5 P11 — numeric robustness (P11a ACCEPTED) and NaN propagation (P11b ACCEPTED, narrowed)
+
+**Provenance.** Baseline: `master` at `2ada0e88` (post-P10, PR #663). Same environment and harness method as P9/P10
+(separate worktrees, Release, `ProjectReference` to each commit's `Utils.csproj`). Line numbers below are at
+`2ada0e88`, `Utils/Expressions/ExpressionSimplifier.cs` unless stated.
+
+**Reproduction matrix.** 469 shapes through the public `Simplify`: `x op c` and `c op x` for `+ - * / ^`, `double`
+and `float`, with `c` in {`NaN`, a second `NaN` payload, `+inf`, `-inf`, `MaxValue`, `1e30`, `Epsilon`, `-0.0`, `0`,
+`1`, `-1`, `2`, `-2`, `0.5`}; negations; constant-only pairs over {`NaN`, `±inf`, `0`, `-0.0`, `2`, `MaxValue`};
+compound sums reaching the factoring rules; `int`/`ulong`/`decimal` controls; `BigInteger` and `Utils.Numerics.Number`
+constants. Each result is compiled and compared with the compiled source on {1.5, -2, ±0, `NaN`, ±inf, `MaxValue`}
+(`NaN`-aware, signed zero distinguished), so exceptions raised while simplifying are told apart from exceptions the
+source raises when evaluated.
+
+| | Baseline | P11a + P11b |
+|---|---:|---:|
+| Exceptions while simplifying | 100 | 19 |
+| Results that evaluate differently from the source | 41 | 31 |
+
+The 19 remaining exceptions are all zero divisors (see below; `float x / (float)double.Epsilon` is `x / 0f`). The 31 remaining differences are signed-zero/`NaN`
+cases of the symbolic identities `x + 0`, `x * 0`, `0 / x`, `0 - x`, `0 ^ x` on a *parameter* (accepted by the S3
+contract, unchanged) and the decimal overflow `m * Max + m` (out of scope). No previously correct result changed.
+
+**Failure matrix (root causes).**
+
+| Rule (line) | Matching | Trigger | Failure | Correct semantics | S3 allows a rewrite? | P11 |
+|---|---|---|---|---|---|---|
+| `AdditionOfEqualsElements` (1132, 1134) | any ordinary `Add` | `x + NaN`, `x + inf`, `x + 1e30`, `x + Max` | `CompareNumeric(c, 1)` converts to `decimal`: `OverflowException` | the constant is simply not `1` | yes (factoring) | fixed |
+| `DivideWithZeroOrOne` (624-626) | any constant divisor | `x / NaN`, `x / inf`, `x / Max`, `c / NaN` | same `OverflowException` | not 0, 1 or -1: decline | yes | fixed |
+| `DivideWithZeroOrOne` (624) | same | `x / Epsilon` | `Epsilon` rounds to `0m`: false `DivideByZeroException` | `x / Epsilon` | yes | fixed |
+| `PowerByZeroOrOne` (660-663) | any constant exponent | `x ^ NaN`, `x ^ inf`, `x ^ Max` | `OverflowException` | decline | no blanket rewrite | fixed |
+| `PowerByZeroOrOne` (660) | same | `x ^ Epsilon` | rewritten to `1` (false zero) | `Math.Pow(x, Epsilon)` (`NaN` for `x < 0`) | no | fixed |
+| `MultiplicationWithZeroOrOne` (598, 611) | `[ConstantNumeric(0, 1, -1)]` | `inf * 0`, `NaN * 0` (constants) | folded to `0` | `NaN` | not for two constants | fixed |
+| `DivideWithZero` (637) | `[ConstantNumeric(0)]` | `0 / NaN` (constants) | `0` | `NaN` | not for two constants | fixed |
+| `PowerOfZeroOrOne` (648) | `[ConstantNumeric(0, 1)]` | `0 ^ NaN`, `0 ^ -inf` (constants) | `0` | `NaN`, `+inf` | not for two constants | fixed |
+| `ConstantNumericAttribute.Match` (`ExpressionTranformer.cs` 1982) | listed values | `big + 0` (`BigInteger`, `Number`) | `Convert.ToDouble` on a non-`IConvertible`: `InvalidCastException` | no match | — | fixed |
+| `DivideWithZeroOrOne` (624) | any constant divisor | `x / 0.0`, `x / -0.0`, `c / 0.0` | `DivideByZeroException` | IEEE: `±inf` or `NaN` | — | **not changed**, separate defect |
+| `AdditionWithZero`, `SubstractionWithZero` (549-587) | `[ConstantNumeric(0)]` | — | no failure: the `double` pre-filter of `Match` never lets a non-finite value through | — | — | predicate unified only |
+| `IsOrdinaryZeroConstant` (P10, 1787) | — | — | no failure (direct `double`/`float` branch) | — | — | predicate unified only |
+
+Large integral values were already safe (`ulong.MaxValue` falls back to the decimal comparison, which holds it); the
+classification is now exact per type throughout, so `ulong.MaxValue`, `decimal.MaxValue` and decimal scale behave as
+before.
+
+**P11a changes.**
+
+- `NumericValueEquals(object?, int)`: the single numeric-identity test of the class. Each native primitive is
+  compared in its own type (no conversion, no boxing beyond the existing constant, no allocation, no exception path);
+  `NaN` equals nothing, infinities equal no finite value, `-0.0` equals zero, decimals compare at any scale; any other
+  runtime type returns `false`, so no third-party numeric code runs. The per-type comparisons are dispatched through a
+  read-only `Dictionary<Type, Func<object, int, bool>>` (`NumericValueComparers`; AGENTS.md forbids a switch of more
+  than ten cases, review of `9dffbbfd`). The 22 `CompareNumeric` calls of the rules and the
+  P10 `IsOrdinaryZeroConstant` use it; `NumberUtils.CompareNumeric` (public) is unchanged and now unused by
+  the simplifier.
+- `PowerByZeroOrOne` reads the exponent as a `double` (ordinary `Power` is only defined on `double`) and declines a
+  non-finite one.
+- `IsNonFiniteFloatingConstant`: the zero/one identities `x * 0|1|-1`, `0 / x` and `0|1 ^ x` decline when the other
+  operand is a `NaN`/infinite constant, so the existing exact constant folding computes the result. On a non-constant
+  operand the symbolic identities are unchanged.
+- `ConstantNumericAttribute.Match` fails, instead of throwing, for a numeric value that is not `IConvertible`.
+- Rule order, `ExpressionTransformer.BuildPlan`, `ExpressionOptimiser`, `FactorEqualityProbe`, the P3 cache and every
+  P9 session, key and threshold are unchanged.
+
+**Division semantics.** For `float`/`double`, `DivideWithZeroOrOne` still throws `DivideByZeroException` on a `±0.0`
+divisor, although IEEE-754 division yields `±inf` or `NaN`. This is pre-existing, not newly exposed by P11, and four
+existing P3/P9 tests use `x / 0.0` as their deterministic throwing simplification, so it is recorded as a separate
+defect rather than changed here; it applies to a `NaN` dividend too (`NaN / 0.0`), since P11b folds after the rules.
+Integral and decimal division by zero keep throwing, matching their runtime behavior.
+
+**P11b contract.** For ordinary (non-lifted, predefined, unchecked) `double`/`float` `Add`, `Subtract`, `Multiply` and
+`Divide`, IEEE-754 guarantees a `NaN` result when an operand is `NaN`. The rewrite to that `NaN` constant is applied
+only when the *other* operand is eliminable, proved recursively by `IsEliminableFloatingOperand` over a whitelist:
+`double`/`float` constants, `double`/`float` parameter or variable reads, and ordinary `+ - * /` and negation of such
+operands (IEEE arithmetic on these types never throws). Everything else is rejected: calls, member accesses, custom
+and lifted operators, invocations, assignments, checked arithmetic, conversions, integral/decimal sub-expressions,
+other node kinds, extension nodes. The predicate inspects node and static types only, runs no user code, allocates
+nothing, and is distinct from `MightInvokeUserCodeWhenSimplified` (which concerns simplification, not evaluation).
+The folded constant is the `NaN` operand itself, so the node's type is kept (`float` stays `float`) and so is its
+payload; payload preservation is not otherwise promised.
+
+*Where it runs.* `FoldNaNOperand` is applied to the result of every node after its rules: `PrepareExpression` (each
+operand), `RebuildLambdaExpression` (a lambda body, which the engine transforms without `PrepareExpression`) and
+`TransformWithinBoundary` (the root of a public or comparer-triggered call). It is not a transformation rule, so the
+rule inventory, the dispatch plan and the rule order are untouched. Folding after the node's rules is equivalent for
+these four operators: no rule drops a `NaN` operand, and the folded constant reaches the parent's rules as an operand.
+It recognizes a `NaN` constant operand and, one level deep, the negative-term shapes canonicalization builds without
+re-entering `PrepareExpression` (`-NaN`, `c - NaN`: `x - NaN` is canonicalized to `(0 - NaN) + x`). Because the fold
+follows the rules, `NaN / 0.0` still reaches the historical zero-divisor exception (see "Division semantics").
+
+*Rejected designs (performance gate).* (1) One `[ExpressionSignature]` rule per operator taking `(Expression,
+Expression)`, declared first: invoked by reflection on every arithmetic node, +9-11% CPU on G and H (9/10 pairs above
++5%). (2) Two overloads per operator with the `NaN` operand typed `ConstantExpression`, so non-constant operands are
+rejected by the parameter type test: still two extra dispatch candidates per node, +5-7% on G and +13-16% on H (8/8
+pairs above +5% on H8-H16). Both were replaced by the post-rule fold, whose common path is a few type tests.
+
+**Accepted and rejected rules.**
+
+| Category | Decision |
+|---|---|
+| Exact numeric classification (`NumericValueEquals`) | ACCEPT |
+| Non-finite exponent declines in `PowerByZeroOrOne` | ACCEPT |
+| Zero/one identities decline on a non-finite constant operand | ACCEPT |
+| `ConstantNumericAttribute.Match` on non-`IConvertible` values | ACCEPT |
+| `NaN` propagation for `+ - * /` with an eliminable operand, as a post-rule fold | ACCEPT |
+| The same propagation as transformation rules (one or two per operator) | REJECT (performance gate) |
+| `NaN` propagation past calls, members, custom/lifted/checked operators, conversions | REJECT (could drop an exception or user code) |
+| `NaN` propagation for `Power` | REJECT (`Pow(NaN, 0) = Pow(1, NaN) = 1`) |
+| Infinity propagation | REJECT (`x + inf` is `NaN` for `x = -inf`) |
+| IEEE division by a floating zero | DEFERRED (separate defect) |
+
+**Correctness tests.** `UtilsTest/Mathematics/Expressions/ExpressionSimplifierNumericRobustnessTests.cs`, 41 cases,
+all through the public entry point and checked by evaluation: non-finite and beyond-decimal `double`/`float` constants
+on both sides of every operator; sums reaching the factoring rule; `Epsilon`; unchanged finite identities (signed zero
+included); exact folding of constant pairs with a non-finite operand, `Pow` special cases included; zero-divisor
+characterization; exact large integral/decimal comparison; non-`IConvertible` constants; `NaN` folding for each
+operator and type, payload, pure trees, lambdas and a derived simplifier; kept operands (counting call, throwing call,
+counting property getter, custom operator, integral division behind a conversion, checked operation, checked
+conversion); no user code run while deciding; `Power` and infinity not propagated. Run against `2ada0e88`, 36 fail
+and the 5 controls pass. The rule inventory (`ExpressionTransformationRuleInventoryTests`) is unchanged.
+
+**Rule-dispatch counts (instrumented scratch builds, never timed).** Signature checks are counted in a scratch copy of
+`ExpressionTransformer.TryTransform`; comparer events with the P8 diagnostic capture.
+
+| Scenario | Signature checks base / P11 | Comparer events base / P11 | Result |
+|---|---:|---:|---|
+| A4 / A8 / A12 / A16 | 188 / 3,590 / 12,758 / 26,006, identical | 46 / 882 / 3,170 / 6,546, identical | identical |
+| B4 / B8 / B12 / B16 | 446 / 9,741 / 34,033 / 70,565, identical | 86 / 2,224 / 8,032 / 16,976, identical | identical |
+| C4 / C8 / C16 | 188 / 3,590 / 26,006, identical | 46 / 882 / 6,546, identical | identical |
+| G4 / G8 / G16 | 91 / 1,651 / 18,603, identical | 14 / 254 / 2,862, identical | identical |
+| H4 / H8 / H16 | 79 / 209 / 613, identical | 17 / 37 / 77, identical | identical |
+| K4 / K16 (sum + 2.5, finite control) | 403 / 30,112, identical | 100 / 7,604, identical | identical |
+| N4 / N16 (sum + `NaN`) | baseline throws; P11 403 / 30,112 (= K) | P11 100 / 7,604 (= K) | `NaN` (1 node) |
+| I16 (sum + `inf`) | baseline throws; P11 30,112 (= K16) | P11 7,604 | not folded |
+| R8 (call-bearing sum + `NaN`) / S8 (same sum + 2.5) | baseline throws; R8 10,029 = S8 10,029 | 1,648 = 1,648 | R8 not folded |
+| D16 / D64 (`NaN` at the deepest leaf) | baseline throws; 172 / 688 | 40 / 160 | `NaN` (1 node) |
+
+With no new rule, ordinary expressions dispatch exactly as on the baseline. A `NaN` operand costs what a finite constant
+costs (N = K, R = S): its rules run before the fold. Propagation through a pure tree is linear (D). The eliminability
+predicate is never a full-tree scan per operation: it runs only beside a `NaN` and stops at the first non-whitelisted
+node. The exponential growth of a call-bearing chain (R16/S16: 203,152 comparer events, identical on the baseline for
+S16) is the pre-existing user-code tail issue listed under P10, not P11.
+
+**Performance (counter-free, paired, alternated order).** Same method as P10: every process starts with a sacrificial
+G5 scenario, then >= 10 warmup operations and 1.5 s per scenario, 21 GC-isolated rounds of >= 50 ms (7 of >= 100 ms for
+n = 16); paired delta = median of same-pair ratios. **Caveat:** the final campaign ran while another CPU-heavy
+application was active (about 37% machine load), so absolute times drift between campaigns (B12 base 6.6 ms in an
+earlier run, 15.1 ms here) and the n = 4 rows are noisy in both directions.
+
+| Scenario | Base ms/op | P11 ms/op | Paired delta | Pairs > +5% | Base bytes/op | P11 bytes/op |
+|---|---:|---:|---:|---:|---:|---:|
+| A4 | 0.0524 | 0.0464 | -12.2% | 2/12 | 49,016 | 49,015 |
+| B4 | 0.0605 | 0.0605 | -0.2% | 1/12 | 92,397 | 89,366 (-3.3%) |
+| C4 | 0.0391 | 0.0491 | +9.1% | 6/12 | 49,764 | 49,765 |
+| G4 | 0.0089 | 0.0093 | +3.7% | 3/12 | 7,320 | 7,320 |
+| H4 | 0.0179 | 0.0187 | +3.0% | 4/12 | 15,484 | 15,484 |
+| K4 | 0.1494 | 0.1548 | +0.8% | 3/12 | 108,429 | 107,370 |
+| A8 | 1.3108 | 1.3499 | +1.1% | 2/12 | 956,081 | 956,078 |
+| B8 | 3.2556 | 3.2117 | +0.0% | 0/12 | 2,356,776 | 2,334,438 (-0.9%) |
+| C8 | 1.3696 | 1.3343 | -0.2% | 1/12 | 957,509 | 957,481 |
+| G8 | 0.1768 | 0.1713 | +0.8% | 0/12 | 139,378 | 139,378 |
+| H8 | 0.0512 | 0.0528 | +3.9% | 5/12 | 54,134 | 54,135 |
+| K8 | 2.1092 | 2.1341 | +0.6% | 1/12 | 1,504,790 | 1,502,852 |
+| A12 | 3.7018 | 3.7927 | +1.3% | 2/6 | 3,629,222 | 3,629,248 |
+| B12 | 15.125 | 15.140 | +1.3% | 2/6 | 8,940,452 | 8,880,888 (-0.7%) |
+| C12 | 6.0119 | 6.3730 | +2.5% | 2/6 | 3,630,904 | 3,631,011 |
+| G12 | 1.1453 | 1.2018 | +4.1% | 2/6 | 791,284 | 791,284 |
+| H12 | 0.1178 | 0.1215 | +4.2% | 2/6 | 116,725 | 116,726 |
+| K12 | 7.5906 | 7.8468 | +4.1% | 1/6 | 4,546,436 | 4,542,801 |
+| A16 | 8.3134 | 8.3713 | +0.0% | 1/4 | 8,127,928 | 8,127,893 |
+| B16 | 34.117 | 34.511 | +1.2% | 0/4 | 20,442,192 | 20,326,912 (-0.6%) |
+| C16 | 13.745 | 13.674 | +1.4% | 1/4 | 8,129,982 | 8,129,849 |
+| G16 | 2.5952 | 2.6030 | +1.4% | 1/4 | 1,743,015 | 1,743,016 |
+| H16 | 0.1894 | 0.1903 | +1.8% | 1/4 | 203,258 | 203,258 |
+| K16 | 16.622 | 16.372 | -1.4% | 0/4 | 9,662,712 | 9,656,231 |
+
+An earlier 8-pair run of the same binaries on the small scenarios measured C4 at +1.3% (1/8 pairs above +5%), A4 +4.0%,
+G4 +2.0%, H4 +1.9%, H8 +1.4%, G12 +0.1%, H12 +2.2%, H16 +1.9%, G16 +2.1%: the C4 row above is not repeatable, consistent
+with the unchanged dispatch counts. The residual cost is the post-rule fold's type tests. Allocations are unchanged or
+lower (the B family allocates less because `NumericValueEquals` replaces the boxing `CompareNumeric` path). P11-only
+scenarios (baseline throws): N4 0.151 ms, N16 16.1 ms (= K), I16 16.7 ms, R8 2.71 ms, D16 0.049 ms, D64 0.194 ms.
+The table above measures the `switch` form of `NumericValueEquals`.
+
+*Idle-machine confirmation of the final dictionary dispatch (requested by the review of `9dffbbfd`).* Same method, no
+concurrent load (< 1% CPU outside the benchmark), final binaries:
+
+| Scenario | Base ms/op | P11 ms/op | Paired delta (12 pairs) | Pairs > +5% | `switch` -> dictionary (8 pairs) | Base bytes/op | P11 bytes/op |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| A4 | 0.0449 | 0.0429 | -4.8% | 2/12 | see below | 49,016 | 49,016 |
+| B4 | 0.0625 | 0.0618 | -0.7% | 0/12 | -0.6% | 92,391 | 89,365 (-3.3%) |
+| C4 | 0.0372 | 0.0376 | -0.2% | 0/12 | -0.1% | 49,765 | 49,765 |
+| G4 | 0.0049 | 0.0050 | +2.6% | 3/12 | +0.4% | 7,320 | 7,320 |
+| H4 | 0.0098 | 0.0098 | +1.5% | 1/12 | -0.3% | 15,484 | 15,484 |
+| H8 | 0.0274 | 0.0277 | +3.0% | 1/12 | +1.8% | 54,133 | 54,133 |
+
+A4 is bimodal from process to process (isolated 0.087-0.090 ms samples on either side, ±15% spread otherwise): the
+8-pair `switch` -> dictionary run read +11.1% while the 12-pair base -> dictionary run read -4.8%. A dedicated
+three-way rotation (base, `switch`, dictionary; 16 rounds, order rotated and reversed) settled it: A4 base -> `switch`
++1.7%, base -> dictionary +3.1%, `switch` -> dictionary +1.3%; C4 +2.8%, +1.0% (0/16 pairs above +5%), -0.4%. The C4
++9.1% of the loaded campaign does not reproduce. Every gate holds for the final code; allocations are unchanged by the
+dictionary (boxed `GetType` and cached static delegates allocate nothing).
+
+**Validation.** Release `Utils.sln` build with 0 errors and the same warning count as before the change (2,144); Unit
+13,928/13,928 (+41), Functional 383/383, Security 241 passed + 3 skipped (re-run on the dictionary dispatch). The
+`NaN`/infinity reproduction matrix is identical between the `switch` and dictionary forms.
+
+**Classification after P11.** Every zero/one/minus-one test of the simplifier rules is now exact per native type, so
+`NaN`, infinities, values beyond the decimal range, subnormal values and large integral values (`ulong.MaxValue`,
+`decimal.MaxValue`) are classified without exception or false identity throughout those rules. `NumberUtils.CompareNumeric`
+keeps its documented decimal-based behavior for other callers (none remain in the repository).
+**Remaining risks and follow-up defects (out of scope, not changed).**
+
+- `float`/`double` division by a zero constant throws `DivideByZeroException` while simplifying (IEEE gives `±inf`/`NaN`).
+- `0 ^ 0` simplifies to `0` (`PowerOfZeroOrOne` runs before `PowerByZeroOrOne`; `Pow(0, 0) = 1`), and `0 ^ c` for a
+  negative constant `c` to `0` (`+inf`): a finite domain-sensitive identity of S3.
+- Decimal factoring can introduce an overflow: `m * decimal.MaxValue + m -> (Max + 1) * m` throws at evaluation for
+  every `m`, including `m = 0` where the source returns `0`.
+- `NumberUtils.TryCompareNumeric`: the integral branches return the *equality* as the success flag and leave
+  `result = 0` (unequal integers report "could not compare"); the `BigInteger` branch's `Convert.ChangeType(int,
+  BigInteger)` throws `InvalidCastException` despite the `Try` contract. No caller in the repository; public API left
+  unchanged.
+- `ExpressionUtils.CheckConstant<T>` unboxes with `(decimal)value`, which throws for any non-`decimal` numeric value;
+  no caller in the repository.
+- Factoring leaves unfolded constant sums (`(NaN + 1) * x` before P11b, H family `(2 + 3 + 4) * x`).
 
 ## Execution-optimizer stages
 

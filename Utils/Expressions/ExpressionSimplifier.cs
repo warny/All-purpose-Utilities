@@ -132,7 +132,7 @@ namespace Utils.Mathematics.Expressions
             _lexicalScopeStack = null;
             try
             {
-                return TransformCore(expression);
+                return FoldNaNOperand(TransformCore(expression));
             }
             finally
             {
@@ -353,7 +353,8 @@ namespace Utils.Mathematics.Expressions
         /// <see cref="ExpressionTransformer.TransformCore(Expression)"/> dereferences a null
         /// <c>context.Expression</c> and throws <see cref="NullReferenceException"/> — historically true for
         /// every runtime type, including a derived subclass, which therefore still observes it unless it
-        /// overrides this method itself.
+        /// overrides this method itself. The transformed operand then goes through <see cref="FoldNaNOperand"/>
+        /// (S5 P11b), for every runtime type.
         /// </remarks>
         protected override Expression PrepareExpression(Expression e)
         {
@@ -362,7 +363,7 @@ namespace Utils.Mathematics.Expressions
                 return null;
             }
 
-            return TransformCore(e);
+            return FoldNaNOperand(TransformCore(e));
         }
 
         /// <summary>
@@ -400,8 +401,10 @@ namespace Utils.Mathematics.Expressions
         /// <param name="body">The (already prepared/transformed) body.</param>
         /// <param name="parameters">The (already prepared) parameters, in declaration order.</param>
         /// <returns>A lambda expression preserving the original node's metadata, for the exact built-in type; the historical reconstruction otherwise.</returns>
+        /// <remarks>The body, transformed without <see cref="PrepareExpression"/>, goes through <see cref="FoldNaNOperand"/> first (S5 P11b), for every runtime type.</remarks>
         internal override LambdaExpression RebuildLambdaExpression(LambdaExpression expression, Expression body, ParameterExpression[] parameters)
         {
+            body = FoldNaNOperand(body);
             if (GetType() != typeof(ExpressionSimplifier))
             {
                 return base.RebuildLambdaExpression(expression, body, parameters);
@@ -537,6 +540,199 @@ namespace Utils.Mathematics.Expressions
 
         #endregion
 
+        #region Numeric constant classification
+
+        /// <summary>
+        /// Determines whether <paramref name="value"/> is a native numeric primitive (one of <see cref="Types.Number"/>)
+        /// numerically equal to the small integer <paramref name="target"/>.
+        /// </summary>
+        /// <param name="value">The boxed constant value.</param>
+        /// <param name="target">The integer to compare with (the rules use <c>0</c>, <c>1</c> and <c>-1</c>).</param>
+        /// <returns><see langword="true"/> when the value equals <paramref name="target"/> exactly.</returns>
+        /// <remarks>
+        /// The single numeric-identity test of this class (S5 P11). Each primitive is compared in its own type, so
+        /// <c>NaN</c> equals nothing, infinities equal no finite value, <c>-0.0</c> equals zero, a decimal compares at
+        /// any scale, and no conversion can overflow or underflow. <see cref="NumberUtils.CompareNumeric"/>, used before
+        /// P11, converted floating-point values to <see cref="decimal"/>: that threw <see cref="OverflowException"/> on
+        /// <c>NaN</c>, infinities and magnitudes beyond the decimal range, and rounded <see cref="double.Epsilon"/> to
+        /// zero. Any other runtime type returns <see langword="false"/>, so no third-party numeric code runs; ordinary
+        /// arithmetic is only defined on <see cref="Types.Number"/>, so a rule never sees such a value anyway.
+        /// The per-type comparisons are dispatched through <see cref="NumericValueComparers"/> (AGENTS.md: no switch
+        /// of more than ten cases).
+        /// </remarks>
+        private static bool NumericValueEquals(object? value, int target)
+            => value is not null
+                && NumericValueComparers.TryGetValue(value.GetType(), out Func<object, int, bool>? comparer)
+                && comparer(value, target);
+
+        /// <summary>
+        /// Exact comparison of a boxed native numeric primitive with a small integer, indexed by the primitive's
+        /// runtime type; used by <see cref="NumericValueEquals"/>.
+        /// </summary>
+        /// <remarks>
+        /// Each entry compares in the primitive's own type, so no conversion can overflow or lose precision. Read-only
+        /// after the type initializer, hence safe for concurrent lookups.
+        /// </remarks>
+        private static readonly Dictionary<Type, Func<object, int, bool>> NumericValueComparers = new()
+        {
+            [typeof(double)] = static (value, target) => (double)value == target,
+            [typeof(float)] = static (value, target) => (float)value == target,
+            [typeof(decimal)] = static (value, target) => (decimal)value == target,
+            [typeof(int)] = static (value, target) => (int)value == target,
+            [typeof(long)] = static (value, target) => (long)value == target,
+            [typeof(uint)] = static (value, target) => (uint)value == target,
+            [typeof(ulong)] = static (value, target) => target >= 0 && (ulong)value == (ulong)target,
+            [typeof(short)] = static (value, target) => (short)value == target,
+            [typeof(ushort)] = static (value, target) => (ushort)value == target,
+            [typeof(sbyte)] = static (value, target) => (sbyte)value == target,
+            [typeof(byte)] = static (value, target) => (byte)value == target,
+        };
+
+        /// <summary>
+        /// Determines whether <paramref name="expression"/> is a <see cref="double"/> or <see cref="float"/> constant
+        /// holding <c>NaN</c> or an infinity.
+        /// </summary>
+        /// <param name="expression">The operand to test.</param>
+        /// <returns><see langword="true"/> for a non-finite floating-point constant.</returns>
+        /// <remarks>
+        /// A zero/one identity declines on such an operand (S5 P11), so the exact constant folding that follows it
+        /// applies instead: <c>inf * 0</c> is <c>NaN</c>, not <c>0</c>, and <c>0 ^ NaN</c> is <c>NaN</c>. Identities on
+        /// a non-constant operand keep the symbolic treatment of the "Symbolic-equivalence contract".
+        /// </remarks>
+        private static bool IsNonFiniteFloatingConstant(Expression expression)
+            => expression is ConstantExpression constant
+                && constant.Value switch
+                {
+                    double doubleValue => !double.IsFinite(doubleValue),
+                    float floatValue => !float.IsFinite(floatValue),
+                    _ => false,
+                };
+
+        #endregion
+
+        #region NaN propagation
+
+        /// <summary>
+        /// Replaces an ordinary <see cref="double"/>/<see cref="float"/> addition, subtraction, multiplication or
+        /// division that has a <c>NaN</c> constant operand by that constant, when the other operand can be dropped
+        /// without changing anything observable (S5 P11b).
+        /// </summary>
+        /// <param name="expression">A fully simplified expression.</param>
+        /// <returns>The <c>NaN</c> operand, or <paramref name="expression"/> unchanged.</returns>
+        /// <remarks>
+        /// <para>
+        /// IEEE-754 makes these four operations return <c>NaN</c> whenever an operand is <c>NaN</c>, whatever the
+        /// other operand is, so the result is numerically inevitable. Dropping the other operand is a separate
+        /// question, answered by <see cref="IsEliminableFloatingOperand"/>: only operands whose evaluation cannot
+        /// throw, run user code or have any other effect qualify. The returned constant is the operand itself, so its
+        /// type is the node's; its payload may differ from the one the hardware would produce, which the
+        /// "Symbolic-equivalence contract" does not promise anyway. <see cref="ExpressionType.Power"/> is excluded:
+        /// <c>Math.Pow(NaN, 0)</c> and <c>Math.Pow(1, NaN)</c> are <c>1</c>.
+        /// </para>
+        /// <para>
+        /// Applied to the result of every node, after its rules, by <see cref="PrepareExpression"/> (each operand) and
+        /// <see cref="TransformWithinBoundary"/> (the root), rather than as a transformation rule: a rule is a dispatch
+        /// candidate of every arithmetic node, and the extra candidates cost up to 16% CPU on small multiplicative and
+        /// factored trees (see the S5 P11 roadmap entry). Here the common path is two type tests. Folding after the
+        /// rules is equivalent: a rewrite of the node keeps the <c>NaN</c> operand, and the folded result reaches the
+        /// parent's own rules as a constant.
+        /// </para>
+        /// </remarks>
+        private static Expression FoldNaNOperand(Expression expression)
+        {
+            if (expression is not BinaryExpression binary) return expression;
+            ConstantExpression nan;
+            Expression other;
+            if (TryGetNaNOperand(binary.Left, out nan)) other = binary.Right;
+            else if (TryGetNaNOperand(binary.Right, out nan)) other = binary.Left;
+            else return expression;
+
+            return binary.NodeType is ExpressionType.Add or ExpressionType.Subtract or ExpressionType.Multiply or ExpressionType.Divide
+                && IsOrdinaryBinaryArithmetic(binary)
+                && IsEliminableFloatingOperand(other)
+                ? nan
+                : expression;
+        }
+
+        /// <summary>
+        /// Recognizes an operand that is, or immediately wraps, a <c>NaN</c> constant: the constant itself, its
+        /// ordinary negation, or <c>c - NaN</c> with a constant <c>c</c>.
+        /// </summary>
+        /// <param name="operand">An operand of the node being folded.</param>
+        /// <param name="nan">Receives the <c>NaN</c> constant.</param>
+        /// <returns><see langword="true"/> when the operand evaluates to that <c>NaN</c> without any effect.</returns>
+        /// <remarks>
+        /// The two wrapped shapes are the negative-term forms <see cref="CanonicalizeAdditiveExpression"/> and
+        /// <see cref="SubstractionWithZero(BinaryExpression, ConstantExpression, Expression)"/> build without passing
+        /// them back through <see cref="PrepareExpression"/> (<c>x - NaN</c> becomes <c>(0 - NaN) + x</c>). The look-ahead
+        /// is one level deep, so the common path stays a few type tests.
+        /// </remarks>
+        private static bool TryGetNaNOperand(Expression operand, out ConstantExpression nan)
+        {
+            // Shape and value tests first; the ordinary-operator table is only consulted once a NaN is found.
+            nan = operand switch
+            {
+                ConstantExpression constant when IsNaNConstant(constant) => constant,
+                UnaryExpression { Operand: ConstantExpression constant } unary when IsNaNConstant(constant) && IsOrdinaryUnaryNegate(unary) => constant,
+                BinaryExpression { NodeType: ExpressionType.Subtract, Left: ConstantExpression, Right: ConstantExpression constant } binary
+                    when IsNaNConstant(constant) && IsOrdinaryBinaryArithmetic(binary) => constant,
+                _ => null,
+            };
+            return nan is not null;
+        }
+
+        /// <summary>Determines whether <paramref name="expression"/> is a <see cref="double"/> or <see cref="float"/> <c>NaN</c> constant.</summary>
+        /// <param name="expression">The operand to test.</param>
+        /// <returns><see langword="true"/> for a <c>NaN</c> constant, whatever its payload.</returns>
+        private static bool IsNaNConstant(Expression expression)
+            => expression is ConstantExpression constant
+                && constant.Value switch
+                {
+                    double doubleValue => double.IsNaN(doubleValue),
+                    float floatValue => float.IsNaN(floatValue),
+                    _ => false,
+                };
+
+        /// <summary>
+        /// Determines whether evaluating <paramref name="expression"/> is free of observable effects and cannot throw,
+        /// so that a rewrite may drop it from the compiled expression (S5 P11b).
+        /// </summary>
+        /// <param name="expression">An operand of an ordinary <see cref="double"/>/<see cref="float"/> operation.</param>
+        /// <returns><see langword="true"/> when the operand may be dropped.</returns>
+        /// <remarks>
+        /// <para>
+        /// A whitelist, checked recursively: a <see cref="double"/>/<see cref="float"/> constant, a
+        /// <see cref="double"/>/<see cref="float"/> parameter or variable read, and an ordinary (non-lifted,
+        /// predefined, unchecked) addition, subtraction, multiplication, division or negation of such operands.
+        /// IEEE-754 arithmetic on these types never throws: division by zero and overflow produce infinities.
+        /// Everything else is rejected, including method calls, member accesses, custom or lifted operators,
+        /// invocations, assignments, checked arithmetic, conversions (a conversion can throw or run a user-defined
+        /// operator), integral or decimal sub-expressions (division by zero and overflow throw there), other node
+        /// kinds, and extension nodes.
+        /// </para>
+        /// <para>
+        /// This is about running the simplified expression, not about simplifying it: it is distinct from
+        /// <see cref="MightInvokeUserCodeWhenSimplified"/>, which only predicts whether simplification reaches user
+        /// code. It only inspects node types and static types, so it runs no user code itself and allocates nothing.
+        /// </para>
+        /// </remarks>
+        private static bool IsEliminableFloatingOperand(Expression expression)
+        {
+            if (expression.Type != typeof(double) && expression.Type != typeof(float)) return false;
+            return expression switch
+            {
+                ConstantExpression or ParameterExpression => true,
+                BinaryExpression binary => binary.NodeType is ExpressionType.Add or ExpressionType.Subtract or ExpressionType.Multiply or ExpressionType.Divide
+                    && IsOrdinaryBinaryArithmetic(binary)
+                    && IsEliminableFloatingOperand(binary.Left)
+                    && IsEliminableFloatingOperand(binary.Right),
+                UnaryExpression unary => IsOrdinaryUnaryNegate(unary) && IsEliminableFloatingOperand(unary.Operand),
+                _ => false,
+            };
+        }
+
+        #endregion
+
         #region Operations with 0 and 1
 
         /// <summary>
@@ -546,7 +742,7 @@ namespace Utils.Mathematics.Expressions
         public Expression AdditionWithZero(BinaryExpression e, Expression left, [ConstantNumeric(0)] ConstantExpression right)
         {
             if (!IsOrdinaryBinaryArithmetic(e)) return null;
-            if (NumberUtils.CompareNumeric(right.Value, 0) == 0) return TransformCore(left);
+            if (NumericValueEquals(right.Value, 0)) return TransformCore(left);
             return null;
         }
 
@@ -557,7 +753,7 @@ namespace Utils.Mathematics.Expressions
         public Expression AdditionWithZero(BinaryExpression e, [ConstantNumeric(0)] ConstantExpression left, Expression right)
         {
             if (!IsOrdinaryBinaryArithmetic(e)) return null;
-            if (NumberUtils.CompareNumeric(left.Value, 0) == 0) return right;
+            if (NumericValueEquals(left.Value, 0)) return right;
             return null;
         }
 
@@ -568,7 +764,7 @@ namespace Utils.Mathematics.Expressions
         public Expression SubstractionWithZero(BinaryExpression e, Expression left, [ConstantNumeric(0)] ConstantExpression right)
         {
             if (!IsOrdinaryBinaryArithmetic(e)) return null;
-            if (NumberUtils.CompareNumeric(right.Value, 0) == 0) return left;
+            if (NumericValueEquals(right.Value, 0)) return left;
             return null;
         }
 
@@ -584,83 +780,100 @@ namespace Utils.Mathematics.Expressions
         public Expression SubstractionWithZero(BinaryExpression e, [ConstantNumeric(0)] ConstantExpression left, Expression right)
         {
             if (!IsOrdinaryBinaryArithmetic(e) || !_ordinaryNegateMethods.ContainsKey(right.Type)) return null;
-            if (NumberUtils.CompareNumeric(left.Value, 0) == 0) return TransformCore(Expression.Negate(right));
+            if (NumericValueEquals(left.Value, 0)) return TransformCore(Expression.Negate(right));
             return null;
         }
 
         /// <summary>
         /// Simplifies multiplication by 0, 1, or -1 (e.g., <c>x * 0</c> to 0, <c>x * 1</c> to <c>x</c>, etc.).
         /// </summary>
+        /// <remarks>Declines when <paramref name="left"/> is a non-finite constant: see <see cref="IsNonFiniteFloatingConstant"/>.</remarks>
         [ExpressionSignature(ExpressionType.Multiply)]
         public Expression MultiplicationWithZeroOrOne(BinaryExpression e, Expression left, [ConstantNumeric(0, 1, -1)] ConstantExpression right)
         {
-            if (!IsOrdinaryBinaryArithmetic(e)) return null;
-            if (NumberUtils.CompareNumeric(right.Value, 0) == 0) return right;  // x * 0 => 0
-            if (NumberUtils.CompareNumeric(right.Value, 1) == 0) return left;   // x * 1 => x
-            if (NumberUtils.CompareNumeric(right.Value, -1) == 0) return Expression.Negate(left); // x * -1 => -x
+            if (!IsOrdinaryBinaryArithmetic(e) || IsNonFiniteFloatingConstant(left)) return null;
+            if (NumericValueEquals(right.Value, 0)) return right;  // x * 0 => 0
+            if (NumericValueEquals(right.Value, 1)) return left;   // x * 1 => x
+            if (NumericValueEquals(right.Value, -1)) return Expression.Negate(left); // x * -1 => -x
             return null;
         }
 
         /// <summary>
         /// Simplifies multiplication by 0, 1, or -1 (e.g., <c>0 * x</c>, <c>1 * x</c>, <c>-1 * x</c>).
         /// </summary>
+        /// <remarks>Declines when <paramref name="right"/> is a non-finite constant: see <see cref="IsNonFiniteFloatingConstant"/>.</remarks>
         [ExpressionSignature(ExpressionType.Multiply)]
         public Expression MultiplicationWithZeroOrOne(BinaryExpression e, [ConstantNumeric(0, 1, -1)] ConstantExpression left, Expression right)
         {
-            if (!IsOrdinaryBinaryArithmetic(e)) return null;
-            if (NumberUtils.CompareNumeric(left.Value, 0) == 0) return left;
-            if (NumberUtils.CompareNumeric(left.Value, 1) == 0) return right;
-            if (NumberUtils.CompareNumeric(left.Value, -1) == 0) return Expression.Negate(right);
+            if (!IsOrdinaryBinaryArithmetic(e) || IsNonFiniteFloatingConstant(right)) return null;
+            if (NumericValueEquals(left.Value, 0)) return left;
+            if (NumericValueEquals(left.Value, 1)) return right;
+            if (NumericValueEquals(left.Value, -1)) return Expression.Negate(right);
             return null;
         }
 
         /// <summary>
         /// Simplifies division by 0, 1, or -1 (throwing if 0).
         /// </summary>
+        /// <remarks>
+        /// Any other divisor, including <c>NaN</c>, an infinity or a value beyond the decimal range, leaves the node to
+        /// the following rules (S5 P11; it threw <see cref="OverflowException"/> before). A <see cref="float"/> or
+        /// <see cref="double"/> zero divisor still throws <see cref="DivideByZeroException"/> although IEEE-754 division
+        /// by zero yields an infinity or <c>NaN</c>: that historical behavior is recorded as a separate defect in the
+        /// S5 P11 roadmap entry, not changed here.
+        /// </remarks>
         [ExpressionSignature(ExpressionType.Divide)]
         public Expression DivideWithZeroOrOne(BinaryExpression e, Expression left, ConstantExpression right)
         {
             if (!IsOrdinaryBinaryArithmetic(e)) return null;
-            if (NumberUtils.CompareNumeric(right.Value, 0) == 0) throw new DivideByZeroException();
-            if (NumberUtils.CompareNumeric(right.Value, 1) == 0) return left;
-            if (NumberUtils.CompareNumeric(right.Value, -1) == 0) return Expression.Negate(left);
+            if (NumericValueEquals(right.Value, 0)) throw new DivideByZeroException();
+            if (NumericValueEquals(right.Value, 1)) return left;
+            if (NumericValueEquals(right.Value, -1)) return Expression.Negate(left);
             return null;
         }
 
         /// <summary>
         /// Simplifies <c>0 / x</c> to <c>0</c>.
         /// </summary>
+        /// <remarks>Declines when <paramref name="right"/> is a non-finite constant: see <see cref="IsNonFiniteFloatingConstant"/>.</remarks>
         [ExpressionSignature(ExpressionType.Divide)]
         public Expression DivideWithZero(BinaryExpression e, [ConstantNumeric(0)] ConstantExpression left, Expression right)
         {
-            if (!IsOrdinaryBinaryArithmetic(e)) return null;
-            if (NumberUtils.CompareNumeric(left.Value, 0) == 0) return left;
+            if (!IsOrdinaryBinaryArithmetic(e) || IsNonFiniteFloatingConstant(right)) return null;
+            if (NumericValueEquals(left.Value, 0)) return left;
             return null;
         }
 
         /// <summary>
         /// Simplifies <c>0^x</c> or <c>1^x</c> to 0 or 1 respectively.
         /// </summary>
+        /// <remarks>Declines when <paramref name="right"/> is a non-finite constant: see <see cref="IsNonFiniteFloatingConstant"/>.</remarks>
         [ExpressionSignature(ExpressionType.Power)]
         public Expression PowerOfZeroOrOne(BinaryExpression e, [ConstantNumeric(0, 1)] ConstantExpression left, Expression right)
         {
-            if (!IsOrdinaryBinaryArithmetic(e)) return null;
-            if (NumberUtils.CompareNumeric(left.Value, 0) == 0) return left; // 0^x => 0
-            if (NumberUtils.CompareNumeric(left.Value, 1) == 0) return left; // 1^x => 1
+            if (!IsOrdinaryBinaryArithmetic(e) || IsNonFiniteFloatingConstant(right)) return null;
+            if (NumericValueEquals(left.Value, 0)) return left; // 0^x => 0
+            if (NumericValueEquals(left.Value, 1)) return left; // 1^x => 1
             return null;
         }
 
         /// <summary>
         /// Simplifies <c>x^0</c> or <c>x^1</c> to <c>1</c> or <c>x</c> respectively.
         /// </summary>
+        /// <remarks>
+        /// Ordinary <see cref="ExpressionType.Power"/> is only defined on <see cref="double"/>. A non-finite exponent
+        /// (<c>NaN</c> or an infinity) is left to <see cref="PowerOfConstants"/> or kept as is (S5 P11; it threw
+        /// <see cref="OverflowException"/> before), and an exponent is compared exactly, so <see cref="double.Epsilon"/>
+        /// is no longer taken for zero (<c>x^Epsilon</c> was rewritten to <c>1</c>).
+        /// </remarks>
         [ExpressionSignature(ExpressionType.Power)]
         public Expression PowerByZeroOrOne(BinaryExpression e, Expression left, ConstantExpression right)
         {
-            if (!IsOrdinaryBinaryArithmetic(e)) return null;
-            if (NumberUtils.CompareNumeric(right.Value, 0) == 0) return Expression.Constant(Convert.ChangeType(1, right.Type));
-            if (NumberUtils.CompareNumeric(right.Value, 1) == 0) return TransformCore(left);
-            if (NumberUtils.CompareNumeric(right.Value, -1) == 0) return TransformCore(Expression.Divide(Expression.Constant(Convert.ChangeType(1, left.Type)), left));
-            if (NumberUtils.CompareNumeric(right.Value, 0) == -1) return Expression.Divide(Expression.Constant(Convert.ChangeType(1, left.Type)), TransformCore(Expression.Power(left, Expression.Constant(-(double)Convert.ChangeType(right.Value, typeof(double))))));
+            if (!IsOrdinaryBinaryArithmetic(e) || right.Value is not double exponent || !double.IsFinite(exponent)) return null;
+            if (exponent == 0) return Expression.Constant(Convert.ChangeType(1, right.Type));
+            if (exponent == 1) return TransformCore(left);
+            if (exponent == -1) return TransformCore(Expression.Divide(Expression.Constant(Convert.ChangeType(1, left.Type)), left));
+            if (exponent < 0) return Expression.Divide(Expression.Constant(Convert.ChangeType(1, left.Type)), TransformCore(Expression.Power(left, Expression.Constant(-exponent))));
             return null;
         }
 
@@ -1128,10 +1341,11 @@ namespace Utils.Mathematics.Expressions
                 rightright = right;
             }
 
-            // Check if the single factor is truly 1
-            if (leftAugmented && leftright is ConstantExpression leftRightConst && NumberUtils.CompareNumeric(leftRightConst.Value, 1) == 0)
+            // Check if the single factor is truly 1 (exactly: a NaN, infinite or out-of-decimal-range constant is
+            // simply not 1, S5 P11 - the decimal comparison used before threw OverflowException on it).
+            if (leftAugmented && leftright is ConstantExpression leftRightConst && NumericValueEquals(leftRightConst.Value, 1))
                 return null;
-            if (rightAugmented && rightright is ConstantExpression rightRightConst && NumberUtils.CompareNumeric(rightRightConst.Value, 1) == 0)
+            if (rightAugmented && rightright is ConstantExpression rightRightConst && NumericValueEquals(rightRightConst.Value, 1))
                 return null;
 
             // Attempt to unify or swap factors for factoring out. A single FactorEqualityProbe is reused
@@ -1777,22 +1991,15 @@ namespace Utils.Mathematics.Expressions
         /// <returns><see langword="true"/> if the term can be dropped from an ordinary additive chain.</returns>
         /// <remarks>
         /// Applies the same zero test as <see cref="AdditionWithZero(BinaryExpression, Expression, ConstantExpression)"/>
-        /// (<see cref="NumberUtils.CompareNumeric"/>), so dropping the term is the identity that rule already applies,
-        /// including its symbolic, not bit-exact, treatment of signed zero and decimal scale. <see cref="double"/> and
-        /// <see cref="float"/> are compared directly instead, because <see cref="NumberUtils.CompareNumeric"/> converts
-        /// to <see cref="decimal"/> and throws for <c>NaN</c>, infinities and magnitudes beyond its range. Only
-        /// constants whose static type is one of <see cref="Types.Number"/> qualify; their values are boxed
-        /// primitives, so no user code runs.
+        /// (<see cref="NumericValueEquals"/>), so dropping the term is the identity that rule already applies,
+        /// including its symbolic, not bit-exact, treatment of signed zero and decimal scale. Only constants whose
+        /// static type is one of <see cref="Types.Number"/> qualify; their values are boxed primitives, so no user
+        /// code runs.
         /// </remarks>
         private static bool IsOrdinaryZeroConstant(Expression term)
             => term is ConstantExpression { Value: not null } constant
                 && Types.Number.Contains(constant.Type)
-                && constant.Value switch
-                {
-                    double doubleValue => doubleValue == 0,
-                    float floatValue => floatValue == 0,
-                    _ => NumberUtils.CompareNumeric(constant.Value, 0) == 0,
-                };
+                && NumericValueEquals(constant.Value, 0);
 
         /// <summary>
         /// Copies one additive group's signed terms, in order, into <paramref name="signedTerms"/>, leaving out the

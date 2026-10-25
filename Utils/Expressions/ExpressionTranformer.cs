@@ -1966,6 +1966,10 @@ public class ConstantNumericAttribute : ExpressionSignatureAttribute
     /// third-party numeric type's conversion could in principle have observable per-call side effects.
     /// This mirrors the historical per-element <c>Convert.ToDouble</c> call inside
     /// <c>Values.Any(v => v == Convert.ToDouble(cc.Value))</c>.
+    /// A numeric value that does not implement <see cref="IConvertible"/> (for example
+    /// <see cref="System.Numerics.BigInteger"/>) cannot equal any of <see cref="Values"/>: <c>Convert.ToDouble</c>
+    /// would only throw <see cref="InvalidCastException"/> for it, so the match fails instead (S5 P11), without
+    /// running any of that type's code.
     /// </remarks>
     public override bool Match(Expression e)
     {
@@ -1975,6 +1979,7 @@ public class ConstantNumericAttribute : ExpressionSignatureAttribute
         // If no specific allowed values, any numeric constant is fine
         IReadOnlyList<double>? values = Values;
         if (values is null) return true;
+        if (cc.Value is not IConvertible) return false;
 
         // Otherwise, ensure the constant's value is among the specified set
         for (int i = 0; i < values.Count; i++)
