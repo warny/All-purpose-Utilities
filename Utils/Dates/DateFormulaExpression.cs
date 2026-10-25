@@ -243,23 +243,27 @@ public sealed class DateFormulaExpression : IFormattable, IEquatable<DateFormula
     {
         culture ??= CultureInfo.CurrentCulture;
 
+        // A read-only snapshot of the culture's selected calendar (DateTimeFormat.Calendar, not the default
+        // CultureInfo.Calendar) and first day of the week: a later change of the culture does not reach the expression.
+        var format = DateTimeFormatInfo.ReadOnly(culture.DateTimeFormat);
+
         var param = Expression.Parameter(typeof(DateTime), "d");
 
         Expression expr = Expression.Call(
             typeof(DateUtils).GetMethod(
                 IsStart ? nameof(DateUtils.StartOf) : nameof(DateUtils.EndOf),
                 BindingFlags.Public | BindingFlags.Static,
-                [typeof(DateTime), typeof(PeriodTypeEnum), typeof(CultureInfo)])!,
+                [typeof(DateTime), typeof(PeriodTypeEnum), typeof(DateTimeFormatInfo)])!,
             param,
             Expression.Constant(BasePeriod),
-            Expression.Constant(culture));
+            Expression.Constant(format));
 
         foreach (var step in Steps)
         {
             switch (step.Kind)
             {
                 case DateFormulaStepKind.AddPeriod:
-                    expr = DateFormula.CreateCalendarCall(culture, expr, step.Unit, step.SignedValue, calendarProvider);
+                    expr = DateFormula.CreateCalendarCall(format.Calendar, expr, step.Unit, step.SignedValue, calendarProvider);
                     break;
 
                 case DateFormulaStepKind.AdjustToWeekDay:
@@ -276,7 +280,7 @@ public sealed class DateFormulaExpression : IFormattable, IEquatable<DateFormula
                         _moveToSameWeekDayMethod,
                         expr,
                         Expression.Constant(step.WeekDay),
-                        Expression.Constant(culture.DateTimeFormat.FirstDayOfWeek));
+                        Expression.Constant(format.FirstDayOfWeek));
                     break;
 
                 case DateFormulaStepKind.AdjustWorkingDay:

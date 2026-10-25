@@ -24,10 +24,10 @@ public static class DateUtils
     /// </summary>
     /// <param name="dateTime">The reference date.</param>
     /// <param name="period">The period type to calculate the start date for.</param>
-    /// <param name="cultureInfo">The culture info to determine the first day of the week.</param>
+    /// <param name="cultureInfo">The culture info providing the first day of the week and the selected calendar (<see cref="DateTimeFormatInfo.Calendar"/>).</param>
     /// <returns>The start date of the specified period.</returns>
     public static DateTime StartOf(this DateTime dateTime, PeriodTypeEnum period, CultureInfo cultureInfo)
-            => StartOfInternal(dateTime, period, cultureInfo.DateTimeFormat.FirstDayOfWeek, cultureInfo.Calendar);
+            => StartOfInternal(dateTime, period, cultureInfo.DateTimeFormat.FirstDayOfWeek, cultureInfo.DateTimeFormat.Calendar);
 
     /// <summary>
     /// Gets the start date of the specified period that contains the given date using the provided DateTimeFormatInfo.
@@ -47,7 +47,7 @@ public static class DateUtils
     /// <param name="firstDayOfWeek">The first day of the week.</param>
     /// <returns>The start date of the specified period.</returns>
     public static DateTime StartOf(this DateTime dateTime, PeriodTypeEnum period, DayOfWeek firstDayOfWeek)
-            => StartOfInternal(dateTime, period, firstDayOfWeek, CultureInfo.CurrentCulture.Calendar);
+            => StartOfInternal(dateTime, period, firstDayOfWeek, CultureInfo.CurrentCulture.DateTimeFormat.Calendar);
 
     /// <summary>
     /// Calculates the start date of a period using the provided calendar.
@@ -111,10 +111,10 @@ public static class DateUtils
     /// </summary>
     /// <param name="dateTime">The reference date.</param>
     /// <param name="period">The period type to calculate the end date for.</param>
-    /// <param name="cultureInfo">The culture info to determine the first day of the week.</param>
+    /// <param name="cultureInfo">The culture info providing the first day of the week and the selected calendar (<see cref="DateTimeFormatInfo.Calendar"/>).</param>
     /// <returns>The end date of the specified period.</returns>
     public static DateTime EndOf(this DateTime dateTime, PeriodTypeEnum period, CultureInfo cultureInfo)
-            => EndOfInternal(dateTime, period, cultureInfo.DateTimeFormat.FirstDayOfWeek, cultureInfo.Calendar);
+            => EndOfInternal(dateTime, period, cultureInfo.DateTimeFormat.FirstDayOfWeek, cultureInfo.DateTimeFormat.Calendar);
 
     /// <summary>
     /// Gets the end date of the specified period that contains the given date using the provided DateTimeFormatInfo.
@@ -134,7 +134,7 @@ public static class DateUtils
     /// <param name="firstDayOfWeek">The first day of the week.</param>
     /// <returns>The end date of the specified period.</returns>
     public static DateTime EndOf(this DateTime dateTime, PeriodTypeEnum period, DayOfWeek firstDayOfWeek)
-            => EndOfInternal(dateTime, period, firstDayOfWeek, CultureInfo.CurrentCulture.Calendar);
+            => EndOfInternal(dateTime, period, firstDayOfWeek, CultureInfo.CurrentCulture.DateTimeFormat.Calendar);
 
     /// <summary>
     /// Calculates the end date of a period using the provided calendar.

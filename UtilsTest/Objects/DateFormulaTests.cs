@@ -93,12 +93,151 @@ public class DateFormulaTests
         Assert.AreEqual(new DateTime(2023, 4, 1), date.Calculate("EM+1T", new CultureInfo("de-DE")));
     }
 
+    /// <summary>
+    /// Clones <paramref name="name"/> with an explicit calendar, so that a test does not depend on the default calendar the
+    /// platform's globalization data gives the culture (ar-SA: Umm al-Qura on Windows, Gregorian on the Linux runner).
+    /// </summary>
+    /// <param name="name">The culture name.</param>
+    /// <param name="calendar">The calendar to select; it must be one of the culture's optional calendars.</param>
+    /// <returns>A writable culture using <paramref name="calendar"/>.</returns>
+    private static CultureInfo WithCalendar(string name, Calendar calendar)
+    {
+        var culture = (CultureInfo)new CultureInfo(name).Clone();
+        culture.DateTimeFormat.Calendar = calendar;
+        return culture;
+    }
+
+    /// <summary>
+    /// "NS+1Y" is the end of the month plus one day. 2023-03-15 is in Sha'ban 1444, which ends on 2023-03-22 in the
+    /// Umm al-Qura calendar (the managed .NET table, not the platform's data).
+    /// </summary>
     [TestMethod]
     public void ArabicFormulaHijri()
     {
-        var culture = new CultureInfo("ar-SA");
+        var culture = WithCalendar("ar-SA", new UmAlQuraCalendar());
         var date = new DateTime(2023, 3, 15);
         Assert.AreEqual(new DateTime(2023, 3, 23), date.Calculate("NS+1Y", culture));
+    }
+
+    /// <summary>The same formula on the Gregorian calendar of the same culture ends March.</summary>
+    [TestMethod]
+    public void ArabicFormulaGregorian()
+    {
+        var culture = WithCalendar("ar-SA", new GregorianCalendar());
+        var date = new DateTime(2023, 3, 15);
+        Assert.AreEqual(new DateTime(2023, 4, 1), date.Calculate("NS+1Y", culture));
+    }
+
+    /// <summary>Two cultures with the same name but different calendars do not share a cached formula.</summary>
+    [TestMethod]
+    public void CachedFormula_DistinguishesTheCalendar()
+    {
+        var date = new DateTime(2023, 3, 15);
+        Assert.AreEqual(new DateTime(2023, 3, 23), date.Calculate("NS+1Y", WithCalendar("ar-SA", new UmAlQuraCalendar())));
+        Assert.AreEqual(new DateTime(2023, 4, 1), date.Calculate("NS+1Y", WithCalendar("ar-SA", new GregorianCalendar())));
+        Assert.AreEqual(new DateTime(2023, 3, 23), date.Calculate("NS+1Y", WithCalendar("ar-SA", new UmAlQuraCalendar())));
+    }
+
+    /// <summary>Gives the start of the month containing <paramref name="date"/> in <paramref name="calendar"/>.</summary>
+    /// <param name="calendar">The calendar.</param>
+    /// <param name="date">The date.</param>
+    /// <returns>The first day of the calendar month.</returns>
+    private static DateTime StartOfMonth(Calendar calendar, DateTime date)
+        => calendar.ToDateTime(calendar.GetYear(date), calendar.GetMonth(date), 1, 0, 0, 0, 0);
+
+    /// <summary>
+    /// Two <see cref="HijriCalendar"/> instances of the same type but a different <see cref="HijriCalendar.HijriAdjustment"/>
+    /// give different dates and must not share a cached formula.
+    /// </summary>
+    [TestMethod]
+    public void CachedFormula_DistinguishesTheHijriAdjustment()
+    {
+        var date = new DateTime(2023, 3, 15);
+        DateTime expected0 = StartOfMonth(new HijriCalendar { HijriAdjustment = 0 }, date);
+        DateTime expected2 = StartOfMonth(new HijriCalendar { HijriAdjustment = 2 }, date);
+        Assert.AreNotEqual(expected0, expected2);
+
+        Assert.AreEqual(expected0, date.Calculate("BS", WithCalendar("ar-SA", new HijriCalendar { HijriAdjustment = 0 })));
+        Assert.AreEqual(expected2, date.Calculate("BS", WithCalendar("ar-SA", new HijriCalendar { HijriAdjustment = 2 })));
+        Assert.AreEqual(expected0, date.Calculate("BS", WithCalendar("ar-SA", new HijriCalendar { HijriAdjustment = 0 })));
+    }
+
+    /// <summary>
+    /// A cached formula is a snapshot of the culture when it was compiled: changing the culture's calendar afterwards
+    /// neither alters the cached entry nor reaches another culture with the original settings.
+    /// </summary>
+    [TestMethod]
+    public void CachedFormula_IsASnapshotOfTheCulture()
+    {
+        var date = new DateTime(2023, 3, 15);
+        DateTime expected0 = StartOfMonth(new HijriCalendar { HijriAdjustment = 0 }, date);
+        DateTime expected1 = StartOfMonth(new HijriCalendar { HijriAdjustment = 1 }, date);
+
+        var hijri = new HijriCalendar { HijriAdjustment = 0 };
+        var mutated = WithCalendar("ar-SA", hijri);
+        Assert.AreEqual(expected0, date.Calculate("BS", mutated));
+
+        hijri.HijriAdjustment = 1;
+        Assert.AreEqual(expected1, date.Calculate("BS", mutated));
+        Assert.AreEqual(expected0, date.Calculate("BS", WithCalendar("ar-SA", new HijriCalendar { HijriAdjustment = 0 })));
+    }
+
+    /// <summary>
+    /// The cache identity of a calendar separates the variants of one type (the <see cref="GregorianCalendar"/> types,
+    /// which a culture such as ar-SA does not all accept, and the Hijri adjustments) and merges equal settings.
+    /// </summary>
+    [TestMethod]
+    public void CalendarIdentity_SeparatesTheVariantsOfOneType()
+    {
+        var localized = DateFormula.CalendarIdentity.Of(new GregorianCalendar(GregorianCalendarTypes.Localized));
+        var arabic = DateFormula.CalendarIdentity.Of(new GregorianCalendar(GregorianCalendarTypes.Arabic));
+        var usEnglish = DateFormula.CalendarIdentity.Of(new GregorianCalendar(GregorianCalendarTypes.USEnglish));
+        Assert.AreNotEqual(localized, arabic);
+        Assert.AreNotEqual(arabic, usEnglish);
+        Assert.AreEqual(localized, DateFormula.CalendarIdentity.Of(new GregorianCalendar(GregorianCalendarTypes.Localized)));
+
+        var hijri0 = DateFormula.CalendarIdentity.Of(new HijriCalendar { HijriAdjustment = 0 });
+        var hijri2 = DateFormula.CalendarIdentity.Of(new HijriCalendar { HijriAdjustment = 2 });
+        Assert.AreNotEqual(hijri0, hijri2);
+        Assert.AreEqual(hijri2, DateFormula.CalendarIdentity.Of(new HijriCalendar { HijriAdjustment = 2 }));
+
+        Assert.AreEqual(DateFormula.CalendarIdentity.Of(new UmAlQuraCalendar()), DateFormula.CalendarIdentity.Of(new UmAlQuraCalendar()));
+        Assert.AreNotEqual(DateFormula.CalendarIdentity.Of(new UmAlQuraCalendar()), hijri0);
+    }
+
+    /// <summary>A compiled delegate keeps the calendar it was compiled with.</summary>
+    [TestMethod]
+    public void CompiledFormula_IsASnapshotOfTheCulture()
+    {
+        var date = new DateTime(2023, 3, 15);
+        var hijri = new HijriCalendar { HijriAdjustment = 0 };
+        var culture = WithCalendar("ar-SA", hijri);
+        Func<DateTime, DateTime> startOfMonth = DateFormula.Compile("BS+1S", culture);
+        DateTime before = startOfMonth(date);
+
+        hijri.HijriAdjustment = 2;
+        Assert.AreEqual(before, startOfMonth(date));
+    }
+
+    /// <summary>The calendar arithmetic of a step (+1S, one month) follows the selected calendar too.</summary>
+    [TestMethod]
+    public void ArabicFormula_AddMonth_FollowsTheSelectedCalendar()
+    {
+        var date = new DateTime(2023, 3, 15);
+        // Start of Sha'ban 1444 (2023-02-21) plus one Umm al-Qura month: 1 Ramadan 1444.
+        Assert.AreEqual(new DateTime(2023, 3, 23), date.Calculate("BS+1S", WithCalendar("ar-SA", new UmAlQuraCalendar())));
+        Assert.AreEqual(new DateTime(2023, 4, 1), date.Calculate("BS+1S", WithCalendar("ar-SA", new GregorianCalendar())));
+    }
+
+    /// <summary><see cref="DateUtils.StartOf(DateTime, PeriodTypeEnum, CultureInfo)"/> reads the culture's selected calendar.</summary>
+    [TestMethod]
+    public void StartAndEndOf_UseTheSelectedCalendar()
+    {
+        var date = new DateTime(2023, 3, 15);
+        Assert.AreEqual(new DateTime(2023, 2, 21), date.StartOf(PeriodTypeEnum.Month, WithCalendar("ar-SA", new UmAlQuraCalendar())));
+        Assert.AreEqual(new DateTime(2023, 3, 1), date.StartOf(PeriodTypeEnum.Month, WithCalendar("ar-SA", new GregorianCalendar())));
+        Assert.AreEqual(new DateTime(2023, 3, 22), date.EndOf(PeriodTypeEnum.Month, WithCalendar("ar-SA", new UmAlQuraCalendar())).Date);
+        Assert.AreEqual(new DateTime(2023, 3, 31), date.EndOf(PeriodTypeEnum.Month, WithCalendar("ar-SA", new GregorianCalendar())).Date);
     }
 
     [TestMethod]
