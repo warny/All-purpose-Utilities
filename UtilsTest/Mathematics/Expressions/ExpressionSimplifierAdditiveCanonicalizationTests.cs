@@ -56,78 +56,144 @@ public class ExpressionSimplifierAdditiveCanonicalizationTests
     /// <returns>The structural rendering.</returns>
     private static string Dump(Expression expression)
     {
-        var parameterIds = new Dictionary<ParameterExpression, int>();
-        var builder = new StringBuilder();
-        Write(expression, builder, parameterIds);
-        return builder.ToString();
+        var context = new DumpContext();
+        Write(expression, context);
+        return context.Builder.ToString();
     }
 
-    /// <summary>Appends the structural rendering of one node to <paramref name="builder"/>.</summary>
-    /// <param name="expression">The node.</param>
-    /// <param name="builder">The destination.</param>
-    /// <param name="parameterIds">Parameter identities assigned so far.</param>
-    private static void Write(Expression expression, StringBuilder builder, Dictionary<ParameterExpression, int> parameterIds)
+    /// <summary>The output and the parameter identities of one <see cref="Dump"/> call.</summary>
+    private sealed class DumpContext
     {
-        switch (expression)
+        /// <summary>The rendering being built.</summary>
+        public StringBuilder Builder { get; } = new();
+
+        /// <summary>Parameter identities assigned so far, by order of first appearance.</summary>
+        public Dictionary<ParameterExpression, int> ParameterIds { get; } = [];
+    }
+
+    /// <summary>
+    /// The structural writer of each supported node family, keyed by its public base type. The runtime types are
+    /// internal subclasses (for example <c>SimpleBinaryExpression</c> or <c>Expression&lt;TDelegate&gt;</c>), so
+    /// <see cref="Write"/> resolves the writer by walking up the runtime type's base types.
+    /// </summary>
+    private static readonly Dictionary<Type, Action<Expression, DumpContext>> Writers = new()
+    {
+        [typeof(BinaryExpression)] = (expression, context) => WriteBinary((BinaryExpression)expression, context),
+        [typeof(UnaryExpression)] = (expression, context) => WriteUnary((UnaryExpression)expression, context),
+        [typeof(ConstantExpression)] = (expression, context) => WriteConstant((ConstantExpression)expression, context),
+        [typeof(ParameterExpression)] = (expression, context) => WriteParameter((ParameterExpression)expression, context),
+        [typeof(LambdaExpression)] = (expression, context) => WriteLambda((LambdaExpression)expression, context),
+        [typeof(MemberExpression)] = (expression, context) => WriteMember((MemberExpression)expression, context),
+        [typeof(MethodCallExpression)] = (expression, context) => WriteCall((MethodCallExpression)expression, context),
+    };
+
+    /// <summary>Appends the structural rendering of one node, or <c>?NodeType</c> for an unsupported node kind.</summary>
+    /// <param name="expression">The node.</param>
+    /// <param name="context">The rendering state.</param>
+    private static void Write(Expression expression, DumpContext context)
+    {
+        for (Type? type = expression.GetType(); type is not null; type = type.BaseType)
         {
-            case BinaryExpression binary:
-                builder.Append('(').Append(binary.NodeType).Append(':').Append(binary.Type.Name);
-                if (binary.Method is not null) builder.Append(":m=").Append(binary.Method.Name);
-                if (binary.IsLifted) builder.Append(":lifted");
-                if (binary.IsLiftedToNull) builder.Append(":liftedToNull");
-                builder.Append(' ');
-                Write(binary.Left, builder, parameterIds);
-                builder.Append(' ');
-                Write(binary.Right, builder, parameterIds);
-                builder.Append(')');
-                break;
-            case UnaryExpression unary:
-                builder.Append('(').Append(unary.NodeType).Append(':').Append(unary.Type.Name);
-                if (unary.Method is not null) builder.Append(":m=").Append(unary.Method.Name);
-                builder.Append(' ');
-                Write(unary.Operand, builder, parameterIds);
-                builder.Append(')');
-                break;
-            case ConstantExpression constant:
-                builder.Append("c:").Append(constant.Type.Name).Append('=').Append(ConstantBits(constant.Value));
-                break;
-            case ParameterExpression parameter:
-                if (!parameterIds.TryGetValue(parameter, out int id))
-                {
-                    id = parameterIds.Count;
-                    parameterIds[parameter] = id;
-                }
-                builder.Append('p').Append(id).Append(':').Append(parameter.Type.Name);
-                break;
-            case LambdaExpression lambda:
-                builder.Append("(lambda");
-                foreach (ParameterExpression parameter in lambda.Parameters)
-                {
-                    builder.Append(' ');
-                    Write(parameter, builder, parameterIds);
-                }
-                builder.Append(' ');
-                Write(lambda.Body, builder, parameterIds);
-                builder.Append(')');
-                break;
-            case MemberExpression member:
-                builder.Append("(member:").Append(member.Member.Name).Append(' ');
-                if (member.Expression is not null) Write(member.Expression, builder, parameterIds);
-                builder.Append(')');
-                break;
-            case MethodCallExpression call:
-                builder.Append("(call:").Append(call.Method.Name);
-                foreach (Expression argument in call.Arguments)
-                {
-                    builder.Append(' ');
-                    Write(argument, builder, parameterIds);
-                }
-                builder.Append(')');
-                break;
-            default:
-                builder.Append('?').Append(expression.NodeType);
-                break;
+            if (Writers.TryGetValue(type, out Action<Expression, DumpContext>? writer))
+            {
+                writer(expression, context);
+                return;
+            }
         }
+
+        context.Builder.Append('?').Append(expression.NodeType);
+    }
+
+    /// <summary>Renders a binary node with its operator method and lifting flags.</summary>
+    /// <param name="binary">The node.</param>
+    /// <param name="context">The rendering state.</param>
+    private static void WriteBinary(BinaryExpression binary, DumpContext context)
+    {
+        StringBuilder builder = context.Builder;
+        builder.Append('(').Append(binary.NodeType).Append(':').Append(binary.Type.Name);
+        if (binary.Method is not null) builder.Append(":m=").Append(binary.Method.Name);
+        if (binary.IsLifted) builder.Append(":lifted");
+        if (binary.IsLiftedToNull) builder.Append(":liftedToNull");
+        builder.Append(' ');
+        Write(binary.Left, context);
+        builder.Append(' ');
+        Write(binary.Right, context);
+        builder.Append(')');
+    }
+
+    /// <summary>Renders a unary node with its operator method.</summary>
+    /// <param name="unary">The node.</param>
+    /// <param name="context">The rendering state.</param>
+    private static void WriteUnary(UnaryExpression unary, DumpContext context)
+    {
+        StringBuilder builder = context.Builder;
+        builder.Append('(').Append(unary.NodeType).Append(':').Append(unary.Type.Name);
+        if (unary.Method is not null) builder.Append(":m=").Append(unary.Method.Name);
+        builder.Append(' ');
+        Write(unary.Operand, context);
+        builder.Append(')');
+    }
+
+    /// <summary>Renders a constant with its static type and exact value bits.</summary>
+    /// <param name="constant">The node.</param>
+    /// <param name="context">The rendering state.</param>
+    private static void WriteConstant(ConstantExpression constant, DumpContext context)
+        => context.Builder.Append("c:").Append(constant.Type.Name).Append('=').Append(ConstantBits(constant.Value));
+
+    /// <summary>Renders a parameter by its identity (order of first appearance) and type, never by its name.</summary>
+    /// <param name="parameter">The node.</param>
+    /// <param name="context">The rendering state.</param>
+    private static void WriteParameter(ParameterExpression parameter, DumpContext context)
+    {
+        if (!context.ParameterIds.TryGetValue(parameter, out int id))
+        {
+            id = context.ParameterIds.Count;
+            context.ParameterIds[parameter] = id;
+        }
+
+        context.Builder.Append('p').Append(id).Append(':').Append(parameter.Type.Name);
+    }
+
+    /// <summary>Renders a lambda: its declared parameters, then its body.</summary>
+    /// <param name="lambda">The node.</param>
+    /// <param name="context">The rendering state.</param>
+    private static void WriteLambda(LambdaExpression lambda, DumpContext context)
+    {
+        context.Builder.Append("(lambda");
+        foreach (ParameterExpression parameter in lambda.Parameters)
+        {
+            context.Builder.Append(' ');
+            Write(parameter, context);
+        }
+
+        context.Builder.Append(' ');
+        Write(lambda.Body, context);
+        context.Builder.Append(')');
+    }
+
+    /// <summary>Renders a member access by member name and target.</summary>
+    /// <param name="member">The node.</param>
+    /// <param name="context">The rendering state.</param>
+    private static void WriteMember(MemberExpression member, DumpContext context)
+    {
+        context.Builder.Append("(member:").Append(member.Member.Name).Append(' ');
+        if (member.Expression is not null) Write(member.Expression, context);
+        context.Builder.Append(')');
+    }
+
+    /// <summary>Renders a method call by method name and arguments.</summary>
+    /// <param name="call">The node.</param>
+    /// <param name="context">The rendering state.</param>
+    private static void WriteCall(MethodCallExpression call, DumpContext context)
+    {
+        context.Builder.Append("(call:").Append(call.Method.Name);
+        foreach (Expression argument in call.Arguments)
+        {
+            context.Builder.Append(' ');
+            Write(argument, context);
+        }
+
+        context.Builder.Append(')');
     }
 
     /// <summary>Renders a constant value exactly: IEEE bits for <see cref="double"/>/<see cref="float"/>, the four words of a <see cref="decimal"/>, invariant text otherwise.</summary>
