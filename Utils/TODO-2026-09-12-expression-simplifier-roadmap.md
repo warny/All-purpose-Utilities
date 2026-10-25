@@ -3499,6 +3499,200 @@ Security 238 passed + 3 skipped (unchanged).
 - **Validation:** Release `Utils.sln` build with 0 errors; Unit 13,850/13,850 (one test moved out), Functional
   383/383, Security 241 passed + 3 skipped.
 
+#### S5 P10 — subtractive-chain canonicalization (zero accumulation FIXED, full idempotence not achievable here)
+
+**Provenance.** Baseline: `master` at `a004f4b5` (post-P9, PR #662). Environment as P9 (Windows 11, i7-12700KF,
+SDK 10.0.402, harness `net8.0` on .NET 8.0.32, workstation non-concurrent GC, Release, `ProjectReference` to each
+commit's `Utils.csproj` from separate worktrees; the harness lives outside the repository and builds the P9 A/B/C/G/H
+shapes exactly). Line numbers below are at `a004f4b5`, `Utils/Expressions/ExpressionSimplifier.cs`.
+
+**Minimal reproduction.** `new ExpressionSimplifier().Simplify(((2*x0 - x1*3) - 4*x2) - x3*5)` returns
+`((0 + (0 + 0)) + ((2 * x0) + ((0 - (3 * x1)) + ((0 - (4 * x2)) + (0 - (5 * x3))))))`: 27 nodes, 6 zero constants.
+Structurally: `Add(Add(c0, Add(c0, c0)), Add(Multiply(c2, x0), Add(Subtract(c0, Multiply(c3, x1)), ...)))`, every
+zero `+0.0` (bits `0`), every node ordinary `double` arithmetic with `Method == null`.
+
+| n | Baseline nodes | Baseline zeros | Zeros in the `0 + (0 + ...)` group |
+|---:|---:|---:|---:|
+| 4 | 27 | 6 | 3 |
+| 8 | 87 | 28 | 21 |
+| 12 | 179 | 66 | 55 |
+| 16 | 303 | 120 | 105 |
+| 24 | 647 | 276 | 253 |
+
+The group holds exactly (n - 1)(n - 2)/2 zeros, plus one `0 - t` minuend per negative term: quadratic output size.
+
+**Root cause (combination of mechanisms 1-5 of the brief).**
+
+1. `BuildAdditiveExpression` (`2155-2157`) rebuilds a negative group as `0 - term` (deliberately, "without relying
+   on unary negation": the unsigned types have none).
+2. The bottom-up transform canonicalizes each level of the left-associated chain. At the next level,
+   `CollectAdditiveTerms` (`1771-1797`) flattens that `0 - term` into a positive `0` term and a negative `term`, so
+   every earlier negative term contributes one zero term.
+3. `CanonicalizeAdditiveExpression` (`1672-1732`) never filters neutral terms; all zero constants are structurally
+   equal, so `GroupBy` (`1725-1729`) puts them in one group, which `BuildAdditiveExpression` rebuilds as
+   `0 + (0 + ...)` and `BuildRightAssociative` (`1828-1845`) keeps as an ordinary operand.
+4. `FinalizeExpression` (`1634-1640`) returns that freshly built tree without running the rules, so
+   `AdditionWithZero` (`546-562`) never sees a zero as a direct operand.
+
+Level k therefore holds the zeros of level k - 1 plus k - 1 new ones. The same mechanism leaves opposite occurrences
+of one term uncancelled inside their group: `(x - y) + y` gave `(0 + ((y - y) + x))`, and `((x - y) - x) + y` gave
+`((0 + 0) + ((y - y) + (x - x)))`.
+
+Two adjacent pre-existing defects were found while reproducing. The first is fixed here because the subtractive
+canonical form depends on it: `SubstractionWithZero(0 - right)` (`579-583`) built `Expression.Negate` for
+`uint`/`ulong`, which throws `InvalidOperationException`. So any unsigned subtraction chain of two or more levels, and
+any re-simplification of `a - b`, threw. The second is left open: `AdditionOfEqualsElements` (`1129`) calls
+`NumberUtils.CompareNumeric` on a `NaN`/infinite operand, which converts to `decimal` and throws `OverflowException`
+(`x + NaN`).
+
+**Invariant.** An ordinary additive canonicalization result:
+
+- contains no ordinary numeric zero constant as a term;
+- contains no group whose occurrences cancel;
+- is the zero constant of its type when everything cancels;
+- keeps a zero only as the minuend of the `0 - term` representation of a negative group;
+- keeps the deterministic right-associated S4 order;
+- adds no user-code invocation and no comparer simplification.
+
+**Full idempotence across public calls is not part of the invariant.** It is incompatible with the performance
+requirements under the current rule set (see alternative B below). It was already absent before P10: repeated public
+passes over a family B result cycle through n - 1 shapes, because `SubstractionWithZero`, `AdditionWithNegate`,
+`SubstractionWithAddition` and `SubstractionWithSubstraction` return non-canonical shapes that only a later pass
+recanonicalizes (B4: period 3, B8: period 7, identical on baseline and candidate). The cycle is bounded. With P10 no
+pass re-accumulates zeros and none exceeds the first pass's size (B8: at most 45 nodes, against 87 on the baseline,
+whose cycle also revisits a 57-node, 13-zero shape).
+
+**Alternatives considered.**
+
+- **A. Remove neutral zero terms and cancel opposite opaque occurrences (SELECTED as A').** A local filter in
+  `CanonicalizeAdditiveExpression`, before grouping and per group; no new traversal, no new comparison.
+- **B. Rebuild negative groups by subtraction, `((p1 + p2) - n1) - n2` (REJECTED).** It is a fixed point of every
+  rule and removes all zeros, so the basic cases and family B were idempotent. But the left-associated shape makes
+  every enclosing comparer probe re-simplify the whole left sub-chain. When that sub-chain can reach user code it is
+  neither P3-cached nor P9-memoized, so the work grows as 3^n. The P9 natural-activation spy (B12 with counting
+  constants) went from 3 to 59,049 user `Equals` calls (3^(n - 2)), and from 60 ms to 1,143 ms. Three existing
+  shape tests also failed: `NegateWithSubstraction`, power-wrapped grouping, and the `cos²+sin²` feature row.
+  For user-code-free chains it halved the comparer events (B16 6,546 instead of 16,976) but was rejected on the
+  user-code regression. Variants of B where all-negative sums become `-(n1 + n2)` do not change this.
+- **C. Targeted re-normalization of generated nodes (REJECTED, not implemented).** Re-entering `TransformCore` on
+  the rebuilt chain would re-run the factoring rules, and with them the comparer recursion P9 just bounded. It would
+  also add a second traversal for a defect that A removes locally.
+
+**Selected correction (A').**
+
+- `IsOrdinaryZeroConstant` drops collected zero terms. It applies the same zero test as `AdditionWithZero` and
+  compares `double`/`float` directly, because `CompareNumeric` would throw on `NaN`, infinities and values beyond the
+  `decimal` range.
+- `CollectUncancelledTerms` cancels min(positive, negative) occurrences inside an opaque group, enumerating the group
+  once. Function-like groups (which cluster `sin(x)` with `cos(x)`) and non-finite `double`/`float` constants are
+  never cancelled.
+- An empty result becomes the zero constant.
+- `SubstractionWithZero(0 - right)` declines a type without an ordinary negation.
+- `BuildAdditiveExpression`, the ordering, the grouping, the P3 cache and every P9 threshold, key and session are
+  unchanged.
+
+Semantically every rewrite is one the existing rules already apply (`x + 0 -> x`, `x - x -> 0`) under the S3 symbolic
+contract: symbolic signed zero and decimal scale, purity assumed. A non-finite literal is excluded because
+`NaN - NaN`/`inf - inf` is not zero even symbolically.
+
+The change applies to subclasses too, since canonicalization is unconditional since S4 round 7. A derived simplifier
+gets the same output as the exact type. The one public rule change (`SubstractionWithZero` returning `null` instead of
+throwing for unsigned types) is an unavoidable correctness fix.
+
+**Structural outputs.**
+
+- Family B is now exactly `(2 * x0) + ((0 - (3 * x1)) + (... + (0 - (c * xn))))`. That is 6n - 3 nodes and n - 1
+  zeros: B4 21/3, B8 45/7, B12 69/11, B16 93/15, B20 117/19, B24 141/23.
+- A, C, G and H at n = 4/8/12/16 (and A20) are byte-identical to the baseline.
+- `(x - y) + y -> x`, `((x - y) - x) + y -> 0`, `(x + y) + z - x - y -> z`.
+- `uint`/`ulong` chains no longer throw and are stable across passes.
+
+**Correctness tests.** `UtilsTest/Mathematics/Expressions/ExpressionSimplifierAdditiveCanonicalizationTests.cs` has 37
+cases. All use the public entry point and structural dumps (node type, static type, `Method`, lifting, exact constant
+bits, parameter identity). They cover:
+
+- basic forms;
+- cancellations;
+- the exact family B shape at n = 4/8/12/16, its evaluation, determinism on rebuilt sources, and bounded repeated
+  passes;
+- `float`/`decimal` zeros;
+- signed zero;
+- non-finite constants;
+- a beyond-`decimal` constant;
+- `int` wrapping;
+- `uint`/`ulong` stability and the `SubstractionWithZero` rule surface;
+- lifted nullable left untouched;
+- nested and root custom operators;
+- function-like groups;
+- lambda alpha-equivalence;
+- same-named free parameters;
+- name-independent order;
+- member terms;
+- a derived simplifier.
+
+Run against `a004f4b5`, 20 of them fail and the 17 controls pass. The non-finite guard test fails when the guard is
+removed (mutation check).
+
+**Performance (counter-free, paired, alternated order).** Each process: >= 10 warmup operations and 1.5 s, then 21
+GC-isolated rounds of >= 50 ms (7 rounds of >= 100 ms for n >= 16). Paired delta = median of same-pair ratios. 14 pairs
+for n = 4/8, 8 for n = 12, 4 for n >= 16.
+
+| Scenario | Base ms/op | P10 ms/op | Paired delta | Pairs > +5% | Base bytes/op | P10 bytes/op |
+|---|---:|---:|---:|---:|---:|---:|
+| A4 | 0.0364 | 0.0361 | -0.6% | 0/14 | 49,469 | 49,013 (-0.9%) |
+| B4 | 0.0799 | 0.0616 | -22.7% | 0/14 | 98,434 | 92,391 (-6.1%) |
+| C4 | 0.0715 | 0.0707 | -1.0% | 0/14 | 50,221 | 49,765 (-0.9%) |
+| G4 | 0.0104 | 0.0103 | -1.2% | 0/14 | 7,320 | 7,320 |
+| H4 | 0.0233 | 0.0215 | -2.2% | 2/14 | 15,484 | 15,484 |
+| A8 | 1.3280 | 1.3229 | -1.1% | 0/14 | 967,787 | 956,090 (-1.2%) |
+| B8 | 3.7768 | 3.1787 | -15.8% | 0/14 | 2,492,487 | 2,356,510 (-5.5%) |
+| C8 | 1.3420 | 1.3199 | -0.9% | 0/14 | 969,187 | 957,517 (-1.2%) |
+| G8 | 0.1929 | 0.1899 | -1.8% | 2/14 | 139,378 | 139,378 |
+| H8 | 0.0495 | 0.0497 | +0.6% | 1/14 | 54,134 | 54,134 |
+| H16 | 0.1518 | 0.1521 | -0.1% | 1/14 | 203,257 | 203,259 |
+| A12 | 2.7911 | 2.7664 | -1.0% | 0/8 | 3,688,384 | 3,629,149 (-1.6%) |
+| B12 | 7.9873 | 6.6811 | -16.5% | 0/8 | 9,556,998 | 8,940,452 (-6.5%) |
+| C12 | 2.7748 | 2.7883 | +0.1% | 0/8 | 3,689,988 | 3,630,748 (-1.6%) |
+| G12 | 0.5709 | 0.5689 | -0.8% | 0/8 | 791,282 | 791,283 |
+| A16 | 6.5271 | 6.3522 | -2.7% | 0/4 | 8,304,750 | 8,127,804 (-2.1%) |
+| B16 | 19.430 | 15.829 | -18.6% | 0/4 | 22,151,280 | 20,441,273 (-7.7%) |
+| C16 | 6.4261 | 6.3947 | -1.1% | 0/4 | 8,306,662 | 8,129,749 (-2.1%) |
+| G16 | 1.2918 | 1.2707 | -1.5% | 0/4 | 1,743,015 | 1,743,014 |
+| B20 | 39.382 | 31.840 | -19.2% | 0/4 | 43,617,117 | 39,867,408 (-8.6%) |
+| B24 | 71.785 | 58.549 | -18.7% | 0/4 | 78,080,104 | 70,984,592 (-9.1%) |
+
+The H4 row is a 14-pair rerun with H4 no longer the first scenario of each process. In the main run H4 was first
+and measured +5.3% (7/14 pairs above +5%); the previous candidate run measured it at -9.7%. That is the P9 harness
+ordering artifact, not a regression: its output and allocations are identical and it performs the same 17
+comparisons.
+
+Instrumented separately (P8 diagnostic capture, never in the timed runs), the comparer-triggered simplification
+events are identical to the baseline for every scenario: A/C 46/882/3,170/6,546, B 86/2,224/8,032/16,976/30,208/48,880
+(n = 4..24), G 14/254/1,382/2,862, H 17/37/77. P9 activations and memo work are therefore unchanged, and B's gain comes
+only from smaller intermediate trees, not from fewer comparisons. User-code invocations are unchanged: the P9 B12
+spy keeps 3/0; with the user-code term sorted last, A8/A10 keep 1/2 and B6-B10 keep 3/0.
+
+The intermediate allocation of the first A' build (+1.0-1.4% on A/C) came from enumerating each group twice and was
+removed before these measurements.
+
+**Validation.** Release `Utils.sln` build with 0 errors and no new warning in the changed files; Unit 13,887/13,887
+(+37), Functional 383/383, Security 241 passed + 3 skipped.
+
+**Remaining limitations.**
+
+- Not idempotent across repeated public calls for chains with negative terms. This is pre-existing, the cycle is
+  bounded and now smaller. A confluent fix needs the four subtraction/negation rules to return canonical shapes,
+  i.e. a rule-set change, not a canonicalization change.
+- One zero per negative group remains, as the minuend of `0 - term`: an intentionally supported representation, not
+  a redundant term.
+- Function-like groups are not cancelled (`x - sin(y) + sin(y)` keeps both calls).
+- Repeated free parameters tie in the S4 order by design, so their relative order can change between public passes
+  (`x - y - z`).
+- Still open, pre-existing and unchanged:
+  - `x + NaN` throws `OverflowException` in `AdditionOfEqualsElements`;
+  - H-family factoring returns unfolded coefficient sums (`(((2 + 3) + 4) + 5) * x`), folded only by a second pass;
+  - CPU stays exponential when an opaque user-code term sorts at the tail of a long chain (B10 ~6-7 s on both).
+
 ## Execution-optimizer stages
 
 These remain separate from the simplifier stages above.
