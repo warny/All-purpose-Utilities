@@ -7,11 +7,13 @@
                 zero="zero"
                 minus="ken *"
                 decimalSeparator="koma"
+                decimalDigitByDigitMaxDigits="0"
                 fractionSeparator="zati"
                 finalGroupConnector="eta"
 
                 maxNumber="999999999999"
         >
+                <!-- NTS-34: no automatic decimal reading (C: school readings name the fraction in hamarren, ehunen, milaren; no Euskaltzaindia rule on the reading; docs/NTS-34-decimal-reading-audit.md). LanguageDefault throws NotSupportedException for a decimal part; DecimalReadingMode.DigitByDigit, requested by the caller, is unchanged. -->
                 <Culture>EU</Culture>
                 <Culture>eu-ES</Culture>
                 <Groups>

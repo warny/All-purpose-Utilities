@@ -40,6 +40,16 @@ public class NumberToStringNts30Tests
     private static DecimalFormatOptions Mode(DecimalReadingMode mode, bool omitZeroDecimals = false)
         => new() { ReadingMode = mode, OmitZeroDecimals = omitZeroDecimals };
 
+    /// <summary>
+    /// Gets the options reading a language digit by digit: <see langword="null"/> (the language default) for a language whose
+    /// default is the digit-by-digit reading, the explicit <see cref="DecimalReadingMode.DigitByDigit"/> for NL, JA and HU, whose
+    /// automatic reading NTS-34 closed (no source established it). The pinned readings are unchanged.
+    /// </summary>
+    /// <param name="language">Language key.</param>
+    /// <returns>The options.</returns>
+    private static DecimalFormatOptions? DigitByDigitReading(string language)
+        => language is "NL" or "JA" or "HU" ? Mode(DecimalReadingMode.DigitByDigit) : null;
+
     // ── LanguageDefault: digit-by-digit languages ───────────────────────────────────────────────
 
     /// <summary>Every decimal zero is read in a digit-by-digit language: leading, trailing, internal, repeated.</summary>
@@ -61,7 +71,7 @@ public class NumberToStringNts30Tests
     [DataRow("ZH", "21.005", "二十一点零零五")]
     [DataRow("ZH", "-21.05", "负 二十一点零五")]
     public void LanguageDefault_DigitByDigit_ZeroDigitsAreRead(string language, string number, string expected)
-        => Assert.AreEqual(expected, Get(language).Convert(D(number)));
+        => Assert.AreEqual(expected, Get(language).Convert(D(number), -1, DigitByDigitReading(language)));
 
     /// <summary>The zero padding of <c>mandatoryDecimalDigits</c> is read, including a whole zero decimal part.</summary>
     /// <param name="language">Language key.</param>
@@ -78,7 +88,7 @@ public class NumberToStringNts30Tests
     [DataRow("ZH", 21.5, 3, "二十一点五零零")]
     [DataRow("ZH", 21.0, 2, "二十一点零零")]
     public void LanguageDefault_DigitByDigit_MandatoryDigitsAreRead(string language, double number, int digits, string expected)
-        => Assert.AreEqual(expected, Get(language).Convert((decimal)number, digits));
+        => Assert.AreEqual(expected, Get(language).Convert((decimal)number, digits, DigitByDigitReading(language)));
 
     /// <summary>Decimal parts without a zero digit are byte-identical to the output before NTS-30A.</summary>
     /// <param name="language">Language key.</param>
@@ -90,7 +100,7 @@ public class NumberToStringNts30Tests
     [DataRow("JA", "21.57", "二十一点五七")]
     [DataRow("ZH", "21.57", "二十一点五七")]
     public void LanguageDefault_DigitByDigit_NonZeroDigitsAreUnchanged(string language, string number, string expected)
-        => Assert.AreEqual(expected, Get(language).Convert(D(number)));
+        => Assert.AreEqual(expected, Get(language).Convert(D(number), -1, DigitByDigitReading(language)));
 
     /// <summary>
     /// A pronounced decimal digit is the standalone cardinal of that digit, not its level-1 table text, which is a
@@ -105,7 +115,7 @@ public class NumberToStringNts30Tests
     [DataRow("DE", "1.12", "eins komma eins zwei")]
     [DataRow("HU", "1.2", "egyegészkettő")]
     public void DigitByDigit_DigitsAreStandaloneCardinals(string language, string number, string expected)
-        => Assert.AreEqual(expected, Get(language).Convert(D(number)));
+        => Assert.AreEqual(expected, Get(language).Convert(D(number), -1, DigitByDigitReading(language)));
 
     /// <summary>
     /// Digit mapping in digit-by-digit mode: a decimal 0 is <see cref="NumberToStringConverter.Zero"/> and 1–9 are
@@ -132,7 +142,7 @@ public class NumberToStringNts30Tests
     public void DigitByDigit_MaximumPrecision_EveryDigitIsRead()
     {
         Assert.AreEqual("nul komma " + string.Join(" ", Enumerable.Repeat("nul", 27)) + " een",
-            Get("NL").Convert(0.0000000000000000000000000001m));
+            Get("NL").Convert(0.0000000000000000000000000001m, -1, Mode(DecimalReadingMode.DigitByDigit)));
         Assert.AreEqual("零点" + string.Concat(Enumerable.Repeat("一零", 14)),
             Get("ZH").Convert(0.1010101010101010101010101010m, 28));
     }
@@ -327,7 +337,7 @@ public class NumberToStringNts30Tests
     [TestMethod]
     public void OmitZeroDecimals_KeepsZerosOfANonZeroDecimalPart()
         => Assert.AreEqual("eenentwintig komma nul vijf",
-            Get("NL").Convert(21.05m, 2, new DecimalFormatOptions { OmitZeroDecimals = true }));
+            Get("NL").Convert(21.05m, 2, new DecimalFormatOptions { OmitZeroDecimals = true, ReadingMode = DecimalReadingMode.DigitByDigit }));
 
     /// <summary>
     /// A caller <see cref="DecimalFormatOptions.DecimalSuffix"/> takes precedence over every reading mode: the digits
@@ -579,11 +589,16 @@ public class NumberToStringNts30Tests
             new NumberToStringConverterOptions(source) { DecimalDigitForms = new System.Collections.Generic.Dictionary<int, string> { [1] = " " } }));
     }
 
-    /// <summary>No built-in language declares a fallback limit: none was justified by the audit.</summary>
+    /// <summary>
+    /// No built-in language declares a numeric fallback limit: none was justified by the audit. NTS-34 closed the
+    /// unsourced automatic readings with the limit 0 (NL, JA, KO, VN among them); the attested ones stay unlimited.
+    /// </summary>
     [TestMethod]
     public void FallbackLimit_NoBuiltInLanguageDeclaresOne()
     {
-        foreach (var language in new[] { "FR", "EN", "NL", "DE", "JA", "ZH", "KO", "VN" })
+        foreach (var language in new[] { "FR", "EN", "DE", "ZH" })
             Assert.IsNull(Get(language).DecimalDigitByDigitMaxDigits, language);
+        foreach (var language in new[] { "NL", "JA", "KO", "VN" })
+            Assert.AreEqual(0, Get(language).DecimalDigitByDigitMaxDigits, language);
     }
 }

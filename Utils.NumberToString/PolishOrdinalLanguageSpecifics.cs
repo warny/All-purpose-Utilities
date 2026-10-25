@@ -10,7 +10,8 @@ namespace Utils.NumberToString;
 /// Since NTS-08 the plugin also builds 1000–1999; since NTS-28 it builds 2000–999 999 after PWN Poradnia
 /// 16446: the thousands stay cardinal with their agreeing noun (<c>dwa tysiące piętnasty</c>) and a round
 /// thousand with a multiplier of 2–99 is one word declined like <c>tysięczny</c>
-/// (<c>dwudziestojedentysięczny</c>). The round thousands from 100 000 and the millions fail closed.
+/// (<c>dwudziestojedentysięczny</c>). The round thousands from 100 000 and the millions fail closed: the cardinals
+/// are unbounded since NTS-35, the million and above are outside the validated ordinal domain.
 /// </summary>
 public sealed class PolishOrdinalLanguageSpecifics : INumberToStringLanguageSpecifics, IOrdinalLanguageSpecifics
 {
@@ -321,7 +322,8 @@ public sealed class PolishOrdinalLanguageSpecifics : INumberToStringLanguageSpec
     public bool TryConvertOrdinal(int number, IReadOnlyDictionary<string, string> activeVariants, out string? result)
     {
         // NTS-28: 2000-999 999, except the round thousands from 100 000 (PWN Poradnia 16446 decomposes them
-        // in an unconfirmed way); the million is outside the cardinal domain.
+        // in an unconfirmed way). The cardinals are unbounded since NTS-35, but the million and above stay outside
+        // the validated ordinal domain: no source for their ordinals was analysed.
         if (number >= 1_000_000 || number >= 100_000 && number % 1000 == 0)
             throw new System.NotSupportedException(
                 $"Polish ordinal {number} is not supported: the validated ordinal domain is 1–999999 except the round thousands from 100000.");

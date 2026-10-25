@@ -1,6 +1,17 @@
 # Utils.NumberToString — Current backlog
 
-Re-audited on 2026-10-23 after NTS-53 (closed: Catalan plural *milions* and 10^9 *mil milions* (IEC Ortografia
+Re-audited on 2026-10-24/25 after the final backlog pass, **which leaves no open NTS item**: NTS-54 (closed: the
+Romanian scale multiplier agrees with its noun, feminine before *mii*, `douăsprezece mii`, `douăzeci și două de mii`,
+`douăzeci și una de mii`, `o sută una mii`, neuter before *milioane*/*miliarde*, `douăzeci și două de milioane`,
+`douăzeci și unu de milioane`; DOOM 3, DOOM 2 §6.4, the Institute of Linguistics of the Romanian Academy (CNA reports
+2010: `o sută şaizeci şi una de mii de lei`, `o sută una zile`); `<ScaleForm forceVariants>` and the new `gen=neutru`
+value), NTS-56 (closed: Danish and Norwegian compound tens in one word, `enogtyve`, `tjueen`; Dansk Sprognævn,
+Bokmålsordboka), NTS-35 (closed: Polish long-scale cardinals without bound, `jeden milion`, `dwa miliony`, `pięć miliardów`,
+`kwadrylion`; SJP PWN, WSO PWN; `<GeneratedScaleForm>` with `PolishPluralLexicalFormSelector`; ordinals kept to
+999 999) and NTS-34 (closed: decimal reading of every language audited; A DE, DA, NO, ES, ZH unchanged, B FR, EN
+unchanged, the C and D languages fail closed under `LanguageDefault` with `decimalDigitByDigitMaxDigits="0"`, the
+caller's `DigitByDigit` unchanged; `docs/NTS-34-decimal-reading-audit.md`); `DONE-2026-10-24.md`. Previously re-audited
+on 2026-10-23 after NTS-53 (closed: Catalan plural *milions* and 10^9 *mil milions* (IEC Ortografia
 §4.4.2.2a, DIEC2 "miliard"), Galician *mil millóns* (RAG "eón"), both through the ES/EU `pairedScalesFrom="2"`, Catalan
 ordinals *milionè*, *mil milionè* (GBU §18.5, GIEC §17.2.5; user decision) and the masculine multiplier of *milió* /
 *millón* under a feminine (GEIEC §12.3.2, NTS-55 closed with it); Romanian scale connector refined by
@@ -110,30 +121,10 @@ classification.
 
 ## Open items
 
-- **NTS-54 — Romanian multiplier agreement with its scale noun.** Opened by NTS-53 (out of its scope, the scale
-  connector). *mie* is feminine and *milioane*, *miliarde* are neuter plurals, so a multiplier ending on two agrees in
-  the feminine (DOOM 3, Studiu introductiv §4.1.5: *două mii*), but only the bare multiplier 2 is fixed (`onValue="2"`
-  replacements): `o sută doi mii`, `douăzeci și doi de mii`, `douăzeci și doi de milioane`, and `doisprezece mii`
-  (pinned by `Romanian.feature`) where *douăsprezece mii* is expected; the form of a compound ending on one before
-  *mii* (*douăzeci și unu* / *una de mii*) is to be sourced. The NTS-53 connector rule is independent of the form.
-- **NTS-35 — Polish cardinals above 999 999.** Excluded from NTS-30C: PL declares `maxNumber="999999"`, so no
-  generated scale is part of its public domain and NTS-30C configured none. Opening the domain needs, together: the
-  Polish long-scale names (*milion*, *miliard*, *bilion*, *biliard* …, not the current generated spelling), their
-  productive inflection after the multiplier (*dwa miliony*, *pięć milionów*, *dwadzieścia dwa miliony*: the
-  `PolishPluralLexicalFormSelector` rule, through `<GeneratedScaleForm>` for the generated families), the multiplier
-  grammar, and a source audit (WSJP PAN, SJP PWN).
-- **NTS-34 — decimal reading audit of the other languages.** Opened by NTS-30A, which audited FR and EN only.
-  Every other language reads its decimals digit by digit with no limit, no named fraction and no mixed-number
-  connector, none of which is linguistically validated: per language, whether named decimal fractions exist
-  (`<Fractions>`, then `MathematicalFraction`), the mixed-number connector (`mixedFractionSeparator`), whether the
-  automatic digit-by-digit reading needs a limit (`decimalDigitByDigitMaxDigits`), and the word for a pronounced
-  decimal 0 (the configured `zero`, e.g. EE `naneke o`). Also: HU writes the decimal digits without a separator
-  (`egyegészkettőöt`); FR beyond 11 digits and EN beyond 5 have no sourced denominator (*billionième*,
-  *millionth*). (The FR numerator ambiguity *vingt cinq millièmes* / *vingt cinq-millièmes* was removed by NTS-49:
-  `vingt-cinq millièmes`.)
+None. There is no remaining open NTS item as of the 2026-10-24/25 audit (`DONE-2026-10-24.md`).
 
 
-NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-28, NTS-29, NTS-30, NTS-30A, NTS-30B, NTS-30C, NTS-30D, NTS-30E, NTS-30F, NTS-30G, NTS-30H, NTS-31, NTS-32, NTS-33, NTS-37, NTS-38, NTS-39, NTS-40, NTS-41, NTS-42, NTS-48, NTS-49, NTS-50, NTS-51 and NTS-52 are closed:
+NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-28, NTS-29, NTS-30, NTS-30A, NTS-30B, NTS-30C, NTS-30D, NTS-30E, NTS-30F, NTS-30G, NTS-30H, NTS-31, NTS-32, NTS-33, NTS-34, NTS-35, NTS-37, NTS-38, NTS-39, NTS-40, NTS-41, NTS-42, NTS-48, NTS-49, NTS-50, NTS-51, NTS-52, NTS-53, NTS-54, NTS-55 and NTS-56 are closed:
 
 - NTS-01 — XSD validation: `DONE-2026-08-21.md`.
 - NTS-02 — initialization isolation: `DONE-2026-08-21.md`.
@@ -377,6 +368,28 @@ NTS-01 through NTS-05, NTS-08, NTS-09, NTS-10 through NTS-28, NTS-29, NTS-30, NT
   `scaleConnector="de"` shorthand (*o sută nouăsprezece mii*, *o sută douăzeci de mii*, GALR); currency *un* / *o*
   through two Standalone `<Currency><Replacement>` (DEX "unu", DOOM 3 §4.1.5), the cardinal *unu* unchanged. No
   multi-group replacement was needed. NTS-54 opened: `DONE-2026-10-23(3).md`.
+- NTS-54 (opened by NTS-53) — **closed**. The Romanian scale multiplier agrees with its noun on its last constituent,
+  whatever the caller's gender: feminine before *mie*/*mii* (DEX '09 s. f.; DOOM 3 *două mii*, *douăzeci și doi, f.
+  douăzeci și două*; DOOM 2 §6.4 *douăsprezece mii de lei*), *douăzeci și una de mii*, *o sută una mii*: a final *unu*
+  agrees even after a hundred (Institute of Linguistics of the Romanian Academy, CNA reports 2010: *o sută şaizeci şi
+  una de mii de lei*, *o sută una zile*; a review's *o sută unu mii* withdrawn, its source not found); neuter before
+  *milion*/*miliard* (DOOM 3 s. n.; *două puncte* num. + s. n. pl.), one masculine and two feminine: *douăzeci și unu de
+  milioane*, *douăzeci și două de milioane*, *douăsprezece miliarde*. Configuration only: `<ScaleForm scale="1..3">`
+  forcing `gen=feminin` / the new `gen=neutru`; the NTS-53 connector, ordinals and clock unchanged:
+  `DONE-2026-10-24.md`.
+- NTS-35 (opened by NTS-30C) — **closed**. Polish cardinals on the long scale without bound: *milion*, *miliard*,
+  *bilion*, *biliard*, *trylion*, *tryliard*, *kwadrylion* … (SJP PWN; WSJP PAN), Conway components in Polish spelling
+  from the attested series (*kwintylion*, *sekstylion*, *nonilion*, *decylion*, *duodecylion*), inflected by
+  `PolishPluralLexicalFormSelector` through one `<GeneratedScaleForm>` per family (WSO PWN *bilion -ny, -nów*): *jeden
+  milion*, *dwa miliony*, *pięć milionów*. The ordinals keep their validated domain (1–999 999): `DONE-2026-10-24.md`.
+- NTS-34 (opened by NTS-30A) — **closed**. Decimal reading audited for every root language
+  (`docs/NTS-34-decimal-reading-audit.md`): A (digit by digit attested, unchanged) DE, DA, NO, ES, ZH; B (named
+  fractions) FR, EN; C (normative reading not representable) and D (no source) fail closed under `LanguageDefault`
+  (`decimalDigitByDigitMaxDigits="0"`), the caller's `DigitByDigit` unchanged. No new primitive: `DONE-2026-10-24.md`.
+- NTS-56 (opened by the review of #660, observed during NTS-34) — **closed**. The Danish and Norwegian compound tens
+  are one word: DA *enogtyve* … *nioghalvfems*, *hundrede og niogtyve* (Dansk Sprognævn, "Talord under 100 skrives i ét
+  ord"), NO *tjueen* … *nittini*, invariable (Bokmålsordboka). Configuration only (`buildString`); the ordinal plugins
+  already fused them; the Norwegian hundreds (*ett*, *og*) unsourced and unchanged: `DONE-2026-10-24.md`.
 
 Full multi-form plural systems (Russian/Slavic count-dependent noun forms,
 Arabic dual/paucal/plural categories) were long deliberately out of scope — the

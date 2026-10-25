@@ -27,6 +27,7 @@
         zero="naneke o"
         minus="minus *"
         decimalSeparator="kpɔ"
+        decimalDigitByDigitMaxDigits="0"
         fractionSeparator="kple"
         multiplierPosition="afterScale"
         groupConnector="kple"
@@ -34,6 +35,7 @@
         intraGroupConnector="kple"
         intraGroupConnectorThreshold="11"
         >
+		<!-- NTS-34: no automatic decimal reading (D: no source for kpɔ nor for naneke o as a pronounced decimal digit; docs/NTS-34-decimal-reading-audit.md). LanguageDefault throws NotSupportedException for a decimal part; DecimalReadingMode.DigitByDigit, requested by the caller, is unchanged. -->
 		<Culture>EE</Culture>
 		<Groups>
 			<Group level="1">

@@ -8,6 +8,7 @@
         zero="нула"
         minus="минус *"
         decimalSeparator="цяло"
+        decimalDigitByDigitMaxDigits="0"
         finalComponentConnector="и"
     >
         <!-- NTS-30D: и before the last component of every numeral phrase (Речник на българския език, ИБЕ-БАН, "и",
@@ -16,6 +17,7 @@
              groups before a last group that is a single component (хиляда и сто, един милион и едно). A multiplier is
              a phrase of its own (двадесет и една хиляди; ФСлФ СУ: един милиард двеста милиона шейсет и пет хиляди
              седемстотин осемдесет и пет). The ordinals keep their plugin, which already wrote и. -->
+        <!-- NTS-34: no automatic decimal reading (C: the textbooks read a declined fraction (три цяло и четиринадесет стотни); цяло agrees with the integer; docs/NTS-34-decimal-reading-audit.md). LanguageDefault throws NotSupportedException for a decimal part; DecimalReadingMode.DigitByDigit, requested by the caller, is unchanged. -->
         <Culture>BG</Culture>
         <Culture>BG-BG</Culture>
         <Groups>

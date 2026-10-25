@@ -8,10 +8,12 @@
                 zero="zero"
                 minus="meno *"
                 decimalSeparator="virgola"
+                decimalDigitByDigitMaxDigits="0"
                 fractionSeparator="su"
                 groupConnector="e"
                 groupConnectorThreshold="1000"
         >
+		<!-- NTS-34: no automatic decimal reading (C: school readings: dodici e settecentoventiquattro millesimi, quarantotto virgola cinquantuno (a number); docs/NTS-34-decimal-reading-audit.md). LanguageDefault throws NotSupportedException for a decimal part; DecimalReadingMode.DigitByDigit, requested by the caller, is unchanged. -->
 		<Culture>IT</Culture>
 		<Groups>
 			<Group level="1">

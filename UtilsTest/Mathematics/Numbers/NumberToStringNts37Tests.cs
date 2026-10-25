@@ -687,7 +687,7 @@ public class NumberToStringNts37Tests
         Assert.AreEqual("nollaa", FI.Convert(0, "sijamuoto=partitiivi"));
         Assert.AreEqual("nollan", FI.Convert(0, "sijamuoto=genetiivi"));
         // Only the whole zero is concerned: no other cardinal contains the word.
-        Assert.AreEqual("nolla pilkku viisi", FI.Convert(0.5m));
+        Assert.AreEqual("nolla pilkku viisi", FI.Convert(0.5m, -1, new DecimalFormatOptions { ReadingMode = DecimalReadingMode.DigitByDigit }));
         Assert.AreEqual("kymmenen", FI.Convert(10, "sijamuoto=genetiivi"));
     }
 
@@ -697,7 +697,7 @@ public class NumberToStringNts37Tests
     {
         Assert.AreEqual("miinus kaksi miljoonaa", FI.Convert(-2_000_000));
         Assert.AreEqual("miinus tuhat biljoonaa", FI.Convert(-P(15)));
-        Assert.AreEqual("kaksi miljoonaa pilkku viisi", FI.Convert(2_000_000.5m));
+        Assert.AreEqual("kaksi miljoonaa pilkku viisi", FI.Convert(2_000_000.5m, -1, new DecimalFormatOptions { ReadingMode = DecimalReadingMode.DigitByDigit }));
         Assert.AreEqual("kaksi miljoonaa pilkku viisi seitsemän",
             FI.Convert(2_000_000.57m, -1, new DecimalFormatOptions { ReadingMode = DecimalReadingMode.DigitByDigit }));
         Assert.AreEqual("yksi yli miljoona", FI.ConvertFraction(1, 1_000_000));

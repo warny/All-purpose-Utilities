@@ -59,6 +59,75 @@ describes any capability.
 | EE | EE | SCALE-SHORT (scale tables only, NTS-23) | Yes (NTS-20): cardinal + `-lia` on the last element, `gbãtɔ` for 1 | Declarative + `ZeroOrdinalUnsupportedLanguageSpecifics` | **Deferred** | — | none | **Consulted** (NTS-20): Dzablu-Kumah, *Basic Ewe for Foreign Students*; Biblica Open Ewe Contemporary Scriptures; *Ewe Basic Course* 1968; Peace Corps Togo 2010; Wiktionary | Cardinals unbounded (NTS-23): static `akpe`, then the Conway-Wechsler short scale `miliɔn`, `biliɔn`, `triliɔn` (sourced anchors), `quadriliɔn` … (project extrapolation), each before its standalone multiplier (`multiplierPosition="afterScale"`); zero ordinal unsupported |
 | WO | WO | none | Yes (`-éel`, NTS-16, NTS-19) | Declarative + `WolofOrdinalLanguageSpecifics` | **Deferred** | — | none | No consistent source found | Cardinals unbounded (NTS-21): static `junni`, then the long-scale Conway-Wechsler names `milyoŋ`, `milyaar` (attested anchors), `bilyoŋ`, `bilyaar` … (project extrapolation in Wolof spelling); ordinals 1–999 999 only, no ordinal of zero nor of the round thousands |
 
+## NTS-54, NTS-35, NTS-34 and NTS-56 — the last backlog items (2026-10-24, NTS-56 2026-10-25)
+
+Pages fetched with curl or the fetch tool and read verbatim unless marked "excerpt". Outputs and dump: `DONE-2026-10-24.md`.
+
+### NTS-54 — Romanian scale multiplier agreement
+
+| # | Source | Quoted text | Used for |
+|---|---|---|---|
+| 1 | DOOM 3, *Studiu introductiv* §4.1.5 (<https://doom.lingv.ro/studiu_introductiv_complet>) | "cardinale: seriile douăzeci și unu...; o sută, două sute...; o mie, două mii, douăzeci de mii...; un milion...; o sută unu...; o mie unu..." | *o mie*, *două mii*, *un milion* |
+| 2 | DOOM 3 (dexonline), "doi" | "num. m., f. două; 2/II (… dar numai: ora două)"; "+două puncte num. + s. n. pl." | the feminine of two; a neuter plural counted with *două* |
+| 3 | DOOM 3 (dexonline), "douăzeci și doi" | "num. m., f. douăzeci și două" | the feminine of a compound on its last constituent |
+| 4 | DOOM 3 (dexonline), "doisprezece" | "num. m., f. douăsprezece (…); anul două mii doisprezece; … ora douăsprezece, douăsprezece zile" | *douăsprezece* before a feminine noun; *două mii* |
+| 5 | DOOM 2 (2005), *Normele* §6.4 (reproduced at <http://dictionarul-ortografic.blogspot.com/2010/10/64-numeralul.html>, excerpt) | rule 2: the cardinal 12 takes the feminine before a feminine noun: "douăsprezece mii de lei" | *douăsprezece mii* |
+| 6 | DEX '09, "mie" | "num. card., s. f.", pl. *mii* | *mie* is feminine |
+| 7 | DOOM 3 (dexonline), "milion" | "s. n. (primul ~ de dolari), pl. milioane"; "(un ~) num.; 1.000.000 (dar: 1,1 milioane)" | *milion* is neuter |
+| 8 | GALR 2005, vol. I, pp. 296–297 (NTS-52 #9) | "două milioane trei sute opt lei" | *două* before *milioane* |
+| 9 | Academia Română, Institutul de Lingvistică „Iorgu Iordan – Al. Rosetti”, *Rezultatele monitorizării posturilor de radio şi de televiziune în luna iunie 2010* (CNA, <https://www.cna.ro/IMG/pdf/Raport_iunie_2010.pdf>; read through <https://web.archive.org/web/20240713071542/https://www.cna.ro/IMG/pdf/Raport_iunie_2010.pdf>, cna.ro unreachable) | "„o sută şaizeci şi unu de mii de lei” (Realitatea TV, 24.VI) – corect: o sută şaizeci şi una de mii de lei"; "„peste doisprezece mii de metri” … – corect: douăspreze[ce] mii"; "„douăzeci şi unu de zile” … – corect: douăzeci şi una de zile" | a final *unu* agrees with *mii* after a hundred |
+| 10 | Same institute, *… în perioada 10 septembrie − 10 octombrie 2010* (CNA, <https://cna.ro/IMG/pdf/Raport_sept-oct_21122010.pdf>; read through <https://web.archive.org/web/20240915230136/https://cna.ro/IMG/pdf/Raport_sept-oct_21122010.pdf>) | "tendinţă de invariabilizare a numeralului compus, de pierdere a acordului în gen, în limba vorbită: … „doisprezece mii de euro” … – corect: douăsprezece mii; ● „şase sute treizeci şi unu de mii de oameni” … – corect: şase sute treizeci şi una de mii de oameni; … ● „mai sunt de petrecut exact o sută unu zile” (OTV, 21.IX) – corect: mai sunt de petrecut exact o sută una zile" | *o sută una* before a feminine: *o sută una mii* |
+| 11 | Same institute, *… în perioada 15 octombrie - 25 noiembrie 2007* (CNA, <http://www.cna.ro/IMG/pdf/raport-sinteza_nov2007-2.pdf>; read through <https://web.archive.org/web/20160401040124/http://www.cna.ro/IMG/pdf/raport-sinteza_nov2007-2.pdf>) | "Sunt dese dezacordurile între un numeral cu forme diferite pentru masculin şi feminin şi substantivul pe care acesta îl determină: „douăzeci şi unu de facultăţi” …; „avem o mie şi una de lucruri de făcut”" | the feminine *una* with the neuter *lucruri* is listed as a disagreement: a neuter plural keeps *unu* (`gen=neutru`) |
+| 12 | Corpus sample, MediaWiki search API, ro.wikisource.org + ro.wikipedia.org, 2026-10-24 | *și una de mii* 9 + 0 against *și unu de mii* 1 + 1; *sute una mii* 2 + 0 against 0 | corroboration only (superseded as the justification by #9 and #10) |
+| 13 | Press columns (timpul.md, "douăzeci şi una de puncte"; emaramures.ro; antena3.ro), excerpts | "substantivul mii din componenţa numeralului compus este de genul feminin (o mie, două mii)"; *douăzeci și una de ori* (feminine); *douăzeci și unu de puncte*, *de grade*, *de scaune* (neuter) | corroboration only |
+
+Rule configured: before *mii* the whole multiplier is feminine on its last constituent (*două mii*, *douăsprezece mii*,
+*douăzeci și două de mii*, *douăzeci și una de mii*, *o sută una mii*); before *milioane* / *miliarde* it is neuter,
+masculine one and feminine two (*douăzeci și unu de milioane*, *douăzeci și două de milioane*, *douăsprezece
+miliarde*). The NTS-53 connector (*de* from 20 except after 1–19) is decided on the number and is unchanged.
+DOOM 3 §4.1.5 (#1) is a rule on writing compounds in separate words and names each series by its citation form
+(*douăzeci și unu...*, *o sută unu...*); it is cited for *o mie*, *două mii*, *douăzeci de mii*, not for the form of
+*unu* before a feminine noun, which #9 and #10 settle.
+
+### NTS-56 — Danish and Norwegian compound tens
+
+| # | Source | Quoted text | Used for |
+|---|---|---|---|
+| 1 | Dansk Sprognævn, "Et eller flere ord" (<https://dsn.dk/wp-content/uploads/2021/01/Et-eller-flere-ord.pdf>) | "Talord under 100 – skrives i ét ord: halvtreds, treoghalvtreds, treoghalvtredsindstyvende, nitisyv, halvanden, femogtyve. Talord over 100 – skrives i flere ord: to hundred(e), fire hundred(e) (og) niogtyve." | DA *enogtyve* … *nioghalvfems*, *hundrede og niogtyve* |
+| 2 | Den Danske Ordbog, "enogtyve" (<https://ordnet.dk/ddo/ordbog?query=enogtyve>, entry not fetched: dynamic page) | headword *enogtyve* | corroboration |
+| 3 | Bokmålsordboka (Språkrådet, University of Bergen), "tjueen" (article 61228) and "tjueto" (article 113459), JSON at <https://ord.uib.no/bm/article/61228.json> | "tjueen", determinativ, kvantor, "grunntallet 21", one form; "tjueto", "grunntallet 22"; *tjueett* (article 61229) is only the card game; no *tjueei* | NO *tjueen* … *nittini*, invariable under the gender variants |
+
+The Norwegian hundreds (`ett hundre tjueen` in the cardinal, `hundre og …` in the ordinal plugin) are not changed: no
+consulted source settles *ett* and *og* after the hundred (Bokmålsordboka "hundre", articles 24553 and 24554, gives
+no compound example).
+
+### NTS-35 — Polish long-scale cardinals
+
+| # | Source | Quoted text | Used for |
+|---|---|---|---|
+| 1 | SJP PWN, "milion", "miliard" | "tysiąc tysięcy", "tysiąc milionów" | 10^6, 10^9 |
+| 2 | SJP PWN, "bilion" | "w Polsce i w niektórych krajach: milion milionów, w innych – tysiąc milionów (miliard)" | long scale, 10^12 |
+| 3 | SJP PWN, "biliard", "trylion", "tryliard" | "tysiąc bilionów"; "milion bilionów, liczba zapisywana jako jedynka z osiemnastoma zerami"; "tysiąc trylionów, liczba odpowiadająca jedynce z dwudziestoma jeden zerami" | 10^15, 10^18, 10^21 and the -liard family |
+| 4 | SJP PWN, "kwadrylion", "kwintylion", "sekstylion", "septylion", "oktylion", "nonilion", "decylion", "undecylion", "duodecylion" | "w Polsce, Anglii i Niemczech: bilion bilionów" (10^24); "liczba równa 10^30"; 10^36; 10^42; 10^48; "jedynką z 54 zerami"; 10^60; 10^66; 10^72 | the attested Conway series and its Polish spelling |
+| 5 | Wielki słownik ortograficzny PWN | "bilion -na, -nie; -ny, -nów", "trylion -na, -nie; -ny, -nów", "kwadrylion -na, -nie; -ny, -nów", "sekstylion -na, -nie; -ny, -nów", "biliard -rda, -rdzie; -rdy, -rdów", "miliard -rda, -rdzie; -rdów", "nonilion (mat.) -na, -nie; -nów a. nonylion" | the inflection (nominative plural -y, genitive plural -ów), *nonilion* kept as the first form |
+| 6 | WSJP PAN, "miliard", "bilion", "biliard", "trylion" (sense 1. "liczba") | entries present (dynamic content not read) | existence of the base names |
+| 7 | Unicode CLDR plural rules, pl (NTS-27) | one: 1; few: 2–4 except 12–14; many: other | `PolishPluralLexicalFormSelector`, unchanged |
+
+Spelling of the Conway components (AGENTS.md, Conway scale names): attested *try-*, *kwadry-*, *kwinty-*, *seksty-*,
+*septy-*, *okty-*, *noni-*, *decy-*, *undecy-*, *duodecy-* establish i → y after t, r and c (also *centymetr*), qu → kw,
+x → ks, c [k] → k; v → w (*wiza*, *nowela*) and the simplified double consonant (*atrybut* < *attributum*) are the
+ordinary spelling of domesticated Latin loans. Higher names are the productive extension (*tredecylion*,
+*kwatuordecylion*, *wigintylion*, *trygintylion*, *centylion*); Polish Wikipedia's table (*centylion*, *kwadryliard*,
+*decyliard*) was consulted as a lead only. *jeden* is kept before the counted noun (*jeden milion*); its elision is
+the *tysiąc* rule only. Ordinals keep their validated domain (1–999 999).
+
+### NTS-34 — decimal reading of every language
+
+Matrix, categories, quoted sources and decisions: `docs/NTS-34-decimal-reading-audit.md`. In short: A (unchanged,
+digit by digit attested) DE, DA, NO, ES, ZH; B (named fractions, NTS-30A) FR, EN; C (normative reading known, not
+representable) and D (no source) fail closed under `LanguageDefault` with `decimalDigitByDigitMaxDigits="0"`; the
+caller's `DigitByDigit` is unchanged everywhere.
+
 ## NTS-53 — Catalan, Galician and Romanian numeral defects observed by the NTS-52 dump (2026-10-23)
 
 Sources read during the pass (IEC pages fetched through their public APIs, `api-oiec.iec.cat` and `dlc.iec.cat`, and
@@ -1052,7 +1121,10 @@ languages (checked over all 74 keys):
 | HU | *kettő* | *két* (attributive) | configuration comment "standalone 2 = kettő" | existing `<Exceptions>` (`2 → kettő`), through the cardinal fragment |
 | DE | *eins* | *ein* (*einundzwanzig*) | PH Niederösterreich, G. Egger, *Dezimalzahlen* (2022): "Wie liest man Dezimalzahlen? … 5,01 „fünf Komma null eins“" | `<DecimalDigits><DecimalDigit digit="1" string="eins" />`: the fragment is *ein*, the standalone *eins* was only produced by the German finalizer, which must run once on the whole phrase |
 
-No source was consulted for the zero word of the other languages: each reads its configured `zero` (NTS-34).
+No source was consulted for the zero word of the other languages: each reads its configured `zero` (NTS-34). NTS-34
+(2026-10-24) audited them: the zero of the A languages is attested (DE *null*, DA *nul*, NO *null*, ES *cero*, ZH
+零); every other language reads its digits only on the caller's explicit `DigitByDigit`
+(`docs/NTS-34-decimal-reading-audit.md`).
 
 ## NTS-31 — Dutch long-scale cardinals (2026-10-11)
 
@@ -1943,6 +2015,11 @@ sources in `DONE-2026-10-22.md`, section NTS-49.
 - NTS-53: IEC *Revista de Tecnologia* 10 (2022): <https://revistes.iec.cat/index.php/RTEC/article/download/150079/147841/178487>
 - NTS-53: RAG, Dicionario, *eón*, *billón*: <https://academia.gal/dicionario/-/termo/eón>, <https://academia.gal/dicionario/-/termo/billón>
 - NTS-53: DEX, *unu*: <https://dexonline.ro/definitie/unu>; DOOM 3, Studiu introductiv: <https://doom.lingv.ro/studiu_introductiv_complet>
+- NTS-54: dexonline (DOOM 3, DOOM 2, DEX '09), *doi*, *doisprezece*, *douăzeci*, *mie*, *milion*: <https://dexonline.ro/definitie/doi>, <https://dexonline.ro/definitie/doisprezece>, <https://dexonline.ro/definitie/douăzeci>, <https://dexonline.ro/definitie/mie>, <https://dexonline.ro/definitie/milion>; DOOM 2 §6.4 (reproduction): <http://dictionarul-ortografic.blogspot.com/2010/10/64-numeralul.html>; MediaWiki search API: <https://ro.wikisource.org/w/api.php>, <https://ro.wikipedia.org/w/api.php>
+- NTS-54 (Academy): Institutul de Lingvistică „Iorgu Iordan – Al. Rosetti”, CNA monitoring reports: <https://web.archive.org/web/20240713071542/https://www.cna.ro/IMG/pdf/Raport_iunie_2010.pdf>, <https://web.archive.org/web/20240915230136/https://cna.ro/IMG/pdf/Raport_sept-oct_21122010.pdf>, <https://web.archive.org/web/20160401040124/http://www.cna.ro/IMG/pdf/raport-sinteza_nov2007-2.pdf>
+- NTS-56: Dansk Sprognævn, "Et eller flere ord": <https://dsn.dk/wp-content/uploads/2021/01/Et-eller-flere-ord.pdf>; Bokmålsordboka: <https://ord.uib.no/bm/article/61228.json>, <https://ord.uib.no/bm/article/113459.json>, <https://ordbokene.no/nob/bm/tjueen>
+- NTS-35: SJP PWN, entries *milion* … *duodecylion*: <https://sjp.pwn.pl/sjp/bilion.html> (and siblings); Wielki słownik ortograficzny PWN: <https://sjp.pwn.pl/so/bilion.html> (and siblings); WSJP PAN: <https://wsjp.pl/haslo/podglad/89689/bilion>
+- NTS-34: Lex, *decimal*: <https://lex.dk/decimal>; Matematikksenteret, *Desimaltall*: <https://www.matematikksenteret.no/sites/default/files/attachments/page/Desimaltall1.pdf>; DPD, *números*: <https://www.rae.es/dpd/números>; GB/T 15835-2011: <https://journal.ecjtu.edu.cn/uploadfile/hdjtdx/20241115/GBT%2015835%E2%80%942011%20%E5%87%BA%E7%89%88%E7%89%A9%E4%B8%8A%E6%95%B0%E5%AD%97%E7%94%A8%E6%B3%95.pdf>; AkH 12: <https://helyesiras.mta.hu/helyesiras/default/akh12>; IJP, *Čtení desetinných čísel*: <https://prirucka.ujc.cas.cz/?id=791>; ZPE: <https://zpe.gov.pl/watek/LPoJeifmNk/5/a/2-zapisywanie-i-odczytywanie-ulamkow-dziesietnych/DuHIaZEM>; Isof Frågelådan: <https://frageladan.isof.se/faqs/21402>; NIKL 온라인가나다: <https://www.korean.go.kr/front/onlineQna/onlineQnaView.do?mn_id=90&qna_seq=328287>; Kielitoimiston ohjepankki: <https://kielitoimistonohjepankki.fi/ohje/luvut-ja-numerot-desimaaliluvut/>; ebooks.edu.gr: <https://ebooks.edu.gr/ebooks/v/html/8547/2186/Mathimatika_ST-Dimotikou_html-empl/index1_2.html>; TASR/JÚĽŠ SAV: <https://www.teraz.sk/slovensko/slovencina-ako-sa-spravne-citaju-d/926094-clanok.html>; the other links are in `docs/NTS-34-decimal-reading-audit.md`
 - AVL glossary, entry `dos`: <https://www.avl.gva.es/glossari/dos/>
 - KBBI: <https://kbbi.kemdikbud.go.id/>
 - Dewan Bahasa dan Pustaka PRPM: <https://prpm.dbp.gov.my/>

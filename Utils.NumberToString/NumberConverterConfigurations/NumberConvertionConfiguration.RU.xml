@@ -8,8 +8,10 @@
         zero="ноль"
         minus="минус *"
         decimalSeparator="запятая"
+        decimalDigitByDigitMaxDigits="0"
         fractionSeparator="на"
     >
+        <!-- NTS-34: no automatic decimal reading (C: textbooks: два целых три десятых, declined fraction nouns; docs/NTS-34-decimal-reading-audit.md). LanguageDefault throws NotSupportedException for a decimal part; DecimalReadingMode.DigitByDigit, requested by the caller, is unchanged. -->
         <Culture>RU</Culture>
         <Groups>
             <Group level="1">

@@ -247,9 +247,9 @@ public class NumberToStringNts43Tests
     [TestMethod]
     public void Decimals_AreInflectedThenAdjusted()
     {
-        Assert.AreEqual("ДВІ КОМА П'ЯТЬ", Upper("UK").Convert(2.5m, "gender=жіночий"));
-        Assert.AreEqual("DVĚ CELÁ PĚT", Upper("CS").Convert(2.5m, "gender=ženský"));
-        Assert.AreEqual("DVE CELÁ PÄŤ", Upper("SK").Convert(2.5m, "gender=ženský"));
+        Assert.AreEqual("ДВІ КОМА П'ЯТЬ", Upper("UK").Convert(2.5m, -1, new DecimalFormatOptions { ReadingMode = DecimalReadingMode.DigitByDigit }, "gender=жіночий"));
+        Assert.AreEqual("DVĚ CELÁ PĚT", Upper("CS").Convert(2.5m, -1, new DecimalFormatOptions { ReadingMode = DecimalReadingMode.DigitByDigit }, "gender=ženský"));
+        Assert.AreEqual("DVE CELÁ PÄŤ", Upper("SK").Convert(2.5m, -1, new DecimalFormatOptions { ReadingMode = DecimalReadingMode.DigitByDigit }, "gender=ženský"));
         Assert.AreEqual("VEINTIÚN COMA CERO CINCO", Upper("ES").Convert(21.05m, "form=attributive"));
         var digits = new DecimalFormatOptions { ReadingMode = DecimalReadingMode.DigitByDigit };
         Assert.AreEqual("VEINTIÚN COMA CERO CINCO", Upper("ES").Convert(21.05m, -1, digits, "form=attributive"));

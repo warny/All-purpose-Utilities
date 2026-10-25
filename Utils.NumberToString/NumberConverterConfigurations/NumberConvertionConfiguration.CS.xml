@@ -8,7 +8,9 @@
         zero="nula"
         minus="minus *"
         decimalSeparator="celá"
+        decimalDigitByDigitMaxDigits="0"
     >
+        <!-- NTS-34: no automatic decimal reading (C: IJP, Čtení desetinných čísel: jedna celá dvě (desetiny), pět celých jedna (desetina), declined forms; docs/NTS-34-decimal-reading-audit.md). LanguageDefault throws NotSupportedException for a decimal part; DecimalReadingMode.DigitByDigit, requested by the caller, is unchanged. -->
         <Culture>CS</Culture>
         <Culture>CS-CZ</Culture>
         <Groups>

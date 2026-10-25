@@ -7,9 +7,11 @@
         zero="صفر"
         minus="سالب *"
         decimalSeparator="فاصل"
+        decimalDigitByDigitMaxDigits="0"
         fractionSeparator="على"
         maxNumber="999999"
     >
+        <!-- NTS-34: no automatic decimal reading (C: school readings name the fraction (أربعة فاصلة ستة وثلاثون من مئة), not the digits; docs/NTS-34-decimal-reading-audit.md). LanguageDefault throws NotSupportedException for a decimal part; DecimalReadingMode.DigitByDigit, requested by the caller, is unchanged. -->
         <Culture>AR</Culture>
         <Groups>
             <Group level="1">

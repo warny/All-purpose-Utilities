@@ -7,9 +7,11 @@
         zero="אפס"
         minus="מינוס *"
         decimalSeparator="נקודה"
+        decimalDigitByDigitMaxDigits="0"
         fractionSeparator="על"
         maxNumber="999999"
     >
+        <!-- NTS-34: no automatic decimal reading (C: the Academy reads the decimal part as a number (נקודה עשרים ואחת), not digit by digit; docs/NTS-34-decimal-reading-audit.md). LanguageDefault throws NotSupportedException for a decimal part; DecimalReadingMode.DigitByDigit, requested by the caller, is unchanged. -->
         <Culture>HE</Culture>
         <Groups>
             <Group level="1">

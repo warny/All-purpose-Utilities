@@ -575,6 +575,8 @@ public class NumberToStringNts30CTests
             ("BG", [0], [1, 2, 3], typeof(DefaultLexicalFormSelector)),
             ("CS", [0, 1], [1, 2, 3], typeof(CzechSlovakPluralLexicalFormSelector)),
             ("SK", [0, 1], [2, 3], typeof(CzechSlovakPluralLexicalFormSelector)),
+            // NTS-35: PL opened from the million, both families generated (milion, miliard, bilion …).
+            ("PL", [0, 1], [1], typeof(PolishPluralLexicalFormSelector)),
         })
         {
             var converter = NumberToStringConverter.GetConverter(culture);
@@ -585,13 +587,16 @@ public class NumberToStringNts30CTests
         }
     }
 
-    /// <summary>Languages outside NTS-30C declare no generated form (PL is bounded at 999 999).</summary>
+    /// <summary>
+    /// Languages outside NTS-30C declare no generated form. PL, excluded from NTS-30C while bounded at 999 999, was
+    /// opened by NTS-35 and is pinned with the configured languages above: its cardinals are now unbounded.
+    /// </summary>
     [TestMethod]
     public void OtherLanguages_DeclareNoGeneratedForm()
     {
-        foreach (string culture in new[] { "PL", "HR", "EN", "DE", "IT", "ES", "SR", "SL" })
+        foreach (string culture in new[] { "HR", "EN", "DE", "IT", "ES", "SR", "SL" })
             Assert.AreEqual(0, NumberToStringConverter.GetConverter(culture).GeneratedScaleForms.Count, culture);
-        Assert.AreEqual(999999, (int)NumberToStringConverter.GetConverter("PL").MaxNumber!.Value);
+        Assert.IsNull(NumberToStringConverter.GetConverter("PL").MaxNumber);
     }
 
     // ----- East Slavic ---------------------------------------------------------------------------
@@ -816,8 +821,8 @@ public class NumberToStringNts30CTests
     public void CompositeSurfaces_UseTheCorrectedGeneratedNoun()
     {
         var russian = NumberToStringConverter.GetConverter("RU");
-        StringAssert.StartsWith(russian.Convert(2000000000000.5m), "два триллиона");
+        StringAssert.StartsWith(russian.Convert(2000000000000.5m, -1, new DecimalFormatOptions { ReadingMode = DecimalReadingMode.DigitByDigit }), "два триллиона");
         var czech = NumberToStringConverter.GetConverter("CS");
-        StringAssert.StartsWith(czech.Convert(2000000000000000.25m), "dvě biliardy");
+        StringAssert.StartsWith(czech.Convert(2000000000000000.25m, -1, new DecimalFormatOptions { ReadingMode = DecimalReadingMode.DigitByDigit }), "dvě biliardy");
     }
 }

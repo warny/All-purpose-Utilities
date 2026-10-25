@@ -27,22 +27,22 @@ dotnet add package omy.Utils.NumberToString --version 2.0.0-rc.2
 | DE, de-DE, de-AT | German | ✓ declarative (zero: `nullte`, Duden) | ✓ 5 min, 12 h | genus × kasus | local | — |
 | de-CH, de-LI | Swiss German | ✓ merged | ✓ inherited | genus × kasus | child of DE | — |
 | NL | Dutch | ✓ declarative (`-long.MaxValue`..`long.MaxValue`) | ✓ 5 min, 12 h | — | local | Long Conway scale (NTS-31): miljoen/miljard, biljoen/biljard, triljoen/triljard, quadriljoen …, then productive Conway with Dutch -joen/-jard and the l junction; unbounded cardinals (een miljoen, twee miljard); productive ordinals over the full supported ordinal domain (`-long.MaxValue`..`long.MaxValue`; `long.MinValue` is rejected by the engine), scale ordinals included (miljoenste, twee miljoenste, een miljoen eerste); no day-part wording |
-| DA, DA-DK | Danish | ✓ plugin (int range) | ✓ 5 min, 12 h | gender (fælleskøn/intetkøn) | local | Ordinal of zero *nulte* (NTS-29); ordinals above `int.MaxValue` fail closed |
-| NO, NB, NB-NO | Norwegian Bokmål | ✓ plugin (int range) | ✓ 5 min, 12 h | gender (hankjønn/hunkjønn/intetkjønn) | local | Ordinals above `int.MaxValue` fail closed; no ordinal of zero |
+| DA, DA-DK | Danish | ✓ plugin (int range) | ✓ 5 min, 12 h | gender (fælleskøn/intetkøn) | local | Compound tens in one word `enogtyve`, `hundrede og niogtyve` (Dansk Sprognævn, NTS-56); ordinal of zero *nulte* (NTS-29); ordinals above `int.MaxValue` fail closed |
+| NO, NB, NB-NO | Norwegian Bokmål | ✓ plugin (int range) | ✓ 5 min, 12 h | gender (hankjønn/hunkjønn/intetkjønn) | local | Compound tens in one word `tjueen`, `ett hundre tjueen` (Bokmålsordboka, NTS-56); ordinals above `int.MaxValue` fail closed; no ordinal of zero |
 | SV, SV-SE | Swedish | ✓ plugin (to one million) | ✓ 5 min, 12 h | — | local | One word below a million (tjugoentusen), en miljon (Språkrådet; NTS-27); ordinals above a million fail closed |
 | BG, BG-BG | Bulgarian | ✓ plugin, gendered | ✓ 15 min, 12 h | gender (standalone/masculine/feminine/neuter) | local | Unverified compound round thousands/millions fail closed. Short scale with `милиард`; Cyrillic Conway names above (`SCALE-SHORT-CYRILLIC`, `кватуор`), unbounded. `хиляди`, count forms `милиона`/`милиарда` (NTS-30B) and `трилиона`… (NTS-30C); `и` before the last component of every numeral phrase: `двадесет и едно`, `хиляда и сто`, `двадесет и една хиляди` (NTS-30D) |
 | HR, HR-HR | Croatian | ✓ declarative (last word) + range plugin | ✓ 15 min, 12 h | — | local | Masculine nominative ordinals only; round scale ordinals other than tisućiti (1 000), milijunti (1 000 000) and milijarditi (1 000 000 000) fail closed, including 10^12 and above |
 | HU, HU-HU | Hungarian | ✓ plugin (int range) | ✓ 15 min, 12 h | — | local | Ordinal of zero *nulladik* (NTS-29) |
 | CS, CS-CZ | Czech | ✓ plugin, gender × case | ✓ 15 min, 12 h | gender × case | local | Ordinals verified up to 9 999 (round millions/milliards: one only). `tisíc`/`milion`/`miliarda` agree with their multiplier (NTS-30B), so do the generated `biliony`/`biliardy`… (NTS-30C); Conway names in Czech spelling `kvadrilion`, `oktilion`, `kvatuordecilion` (NTS-36) |
 | SK, SK-SK | Slovak | ✓ plugin, gender × case | ✓ 15 min, 12 h | gender × case | local | Ordinals verified up to 9 999 and one million. Cardinals in the PSP one-word spelling (`dvadsaťdva`, `päťsto`, `dvetisíc`), `milión`/`miliarda` agree (NTS-30B), so do the generated `bilióny`/`biliárd`… (NTS-30C); Conway names in Slovak spelling `kvadrilión`, `kvintiliarda`, `oktilión` (NTS-36) |
-| PL | Polish | ✓ plugin + declarative (1–999 999; round thousands to 99 000, NTS-28) | ✓ 5 min, 12 h | rodzaj × przypadek | local | tysiąc/tysiące/tysięcy agree with their multiplier (NTS-27); cardinals to 999 999; no ordinal of zero |
+| PL | Polish | ✓ plugin + declarative (1–999 999; round thousands to 99 000, NTS-28) | ✓ 5 min, 12 h | rodzaj × przypadek | local | tysiąc/tysiące/tysięcy agree with their multiplier (NTS-27); unbounded long-scale cardinals `jeden milion`, `dwa miliony`, `pięć miliardów`, `dwadzieścia dwa biliony`, `kwadrylion` (SJP PWN, WSO PWN, `<GeneratedScaleForm>`, NTS-35); ordinals stay within 1–999 999; no ordinal of zero |
 | RU | Russian | ✓ declarative + plugin for the one-word round values (zero: `нулевой`; 0–999 999 999, NTS-28) | ✓ 15 min, 12 h | gender × case | local | тысяча, миллион, миллиард agree with their multiplier (две тысячи, пять миллионов; NTS-27). Short scale with `миллиард`; Cyrillic Conway names above (`SCALE-SHORT-CYRILLIC`), unbounded, agreeing with their multiplier (два триллиона; NTS-30C) |
 | UK, UK-UA | Ukrainian | ✓ plugin, gender × case | ✓ 15 min, 12 h | gender × case | local | Round thousands, millions and milliards with a multiplier of 1–89 (NTS-28, §38). Short scale with `мільярд`; Ukrainian-spelled Conway names above (`вігінтильйон`), unbounded. `тисяча`/`мільйон`/`мільярд` agree with their multiplier (NTS-30B), so do the generated names (два трильйони; NTS-30C) |
 | ES | Spanish | ✓ declarative, composed (1–999 999 999 999, NTS-28; `milmillonésimo` from 10^9, NTS-38) | ✓ 5 min, 12 h | gender × form | local | Apocope before mil/millón (veintiún mil, un millón; NTS-27); million multipliers up to six digits (dos mil quinientos millones, mil un millones; NTS-30F), masculine whatever the caller's gender (quinientos millones; NTS-30G); currency numerals attributive (un euro, veintiún euros; `<Currency forceVariants>`, NTS-30); a currency amount ending on millón takes de (un millón de euros, dos mil millones de euros, but un millón doscientos mil euros; `<Currency terminalScaleConnector>`, NTS-51, the shorthand of a `<NounConnector>` substitution, NTS-52); no ordinal of zero |
 | IT | Italian | ✓ validated productive forms through round trilione: 1–1999 except 1110–1910, round thousands to 999000, round multiples of milione/miliardo/bilione/biliardo/trilione; selected sourced analytic compounds (1010, 100001–100009) (`<OrdinalStem>`, `<OrdinalComposition>`, `<OrdinalScale>`, domain-guard plugin) | ✓ 5 min, 12 h | gender | local | Unsourced ordinals fail closed by design: zero, 1110–1910, the other non-round thousands above 1999 and the non-round values from a million (no canonical form established); millions are separate nouns joined by `e` ("due milioni e centomila"); a currency amount of one reads un before a noun taking il (un euro, but uno scellino, uno zloty) and its compounds stay invariable (ventuno euro; `<Currency><Replacement exceptBeforeNoun>`, NTS-51); un milione di euro (`<Currency terminalScaleConnector="di">`, NTS-51) |
 | PT | Portuguese | ✓ declarative, composed (1–1999, NTS-28) | ✓ 5 min, 12 h (direct "e …") | gender | local | Deliberate direct numeric reading (no "para"/"menos" constructions); PT-PT/PT-BR not split; no ordinal of zero; cardinals to 999 999, so *um milhão de* (Priberam) is outside the domain (NTS-52) |
 | GL, gl-ES | Galician | ✓ declarative, gender on the last element (1–1999, NTS-28) | ✓ 5 min, 12 h | gender | local | No ordinal of zero; `un millón de euros` (`<NounConnector>`, NTS-52); 10^9 `mil millóns`, `dous mil millóns` (RAG "eón"; `pairedScalesFrom="2"`, NTS-53); multiplier of `millón` masculine (`douscentos millóns` under `gender=feminino`) |
-| RO, RO-RO | Romanian | ✓ plugin (DOOM) | ✓ 15 min, 12 h | gen | local | Ordinals up to 999 999 and one million (masculine); a currency noun after 20 and above takes de, except after a compound ending on 1–19 (`douăzeci de lei`, `o sută nouăsprezece lei`; GALR, `<NounConnector numberModulo>`, NTS-52); no de inside the numeral after a multiplier ending on 1–19 (`o sută nouăsprezece mii`, `o sută douăzeci de mii`; GALR, `<ScaleConnector>`, NTS-53); currency `un euro`, `o liră` (DEX "unu"; `<Currency><Replacement>`, NTS-53) |
+| RO, RO-RO | Romanian | ✓ plugin (DOOM) | ✓ 15 min, 12 h | gen | local | Ordinals up to 999 999 and one million (masculine); a currency noun after 20 and above takes de, except after a compound ending on 1–19 (`douăzeci de lei`, `o sută nouăsprezece lei`; GALR, `<NounConnector numberModulo>`, NTS-52); no de inside the numeral after a multiplier ending on 1–19 (`o sută nouăsprezece mii`, `o sută douăzeci de mii`; GALR, `<ScaleConnector>`, NTS-53); currency `un euro`, `o liră` (DEX "unu"; `<Currency><Replacement>`, NTS-53); the scale multiplier agrees with its noun, feminine before `mii` (`douăsprezece mii`, `douăzeci și două de mii`, `douăzeci și una de mii`, `o sută una mii`; Academy CNA reports 2010), neuter before `milioane`/`miliarde` (`douăzeci și două de milioane`, `douăzeci și unu de milioane`; DOOM 3, `<ScaleForm forceVariants>`, `gen=neutru`, NTS-54) |
 | CA, ca-ES, ca-ES-valencia | Catalan | ✓ declarative | ✓ 15 min, 12 h | gender | local | Traditional quarters only; no ordinal of zero; `un milió de pessetes`, `un milió d'euros` (`<NounConnector>`, NTS-52); `dos milions`, 10^9 `mil milions`, `dos mil cinc-cents milions` (IEC Ortografia §4.4.2.2a, DIEC2; `pairedScalesFrom="2"`), ordinals `milionè`, `mil milionè`, multiplier of `milió` masculine (`dos-cents milions` under `gender=femení`; NTS-53) |
 | ca-ES-valencia | Valencian | ✓ inherited | ✓ 5 min, 12 h, own section | gender | child of CA | Invariable `dos` in ClockTime only |
 | EL | Greek | ✓ declarative, composed (1–1999, NTS-28) | ✓ 15 min, 12 h | gender | local | Masculine cardinal forms (ένας) not modelled; no ordinal of zero |
@@ -103,16 +103,20 @@ de.Convert(1_000_000);  // "eine Million"   ← GermanNumberToStringLanguageSpec
 
 ```csharp
 var fr = NumberToStringConverter.GetConverter("FR");
+var de = NumberToStringConverter.GetConverter("DE");
 var nl = NumberToStringConverter.GetConverter("NL");
+var digits = new DecimalFormatOptions { ReadingMode = DecimalReadingMode.DigitByDigit };
 
-// LanguageDefault (default): the configured <Fraction>, otherwise the digits one by one.
+// LanguageDefault (default): the configured <Fraction>, otherwise the digits one by one where that reading is
+// attested, otherwise NotSupportedException (NTS-34).
 fr.Convert(0.05m);      // "zéro virgule cinq centièmes"
 fr.Convert(0.0001m);    // "zéro virgule un dix-millième"
-nl.Convert(21.05m);     // "eenentwintig komma nul vijf"   ← a decimal 0 is read with the language's zero
+de.Convert(21.05m);     // "einundzwanzig komma null fünf"   ← a decimal 0 is read with the language's zero
+nl.Convert(21.05m);     // NotSupportedException: no source establishes an automatic Dutch reading
 
-// DigitByDigit: every digit, even where a fraction is configured.
-fr.Convert(0.0001m, -1, new DecimalFormatOptions { ReadingMode = DecimalReadingMode.DigitByDigit });
-// "zéro virgule zéro zéro zéro un"
+// DigitByDigit: every digit, even where a fraction is configured or the automatic reading is closed.
+fr.Convert(0.0001m, -1, digits);  // "zéro virgule zéro zéro zéro un"
+nl.Convert(21.05m, -1, digits);   // "eenentwintig komma nul vijf"
 
 // MathematicalFraction: numerator over the named denominator 10^n, no decimal separator word.
 var math = new DecimalFormatOptions { ReadingMode = DecimalReadingMode.MathematicalFraction };
@@ -131,11 +135,26 @@ Precedence: a caller `DecimalSuffix` first (the digits as one numerator after th
 the mode), then the reading mode. `OmitZeroDecimals` suppresses a zero decimal part in every mode, and negative
 values take the language's `minus` template around the whole phrase (`moins un dix-millième`).
 
-Named fractions shipped: FR 1–11 digits (`dixième` … `dix-millième`, `cent-millième`, `millionième`,
-`dix-millionième`, `cent-millionième`, `milliardième`, `dix-milliardième`, `cent-milliardième`), EN 1–5 digits
-(`tenth` … `ten-thousandth`, `hundred-thousandth`); every other language reads its decimals digit by digit. No
-shipped language declares `decimalDigitByDigitMaxDigits` (no source justified a limit), and only FR (`et`) and EN
-(`and`) declare `mixedFractionSeparator`. Sources: `docs/NTS-08-linguistic-sources.md`, section NTS-30A.
+`DigitByDigit` is a reading the caller asks for: it is available in every language, including those whose automatic
+reading is closed, and is not a claim that it is the natural reading of the language.
+
+Final policy of `LanguageDefault` (NTS-34, every root language audited; matrix and sources in
+`docs/NTS-34-decimal-reading-audit.md`):
+
+| Category | Languages | `LanguageDefault` |
+|---|---|---|
+| A — digit by digit attested | DE (and de-CH, de-LI), DA, NO (NB), ES, ZH | the digits one by one, no limit |
+| B — named fractions | FR (and FR-be, FR-ch, FR-ca), EN (and EN-GB) | FR 1–11 digits (`dixième` … `cent-milliardième`), EN 1–5 (`tenth` … `hundred-thousandth`), then the digits |
+| C — normative reading known, not representable | AR, BG, CA, CS, EL, EU, FA, HE, HR, HU, IT, PL, PT, RO, RU, SK, SV, TR, UK, VN | `NotSupportedException` (`decimalDigitByDigitMaxDigits="0"`) |
+| D — no authoritative source | EE, FI, GL, HI, ID (and MS), JA, KO, NL, SW, WO, ZU | `NotSupportedException` (`decimalDigitByDigitMaxDigits="0"`) |
+
+C covers the readings the primitives cannot render exactly: declined fraction nouns (CS *jedna celá dvě desetiny*,
+RU *два целых три десятых*), the decimal part read as one number (SV *tio komma åttiofem*, VN *phẩy bảy trăm linh
+ba*), a denominator before its numerator (TR *üç tam yüzde yirmi beş*), separate words and an attributive form in a
+language written without spaces (HU *harmincnyolc egész hat tized*, *két harmad*). An integer value is unaffected
+(`Convert(21m)`), and so is a caller `DecimalSuffix`. No shipped language declares a numeric limit (none was
+justified), and only FR (`et`) and EN (`and`) declare `mixedFractionSeparator`. Sources:
+`docs/NTS-08-linguistic-sources.md`, sections NTS-30A and NTS-34.
 
 ---
 
@@ -2172,7 +2191,7 @@ NumberToStringConverter.GetConverter("CS").Convert(2_000_000_000_000_000);  // "
 NumberToStringConverter.GetConverter("SK").Convert(5_000_000_000_000_000);  // "päť biliárd"
 ```
 
-RU, UK, BG, CS and SK configure it (NTS-30C); PL is bounded at 999 999 (NTS-35).
+RU, UK, BG, CS and SK configure it (NTS-30C), PL since NTS-35 (`dwa miliony`, `pięć miliardów`, `dwa biliony`).
 
 ---
 

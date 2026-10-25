@@ -7,10 +7,12 @@
         zero="không"
         minus="âm *"
         decimalSeparator="phẩy"
+        decimalDigitByDigitMaxDigits="0"
         fractionSeparator="trên"
         maxNumber="999999999999"
         internalZeroGroupString="không"
     >
+        <!-- NTS-34: no automatic decimal reading (C: SGK Toán 5: hai trăm tám mươi sáu phẩy bảy trăm linh ba (the decimal part read as a number); docs/NTS-34-decimal-reading-audit.md). LanguageDefault throws NotSupportedException for a decimal part; DecimalReadingMode.DigitByDigit, requested by the caller, is unchanged. -->
         <Culture>VN</Culture>
         <Culture>VI</Culture>
         <Culture>VI-VN</Culture>

@@ -7,10 +7,12 @@
         zero="iqanda"
         minus="minus *"
         decimalSeparator="phuzu"
+        decimalDigitByDigitMaxDigits="0"
         fractionSeparator="ngaphezu"
 
                 maxNumber="999999"
         >
+        <!-- NTS-34: no automatic decimal reading (D: no DBE or PanSALB statement on the decimal reading; docs/NTS-34-decimal-reading-audit.md). LanguageDefault throws NotSupportedException for a decimal part; DecimalReadingMode.DigitByDigit, requested by the caller, is unchanged. -->
         <Culture>ZU</Culture>
         <Groups>
             <Group level="1">

@@ -9,9 +9,11 @@
         zero="صفر"
         minus="منفی *"
         decimalSeparator="ممیز"
+        decimalDigitByDigitMaxDigits="0"
         fractionSeparator="بر"
         maxNumber="999999999999999"
     >
+        <!-- NTS-34: no automatic decimal reading (C: school readings name the fraction (دو و نهصد و چهل و پنج هزارم); docs/NTS-34-decimal-reading-audit.md). LanguageDefault throws NotSupportedException for a decimal part; DecimalReadingMode.DigitByDigit, requested by the caller, is unchanged. -->
         <Culture>FA</Culture>
         <Culture>FA-IR</Culture>
         <Groups>

@@ -8,8 +8,10 @@
         zero="nol"
         minus="negatif *"
         decimalSeparator="koma"
+        decimalDigitByDigitMaxDigits="0"
         fractionSeparator="per"
     >
+        <!-- NTS-34: no automatic decimal reading (D: no Badan Bahasa statement; media only; docs/NTS-34-decimal-reading-audit.md). LanguageDefault throws NotSupportedException for a decimal part; DecimalReadingMode.DigitByDigit, requested by the caller, is unchanged. -->
         <Culture>ID</Culture>
         <Culture>ID-ID</Culture>
         <Groups>

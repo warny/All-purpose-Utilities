@@ -788,7 +788,7 @@ public class NumberToStringNts30GTests
     {
         var converter = Get("EU");
         Assert.AreEqual("ken hirurogei milioi berrehun mila eta bat", converter.Convert(-60_200_001));
-        Assert.AreEqual("hirurogei milioi berrehun mila eta bat koma bost", converter.Convert(60_200_001.5m));
+        Assert.AreEqual("hirurogei milioi berrehun mila eta bat koma bost", converter.Convert(60_200_001.5m, -1, new DecimalFormatOptions { ReadingMode = DecimalReadingMode.DigitByDigit }));
         Assert.AreEqual("hirurogei milioi berrehun mila eta bat zati hiru", converter.ConvertFraction(60_200_001, 3));
         Assert.AreEqual("bi mila eta bostehun milioi mila eta bat zati bi", converter.Convert(new Number(2_500_001_001L, 2)));
         var currency = new CurrencyDefinition { UnitSingular = "euro", UnitPlural = "euro", SubunitSingular = "zentimo", SubunitPlural = "zentimo" };
@@ -906,13 +906,14 @@ public class NumberToStringNts30GTests
 
     /// <summary>
     /// Every built-in language other than Spanish, Catalan and Galician (whose million keeps a masculine multiplier,
-    /// NTS-30G and NTS-53) declares no forcing exact scale form, and every language other than Basque no final-group
-    /// connector: their outputs cannot depend on either primitive.
+    /// NTS-30G and NTS-53) and Romanian (whose multipliers agree with mii, milioane and miliarde, NTS-54) declares no
+    /// forcing exact scale form, and every language other than Basque no final-group connector: their outputs cannot
+    /// depend on either primitive.
     /// </summary>
     [TestMethod]
     public void BuiltInLanguages_OnlySpanishAndBasqueOptIn()
     {
-        string[] forcing = ["ES", "CA", "ca-ES", "ca-ES-valencia", "GL", "gl-ES"];
+        string[] forcing = ["ES", "CA", "ca-ES", "ca-ES-valencia", "GL", "gl-ES", "RO", "RO-RO"];
         var field = typeof(NumberToStringConverter).GetField("CachedConfigurations", BindingFlags.NonPublic | BindingFlags.Static)!;
         _ = Get("EN");
         var cache = (System.Collections.IDictionary)field.GetValue(null)!;

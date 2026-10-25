@@ -4,7 +4,8 @@
       Romanian (RO) cardinals.
 
       Gender: "unu/una" (1m/f) and "doi/două" (2m/f) are tracked via the gender variant.
-      The default gender (no variant) is masculine.
+      The default gender (no variant) is masculine; "neutru" counts a neuter plural noun (unu, două).
+      The multiplier of mii is forced feminine, that of milioane/miliarde neuter (NTS-54, ScaleForm below).
 
       scaleConnector="de" inserts "de" between the multiplier and the scale name when the
       multiplier is ≥ 20 (douăzeci de mii, o sută de milioane, etc.), except after a multiplier
@@ -17,12 +18,14 @@
         zero="zero"
         minus="minus *"
         decimalSeparator="virgulă"
+        decimalDigitByDigitMaxDigits="0"
         fractionSeparator="peste"
         scaleConnector="de"
         scaleConnectorThreshold="20"
 
                 maxNumber="999999999999"
         >
+        <!-- NTS-34: no automatic decimal reading (C: textbooks: opt întregi și douăzeci și șapte miimi, or opt virgulă zero douăzeci și șapte (a number); docs/NTS-34-decimal-reading-audit.md). LanguageDefault throws NotSupportedException for a decimal part; DecimalReadingMode.DigitByDigit, requested by the caller, is unchanged. -->
         <Culture>RO</Culture>
         <Culture>RO-RO</Culture>
         <Groups>
@@ -75,17 +78,45 @@
                 <Scale value="2" string="milioane" />
                 <Scale value="3" string="miliarde" />
             </StaticNames>
+            <!-- NTS-54: the multiplier agrees with its scale noun like any numeral with its noun, on the last
+                 constituent of the whole multiplier, whatever the caller's gender (the forced group is shielded from
+                 the caller's passes, the lower groups keep agreeing with the counted noun).
+                 mie / mii is feminine (DEX '09 "mie": num. card., s. f.): două mii (DOOM 3, Studiu introductiv §4.1.5),
+                 douăsprezece mii de lei (DOOM 2, Normele §6.4), douăzeci și două de mii (DOOM 3 "douăzeci și doi":
+                 num. m., f. douăzeci și două), and a final unu becomes una before mii, even after a hundred: the
+                 Institute of Linguistics of the Romanian Academy corrects "o sută şaizeci şi unu de mii de lei" to
+                 "o sută şaizeci şi una de mii de lei", "şase sute treizeci şi unu de mii de oameni" to "… una de mii
+                 …" (CNA monitoring reports, June and September-October 2010) and "o sută unu zile" to "o sută una
+                 zile": o sută una mii, douăzeci și una de mii.
+                 milion / miliard are neuter (DOOM 3 "milion": s. n., pl. milioane): the neuter plural counts with the
+                 feminine două (DOOM 3 "două puncte": num. + s. n. pl.; GALR 2005: două milioane trei sute opt lei) and
+                 keeps unu (douăzeci și unu de milioane), the gen=neutru variant below.
+                 The NTS-53 connector is decided on the number and is untouched. -->
+            <ScaleForm scale="1">
+                <Forms>
+                    <Form key="singular" value="mie" forceVariants="gen=feminin" />
+                    <Form key="plural" value="mii" forceVariants="gen=feminin" />
+                </Forms>
+            </ScaleForm>
+            <ScaleForm scale="2">
+                <Forms>
+                    <Form key="singular" value="milion" forceVariants="gen=neutru" />
+                    <Form key="plural" value="milioane" forceVariants="gen=neutru" />
+                </Forms>
+            </ScaleForm>
+            <ScaleForm scale="3">
+                <Forms>
+                    <Form key="singular" value="miliard" forceVariants="gen=neutru" />
+                    <Form key="plural" value="miliarde" forceVariants="gen=neutru" />
+                </Forms>
+            </ScaleForm>
         </NumberScale>
         <Replacements>
-            <!-- Thousands: fix unu/doi before feminine scale "mii/mie" -->
-            <Replacement oldValue="unu mii"  newValue="o mie"    onScale="1" onValue="1" />
-            <Replacement oldValue="doi mii"  newValue="două mii" onScale="1" onValue="2" />
-            <!-- Millions: fix unu/doi before neuter scale "milioane/milion" -->
-            <Replacement oldValue="unu milioane" newValue="un milion"     onScale="2" onValue="1" />
-            <Replacement oldValue="doi milioane" newValue="două milioane" onScale="2" onValue="2" />
-            <!-- Billions: fix unu/doi before neuter scale "miliarde/miliard" -->
-            <Replacement oldValue="unu miliarde" newValue="un miliard"     onScale="3" onValue="1" />
-            <Replacement oldValue="doi miliarde" newValue="două miliarde"  onScale="3" onValue="2" />
+            <!-- One alone before a scale noun is the attributive o / un (DOOM 3 §4.1.5: o mie, un milion); the forced
+                 gender has already turned the multiplier into una (feminine) or kept unu (neuter). -->
+            <Replacement oldValue="una mie"     newValue="o mie"      onScale="1" onValue="1" />
+            <Replacement oldValue="unu milion"  newValue="un milion"  onScale="2" onValue="1" />
+            <Replacement oldValue="unu miliard" newValue="un miliard" onScale="3" onValue="1" />
         </Replacements>
         <Exceptions>
             <Number value="1"  string="unu" />
@@ -100,12 +131,19 @@
             <Number value="19" string="nouăsprezece" />
         </Exceptions>
         <Variants>
-            <Dimension name="gen" values="masculin,feminin" />
+            <Dimension name="gen" values="masculin,feminin,neutru" />
             <Variant type="gen" variant="feminin">
                 <!-- 1f: una; 2f: două -->
                 <Replacement oldValue="unu" newValue="una"  scope="LastWord" />
                 <Replacement oldValue="doi" newValue="două" scope="LastWord" />
                 <!-- 12f: douăsprezece ("ora douăsprezece", "a douăsprezecea") -->
+                <Replacement oldValue="doisprezece" newValue="douăsprezece" scope="LastWord" />
+            </Variant>
+            <!-- NTS-54: the neuter counts a plural noun with the feminine two and the masculine one (DOOM 3 "două
+                 puncte": num. + s. n. pl.; douăzeci și unu de milioane): două scaune, douăzeci și unu de scaune. Forced
+                 on the multiplier of milioane / miliarde; available to the caller for a neuter counted noun. -->
+            <Variant type="gen" variant="neutru">
+                <Replacement oldValue="doi" newValue="două" scope="LastWord" />
                 <Replacement oldValue="doisprezece" newValue="douăsprezece" scope="LastWord" />
             </Variant>
         </Variants>

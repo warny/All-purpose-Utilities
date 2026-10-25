@@ -12,9 +12,11 @@
         zero="영"
         minus="마이너스 *"
         decimalSeparator="점"
+        decimalDigitByDigitMaxDigits="0"
         fractionSeparator="나누기"
         maxNumber="9999999999999999"
     >
+        <!-- NTS-34: no automatic decimal reading (D: NIKL: the reading of decimals is not regulated by the language norms; docs/NTS-34-decimal-reading-audit.md). LanguageDefault throws NotSupportedException for a decimal part; DecimalReadingMode.DigitByDigit, requested by the caller, is unchanged. -->
         <Culture>KO</Culture>
         <Groups>
             <Group level="1">
