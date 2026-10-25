@@ -95,6 +95,37 @@ namespace Utils.Mathematics.Expressions
         /// </remarks>
         public override Expression Transform(Expression expression)
         {
+            // Detach the caller's comparison-memo session (S5 P9): an independent Transform call never shares
+            // memo entries with, nor activates or releases, a session that is in progress on this thread.
+            int callerMemoDepth = _comparisonMemoDepth;
+            bool callerMemoActive = _comparisonMemoActive;
+            Dictionary<ComparisonMemoKey, Expression>? callerMemo = _comparisonMemo;
+            _comparisonMemoDepth = 0;
+            _comparisonMemoActive = false;
+            _comparisonMemo = null;
+            try
+            {
+                return TransformWithinBoundary(expression);
+            }
+            finally
+            {
+                _comparisonMemoDepth = callerMemoDepth;
+                _comparisonMemoActive = callerMemoActive;
+                _comparisonMemo = callerMemo;
+            }
+        }
+
+        /// <summary>
+        /// Runs <see cref="ExpressionTransformer.TransformCore(Expression)"/> inside a fresh lexical-scope (and,
+        /// when capture is active, diagnostic-metrics) boundary, without detaching the current comparison-memo
+        /// session. Called by <see cref="Transform(Expression)"/> after it has detached the caller's session, and
+        /// directly by <see cref="SimplifyForComparisonInSession"/> so that the comparer's own nested pass joins
+        /// the session it belongs to.
+        /// </summary>
+        /// <param name="expression">The expression to transform.</param>
+        /// <returns>A possibly rewritten expression.</returns>
+        private Expression TransformWithinBoundary(Expression expression)
+        {
             bool diagnosticsActive = ExpressionComparer.IsDiagnosticCaptureActive;
             ExpressionMetricsScope metricsScope = diagnosticsActive ? BeginExpressionMetricsScope() : default;
             List<ParameterExpression[]>? callerScope = _lexicalScopeStack;

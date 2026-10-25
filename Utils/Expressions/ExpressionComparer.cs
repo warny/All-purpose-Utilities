@@ -212,7 +212,7 @@ public class ExpressionComparer : IEqualityComparer<Expression>
     {
         if (!IsDiagnosticCaptureActive)
         {
-            return _expressionSimplifier.Simplify(expression);
+            return ExpressionSimplifier.SimplifyForComparisonInSession(_expressionSimplifier, expression);
         }
 
         using ExpressionSimplifier.ExpressionMetricsScope metricsScope = ExpressionSimplifier.BeginExpressionMetricsScope();
@@ -230,7 +230,7 @@ public class ExpressionComparer : IEqualityComparer<Expression>
                 expression.NodeType,
                 _currentComparisonOrigin,
                 _cumulativeNodeBudget));
-            return _expressionSimplifier.Simplify(expression);
+            return ExpressionSimplifier.SimplifyForComparisonInSession(_expressionSimplifier, expression);
         }
         finally
         {
