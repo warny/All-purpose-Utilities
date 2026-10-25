@@ -5665,7 +5665,7 @@
       "Uid": null,
       "IsMRef": true,
       "Title": "Utils.Mathematics.Expressions.ExpressionSimplifier",
-      "Summary": "<p sourcefile=\"api/Utils.Mathematics.Expressions.ExpressionSimplifier.yml\" sourcestartlinenumber=\"1\">Provides methods to simplify or rewrite expression trees by applying various transformations,\ntypically related to arithmetic identities or constant folding.\nThis partial class works alongside other parts of <xref href=\"Utils.Mathematics.Expressions.ExpressionSimplifier\" data-throw-if-not-resolved=\"false\"></xref> to compose\na complete transformation pipeline.</p>\n"
+      "Summary": "<p sourcefile=\"api/Utils.Mathematics.Expressions.ExpressionSimplifier.yml\" sourcestartlinenumber=\"1\">Selective strict structural memoization of comparer-triggered simplifications (roadmap stage S5, P9).</p>\n"
     },
     {
       "type": "ManagedReference",
