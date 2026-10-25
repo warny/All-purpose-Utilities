@@ -28,11 +28,33 @@ public static class DateFormula
     private static readonly Dictionary<FormulaCacheKey, Func<DateTime, DateTime>> _cache = [];
 
     /// <summary>
-    /// Represents a unique key for the formula cache. The compiled delegate captures the culture's selected calendar and
-    /// first day of the week, so two cultures with the same name but a different calendar (a clone with another
-    /// <see cref="DateTimeFormatInfo.Calendar"/>) must not share an entry.
+    /// Represents a unique key for the formula cache. The compiled delegate captures a snapshot of the culture's selected
+    /// calendar and first day of the week, so two cultures with the same name but a different selection (a clone with
+    /// another <see cref="DateTimeFormatInfo.Calendar"/>) must not share an entry.
     /// </summary>
-    private sealed record FormulaCacheKey(IDateFormulaLanguageProvider Provider, string CultureName, Type CalendarType, DayOfWeek FirstDayOfWeek, string Formula, ICalendarProvider? CalendarProvider);
+    private sealed record FormulaCacheKey(IDateFormulaLanguageProvider Provider, string CultureName, CalendarIdentity Calendar, DayOfWeek FirstDayOfWeek, string Formula, ICalendarProvider? CalendarProvider);
+
+    /// <summary>
+    /// Identifies a calendar by what changes its date arithmetic: its type and, for the built-in calendars carrying such
+    /// a state, the variant of that type.
+    /// </summary>
+    /// <param name="Type">The runtime type of the calendar.</param>
+    /// <param name="Variant">
+    /// <see cref="HijriCalendar.HijriAdjustment"/> for a <see cref="HijriCalendar"/>, <see cref="GregorianCalendar.CalendarType"/>
+    /// for a <see cref="GregorianCalendar"/>, 0 for any other calendar.
+    /// </param>
+    internal readonly record struct CalendarIdentity(Type Type, int Variant)
+    {
+        /// <summary>Builds the identity of <paramref name="calendar"/>.</summary>
+        /// <param name="calendar">The calendar.</param>
+        /// <returns>Its type and variant.</returns>
+        public static CalendarIdentity Of(Calendar calendar) => new(calendar.GetType(), calendar switch
+        {
+            HijriCalendar hijri => hijri.HijriAdjustment,
+            GregorianCalendar gregorian => (int)gregorian.CalendarType,
+            _ => 0,
+        });
+    }
 
     /// <summary>
     /// Retrieves a compiled formula from the cache or compiles it if missing.
@@ -44,7 +66,8 @@ public static class DateFormula
     /// <returns>A delegate computing the date from a base value.</returns>
     private static Func<DateTime, DateTime> GetCompiledFormula(string formula, IDateFormulaLanguageProvider provider, CultureInfo culture, ICalendarProvider? calendarProvider)
     {
-        var key = new FormulaCacheKey(provider, culture.Name, culture.DateTimeFormat.Calendar.GetType(), culture.DateTimeFormat.FirstDayOfWeek, formula, calendarProvider);
+        var format = culture.DateTimeFormat;
+        var key = new FormulaCacheKey(provider, culture.Name, CalendarIdentity.Of(format.Calendar), format.FirstDayOfWeek, formula, calendarProvider);
         lock (_cache)
         {
             return _cache.GetOrAdd(key, () => Compile(formula, provider, culture, calendarProvider));
@@ -127,7 +150,14 @@ public static class DateFormula
         return DateFormulaExpression.Parse(formula, provider, culture).Compile(culture, calendarProvider);
     }
 
-    internal static Expression CreateCalendarCall(CultureInfo culture, Expression expr, PeriodTypeEnum period, int value, ICalendarProvider? calendarProvider)
+    /// <summary>Builds the call adding <paramref name="value"/> periods to <paramref name="expr"/>.</summary>
+    /// <param name="calendar">The calendar of the arithmetic, a read-only snapshot of the culture's selected calendar.</param>
+    /// <param name="expr">The date expression.</param>
+    /// <param name="period">The period unit.</param>
+    /// <param name="value">The signed number of periods.</param>
+    /// <param name="calendarProvider">Required for working days.</param>
+    /// <returns>The call expression, or <paramref name="expr"/> when the period adds nothing.</returns>
+    internal static Expression CreateCalendarCall(Calendar calendar, Expression expr, PeriodTypeEnum period, int value, ICalendarProvider? calendarProvider)
     {
         if (period == PeriodTypeEnum.WorkingDay)
         {
@@ -152,9 +182,7 @@ public static class DateFormula
         };
         if (methodName is null) return expr;
 
-        // The selected calendar (DateTimeFormat.Calendar), not the culture's default one (CultureInfo.Calendar), so that a
-        // caller can choose one of the culture's optional calendars.
-        var calendarExpression = Expression.Constant(culture.DateTimeFormat.Calendar);
+        var calendarExpression = Expression.Constant(calendar);
         return Expression.Call(
                 calendarExpression,
                 typeof(Calendar).GetMethod(methodName, BindingFlags.Public | BindingFlags.Instance)!,

@@ -14,8 +14,11 @@ All notable changes to this project will be documented in this file.
   2023-04-01. Before, the platform's default calendar of the culture always applied (`ar-SA`: Umm al-Qura on Windows,
   Gregorian with the Linux ICU data). Unchanged for a culture whose calendar was not changed; for the current culture
   on Windows, a calendar chosen in the user's regional settings now applies.
-- The compiled-formula cache distinguishes the calendar and the first day of the week, so two cultures with the same
-  name but a different selection no longer share a cached delegate.
+- The compiled-formula cache distinguishes the calendar (its type and, for `HijriCalendar`, its `HijriAdjustment`, for
+  `GregorianCalendar`, its `CalendarType`) and the first day of the week, so two cultures with the same name but a
+  different selection no longer share a cached delegate. A compiled formula (`Compile`, `ToExpression`, the cache) is a
+  read-only snapshot of the culture's `DateTimeFormat`: changing the culture or its calendar afterwards no longer
+  reaches it.
 
 ### Fixed — `omy.Utils.NumberToString` (NTS-53 closed: Catalan, Galician and Romanian numerals)
 - Catalan (CA, ca-ES, ca-ES-valencia) writes the plural of *milió* `milions` (IEC, Ortografia catalana §4.4.2.2a: *dos

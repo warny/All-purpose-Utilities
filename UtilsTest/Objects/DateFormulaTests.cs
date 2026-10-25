@@ -182,6 +182,29 @@ public class DateFormulaTests
         Assert.AreEqual(expected0, date.Calculate("BS", WithCalendar("ar-SA", new HijriCalendar { HijriAdjustment = 0 })));
     }
 
+    /// <summary>
+    /// The cache identity of a calendar separates the variants of one type (the <see cref="GregorianCalendar"/> types,
+    /// which a culture such as ar-SA does not all accept, and the Hijri adjustments) and merges equal settings.
+    /// </summary>
+    [TestMethod]
+    public void CalendarIdentity_SeparatesTheVariantsOfOneType()
+    {
+        var localized = DateFormula.CalendarIdentity.Of(new GregorianCalendar(GregorianCalendarTypes.Localized));
+        var arabic = DateFormula.CalendarIdentity.Of(new GregorianCalendar(GregorianCalendarTypes.Arabic));
+        var usEnglish = DateFormula.CalendarIdentity.Of(new GregorianCalendar(GregorianCalendarTypes.USEnglish));
+        Assert.AreNotEqual(localized, arabic);
+        Assert.AreNotEqual(arabic, usEnglish);
+        Assert.AreEqual(localized, DateFormula.CalendarIdentity.Of(new GregorianCalendar(GregorianCalendarTypes.Localized)));
+
+        var hijri0 = DateFormula.CalendarIdentity.Of(new HijriCalendar { HijriAdjustment = 0 });
+        var hijri2 = DateFormula.CalendarIdentity.Of(new HijriCalendar { HijriAdjustment = 2 });
+        Assert.AreNotEqual(hijri0, hijri2);
+        Assert.AreEqual(hijri2, DateFormula.CalendarIdentity.Of(new HijriCalendar { HijriAdjustment = 2 }));
+
+        Assert.AreEqual(DateFormula.CalendarIdentity.Of(new UmAlQuraCalendar()), DateFormula.CalendarIdentity.Of(new UmAlQuraCalendar()));
+        Assert.AreNotEqual(DateFormula.CalendarIdentity.Of(new UmAlQuraCalendar()), hijri0);
+    }
+
     /// <summary>A compiled delegate keeps the calendar it was compiled with.</summary>
     [TestMethod]
     public void CompiledFormula_IsASnapshotOfTheCulture()
