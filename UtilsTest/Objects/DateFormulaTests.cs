@@ -138,6 +138,64 @@ public class DateFormulaTests
         Assert.AreEqual(new DateTime(2023, 3, 23), date.Calculate("NS+1Y", WithCalendar("ar-SA", new UmAlQuraCalendar())));
     }
 
+    /// <summary>Gives the start of the month containing <paramref name="date"/> in <paramref name="calendar"/>.</summary>
+    /// <param name="calendar">The calendar.</param>
+    /// <param name="date">The date.</param>
+    /// <returns>The first day of the calendar month.</returns>
+    private static DateTime StartOfMonth(Calendar calendar, DateTime date)
+        => calendar.ToDateTime(calendar.GetYear(date), calendar.GetMonth(date), 1, 0, 0, 0, 0);
+
+    /// <summary>
+    /// Two <see cref="HijriCalendar"/> instances of the same type but a different <see cref="HijriCalendar.HijriAdjustment"/>
+    /// give different dates and must not share a cached formula.
+    /// </summary>
+    [TestMethod]
+    public void CachedFormula_DistinguishesTheHijriAdjustment()
+    {
+        var date = new DateTime(2023, 3, 15);
+        DateTime expected0 = StartOfMonth(new HijriCalendar { HijriAdjustment = 0 }, date);
+        DateTime expected2 = StartOfMonth(new HijriCalendar { HijriAdjustment = 2 }, date);
+        Assert.AreNotEqual(expected0, expected2);
+
+        Assert.AreEqual(expected0, date.Calculate("BS", WithCalendar("ar-SA", new HijriCalendar { HijriAdjustment = 0 })));
+        Assert.AreEqual(expected2, date.Calculate("BS", WithCalendar("ar-SA", new HijriCalendar { HijriAdjustment = 2 })));
+        Assert.AreEqual(expected0, date.Calculate("BS", WithCalendar("ar-SA", new HijriCalendar { HijriAdjustment = 0 })));
+    }
+
+    /// <summary>
+    /// A cached formula is a snapshot of the culture when it was compiled: changing the culture's calendar afterwards
+    /// neither alters the cached entry nor reaches another culture with the original settings.
+    /// </summary>
+    [TestMethod]
+    public void CachedFormula_IsASnapshotOfTheCulture()
+    {
+        var date = new DateTime(2023, 3, 15);
+        DateTime expected0 = StartOfMonth(new HijriCalendar { HijriAdjustment = 0 }, date);
+        DateTime expected1 = StartOfMonth(new HijriCalendar { HijriAdjustment = 1 }, date);
+
+        var hijri = new HijriCalendar { HijriAdjustment = 0 };
+        var mutated = WithCalendar("ar-SA", hijri);
+        Assert.AreEqual(expected0, date.Calculate("BS", mutated));
+
+        hijri.HijriAdjustment = 1;
+        Assert.AreEqual(expected1, date.Calculate("BS", mutated));
+        Assert.AreEqual(expected0, date.Calculate("BS", WithCalendar("ar-SA", new HijriCalendar { HijriAdjustment = 0 })));
+    }
+
+    /// <summary>A compiled delegate keeps the calendar it was compiled with.</summary>
+    [TestMethod]
+    public void CompiledFormula_IsASnapshotOfTheCulture()
+    {
+        var date = new DateTime(2023, 3, 15);
+        var hijri = new HijriCalendar { HijriAdjustment = 0 };
+        var culture = WithCalendar("ar-SA", hijri);
+        Func<DateTime, DateTime> startOfMonth = DateFormula.Compile("BS+1S", culture);
+        DateTime before = startOfMonth(date);
+
+        hijri.HijriAdjustment = 2;
+        Assert.AreEqual(before, startOfMonth(date));
+    }
+
     /// <summary>The calendar arithmetic of a step (+1S, one month) follows the selected calendar too.</summary>
     [TestMethod]
     public void ArabicFormula_AddMonth_FollowsTheSelectedCalendar()
