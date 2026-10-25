@@ -557,21 +557,35 @@ namespace Utils.Mathematics.Expressions
         /// <c>NaN</c>, infinities and magnitudes beyond the decimal range, and rounded <see cref="double.Epsilon"/> to
         /// zero. Any other runtime type returns <see langword="false"/>, so no third-party numeric code runs; ordinary
         /// arithmetic is only defined on <see cref="Types.Number"/>, so a rule never sees such a value anyway.
+        /// The per-type comparisons are dispatched through <see cref="NumericValueComparers"/> (AGENTS.md: no switch
+        /// of more than ten cases).
         /// </remarks>
-        private static bool NumericValueEquals(object? value, int target) => value switch
+        private static bool NumericValueEquals(object? value, int target)
+            => value is not null
+                && NumericValueComparers.TryGetValue(value.GetType(), out Func<object, int, bool>? comparer)
+                && comparer(value, target);
+
+        /// <summary>
+        /// Exact comparison of a boxed native numeric primitive with a small integer, indexed by the primitive's
+        /// runtime type; used by <see cref="NumericValueEquals"/>.
+        /// </summary>
+        /// <remarks>
+        /// Each entry compares in the primitive's own type, so no conversion can overflow or lose precision. Read-only
+        /// after the type initializer, hence safe for concurrent lookups.
+        /// </remarks>
+        private static readonly Dictionary<Type, Func<object, int, bool>> NumericValueComparers = new()
         {
-            double doubleValue => doubleValue == target,
-            float floatValue => floatValue == target,
-            decimal decimalValue => decimalValue == target,
-            int intValue => intValue == target,
-            long longValue => longValue == target,
-            uint uintValue => uintValue == target,
-            ulong ulongValue => target >= 0 && ulongValue == (ulong)target,
-            short shortValue => shortValue == target,
-            ushort ushortValue => ushortValue == target,
-            sbyte sbyteValue => sbyteValue == target,
-            byte byteValue => byteValue == target,
-            _ => false,
+            [typeof(double)] = static (value, target) => (double)value == target,
+            [typeof(float)] = static (value, target) => (float)value == target,
+            [typeof(decimal)] = static (value, target) => (decimal)value == target,
+            [typeof(int)] = static (value, target) => (int)value == target,
+            [typeof(long)] = static (value, target) => (long)value == target,
+            [typeof(uint)] = static (value, target) => (uint)value == target,
+            [typeof(ulong)] = static (value, target) => target >= 0 && (ulong)value == (ulong)target,
+            [typeof(short)] = static (value, target) => (short)value == target,
+            [typeof(ushort)] = static (value, target) => (ushort)value == target,
+            [typeof(sbyte)] = static (value, target) => (sbyte)value == target,
+            [typeof(byte)] = static (value, target) => (byte)value == target,
         };
 
         /// <summary>

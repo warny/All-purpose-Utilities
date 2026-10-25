@@ -3742,7 +3742,9 @@ before.
 - `NumericValueEquals(object?, int)`: the single numeric-identity test of the class. Each native primitive is
   compared in its own type (no conversion, no boxing beyond the existing constant, no allocation, no exception path);
   `NaN` equals nothing, infinities equal no finite value, `-0.0` equals zero, decimals compare at any scale; any other
-  runtime type returns `false`, so no third-party numeric code runs. The 22 `CompareNumeric` calls of the rules and the
+  runtime type returns `false`, so no third-party numeric code runs. The per-type comparisons are dispatched through a
+  read-only `Dictionary<Type, Func<object, int, bool>>` (`NumericValueComparers`; AGENTS.md forbids a switch of more
+  than ten cases, review of `9dffbbfd`). The 22 `CompareNumeric` calls of the rules and the
   P10 `IsOrdinaryZeroConstant` use it; `NumberUtils.CompareNumeric` (public) is unchanged and now unused by
   the simplifier.
 - `PowerByZeroOrOne` reads the exponent as a `double` (ordinary `Power` is only defined on `double`) and declines a
@@ -3871,10 +3873,30 @@ G4 +2.0%, H4 +1.9%, H8 +1.4%, G12 +0.1%, H12 +2.2%, H16 +1.9%, G16 +2.1%: the C4
 with the unchanged dispatch counts. The residual cost is the post-rule fold's type tests. Allocations are unchanged or
 lower (the B family allocates less because `NumericValueEquals` replaces the boxing `CompareNumeric` path). P11-only
 scenarios (baseline throws): N4 0.151 ms, N16 16.1 ms (= K), I16 16.7 ms, R8 2.71 ms, D16 0.049 ms, D64 0.194 ms.
-A re-run of the campaign on an idle machine is recommended before relying on the n = 4 rows.
+The table above measures the `switch` form of `NumericValueEquals`.
+
+*Idle-machine confirmation of the final dictionary dispatch (requested by the review of `9dffbbfd`).* Same method, no
+concurrent load (< 1% CPU outside the benchmark), final binaries:
+
+| Scenario | Base ms/op | P11 ms/op | Paired delta (12 pairs) | Pairs > +5% | `switch` -> dictionary (8 pairs) | Base bytes/op | P11 bytes/op |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| A4 | 0.0449 | 0.0429 | -4.8% | 2/12 | see below | 49,016 | 49,016 |
+| B4 | 0.0625 | 0.0618 | -0.7% | 0/12 | -0.6% | 92,391 | 89,365 (-3.3%) |
+| C4 | 0.0372 | 0.0376 | -0.2% | 0/12 | -0.1% | 49,765 | 49,765 |
+| G4 | 0.0049 | 0.0050 | +2.6% | 3/12 | +0.4% | 7,320 | 7,320 |
+| H4 | 0.0098 | 0.0098 | +1.5% | 1/12 | -0.3% | 15,484 | 15,484 |
+| H8 | 0.0274 | 0.0277 | +3.0% | 1/12 | +1.8% | 54,133 | 54,133 |
+
+A4 is bimodal from process to process (isolated 0.087-0.090 ms samples on either side, ±15% spread otherwise): the
+8-pair `switch` -> dictionary run read +11.1% while the 12-pair base -> dictionary run read -4.8%. A dedicated
+three-way rotation (base, `switch`, dictionary; 16 rounds, order rotated and reversed) settled it: A4 base -> `switch`
++1.7%, base -> dictionary +3.1%, `switch` -> dictionary +1.3%; C4 +2.8%, +1.0% (0/16 pairs above +5%), -0.4%. The C4
++9.1% of the loaded campaign does not reproduce. Every gate holds for the final code; allocations are unchanged by the
+dictionary (boxed `GetType` and cached static delegates allocate nothing).
 
 **Validation.** Release `Utils.sln` build with 0 errors and the same warning count as before the change (2,144); Unit
-13,928/13,928 (+41), Functional 383/383, Security 241 passed + 3 skipped.
+13,928/13,928 (+41), Functional 383/383, Security 241 passed + 3 skipped (re-run on the dictionary dispatch). The
+`NaN`/infinity reproduction matrix is identical between the `switch` and dictionary forms.
 
 **Classification after P11.** Every zero/one/minus-one test of the simplifier rules is now exact per native type, so
 `NaN`, infinities, values beyond the decimal range, subnormal values and large integral values (`ulong.MaxValue`,

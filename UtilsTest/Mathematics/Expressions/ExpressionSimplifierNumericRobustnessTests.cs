@@ -198,7 +198,8 @@ public class ExpressionSimplifierNumericRobustnessTests
     public void Simplify_DoubleConstantOutsideDecimalRange_DoesNotThrowAndPreservesValues(double value)
     {
         ParameterExpression x = Expression.Parameter(typeof(double), "x");
-        foreach (string operation in new[] { "+", "-", "*", "/", "^" })
+        string[] operations = ["+", "-", "*", "/", "^"];
+        foreach (string operation in operations)
         {
             AssertSimplifiesEquivalently(x, Binary(operation, x, Expression.Constant(value)));
             AssertSimplifiesEquivalently(x, Binary(operation, Expression.Constant(value), x));
@@ -215,9 +216,11 @@ public class ExpressionSimplifierNumericRobustnessTests
     public void Simplify_FloatConstantOutsideDecimalRange_DoesNotThrowAndPreservesValues(float value)
     {
         ParameterExpression x = Expression.Parameter(typeof(float), "x");
-        foreach (string operation in new[] { "+", "-", "*", "/" })
+        string[] operations = ["+", "-", "*", "/"];
+        foreach (string operation in operations)
         {
-            foreach (BinaryExpression body in new[] { Binary(operation, x, Expression.Constant(value)), Binary(operation, Expression.Constant(value), x) })
+            BinaryExpression[] bodies = [Binary(operation, x, Expression.Constant(value)), Binary(operation, Expression.Constant(value), x)];
+            foreach (BinaryExpression body in bodies)
             {
                 Expression simplified = Simplify(body);
                 Func<float, float> source = Expression.Lambda<Func<float, float>>(body, x).Compile();
@@ -375,7 +378,8 @@ public class ExpressionSimplifierNumericRobustnessTests
 
         ParameterExpression xf = Expression.Parameter(typeof(float), "xf");
         ConstantExpression nanf = Expression.Constant(float.NaN);
-        foreach (Expression folded in new[] { Simplify(Binary(operation, xf, nanf)), Simplify(Binary(operation, nanf, xf)) })
+        Expression[] foldedExpressions = [Simplify(Binary(operation, xf, nanf)), Simplify(Binary(operation, nanf, xf))];
+        foreach (Expression folded in foldedExpressions)
         {
             ConstantExpression constant = folded as ConstantExpression ?? throw new AssertFailedException($"Expected a constant, got {folded}.");
             Assert.AreEqual(typeof(float), constant.Type, "A float expression must stay a float constant.");
