@@ -208,6 +208,12 @@ public class ExpressionComparer : IEqualityComparer<Expression>
     /// </summary>
     /// <param name="expression">The expression to simplify; never <see langword="null"/>.</param>
     /// <returns>The simplified expression.</returns>
+    /// <remarks>
+    /// Nested calls join the current comparison session of
+    /// <see cref="ExpressionSimplifier.SimplifyForComparisonInSession"/>, which may return a previously completed
+    /// result for a strictly identical, user-code-free operand (roadmap S5 P9). The returned shape is the same as
+    /// a fresh simplification; only its object identity may be shared.
+    /// </remarks>
     internal static Expression SimplifyForComparison(Expression expression)
     {
         if (!IsDiagnosticCaptureActive)

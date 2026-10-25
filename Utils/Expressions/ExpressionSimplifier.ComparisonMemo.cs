@@ -43,11 +43,11 @@ namespace Utils.Mathematics.Expressions
     /// </remarks>
     public partial class ExpressionSimplifier
     {
-        /// <summary>Minimum comparison depth at which the activation signal is evaluated.</summary>
-        private static readonly int ComparisonMemoMinimumDepth = ReadMemoKnob("P9_MEMO_DEPTH", 6);
-
-        /// <summary>Minimum continuous ordinary-arithmetic depth (1 or 2) required at activation.</summary>
-        private static readonly int ComparisonMemoMinimumArithmeticDepth = ReadMemoKnob("P9_MEMO_ARITH", 2);
+        /// <summary>
+        /// Minimum comparison depth at which the activation signal is evaluated (P9 policy D6/A2: depth 6 and a
+        /// continuous ordinary-arithmetic depth of at least 2, see <see cref="HasArithmeticDepthOfAtLeastTwo"/>).
+        /// </summary>
+        private const int ComparisonMemoMinimumDepth = 6;
 
         /// <summary>Maximum logical node count, counted per path, for which a strict key is built.</summary>
         private const int ComparisonMemoNodeBudget = 1024;
@@ -64,13 +64,6 @@ namespace Utils.Mathematics.Expressions
         [ThreadStatic]
         private static Dictionary<ComparisonMemoKey, Expression>? _comparisonMemo;
 
-        /// <summary>Reads an experiment knob from the environment (experimental build only).</summary>
-        /// <param name="name">The environment variable name.</param>
-        /// <param name="defaultValue">The value used when the variable is absent or invalid.</param>
-        /// <returns>The knob value.</returns>
-        private static int ReadMemoKnob(string name, int defaultValue)
-            => int.TryParse(Environment.GetEnvironmentVariable(name), out int value) ? value : defaultValue;
-
         /// <summary>Gets whether the current thread holds an active comparison memo session (focused tests).</summary>
         internal static bool IsComparisonMemoActive => _comparisonMemoActive;
 
@@ -79,6 +72,72 @@ namespace Utils.Mathematics.Expressions
 
         /// <summary>Gets the current comparison memo nesting depth (focused tests).</summary>
         internal static int ComparisonMemoDepth => _comparisonMemoDepth;
+
+        /// <summary>Gets the number of entries in the current thread's comparison memo (focused tests).</summary>
+        internal static int ComparisonMemoEntryCount => _comparisonMemo?.Count ?? 0;
+
+        /// <summary>
+        /// Test support: opens an already activated comparison session on the current thread, so focused tests can
+        /// exercise key identity, reuse, re-entrancy and isolation on small expressions without reaching the
+        /// production activation depth. Disposing the returned scope restores the previous session state.
+        /// </summary>
+        /// <returns>The scope restoring the previous state.</returns>
+        internal static ComparisonMemoTestSession BeginActivatedComparisonMemoSessionForTesting()
+        {
+            ComparisonMemoTestSession scope = ComparisonMemoTestSession.CaptureCurrent();
+            _comparisonMemoDepth = 1;
+            _comparisonMemoActive = true;
+            _comparisonMemo = null;
+            return scope;
+        }
+
+        /// <summary>Restores the comparison session state saved by <see cref="BeginActivatedComparisonMemoSessionForTesting"/>.</summary>
+        internal readonly struct ComparisonMemoTestSession : IDisposable
+        {
+            /// <summary>The saved depth.</summary>
+            private readonly int _depth;
+
+            /// <summary>The saved activation flag.</summary>
+            private readonly bool _active;
+
+            /// <summary>The saved memo.</summary>
+            private readonly Dictionary<ComparisonMemoKey, Expression>? _memo;
+
+            /// <summary>Captures the current thread's session state.</summary>
+            /// <param name="capture">Ignored; distinguishes this constructor from the default one.</param>
+            private ComparisonMemoTestSession(bool capture)
+            {
+                _depth = _comparisonMemoDepth;
+                _active = _comparisonMemoActive;
+                _memo = _comparisonMemo;
+            }
+
+            /// <summary>Captures the current thread's session state for later restoration.</summary>
+            /// <returns>The captured state.</returns>
+            internal static ComparisonMemoTestSession CaptureCurrent() => new(capture: true);
+
+            /// <summary>Restores the saved state.</summary>
+            public void Dispose()
+            {
+                _comparisonMemoDepth = _depth;
+                _comparisonMemoActive = _active;
+                _comparisonMemo = _memo;
+            }
+        }
+
+        /// <summary>Determines whether <paramref name="expression"/> is eligible for a strict memo key (focused tests).</summary>
+        /// <param name="expression">The operand.</param>
+        /// <returns><see langword="true"/> when a strict key can be built.</returns>
+        internal static bool IsComparisonMemoEligible(Expression expression) => ComparisonMemoKey.TryCreate(expression, out _);
+
+        /// <summary>Determines whether two operands have equal strict memo keys (focused tests).</summary>
+        /// <param name="x">The first operand.</param>
+        /// <param name="y">The second operand.</param>
+        /// <returns><see langword="true"/> when both are eligible and their strict keys are equal.</returns>
+        internal static bool ComparisonMemoKeysEqual(Expression x, Expression y)
+            => ComparisonMemoKey.TryCreate(x, out ComparisonMemoKey xKey)
+                && ComparisonMemoKey.TryCreate(y, out ComparisonMemoKey yKey)
+                && ComparisonMemoKeyComparer.Instance.Equals(xKey, yKey);
 
         /// <summary>
         /// Simplifies <paramref name="expression"/> for comparison with <paramref name="simplifier"/> (the comparer's
@@ -93,12 +152,11 @@ namespace Utils.Mathematics.Expressions
             int depth = ++_comparisonMemoDepth;
             try
             {
-                P9MemoDiagnostics.Request(depth);
                 if (!_comparisonMemoActive)
                 {
-                    if (depth < ComparisonMemoMinimumDepth || !HasMinimumArithmeticDepth(expression))
+                    if (depth < ComparisonMemoMinimumDepth || !HasArithmeticDepthOfAtLeastTwo(expression))
                     {
-                        Expression inactiveResult = ExecuteComparisonSimplification(simplifier, expression);
+                        Expression inactiveResult = simplifier.TransformWithinBoundary(expression);
 
                         // The session may have been activated by a nested comparison while this one was in
                         // progress: its completed result can still serve later siblings of the session.
@@ -107,34 +165,21 @@ namespace Utils.Mathematics.Expressions
                     }
 
                     _comparisonMemoActive = true;
-                    P9MemoDiagnostics.Activation(depth);
                 }
 
                 if (!ComparisonMemoKey.TryCreate(expression, out ComparisonMemoKey key))
                 {
-                    return ExecuteComparisonSimplification(simplifier, expression);
+                    return simplifier.TransformWithinBoundary(expression);
                 }
 
                 Dictionary<ComparisonMemoKey, Expression>? memo = _comparisonMemo;
                 if (memo is not null && memo.TryGetValue(key, out Expression? cached))
                 {
-                    P9MemoDiagnostics.Hit();
                     return cached;
                 }
 
-                Expression result = ExecuteComparisonSimplification(simplifier, expression);
-
-                // Re-read the shared state: the recursive simplification above may have allocated or populated
-                // the memo (P6's re-entrancy failure), so nothing observed before the call is assumed unchanged.
-                memo = _comparisonMemo;
-                if (memo is null)
-                {
-                    memo = new Dictionary<ComparisonMemoKey, Expression>(ComparisonMemoKeyComparer.Instance);
-                    _comparisonMemo = memo;
-                    P9MemoDiagnostics.DictionaryAllocation();
-                }
-
-                if (memo.TryAdd(key, result)) P9MemoDiagnostics.Insert(memo.Count);
+                Expression result = simplifier.TransformWithinBoundary(expression);
+                StoreComparisonResult(key, result);
                 return result;
             }
             finally
@@ -147,54 +192,42 @@ namespace Utils.Mathematics.Expressions
             }
         }
 
-        /// <summary>Runs one underlying comparer simplification inside the current comparison session.</summary>
-        /// <param name="simplifier">The comparer's shared exact built-in simplifier.</param>
-        /// <param name="expression">The operand to simplify.</param>
-        /// <returns>The simplified operand.</returns>
-        private static Expression ExecuteComparisonSimplification(ExpressionSimplifier simplifier, Expression expression)
-        {
-            P9MemoDiagnostics.Execution();
-            return simplifier.TransformWithinBoundary(expression);
-        }
-
         /// <summary>Records a completed result in the active session's memo when the operand is eligible.</summary>
         /// <param name="expression">The completed operand.</param>
         /// <param name="result">Its successful simplification.</param>
         private static void RecordComparisonResult(Expression expression, Expression result)
         {
-            if (!ComparisonMemoKey.TryCreate(expression, out ComparisonMemoKey key)) return;
+            if (ComparisonMemoKey.TryCreate(expression, out ComparisonMemoKey key)) StoreComparisonResult(key, result);
+        }
 
-            Dictionary<ComparisonMemoKey, Expression>? memo = _comparisonMemo;
-            if (memo is null)
-            {
-                memo = new Dictionary<ComparisonMemoKey, Expression>(ComparisonMemoKeyComparer.Instance);
-                _comparisonMemo = memo;
-                P9MemoDiagnostics.DictionaryAllocation();
-            }
-
-            if (memo.TryAdd(key, result)) P9MemoDiagnostics.Insert(memo.Count);
+        /// <summary>
+        /// Stores a completed result, allocating the session's memo on first use. The shared state is read here,
+        /// after the recursive simplification that produced <paramref name="result"/> has returned: that recursion
+        /// may already have allocated or populated the memo (P6's re-entrancy failure), so nothing observed before
+        /// it is assumed unchanged, and an entry it inserted for the same key is kept.
+        /// </summary>
+        /// <param name="key">The operand's strict key.</param>
+        /// <param name="result">Its successful simplification.</param>
+        private static void StoreComparisonResult(in ComparisonMemoKey key, Expression result)
+        {
+            Dictionary<ComparisonMemoKey, Expression> memo = _comparisonMemo ??= new Dictionary<ComparisonMemoKey, Expression>(ComparisonMemoKeyComparer.Instance);
+            memo.TryAdd(key, result);
         }
 
         /// <summary>
         /// Determines in constant time whether <paramref name="expression"/>'s continuous ordinary-arithmetic depth
-        /// reaches <see cref="ComparisonMemoMinimumArithmeticDepth"/>: depth 1 means the root is ordinary
-        /// arithmetic, depth 2 additionally requires one ordinary-arithmetic child. No subtree is traversed.
+        /// (the P8 <c>ArithmeticDepth</c> metric) is at least 2: the root is ordinary arithmetic and so is at least
+        /// one of its operands. No subtree is traversed and no metric cache is consulted.
         /// </summary>
         /// <param name="expression">The operand at the activation candidate.</param>
         /// <returns><see langword="true"/> when the signal's arithmetic condition holds.</returns>
-        private static bool HasMinimumArithmeticDepth(Expression expression)
+        private static bool HasArithmeticDepthOfAtLeastTwo(Expression expression) => expression switch
         {
-            if (!IsOrdinaryArithmeticNode(expression)) return false;
-            if (ComparisonMemoMinimumArithmeticDepth <= 1) return true;
-
-            return expression switch
-            {
-                UnaryExpression unary => IsOrdinaryArithmeticNode(unary.Operand),
-                BinaryExpression binary => IsOrdinaryArithmeticNode(binary.Left) || IsOrdinaryArithmeticNode(binary.Right),
-                _ => false,
-            };
-        }
-
+            UnaryExpression unary => IsOrdinaryUnaryNegate(unary) && IsOrdinaryArithmeticNode(unary.Operand),
+            BinaryExpression binary => IsOrdinaryBinaryArithmetic(binary)
+                && (IsOrdinaryArithmeticNode(binary.Left) || IsOrdinaryArithmeticNode(binary.Right)),
+            _ => false,
+        };
         /// <summary>Whether <paramref name="expression"/> is itself an ordinary negation or binary arithmetic node.</summary>
         /// <param name="expression">The node to classify.</param>
         /// <returns><see langword="true"/> for ordinary predefined arithmetic.</returns>
@@ -246,12 +279,10 @@ namespace Utils.Mathematics.Expressions
             /// <returns><see langword="true"/> when <paramref name="expression"/> is eligible.</returns>
             public static bool TryCreate(Expression expression, out ComparisonMemoKey key)
             {
-                P9MemoDiagnostics.KeyComputation();
                 int budget = ComparisonMemoNodeBudget;
                 if (TryHash(expression, ref budget, out int hash))
                 {
                     key = new ComparisonMemoKey(expression, hash);
-                    P9MemoDiagnostics.EligibleKey();
                     return true;
                 }
 
@@ -337,10 +368,7 @@ namespace Utils.Mathematics.Expressions
 
             /// <inheritdoc/>
             public bool Equals(ComparisonMemoKey x, ComparisonMemoKey y)
-            {
-                P9MemoDiagnostics.EqualityCheck();
-                return x.Hash == y.Hash && StrictEquals(x.Expression, y.Expression);
-            }
+                => x.Hash == y.Hash && StrictEquals(x.Expression, y.Expression);
 
             /// <inheritdoc/>
             public int GetHashCode(ComparisonMemoKey obj) => obj.Hash;
@@ -411,133 +439,6 @@ namespace Utils.Mathematics.Expressions
                 decimal.GetBits(y, yBits);
                 return xBits.SequenceEqual(yBits);
             }
-        }
-    }
-
-    /// <summary>
-    /// Experiment-only internal counters for the P9 memo. Compiled to empty methods unless the
-    /// <c>P9_MEMO_COUNTERS</c> symbol is defined, so counter-free builds carry no instrumentation.
-    /// </summary>
-    internal static class P9MemoDiagnostics
-    {
-#if P9_MEMO_COUNTERS
-        [ThreadStatic] private static long _requests, _executions, _hits, _keys, _eligible, _equalities, _activations, _dictionaries, _inserts, _peak;
-        [ThreadStatic] private static int[]? _activationDepths;
-#endif
-
-        /// <summary>Resets every counter of the current thread.</summary>
-        internal static void Reset()
-        {
-#if P9_MEMO_COUNTERS
-            _requests = _executions = _hits = _keys = _eligible = _equalities = _activations = _dictionaries = _inserts = _peak = 0;
-            _activationDepths = new int[64];
-#endif
-        }
-
-        /// <summary>Gets the CSV header matching <see cref="Snapshot"/>.</summary>
-        /// <returns>The header.</returns>
-        internal static string Header() => "requests,executions,hits,keyComputations,eligibleKeys,equalityChecks,activations,dictionaries,inserts,peakEntries,activationDepths";
-
-        /// <summary>Gets the current thread's counters as CSV.</summary>
-        /// <returns>The counters.</returns>
-        internal static string Snapshot()
-        {
-#if P9_MEMO_COUNTERS
-            var depths = new System.Text.StringBuilder();
-            for (int depth = 0; _activationDepths is not null && depth < _activationDepths.Length; depth++)
-            {
-                if (_activationDepths[depth] > 0) depths.Append($"d{depth}:{_activationDepths[depth]} ");
-            }
-            return $"{_requests},{_executions},{_hits},{_keys},{_eligible},{_equalities},{_activations},{_dictionaries},{_inserts},{_peak},{depths}";
-#else
-            return "counters-disabled";
-#endif
-        }
-
-        /// <summary>Counts a comparer-triggered simplification request.</summary>
-        /// <param name="depth">The request's comparison depth.</param>
-        [System.Diagnostics.Conditional("P9_MEMO_COUNTERS")]
-        internal static void Request(int depth)
-        {
-#if P9_MEMO_COUNTERS
-            _requests++;
-#endif
-        }
-
-        /// <summary>Counts an actual underlying simplification execution.</summary>
-        [System.Diagnostics.Conditional("P9_MEMO_COUNTERS")]
-        internal static void Execution()
-        {
-#if P9_MEMO_COUNTERS
-            _executions++;
-#endif
-        }
-
-        /// <summary>Counts a memo hit.</summary>
-        [System.Diagnostics.Conditional("P9_MEMO_COUNTERS")]
-        internal static void Hit()
-        {
-#if P9_MEMO_COUNTERS
-            _hits++;
-#endif
-        }
-
-        /// <summary>Counts a strict key computation (eligibility check).</summary>
-        [System.Diagnostics.Conditional("P9_MEMO_COUNTERS")]
-        internal static void KeyComputation()
-        {
-#if P9_MEMO_COUNTERS
-            _keys++;
-#endif
-        }
-
-        /// <summary>Counts an eligible key.</summary>
-        [System.Diagnostics.Conditional("P9_MEMO_COUNTERS")]
-        internal static void EligibleKey()
-        {
-#if P9_MEMO_COUNTERS
-            _eligible++;
-#endif
-        }
-
-        /// <summary>Counts a strict structural equality check.</summary>
-        [System.Diagnostics.Conditional("P9_MEMO_COUNTERS")]
-        internal static void EqualityCheck()
-        {
-#if P9_MEMO_COUNTERS
-            _equalities++;
-#endif
-        }
-
-        /// <summary>Counts a session activation at <paramref name="depth"/>.</summary>
-        /// <param name="depth">The activating request's comparison depth.</param>
-        [System.Diagnostics.Conditional("P9_MEMO_COUNTERS")]
-        internal static void Activation(int depth)
-        {
-#if P9_MEMO_COUNTERS
-            _activations++;
-            if (_activationDepths is not null && depth < _activationDepths.Length) _activationDepths[depth]++;
-#endif
-        }
-
-        /// <summary>Counts a memo dictionary allocation.</summary>
-        [System.Diagnostics.Conditional("P9_MEMO_COUNTERS")]
-        internal static void DictionaryAllocation()
-        {
-#if P9_MEMO_COUNTERS
-            _dictionaries++;
-#endif
-        }
-
-        /// <summary>Counts an insertion and tracks the peak session entry count.</summary>
-        /// <param name="count">The memo entry count after insertion.</param>
-        [System.Diagnostics.Conditional("P9_MEMO_COUNTERS")]
-        internal static void Insert(int count)
-        {
-#if P9_MEMO_COUNTERS
-            _inserts++;
-            if (count > _peak) _peak = count;
-#endif
         }
     }
 }
