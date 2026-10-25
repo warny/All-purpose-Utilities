@@ -26,6 +26,9 @@
 
 	<ItemGroup>
 		<InternalsVisibleTo Include="UtilsTest.Unit" />
+		<!-- UtilsTest.Security requires access to the expression comparison memo's internal key and session
+		     helpers to verify its resource-exhaustion bounds (roadmap S5 P9). -->
+		<InternalsVisibleTo Include="UtilsTest.Security" />
 	</ItemGroup>
 
 	<ItemGroup>

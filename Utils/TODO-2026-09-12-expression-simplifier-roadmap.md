@@ -3274,6 +3274,231 @@ distinct rebuilt objects, nested reuse, teardown, bounded two-thread isolation, 
 normal/exception cleanup. The unchanged comparer-batching, structural-canonicalization, comparer, symbolic
 contract, custom-operator safety, and reconstruction-fidelity suites remain semantic gates.
 
+#### S5 P9 — selective strict structural memoization (D6/A2 ACCEPTED, D7/A2 not selected)
+
+**Provenance.** Baseline: `master` at `133861c5` (the four simplifier files are unchanged since P8, PR #616,
+`626f354e`). Knobbed experimental candidate (thresholds read from environment variables, counters compiled only
+under `P9_MEMO_COUNTERS`): `56b53d7b`. Final production candidate (constants, no knobs, no counters): `bb77b430`.
+Environment: Windows 11 Pro 10.0.26300, Intel i7-12700KF (12 cores / 20 threads), SDK 10.0.402, harness
+`net8.0` on .NET 8.0.32, workstation non-concurrent GC, Release, `ProjectReference` to each commit's
+`Utils.csproj` from separate git worktrees. The harness lives outside the repository.
+
+**Audit (line numbers at `133861c5`).**
+
+- Call graph. Public `Simplify` → `ExpressionSimplifier.Transform` (`ExpressionSimplifier.cs:96-111`, lexical
+  boundary) → `ExpressionTransformer.TransformCore` (`ExpressionTranformer.cs:825-840`, bottom-up; `PrepareBinary`
+  rebuilds every binary node, so children are new objects). At each additive node `AdditionOfEqualsElements`
+  (`ExpressionSimplifier.cs:1057-1136`) or `SubstractionOfEqualsElements` (`1143-1219`) augments a non-product
+  operand as `1 * operand` (`1073-1078`, `1159-1164`), so the whole accumulated left chain becomes a probe
+  candidate. `FactorEqualityProbe.EqualsCore` (`904-928`) classifies both operands (`IsCacheable`, `938-961`)
+  then calls `GetOrSimplify` (`970-987`) → `ExpressionComparer.SimplifyForComparison` (`ExpressionComparer.cs:211-240`)
+  → `_expressionSimplifier.Simplify` → a nested `Transform` of the whole accumulated chain, which repeats the
+  same pattern one level down: `T(n) ≈ 2·T(n-1)`. G follows the same shape through the power-combination
+  overload of `MultiplicationOfEqualsElements` (`1431-1495`), which calls `ExpressionComparer.Default.Equals`
+  directly (`1468`/`1477`), never through a probe; `AdditionWithNegate` (`653`, `670`) and the probe fallback
+  (`921`) are further direct comparer paths.
+- Repeated equivalent work is reconstructed, not shared: rebuilt children (`PrepareBinary`) and canonical
+  right-association (`CanonicalizeAdditiveExpression`, `1641-1701`; `CanonicalizeMultiplicativeExpression`,
+  `1709-1722`) produce fresh objects. This is why P5's reference identity missed and P6's structural identity hit.
+- Safely reusable result: only `SimplifyForComparison`'s output. It is always computed by the comparer's shared
+  exact built-in instance under a fresh lexical boundary, so for a user-code-free operand it is a pure function of
+  the operand's strict structure. Its only consumer is `StructuralEqualsAfterSimplification` (`257`), which has no
+  reference-identity shortcut, so returning a shared result object is unobservable. `GetHashCode` (`614-620`)
+  simplifies directly and is not affected.
+- Decision point: `SimplifyForComparison` is the single funnel of every comparer-triggered simplification (probe,
+  multiplication, negation cancellation, fallback). A probe-only hook (P6/P7) cannot help G.
+- Instrumentation: P8's `ComparisonDepth` (`ExpressionComparer.cs:34`, `219`) and `GetExpressionMetrics`
+  (`ExpressionSimplifier.cs:186-204`, a dictionary-backed traversal) exist only under opt-in capture and are
+  unsuitable for the production path. `ArithmeticDepth >= 2` (`243-255`) is equivalent to "root and at least one
+  operand are ordinary arithmetic", an O(1) local test.
+- Re-entrancy: comparisons nest synchronously on one thread through `SimplifyForComparison` → `Transform`;
+  arbitrary user code (an opaque constant's `Equals`, `ExpressionComparer.cs:534`) can additionally start an
+  unrelated public call. P8's metrics cache deliberately spans nested public `Transform` calls; a memo must not.
+- Identity: the public comparer's commutative fallback (`387-404`) and `ExactNumericValue` (`519-551`, signed-zero
+  normalization) are symbolic identities and must not be memo keys.
+
+**Trigger evidence per outer factoring session (baseline, instrumented).** A session is one depth-1 comparison
+event and every nested event before the next depth-1 event. "After trigger" counts the events from the first
+qualifying event to the end of its session, i.e. the work an activation at that point can still reach.
+
+| Scenario | Events | Sessions | D6/A2 sessions | Events after D6/A2 trigger | D7/A2 sessions | Events after D7/A2 trigger |
+|---|---:|---:|---:|---:|---:|---:|
+| A8 | 882 | 36 | 1 | 19 | 0 | 0 |
+| B8 | 2,410 | 36 | 1 | 237 | 0 | 0 |
+| A12 | 14,318 | 56 | 5 | 11,723 | 4 | 9,928 |
+| B12 | 42,406 | 56 | 5 | 36,009 | 4 | 31,348 |
+| A16 | 229,354 | 76 | 9 | 224,995 (98.1%) | 8 | 221,424 |
+| B16 | 687,074 | 76 | 9 | 676,389 (98.4%) | 8 | 667,304 |
+| G12 | 4,094 | 22 | 4 | 2,844 | 3 | 2,069 |
+| G16 | 65,534 | 30 | 8 | 63,288 (96.6%) | 7 | 61,489 |
+| H4-H16 | 17-77 | all depth 1 | 0 | 0 | 0 | 0 |
+
+The trigger is rare per session but fires early inside the expensive sessions (median first trigger about 430
+events into an A16 session of ~25,000), so late activation loses almost nothing: ancestors still in flight
+record their completed results on return. C equals A. This harness's A/B shapes give 4 (n=4) and 8 (n=8) fewer
+events than the historical P5/P8 shapes (A8 882 vs 890, B8 2,410 vs 2,418); G and H match exactly; growth is
+identical.
+
+**Design.** `Utils/Expressions/ExpressionSimplifier.ComparisonMemo.cs`.
+
+- Session: one outermost `SimplifyForComparison` (depth 0→1) plus everything synchronously nested in it,
+  including nested probes and the comparer's own nested pass (`SimplifyForComparisonInSession` calls the new
+  `TransformWithinBoundary`, which keeps the lexical/metrics boundary but joins the session). Thread-static
+  depth, activation flag and lazily allocated dictionary; released in `finally` when depth returns to 0, on
+  success or exception. The public `Transform` saves, resets and restores all three, so a public `Simplify`, the
+  comparer's `GetHashCode`, or any call made from user code starts detached and cannot see, populate, activate
+  or release the caller's session.
+- Activation (D6/A2): only evaluated while inactive, as `depth >= 6 && HasArithmeticDepthOfAtLeastTwo(operand)`
+  (O(1)). The inactive path costs one thread-static increment/decrement, one flag read before and one after the
+  nested simplification, and a constant comparison; no key, traversal or allocation.
+- Active path: one traversal both decides eligibility and computes the strict hash, bounded by a 1,024-node
+  per-path budget (shared DAGs cannot explode); hit → return the stored result, no simplification; miss →
+  simplify, then re-read the shared state (P6's failure) and `TryAdd`. Completed in-flight ancestors are recorded
+  when they return into an active session. Only successful results are stored.
+- Keys: node type, static type, `Method`, `IsLifted`/`IsLiftedToNull`, null conversion, ordered operands,
+  parameters by reference, constants by exact bits (`double`/`float` IEEE bits, `decimal` four words including
+  scale, integers by same-type value). Eligible: numeric parameters, non-null constants whose runtime type equals
+  one of the eleven primitive numeric types, ordinary negation, ordinary non-lifted Add/Subtract/Multiply/
+  Divide/Power. Everything else (custom/lifted/checked operators, conversions, calls, members, lambdas,
+  conditionals, opaque or `object`-typed constants) is ineligible.
+- P3 untouched: the four-entry tuple list, classify-both-before-simplifying-either, `x`-before-`y` order and the
+  public comparer path are unchanged; P3's cache now simply wraps calls that may be served by the session memo.
+- D7/A2 is the same mechanism with `depth >= 7`.
+
+**Causal evidence (instrumented knobbed candidate, one public simplification).** Requests are comparer-triggered
+simplification calls; executions are underlying simplifications actually run; hits are memo returns; every key
+computation is also the eligibility check (all were eligible here); equality checks are strict-key comparisons
+(one per hit, no collisions).
+
+| Scenario | Baseline executions | D6/A2 requests / executions / hits | Key computations | Activations = dictionaries | Peak entries | D7/A2 executions / hits |
+|---|---:|---:|---:|---:|---:|---:|
+| A4, B4, C4, G4, G8, H* | 46 / 86 / 46 / 14 / 254 / 17-77 | inactive | 0 | 0 | 0 | inactive |
+| A8 | 882 | 882 / 874 / 8 | 24 | 1 | 16 | inactive |
+| B8 | 2,410 | 2,224 / 2,189 / 35 | 56 | 1 | 21 | inactive |
+| A12 | 14,318 | 3,170 / 2,700 / 470 | 600 | 5 | 33 | 4,474 / 312 |
+| B12 | 42,406 | 8,032 / 6,517 / 1,515 | 1,660 | 5 | 37 | 11,154 / 1,040 |
+| A16 | 229,354 | 6,546 / 4,606 / 1,940 | 2,232 | 9 | 45 | 8,152 / 1,626 |
+| B16 | 687,074 | 16,976 / 10,973 / 6,003 | 6,336 | 9 | 53 | 20,026 / 5,088 |
+| G12 | 4,094 | 1,382 / 1,297 / 85 | 152 | 4 | 21 | 2,058 / 44 |
+| G16 | 65,534 | 2,862 / 2,377 / 485 | 656 | 8 | 29 | 4,158 / 384 |
+
+Theoretical event coverage (P8) and actual reuse differ by orders of magnitude: 9 activations, 1,940 hits and
+2,232 key computations remove 98.0% of A16's executions; B16 and G16 lose 98.4% and 96.4%.
+
+**Performance (counter-free; median of per-process medians; paired delta = median of same-pair ratios, order
+alternated/rotated).** Each process: >=10 warmup operations and 1.5 s, then 21 GC-isolated rounds (7 for n=16)
+of enough operations for >=50 ms (>=100 ms for n=16). The final table is base `133861c5` vs final `bb77b430`,
+14 pairs (4 for n=16):
+
+| Scenario | Base ms/op | Final ms/op | Paired delta | Pairs > +5% | Base bytes/op | Final bytes/op |
+|---|---:|---:|---:|---:|---:|---:|
+| A4 | 0.0689 | 0.0696 | +0.8% | 1/14 | 49,468 | 49,468 |
+| B4 | 0.1573 | 0.1580 | +0.4% | 1/14 | 98,444 | 98,445 |
+| C4 | 0.0732 | 0.0729 | +0.6% | 0/14 | 50,220 | 50,220 |
+| G4 | 0.0103 | 0.0103 | +0.4% | 1/14 | 7,320 | 7,320 |
+| H4 | 0.0185 | 0.0186 | +0.3% | 0/14 | 15,484 | 15,484 |
+| A8 | 0.6868 | 0.6993 | +2.0% | 1/14 | 966,697 | 967,768 (+0.1%) |
+| **B8** | **2.0972** | **1.9788** | **-5.7%** | **0/14** | 2,685,809 | 2,492,515 (-7.2%) |
+| C8 | 1.3353 | 1.3347 | +1.9% | 3/14 | 968,102 | 969,195 (+0.1%) |
+| G8 | 0.1894 | 0.1936 | +2.4% | 2/14 | 139,378 | 139,378 |
+| H8 | 0.0510 | 0.0518 | +1.5% | 2/14 | 54,134 | 54,134 |
+| H16 | 0.1552 | 0.1558 | -0.8% | 1/14 | 203,257 | 203,257 |
+| A12 | 21.665 | 5.229 | -75.9% | 0/14 | 15,744,896 | 3,688,285 |
+| B12 | 65.865 | 15.141 | -77.0% | 0/14 | 46,741,104 | 9,555,964 |
+| C12 | 21.620 | 5.227 | -75.8% | 0/14 | 15,746,552 | 3,689,941 |
+| G12 | 3.058 | 1.093 | -64.4% | 0/14 | 2,261,542 | 791,283 |
+| A16 | 267.62 | 6.64 | -96.5% | 0/4 | 252,285,984 | 8,304,688 |
+| B16 | 1,051.09 | 19.82 | -97.3% | 0/4 | 755,942,936 | 22,151,280 |
+| C16 | 267.36 | 6.66 | -96.5% | 0/4 | 252,287,896 | 8,306,631 |
+| G16 | 23.88 | 1.21 | -95.0% | 0/4 | 36,223,096 | 1,743,015 |
+
+Inactive-path overhead was isolated on the knobbed candidate with an unreachable depth threshold ("off", same
+code, never activates; 12 alternated pairs): +0.5% to +1.8% paired on A4/A8/B4/C4/C8/G4/G8/H4/H8 and -1.7% on
+B8, allocations identical — within noise, consistent with the handful of thread-static operations per request.
+The same 12-pair run measured D7/A2 at +2.4% on B8 (5/12 pairs above +5%, so not demonstrably neutral either)
+and +0.3% to +1.9% elsewhere, versus D6/A2 at -5.8% on B8. An earlier 8-pair run showed +11% on A4 for every
+variant including "off"; it was the first scenario of each process and disappeared once warmup was lengthened
+and scenarios reordered, so it was a harness ordering artifact, not a regression. Absolute n=16 baseline timings
+vary by up to ±45% between runs (250-750 MB allocated per operation); the unmemoized "off" variant shows the
+same spread, which does not affect a 20-60x difference.
+
+**Correctness and re-entrancy report.** `ExpressionSimplifierComparisonMemoTests` (22 tests at `3974c639`; see review round 1): rebuilt identical
+trees share a key and reuse the result object without adding entries; distinct same-named parameters,
+orientation, association, node/static/constant types, `+0.0`/`-0.0` (also `float`), NaN payloads (identical
+payload equal, distinct payload not, `double` and `float`) and decimal scale are distinct keys, and each signed
+zero keeps its own bit-exact simplification inside a session; custom, lifted, checked, converted, call, member,
+conditional, lambda and opaque/`object` constant operands are ineligible; a 2^40 shared DAG is rejected by
+budget; lambda alpha-equivalence and bound-parameter bodies keep their results; the P6 re-entrant population
+scenario inserts safely and is reusable; exceptions are never cached, propagate each time and restore depth;
+the comparer keeps its `x`-before-`y` exception order; a naturally activated deep B12 chain with counting
+constants keeps the baseline user-code invocation count (measured on `133861c5`: 3 and 0; also unchanged in an
+always-active stress mode); a hostile-constant exception inside a naturally activated session propagates and
+releases all state; A12/G12 keep the exact baseline strings and evaluate like their sources; the inactive path
+never allocates or reuses; a public `Simplify` started from user code inside an active session observes a
+detached, inactive, empty state while the caller's session is restored intact; two sessions on explicit threads
+overlap through a two-phase `Barrier` with 30 s bounded waits and `Join` timeouts and never share entries.
+Simplified outputs of every A/B/C/G/H scenario for n=4/8/12/16 are byte-identical to the baseline for D6/A2,
+D7/A2, an always-active D1/A1 stress mode, and the final build. The whole `UtilsTest.Mathematics.Expressions`
+namespace (514 tests) also passed with the knobbed candidate forced into D1/A1. Final validation on `bb77b430`:
+Release `Utils.sln` build (no new warning in the changed files), Unit 13,851/13,851, Functional 383/383,
+Security 238 passed + 3 skipped (unchanged).
+
+**Decisions.**
+
+- **D6/A2: ACCEPTED.** No semantic change, no invalid hit, no user-code evaluation change, re-entrancy/lifetime
+  covered; no small/intermediate scenario regresses beyond +2.4% median paired (B8, the mandatory gate, improves
+  by 5.7% with 0/14 pairs above +5%); allocations within +0.1% where activation is rare and down where it is
+  frequent; large A/B/C improve by 96-97% in CPU and allocation with 98-99% fewer executions, G16 by 95%, H is
+  never activated. This keeps the order-of-magnitude large-case gains P7 reported (A16 17.7 ms there; 6.6 ms here, on a different run) without
+  P7's B8 regression.
+- **D7/A2: not selected (REJECTED as the production policy).** It passes the large-case gates but is dominated
+  by D6/A2: 1.8-2.5x more executions at n=16, 30-50% slower at n=12/16, and B8 measured +2.4% with 5/12 pairs
+  above +5% rather than demonstrably neutral.
+- No cheaper alternative signal was tested: the O(1) arithmetic predicate already removes the metric traversal,
+  so the signal costs only the always-on depth counter.
+
+**Remaining risks and next steps.**
+
+- A public `ExpressionComparer.Equals` call made by user code during an active session joins it (the public
+  comparer cannot distinguish its internal callers). Only user-code-free eligible operands are ever memoized and
+  their results are pure, so this is unobservable, but it is a documented exception to "detached" boundaries.
+- The thresholds are tuned to these families; deeper but cheap comparison nests could activate without benefit.
+  The worst observed cost of an activation is B8's single session, which is net positive.
+- Pre-existing, unchanged: subtractive chains keep unfolded `0 + 0 + ...` terms (e.g. B4 →
+  `((0 + (0 + 0)) + ((2 * x0) + ((0 - (3 * x1)) + ...)))`); values are correct but the form is not canonical. This
+  is a simplification-quality follow-up, not part of P9.
+- Still open from earlier stages: reflection-metadata caching for `CompareType`/`CompareMethod`/`CompareMember`.
+
+#### S5 P9 review, round 1 (2026-10-25, PR #662 review at `3974c639`)
+
+- **Test classification (fixed).** `StronglySharedDag_ExceedingBudget_IsIneligible` protects a resource-exhaustion
+  limit, so per `AGENTS.md` it moved, with unchanged scope and assertions, from `UtilsTest.Unit` to
+  `UtilsTest.Security/Expressions/ExpressionComparisonMemoResourceLimitTests.cs`. `Utils.csproj` now also declares
+  `InternalsVisibleTo UtilsTest.Security`, following the existing `Utils.IO`/`Utils.Fonts`/`Utils.Reflection`
+  precedent. The unit class keeps 21 tests.
+- **Recursion depth (verified, no production change).** Every node visited by the key traversal consumes one
+  budget unit before recursing, so the 1,024-node budget bounds its recursion depth as well as its work; strict
+  key equality only runs on two keys that passed that traversal, so its recursion is bounded by the same budget
+  (the `TryCreate` remarks now say so). Two new Security tests run on a dedicated 1 MB-stack thread with bounded
+  joins: left- and right-nested 100,000-level chains are rejected without exhausting the stack, and the deepest
+  in-budget chain (1,023 nodes, 511 levels) is eligible, compares equal to a rebuilt copy, still detects a
+  difference at its deepest leaf, while 512 levels (1,025 nodes) are rejected.
+- **Dictionary growth (measured, instrumented knobbed candidate `56b53d7b`, D6/A2).** The budget bounds key size,
+  not entry count; the per-session lifetime bounds the count. Peak entries per session grow linearly with n:
+
+| Family | n=16 | n=20 | n=24 | Executions n=16/20/24 | Inserts per public call n=16/20/24 |
+|---|---:|---:|---:|---:|---:|
+| A | 45 | 57 | 69 | 4,606 / 6,592 / 8,658 | 292 / 502 / 760 |
+| B | 53 | 69 | 85 | 10,973 / 15,557 / 20,269 | 333 / 585 / 901 |
+| G | 29 | 37 | 45 | 2,377 / 3,489 / 4,633 | 171 / 307 / 475 |
+
+  That is +3, +4 and +2 entries per additional term; activations (one dictionary each) are `n - 7` for A/B and
+  `n - 8` for G.
+- **Unchanged by design:** thresholds and mechanism (no new experimental result); the activation-during-recursion
+  insertion path (reviewed, kept); the commit-message BOM in `3974c639` (cosmetic, history not rewritten).
+- **Validation:** Release `Utils.sln` build with 0 errors; Unit 13,850/13,850 (one test moved out), Functional
+  383/383, Security 241 passed + 3 skipped.
+
 ## Execution-optimizer stages
 
 These remain separate from the simplifier stages above.
