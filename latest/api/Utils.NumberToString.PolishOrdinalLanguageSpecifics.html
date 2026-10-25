@@ -6,7 +6,7 @@
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <meta name="title" content="Class PolishOrdinalLanguageSpecifics | omy.Utils Documentation ">
       
-      <meta name="description" content="Handles Polish ordinal conversion for numbers 20 and above, where compound forms require both the tens and units components to carry ordinal endings — a transformation the XML word-rule engine cannot perform because it only rewrites the last word. Numbers 1–19 fall through to the XML pipeline (which carries full case/gender tables). Since NTS-08 the plugin also builds 1000–1999; since NTS-28 it builds 2000–999 999 after PWN Poradnia 16446: the thousands stay cardinal with their agreeing noun (dwa tysiące piętnasty) and a round thousand with a multiplier of 2–99 is one word declined like tysięczny (dwudziestojedentysięczny). The round thousands from 100 000 and the millions fail closed.">
+      <meta name="description" content="Handles Polish ordinal conversion for numbers 20 and above, where compound forms require both the tens and units components to carry ordinal endings — a transformation the XML word-rule engine cannot perform because it only rewrites the last word. Numbers 1–19 fall through to the XML pipeline (which carries full case/gender tables). Since NTS-08 the plugin also builds 1000–1999; since NTS-28 it builds 2000–999 999 after PWN Poradnia 16446: the thousands stay cardinal with their agreeing noun (dwa tysiące piętnasty) and a round thousand with a multiplier of 2–99 is one word declined like tysięczny (dwudziestojedentysięczny). The round thousands from 100 000 and the millions fail closed: the cardinals are unbounded since NTS-35, the million and above are outside the validated ordinal domain.">
       <link rel="icon" href="../favicon.ico">
       <link rel="stylesheet" href="../public/docfx.min.css">
       <link rel="stylesheet" href="../public/main.css">
@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_NumberToString_PolishOrdinalLanguageSpecifics" data-uid="Utils.NumberToString.PolishOrdinalLanguageSpecifics" class="text-break">
-Class PolishOrdinalLanguageSpecifics  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/PolishOrdinalLanguageSpecifics.cs/#L15"><i class="bi bi-code-slash"></i></a>
+Class PolishOrdinalLanguageSpecifics  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/PolishOrdinalLanguageSpecifics.cs/#L16"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -104,7 +104,8 @@ Numbers 1–19 fall through to the XML pipeline (which carries full case/gender 
 Since NTS-08 the plugin also builds 1000–1999; since NTS-28 it builds 2000–999 999 after PWN Poradnia
 16446: the thousands stay cardinal with their agreeing noun (<code>dwa tysiące piętnasty</code>) and a round
 thousand with a multiplier of 2–99 is one word declined like <code>tysięczny</code>
-(<code>dwudziestojedentysięczny</code>). The round thousands from 100 000 and the millions fail closed.</p>
+(<code>dwudziestojedentysięczny</code>). The round thousands from 100 000 and the millions fail closed: the cardinals
+are unbounded since NTS-35, the million and above are outside the validated ordinal domain.</p>
 </div>
   <div class="markdown conceptual"></div>
 
@@ -259,7 +260,7 @@ thousand with a multiplier of 2–99 is one word declined like <code>tysięczny<
 
   <h3 id="Utils_NumberToString_PolishOrdinalLanguageSpecifics_FinalizeWriting_System_String_System_String_" data-uid="Utils.NumberToString.PolishOrdinalLanguageSpecifics.FinalizeWriting(System.String,System.String)">
   FinalizeWriting(string, string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/PolishOrdinalLanguageSpecifics.cs/#L308"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/PolishOrdinalLanguageSpecifics.cs/#L309"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Finalizes a converted text according to language-specific writing rules.</p>
@@ -305,7 +306,7 @@ fragments without invoking this method, then invokes it exactly once for each pu
 
   <h3 id="Utils_NumberToString_PolishOrdinalLanguageSpecifics_TryConvertOrdinal_System_Int32_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__System_String__" data-uid="Utils.NumberToString.PolishOrdinalLanguageSpecifics.TryConvertOrdinal(System.Int32,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String@)">
   TryConvertOrdinal(int, IReadOnlyDictionary&lt;string, string&gt;, out string?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/PolishOrdinalLanguageSpecifics.cs/#L321"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/PolishOrdinalLanguageSpecifics.cs/#L322"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Attempts to convert a non-negative integer to its ordinal string representation.</p>
@@ -353,7 +354,7 @@ otherwise <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/
 
   <h3 id="Utils_NumberToString_PolishOrdinalLanguageSpecifics_TryConvertOrdinal_System_Int64_System_Collections_Generic_IReadOnlyDictionary_System_String_System_String__System_String__" data-uid="Utils.NumberToString.PolishOrdinalLanguageSpecifics.TryConvertOrdinal(System.Int64,System.Collections.Generic.IReadOnlyDictionary{System.String,System.String},System.String@)">
   TryConvertOrdinal(long, IReadOnlyDictionary&lt;string, string&gt;, out string?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/PolishOrdinalLanguageSpecifics.cs/#L312"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/PolishOrdinalLanguageSpecifics.cs/#L313"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Attempts to convert a 64-bit integer to its ordinal string representation.
@@ -408,7 +409,7 @@ otherwise <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/PolishOrdinalLanguageSpecifics.cs/#L15" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.NumberToString/PolishOrdinalLanguageSpecifics.cs/#L16" class="edit-link">Edit this page</a>
         </div>
 
 
