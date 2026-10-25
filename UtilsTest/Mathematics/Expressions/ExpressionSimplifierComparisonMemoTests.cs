@@ -305,17 +305,6 @@ public class ExpressionSimplifierComparisonMemoTests
         Assert.IsTrue(ExpressionSimplifier.IsComparisonMemoEligible(Expression.Negate(Expression.Power(x, Expression.Constant(2.0)))));
     }
 
-    /// <summary>A strongly shared DAG exceeding the per-path node budget is ineligible instead of being traversed exponentially.</summary>
-    [TestMethod]
-    public void StronglySharedDag_ExceedingBudget_IsIneligible()
-    {
-        ParameterExpression x = Expression.Parameter(typeof(double), "x");
-        Expression shared = x;
-        for (int i = 0; i < 40; i++) shared = Expression.Add(shared, shared);
-
-        Assert.IsFalse(ExpressionSimplifier.IsComparisonMemoEligible(shared));
-    }
-
     // ------------------------------------------------------------------------------------------
     // Lambda and lexical-scope isolation
     // ------------------------------------------------------------------------------------------

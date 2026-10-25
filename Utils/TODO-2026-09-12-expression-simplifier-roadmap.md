@@ -3422,7 +3422,7 @@ and scenarios reordered, so it was a harness ordering artifact, not a regression
 vary by up to ±45% between runs (250-750 MB allocated per operation); the unmemoized "off" variant shows the
 same spread, which does not affect a 20-60x difference.
 
-**Correctness and re-entrancy report.** `ExpressionSimplifierComparisonMemoTests` (22 tests): rebuilt identical
+**Correctness and re-entrancy report.** `ExpressionSimplifierComparisonMemoTests` (22 tests at `3974c639`; see review round 1): rebuilt identical
 trees share a key and reuse the result object without adding entries; distinct same-named parameters,
 orientation, association, node/static/constant types, `+0.0`/`-0.0` (also `float`), NaN payloads (identical
 payload equal, distinct payload not, `double` and `float`) and decimal scale are distinct keys, and each signed
@@ -3468,6 +3468,36 @@ Security 238 passed + 3 skipped (unchanged).
   `((0 + (0 + 0)) + ((2 * x0) + ((0 - (3 * x1)) + ...)))`); values are correct but the form is not canonical. This
   is a simplification-quality follow-up, not part of P9.
 - Still open from earlier stages: reflection-metadata caching for `CompareType`/`CompareMethod`/`CompareMember`.
+
+#### S5 P9 review, round 1 (2026-10-25, PR #662 review at `3974c639`)
+
+- **Test classification (fixed).** `StronglySharedDag_ExceedingBudget_IsIneligible` protects a resource-exhaustion
+  limit, so per `AGENTS.md` it moved, with unchanged scope and assertions, from `UtilsTest.Unit` to
+  `UtilsTest.Security/Expressions/ExpressionComparisonMemoResourceLimitTests.cs`. `Utils.csproj` now also declares
+  `InternalsVisibleTo UtilsTest.Security`, following the existing `Utils.IO`/`Utils.Fonts`/`Utils.Reflection`
+  precedent. The unit class keeps 21 tests.
+- **Recursion depth (verified, no production change).** Every node visited by the key traversal consumes one
+  budget unit before recursing, so the 1,024-node budget bounds its recursion depth as well as its work; strict
+  key equality only runs on two keys that passed that traversal, so its recursion is bounded by the same budget
+  (the `TryCreate` remarks now say so). Two new Security tests run on a dedicated 1 MB-stack thread with bounded
+  joins: left- and right-nested 100,000-level chains are rejected without exhausting the stack, and the deepest
+  in-budget chain (1,023 nodes, 511 levels) is eligible, compares equal to a rebuilt copy, still detects a
+  difference at its deepest leaf, while 512 levels (1,025 nodes) are rejected.
+- **Dictionary growth (measured, instrumented knobbed candidate `56b53d7b`, D6/A2).** The budget bounds key size,
+  not entry count; the per-session lifetime bounds the count. Peak entries per session grow linearly with n:
+
+| Family | n=16 | n=20 | n=24 | Executions n=16/20/24 | Inserts per public call n=16/20/24 |
+|---|---:|---:|---:|---:|---:|
+| A | 45 | 57 | 69 | 4,606 / 6,592 / 8,658 | 292 / 502 / 760 |
+| B | 53 | 69 | 85 | 10,973 / 15,557 / 20,269 | 333 / 585 / 901 |
+| G | 29 | 37 | 45 | 2,377 / 3,489 / 4,633 | 171 / 307 / 475 |
+
+  That is +3, +4 and +2 entries per additional term; activations (one dictionary each) are `n - 7` for A/B and
+  `n - 8` for G.
+- **Unchanged by design:** thresholds and mechanism (no new experimental result); the activation-during-recursion
+  insertion path (reviewed, kept); the commit-message BOM in `3974c639` (cosmetic, history not rewritten).
+- **Validation:** Release `Utils.sln` build with 0 errors; Unit 13,850/13,850 (one test moved out), Functional
+  383/383, Security 241 passed + 3 skipped.
 
 ## Execution-optimizer stages
 

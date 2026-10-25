@@ -271,8 +271,10 @@ namespace Utils.Mathematics.Expressions
 
             /// <summary>
             /// Builds a key in one traversal that also decides eligibility. Traversal stops, and the operand is
-            /// ineligible, as soon as an unsupported node is met or the per-path node budget is exhausted (which
-            /// bounds the cost of strongly shared DAGs).
+            /// ineligible, as soon as an unsupported node is met or the per-path node budget is exhausted. Every
+            /// visited node consumes one budget unit before recursing, so the budget bounds both the work (strongly
+            /// shared DAGs are counted per path) and the recursion depth of this traversal; strict key equality only
+            /// ever runs on two keys built here, so its recursion is bounded by the same budget.
             /// </summary>
             /// <param name="expression">The operand.</param>
             /// <param name="key">The key when the method returns <see langword="true"/>.</param>
