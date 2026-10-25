@@ -132,7 +132,7 @@ namespace Utils.Mathematics.Expressions
             _lexicalScopeStack = null;
             try
             {
-                return TransformCore(expression);
+                return FoldNaNOperand(TransformCore(expression));
             }
             finally
             {
@@ -353,7 +353,8 @@ namespace Utils.Mathematics.Expressions
         /// <see cref="ExpressionTransformer.TransformCore(Expression)"/> dereferences a null
         /// <c>context.Expression</c> and throws <see cref="NullReferenceException"/> — historically true for
         /// every runtime type, including a derived subclass, which therefore still observes it unless it
-        /// overrides this method itself.
+        /// overrides this method itself. The transformed operand then goes through <see cref="FoldNaNOperand"/>
+        /// (S5 P11b), for every runtime type.
         /// </remarks>
         protected override Expression PrepareExpression(Expression e)
         {
@@ -362,7 +363,7 @@ namespace Utils.Mathematics.Expressions
                 return null;
             }
 
-            return TransformCore(e);
+            return FoldNaNOperand(TransformCore(e));
         }
 
         /// <summary>
@@ -400,8 +401,10 @@ namespace Utils.Mathematics.Expressions
         /// <param name="body">The (already prepared/transformed) body.</param>
         /// <param name="parameters">The (already prepared) parameters, in declaration order.</param>
         /// <returns>A lambda expression preserving the original node's metadata, for the exact built-in type; the historical reconstruction otherwise.</returns>
+        /// <remarks>The body, transformed without <see cref="PrepareExpression"/>, goes through <see cref="FoldNaNOperand"/> first (S5 P11b), for every runtime type.</remarks>
         internal override LambdaExpression RebuildLambdaExpression(LambdaExpression expression, Expression body, ParameterExpression[] parameters)
         {
+            body = FoldNaNOperand(body);
             if (GetType() != typeof(ExpressionSimplifier))
             {
                 return base.RebuildLambdaExpression(expression, body, parameters);
@@ -595,50 +598,73 @@ namespace Utils.Mathematics.Expressions
 
         #region NaN propagation
 
-        /// <summary>Folds <c>left + right</c> to <c>NaN</c>: see <see cref="PropagateNaN"/>.</summary>
-        [ExpressionSignature(ExpressionType.Add)]
-        protected Expression AdditionWithNaN(BinaryExpression e, Expression left, Expression right) => PropagateNaN(e, left, right);
-
-        /// <summary>Folds <c>left - right</c> to <c>NaN</c>: see <see cref="PropagateNaN"/>.</summary>
-        [ExpressionSignature(ExpressionType.Subtract)]
-        protected Expression SubstractionWithNaN(BinaryExpression e, Expression left, Expression right) => PropagateNaN(e, left, right);
-
-        /// <summary>Folds <c>left * right</c> to <c>NaN</c>: see <see cref="PropagateNaN"/>.</summary>
-        [ExpressionSignature(ExpressionType.Multiply)]
-        protected Expression MultiplicationWithNaN(BinaryExpression e, Expression left, Expression right) => PropagateNaN(e, left, right);
-
-        /// <summary>Folds <c>left / right</c> to <c>NaN</c>: see <see cref="PropagateNaN"/>.</summary>
-        [ExpressionSignature(ExpressionType.Divide)]
-        protected Expression DivisionWithNaN(BinaryExpression e, Expression left, Expression right) => PropagateNaN(e, left, right);
-
         /// <summary>
         /// Replaces an ordinary <see cref="double"/>/<see cref="float"/> addition, subtraction, multiplication or
         /// division that has a <c>NaN</c> constant operand by that constant, when the other operand can be dropped
         /// without changing anything observable (S5 P11b).
         /// </summary>
-        /// <param name="e">The arithmetic node.</param>
-        /// <param name="left">Its left operand.</param>
-        /// <param name="right">Its right operand.</param>
-        /// <returns>The <c>NaN</c> operand, or <see langword="null"/> when the rule does not apply.</returns>
+        /// <param name="expression">A fully simplified expression.</param>
+        /// <returns>The <c>NaN</c> operand, or <paramref name="expression"/> unchanged.</returns>
         /// <remarks>
+        /// <para>
         /// IEEE-754 makes these four operations return <c>NaN</c> whenever an operand is <c>NaN</c>, whatever the
         /// other operand is, so the result is numerically inevitable. Dropping the other operand is a separate
         /// question, answered by <see cref="IsEliminableFloatingOperand"/>: only operands whose evaluation cannot
         /// throw, run user code or have any other effect qualify. The returned constant is the operand itself, so its
-        /// type is <paramref name="e"/>'s; its payload may differ from the one the hardware would produce, which the
+        /// type is the node's; its payload may differ from the one the hardware would produce, which the
         /// "Symbolic-equivalence contract" does not promise anyway. <see cref="ExpressionType.Power"/> is excluded:
         /// <c>Math.Pow(NaN, 0)</c> and <c>Math.Pow(1, NaN)</c> are <c>1</c>.
+        /// </para>
+        /// <para>
+        /// Applied to the result of every node, after its rules, by <see cref="PrepareExpression"/> (each operand) and
+        /// <see cref="TransformWithinBoundary"/> (the root), rather than as a transformation rule: a rule is a dispatch
+        /// candidate of every arithmetic node, and the extra candidates cost up to 16% CPU on small multiplicative and
+        /// factored trees (see the S5 P11 roadmap entry). Here the common path is two type tests. Folding after the
+        /// rules is equivalent: a rewrite of the node keeps the <c>NaN</c> operand, and the folded result reaches the
+        /// parent's own rules as a constant.
+        /// </para>
         /// </remarks>
-        private static Expression PropagateNaN(BinaryExpression e, Expression left, Expression right)
+        private static Expression FoldNaNOperand(Expression expression)
         {
-            // Cheapest tests first: on the common path (no NaN operand) the rule costs two type tests.
-            if (e.Type != typeof(double) && e.Type != typeof(float)) return null;
-            Expression nan, other;
-            if (IsNaNConstant(left)) (nan, other) = (left, right);
-            else if (IsNaNConstant(right)) (nan, other) = (right, left);
-            else return null;
+            if (expression is not BinaryExpression binary) return expression;
+            ConstantExpression nan;
+            Expression other;
+            if (TryGetNaNOperand(binary.Left, out nan)) other = binary.Right;
+            else if (TryGetNaNOperand(binary.Right, out nan)) other = binary.Left;
+            else return expression;
 
-            return IsOrdinaryBinaryArithmetic(e) && IsEliminableFloatingOperand(other) ? nan : null;
+            return binary.NodeType is ExpressionType.Add or ExpressionType.Subtract or ExpressionType.Multiply or ExpressionType.Divide
+                && IsOrdinaryBinaryArithmetic(binary)
+                && IsEliminableFloatingOperand(other)
+                ? nan
+                : expression;
+        }
+
+        /// <summary>
+        /// Recognizes an operand that is, or immediately wraps, a <c>NaN</c> constant: the constant itself, its
+        /// ordinary negation, or <c>c - NaN</c> with a constant <c>c</c>.
+        /// </summary>
+        /// <param name="operand">An operand of the node being folded.</param>
+        /// <param name="nan">Receives the <c>NaN</c> constant.</param>
+        /// <returns><see langword="true"/> when the operand evaluates to that <c>NaN</c> without any effect.</returns>
+        /// <remarks>
+        /// The two wrapped shapes are the negative-term forms <see cref="CanonicalizeAdditiveExpression"/> and
+        /// <see cref="SubstractionWithZero(BinaryExpression, ConstantExpression, Expression)"/> build without passing
+        /// them back through <see cref="PrepareExpression"/> (<c>x - NaN</c> becomes <c>(0 - NaN) + x</c>). The look-ahead
+        /// is one level deep, so the common path stays a few type tests.
+        /// </remarks>
+        private static bool TryGetNaNOperand(Expression operand, out ConstantExpression nan)
+        {
+            // Shape and value tests first; the ordinary-operator table is only consulted once a NaN is found.
+            nan = operand switch
+            {
+                ConstantExpression constant when IsNaNConstant(constant) => constant,
+                UnaryExpression { Operand: ConstantExpression constant } unary when IsNaNConstant(constant) && IsOrdinaryUnaryNegate(unary) => constant,
+                BinaryExpression { NodeType: ExpressionType.Subtract, Left: ConstantExpression, Right: ConstantExpression constant } binary
+                    when IsNaNConstant(constant) && IsOrdinaryBinaryArithmetic(binary) => constant,
+                _ => null,
+            };
+            return nan is not null;
         }
 
         /// <summary>Determines whether <paramref name="expression"/> is a <see cref="double"/> or <see cref="float"/> <c>NaN</c> constant.</summary>

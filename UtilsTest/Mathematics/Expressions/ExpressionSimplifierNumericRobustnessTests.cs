@@ -304,8 +304,8 @@ public class ExpressionSimplifierNumericRobustnessTests
 
     /// <summary>
     /// Characterizes the remaining zero-divisor behavior (a separate defect in the S5 P11 roadmap entry): division by
-    /// a <see cref="double"/> zero still throws while simplifying, as do integral and decimal division by zero, which
-    /// match their runtime behavior. A <c>NaN</c> dividend is folded by P11b before that rule is reached.
+    /// a <see cref="double"/> zero still throws while simplifying, even with a <c>NaN</c> dividend, as do integral and
+    /// decimal division by zero, which match their runtime behavior.
     /// </summary>
     [TestMethod]
     public void Simplify_ZeroDivisor_KeepsHistoricalBehavior()
@@ -316,7 +316,7 @@ public class ExpressionSimplifierNumericRobustnessTests
         AssertThrowsRuleException<DivideByZeroException>(() => Simplify(Expression.Divide(x, Expression.Constant(-0.0))));
         AssertThrowsRuleException<DivideByZeroException>(() => Simplify(Expression.Divide(i, Expression.Constant(0))));
         AssertThrowsRuleException<DivideByZeroException>(() => Simplify(Expression.Divide(m, Expression.Constant(0m))));
-        AssertDoubleConstant(double.NaN, Simplify(Expression.Divide(Expression.Constant(double.NaN), Expression.Constant(0.0))));
+        AssertThrowsRuleException<DivideByZeroException>(() => Simplify(Expression.Divide(Expression.Constant(double.NaN), Expression.Constant(0.0))));
     }
 
     /// <summary>Large integral and decimal constants keep their exact comparison: none is taken for zero, one or minus one.</summary>
@@ -406,6 +406,10 @@ public class ExpressionSimplifierNumericRobustnessTests
 
         Expression nested = Expression.Multiply(Expression.Add(x, Expression.Divide(y, Expression.Constant(double.NaN))), Expression.Subtract(x, y));
         AssertDoubleConstant(double.NaN, Simplify(nested));
+
+        // Negative-term shapes built by canonicalization: -NaN and 0 - NaN.
+        AssertDoubleConstant(double.NaN, Simplify(Expression.Add(Expression.Negate(Expression.Constant(double.NaN)), x)));
+        AssertDoubleConstant(double.NaN, Simplify(Expression.Subtract(Expression.Subtract(x, y), Expression.Constant(double.NaN))));
     }
 
     /// <summary>A <c>NaN</c> in a lambda body folds the body; the lambda and its parameters are kept.</summary>
