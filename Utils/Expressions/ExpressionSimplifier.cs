@@ -575,10 +575,15 @@ namespace Utils.Mathematics.Expressions
         /// <summary>
         /// Simplifies <c>0 - right</c> to <c>-right</c>.
         /// </summary>
+        /// <remarks>
+        /// Not applied to a type without an ordinary unary negation (the unsigned integers), where
+        /// <see cref="Expression.Negate(Expression)"/> would throw; <c>0 - right</c> is then already the simplest
+        /// form and is also what <see cref="CanonicalizeAdditiveExpression"/> produces for such a type (S5 P10).
+        /// </remarks>
         [ExpressionSignature(ExpressionType.Subtract)]
         public Expression SubstractionWithZero(BinaryExpression e, [ConstantNumeric(0)] ConstantExpression left, Expression right)
         {
-            if (!IsOrdinaryBinaryArithmetic(e)) return null;
+            if (!IsOrdinaryBinaryArithmetic(e) || !_ordinaryNegateMethods.ContainsKey(right.Type)) return null;
             if (NumberUtils.CompareNumeric(left.Value, 0) == 0) return TransformCore(Expression.Negate(right));
             return null;
         }
@@ -1669,11 +1674,34 @@ namespace Utils.Mathematics.Expressions
         /// <param name="left">Left expression branch.</param>
         /// <param name="right">Right expression branch.</param>
         /// <returns>A deterministic additive expression tree preserving semantics.</returns>
+        /// <remarks>
+        /// <para>
+        /// <b>Canonical additive form (S5 P10).</b> No collected term is an ordinary numeric zero constant (see
+        /// <see cref="IsOrdinaryZeroConstant"/>), opposite occurrences of the same opaque term cancel (see
+        /// <see cref="CollectUncancelledTerms"/>), a group that cancels entirely is omitted, and a sum in which
+        /// everything cancels is the zero constant of the result type. Before P10, a negative group rebuilt as
+        /// <c>0 - term</c> (see <see cref="BuildAdditiveExpression"/>) handed its zero back to the enclosing
+        /// canonicalization as a term of its own, and all such zeros were grouped and kept as
+        /// <c>0 + (0 + ...)</c>: a left-associated subtraction chain of n terms accumulated
+        /// (n - 1)(n - 2)/2 of them. Dropping them is the identity
+        /// <see cref="AdditionWithZero(BinaryExpression, Expression, ConstantExpression)"/> already applies, and
+        /// cancellation is the one <see cref="SubstractionOfEqualsElements"/> already applies, so the
+        /// symbolic-equivalence contract is not widened.
+        /// </para>
+        /// <para>
+        /// The right-associated shape and the <c>0 - term</c> representation of a negative group are kept on
+        /// purpose. A left-associated <c>((p - n1) - n2)</c> form would be a fixed point of the subtraction rules,
+        /// but every comparer probe at an enclosing level then re-simplifies the whole left sub-chain; when that
+        /// sub-chain can reach user code (so it is neither cached nor memoized) the work grows as 3^n (measured
+        /// on a 12-term chain: 59,049 user <see cref="object.Equals(object?)"/> calls instead of 3).
+        /// </para>
+        /// </remarks>
         private Expression CanonicalizeAdditiveExpression(ExpressionType nodeType, Expression left, Expression right)
         {
             var terms = new List<(Expression Term, bool IsNegative)>();
             CollectAdditiveTerms(terms, left, false);
             CollectAdditiveTerms(terms, right, nodeType == ExpressionType.Subtract);
+            terms.RemoveAll(static term => IsOrdinaryZeroConstant(term.Term));
 
             if (terms.Count == 0)
             {
@@ -1722,14 +1750,101 @@ namespace Utils.Mathematics.Expressions
                 .ToList();
 
             var rebuiltTerms = new List<Expression>();
+            var signedTerms = new List<(Expression Term, bool IsNegative)>();
             foreach (var termGroup in orderedTerms.GroupBy(static term => term.Term, AdditiveGroupingEqualityComparer.Instance))
             {
-                var signedTerms = termGroup.Select(static term => (term.Term, term.IsNegative)).ToList();
-                rebuiltTerms.Add(BuildAdditiveExpression(signedTerms, left.Type));
+                signedTerms.Clear();
+                CollectUncancelledTerms(termGroup, signedTerms);
+                if (signedTerms.Count > 0)
+                {
+                    rebuiltTerms.Add(BuildAdditiveExpression(signedTerms, left.Type));
+                }
+            }
+
+            if (rebuiltTerms.Count == 0)
+            {
+                return Expression.Constant(Convert.ChangeType(0, left.Type), left.Type);
             }
 
             return BuildRightAssociative(rebuiltTerms, Expression.Add);
         }
+
+        /// <summary>
+        /// Determines whether <paramref name="term"/> is a numeric zero constant of an ordinary numeric type, i.e. a
+        /// neutral additive term (both <c>+0.0</c> and <c>-0.0</c>, any decimal scale).
+        /// </summary>
+        /// <param name="term">The collected additive term.</param>
+        /// <returns><see langword="true"/> if the term can be dropped from an ordinary additive chain.</returns>
+        /// <remarks>
+        /// Applies the same zero test as <see cref="AdditionWithZero(BinaryExpression, Expression, ConstantExpression)"/>
+        /// (<see cref="NumberUtils.CompareNumeric"/>), so dropping the term is the identity that rule already applies,
+        /// including its symbolic, not bit-exact, treatment of signed zero and decimal scale. <see cref="double"/> and
+        /// <see cref="float"/> are compared directly instead, because <see cref="NumberUtils.CompareNumeric"/> converts
+        /// to <see cref="decimal"/> and throws for <c>NaN</c>, infinities and magnitudes beyond its range. Only
+        /// constants whose static type is one of <see cref="Types.Number"/> qualify; their values are boxed
+        /// primitives, so no user code runs.
+        /// </remarks>
+        private static bool IsOrdinaryZeroConstant(Expression term)
+            => term is ConstantExpression { Value: not null } constant
+                && Types.Number.Contains(constant.Type)
+                && constant.Value switch
+                {
+                    double doubleValue => doubleValue == 0,
+                    float floatValue => floatValue == 0,
+                    _ => NumberUtils.CompareNumeric(constant.Value, 0) == 0,
+                };
+
+        /// <summary>
+        /// Copies one additive group's signed terms, in order, into <paramref name="signedTerms"/>, leaving out the
+        /// opposite occurrences of an opaque term that cancel each other.
+        /// </summary>
+        /// <param name="termGroup">The ordered terms of one group.</param>
+        /// <param name="signedTerms">Receives the group's remaining signed terms; empty when the group cancels entirely.</param>
+        /// <remarks>
+        /// Every member of an opaque group is structurally equal to the others (the group was formed by
+        /// <see cref="AdditiveGroupingEqualityComparer"/>), so <c>t - t</c> cancels, the identity
+        /// <see cref="SubstractionOfEqualsElements"/> already applies; no further comparison is made, so no extra
+        /// user code can run. A function-like group clusters distinct calls (for example <c>sin(x)</c> and
+        /// <c>cos(x)</c>), so it is never cancelled here. Neither is a non-finite floating-point constant group:
+        /// <c>NaN - NaN</c> and <c>inf - inf</c> are not zero even symbolically.
+        /// </remarks>
+        private static void CollectUncancelledTerms(IGrouping<Expression, AnnotatedAdditiveTerm> termGroup, List<(Expression Term, bool IsNegative)> signedTerms)
+        {
+            // A single enumeration of the group (as before P10): enumerating an IGrouping allocates an enumerator.
+            int positiveCount = 0;
+            int negativeCount = 0;
+            foreach (AnnotatedAdditiveTerm term in termGroup)
+            {
+                signedTerms.Add((term.Term, term.IsNegative));
+                if (term.IsNegative) negativeCount++;
+                else positiveCount++;
+            }
+
+            if (positiveCount == 0 || negativeCount == 0 || ClassifyForAdditiveGrouping(termGroup.Key).IsFunctionLike || IsNonFiniteConstant(termGroup.Key))
+            {
+                return;
+            }
+
+            // Drop the first min(positive, negative) occurrences of each sign in place, keeping the others in order.
+            int positivesToSkip = Math.Min(positiveCount, negativeCount);
+            int negativesToSkip = positivesToSkip;
+            int kept = 0;
+            for (int index = 0; index < signedTerms.Count; index++)
+            {
+                (Expression Term, bool IsNegative) signedTerm = signedTerms[index];
+                if (signedTerm.IsNegative ? negativesToSkip-- > 0 : positivesToSkip-- > 0) continue;
+                signedTerms[kept++] = signedTerm;
+            }
+
+            signedTerms.RemoveRange(kept, signedTerms.Count - kept);
+        }
+
+        /// <summary>Determines whether <paramref name="expression"/> is a <c>NaN</c> or infinite <see cref="double"/>/<see cref="float"/> constant.</summary>
+        /// <param name="expression">The group's representative term.</param>
+        /// <returns><see langword="true"/> for a non-finite floating-point constant.</returns>
+        private static bool IsNonFiniteConstant(Expression expression)
+            => expression is ConstantExpression { Value: double doubleValue } ? !double.IsFinite(doubleValue)
+                : expression is ConstantExpression { Value: float floatValue } && !float.IsFinite(floatValue);
 
         /// <summary>
         /// Creates a canonical multiplicative form by flattening factors, sorting them, and right-associating.
