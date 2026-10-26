@@ -4548,6 +4548,44 @@ head and the follow-up compared per file and warning message: identical (896 uni
 11 aggregation tests and the moved nested constant-coefficient test), Functional 383/383, Security 241 passed + 3
 skipped; the rule inventory, P3/P9, S4/P10, P11, P12–P13 and P14 tests pass.
 
+##### S5 P14 follow-up C — review corrections (0e1d90a2, 2b836ad3)
+
+**Documentation (0e1d90a2, documentation only).** The S3 remarks said that "the simplifier itself never runs user code
+while simplifying", which the P3 factor comparisons contradict. They now tell apart: (1) the source tree is never
+evaluated (a `MethodCallExpression` is not invoked to compute its result; folding only touches boxed primitives);
+(2) user code can run indirectly while simplifying, through structural comparisons such as those of
+`FactorEqualityProbe`, which may call `Equals`/`GetHashCode` of custom constants (and let their exceptions propagate);
+the P3 cache keeps the number and order of those calls as an uncached comparison would; (3) the simplified tree may run
+less user code. The "no user code" statements of `BuildFactoredProduct`, `AggregateAdditiveConstants` and this roadmap
+are scoped to their own construction.
+
+**Edge-case tests (2b836ad3).** Five tests added to `ExpressionSimplifierAdditiveConstantAggregationTests`:
+unsigned chains near `MaxValue` with several positive and negative constants (`uint` `((a + (Max - 1)) - 5 + 7 - Max)
++ 2 -> (0 - 4294967293) + a`, `ulong` `(a - Max) - Max -> (0 - 18446744073709551614) + a`), decimal chains through the
+limits, `+inf`/`-inf`/`NaN`/`±0` combinations evaluated against the source on special samples, coefficients with
+several subtractions and bound parameters (`((a - 2)x - (3 - b)x) - 4x -> (-9 + (a + b)) * x`), and tree calls never
+invoked during aggregation (a call whose argument is a custom constant; comparer `Equals` calls are deliberately not
+constrained). Against the P14 head, four fail and the decimal test is a control. Every evaluation equals the source
+except the two documented S3 differences, now pinned as characterizations: `(a + -0) + 0 -> a` keeps `-0`, and
+`((a + max) + max) - max -> inf + a` gives `NaN` instead of `-inf` for `a = -inf` (the P14 head gave `max + a`, which
+differed for every finite `a`). No counterexample to the aggregation was found.
+
+**Pre-existing defects found while testing (present on `32cc4647`, unchanged by #666; not fixed here).**
+
+- **Stack overflow.** `a*x + (1 - a)*x` (also `(a - b)*x + (1 - a)*x`, `b*x + (1 - a)*x`, `-b*x + (1 - a)*x`)
+  recurses without end between the factoring rules (`SubstractionOfEqualsElements` probe) and
+  `MultiplicationOfEqualsElements` until the process dies. Same on master, on the P14 head and with this follow-up.
+  It needs its own stage: the recursion goes through comparison simplification, outside the code changed here.
+- **Decimal overflow while simplifying.** `((a + MaxValue) + MaxValue) - MaxValue` throws `OverflowException` from
+  `Simplify` although the source evaluates for `a = -MaxValue`: the inner `(a + MaxValue) + MaxValue` (whose own total
+  overflows, so the aggregation rightly declines) is canonicalized with its equal constants grouped into
+  `(MaxValue + MaxValue)`, which a later fold of the enclosing node evaluates. A balanced-order decimal summation was
+  tried in the aggregation and reverted: each prefix of the chain is canonicalized bottom-up with its own total, so it
+  cannot reach this case.
+- **`(e - c) * 1`.** `((a + MaxValue) + MaxValue) - 1u` and `(a + decimal.MinValue) - 1` end as `(... - 1) * 1`: the
+  factoring rules augment both sides with a coefficient `1` and factor `e - c` as `(e - c) * 1`. Values are correct;
+  the shape is not minimal.
+
 ## Execution-optimizer stages
 
 These remain separate from the simplifier stages above.
