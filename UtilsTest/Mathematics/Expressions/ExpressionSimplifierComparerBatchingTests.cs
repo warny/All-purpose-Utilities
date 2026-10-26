@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -50,7 +51,8 @@ namespace UtilsTest.Mathematics.Expressions;
 /// <see cref="ExpressionSimplifierAdditiveSortScaleTests"/>'s reflection into
 /// <c>CanonicalizeAdditiveExpression</c>) isolates exactly the code this stage changed and removes that
 /// fragility; <see cref="BoundLambdaEndToEnd_SecondPassFactoring_ProducesSameShapeAsFreeParameters"/> below
-/// separately proves the same shape is reachable through the public pipeline for a bound-lambda scenario.
+/// separately proves the same shape is reachable through the public pipeline for a bound-lambda scenario (with an
+/// opaque coefficient since S5 P14, which folds a constant coefficient pair in the first pass).
 /// </para>
 /// </remarks>
 [TestClass]
@@ -173,35 +175,43 @@ public class ExpressionSimplifierComparerBatchingTests
     /// <summary>
     /// End-to-end (public <c>Simplify(Expression)</c>) confirmation that the second-pass factoring shape
     /// from <see cref="SecondPassAdd_UnfoldedCoefficient_RecognizesEqualityAfterSimplifying"/> is reachable
-    /// through ordinary nested source expressions, not only via direct reflection: <c>(2*x + 3*x) + 5*z</c>
-    /// simplifies to <c>(x + z) * (2 + 3)</c>, because the inner <c>2*x + 3*x</c> factors first (to the
-    /// still-unfolded <c>(2+3)*x</c>, per <c>TransformCore</c> "returns immediately" - see this class's
-    /// remarks) and that unfixed-point result becomes the outer <c>AdditionOfEqualsElements</c> call's own
-    /// <c>left</c> operand.
+    /// through ordinary nested source expressions, not only via direct reflection:
+    /// <c>((a + b)*x - b*x) + a*z</c> simplifies to <c>(x + z) * ((a + b) - b)</c>. The inner <c>(a + b)*x - b*x</c>
+    /// factors first, to the still-unfolded <c>((a + b) - b)*x</c> (per <c>TransformCore</c> "returns immediately" -
+    /// see this class's remarks), and that unfixed-point result becomes the outer <c>AdditionOfEqualsElements</c>
+    /// call's own <c>left</c> operand; the outer probe must simplify <c>(a + b) - b</c> to <c>a</c> to recognize it as
+    /// the right term's coefficient.
     /// </summary>
+    /// <remarks>
+    /// Until S5 P14 this scenario used constant coefficients, <c>(2*x + 3*x) + 5*z -&gt; (x + z) * (2 + 3)</c>.
+    /// P14 folds a constant coefficient pair in the first pass, so the unfolded coefficient is now reached with an
+    /// opaque one that contains no constant at all, so that no constant folding or aggregation can remove it.
+    /// <c>(a + b) - b</c> is structurally different from <c>a</c> before simplification (checked below; an operand
+    /// swap such as <c>a + 2</c> against <c>2 + a</c> would not do, because the raw comparison already treats
+    /// addition as commutative), so the factoring proves the comparison-simplification path, and the result keeping
+    /// the raw <c>(a + b) - b</c> proves the coefficient reached the comparison unfolded. The diagnostic capture
+    /// confirms that the factor probe simplified that subtraction for comparison. The scenario gives the same tree
+    /// before and after P14; the constant variant moved to
+    /// <c>ExpressionSimplifierFactoringCoefficientTests.Simplify_NestedFactoringWithConstantCoefficients_FoldsInFirstPass</c>.
+    /// </remarks>
     [TestMethod]
     public void EndToEnd_NestedAdditionOfEqualsElements_ProducesSecondPassFactoredShape()
     {
         var simplifier = new ExpressionSimplifier();
         ParameterExpression x = Expression.Parameter(typeof(double), "x");
         ParameterExpression z = Expression.Parameter(typeof(double), "z");
+        ParameterExpression a = Expression.Parameter(typeof(double), "a");
+        ParameterExpression b = Expression.Parameter(typeof(double), "b");
+        Expression source = BuildOpaqueSecondPassSource(x, z, a, b);
 
-        Expression source = Expression.Add(
-            Expression.Add(Expression.Multiply(Expression.Constant(2.0), x), Expression.Multiply(Expression.Constant(3.0), x)),
-            Expression.Multiply(Expression.Constant(5.0), z));
+        Assert.IsFalse(
+            ExpressionComparer.StructuralEqualsRaw(Expression.Subtract(Expression.Add(a, b), b), a),
+            "Precondition: the unfolded coefficient differs from the right term's coefficient before simplification.");
 
         Expression result = simplifier.Simplify(source);
 
-        var multiply = (BinaryExpression)result;
-        Assert.AreEqual(ExpressionType.Multiply, multiply.NodeType);
-        var sumOfVariables = (BinaryExpression)multiply.Left;
-        Assert.AreEqual(ExpressionType.Add, sumOfVariables.NodeType);
-        Assert.IsTrue(ReferenceEquals(x, sumOfVariables.Left));
-        Assert.IsTrue(ReferenceEquals(z, sumOfVariables.Right));
-        var coefficient = (BinaryExpression)multiply.Right;
-        Assert.AreEqual(ExpressionType.Add, coefficient.NodeType);
-        Assert.AreEqual(2.0, (double)((ConstantExpression)coefficient.Left).Value!);
-        Assert.AreEqual(3.0, (double)((ConstantExpression)coefficient.Right).Value!);
+        AssertOpaqueSecondPassShape(result, x, z, a, b);
+        AssertFactorProbeSimplifiedUnfoldedCoefficient(() => new ExpressionSimplifier().Simplify(source));
     }
 
     // ------------------------------------------------------------------------------------------
@@ -209,17 +219,25 @@ public class ExpressionSimplifierComparerBatchingTests
     // ------------------------------------------------------------------------------------------
 
     /// <summary>
-    /// Positive control: the ordinary, no-second-pass-needed shape <c>2*x + 3*x</c> (with the SAME
+    /// Positive control: the ordinary, no-second-pass-needed shape <c>a*x + b*x</c> (with the SAME
     /// <see cref="ParameterExpression"/> instance used on both sides) must still factor to
-    /// <c>(2+3)*x</c>, exactly like before this stage's change.
+    /// <c>(a+b)*x</c>, exactly like before this stage's change.
     /// </summary>
+    /// <remarks>
+    /// Until S5 P14 this control used the constant coefficients <c>2</c> and <c>3</c> and asserted the unevaluated
+    /// <c>(2+3)</c>; P14 folds that pair, so the control keeps its structural assertions on the opaque coefficients
+    /// <c>a</c> and <c>b</c>, which the rule combines unchanged before and after P14. The folded constant case is
+    /// covered by <c>ExpressionSimplifierFactoringCoefficientTests</c>.
+    /// </remarks>
     [TestMethod]
     public void OrdinaryFactorMatch_SameReferenceVariable_StillFactors()
     {
         var simplifier = new ExpressionSimplifier();
         ParameterExpression x = Expression.Parameter(typeof(double), "x");
-        Expression left = Expression.Multiply(Expression.Constant(2.0), x);
-        Expression right = Expression.Multiply(Expression.Constant(3.0), x);
+        ParameterExpression a = Expression.Parameter(typeof(double), "a");
+        ParameterExpression b = Expression.Parameter(typeof(double), "b");
+        Expression left = Expression.Multiply(a, x);
+        Expression right = Expression.Multiply(b, x);
 
         Expression? result = InvokeAdditionOfEqualsElements(simplifier, left, right);
 
@@ -228,8 +246,9 @@ public class ExpressionSimplifierComparerBatchingTests
         Assert.AreEqual(ExpressionType.Multiply, multiply.NodeType);
         Assert.IsTrue(ReferenceEquals(x, multiply.Right));
         var coefficient = (BinaryExpression)multiply.Left;
-        Assert.AreEqual(2.0, (double)((ConstantExpression)coefficient.Left).Value!);
-        Assert.AreEqual(3.0, (double)((ConstantExpression)coefficient.Right).Value!);
+        Assert.AreEqual(ExpressionType.Add, coefficient.NodeType);
+        Assert.IsTrue(ReferenceEquals(a, coefficient.Left));
+        Assert.IsTrue(ReferenceEquals(b, coefficient.Right));
     }
 
     /// <summary>
@@ -371,41 +390,110 @@ public class ExpressionSimplifierComparerBatchingTests
     /// <summary>
     /// The second-pass factoring shape from
     /// <see cref="EndToEnd_NestedAdditionOfEqualsElements_ProducesSecondPassFactoredShape"/> must produce
-    /// the SAME shape when <c>x</c>/<c>z</c> are BOUND lambda parameters instead of free parameters: the S4
+    /// the SAME shape when the parameters are BOUND lambda parameters instead of free parameters: the S4
     /// ambient lexical-scope stack is open around the whole call, and each nested
     /// <see cref="ExpressionComparer.SimplifyForComparison(Expression)"/> call the probe performs must
     /// still establish its own independent, self-contained top-level scope boundary (see
     /// <see cref="ExpressionSimplifier"/>'s "Independent top-level calls" remarks) rather than leaking the
     /// ambient bound-parameter scope into - or losing it from - the cached simplified forms.
     /// </summary>
+    /// <remarks>
+    /// Uses the opaque coefficient <c>(a + b) - b</c> for the reason given on
+    /// <see cref="EndToEnd_NestedAdditionOfEqualsElements_ProducesSecondPassFactoredShape"/> (S5 P14 folds the
+    /// former constant coefficient <c>2 + 3</c>). A second lambda reuses the parameter names with distinct
+    /// instances, so a leaked or confused scope would surface as a wrong reference below.
+    /// </remarks>
     [TestMethod]
     public void BoundLambdaEndToEnd_SecondPassFactoring_ProducesSameShapeAsFreeParameters()
     {
         var simplifier = new ExpressionSimplifier();
         ParameterExpression x = Expression.Parameter(typeof(double), "x");
         ParameterExpression z = Expression.Parameter(typeof(double), "z");
+        ParameterExpression a = Expression.Parameter(typeof(double), "a");
+        ParameterExpression b = Expression.Parameter(typeof(double), "b");
 
-        Expression body = Expression.Add(
-            Expression.Add(Expression.Multiply(Expression.Constant(2.0), x), Expression.Multiply(Expression.Constant(3.0), x)),
-            Expression.Multiply(Expression.Constant(5.0), z));
-        Expression<Func<double, double, double>> source = Expression.Lambda<Func<double, double, double>>(body, x, z);
+        Expression body = BuildOpaqueSecondPassSource(x, z, a, b);
+        Expression<Func<double, double, double, double, double>> source = Expression.Lambda<Func<double, double, double, double, double>>(body, x, z, a, b);
 
-        var result = (Expression<Func<double, double, double>>)simplifier.Simplify(source);
+        var result = (Expression<Func<double, double, double, double, double>>)simplifier.Simplify(source);
 
-        var multiply = (BinaryExpression)result.Body;
-        Assert.AreEqual(ExpressionType.Multiply, multiply.NodeType);
+        AssertOpaqueSecondPassShape(result.Body, x, z, a, b);
+        CollectionAssert.AreEqual(new[] { x, z, a, b }, result.Parameters.ToArray());
+
+        Func<double, double, double, double, double> compiledSource = source.Compile();
+        Func<double, double, double, double, double> compiledResult = result.Compile();
+        foreach ((double xv, double zv, double av, double bv) in new[] { (1.0, 2.0, 3.0, 4.0), (-3.5, 0.25, -2.0, 0.5), (0.0, 10.0, 0.5, -1.0) })
+        {
+            Assert.AreEqual(compiledSource(xv, zv, av, bv), compiledResult(xv, zv, av, bv), 1e-9);
+        }
+
+        // Same names, distinct instances, simplified by the same simplifier instance: each lambda keeps its own parameters.
+        ParameterExpression otherX = Expression.Parameter(typeof(double), "x");
+        ParameterExpression otherZ = Expression.Parameter(typeof(double), "z");
+        ParameterExpression otherA = Expression.Parameter(typeof(double), "a");
+        ParameterExpression otherB = Expression.Parameter(typeof(double), "b");
+        var other = (LambdaExpression)simplifier.Simplify(Expression.Lambda(BuildOpaqueSecondPassSource(otherX, otherZ, otherA, otherB), otherX, otherZ, otherA, otherB));
+        AssertOpaqueSecondPassShape(other.Body, otherX, otherZ, otherA, otherB);
+        AssertFactorProbeSimplifiedUnfoldedCoefficient(() => new ExpressionSimplifier().Simplify(source));
+    }
+
+    /// <summary>Builds <c>((a + b)*x - b*x) + a*z</c>, whose inner factoring yields the unfolded coefficient <c>(a + b) - b</c>.</summary>
+    /// <param name="x">The factor of the inner difference.</param>
+    /// <param name="z">The factor of the outer term.</param>
+    /// <param name="a">The coefficient of the outer term.</param>
+    /// <param name="b">The opaque part that cancels in the unfolded coefficient.</param>
+    /// <returns>The source expression.</returns>
+    private static Expression BuildOpaqueSecondPassSource(ParameterExpression x, ParameterExpression z, ParameterExpression a, ParameterExpression b)
+        => Expression.Add(
+            Expression.Subtract(Expression.Multiply(Expression.Add(a, b), x), Expression.Multiply(b, x)),
+            Expression.Multiply(a, z));
+
+    /// <summary>
+    /// Asserts <c>(x + z) * ((a + b) - b)</c>: the factored variables in source order, and the coefficient exactly as
+    /// the inner factoring built it, which the simplifier would have reduced to <c>a</c>.
+    /// </summary>
+    /// <param name="result">The simplified expression.</param>
+    /// <param name="x">The expected left variable.</param>
+    /// <param name="z">The expected right variable.</param>
+    /// <param name="a">The expected surviving coefficient parameter.</param>
+    /// <param name="b">The expected cancelling coefficient parameter.</param>
+    private static void AssertOpaqueSecondPassShape(Expression result, ParameterExpression x, ParameterExpression z, ParameterExpression a, ParameterExpression b)
+    {
+        var multiply = (BinaryExpression)result;
+        Assert.AreEqual(ExpressionType.Multiply, multiply.NodeType, result.ToString());
         var sumOfVariables = (BinaryExpression)multiply.Left;
         Assert.AreEqual(ExpressionType.Add, sumOfVariables.NodeType);
         Assert.IsTrue(ReferenceEquals(x, sumOfVariables.Left));
         Assert.IsTrue(ReferenceEquals(z, sumOfVariables.Right));
         var coefficient = (BinaryExpression)multiply.Right;
-        Assert.AreEqual(ExpressionType.Add, coefficient.NodeType);
+        Assert.AreEqual(ExpressionType.Subtract, coefficient.NodeType, "The coefficient must be the unfolded (a + b) - b built by the inner factoring.");
+        var sum = (BinaryExpression)coefficient.Left;
+        Assert.AreEqual(ExpressionType.Add, sum.NodeType);
+        Assert.IsTrue(ReferenceEquals(a, sum.Left));
+        Assert.IsTrue(ReferenceEquals(b, sum.Right));
+        Assert.IsTrue(ReferenceEquals(b, coefficient.Right));
+    }
 
-        Func<double, double, double> compiledSource = source.Compile();
-        Func<double, double, double> compiledResult = result.Compile();
-        foreach ((double xv, double zv) in new[] { (1.0, 2.0), (-3.5, 0.25), (0.0, 10.0) })
+    /// <summary>
+    /// Runs <paramref name="simplify"/> under diagnostic capture and asserts that the factor probe simplified a
+    /// subtraction (the unfolded coefficient; no other subtraction remains once the inner factoring has run) for
+    /// comparison.
+    /// </summary>
+    /// <param name="simplify">The simplification to observe.</param>
+    private static void AssertFactorProbeSimplifiedUnfoldedCoefficient(Action simplify)
+    {
+        ExpressionComparer.BeginDiagnosticCapture();
+        try
         {
-            Assert.AreEqual(compiledSource(xv, zv), compiledResult(xv, zv), 1e-9);
+            simplify();
+            var events = ExpressionComparer.EndDiagnosticCapture();
+            Assert.IsTrue(
+                events.Any(e => e.Origin == ExpressionComparer.ComparisonOrigin.FactorEqualityProbe && e.RootNodeType == ExpressionType.Subtract),
+                "The factor probe must simplify the unfolded (a + b) - b coefficient for comparison.");
+        }
+        finally
+        {
+            if (ExpressionComparer.IsDiagnosticCaptureActive) ExpressionComparer.EndDiagnosticCapture();
         }
     }
 
