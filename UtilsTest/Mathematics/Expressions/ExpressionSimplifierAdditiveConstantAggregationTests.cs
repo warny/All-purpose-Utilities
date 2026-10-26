@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -290,6 +291,183 @@ public class ExpressionSimplifierAdditiveConstantAggregationTests
         Expression cancelling = Expression.Add(Expression.Add(a, C(5)), C(-5));
         Assert.AreEqual(Key(0.0), Key(Expression.Lambda<Func<double, double>>(cancelling, a).Compile()(-0.0)));
         Assert.AreEqual(Key(-0.0), Key(Expression.Lambda<Func<double, double>>(Simplify(cancelling), a).Compile()(-0.0)));
+    }
+
+    /// <summary>
+    /// Unsigned chains with several positive and negative constants near <c>MaxValue</c> evaluate exactly like the
+    /// source on every sample, keep their type and are left with one constant term whose sign is kept apart
+    /// (review of #666).
+    /// </summary>
+    [TestMethod]
+    public void Simplify_UnsignedConstantsNearMaxValue_SumExactly()
+    {
+        Expression K<T>(T value) => Expression.Constant(value, typeof(T));
+        uint[] uintSamples = [0u, 1u, 5u, uint.MaxValue, uint.MaxValue - 3];
+        Expression mixed = SimplifyAndCompare<uint>(
+            a => Expression.Add(Expression.Subtract(Expression.Add(Expression.Subtract(Expression.Add(a, K(uint.MaxValue - 1)), K(5u)), K(7u)), K(uint.MaxValue)), K(2u)),
+            uintSamples);
+        Assert.AreEqual("((0 - 4294967293) + a)", mixed.ToString());
+        Assert.AreEqual("((0 - 6) + a)", SimplifyAndCompare<uint>(a => Expression.Subtract(Expression.Subtract(Expression.Add(a, K(3u)), K(uint.MaxValue)), K(10u)), uintSamples).ToString());
+        // The pre-existing factoring of e - c into (e - c) * 1 (also on master) adds a constant 1 around the sum.
+        Expression positive = SimplifyAndCompare<uint>(a => Expression.Subtract(Expression.Add(Expression.Add(a, K(uint.MaxValue)), K(uint.MaxValue)), K(1u)), uintSamples);
+        Assert.IsTrue(ContainsConstant(positive, uint.MaxValue - 2), positive.ToString());
+        Assert.IsFalse(ContainsConstant(positive, uint.MaxValue), $"MaxValue + MaxValue - 1 must be one constant: {positive}");
+
+        ulong[] ulongSamples = [0ul, 1ul, ulong.MaxValue, ulong.MaxValue - 7];
+        Assert.AreEqual("((0 - 7) + a)", SimplifyAndCompare<ulong>(
+            a => Expression.Add(Expression.Subtract(Expression.Add(Expression.Subtract(a, K(ulong.MaxValue)), K(ulong.MaxValue - 2)), K(9ul)), K(4ul)),
+            ulongSamples).ToString());
+        Assert.AreEqual("((0 - 18446744073709551614) + a)", SimplifyAndCompare<ulong>(a => Expression.Subtract(Expression.Subtract(a, K(ulong.MaxValue)), K(ulong.MaxValue)), ulongSamples).ToString());
+    }
+
+    /// <summary>
+    /// Decimal chains whose constants cancel through the limits fold when the running sum stays representable
+    /// (<c>((a + MaxValue) - MaxValue) + MaxValue -&gt; MaxValue + a</c>) and decline without throwing when the total
+    /// overflows (<c>(a + MinValue) - 1</c>), evaluating like the source wherever the source evaluates (review of #666).
+    /// </summary>
+    [TestMethod]
+    public void Simplify_DecimalConstantsNearTheLimits_FoldOrDeclineWithoutThrowing()
+    {
+        Expression K(decimal value) => Expression.Constant(value);
+        var folded = (BinaryExpression)SimplifyAndCompare<decimal>(
+            a => Expression.Add(Expression.Subtract(Expression.Add(a, K(decimal.MaxValue)), K(decimal.MaxValue)), K(decimal.MaxValue)),
+            -decimal.MaxValue, -1m, 0m);
+        Assert.AreEqual(decimal.MaxValue, (decimal)((ConstantExpression)folded.Left).Value!);
+
+        Expression declined = SimplifyAndCompare<decimal>(a => Expression.Subtract(Expression.Add(a, K(decimal.MinValue)), K(1m)), 1m, 10m, decimal.MaxValue);
+        Assert.IsTrue(ContainsConstant(declined, decimal.MinValue) && ContainsConstant(declined, 1m), $"The overflowing total must not be folded: {declined}");
+    }
+
+    /// <summary>Determines whether <paramref name="expression"/> holds a constant equal to <paramref name="value"/>.</summary>
+    /// <param name="expression">The tree.</param>
+    /// <param name="value">The value to look for.</param>
+    /// <returns><see langword="true"/> when a constant leaf equals <paramref name="value"/>.</returns>
+    private static bool ContainsConstant(Expression expression, object value) => expression switch
+    {
+        BinaryExpression binary => ContainsConstant(binary.Left, value) || ContainsConstant(binary.Right, value),
+        UnaryExpression unary => ContainsConstant(unary.Operand, value),
+        ConstantExpression constant => Equals(constant.Value, value),
+        _ => false,
+    };
+
+    /// <summary>
+    /// Floating constants mixing <c>+inf</c>, <c>-inf</c>, <c>NaN</c>, <c>+0</c> and <c>-0</c> evaluate like the source
+    /// on special samples, with the two documented S3 differences: a signed zero (<c>(a + -0) + 0 -&gt; a</c> keeps
+    /// <c>-0</c>) and an overflowing reassociation (<c>((a + max) + max) - max -&gt; inf + a</c>, <c>NaN</c> instead of
+    /// <c>-inf</c> for <c>a = -inf</c>) (review of #666).
+    /// </summary>
+    [TestMethod]
+    public void Simplify_NonFiniteAndSignedZeroConstants_CombineLikeTheSource()
+    {
+        double[] samples = [0.0, -0.0, 1.5, double.NaN, double.PositiveInfinity, double.NegativeInfinity, double.MaxValue, double.Epsilon];
+        Func<ParameterExpression, Expression>[] exact =
+        [
+            a => Expression.Add(Expression.Add(a, C(double.PositiveInfinity)), C(double.NegativeInfinity)),
+            a => Expression.Subtract(Expression.Add(Expression.Add(a, C(double.PositiveInfinity)), C(5)), C(double.PositiveInfinity)),
+            a => Expression.Add(Expression.Add(Expression.Add(a, C(double.PositiveInfinity)), C(-0.0)), C(0.0)),
+            a => Expression.Add(Expression.Add(Expression.Add(a, C(double.NaN)), C(double.PositiveInfinity)), C(-0.0)),
+            a => Expression.Subtract(Expression.Add(a, C(double.NegativeInfinity)), C(double.PositiveInfinity)),
+            a => Expression.Subtract(Expression.Add(a, C(-0.0)), C(0.0)),
+        ];
+        foreach (Func<ParameterExpression, Expression> build in exact)
+        {
+            ParameterExpression a = Expression.Parameter(typeof(double), "a");
+            Expression source = build(a);
+            Expression simplified = Simplify(source);
+            Func<double, double> expected = Expression.Lambda<Func<double, double>>(source, a).Compile();
+            Func<double, double> actual = Expression.Lambda<Func<double, double>>(simplified, a).Compile();
+            foreach (double sample in samples)
+            {
+                Assert.AreEqual(Key(expected(sample)), Key(actual(sample)), $"{source} => {simplified} differs at a = {sample}.");
+            }
+        }
+
+        ParameterExpression p = Expression.Parameter(typeof(double), "a");
+        Expression signedZero = Expression.Add(Expression.Add(p, C(-0.0)), C(0.0));
+        Assert.AreSame(p, Simplify(signedZero));
+        Assert.AreEqual(Key(0.0), Key(Expression.Lambda<Func<double, double>>(signedZero, p).Compile()(-0.0)), "Characterization: the source gives +0.");
+
+        Expression overflowing = Expression.Subtract(Expression.Add(Expression.Add(p, C(double.MaxValue)), C(double.MaxValue)), C(double.MaxValue));
+        Expression reassociated = Simplify(overflowing);
+        Assert.AreEqual(double.PositiveInfinity, (double)AssertConstantPlus(reassociated, p));
+        Assert.AreEqual(double.NegativeInfinity, Expression.Lambda<Func<double, double>>(overflowing, p).Compile()(double.NegativeInfinity));
+        Assert.IsTrue(double.IsNaN(Expression.Lambda<Func<double, double>>(reassociated, p).Compile()(double.NegativeInfinity)), "Characterization: S3 reassociation.");
+    }
+
+    /// <summary>
+    /// Factored coefficients mixing several subtractions aggregate their constants with the right signs, with free and
+    /// bound lambda parameters: <c>((a - 2)*x - (3 - b)*x) - 4*x -&gt; (-9 + (a + b)) * x</c> (review of #666).
+    /// </summary>
+    [TestMethod]
+    public void Simplify_CoefficientsWithSeveralSubtractions_AggregateWithSigns()
+    {
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+        ParameterExpression a = Expression.Parameter(typeof(double), "a");
+        ParameterExpression b = Expression.Parameter(typeof(double), "b");
+        Expression body = Expression.Subtract(
+            Expression.Subtract(Expression.Multiply(Expression.Subtract(a, C(2)), x), Expression.Multiply(Expression.Subtract(C(3), b), x)),
+            Expression.Multiply(C(4), x));
+        Assert.AreEqual("((-9 + (a + b)) * x)", Simplify(body).ToString());
+
+        var source = Expression.Lambda<Func<double, double, double, double>>(body, x, a, b);
+        var lambda = (Expression<Func<double, double, double, double>>)Simplify(source);
+        Assert.AreEqual("((-9 + (a + b)) * x)", lambda.Body.ToString());
+        CollectionAssert.AreEqual(new[] { x, a, b }, lambda.Parameters.ToArray());
+        Func<double, double, double, double> before = source.Compile();
+        Func<double, double, double, double> after = lambda.Compile();
+        foreach ((double xv, double av, double bv) in new[] { (2.0, 3.0, 5.0), (-1.5, 0.25, 4.0), (0.0, 1.0, -1.0) })
+        {
+            Assert.AreEqual(before(xv, av, bv), after(xv, av, bv), 1e-12);
+        }
+    }
+
+    /// <summary>A call whose argument is a custom constant, used to observe invocations independently of comparisons.</summary>
+    /// <param name="value">The custom constant.</param>
+    /// <returns>Always <c>1</c>.</returns>
+    public static double CountingCall(object value)
+    {
+        _countingIdentityCalls++;
+        return 1.0;
+    }
+
+    /// <summary>A custom constant value that counts the <see cref="object.Equals(object?)"/> calls made on it.</summary>
+    private sealed class CountingConstant
+    {
+        /// <summary>Gets the number of <see cref="Equals(object?)"/> calls.</summary>
+        public int EqualsCalls { get; private set; }
+
+        /// <inheritdoc/>
+        public override bool Equals(object? obj)
+        {
+            EqualsCalls++;
+            return ReferenceEquals(this, obj);
+        }
+
+        /// <inheritdoc/>
+        public override int GetHashCode() => 0;
+    }
+
+    /// <summary>
+    /// The aggregation never invokes a <see cref="MethodCallExpression"/> of the tree, in a sum and in a factored
+    /// coefficient, whether or not structural comparisons reach the <see cref="object.Equals(object?)"/> of a custom
+    /// constant in its arguments (the S3 remarks allow the latter; here they make none); the call runs once per
+    /// evaluation (review of #666).
+    /// </summary>
+    [TestMethod]
+    public void Simplify_Aggregation_NeverInvokesTreeCalls()
+    {
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+        var custom = new CountingConstant();
+        Expression call = Expression.Call(Method(nameof(CountingCall)), Expression.Constant(custom, typeof(object)));
+        _countingIdentityCalls = 0;
+        Expression sum = Simplify(Expression.Add(Expression.Add(call, C(5)), C(6)));
+        Expression factored = Simplify(Expression.Add(Expression.Multiply(Expression.Add(call, C(2)), x), Expression.Multiply(C(3), x)));
+        Assert.AreEqual(0, _countingIdentityCalls, "No call of the tree may run while simplifying.");
+        Assert.AreEqual(11.0, (double)((ConstantExpression)((BinaryExpression)sum).Left).Value!);
+        Assert.AreEqual("(5 + CountingCall(value(UtilsTest.Mathematics.Expressions.ExpressionSimplifierAdditiveConstantAggregationTests+CountingConstant)))", ((BinaryExpression)factored).Left.ToString());
+        Assert.AreEqual(12.0, Expression.Lambda<Func<double>>(sum).Compile()());
+        Assert.AreEqual(1, _countingIdentityCalls);
+        // custom.EqualsCalls is deliberately not constrained: structural comparisons may call it (S3 remarks).
     }
 
     // ------------------------------------------------------------------------------------------
