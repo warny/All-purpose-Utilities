@@ -58,8 +58,10 @@ namespace Utils.Mathematics.Expressions
     /// nevertheless run indirectly while simplifying: structural comparisons, notably those of the factoring rules
     /// (<c>FactorEqualityProbe</c>) through <see cref="ExpressionComparer"/>, may call the
     /// <see cref="object.Equals(object?)"/> or <see cref="object.GetHashCode"/> of custom constant values, and an
-    /// exception they throw propagates out of <see cref="Simplify(Expression)"/>; the S5 P3 factor cache is designed
-    /// to keep the number and order of those calls exactly as an uncached comparison would. Callers must therefore not
+    /// exception they throw propagates out of <see cref="Simplify(Expression)"/>; the S5 P3 factor cache, the S5 P9
+    /// comparison memo and the S5 P15 observed comparison memo (which only reuses a comparer simplification observed
+    /// to call no user code) are designed to keep the number and order of those calls exactly as an uncached
+    /// comparison would. Callers must therefore not
     /// assume that simplification is free of user code when the tree holds custom constants. (3) The simplified tree
     /// may contain fewer calls than the source (see the previous paragraph), so evaluating it may run less user code.
     /// </para>
@@ -132,9 +134,11 @@ namespace Utils.Mathematics.Expressions
             int callerMemoDepth = _comparisonMemoDepth;
             bool callerMemoActive = _comparisonMemoActive;
             Dictionary<ComparisonMemoKey, Expression>? callerMemo = _comparisonMemo;
+            Dictionary<ObservedComparisonMemoKey, Expression>? callerObservedMemo = _observedComparisonMemo;
             _comparisonMemoDepth = 0;
             _comparisonMemoActive = false;
             _comparisonMemo = null;
+            _observedComparisonMemo = null;
             try
             {
                 return TransformWithinBoundary(expression);
@@ -144,6 +148,7 @@ namespace Utils.Mathematics.Expressions
                 _comparisonMemoDepth = callerMemoDepth;
                 _comparisonMemoActive = callerMemoActive;
                 _comparisonMemo = callerMemo;
+                _observedComparisonMemo = callerObservedMemo;
             }
         }
 
@@ -1230,11 +1235,14 @@ namespace Utils.Mathematics.Expressions
         /// conservatively predicts this risk from a candidate's STATIC SHAPE alone - it never itself
         /// simplifies or compares anything, so it never runs the very user code it is trying to avoid running
         /// an extra time - and <see cref="GetOrSimplify"/> only caches (and therefore only
-        /// deduplicates re-simplification of) a candidate <see cref="IsCacheable"/> has cleared. A candidate
-        /// that is not cacheable falls back, on EVERY comparison it participates in, to calling
-        /// <see cref="ExpressionComparer.Default"/>'s public <see cref="ExpressionComparer.Equals(Expression?, Expression?)"/>
-        /// directly - the exact call, and therefore the exact user-code invocation count, this type replaces
-        /// for a cacheable candidate - so this type never reduces how many times user code observably runs
+        /// deduplicates re-simplification of) a candidate <see cref="IsCacheable"/> has cleared. A comparison
+        /// involving a candidate that is not cacheable runs the public
+        /// <see cref="ExpressionComparer.Equals(Expression?, Expression?)"/> sequence itself (fast path, then
+        /// <c>Simplify(x)</c>, then <c>Simplify(y)</c>, then the structural comparison), through
+        /// <see cref="GetOrSimplifyObserved"/>: an operand is simplified again for every such comparison, exactly as
+        /// the public comparer does, unless this probe already simplified that same reference and observed that the
+        /// simplification called no user code (S5 P15) - a case in which simplifying it again would call no user code
+        /// either. So this type never reduces how many times, or changes in which order, user code observably runs
         /// relative to the pre-existing per-comparison behavior, for any candidate.
         /// </para>
         /// <para>
@@ -1252,8 +1260,8 @@ namespace Utils.Mathematics.Expressions
         /// anything; simplification (<see cref="GetOrSimplify"/>) then only ever runs, in `x`-then-`y` order,
         /// once both operands are already known cacheable - exactly reproducing
         /// <see cref="ExpressionComparer.Equals(Expression?, Expression?)"/>'s own <c>Simplify(x)</c>-then-
-        /// <c>Simplify(y)</c> sequence for that case, and never simplifying anything at all (deferring fully to
-        /// the fallback) for every other case.
+        /// <c>Simplify(y)</c> sequence for that case. In every other case, the fallback simplifies <c>x</c> then
+        /// <c>y</c>, in that order and only after both were classified, as the public comparer does.
         /// </para>
         /// <para>
         /// <b>Lifetime.</b> A fresh instance is created at the top of each
@@ -1270,9 +1278,11 @@ namespace Utils.Mathematics.Expressions
             /// (<c>leftleft</c>/<c>leftright</c>/<c>rightleft</c>/<c>rightright</c>), so a small
             /// fixed-capacity list - linearly scanned by reference equality - avoids a
             /// <see cref="Dictionary{TKey, TValue}"/>'s hashing/bucket overhead for so few entries.
-            /// <c>CanCache</c> records, once computed, whether <c>Simplified</c> holds a reusable cached form
-            /// (<see langword="true"/>) or is meaningless/<see langword="null"/> because
-            /// <see cref="MightInvokeUserCodeWhenSimplified"/> ruled the operand out (<see langword="false"/>).
+            /// <c>CanCache</c> records, once computed, whether the operand is statically safe to cache
+            /// (<see langword="true"/>) or <see cref="MightInvokeUserCodeWhenSimplified"/> ruled it out
+            /// (<see langword="false"/>). <c>Simplified</c> is <see langword="null"/> until a form is kept: always
+            /// for a cacheable operand, and for any other operand only when its simplification was observed to call
+            /// no user code (<see cref="GetOrSimplifyObserved"/>, S5 P15).
             /// </summary>
             private readonly List<(Expression Original, bool CanCache, Expression? Simplified)> _cache = new(4);
 
@@ -1280,9 +1290,9 @@ namespace Utils.Mathematics.Expressions
             /// Compares <paramref name="x"/> and <paramref name="y"/> exactly like the public
             /// <see cref="ExpressionComparer.Equals(Expression?, Expression?)"/>, reusing a previously
             /// simplified form for either operand when this instance has already computed one AND that
-            /// operand was proven safe to cache (see "Side-effect safety" above) - otherwise falling back,
-            /// for this one comparison, to calling <see cref="ExpressionComparer.Default"/> directly, exactly
-            /// as every comparison did before this type existed.
+            /// operand was proven safe to cache (see "Side-effect safety" above) - otherwise running, for this
+            /// one comparison, the public comparer's own sequence, which only skips a simplification this
+            /// probe already observed to call no user code (<see cref="GetOrSimplifyObserved"/>).
             /// </summary>
             /// <param name="x">The first candidate operand.</param>
             /// <param name="y">The second candidate operand.</param>
@@ -1327,7 +1337,12 @@ namespace Utils.Mathematics.Expressions
 
                 if (!canCacheX || !canCacheY)
                 {
-                    return ExpressionComparer.Default.Equals(x, y);
+                    // The public comparer's own sequence (S5 P15): the fast path above, then Simplify(x), then
+                    // Simplify(y), then the structural comparison. A simplification is only skipped when this probe
+                    // already ran it for the same reference and observed that it called no user code.
+                    Expression observedX = GetOrSimplifyObserved(x);
+                    Expression observedY = GetOrSimplifyObserved(y);
+                    return ExpressionComparer.StructuralEqualsAfterSimplification(observedX, observedY);
                 }
 
                 Expression simplifiedX = GetOrSimplify(x);
@@ -1393,6 +1408,59 @@ namespace Utils.Mathematics.Expressions
 
                 throw new InvalidOperationException(
                     $"{nameof(GetOrSimplify)} was called for an operand that {nameof(IsCacheable)} had not already classified as cacheable.");
+            }
+
+            /// <summary>
+            /// Returns <paramref name="original"/>'s simplified form for a comparison whose other operand, or this one,
+            /// is not cacheable (S5 P15). A form computed earlier by this probe is reused; otherwise the operand is
+            /// simplified now and the form is kept only when <see cref="ExpressionComparer.UserCodeInvocationCount"/>
+            /// did not change meanwhile AND the operand is either statically cacheable or has a strict observed key
+            /// (<see cref="IsObservedComparisonMemoEligible"/>).
+            /// </summary>
+            /// <param name="original">A candidate operand <see cref="IsCacheable"/> has already classified.</param>
+            /// <returns><paramref name="original"/>'s simplified form.</returns>
+            /// <remarks>
+            /// Before P15, such a comparison called <see cref="ExpressionComparer.Equals(Expression?, Expression?)"/>
+            /// and simplified both operands again, even when the same chain had already been simplified for the
+            /// previous comparison of this probe without running any user code. Skipping that repetition is not
+            /// observable: a simplification that called no user code is a deterministic function of the operand, which
+            /// is the same reference (see the "Observed comparison memo" remarks of <see cref="ExpressionSimplifier"/>),
+            /// so running it again would call no user code either and build a structurally identical form. A
+            /// simplification that did call user code (a stateful, throwing or re-entrant <c>Equals</c>) is never kept,
+            /// so it runs again for every comparison, exactly as the public comparer does.
+            /// <para>
+            /// The counter only sees the comparer's calls into constant values. Other user code can run while
+            /// simplifying a node the simplifier does not own: the virtual members of an
+            /// <see cref="ExpressionType.Extension"/> node (its <see cref="Expression.NodeType"/> getter is read by
+            /// rule dispatch), or a user-defined operator node. Such an operand is never kept (PR #667 review P2):
+            /// besides an unchanged counter, it must be statically cacheable or pass the closed node policy of the
+            /// observed comparison memo, which accepts only parameters, constants, built-in unary and binary nodes,
+            /// calls and member accesses, and inspects nodes by type tests only, never through their virtual members.
+            /// </para>
+            /// </remarks>
+            private Expression GetOrSimplifyObserved(Expression original)
+            {
+                for (int i = 0; i < _cache.Count; i++)
+                {
+                    if (ReferenceEquals(_cache[i].Original, original))
+                    {
+                        Expression? simplified = _cache[i].Simplified;
+                        if (simplified is not null) return simplified;
+
+                        long userCodeBefore = ExpressionComparer.UserCodeInvocationCount;
+                        simplified = ExpressionComparer.SimplifyForComparison(original);
+                        if (ExpressionComparer.UserCodeInvocationCount == userCodeBefore
+                            && (_cache[i].CanCache || IsObservedComparisonMemoEligible(original)))
+                        {
+                            _cache[i] = (original, _cache[i].CanCache, simplified);
+                        }
+
+                        return simplified;
+                    }
+                }
+
+                throw new InvalidOperationException(
+                    $"{nameof(GetOrSimplifyObserved)} was called for an operand that {nameof(IsCacheable)} had not already classified.");
             }
 
             /// <summary>

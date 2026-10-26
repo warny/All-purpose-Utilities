@@ -40,6 +40,12 @@ namespace Utils.Mathematics.Expressions
     /// ineligible. Simplifying an eligible operand cannot reach user code, so skipping a repeated simplification
     /// is not observable beyond its cost. Exceptions are never cached.
     /// </para>
+    /// <para>
+    /// <b>Observed tier (S5 P15).</b> An operand of an active session that is not eligible here is handed to the
+    /// observed comparison memo (<c>ExpressionSimplifier.ObservedComparisonMemo.cs</c>), which accepts calls, members
+    /// and opaque constants but stores a result only when its simplification called no user code. Eligibility,
+    /// keys and entries of this memo are unchanged.
+    /// </para>
     /// </remarks>
     public partial class ExpressionSimplifier
     {
@@ -88,6 +94,7 @@ namespace Utils.Mathematics.Expressions
             _comparisonMemoDepth = 1;
             _comparisonMemoActive = true;
             _comparisonMemo = null;
+            _observedComparisonMemo = null;
             return scope;
         }
 
@@ -103,6 +110,9 @@ namespace Utils.Mathematics.Expressions
             /// <summary>The saved memo.</summary>
             private readonly Dictionary<ComparisonMemoKey, Expression>? _memo;
 
+            /// <summary>The saved observed memo (S5 P15).</summary>
+            private readonly Dictionary<ObservedComparisonMemoKey, Expression>? _observedMemo;
+
             /// <summary>Captures the current thread's session state.</summary>
             /// <param name="capture">Ignored; distinguishes this constructor from the default one.</param>
             private ComparisonMemoTestSession(bool capture)
@@ -110,6 +120,7 @@ namespace Utils.Mathematics.Expressions
                 _depth = _comparisonMemoDepth;
                 _active = _comparisonMemoActive;
                 _memo = _comparisonMemo;
+                _observedMemo = _observedComparisonMemo;
             }
 
             /// <summary>Captures the current thread's session state for later restoration.</summary>
@@ -122,6 +133,7 @@ namespace Utils.Mathematics.Expressions
                 _comparisonMemoDepth = _depth;
                 _comparisonMemoActive = _active;
                 _comparisonMemo = _memo;
+                _observedComparisonMemo = _observedMemo;
             }
         }
 
@@ -150,6 +162,7 @@ namespace Utils.Mathematics.Expressions
         internal static Expression SimplifyForComparisonInSession(ExpressionSimplifier simplifier, Expression expression)
         {
             int depth = ++_comparisonMemoDepth;
+            long userCodeBefore = ExpressionComparer.UserCodeInvocationCount;
             try
             {
                 if (!_comparisonMemoActive)
@@ -160,7 +173,7 @@ namespace Utils.Mathematics.Expressions
 
                         // The session may have been activated by a nested comparison while this one was in
                         // progress: its completed result can still serve later siblings of the session.
-                        if (_comparisonMemoActive) RecordComparisonResult(expression, inactiveResult);
+                        if (_comparisonMemoActive) RecordComparisonResult(expression, inactiveResult, userCodeBefore);
                         return inactiveResult;
                     }
 
@@ -169,7 +182,7 @@ namespace Utils.Mathematics.Expressions
 
                 if (!ComparisonMemoKey.TryCreate(expression, out ComparisonMemoKey key))
                 {
-                    return simplifier.TransformWithinBoundary(expression);
+                    return SimplifyWithObservedComparisonMemo(simplifier, expression, userCodeBefore);
                 }
 
                 Dictionary<ComparisonMemoKey, Expression>? memo = _comparisonMemo;
@@ -188,16 +201,28 @@ namespace Utils.Mathematics.Expressions
                 {
                     _comparisonMemoActive = false;
                     _comparisonMemo = null;
+                    _observedComparisonMemo = null;
                 }
             }
         }
 
-        /// <summary>Records a completed result in the active session's memo when the operand is eligible.</summary>
+        /// <summary>
+        /// Records a completed result in the active session's memo when the operand is eligible, or in the observed
+        /// memo when it is only eligible there and its simplification ran no user code (S5 P15).
+        /// </summary>
         /// <param name="expression">The completed operand.</param>
         /// <param name="result">Its successful simplification.</param>
-        private static void RecordComparisonResult(Expression expression, Expression result)
+        /// <param name="userCodeBefore">The value of <see cref="ExpressionComparer.UserCodeInvocationCount"/> read before the simplification started.</param>
+        private static void RecordComparisonResult(Expression expression, Expression result, long userCodeBefore)
         {
-            if (ComparisonMemoKey.TryCreate(expression, out ComparisonMemoKey key)) StoreComparisonResult(key, result);
+            if (ComparisonMemoKey.TryCreate(expression, out ComparisonMemoKey key))
+            {
+                StoreComparisonResult(key, result);
+            }
+            else
+            {
+                RecordObservedComparisonResult(expression, result, userCodeBefore);
+            }
         }
 
         /// <summary>
