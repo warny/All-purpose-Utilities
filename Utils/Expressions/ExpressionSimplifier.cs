@@ -1508,10 +1508,7 @@ namespace Utils.Mathematics.Expressions
             }
 
             // Factor out without recursively re-entering this rule on the same shape.
-            return Expression.Multiply(
-                Expression.Add(leftleft, rightleft),
-                leftright
-            );
+            return BuildFactoredProduct(ExpressionType.Add, leftleft, rightleft, leftright);
         }
 
         /// <summary>
@@ -1591,10 +1588,90 @@ namespace Utils.Mathematics.Expressions
             }
 
             // Factor out without recursively re-entering this rule on the same shape.
+            return BuildFactoredProduct(ExpressionType.Subtract, leftleft, rightleft, leftright);
+        }
+
+        /// <summary>
+        /// Builds the result <c>(leftCoefficient op rightCoefficient) * factor</c> of
+        /// <see cref="AdditionOfEqualsElements"/> or <see cref="SubstractionOfEqualsElements"/>, folding the coefficient
+        /// when both coefficients are constants (S5 P14).
+        /// </summary>
+        /// <param name="nodeType"><see cref="ExpressionType.Add"/> or <see cref="ExpressionType.Subtract"/>.</param>
+        /// <param name="leftCoefficient">The coefficient of the left term.</param>
+        /// <param name="rightCoefficient">The coefficient of the right term.</param>
+        /// <param name="factor">The common factor, already simplified.</param>
+        /// <returns>The factored product.</returns>
+        /// <remarks>
+        /// <para>
+        /// The factoring rules return their product without simplifying it again, so a constant coefficient such as
+        /// <c>2 + 3</c> stayed unevaluated, and each further factoring of the same sum nested it once more:
+        /// <c>2*x + 3*x + 4*x + 5*x</c> gave <c>(2 + (3 + (4 + 5))) * x</c> after one public call and needed a second
+        /// call to reach <c>14 * x</c>. Meanwhile, the factor comparisons of every enclosing factoring re-simplified
+        /// the unevaluated coefficient on a discarded copy (<see cref="FactorEqualityProbe"/>).
+        /// </para>
+        /// <para>
+        /// When both coefficients are constants, the coefficient is folded with <see cref="FoldConstants"/>: the exact
+        /// value of the node <c>leftCoefficient op rightCoefficient</c> as built, in its type and with the ordinary .NET
+        /// semantics of that operation. That is constant folding, not a regrouping: the association of the
+        /// coefficients is the one the factoring order produces, which is also what a second public call folded. The
+        /// factoring itself (<c>a*x + b*x -&gt; (a + b)*x</c>) remains the symbolic identity of the
+        /// "Symbolic-equivalence contract" and is unchanged. A decimal coefficient that overflows keeps its
+        /// unevaluated node: the source terms may still evaluate (<c>decimal.MaxValue * x + decimal.MaxValue * x</c> is
+        /// <c>0</c> for <c>x = 0</c>), so simplifying must not throw. Any other coefficient (a parameter, a call, a
+        /// custom-operator node) is combined with the ordinary factory as before and is not simplified again, so no
+        /// user code runs and no comparer or rule dispatch is added.
+        /// </para>
+        /// <para>
+        /// A folded coefficient of <c>0</c>, <c>1</c> or <c>-1</c> is handed to the existing
+        /// <see cref="MultiplicationWithZeroOrOne(BinaryExpression, ConstantExpression, Expression)"/> identity, called
+        /// directly on the product: <c>2*x - x</c> gives <c>x</c> instead of <c>1 * x</c>, without dispatching rules or
+        /// traversing <paramref name="factor"/> again.
+        /// </para>
+        /// </remarks>
+        private Expression BuildFactoredProduct(ExpressionType nodeType, Expression leftCoefficient, Expression rightCoefficient, Expression factor)
+        {
+            if (TryFoldFactoredCoefficient(nodeType, leftCoefficient, rightCoefficient) is ConstantExpression coefficient)
+            {
+                BinaryExpression product = Expression.Multiply(coefficient, factor);
+                return (NumericValueEquals(coefficient.Value, 0) || NumericValueEquals(coefficient.Value, 1) || NumericValueEquals(coefficient.Value, -1))
+                    && MultiplicationWithZeroOrOne(product, coefficient, factor) is Expression identity
+                    ? identity
+                    : product;
+            }
+
             return Expression.Multiply(
-                Expression.Subtract(leftleft, rightleft),
-                leftright
-            );
+                nodeType == ExpressionType.Add ? Expression.Add(leftCoefficient, rightCoefficient) : Expression.Subtract(leftCoefficient, rightCoefficient),
+                factor);
+        }
+
+        /// <summary>
+        /// Folds the coefficient of a factored sum or difference when both coefficients are constants of the same type.
+        /// </summary>
+        /// <param name="nodeType"><see cref="ExpressionType.Add"/> or <see cref="ExpressionType.Subtract"/>.</param>
+        /// <param name="leftCoefficient">The coefficient of the left term.</param>
+        /// <param name="rightCoefficient">The coefficient of the right term.</param>
+        /// <returns>The folded coefficient, or <see langword="null"/> when it is not a pair of constants or a decimal overflow occurs.</returns>
+        /// <remarks>
+        /// Only <see cref="OverflowException"/> is caught: unchecked integral and floating-point addition and subtraction
+        /// never throw, so it can only come from <see cref="decimal"/> (see <see cref="BuildFactoredProduct"/>).
+        /// </remarks>
+        private static ConstantExpression? TryFoldFactoredCoefficient(ExpressionType nodeType, Expression leftCoefficient, Expression rightCoefficient)
+        {
+            if (leftCoefficient is not ConstantExpression left
+                || rightCoefficient is not ConstantExpression right
+                || left.Type != right.Type)
+            {
+                return null;
+            }
+
+            try
+            {
+                return FoldConstants(nodeType, left.Type, left.Value, right.Value);
+            }
+            catch (OverflowException)
+            {
+                return null;
+            }
         }
 
         #endregion

@@ -49,8 +49,10 @@ namespace UtilsTest.Mathematics.Expressions;
 /// methods (matching this project's own precedent - see
 /// <see cref="ExpressionSimplifierAdditiveSortScaleTests"/>'s reflection into
 /// <c>CanonicalizeAdditiveExpression</c>) isolates exactly the code this stage changed and removes that
-/// fragility; <see cref="BoundLambdaEndToEnd_SecondPassFactoring_ProducesSameShapeAsFreeParameters"/> below
-/// separately proves the same shape is reachable through the public pipeline for a bound-lambda scenario.
+/// fragility; <see cref="BoundLambdaEndToEnd_NestedFactoring_ProducesSameShapeAsFreeParameters"/> below
+/// separately checks nested factoring through the public pipeline for a bound-lambda scenario (since S5 P14 the
+/// public pipeline folds a constant coefficient pair, so the unfolded shape is reached there only with an
+/// opaque coefficient; see <c>ExpressionSimplifierFactoringCoefficientTests</c>).
 /// </para>
 /// </remarks>
 [TestClass]
@@ -171,16 +173,16 @@ public class ExpressionSimplifierComparerBatchingTests
     }
 
     /// <summary>
-    /// End-to-end (public <c>Simplify(Expression)</c>) confirmation that the second-pass factoring shape
-    /// from <see cref="SecondPassAdd_UnfoldedCoefficient_RecognizesEqualityAfterSimplifying"/> is reachable
-    /// through ordinary nested source expressions, not only via direct reflection: <c>(2*x + 3*x) + 5*z</c>
-    /// simplifies to <c>(x + z) * (2 + 3)</c>, because the inner <c>2*x + 3*x</c> factors first (to the
-    /// still-unfolded <c>(2+3)*x</c>, per <c>TransformCore</c> "returns immediately" - see this class's
-    /// remarks) and that unfixed-point result becomes the outer <c>AdditionOfEqualsElements</c> call's own
-    /// <c>left</c> operand.
+    /// End-to-end (public <c>Simplify(Expression)</c>) nested factoring: <c>(2*x + 3*x) + 5*z</c> simplifies to
+    /// <c>(x + z) * 5</c>. The inner <c>2*x + 3*x</c> factors first and its result becomes the outer
+    /// <c>AdditionOfEqualsElements</c> call's own <c>left</c> operand. Before S5 P14 that inner result was the
+    /// still-unfolded <c>(2+3)*x</c> (the "second-pass" shape this test was written to reach through the public
+    /// pipeline), and the outer factoring kept <c>(2 + 3)</c> as its coefficient; the factoring rules now fold a
+    /// constant coefficient pair, so the coefficient is the constant <c>5</c>. The probe's handling of an
+    /// unfolded coefficient remains covered by the reflection tests above.
     /// </summary>
     [TestMethod]
-    public void EndToEnd_NestedAdditionOfEqualsElements_ProducesSecondPassFactoredShape()
+    public void EndToEnd_NestedAdditionOfEqualsElements_FactorsWithFoldedCoefficient()
     {
         var simplifier = new ExpressionSimplifier();
         ParameterExpression x = Expression.Parameter(typeof(double), "x");
@@ -198,10 +200,8 @@ public class ExpressionSimplifierComparerBatchingTests
         Assert.AreEqual(ExpressionType.Add, sumOfVariables.NodeType);
         Assert.IsTrue(ReferenceEquals(x, sumOfVariables.Left));
         Assert.IsTrue(ReferenceEquals(z, sumOfVariables.Right));
-        var coefficient = (BinaryExpression)multiply.Right;
-        Assert.AreEqual(ExpressionType.Add, coefficient.NodeType);
-        Assert.AreEqual(2.0, (double)((ConstantExpression)coefficient.Left).Value!);
-        Assert.AreEqual(3.0, (double)((ConstantExpression)coefficient.Right).Value!);
+        var coefficient = (ConstantExpression)multiply.Right;
+        Assert.AreEqual(5.0, (double)coefficient.Value!);
     }
 
     // ------------------------------------------------------------------------------------------
@@ -210,8 +210,8 @@ public class ExpressionSimplifierComparerBatchingTests
 
     /// <summary>
     /// Positive control: the ordinary, no-second-pass-needed shape <c>2*x + 3*x</c> (with the SAME
-    /// <see cref="ParameterExpression"/> instance used on both sides) must still factor to
-    /// <c>(2+3)*x</c>, exactly like before this stage's change.
+    /// <see cref="ParameterExpression"/> instance used on both sides) must still factor, to <c>5*x</c>: the
+    /// constant coefficient pair is folded since S5 P14 (it was the unevaluated <c>(2+3)*x</c> before).
     /// </summary>
     [TestMethod]
     public void OrdinaryFactorMatch_SameReferenceVariable_StillFactors()
@@ -227,9 +227,8 @@ public class ExpressionSimplifierComparerBatchingTests
         var multiply = (BinaryExpression)result!;
         Assert.AreEqual(ExpressionType.Multiply, multiply.NodeType);
         Assert.IsTrue(ReferenceEquals(x, multiply.Right));
-        var coefficient = (BinaryExpression)multiply.Left;
-        Assert.AreEqual(2.0, (double)((ConstantExpression)coefficient.Left).Value!);
-        Assert.AreEqual(3.0, (double)((ConstantExpression)coefficient.Right).Value!);
+        var coefficient = (ConstantExpression)multiply.Left;
+        Assert.AreEqual(5.0, (double)coefficient.Value!);
     }
 
     /// <summary>
@@ -369,17 +368,18 @@ public class ExpressionSimplifierComparerBatchingTests
     // ------------------------------------------------------------------------------------------
 
     /// <summary>
-    /// The second-pass factoring shape from
-    /// <see cref="EndToEnd_NestedAdditionOfEqualsElements_ProducesSecondPassFactoredShape"/> must produce
+    /// The nested factoring from
+    /// <see cref="EndToEnd_NestedAdditionOfEqualsElements_FactorsWithFoldedCoefficient"/> must produce
     /// the SAME shape when <c>x</c>/<c>z</c> are BOUND lambda parameters instead of free parameters: the S4
     /// ambient lexical-scope stack is open around the whole call, and each nested
     /// <see cref="ExpressionComparer.SimplifyForComparison(Expression)"/> call the probe performs must
     /// still establish its own independent, self-contained top-level scope boundary (see
     /// <see cref="ExpressionSimplifier"/>'s "Independent top-level calls" remarks) rather than leaking the
-    /// ambient bound-parameter scope into - or losing it from - the cached simplified forms.
+    /// ambient bound-parameter scope into - or losing it from - the cached simplified forms. Since S5 P14 the
+    /// coefficient is the folded constant <c>5</c> in both cases (it was the unevaluated <c>(2 + 3)</c>).
     /// </summary>
     [TestMethod]
-    public void BoundLambdaEndToEnd_SecondPassFactoring_ProducesSameShapeAsFreeParameters()
+    public void BoundLambdaEndToEnd_NestedFactoring_ProducesSameShapeAsFreeParameters()
     {
         var simplifier = new ExpressionSimplifier();
         ParameterExpression x = Expression.Parameter(typeof(double), "x");
@@ -398,8 +398,8 @@ public class ExpressionSimplifierComparerBatchingTests
         Assert.AreEqual(ExpressionType.Add, sumOfVariables.NodeType);
         Assert.IsTrue(ReferenceEquals(x, sumOfVariables.Left));
         Assert.IsTrue(ReferenceEquals(z, sumOfVariables.Right));
-        var coefficient = (BinaryExpression)multiply.Right;
-        Assert.AreEqual(ExpressionType.Add, coefficient.NodeType);
+        var coefficient = (ConstantExpression)multiply.Right;
+        Assert.AreEqual(5.0, (double)coefficient.Value!);
 
         Func<double, double, double> compiledSource = source.Compile();
         Func<double, double, double> compiledResult = result.Compile();
