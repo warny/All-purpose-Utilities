@@ -591,26 +591,23 @@ namespace Utils.Mathematics.Expressions
 
 
         /// <summary>
-        /// Determines whether <paramref name="expression"/> is a <see cref="double"/> or <see cref="float"/> constant
-        /// holding <c>NaN</c> or an infinity.
+        /// Determines whether both operands of <paramref name="binary"/> are constants.
         /// </summary>
-        /// <param name="expression">The operand to test.</param>
-        /// <returns><see langword="true"/> for a non-finite floating-point constant.</returns>
+        /// <param name="binary">The node a zero/one identity is about to rewrite.</param>
+        /// <returns><see langword="true"/> when the node is a pair of constants.</returns>
         /// <remarks>
-        /// The multiplicative zero/one identities decline on such an operand (S5 P11), so the exact constant folding
-        /// that follows them applies instead: <c>inf * 0</c> is <c>NaN</c>, not <c>0</c>. Identities on a non-constant
-        /// operand keep the symbolic treatment of the "Symbolic-equivalence contract". The division and power
-        /// identities decline on any constant operand instead (S5 P12/P13, see <see cref="DivideWithZero"/> and
-        /// <see cref="PowerOfZeroOrOne"/>).
+        /// The additive and multiplicative zero/one identities decline on such a node, so the exact typed folding that
+        /// follows them applies instead (<see cref="FoldConstants"/>). The identities returned one operand unevaluated:
+        /// <c>-0.0 + 0.0</c> gave <c>-0</c> instead of <c>+0</c>, <c>0.0 - 0.0</c> gave <c>-(0)</c> (<c>-0</c>),
+        /// <c>-0.0 * 0.0</c> gave <c>+0</c> instead of <c>-0</c>, <c>0m * 2.5m</c> dropped the decimal scale of
+        /// <c>0.0m</c>, and <c>5 * -1</c> gave the unevaluated <c>-(5)</c>. S5 P11 already declined on a non-finite
+        /// constant (<c>inf * 0</c> is <c>NaN</c>, not <c>0</c>), a case this guard subsumes; the division identities
+        /// apply the same guard (S5 P12, see <see cref="DivideWithZero"/> and <see cref="DivideWithZeroOrOne"/>), and
+        /// the power identities theirs (S5 P13, see <see cref="PowerOfZeroOrOne"/>). Identities on a non-constant
+        /// operand keep the symbolic treatment of the "Symbolic-equivalence contract".
         /// </remarks>
-        private static bool IsNonFiniteFloatingConstant(Expression expression)
-            => expression is ConstantExpression constant
-                && constant.Value switch
-                {
-                    double doubleValue => !double.IsFinite(doubleValue),
-                    float floatValue => !float.IsFinite(floatValue),
-                    _ => false,
-                };
+        private static bool IsConstantPair(BinaryExpression binary)
+            => binary.Left is ConstantExpression && binary.Right is ConstantExpression;
 
         #endregion
 
@@ -827,10 +824,11 @@ namespace Utils.Mathematics.Expressions
         /// <summary>
         /// Simplifies <c>left + 0</c> to <c>left</c>.
         /// </summary>
+        /// <remarks>Declines when <paramref name="left"/> is a constant: see <see cref="IsConstantPair"/>.</remarks>
         [ExpressionSignature(ExpressionType.Add)]
         public Expression AdditionWithZero(BinaryExpression e, Expression left, [ConstantNumeric(0)] ConstantExpression right)
         {
-            if (!IsOrdinaryBinaryArithmetic(e)) return null;
+            if (!IsOrdinaryBinaryArithmetic(e) || IsConstantPair(e)) return null;
             if (NumericValueEquals(right.Value, 0)) return TransformCore(left);
             return null;
         }
@@ -838,10 +836,11 @@ namespace Utils.Mathematics.Expressions
         /// <summary>
         /// Simplifies <c>0 + right</c> to <c>right</c>.
         /// </summary>
+        /// <remarks>Declines when <paramref name="right"/> is a constant: see <see cref="IsConstantPair"/>.</remarks>
         [ExpressionSignature(ExpressionType.Add)]
         public Expression AdditionWithZero(BinaryExpression e, [ConstantNumeric(0)] ConstantExpression left, Expression right)
         {
-            if (!IsOrdinaryBinaryArithmetic(e)) return null;
+            if (!IsOrdinaryBinaryArithmetic(e) || IsConstantPair(e)) return null;
             if (NumericValueEquals(left.Value, 0)) return right;
             return null;
         }
@@ -849,10 +848,11 @@ namespace Utils.Mathematics.Expressions
         /// <summary>
         /// Simplifies <c>left - 0</c> to <c>left</c>.
         /// </summary>
+        /// <remarks>Declines when <paramref name="left"/> is a constant: see <see cref="IsConstantPair"/>.</remarks>
         [ExpressionSignature(ExpressionType.Subtract)]
         public Expression SubstractionWithZero(BinaryExpression e, Expression left, [ConstantNumeric(0)] ConstantExpression right)
         {
-            if (!IsOrdinaryBinaryArithmetic(e)) return null;
+            if (!IsOrdinaryBinaryArithmetic(e) || IsConstantPair(e)) return null;
             if (NumericValueEquals(right.Value, 0)) return left;
             return null;
         }
@@ -864,11 +864,12 @@ namespace Utils.Mathematics.Expressions
         /// Not applied to a type without an ordinary unary negation (the unsigned integers), where
         /// <see cref="Expression.Negate(Expression)"/> would throw; <c>0 - right</c> is then already the simplest
         /// form and is also what <see cref="CanonicalizeAdditiveExpression"/> produces for such a type (S5 P10).
+        /// Declines when <paramref name="right"/> is a constant: see <see cref="IsConstantPair"/>.
         /// </remarks>
         [ExpressionSignature(ExpressionType.Subtract)]
         public Expression SubstractionWithZero(BinaryExpression e, [ConstantNumeric(0)] ConstantExpression left, Expression right)
         {
-            if (!IsOrdinaryBinaryArithmetic(e) || !_ordinaryNegateMethods.ContainsKey(right.Type)) return null;
+            if (!IsOrdinaryBinaryArithmetic(e) || IsConstantPair(e) || !_ordinaryNegateMethods.ContainsKey(right.Type)) return null;
             if (NumericValueEquals(left.Value, 0)) return TransformCore(Expression.Negate(right));
             return null;
         }
@@ -876,11 +877,11 @@ namespace Utils.Mathematics.Expressions
         /// <summary>
         /// Simplifies multiplication by 0, 1, or -1 (e.g., <c>x * 0</c> to 0, <c>x * 1</c> to <c>x</c>, etc.).
         /// </summary>
-        /// <remarks>Declines when <paramref name="left"/> is a non-finite constant: see <see cref="IsNonFiniteFloatingConstant"/>.</remarks>
+        /// <remarks>Declines when <paramref name="left"/> is a constant: see <see cref="IsConstantPair"/>.</remarks>
         [ExpressionSignature(ExpressionType.Multiply)]
         public Expression MultiplicationWithZeroOrOne(BinaryExpression e, Expression left, [ConstantNumeric(0, 1, -1)] ConstantExpression right)
         {
-            if (!IsOrdinaryBinaryArithmetic(e) || IsNonFiniteFloatingConstant(left)) return null;
+            if (!IsOrdinaryBinaryArithmetic(e) || IsConstantPair(e)) return null;
             if (NumericValueEquals(right.Value, 0)) return right;  // x * 0 => 0
             if (NumericValueEquals(right.Value, 1)) return left;   // x * 1 => x
             if (NumericValueEquals(right.Value, -1)) return Expression.Negate(left); // x * -1 => -x
@@ -890,11 +891,11 @@ namespace Utils.Mathematics.Expressions
         /// <summary>
         /// Simplifies multiplication by 0, 1, or -1 (e.g., <c>0 * x</c>, <c>1 * x</c>, <c>-1 * x</c>).
         /// </summary>
-        /// <remarks>Declines when <paramref name="right"/> is a non-finite constant: see <see cref="IsNonFiniteFloatingConstant"/>.</remarks>
+        /// <remarks>Declines when <paramref name="right"/> is a constant: see <see cref="IsConstantPair"/>.</remarks>
         [ExpressionSignature(ExpressionType.Multiply)]
         public Expression MultiplicationWithZeroOrOne(BinaryExpression e, [ConstantNumeric(0, 1, -1)] ConstantExpression left, Expression right)
         {
-            if (!IsOrdinaryBinaryArithmetic(e) || IsNonFiniteFloatingConstant(right)) return null;
+            if (!IsOrdinaryBinaryArithmetic(e) || IsConstantPair(e)) return null;
             if (NumericValueEquals(left.Value, 0)) return left;
             if (NumericValueEquals(left.Value, 1)) return right;
             if (NumericValueEquals(left.Value, -1)) return Expression.Negate(right);

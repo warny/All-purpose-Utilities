@@ -618,6 +618,56 @@ public class ExpressionSimplifierIeeeDivisionPowerTests
     }
 
     /// <summary>
+    /// Every ordinary addition, subtraction and multiplication of two constants folds like the compiled node, the
+    /// zero/one operands included: the additive and multiplicative identities no longer return one constant operand
+    /// unevaluated.
+    /// </summary>
+    [TestMethod]
+    public void Simplify_OrdinaryConstantAdditiveAndMultiplicativeArithmetic_FoldsInNodeType()
+        => AssertConstantArithmeticFoldsInNodeType([Expression.Add, Expression.Subtract, Expression.Multiply]);
+
+    /// <summary>
+    /// The zero/one identities ran before constant folding and returned one operand: <c>-0.0 + 0.0</c> was <c>-0</c>,
+    /// <c>0.0 - 0.0</c> was <c>-(0)</c>, <c>-0.0 * 0.0</c> was <c>+0</c>, <c>0m * 2.5m</c> lost the scale of
+    /// <c>0.0m</c>, and <c>5 * -1</c> was <c>-(5)</c>. Each now folds to the runtime result.
+    /// </summary>
+    [TestMethod]
+    public void Simplify_ConstantPairWithZeroOrOne_FoldsExactly()
+    {
+        Expression c(double value) => Expression.Constant(value);
+        Assert.AreEqual(Key(0.0), Key((double)AssertConstant(typeof(double), Simplify(Expression.Add(c(-0.0), c(0.0))))));
+        Assert.AreEqual(Key(0.0), Key((double)AssertConstant(typeof(double), Simplify(Expression.Add(c(0.0), c(-0.0))))));
+        Assert.AreEqual(Key(0.0), Key((double)AssertConstant(typeof(double), Simplify(Expression.Subtract(c(0.0), c(0.0))))));
+        Assert.AreEqual(Key(0.0), Key((double)AssertConstant(typeof(double), Simplify(Expression.Subtract(c(-0.0), c(-0.0))))));
+        Assert.AreEqual(Key(-0.0), Key((double)AssertConstant(typeof(double), Simplify(Expression.Multiply(c(-0.0), c(0.0))))));
+        Assert.AreEqual(Key(-0.0), Key((double)AssertConstant(typeof(double), Simplify(Expression.Multiply(c(0.0), c(-3.0))))));
+        Assert.AreEqual(Key(-0f), Key((float)AssertConstant(typeof(float), Simplify(Expression.Multiply(Expression.Constant(-0f), Expression.Constant(1f))))));
+        decimal product = (decimal)AssertConstant(typeof(decimal), Simplify(Expression.Multiply(Expression.Constant(0m), Expression.Constant(2.5m))));
+        Assert.AreEqual(string.Join(",", decimal.GetBits(0m * 2.5m)), string.Join(",", decimal.GetBits(product)), "The decimal scale is kept.");
+        Assert.AreEqual(-5, AssertConstant(typeof(int), Simplify(Expression.Multiply(Expression.Constant(5), Expression.Constant(-1)))));
+        Assert.AreEqual(-5, AssertConstant(typeof(int), Simplify(Expression.Multiply(Expression.Constant(-1), Expression.Constant(5)))));
+        Assert.IsTrue(double.IsNaN((double)AssertConstant(typeof(double), Simplify(Expression.Multiply(c(double.PositiveInfinity), c(0.0))))), "S5 P11 behavior is kept.");
+    }
+
+    /// <summary>
+    /// The zero/one identities are unchanged on a non-constant operand (controls): <c>x + 0</c>, <c>0 + x</c>,
+    /// <c>x - 0</c>, <c>0 - x</c>, <c>x * 0</c>, <c>x * 1</c> and <c>x * -1</c>.
+    /// </summary>
+    [TestMethod]
+    public void Simplify_SymbolicZeroOrOneIdentities_AreUnchanged()
+    {
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+        Expression zero = Expression.Constant(0.0);
+        Assert.AreSame(x, Simplify(Expression.Add(x, zero)));
+        Assert.AreSame(x, Simplify(Expression.Add(zero, x)));
+        Assert.AreSame(x, Simplify(Expression.Subtract(x, zero)));
+        Assert.AreEqual(ExpressionType.Negate, Simplify(Expression.Subtract(zero, x)).NodeType);
+        Assert.AreEqual(Key(0.0), Key((double)AssertConstant(typeof(double), Simplify(Expression.Multiply(x, zero)))));
+        Assert.AreSame(x, Simplify(Expression.Multiply(x, Expression.Constant(1.0))));
+        Assert.AreEqual(ExpressionType.Negate, Simplify(Expression.Multiply(Expression.Constant(-1.0), x)).NodeType);
+    }
+
+    /// <summary>
     /// <see cref="short"/> and <see cref="ushort"/> additions, subtractions and multiplications of two constants fold in
     /// the operand type with wrap-around: <c>32767 + 1</c> is <c>-32768</c> and <c>(ushort)3 - 4</c> is <c>65535</c>
     /// (the <c>dynamic</c> folding returned the <see cref="int"/> constants <c>32768</c> and <c>-1</c>).
