@@ -367,11 +367,15 @@ public class ExpressionSimplifierComparisonMemoTests
     }
 
     /// <summary>Exceptions thrown while simplifying an eligible operand are never cached and propagate every time.</summary>
+    /// <remarks>
+    /// The throwing operand is an integral division by zero, which throws at runtime as well; until S5 P12 it was
+    /// <c>x / 0.0</c>, which now simplifies without throwing (IEEE-754 division by zero is defined).
+    /// </remarks>
     [TestMethod]
     public void Exceptions_AreNeverCached()
     {
-        ParameterExpression x = Expression.Parameter(typeof(double), "x");
-        Expression throwing = Expression.Divide(x, Expression.Constant(0.0));
+        ParameterExpression i = Expression.Parameter(typeof(int), "i");
+        Expression throwing = Expression.Divide(i, Expression.Constant(0));
         Assert.IsTrue(ExpressionSimplifier.IsComparisonMemoEligible(throwing));
 
         using (ExpressionSimplifier.BeginActivatedComparisonMemoSessionForTesting())
@@ -387,15 +391,19 @@ public class ExpressionSimplifierComparisonMemoTests
     }
 
     /// <summary>The comparer keeps its x-before-y simplification and exception ordering inside an activated session.</summary>
+    /// <remarks>
+    /// The second operand throws through an integral division by zero, converted to <see cref="double"/> so both
+    /// operands keep the same type; until S5 P12 it was <c>x / 0.0</c>, which now simplifies without throwing.
+    /// </remarks>
     [TestMethod]
     public void ComparerExceptionOrder_IsPreservedInSession()
     {
-        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+        ParameterExpression i = Expression.Parameter(typeof(int), "i");
         MethodInfo identity = typeof(ExpressionSimplifierComparisonMemoTests).GetMethod(nameof(IdentityFromObject))!;
         Expression hostile = Expression.Add(
             Expression.Multiply(Expression.Constant(2.0), Expression.Call(identity, Expression.Constant(new HostileConstant(), typeof(object)))),
             Expression.Multiply(Expression.Constant(3.0), Expression.Call(identity, Expression.Constant(new HostileConstant(), typeof(object)))));
-        Expression dividesByZero = Expression.Divide(x, Expression.Constant(0.0));
+        Expression dividesByZero = Expression.Convert(Expression.Divide(i, Expression.Constant(0)), typeof(double));
 
         using (ExpressionSimplifier.BeginActivatedComparisonMemoSessionForTesting())
         {

@@ -306,20 +306,17 @@ public class ExpressionSimplifierNumericRobustnessTests
     }
 
     /// <summary>
-    /// Characterizes the remaining zero-divisor behavior (a separate defect in the S5 P11 roadmap entry): division by
-    /// a <see cref="double"/> zero still throws while simplifying, even with a <c>NaN</c> dividend, as do integral and
-    /// decimal division by zero, which match their runtime behavior.
+    /// Integral and decimal division by zero keep throwing while simplifying, matching their runtime behavior. The
+    /// floating-point zero divisor, which this test characterized as still throwing until S5 P12, is covered by
+    /// <see cref="ExpressionSimplifierIeeeDivisionPowerTests"/>.
     /// </summary>
     [TestMethod]
-    public void Simplify_ZeroDivisor_KeepsHistoricalBehavior()
+    public void Simplify_IntegralOrDecimalZeroDivisor_Throws()
     {
-        ParameterExpression x = Expression.Parameter(typeof(double), "x");
         ParameterExpression i = Expression.Parameter(typeof(int), "i");
         ParameterExpression m = Expression.Parameter(typeof(decimal), "m");
-        AssertThrowsRuleException<DivideByZeroException>(() => Simplify(Expression.Divide(x, Expression.Constant(-0.0))));
         AssertThrowsRuleException<DivideByZeroException>(() => Simplify(Expression.Divide(i, Expression.Constant(0))));
         AssertThrowsRuleException<DivideByZeroException>(() => Simplify(Expression.Divide(m, Expression.Constant(0m))));
-        AssertThrowsRuleException<DivideByZeroException>(() => Simplify(Expression.Divide(Expression.Constant(double.NaN), Expression.Constant(0.0))));
     }
 
     /// <summary>Large integral and decimal constants keep their exact comparison: none is taken for zero, one or minus one.</summary>

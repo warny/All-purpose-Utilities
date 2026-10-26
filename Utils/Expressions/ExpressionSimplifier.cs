@@ -595,9 +595,10 @@ namespace Utils.Mathematics.Expressions
         /// <param name="expression">The operand to test.</param>
         /// <returns><see langword="true"/> for a non-finite floating-point constant.</returns>
         /// <remarks>
-        /// A zero/one identity declines on such an operand (S5 P11), so the exact constant folding that follows it
-        /// applies instead: <c>inf * 0</c> is <c>NaN</c>, not <c>0</c>, and <c>0 ^ NaN</c> is <c>NaN</c>. Identities on
-        /// a non-constant operand keep the symbolic treatment of the "Symbolic-equivalence contract".
+        /// The multiplicative and power zero/one identities decline on such an operand (S5 P11), so the exact constant
+        /// folding that follows them applies instead: <c>inf * 0</c> is <c>NaN</c>, not <c>0</c>, and <c>0 ^ NaN</c> is
+        /// <c>NaN</c>. Identities on a non-constant operand keep the symbolic treatment of the "Symbolic-equivalence
+        /// contract". <see cref="DivideWithZero"/> declines on any constant divisor instead (S5 P12).
         /// </remarks>
         private static bool IsNonFiniteFloatingConstant(Expression expression)
             => expression is ConstantExpression constant
@@ -813,33 +814,44 @@ namespace Utils.Mathematics.Expressions
         }
 
         /// <summary>
-        /// Simplifies division by 0, 1, or -1 (throwing if 0).
+        /// Simplifies division by 1 or -1, and throws on an integral or decimal zero divisor.
         /// </summary>
         /// <remarks>
         /// Any other divisor, including <c>NaN</c>, an infinity or a value beyond the decimal range, leaves the node to
-        /// the following rules (S5 P11; it threw <see cref="OverflowException"/> before). A <see cref="float"/> or
-        /// <see cref="double"/> zero divisor still throws <see cref="DivideByZeroException"/> although IEEE-754 division
-        /// by zero yields an infinity or <c>NaN</c>: that historical behavior is recorded as a separate defect in the
-        /// S5 P11 roadmap entry, not changed here.
+        /// the following rules (S5 P11; it threw <see cref="OverflowException"/> before). An integral or
+        /// <see cref="decimal"/> zero divisor throws <see cref="DivideByZeroException"/>, as evaluating the node would.
+        /// A <see cref="float"/> or <see cref="double"/> zero divisor is declined instead (S5 P12; it threw before):
+        /// IEEE-754 division by <c>±0</c> is defined (an infinity or <c>NaN</c>), so <see cref="DivisionOfConstants"/>
+        /// folds a constant dividend exactly and a non-constant dividend keeps the division node.
         /// </remarks>
         [ExpressionSignature(ExpressionType.Divide)]
         public Expression DivideWithZeroOrOne(BinaryExpression e, Expression left, ConstantExpression right)
         {
             if (!IsOrdinaryBinaryArithmetic(e)) return null;
-            if (NumericValueEquals(right.Value, 0)) throw new DivideByZeroException();
+            if (NumericValueEquals(right.Value, 0))
+            {
+                if (e.Type == typeof(double) || e.Type == typeof(float)) return null;
+                throw new DivideByZeroException();
+            }
             if (NumericValueEquals(right.Value, 1)) return left;
             if (NumericValueEquals(right.Value, -1)) return Expression.Negate(left);
             return null;
         }
 
         /// <summary>
-        /// Simplifies <c>0 / x</c> to <c>0</c>.
+        /// Simplifies <c>0 / x</c> to <c>0</c> for a non-constant <c>x</c>.
         /// </summary>
-        /// <remarks>Declines when <paramref name="right"/> is a non-finite constant: see <see cref="IsNonFiniteFloatingConstant"/>.</remarks>
+        /// <remarks>
+        /// Declines when <paramref name="right"/> is a constant, which <see cref="DivisionOfConstants"/> then folds
+        /// exactly (S5 P12): <c>0 / -3</c> is <c>-0</c>, <c>0 / 0.0</c> is <c>NaN</c> and <c>0 / inf</c> is <c>0</c>,
+        /// whereas this identity returned the dividend (S5 P11 already declined on a non-finite constant). On a
+        /// non-constant divisor it is the symbolic identity of the "Symbolic-equivalence contract" (the sign of the
+        /// zero and a <c>NaN</c> for <c>x = 0</c> or <c>x = NaN</c> are not preserved).
+        /// </remarks>
         [ExpressionSignature(ExpressionType.Divide)]
         public Expression DivideWithZero(BinaryExpression e, [ConstantNumeric(0)] ConstantExpression left, Expression right)
         {
-            if (!IsOrdinaryBinaryArithmetic(e) || IsNonFiniteFloatingConstant(right)) return null;
+            if (!IsOrdinaryBinaryArithmetic(e) || right is ConstantExpression) return null;
             if (NumericValueEquals(left.Value, 0)) return left;
             return null;
         }
