@@ -533,13 +533,17 @@ public class ExpressionSimplifierComparerBatchingTests
     /// "inner" shape from <see cref="NestedSimplifyReachingUserCode_InvokedOncePerComparison_NotOncePerCandidate"/>,
     /// which simplifies by reaching its own nested <c>AdditionOfEqualsElements</c> call whose structural
     /// argument comparison invokes <c>hostileLeft.Equals(hostileRight)</c> and throws
-    /// <see cref="HostileConstantException"/>). <c>y</c> is cacheable (a plain <c>Divide(Constant(1.0),
-    /// Constant(0.0))</c> of only native numeric constants) but its OWN simplification unconditionally throws
-    /// <see cref="DivideByZeroException"/> (<c>ExpressionSimplifier.DivideWithZeroOrOne</c>) - a DIFFERENT
-    /// exception type from <c>x</c>'s, chosen specifically so the propagated exception's TYPE identifies which
-    /// operand was actually attempted first.
+    /// <see cref="HostileConstantException"/>). <c>y</c> is cacheable (<c>Convert(Divide(Constant(1), Constant(0)),
+    /// double)</c>, only native numeric constants) but its OWN simplification unconditionally throws
+    /// <see cref="DivideByZeroException"/> (<c>ExpressionSimplifier.DivideWithZeroOrOne</c> on an integral zero
+    /// divisor) - a DIFFERENT exception type from <c>x</c>'s, chosen specifically so the propagated exception's TYPE
+    /// identifies which operand was actually attempted first.
     /// </summary>
     /// <remarks>
+    /// Until S5 P12 <c>y</c> was <c>Divide(Constant(1.0), Constant(0.0))</c>; floating-point division by zero now
+    /// folds to <c>+inf</c> instead of throwing, so the integral division (which throws at runtime as well) keeps
+    /// <c>y</c>'s own simplification throwing. The test first checks that it does, so it cannot pass vacuously.
+    /// <para>
     /// <c>left</c>/<c>right</c> share the exact same <c>Constant(5.0)</c> instance as their <c>Multiply</c>
     /// left factor, so <c>equalityProbe.Equals(leftleft, rightleft)</c> - the first check
     /// <c>AdditionOfEqualsElements</c> performs - is satisfied by <see cref="ExpressionComparer.TryFastPathEquals"/>'s
@@ -547,6 +551,7 @@ public class ExpressionSimplifierComparerBatchingTests
     /// making <c>equalityProbe.Equals(leftright=x, rightright=y)</c> (inside that same <c>if</c> condition's
     /// short-circuited <c>&amp;&amp;</c> chain) the very first substantive comparison the probe performs - so the
     /// exception this test observes can only have come from that one call.
+    /// </para>
     /// </remarks>
     [TestMethod]
     public void NonCacheableThenCacheableOperand_FallsBackWithoutSimplifyingEitherFirst_PreservesXBeforeYOrder()
@@ -568,7 +573,10 @@ public class ExpressionSimplifierComparerBatchingTests
         // Cacheable (only native numeric constants reachable) but its OWN simplification unconditionally
         // throws DivideByZeroException - a different exception type from x's, so the type that propagates
         // proves which operand was attempted first.
-        Expression y = Expression.Divide(Expression.Constant(1.0), Expression.Constant(0.0));
+        Expression y = Expression.Convert(Expression.Divide(Expression.Constant(1), Expression.Constant(0)), typeof(double));
+        Exception yAlone = Assert.Throws<Exception>(() => new ExpressionSimplifier().Simplify(y));
+        while (yAlone is TargetInvocationException { InnerException: { } yInner }) yAlone = yInner;
+        Assert.IsInstanceOfType<DivideByZeroException>(yAlone, "Precondition: y's own simplification must throw, or the order check below is vacuous.");
 
         Expression sharedFactor = Expression.Constant(5.0);
         Expression left = Expression.Multiply(sharedFactor, x);

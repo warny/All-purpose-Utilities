@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Numerics;
 using System.Reflection;
 using Utils.Expressions;
 using Utils.Objects;
@@ -588,25 +589,113 @@ namespace Utils.Mathematics.Expressions
             [typeof(byte)] = static (value, target) => (byte)value == target,
         };
 
+
         /// <summary>
-        /// Determines whether <paramref name="expression"/> is a <see cref="double"/> or <see cref="float"/> constant
-        /// holding <c>NaN</c> or an infinity.
+        /// Determines whether both operands of <paramref name="binary"/> are constants.
         /// </summary>
-        /// <param name="expression">The operand to test.</param>
-        /// <returns><see langword="true"/> for a non-finite floating-point constant.</returns>
+        /// <param name="binary">The node a zero/one identity is about to rewrite.</param>
+        /// <returns><see langword="true"/> when the node is a pair of constants.</returns>
         /// <remarks>
-        /// A zero/one identity declines on such an operand (S5 P11), so the exact constant folding that follows it
-        /// applies instead: <c>inf * 0</c> is <c>NaN</c>, not <c>0</c>, and <c>0 ^ NaN</c> is <c>NaN</c>. Identities on
-        /// a non-constant operand keep the symbolic treatment of the "Symbolic-equivalence contract".
+        /// The additive and multiplicative zero/one identities decline on such a node, so the exact typed folding that
+        /// follows them applies instead (<see cref="FoldConstants"/>). The identities returned one operand unevaluated:
+        /// <c>-0.0 + 0.0</c> gave <c>-0</c> instead of <c>+0</c>, <c>0.0 - 0.0</c> gave <c>-(0)</c> (<c>-0</c>),
+        /// <c>-0.0 * 0.0</c> gave <c>+0</c> instead of <c>-0</c>, <c>0m * 2.5m</c> dropped the decimal scale of
+        /// <c>0.0m</c>, and <c>5 * -1</c> gave the unevaluated <c>-(5)</c>. S5 P11 already declined on a non-finite
+        /// constant (<c>inf * 0</c> is <c>NaN</c>, not <c>0</c>), a case this guard subsumes; the division identities
+        /// apply the same guard (S5 P12, see <see cref="DivideWithZero"/> and <see cref="DivideWithZeroOrOne"/>), and
+        /// the power identities theirs (S5 P13, see <see cref="PowerOfZeroOrOne"/>). Identities on a non-constant
+        /// operand keep the symbolic treatment of the "Symbolic-equivalence contract".
         /// </remarks>
-        private static bool IsNonFiniteFloatingConstant(Expression expression)
-            => expression is ConstantExpression constant
-                && constant.Value switch
-                {
-                    double doubleValue => !double.IsFinite(doubleValue),
-                    float floatValue => !float.IsFinite(floatValue),
-                    _ => false,
-                };
+        private static bool IsConstantPair(BinaryExpression binary)
+            => binary.Left is ConstantExpression && binary.Right is ConstantExpression;
+
+        #endregion
+
+        #region Typed constant folding
+
+        /// <summary>
+        /// Evaluates an ordinary addition, subtraction, multiplication or division of two constants exactly as the
+        /// compiled node would, and returns the result as a constant of the node's type.
+        /// </summary>
+        /// <param name="nodeType">The operator: <see cref="ExpressionType.Add"/>, <see cref="ExpressionType.Subtract"/>,
+        /// <see cref="ExpressionType.Multiply"/> or <see cref="ExpressionType.Divide"/>.</param>
+        /// <param name="type">The node's type, which is also the type of both operands.</param>
+        /// <param name="left">The left constant.</param>
+        /// <param name="right">The right constant.</param>
+        /// <returns>The folded constant, or <see langword="null"/> when an operand is <see langword="null"/> or the
+        /// (operator, type) pair has no folder.</returns>
+        /// <remarks>
+        /// <para>
+        /// The caller must have proven the node ordinary (<see cref="IsOrdinaryBinaryArithmetic(BinaryExpression)"/>):
+        /// both operands then have exactly <paramref name="type"/>, and their boxed values are of that type. The folder
+        /// returns a boxed <paramref name="type"/> too, so <see cref="Expression.Constant(object)"/> already types the
+        /// constant exactly; the <see cref="Expression.Constant(object, Type)"/> overload would only add an
+        /// assignability check (about 8 ns per fold, measurable on factored sums of constants).
+        /// </para>
+        /// <para>
+        /// Replaces the <c>dynamic</c> arithmetic used before S5 P12, which applied the C# binary numeric promotions:
+        /// <see cref="short"/> and <see cref="ushort"/> operands were widened to <see cref="int"/>, so <c>(short)0 / (short)3</c>
+        /// folded to an <see cref="int"/> constant (a type mismatch for the parent node or the lambda) and
+        /// <c>(short)32767 + (short)1</c> to <c>32768</c> instead of the wrapped <c>-32768</c>. The folders of
+        /// <see cref="ConstantFolders"/> keep the operand type and the unchecked semantics of the ordinary node, raise
+        /// the exceptions its evaluation raises (<see cref="DivideByZeroException"/> for an integral or decimal zero
+        /// divisor, <see cref="OverflowException"/> for <c>int.MinValue / -1</c>, <c>long.MinValue / -1</c> and a
+        /// decimal overflow), and follow IEEE-754 for <see cref="float"/> and <see cref="double"/> (<c>NaN</c>,
+        /// infinities and signed zeros).
+        /// </para>
+        /// </remarks>
+        private static ConstantExpression? FoldConstants(ExpressionType nodeType, Type type, object? left, object? right)
+            => left is not null
+                && right is not null
+                && ConstantFolders.TryGetValue((nodeType, type), out Func<object, object, object>? folder)
+                ? Expression.Constant(folder(left, right))
+                : null;
+
+        /// <summary>
+        /// Typed evaluators of the ordinary binary operators, indexed by operator and operand type; used by
+        /// <see cref="FoldConstants"/>.
+        /// </summary>
+        /// <remarks>
+        /// Covers the four operators on the nine types for which <see cref="_ordinaryBinaryOperatorMethods"/> defines
+        /// them (every <see cref="Types.Number"/> entry but <see cref="byte"/> and <see cref="sbyte"/>). Each entry is a
+        /// generic-math operator call specialized by the JIT for its value type: no reflection, no dynamic binding and
+        /// no implicit conversion. Read-only after the type initializer, hence safe for concurrent lookups.
+        /// </remarks>
+        private static readonly Dictionary<(ExpressionType NodeType, Type Type), Func<object, object, object>> ConstantFolders = BuildConstantFolders();
+
+        /// <summary>Builds <see cref="ConstantFolders"/> once.</summary>
+        /// <returns>The table of typed evaluators.</returns>
+        private static Dictionary<(ExpressionType NodeType, Type Type), Func<object, object, object>> BuildConstantFolders()
+        {
+            var table = new Dictionary<(ExpressionType NodeType, Type Type), Func<object, object, object>>();
+            AddConstantFolders<double>(table);
+            AddConstantFolders<float>(table);
+            AddConstantFolders<decimal>(table);
+            AddConstantFolders<int>(table);
+            AddConstantFolders<long>(table);
+            AddConstantFolders<uint>(table);
+            AddConstantFolders<ulong>(table);
+            AddConstantFolders<short>(table);
+            AddConstantFolders<ushort>(table);
+            return table;
+        }
+
+        /// <summary>Registers the unchecked addition, subtraction, multiplication and division of <typeparamref name="T"/>.</summary>
+        /// <typeparam name="T">The operand type.</typeparam>
+        /// <param name="table">The table being built.</param>
+        /// <remarks>
+        /// The generic-math operators of the primitive types compute in the operand type: <see cref="short"/> and
+        /// <see cref="ushort"/> results are truncated exactly like the <c>conv</c> the expression compiler emits after
+        /// the widened IL operation.
+        /// </remarks>
+        private static void AddConstantFolders<T>(Dictionary<(ExpressionType NodeType, Type Type), Func<object, object, object>> table)
+            where T : INumber<T>
+        {
+            table[(ExpressionType.Add, typeof(T))] = static (left, right) => unchecked((T)left + (T)right);
+            table[(ExpressionType.Subtract, typeof(T))] = static (left, right) => unchecked((T)left - (T)right);
+            table[(ExpressionType.Multiply, typeof(T))] = static (left, right) => unchecked((T)left * (T)right);
+            table[(ExpressionType.Divide, typeof(T))] = static (left, right) => unchecked((T)left / (T)right);
+        }
 
         #endregion
 
@@ -738,10 +827,11 @@ namespace Utils.Mathematics.Expressions
         /// <summary>
         /// Simplifies <c>left + 0</c> to <c>left</c>.
         /// </summary>
+        /// <remarks>Declines when <paramref name="left"/> is a constant: see <see cref="IsConstantPair"/>.</remarks>
         [ExpressionSignature(ExpressionType.Add)]
         public Expression AdditionWithZero(BinaryExpression e, Expression left, [ConstantNumeric(0)] ConstantExpression right)
         {
-            if (!IsOrdinaryBinaryArithmetic(e)) return null;
+            if (!IsOrdinaryBinaryArithmetic(e) || IsConstantPair(e)) return null;
             if (NumericValueEquals(right.Value, 0)) return TransformCore(left);
             return null;
         }
@@ -749,10 +839,11 @@ namespace Utils.Mathematics.Expressions
         /// <summary>
         /// Simplifies <c>0 + right</c> to <c>right</c>.
         /// </summary>
+        /// <remarks>Declines when <paramref name="right"/> is a constant: see <see cref="IsConstantPair"/>.</remarks>
         [ExpressionSignature(ExpressionType.Add)]
         public Expression AdditionWithZero(BinaryExpression e, [ConstantNumeric(0)] ConstantExpression left, Expression right)
         {
-            if (!IsOrdinaryBinaryArithmetic(e)) return null;
+            if (!IsOrdinaryBinaryArithmetic(e) || IsConstantPair(e)) return null;
             if (NumericValueEquals(left.Value, 0)) return right;
             return null;
         }
@@ -760,10 +851,11 @@ namespace Utils.Mathematics.Expressions
         /// <summary>
         /// Simplifies <c>left - 0</c> to <c>left</c>.
         /// </summary>
+        /// <remarks>Declines when <paramref name="left"/> is a constant: see <see cref="IsConstantPair"/>.</remarks>
         [ExpressionSignature(ExpressionType.Subtract)]
         public Expression SubstractionWithZero(BinaryExpression e, Expression left, [ConstantNumeric(0)] ConstantExpression right)
         {
-            if (!IsOrdinaryBinaryArithmetic(e)) return null;
+            if (!IsOrdinaryBinaryArithmetic(e) || IsConstantPair(e)) return null;
             if (NumericValueEquals(right.Value, 0)) return left;
             return null;
         }
@@ -775,11 +867,12 @@ namespace Utils.Mathematics.Expressions
         /// Not applied to a type without an ordinary unary negation (the unsigned integers), where
         /// <see cref="Expression.Negate(Expression)"/> would throw; <c>0 - right</c> is then already the simplest
         /// form and is also what <see cref="CanonicalizeAdditiveExpression"/> produces for such a type (S5 P10).
+        /// Declines when <paramref name="right"/> is a constant: see <see cref="IsConstantPair"/>.
         /// </remarks>
         [ExpressionSignature(ExpressionType.Subtract)]
         public Expression SubstractionWithZero(BinaryExpression e, [ConstantNumeric(0)] ConstantExpression left, Expression right)
         {
-            if (!IsOrdinaryBinaryArithmetic(e) || !_ordinaryNegateMethods.ContainsKey(right.Type)) return null;
+            if (!IsOrdinaryBinaryArithmetic(e) || IsConstantPair(e) || !_ordinaryNegateMethods.ContainsKey(right.Type)) return null;
             if (NumericValueEquals(left.Value, 0)) return TransformCore(Expression.Negate(right));
             return null;
         }
@@ -787,11 +880,11 @@ namespace Utils.Mathematics.Expressions
         /// <summary>
         /// Simplifies multiplication by 0, 1, or -1 (e.g., <c>x * 0</c> to 0, <c>x * 1</c> to <c>x</c>, etc.).
         /// </summary>
-        /// <remarks>Declines when <paramref name="left"/> is a non-finite constant: see <see cref="IsNonFiniteFloatingConstant"/>.</remarks>
+        /// <remarks>Declines when <paramref name="left"/> is a constant: see <see cref="IsConstantPair"/>.</remarks>
         [ExpressionSignature(ExpressionType.Multiply)]
         public Expression MultiplicationWithZeroOrOne(BinaryExpression e, Expression left, [ConstantNumeric(0, 1, -1)] ConstantExpression right)
         {
-            if (!IsOrdinaryBinaryArithmetic(e) || IsNonFiniteFloatingConstant(left)) return null;
+            if (!IsOrdinaryBinaryArithmetic(e) || IsConstantPair(e)) return null;
             if (NumericValueEquals(right.Value, 0)) return right;  // x * 0 => 0
             if (NumericValueEquals(right.Value, 1)) return left;   // x * 1 => x
             if (NumericValueEquals(right.Value, -1)) return Expression.Negate(left); // x * -1 => -x
@@ -801,11 +894,11 @@ namespace Utils.Mathematics.Expressions
         /// <summary>
         /// Simplifies multiplication by 0, 1, or -1 (e.g., <c>0 * x</c>, <c>1 * x</c>, <c>-1 * x</c>).
         /// </summary>
-        /// <remarks>Declines when <paramref name="right"/> is a non-finite constant: see <see cref="IsNonFiniteFloatingConstant"/>.</remarks>
+        /// <remarks>Declines when <paramref name="right"/> is a constant: see <see cref="IsConstantPair"/>.</remarks>
         [ExpressionSignature(ExpressionType.Multiply)]
         public Expression MultiplicationWithZeroOrOne(BinaryExpression e, [ConstantNumeric(0, 1, -1)] ConstantExpression left, Expression right)
         {
-            if (!IsOrdinaryBinaryArithmetic(e) || IsNonFiniteFloatingConstant(right)) return null;
+            if (!IsOrdinaryBinaryArithmetic(e) || IsConstantPair(e)) return null;
             if (NumericValueEquals(left.Value, 0)) return left;
             if (NumericValueEquals(left.Value, 1)) return right;
             if (NumericValueEquals(left.Value, -1)) return Expression.Negate(right);
@@ -813,45 +906,74 @@ namespace Utils.Mathematics.Expressions
         }
 
         /// <summary>
-        /// Simplifies division by 0, 1, or -1 (throwing if 0).
+        /// Simplifies division by 1 or -1, and throws on an integral or decimal zero divisor.
         /// </summary>
         /// <remarks>
         /// Any other divisor, including <c>NaN</c>, an infinity or a value beyond the decimal range, leaves the node to
-        /// the following rules (S5 P11; it threw <see cref="OverflowException"/> before). A <see cref="float"/> or
-        /// <see cref="double"/> zero divisor still throws <see cref="DivideByZeroException"/> although IEEE-754 division
-        /// by zero yields an infinity or <c>NaN</c>: that historical behavior is recorded as a separate defect in the
-        /// S5 P11 roadmap entry, not changed here.
+        /// the following rules (S5 P11; it threw <see cref="OverflowException"/> before). An integral or
+        /// <see cref="decimal"/> zero divisor throws <see cref="DivideByZeroException"/>, as evaluating the node would.
+        /// A <see cref="float"/> or <see cref="double"/> zero divisor is declined instead (S5 P12; it threw before):
+        /// IEEE-754 division by <c>±0</c> is defined (an infinity or <c>NaN</c>), so <see cref="DivisionOfConstants"/>
+        /// folds a constant dividend exactly and a non-constant dividend keeps the division node.
+        /// <para>
+        /// The <c>±1</c> identities decline on a constant dividend, which <see cref="DivisionOfConstants"/> folds to
+        /// a constant of the node's type instead: <c>5 / -1</c> was left as the unevaluated <c>-(5)</c>, and
+        /// <c>int.MinValue / -1</c> (or <c>long.MinValue / -1</c>) became <c>-(MinValue)</c>, which evaluates to
+        /// <c>MinValue</c> where the source throws <see cref="OverflowException"/>; the fold throws it while simplifying,
+        /// as a zero divisor does. On a non-constant dividend <c>x / -1 -&gt; -x</c> stays: it is exact in IEEE-754 and
+        /// for decimals, but for <c>x = int.MinValue</c> (or <c>long.MinValue</c>) the negation wraps where the division
+        /// throws, which the "Symbolic-equivalence contract" leaves open (overflow and exceptions are not preserved).
+        /// </para>
         /// </remarks>
         [ExpressionSignature(ExpressionType.Divide)]
         public Expression DivideWithZeroOrOne(BinaryExpression e, Expression left, ConstantExpression right)
         {
             if (!IsOrdinaryBinaryArithmetic(e)) return null;
-            if (NumericValueEquals(right.Value, 0)) throw new DivideByZeroException();
-            if (NumericValueEquals(right.Value, 1)) return left;
-            if (NumericValueEquals(right.Value, -1)) return Expression.Negate(left);
+            if (NumericValueEquals(right.Value, 0))
+            {
+                if (e.Type != typeof(double) && e.Type != typeof(float)) throw new DivideByZeroException();
+            }
+            else if (left is not ConstantExpression)
+            {
+                if (NumericValueEquals(right.Value, 1)) return left;
+                if (NumericValueEquals(right.Value, -1)) return Expression.Negate(left);
+            }
             return null;
         }
 
         /// <summary>
-        /// Simplifies <c>0 / x</c> to <c>0</c>.
+        /// Simplifies <c>0 / x</c> to <c>0</c> for a non-constant <c>x</c>.
         /// </summary>
-        /// <remarks>Declines when <paramref name="right"/> is a non-finite constant: see <see cref="IsNonFiniteFloatingConstant"/>.</remarks>
+        /// <remarks>
+        /// Declines when <paramref name="right"/> is a constant, which <see cref="DivisionOfConstants"/> then folds
+        /// exactly (S5 P12): <c>0 / -3</c> is <c>-0</c>, <c>0 / 0.0</c> is <c>NaN</c> and <c>0 / inf</c> is <c>0</c>,
+        /// whereas this identity returned the dividend (S5 P11 already declined on a non-finite constant). On a
+        /// non-constant divisor it is the symbolic identity of the "Symbolic-equivalence contract" (the sign of the
+        /// zero and a <c>NaN</c> for <c>x = 0</c> or <c>x = NaN</c> are not preserved).
+        /// </remarks>
         [ExpressionSignature(ExpressionType.Divide)]
         public Expression DivideWithZero(BinaryExpression e, [ConstantNumeric(0)] ConstantExpression left, Expression right)
         {
-            if (!IsOrdinaryBinaryArithmetic(e) || IsNonFiniteFloatingConstant(right)) return null;
+            if (!IsOrdinaryBinaryArithmetic(e) || right is ConstantExpression) return null;
             if (NumericValueEquals(left.Value, 0)) return left;
             return null;
         }
 
         /// <summary>
-        /// Simplifies <c>0^x</c> or <c>1^x</c> to 0 or 1 respectively.
+        /// Simplifies <c>0^x</c> or <c>1^x</c> to 0 or 1 respectively, for a non-constant <c>x</c>.
         /// </summary>
-        /// <remarks>Declines when <paramref name="right"/> is a non-finite constant: see <see cref="IsNonFiniteFloatingConstant"/>.</remarks>
+        /// <remarks>
+        /// Declines when <paramref name="right"/> is a constant, which <see cref="PowerOfConstants"/> then folds with
+        /// <see cref="double.Pow(double, double)"/> (S5 P13): <c>0^0</c> is <c>1</c>, <c>0^-1</c> is <c>+inf</c>,
+        /// <c>(-0)^2</c> is <c>+0</c> and <c>(-0)^-3</c> is <c>-inf</c>, whereas this identity returned the base
+        /// (S5 P11 already declined on a non-finite constant). On a non-constant exponent <c>0^x -&gt; 0</c> stays the
+        /// domain-sensitive identity of the "Symbolic-equivalence contract" (valid for <c>x &gt; 0</c>; the sign of a
+        /// <c>-0</c> base is not preserved).
+        /// </remarks>
         [ExpressionSignature(ExpressionType.Power)]
         public Expression PowerOfZeroOrOne(BinaryExpression e, [ConstantNumeric(0, 1)] ConstantExpression left, Expression right)
         {
-            if (!IsOrdinaryBinaryArithmetic(e) || IsNonFiniteFloatingConstant(right)) return null;
+            if (!IsOrdinaryBinaryArithmetic(e) || right is ConstantExpression) return null;
             if (NumericValueEquals(left.Value, 0)) return left; // 0^x => 0
             if (NumericValueEquals(left.Value, 1)) return left; // 1^x => 1
             return null;
@@ -865,11 +987,20 @@ namespace Utils.Mathematics.Expressions
         /// (<c>NaN</c> or an infinity) is left to <see cref="PowerOfConstants"/> or kept as is (S5 P11; it threw
         /// <see cref="OverflowException"/> before), and an exponent is compared exactly, so <see cref="double.Epsilon"/>
         /// is no longer taken for zero (<c>x^Epsilon</c> was rewritten to <c>1</c>).
+        /// <para>
+        /// Declines when <paramref name="left"/> is also a constant, which <see cref="PowerOfConstants"/> then folds
+        /// exactly (S5 P13). The reciprocal rewrites <c>x^-1 -&gt; 1/x</c> and <c>x^-n -&gt; 1/x^n</c> are not
+        /// bit-exact: <c>Pow(x, -n)</c> and <c>1 / Pow(x, n)</c> round independently (one unit in the last place on
+        /// about a quarter of finite bases) and part ways where <c>x^n</c> overflows while <c>x^-n</c> is still a
+        /// subnormal value. That is the rounding and overflow latitude of the "Symbolic-equivalence contract" for a
+        /// symbolic base, but a constant base has an exact value, so it is folded instead (<c>2^-2</c> was left as the
+        /// unevaluated <c>1 / 4</c>, and <c>0^-2</c> became <c>0</c> through <see cref="PowerOfZeroOrOne"/>).
+        /// </para>
         /// </remarks>
         [ExpressionSignature(ExpressionType.Power)]
         public Expression PowerByZeroOrOne(BinaryExpression e, Expression left, ConstantExpression right)
         {
-            if (!IsOrdinaryBinaryArithmetic(e) || right.Value is not double exponent || !double.IsFinite(exponent)) return null;
+            if (!IsOrdinaryBinaryArithmetic(e) || left is ConstantExpression || right.Value is not double exponent || !double.IsFinite(exponent)) return null;
             if (exponent == 0) return Expression.Constant(Convert.ChangeType(1, right.Type));
             if (exponent == 1) return TransformCore(left);
             if (exponent == -1) return TransformCore(Expression.Divide(Expression.Constant(Convert.ChangeType(1, left.Type)), left));
@@ -887,8 +1018,7 @@ namespace Utils.Mathematics.Expressions
         [ExpressionSignature(ExpressionType.Add)]
         protected Expression AdditionOfConstants(BinaryExpression e, [ConstantNumeric] ConstantExpression left, [ConstantNumeric] ConstantExpression right)
         {
-            if (!IsOrdinaryBinaryArithmetic(e)) return null;
-            return Expression.Constant((object)((dynamic)left.Value + (dynamic)right.Value));
+            return IsOrdinaryBinaryArithmetic(e) ? FoldConstants(ExpressionType.Add, e.Type, left.Value, right.Value) : null;
         }
 
         /// <summary>
@@ -991,8 +1121,7 @@ namespace Utils.Mathematics.Expressions
         [ExpressionSignature(ExpressionType.Subtract)]
         protected Expression SubstractionOfConstants(BinaryExpression e, [ConstantNumeric] ConstantExpression left, [ConstantNumeric] ConstantExpression right)
         {
-            if (!IsOrdinaryBinaryArithmetic(e)) return null;
-            return Expression.Constant((object)((dynamic)left.Value - (dynamic)right.Value));
+            return IsOrdinaryBinaryArithmetic(e) ? FoldConstants(ExpressionType.Subtract, e.Type, left.Value, right.Value) : null;
         }
 
         /// <summary>
@@ -1481,8 +1610,7 @@ namespace Utils.Mathematics.Expressions
             [ConstantNumeric] ConstantExpression left,
             [ConstantNumeric] ConstantExpression right)
         {
-            if (!IsOrdinaryBinaryArithmetic(e)) return null;
-            return Expression.Constant((object)((dynamic)left.Value * (dynamic)right.Value));
+            return IsOrdinaryBinaryArithmetic(e) ? FoldConstants(ExpressionType.Multiply, e.Type, left.Value, right.Value) : null;
         }
 
         /// <summary>
@@ -1506,12 +1634,10 @@ namespace Utils.Mathematics.Expressions
         {
             if (!IsOrdinaryBinaryArithmetic(e) || !IsOrdinaryBinaryArithmetic(right)) return null;
 
-            if (right.Left is ConstantExpression rightLeftConst)
+            if (right.Left is ConstantExpression rightLeftConst
+                && FoldConstants(ExpressionType.Multiply, e.Type, left.Value, rightLeftConst.Value) is ConstantExpression product)
             {
-                return Expression.Multiply(
-                    Expression.Constant((object)((dynamic)left.Value * (dynamic)rightLeftConst.Value)),
-                    right.Right
-                );
+                return Expression.Multiply(product, right.Right);
             }
             return null;
         }
@@ -1528,12 +1654,10 @@ namespace Utils.Mathematics.Expressions
         {
             if (!IsOrdinaryBinaryArithmetic(e) || !IsOrdinaryBinaryArithmetic(left) || !IsOrdinaryBinaryArithmetic(right)) return null;
 
-            if (left.Left is ConstantExpression leftLeft && right.Left is ConstantExpression rightLeft)
+            if (left.Left is ConstantExpression leftLeft && right.Left is ConstantExpression rightLeft
+                && FoldConstants(ExpressionType.Multiply, e.Type, leftLeft.Value, rightLeft.Value) is ConstantExpression product)
             {
-                return Expression.Multiply(
-                    Expression.Constant((object)((dynamic)leftLeft.Value * (dynamic)rightLeft.Value)),
-                    TransformCore(Expression.Multiply(left.Right, right.Right))
-                );
+                return Expression.Multiply(product, TransformCore(Expression.Multiply(left.Right, right.Right)));
             }
             return null;
         }
@@ -1541,14 +1665,17 @@ namespace Utils.Mathematics.Expressions
         /// <summary>
         /// Simplifies constant division <c>(a / b)</c> when both are numeric constants.
         /// </summary>
+        /// <remarks>
+        /// Folded by <see cref="FoldConstants"/> in the node's own type: an integral or decimal zero divisor and
+        /// <c>int.MinValue / -1</c> throw as the compiled node would, and a floating-point division follows IEEE-754.
+        /// </remarks>
         [ExpressionSignature(ExpressionType.Divide)]
         protected Expression DivisionOfConstants(
             BinaryExpression e,
             [ConstantNumeric] ConstantExpression left,
             [ConstantNumeric] ConstantExpression right)
         {
-            if (!IsOrdinaryBinaryArithmetic(e)) return null;
-            return Expression.Constant((object)((dynamic)left.Value / (dynamic)right.Value));
+            return IsOrdinaryBinaryArithmetic(e) ? FoldConstants(ExpressionType.Divide, e.Type, left.Value, right.Value) : null;
         }
 
         /// <summary>
@@ -1747,12 +1874,14 @@ namespace Utils.Mathematics.Expressions
         /// <summary>
         /// Simplifies nested divisions, e.g. <c>(x / y) / (z / w)</c> =&gt; <c>(x*w) / (y*z)</c>.
         /// </summary>
+        /// <remarks>Declines when <c>y</c>, <c>z</c> or <c>w</c> is a zero constant: see <see cref="IsZeroDivisorOutsideFieldDomain"/>.</remarks>
         [ExpressionSignature(ExpressionType.Divide)]
         protected Expression DivisionOfDivision(BinaryExpression e,
             [ExpressionSignature(ExpressionType.Divide)] BinaryExpression left,
             [ExpressionSignature(ExpressionType.Divide)] BinaryExpression right)
         {
-            if (!IsOrdinaryFieldDivision(e) || !IsOrdinaryFieldDivision(left) || !IsOrdinaryFieldDivision(right)) return null;
+            if (!IsOrdinaryFieldDivision(e) || !IsOrdinaryFieldDivision(left) || !IsOrdinaryFieldDivision(right)
+                || IsZeroDivisorOutsideFieldDomain(left.Right, right.Left, right.Right)) return null;
 
             return Expression.Divide(
                 TransformCore(Expression.Multiply(left.Left, right.Right)),
@@ -1763,10 +1892,12 @@ namespace Utils.Mathematics.Expressions
         /// <summary>
         /// Simplifies nested divisions, e.g. <c>x / (y / z)</c> =&gt; <c>(x*z) / y</c>.
         /// </summary>
+        /// <remarks>Declines when <c>y</c> or <c>z</c> is a zero constant: see <see cref="IsZeroDivisorOutsideFieldDomain"/>.</remarks>
         [ExpressionSignature(ExpressionType.Divide)]
         protected Expression DivisionOfDivision(BinaryExpression e, Expression left, [ExpressionSignature(ExpressionType.Divide)] BinaryExpression right)
         {
-            if (!IsOrdinaryFieldDivision(e) || !IsOrdinaryFieldDivision(right)) return null;
+            if (!IsOrdinaryFieldDivision(e) || !IsOrdinaryFieldDivision(right)
+                || IsZeroDivisorOutsideFieldDomain(right.Left, right.Right)) return null;
 
             return Expression.Divide(
                 TransformCore(Expression.Multiply(left, right.Right)),
@@ -1777,17 +1908,59 @@ namespace Utils.Mathematics.Expressions
         /// <summary>
         /// Simplifies nested divisions, e.g. <c>(x / y) / z</c> =&gt; <c>x / (y*z)</c>.
         /// </summary>
+        /// <remarks>Declines when <c>y</c> or <c>z</c> is a zero constant: see <see cref="IsZeroDivisorOutsideFieldDomain"/>.</remarks>
         [ExpressionSignature(ExpressionType.Divide)]
         protected Expression DivisionOfDivision(BinaryExpression e,
             [ExpressionSignature(ExpressionType.Divide)] BinaryExpression left,
             Expression right)
         {
-            if (!IsOrdinaryFieldDivision(e) || !IsOrdinaryFieldDivision(left)) return null;
+            if (!IsOrdinaryFieldDivision(e) || !IsOrdinaryFieldDivision(left)
+                || IsZeroDivisorOutsideFieldDomain(left.Right, right)) return null;
 
             return Expression.Divide(
                 left.Left,
                 TransformCore(Expression.Multiply(left.Right, right))
             );
+        }
+
+        /// <summary>
+        /// Determines whether one of the divisors of a nested division is a zero constant, which puts the node outside
+        /// the domain of the <see cref="DivisionOfDivision(BinaryExpression, BinaryExpression, BinaryExpression)"/>
+        /// field identities (S5 P12).
+        /// </summary>
+        /// <param name="divisors">The operands that are divisors in the source: two or three, depending on the overload.</param>
+        /// <returns><see langword="true"/> when a divisor is a zero constant.</returns>
+        /// <remarks>
+        /// <para>
+        /// <c>x / (y / z) = (x*z) / y</c> and its two siblings hold in a field for non-zero divisors only. A divisor
+        /// that is a constant zero is known to violate that precondition, and IEEE-754 gives the source a value the
+        /// rewrite does not keep: the rewrite moves the zero from a divisor into a product, where the symbolic
+        /// <c>x * 0 -&gt; 0</c> identity (or the <c>0 / x -&gt; 0</c> one) then discards the other factor. Measured on
+        /// <c>x, y</c> in {±2, 0.5, ±0, ±inf, NaN, MaxValue, Epsilon}: <c>x / (x / 0.0)</c> became <c>0 / x</c>
+        /// (<c>+0</c> where the source is <c>NaN</c> for an infinite <c>x</c>, and <c>-0</c> for a negative <c>x</c>),
+        /// <c>(x / 0.0) / x</c> became <c>x / 0</c> (<c>-inf</c> where the source is <c>+inf</c> for a negative
+        /// <c>x</c>), and <c>(x / y) / 0.0</c> became <c>x / 0</c> (the sign of <c>y</c> lost). The reconstructed
+        /// form before that second rewrite is itself IEEE-exact in most of these cases; the defect is applying a
+        /// field identity whose precondition is statically false, so the node is left as is.
+        /// </para>
+        /// <para>
+        /// Only a zero constant is excluded. A non-zero constant or symbolic divisor keeps the rewrite: its
+        /// differences with the source (rounding, intermediate overflow or underflow at extreme magnitudes, and a
+        /// runtime zero divisor) are the field-reassociation latitude of the "Symbolic-equivalence contract". An
+        /// infinite constant divisor only diverges at such extreme magnitudes, like any finite constant; a
+        /// <c>NaN</c> constant is folded by <see cref="FoldNaNOperand"/>.
+        /// </para>
+        /// <para>
+        /// The <see cref="ReadOnlySpan{T}"/> parameter keeps the call allocation-free on this hot path.
+        /// </para>
+        /// </remarks>
+        private static bool IsZeroDivisorOutsideFieldDomain(params ReadOnlySpan<Expression> divisors)
+        {
+            foreach (Expression divisor in divisors)
+            {
+                if (IsOrdinaryZeroConstant(divisor)) return true;
+            }
+            return false;
         }
 
         #endregion

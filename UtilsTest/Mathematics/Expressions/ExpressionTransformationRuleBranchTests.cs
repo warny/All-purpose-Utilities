@@ -196,14 +196,39 @@ public sealed class ExpressionTransformationRuleBranchTests
         AssertStructural(Expression.Multiply(Expression.Constant(-1.0), x), Expression.Negate(x));
     }
 
-    /// <summary>Verifies division by an actual zero constant fails with the documented exception.</summary>
+    /// <summary>
+    /// Verifies division by an actual integral or decimal zero constant fails with the documented exception, as
+    /// evaluating the node would.
+    /// </summary>
     [TestMethod]
-    public void Simplify_DivideWithZeroOrOne_ZeroDenominator_ThrowsDivideByZeroException()
+    public void Simplify_DivideWithZeroOrOne_IntegralOrDecimalZeroDenominator_ThrowsDivideByZeroException()
     {
+        ParameterExpression i = Expression.Parameter(typeof(int), "i");
+        ConstantExpression intZero = Expression.Constant(0);
+        Assert.ThrowsExactly<DivideByZeroException>(() => new ExpressionSimplifier().DivideWithZeroOrOne(Expression.Divide(i, intZero), i, intZero));
+
+        ParameterExpression m = Expression.Parameter(typeof(decimal), "m");
+        ConstantExpression decimalZero = Expression.Constant(0m);
+        Assert.ThrowsExactly<DivideByZeroException>(() => new ExpressionSimplifier().DivideWithZeroOrOne(Expression.Divide(m, decimalZero), m, decimalZero));
+    }
+
+    /// <summary>
+    /// Verifies the rule declines an actual <see cref="double"/> or <see cref="float"/> zero divisor (S5 P12): IEEE-754
+    /// division by zero is defined, so the node is left to constant folding or kept.
+    /// </summary>
+    [TestMethod]
+    public void Simplify_DivideWithZeroOrOne_FloatingZeroDenominator_Declines()
+    {
+        var simplifier = new ExpressionSimplifier();
         ParameterExpression x = Expression.Parameter(typeof(double), "x");
         ConstantExpression zero = Expression.Constant(0.0);
-        BinaryExpression source = Expression.Divide(x, zero);
-        Assert.ThrowsExactly<DivideByZeroException>(() => new ExpressionSimplifier().DivideWithZeroOrOne(source, x, zero));
+        ConstantExpression negativeZero = Expression.Constant(-0.0);
+        Assert.IsNull(simplifier.DivideWithZeroOrOne(Expression.Divide(x, zero), x, zero));
+        Assert.IsNull(simplifier.DivideWithZeroOrOne(Expression.Divide(x, negativeZero), x, negativeZero));
+
+        ParameterExpression xf = Expression.Parameter(typeof(float), "xf");
+        ConstantExpression floatZero = Expression.Constant(0f);
+        Assert.IsNull(simplifier.DivideWithZeroOrOne(Expression.Divide(xf, floatZero), xf, floatZero));
     }
 
     /// <summary>Verifies division by an actual negative-one constant negates the numerator.</summary>
