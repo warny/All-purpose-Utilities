@@ -1414,7 +1414,8 @@ namespace Utils.Mathematics.Expressions
             /// Returns <paramref name="original"/>'s simplified form for a comparison whose other operand, or this one,
             /// is not cacheable (S5 P15). A form computed earlier by this probe is reused; otherwise the operand is
             /// simplified now and the form is kept only when <see cref="ExpressionComparer.UserCodeInvocationCount"/>
-            /// did not change meanwhile, i.e. when the simplification called no user code.
+            /// did not change meanwhile AND the operand is either statically cacheable or has a strict observed key
+            /// (<see cref="IsObservedComparisonMemoEligible"/>).
             /// </summary>
             /// <param name="original">A candidate operand <see cref="IsCacheable"/> has already classified.</param>
             /// <returns><paramref name="original"/>'s simplified form.</returns>
@@ -1427,6 +1428,15 @@ namespace Utils.Mathematics.Expressions
             /// so running it again would call no user code either and build a structurally identical form. A
             /// simplification that did call user code (a stateful, throwing or re-entrant <c>Equals</c>) is never kept,
             /// so it runs again for every comparison, exactly as the public comparer does.
+            /// <para>
+            /// The counter only sees the comparer's calls into constant values. Other user code can run while
+            /// simplifying a node the simplifier does not own: the virtual members of an
+            /// <see cref="ExpressionType.Extension"/> node (its <see cref="Expression.NodeType"/> getter is read by
+            /// rule dispatch), or a user-defined operator node. Such an operand is never kept (PR #667 review P2):
+            /// besides an unchanged counter, it must be statically cacheable or pass the closed node policy of the
+            /// observed comparison memo, which accepts only parameters, constants, built-in unary and binary nodes,
+            /// calls and member accesses, and inspects nodes by type tests only, never through their virtual members.
+            /// </para>
             /// </remarks>
             private Expression GetOrSimplifyObserved(Expression original)
             {
@@ -1439,7 +1449,8 @@ namespace Utils.Mathematics.Expressions
 
                         long userCodeBefore = ExpressionComparer.UserCodeInvocationCount;
                         simplified = ExpressionComparer.SimplifyForComparison(original);
-                        if (ExpressionComparer.UserCodeInvocationCount == userCodeBefore)
+                        if (ExpressionComparer.UserCodeInvocationCount == userCodeBefore
+                            && (_cache[i].CanCache || IsObservedComparisonMemoEligible(original)))
                         {
                             _cache[i] = (original, _cache[i].CanCache, simplified);
                         }

@@ -405,6 +405,159 @@ public class ExpressionSimplifierOpaqueConstantInvariantTests
         Assert.IsNotNull(twinResult);
     }
 
+    /// <summary>
+    /// An extension node whose virtual <see cref="Expression.NodeType"/> and <see cref="Expression.Type"/> getters are
+    /// user code: every read is logged, the <see cref="Expression.NodeType"/> getter can throw on its k-th read or run a
+    /// callback (PR #667 review P2: the factor probe must not skip a simplification that reads these getters).
+    /// </summary>
+    private sealed class LoggingExtension : Expression
+    {
+        /// <summary>The identifier written to the log.</summary>
+        private readonly string _id;
+
+        /// <summary>The shared read log.</summary>
+        private readonly List<string> _log;
+
+        /// <summary>The <see cref="NodeType"/> read that throws, or 0.</summary>
+        private readonly int _throwAt;
+
+        /// <summary>A callback run on every <see cref="NodeType"/> read, or <see langword="null"/>.</summary>
+        private readonly Action? _onNodeType;
+
+        /// <summary>The number of <see cref="NodeType"/> reads.</summary>
+        private int _nodeTypeReads;
+
+        /// <summary>Initializes the node.</summary>
+        /// <param name="id">The identifier written to the log.</param>
+        /// <param name="log">The shared read log.</param>
+        /// <param name="throwAt">The <see cref="NodeType"/> read that throws, or 0.</param>
+        /// <param name="onNodeType">A callback run on every <see cref="NodeType"/> read, or <see langword="null"/>.</param>
+        public LoggingExtension(string id, List<string> log, int throwAt = 0, Action? onNodeType = null)
+        {
+            _id = id;
+            _log = log;
+            _throwAt = throwAt;
+            _onNodeType = onNodeType;
+        }
+
+        /// <inheritdoc/>
+        public override ExpressionType NodeType
+        {
+            get
+            {
+                _nodeTypeReads++;
+                _log.Add("N:" + _id);
+                _onNodeType?.Invoke();
+                if (_nodeTypeReads == _throwAt) throw new LoggingConstantException("N:" + _id + "#" + _nodeTypeReads);
+                return ExpressionType.Extension;
+            }
+        }
+
+        /// <inheritdoc/>
+        public override Type Type
+        {
+            get
+            {
+                _log.Add("T:" + _id);
+                return typeof(double);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Builds <c>c * ext - x1*3 - 4*x2 - ...</c> (c = 100 when the extension term sorts last, else 2), optionally with
+    /// <c>5 * extra</c> as the last term. The log is cleared after construction, so it only records simplification.
+    /// </summary>
+    /// <param name="n">The number of terms.</param>
+    /// <param name="sortedLast">Whether the extension term sorts last.</param>
+    /// <param name="extension">The extension node of the first term.</param>
+    /// <param name="extra">The extension node of the last term, or <see langword="null"/>.</param>
+    /// <param name="log">The shared log, cleared after construction.</param>
+    /// <returns>The chain.</returns>
+    private static Expression ExtensionChain(int n, bool sortedLast, Expression extension, Expression? extra, List<string> log)
+    {
+        ParameterExpression[] xs = Enumerable.Range(0, n).Select(i => Expression.Parameter(typeof(double), "x" + i)).ToArray();
+        Expression[] terms = xs.Select((x, i) => i % 2 == 0
+            ? (Expression)Expression.Multiply(Expression.Constant((double)(i + 2)), x)
+            : Expression.Multiply(x, Expression.Constant((double)(i + 2)))).ToArray();
+        terms[0] = Expression.Multiply(Expression.Constant(sortedLast ? 100.0 : 2.0), extension);
+        if (extra is not null) terms[^1] = Expression.Multiply(Expression.Constant(5.0), extra);
+        Expression chain = LeftChain(terms, Expression.Subtract);
+        log.Clear();
+        return chain;
+    }
+
+    /// <summary>Every read of an extension node's virtual getters is made exactly as on the baseline.</summary>
+    /// <param name="n">The number of terms.</param>
+    /// <param name="sortedLast">Whether the extension term sorts last.</param>
+    /// <param name="expectedReads">The baseline number of getter reads.</param>
+    /// <param name="expectedDigest">The baseline digest of the read log.</param>
+    [TestMethod]
+    [DataRow(4, false, 158, 13199457548972759387UL)]
+    [DataRow(4, true, 494, 12116947977114951067UL)]
+    [DataRow(6, true, 12346, 2552214165946043347UL)]
+    [DataRow(8, true, 308598, 15106243316600799019UL)]
+    public void ExtensionNodeGetters_AreReadAsOnTheBaseline(int n, bool sortedLast, int expectedReads, ulong expectedDigest)
+    {
+        var log = new List<string>();
+        Simplify(ExtensionChain(n, sortedLast, new LoggingExtension("e", log), null, log));
+
+        Assert.AreEqual(expectedReads, log.Count);
+        Assert.AreEqual(expectedDigest, Digest(log));
+    }
+
+    /// <summary>A <see cref="Expression.NodeType"/> getter throwing on its k-th read throws on exactly the same read.</summary>
+    /// <param name="n">The number of terms.</param>
+    /// <param name="throwAt">The throwing read.</param>
+    /// <param name="expectedReads">The baseline number of logged reads when it throws.</param>
+    [TestMethod]
+    [DataRow(4, 12, 14)]
+    [DataRow(6, 30, 39)]
+    [DataRow(8, 30, 39)]
+    public void ThrowingExtensionGetter_ThrowsOnTheSameRead(int n, int throwAt, int expectedReads)
+    {
+        var log = new List<string>();
+        Expression source = ExtensionChain(n, true, new LoggingExtension("e", log, throwAt), null, log);
+
+        Exception exception = Innermost(() => Simplify(source));
+
+        Assert.IsInstanceOfType(exception, typeof(LoggingConstantException));
+        Assert.AreEqual("N:e#" + throwAt, exception.Message);
+        Assert.AreEqual(expectedReads, log.Count);
+    }
+
+    /// <summary>
+    /// A re-entrant extension getter (it calls the public comparer), one extension instance shared by two terms, and
+    /// two structurally similar but distinct instances, keep their baseline reads.
+    /// </summary>
+    [TestMethod]
+    public void ReentrantSharedAndTwinExtensions_KeepBaselineReads()
+    {
+        var log = new List<string>();
+        int inner = 0;
+        (Expression innerLeft, _) = MixedChain(4, new object(), null);
+        (Expression innerRight, _) = MixedChain(4, new object(), null);
+        var reentrant = new LoggingExtension("r", log, onNodeType: () =>
+        {
+            if (ExpressionComparer.Default.Equals(innerLeft, innerRight)) Assert.Fail("Distinct opaque constants must not compare equal.");
+            inner++;
+        });
+        Simplify(ExtensionChain(6, true, reentrant, null, log));
+        int reentrantReads = log.Count;
+
+        var shared = new LoggingExtension("s", log);
+        Simplify(ExtensionChain(6, true, shared, shared, log));
+        int sharedReads = log.Count;
+
+        Simplify(ExtensionChain(6, true, new LoggingExtension("t0", log), new LoggingExtension("t1", log), log));
+        int twinReads = log.Count;
+
+        Assert.AreEqual(12346, reentrantReads);
+        Assert.AreEqual(9143, inner);
+        Assert.AreEqual(12364, sharedReads);
+        Assert.AreEqual(12364, twinReads);
+    }
+
     /// <summary>A custom operator and an unsupported node next to an opaque term keep their baseline trees.</summary>
     [TestMethod]
     public void CustomOperatorAndUnsupportedNode_KeepBaselineTrees()
