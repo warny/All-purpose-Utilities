@@ -3692,6 +3692,8 @@ removed before these measurements.
   - `x + NaN` throws `OverflowException` in `AdditionOfEqualsElements` (fixed in S5 P11);
   - H-family factoring returns unfolded coefficient sums (`(((2 + 3) + 4) + 5) * x`), folded only by a second pass;
   - CPU stays exponential when an opaque user-code term sorts at the tail of a long chain (B10 ~6-7 s on both).
+    *Addressed by S5 P15 for the opaque-constant part (z8 -90 %); the same shape stays exponential for purely numeric
+    terms, see P15 "Remaining limits".*
 
 #### S5 P11 — numeric robustness (P11a ACCEPTED) and NaN propagation (P11b ACCEPTED, narrowed)
 
@@ -4585,6 +4587,214 @@ differed for every finite `a`). No counterexample to the aggregation was found.
 - **`(e - c) * 1`.** `((a + MaxValue) + MaxValue) - 1u` and `(a + decimal.MinValue) - 1` end as `(... - 1) * 1`: the
   factoring rules augment both sides with a coefficient `1` and factor `e - c` as `(e - c) * 1`. Values are correct;
   the shape is not minimal.
+
+#### S5 P15 — Opaque-constant comparer recursion and pathological additive chains (C1 + C2 ACCEPTED)
+
+**Provenance.** Baseline: `master` at `ac702499b9a807d70004f331b9f8b71a309c3bbd` (post-P14, PR #666), verified as the
+current HEAD before starting. Environment as P9–P14 (Windows 11 Pro 10.0.26300, SDK 10.0.403, harness `net8.0`,
+workstation non-concurrent GC, Release, `ProjectReference` to each variant's `Utils.csproj` from separate worktrees).
+Counters (`TransformCore` visits, rule invocations, factor attempts, probe equalities/fallbacks/cache hits,
+classification traversals and nodes, public comparer calls, comparer simplifications, structural equality and hash
+nodes, P9 hits/stores/activations, observed hits/stores, canonicalizations, depth histogram) exist only in
+instrumented scratch worktrees, never in timed runs. The harness lives outside the repository.
+
+**Exact reproduction.** The P10 remark ("CPU stays exponential when an opaque user-code term sorts at the tail of a
+long chain") needs the opaque term to be first in the *source* and last in the *canonical order*, so that every right
+sub-chain of the canonical form contains it. Family `z`:
+
+```csharp
+// 100 * Identity(opaque) - x1*3 - 4*x2 - x3*5 - ...   (left-associated; Identity(object) returns 1.0)
+Expression acc = Expression.Multiply(Expression.Constant(100.0),
+    Expression.Call(identity, Expression.Constant(new Opaque(), typeof(object))));
+for (int i = 1; i < n; i++) acc = Expression.Subtract(acc, i % 2 == 0 ? c(i + 2) * x[i] : x[i] * c(i + 2));
+new ExpressionSimplifier().Simplify(acc);
+```
+
+The opaque value's `Equals` is never called (one opaque constant, never compared with another), yet one public call
+ran 379,750 `TransformCore` visits at n = 8 and allocated 181 MB (871 MB at n = 9): x4.8 per term. Variants: `e` (a
+second opaque term `3*Id(c1)`: exactly 3 user calls), `a` (addition), `c` (bound lambda), `k` (known-safe string
+constant), `n` (`100*Sin(x0)`), `o`/`r` (every term opaque, subtraction/addition), `u`/`v`/`w`/`y`/`s`/`m`/`f`/`b`
+(opaque term at the source tail or sorted first, member access `spy.Value`, safe and call controls; not pathological),
+`p` (the `z` shape with the purely numeric `100*x0`).
+
+**Call-graph analysis.**
+
+1. Public `Simplify` -> `Transform` (detaches the P9 session) -> `TransformCore` bottom-up. At each level of the source
+   chain `SubstractionOfEqualsElements(left, t)` augments the canonical left chain `R` as `1 * R`: of its comparisons
+   `Equals(1, rr)`, `Equals(R, rl)`, `Equals(R, rr)`, the last two involve `R`.
+2. `FactorEqualityProbe.EqualsCore` classifies both operands (`IsCacheable` -> `MightInvokeUserCodeWhenSimplified`, a
+   full static walk). `R` holds the opaque constant, so it is not cacheable: each comparison fell back to the public
+   `ExpressionComparer.Equals`, which simplifies `R` (and the small term) again. Same reference, simplified twice per
+   probe.
+3. Each such simplification (`SimplifyForComparison` -> `SimplifyForComparisonInSession` -> `TransformWithinBoundary`
+   -> `TransformCore`) rebuilds `R = t1 + (t2 + (... + O))` bottom-up: every right sub-chain contains `O`, so every
+   nested `AdditionOfEqualsElements` probe repeats steps 1-2 one level down. The P9 memo never applies: its strict keys
+   reject calls and opaque constants.
+4. The results are only ever compared and discarded: 379,718 of the 379,750 `TransformCore` visits of z8 (99.99 %) run
+   inside comparer simplifications.
+
+Classification of the repeated work (z8, baseline): (1) genuinely new factoring decisions: 9,769 factor attempts;
+(2) repeated simplification of unchanged subtrees: 199,243 comparer simplifications, of which 19,538 probe fallbacks
+simplify an already simplified reference again; (3) classification traversals: 39,076 classifications, 82,134 nodes
+(about 22 % of the `TransformCore` visits, each far cheaper); (4) structural hashing (additive grouping):
+107,494 nodes; structural equality: 103,528 calls, 119,152 nodes; (5) rebuilt equivalent subtrees: every comparer
+simplification rebuilds its operand (results discarded); (6) user `Equals`/`GetHashCode`: 0; (7) comparisons decided by
+reference identity: the fast path already applies before any classification. Recursion depth = n (z8: 8; histogram
+0/51/3,990/21,366/50,858/64,590/43,802/13,610/976 for depths 1-9).
+
+**Baseline growth (one public call, instrumented counts; bytes from the non-instrumented build).**
+
+| Family | n | TransformCore | Comparer simplifications | Probe fallbacks | User Equals | Bytes |
+|---|---:|---:|---:|---:|---:|---:|
+| z | 4 / 5 / 6 / 7 / 8 | 756 / 3,864 / 19,420 / 97,228 / 379,750 | 331 / 1,681 / 8,429 / 42,179 / 199,243 | 34 / 160 / 786 / 3,912 / 19,538 | 0 | 0.31 / 1.55 / 7.8 / 39 / 181 MB (z9: 871 MB) |
+| e | 6 / 8 | 19,509 / 379,883 | 8,434 / 199,248 | 795 / 19,551 | 3 / 3 | 7.8 / 181 MB |
+| k (safe), n (Sin) | 6 / 8 / 10 | 5,139 / 67,620 / — | 2,104 / 31,874 / — | 0 | 0 | 2.2 / 33 / 504 MB |
+| a (addition) | 6 / 8 / 10 | 2,176 / 17,018 / — | 1,205 / 10,923 / — | 242 / 2,186 / — | 0 | 0.98 / 8.8 / 79 MB |
+| o (all opaque) | 4 / 5 / 6 / 7 / 8 / 9 | 529 / 1,527 / 4,391 / 12,793 / 35,943 / 97,767 | 200 / 616 / 1,892 / 5,756 / 17,392 / 52,352 | — | 9 / 33 / 111 / 351 / 1,077 / 3,261 | — |
+| r (all opaque, +) | 5 / 6 / 7 / 8 / 9 | 911 / 2,747 / 8,255 / 22,971 / 63,451 | — | — | 27 / 81 / 243 / 729 / 2,187 | — |
+
+`z` and `e` grow by about x5 per term, `k`/`n` by x3.9, `a` by x3: exponential. In `o`/`r` the user calls themselves grow
+by about x3 per term (3^(n-2) for `r`): those calls are required by the contract (see "Remaining limits").
+
+**Tested strategies.**
+
+- **A — redundant non-observable work.** Not pursued as a change: classification is about a fifth of the node visits
+  and each visit is a type test; caching it by reference (it is a pure static function of the tree) would cut a
+  constant factor of a cost that is not the exponential one. The exponential factor is the repeated simplification.
+- **B — cheaper decisions before the fallback.** Rejected: the only checks the public comparer applies before
+  simplifying are reference/null/root-lambda metadata, which the probe already applies; any other early decision would
+  skip a simplification (and its possible user code) the contract performs.
+- **C2 (ACCEPTED) — probe fallback reuses an observed user-code-free simplification.** The fallback now runs the public
+  comparer's own sequence inline (fast path already done, `Simplify(x)`, `Simplify(y)`,
+  `StructuralEqualsAfterSimplification`) through `GetOrSimplifyObserved`: an operand already simplified by this probe
+  is reused only when that simplification called no user code (`ExpressionComparer.UserCodeInvocationCount`, a
+  thread-static counter incremented before every comparer call into a non-known-safe constant's `Equals` or
+  `GetHashCode`, unchanged across it). Invocation-local, same reference, classification order unchanged.
+- **C1 (ACCEPTED) — observed tier of the P9 session.** In an active P9 session, an operand the P9 keys reject is keyed by
+  a second strict key (`ObservedComparisonMemoKey`: parameters, constants, unary except Quote/Throw, binary without
+  conversion lambda, calls, members — unary/binary nodes with a user-defined operator method excluded, as in P9; primitive constants by bits, every other constant by declared type and value
+  reference identity; numeric-like non-primitive values rejected because `ConstantNumericAttribute` may call their
+  conversions; same 1,024-node budget) and its result is stored only when the counter did not change during its
+  simplification. Same activation (D6/A2), lifetime, detachment and consumer as P9; separate dictionary, so P9's
+  eligibility, keys and entries are unchanged.
+- **D — avoid reconstruction.** Not pursued: comparer results are already only compared and discarded; rebuild
+  operations of `Prepare*`/`FinalizeExpression` are observable by derived simplifiers, and the P10 left-associated
+  reconstruction stays rejected.
+- **E — architectural limits.** See the user-code families and the `p` finding below.
+
+**Why skipping is not observable (C1, C2).** A simplification that made no counted call depended only on the operand's
+strict structure: the simplifier reads an opaque value only through reference identity, `GetType`,
+`RuntimeHelpers.GetHashCode` (safe raw grouping policy) and the two counted comparer calls; the canonical order never
+calls value code; folding only touches primitives; extension nodes and lambdas are not eligible. Re-running it would
+make no call, throw nothing and build a structurally identical tree, which the only consumer
+(`StructuralEqualsAfterSimplification`, no reference shortcut) compares with the same value objects. A run that made a
+counted call — even one that returned normally, or one made by re-entrant user code — is never reused, so a stateful,
+throwing or re-entrant `Equals` runs exactly as on the baseline. The probe still classifies both operands before
+simplifying either, and simplifies `x` before `y`.
+
+**User-code invariants (adversarial harness, baseline vs C1, C2, C1+C2).** 462 scenarios: the opaque families above for
+n = 3..7; all-opaque chains (ascending or first-sorted-last, subtraction and addition, n = 3..8) with identity, stateful
+(true every 2nd/3rd/7th call), always-true, throwing at the 1st/2nd/5th/17th/40th call (message `self~other#call`),
+re-entrant public comparer and re-entrant public simplification (itself reaching user code) behaviors; lambdas;
+custom operators; conditionals; shared references; structurally equal twins; the public comparer on rebuilt chains;
+public hashing with a throwing `GetHashCode`; mixed n = 8/10 chains that activate the session. 367 scenarios call user
+code (134,208 logged calls, 104 exceptions). Every log (order and arguments of each call), exception type and message,
+and simplified tree dump is identical for C1, C2, C1+C2 and the final commit (0 differences). 47 of these scenarios reach observed hits
+while user code runs (including re-entrant comparisons joining the session). Mutation checks: removing either counter
+guard changes 273 (probe) and 43 (session) scenarios. Simplified trees of 73 benchmark scenarios (every family of
+P9–P15) are byte-identical, with identical user-call counts.
+
+**Work after C1 + C2 (instrumented, one public call).**
+
+| Scenario | TransformCore base -> C1+C2 | Comparer simplifications | User Equals |
+|---|---|---|---|
+| z8 / z10 / z12 (z10, z12 not run on the baseline) | 379,750 -> 42,336 / 95,049 / 189,214 | 199,243 -> 17,718 / 43,458 / 101,414 | 0 |
+| e8 / e12 | 379,883 -> 42,454 / 189,360 | 199,248 -> 17,741 / 101,437 | 3 |
+| a8 / a12 / a20 | 17,018 -> 1,702 / 5,538 / 15,962 | 10,923 -> 882 / 3,170 / 11,394 | 0 |
+| k8, n8 | 67,620 -> 42,336 | 31,874 -> 17,718 | 0 |
+| o7 / o8 / o9 | 12,793 -> 10,389 / 35,943 -> 26,565 / 97,767 -> 59,559 | 5,756 -> 4,203 / 17,392 -> 12,586 / 52,352 -> 37,735 | 351 / 1,077 / 3,261 (same) |
+| X16 (custom operator) | identical (329,895) | identical (131,068) | 0 |
+| A, B, C, G, H, J, K, Q, Y, d, j (n = 4..16) | identical | identical | — |
+
+C2 alone makes the opaque chain cost exactly the safe control (z8 = k8 = 67,620; z6 = k6 = 5,139); C1 alone halves z8
+(197k) and also reaches `k` and `n`; together `z`, `e`, `k`, `n`, `p` have identical counts. A first version of C1 also
+accepted custom-operator nodes and cut X16 by 95 % (205 -> 9.4 ms), but the historical P9 test
+`CustomOperator_IsIneligible` pins that a custom-operator operand is never memoized in an active session; rather than
+change that test, user-defined operator nodes are excluded and the X family is unchanged (a possible separate stage).
+
+**Performance (counter-free, paired, alternated order; final commit).** Existing families, base vs final, 12 pairs
+(n <= 8), 6 (n = 12), 4 (n = 16), 21 rounds (7 for n = 16):
+
+| Scenario | Paired delta | Pairs > +5% | Bytes |
+|---|---|---|---|
+| A4 / B4 / C4 / G4 / H4 / J4 / Y4 / X4 / O4 / d4 / j4 / K4 | -3.9 / -0.5 / -1.3 / +0.0 / -0.6 / -0.1 / +0.4 / -0.3 / -0.1 / +0.7 / -0.1 / +0.4 % | A4 3/12, G4 1/12, j4 1/12 | identical (±1 B) |
+| A8 / B8 / C8 / G8 / H8 / J8 / Y8 / d8 / j8 / T8 | +0.0 / -0.3 / -0.6 / +1.0 / +0.4 / +0.3 / -0.5 / -0.9 / +0.1 / +0.0 % | 0/12 | identical (±10 B) |
+| A12 / B12 / C12 / G12 / H12 / J12 / Y12 / d12 / j12 / T12 / X12 | -1.2 / -2.2 / -1.1 / -1.0 / -0.1 / +0.0 / -0.4 / -0.4 / -0.3 / -0.4 / -1.0 % | 0/6 | identical (±104 B) |
+| A16 / B16 / C16 / G16 / H16 / L16 / J16 / Y16 / O16 / X16 / d16 / j16 / l16 / K16 / Q16 | +0.2 / -0.4 / -1.2 / +2.0 / +0.8 / +0.3 / +0.4 / +4.2 / +1.1 / +0.4 / +0.9 / +2.3 / +1.0 / +1.2 / +0.2 % | l16 1/4, K16 1/4, others 0/4 | identical (±33 B) |
+
+Recheck of Y16 / G16 / j16 (8 pairs, 7 rounds) next to an A/A control (the baseline binary against a copy of itself):
+-0.1 / -1.6 / -0.8 % (A/A -0.7 / -0.5 / +1.0 %), 0/8 pairs above +5 %: noise. P14 H/J gains, P10 B gains and P9
+large-scenario gains are kept (identical dispatch and memo counts). Pathological and control families, 6 pairs,
+11 rounds:
+
+| Scenario | Base ms/op | Final ms/op | Paired | Base bytes | Final bytes |
+|---|---:|---:|---:|---:|---:|
+| z4 / z5 / z6 / z7 / z8 | 0.763 / 1.393 / 6.98 / 34.8 / 169.9 | 0.337 / 0.490 / 1.92 / 7.71 / 16.2 | -55.6 / -64.5 / -72.3 / -77.8 / -90.4 % | 0.31 / 1.55 / 7.8 / 39.0 / 180.8 MB | 0.14 / 0.56 / 2.2 / 8.9 / 18.7 MB |
+| e6 / e8 | 7.00 / 169.5 | 1.99 / 16.2 | -71.4 / -90.4 % | 7.8 / 180.8 MB | 2.3 / 18.7 MB |
+| a6 / a8 / a10 | 0.922 / 8.58 / 77.6 | 0.207 / 0.870 / 1.93 | -77.5 / -89.8 / -97.5 % | 0.98 / 8.8 / 79.0 MB | 0.24 / 1.0 / 2.2 MB |
+| c6 / c8 (bound lambda) | 7.04 / 170.2 | 1.95 / 16.2 | -72.5 / -90.5 % | 7.8 / 180.8 MB | 2.2 / 18.7 MB |
+| k6 / k8 (safe), n8 (Sin) | 1.91 / 29.6, 28.9 | 1.92 / 16.1, 15.7 | +1.0 / -45.5, -45.3 % | 2.2 / 33.4, 32.9 MB | 2.2 / 18.7, 18.4 MB |
+| p8 (numeric, sorted last) | 11.65 | 11.70 | +1.1 % | 17.7 MB | 17.7 MB |
+| o5 / o7 / r7 (user calls) | 0.684 / 6.08 / 4.09 | 0.624 / 5.42 / 3.59 | -8.1 / -10.8 / -11.3 % | 0.56 / 4.9 / 3.3 MB | 0.55 / 4.8 / 3.2 MB |
+| w8 / y8 / u8 / f8 / b8 | 3.29 / 4.02 / 2.50 / 2.47 / 2.48 | 1.69 / 1.79 / 1.64 / 1.65 / 1.65 | -49.0 / -55.6 / -34.2 / -33.5 / -32.8 % | 3.5-5.4 MB | 2.3-2.4 MB |
+| s8 / m8 / X8 (controls) | 1.65 / 1.65 / 0.773 | 1.64 / 1.64 / 0.775 | -0.1 / -0.1 / -0.3 % | unchanged | unchanged |
+
+Separately, on the experimental commits (4 pairs): C1 alone z8 -58 %, k8 -46 %, a8 -33 % (and X12 -66 % before custom
+operators were excluded), z6/o7 unchanged; C2 alone z6 -72 %, z8 -82 %, a8 -90 %, o7 -12 %, k8 unchanged; B8/A8/H8
+within +1.3 % for both.
+
+**Growth after C1 + C2 and remaining limits.**
+
+- The opaque-constant penalty is gone: `z`, `e`, `k`, `n` and the purely numeric `p` (`100*x0` sorted last, P9-eligible,
+  no call, no constant) have *identical* counts (z16 = k16 = p16: 1,372,812 / 1,284,089 `TransformCore`, 991,350
+  comparer simplifications; `p` is the same on the baseline). But that shape is itself still exponential, at about x1.9
+  per term for n = 16..20 (z20: 19.1 M visits, 15 GB): the comparer requests concentrate at depth 2-3 (k16: 458,556 and
+  469,422), mostly memo hits, i.e. the remaining cost is `TransformCore` work of the shape, not opaque-constant
+  recursion. Growth z8 -> z16 in comparer simplifications: 17,718 / 43,458 / 101,414 / 288,354 / 991,350 (n = 8, 10,
+  12, 14, 16): not polynomial. This is a pre-existing P9/canonical-shape limit of a purely numeric family, independent
+  of user code; it needs its own stage (candidate directions: why the depth-1 sessions of a first-sorted-last chain
+  issue a number of depth-2 requests exponential in n even with every request served by a memo; rule paths that
+  re-enter `TransformCore` on prepared children, `AdditionWithZero`/`SubstractionWithZero`).
+- Chains whose opaque constants are genuinely compared (`o`, `r`) still grow exponentially, because the user calls
+  themselves grow as about 3^n (`r`: 3^(n-2)) on the baseline, and every simplification that makes one of them must be
+  re-run by the contract (P3 round 6: caching must not reduce nested user-code invocations). C1/C2 only remove their
+  user-code-free sub-simplifications (-8 to -32 % work). Reducing them further requires a contract change, not an
+  optimization: e.g. (1) documenting that the comparer may call a constant's `Equals` at most once per distinct
+  (value, value) pair within one public call (memoize the answers: changes call counts, keeps answers for pure
+  `Equals`); or (2) declaring that values are compared by `Equals` only when they implement a marker interface
+  (otherwise reference identity); or (3) an opt-in `ExpressionSimplifierOptions.AssumePureConstantEquality`. None is
+  implemented here; each changes observable behavior and must be proposed separately.
+- C1 is gated by the P9 activation (depth >= 6, arithmetic depth >= 2): small chains benefit from C2 only.
+- The counter treats every non-known-safe value's `Equals`/`GetHashCode` as user code (string/bool/char/enum excluded);
+  user code reached through other members (custom `MethodInfo`/`Type` subclasses) is out of the contract, as for
+  P3/P9.
+
+**Tests.** `ExpressionSimplifierOpaqueConstantInvariantTests` (12 methods, 19 cases, public API and diagnostic capture
+only) pins the baseline user-call sequences, counts, stateful/throwing/re-entrant behaviors, public comparer calls and
+trees; it passes unchanged on `ac702499` and on the candidate. `ExpressionSimplifierObservedComparisonMemoTests`
+(10 methods, 12 cases): counter semantics, strict observed keys by reference without user code, eligibility boundaries
+(P9 eligibility unchanged), activated-session reuse, no reuse after user code, exceptions never cached, detachment of
+an independent public call from user code, thread-local memo, the opaque chain costing exactly the safe control
+(n = 4/6/8) and the z9 work bound. `UtilsTest.Security` `ObservedComparisonMemoResourceLimitTests` (3): shared call DAG
+over budget, 100,000-level call and sum chains rejected without stack exhaustion, deepest in-budget call chain.
+Mutation checks (each on the full new test set): probe reuse disabled -> 4 failures; probe guard removed -> 14; session
+tier disabled -> 4; session guard removed -> 7; counter increment removed -> 16.
+
+**Validation.** Release `Utils.sln` build with 0 errors; `--no-incremental` builds of the baseline and the final commit compared per file and warning message: identical (920 unique). Unit 14,102/14,102 (includes the 31 new cases), Functional 383/383, Security 244 passed + 3 skipped (+3 new; the 3 skips are the pre-existing platform-gated tests). The rule inventory, P3 comparer-batching, P9 comparison-memo (including `CustomOperator_IsIneligible`), P10 additive-canonicalization, P11, P12-P13 and P14 tests pass unmodified (765/765 in `UtilsTest.Mathematics.Expressions`).
+
+**Decision: ACCEPT** C2 (probe fallback observed reuse) and C1 (observed tier of the P9 session). No public API change,
+no rule change, no threshold change; user-code calls, their order and exceptions are identical on every tested
+scenario; no existing family regresses.
 
 ## Execution-optimizer stages
 
