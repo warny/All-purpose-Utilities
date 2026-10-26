@@ -911,6 +911,15 @@ namespace Utils.Mathematics.Expressions
         /// A <see cref="float"/> or <see cref="double"/> zero divisor is declined instead (S5 P12; it threw before):
         /// IEEE-754 division by <c>±0</c> is defined (an infinity or <c>NaN</c>), so <see cref="DivisionOfConstants"/>
         /// folds a constant dividend exactly and a non-constant dividend keeps the division node.
+        /// <para>
+        /// The <c>±1</c> identities decline on a constant dividend, which <see cref="DivisionOfConstants"/> folds to
+        /// a constant of the node's type instead: <c>5 / -1</c> was left as the unevaluated <c>-(5)</c>, and
+        /// <c>int.MinValue / -1</c> (or <c>long.MinValue / -1</c>) became <c>-(MinValue)</c>, which evaluates to
+        /// <c>MinValue</c> where the source throws <see cref="OverflowException"/>; the fold throws it while simplifying,
+        /// as a zero divisor does. On a non-constant dividend <c>x / -1 -&gt; -x</c> stays: it is exact in IEEE-754 and
+        /// for decimals, but for <c>x = int.MinValue</c> (or <c>long.MinValue</c>) the negation wraps where the division
+        /// throws, which the "Symbolic-equivalence contract" leaves open (overflow and exceptions are not preserved).
+        /// </para>
         /// </remarks>
         [ExpressionSignature(ExpressionType.Divide)]
         public Expression DivideWithZeroOrOne(BinaryExpression e, Expression left, ConstantExpression right)
@@ -920,8 +929,11 @@ namespace Utils.Mathematics.Expressions
             {
                 if (e.Type != typeof(double) && e.Type != typeof(float)) throw new DivideByZeroException();
             }
-            else if (NumericValueEquals(right.Value, 1)) return left;
-            else if (NumericValueEquals(right.Value, -1)) return Expression.Negate(left);
+            else if (left is not ConstantExpression)
+            {
+                if (NumericValueEquals(right.Value, 1)) return left;
+                if (NumericValueEquals(right.Value, -1)) return Expression.Negate(left);
+            }
             return null;
         }
 

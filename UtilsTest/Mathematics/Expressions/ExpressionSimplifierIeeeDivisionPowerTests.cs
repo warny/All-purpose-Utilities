@@ -464,15 +464,15 @@ public class ExpressionSimplifierIeeeDivisionPowerTests
     /// </summary>
     private static readonly (Type Type, object[] Values)[] TypedSamples =
     [
-        (typeof(short), [(short)0, (short)3, (short)-7, (short)2, short.MaxValue, short.MinValue]),
-        (typeof(ushort), [(ushort)0, (ushort)3, (ushort)7, (ushort)2, ushort.MaxValue]),
-        (typeof(int), [0, 3, -7, 2, int.MaxValue, int.MinValue]),
-        (typeof(uint), [0u, 3u, 7u, 2u, uint.MaxValue]),
-        (typeof(long), [0L, 3L, -7L, 2L, long.MaxValue, long.MinValue]),
-        (typeof(ulong), [0ul, 3ul, 7ul, 2ul, ulong.MaxValue]),
-        (typeof(decimal), [0m, 3m, -7m, 2.5m, decimal.MaxValue, decimal.MinValue]),
-        (typeof(float), [0f, -0f, 3f, -7f, 0.1f, float.MaxValue, float.Epsilon, float.NaN, float.PositiveInfinity, float.NegativeInfinity]),
-        (typeof(double), [0.0, -0.0, 3.0, -7.0, 0.1, double.MaxValue, double.Epsilon, double.NaN, double.PositiveInfinity, double.NegativeInfinity]),
+        (typeof(short), [(short)0, (short)1, (short)-1, (short)3, (short)-7, (short)2, short.MaxValue, short.MinValue]),
+        (typeof(ushort), [(ushort)0, (ushort)1, (ushort)3, (ushort)7, (ushort)2, ushort.MaxValue]),
+        (typeof(int), [0, 1, -1, 3, -7, 2, int.MaxValue, int.MinValue]),
+        (typeof(uint), [0u, 1u, 3u, 7u, 2u, uint.MaxValue]),
+        (typeof(long), [0L, 1L, -1L, 3L, -7L, 2L, long.MaxValue, long.MinValue]),
+        (typeof(ulong), [0ul, 1ul, 3ul, 7ul, 2ul, ulong.MaxValue]),
+        (typeof(decimal), [0m, 1m, -1m, 3m, -7m, 2.5m, 1.00m, decimal.MaxValue, decimal.MinValue]),
+        (typeof(float), [0f, -0f, 1f, -1f, 3f, -7f, 0.1f, float.MaxValue, float.Epsilon, float.NaN, float.PositiveInfinity, float.NegativeInfinity]),
+        (typeof(double), [0.0, -0.0, 1.0, -1.0, 3.0, -7.0, 0.1, double.MaxValue, double.Epsilon, double.NaN, double.PositiveInfinity, double.NegativeInfinity]),
     ];
 
     /// <summary>Evaluates a parameterless expression of any type by compiling it, reporting an exception by its type.</summary>
@@ -555,12 +555,67 @@ public class ExpressionSimplifierIeeeDivisionPowerTests
 
     /// <summary>
     /// Every ordinary division of two constants folds to a constant of the node's type whose value (or exception) is
-    /// the compiled node's: truncation, <c>DivideByZeroException</c>, decimal <c>OverflowException</c>, and IEEE-754
-    /// <c>NaN</c>, infinities and signed zeros.
+    /// the compiled node's: truncation, <c>DivideByZeroException</c>, <c>OverflowException</c> (<c>MinValue / -1</c>,
+    /// decimal overflow), IEEE-754 <c>NaN</c>, infinities and signed zeros, and divisors <c>±1</c>.
     /// </summary>
     [TestMethod]
     public void Simplify_OrdinaryConstantDivision_FoldsInNodeType()
         => AssertConstantArithmeticFoldsInNodeType([Expression.Divide]);
+
+    /// <summary>
+    /// A constant divided by a constant <c>±1</c> folds to a constant of the node's type, whatever the type: before,
+    /// the <c>±1</c> identity ran first and returned the unevaluated <c>-(5)</c> for <c>5 / -1</c>.
+    /// </summary>
+    [TestMethod]
+    public void Simplify_ConstantOverPlusOrMinusOne_FoldsToConstant()
+    {
+        Assert.AreEqual(5, AssertConstant(typeof(int), Simplify(Expression.Divide(Expression.Constant(5), Expression.Constant(1)))));
+        Assert.AreEqual(-5, AssertConstant(typeof(int), Simplify(Expression.Divide(Expression.Constant(5), Expression.Constant(-1)))));
+        Assert.AreEqual(0, AssertConstant(typeof(int), Simplify(Expression.Divide(Expression.Constant(0), Expression.Constant(3)))));
+        Assert.AreEqual(0, AssertConstant(typeof(int), Simplify(Expression.Divide(Expression.Constant(0), Expression.Constant(-3)))));
+        Assert.AreEqual(-5L, AssertConstant(typeof(long), Simplify(Expression.Divide(Expression.Constant(5L), Expression.Constant(-1L)))));
+        Assert.AreEqual(5u, AssertConstant(typeof(uint), Simplify(Expression.Divide(Expression.Constant(5u), Expression.Constant(1u)))));
+        Assert.AreEqual(5ul, AssertConstant(typeof(ulong), Simplify(Expression.Divide(Expression.Constant(5ul), Expression.Constant(1ul)))));
+        Assert.AreEqual(-5m, AssertConstant(typeof(decimal), Simplify(Expression.Divide(Expression.Constant(5m), Expression.Constant(-1m)))));
+        Assert.AreEqual((short)-7, AssertConstant(typeof(short), Simplify(Expression.Divide(Expression.Constant((short)7), Expression.Constant((short)-1)))));
+        Assert.AreEqual(short.MinValue, AssertConstant(typeof(short), Simplify(Expression.Divide(Expression.Constant(short.MinValue), Expression.Constant((short)-1)))));
+        Assert.AreEqual(-5f, AssertConstant(typeof(float), Simplify(Expression.Divide(Expression.Constant(5f), Expression.Constant(-1f)))));
+        Assert.AreEqual(Key(-5.0), Key((double)AssertConstant(typeof(double), Simplify(Expression.Divide(Expression.Constant(5.0), Expression.Constant(-1.0))))));
+        Assert.AreEqual(Key(0.0), Key((double)AssertConstant(typeof(double), Simplify(Expression.Divide(Expression.Constant(-0.0), Expression.Constant(-1.0))))));
+        Assert.AreEqual(Key(-0.0), Key((double)AssertConstant(typeof(double), Simplify(Expression.Divide(Expression.Constant(0.0), Expression.Constant(-1.0))))));
+        Assert.IsTrue(double.IsNaN((double)AssertConstant(typeof(double), Simplify(Expression.Divide(Expression.Constant(double.NaN), Expression.Constant(-1.0))))));
+    }
+
+    /// <summary>
+    /// <c>int.MinValue / -1</c> and <c>long.MinValue / -1</c> throw <see cref="OverflowException"/> while simplifying,
+    /// as the compiled node does; the <c>-1</c> identity turned them into a negation that silently wraps to
+    /// <c>MinValue</c>.
+    /// </summary>
+    [TestMethod]
+    public void Simplify_MinValueOverMinusOne_ThrowsOverflow()
+    {
+        Expression intSource = Expression.Divide(Expression.Constant(int.MinValue), Expression.Constant(-1));
+        Assert.ThrowsExactly<OverflowException>(() => Expression.Lambda<Func<int>>(intSource).Compile()(), "Precondition: the compiled node throws.");
+        AssertThrowsRuleException<OverflowException>(() => Simplify(intSource));
+        Expression longSource = Expression.Divide(Expression.Constant(long.MinValue), Expression.Constant(-1L));
+        Assert.ThrowsExactly<OverflowException>(() => Expression.Lambda<Func<long>>(longSource).Compile()(), "Precondition: the compiled node throws.");
+        AssertThrowsRuleException<OverflowException>(() => Simplify(longSource));
+    }
+
+    /// <summary>
+    /// On a non-constant dividend the <c>±1</c> identities are unchanged (controls): <c>x / 1 -&gt; x</c> and
+    /// <c>x / -1 -&gt; -x</c>, exact for <see cref="double"/> (signed zeros, infinities and <c>NaN</c> included).
+    /// </summary>
+    [TestMethod]
+    public void Simplify_SymbolicOverPlusOrMinusOne_KeepsIdentities()
+    {
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+        Assert.AreSame(x, Simplify(Expression.Divide(x, Expression.Constant(1.0))));
+        Expression negated = AssertSimplifiesEquivalently(x, Expression.Divide(x, Expression.Constant(-1.0)));
+        Assert.AreEqual(ExpressionType.Negate, negated.NodeType);
+        ParameterExpression i = Expression.Parameter(typeof(int), "i");
+        Assert.AreEqual(ExpressionType.Negate, Simplify(Expression.Divide(i, Expression.Constant(-1))).NodeType);
+    }
 
     /// <summary>
     /// <see cref="short"/> and <see cref="ushort"/> additions, subtractions and multiplications of two constants fold in
