@@ -453,4 +453,209 @@ public class ExpressionSimplifierIeeeDivisionPowerTests
         AssertSimplifiesEquivalently(x, Expression.Multiply(x, Expression.Power(c(0.0), c(-1.0))));
         AssertSimplifiesEquivalently(x, Expression.Add(x, Expression.Power(c(0.0), c(0.0))));
     }
+
+    // ------------------------------------------------------------------------------------------
+    // P12 follow-up - typed constant folding
+    // ------------------------------------------------------------------------------------------
+
+    /// <summary>
+    /// Sample operands of every type with ordinary arithmetic, limits included, so that wrap-around, truncation and
+    /// the IEEE-754 special values are exercised.
+    /// </summary>
+    private static readonly (Type Type, object[] Values)[] TypedSamples =
+    [
+        (typeof(short), [(short)0, (short)3, (short)-7, (short)2, short.MaxValue, short.MinValue]),
+        (typeof(ushort), [(ushort)0, (ushort)3, (ushort)7, (ushort)2, ushort.MaxValue]),
+        (typeof(int), [0, 3, -7, 2, int.MaxValue, int.MinValue]),
+        (typeof(uint), [0u, 3u, 7u, 2u, uint.MaxValue]),
+        (typeof(long), [0L, 3L, -7L, 2L, long.MaxValue, long.MinValue]),
+        (typeof(ulong), [0ul, 3ul, 7ul, 2ul, ulong.MaxValue]),
+        (typeof(decimal), [0m, 3m, -7m, 2.5m, decimal.MaxValue, decimal.MinValue]),
+        (typeof(float), [0f, -0f, 3f, -7f, 0.1f, float.MaxValue, float.Epsilon, float.NaN, float.PositiveInfinity, float.NegativeInfinity]),
+        (typeof(double), [0.0, -0.0, 3.0, -7.0, 0.1, double.MaxValue, double.Epsilon, double.NaN, double.PositiveInfinity, double.NegativeInfinity]),
+    ];
+
+    /// <summary>Evaluates a parameterless expression of any type by compiling it, reporting an exception by its type.</summary>
+    /// <param name="expression">The expression.</param>
+    /// <returns>A comparison key: see <see cref="ValueKey"/>, or the exception's type.</returns>
+    private static string EvaluateKey(Expression expression)
+    {
+        try
+        {
+            return ValueKey(Expression.Lambda(expression).Compile().DynamicInvoke()!);
+        }
+        catch (TargetInvocationException exception)
+        {
+            return "throws " + exception.InnerException!.GetType().Name;
+        }
+    }
+
+    /// <summary>Formats a boxed numeric value with its type and exact representation.</summary>
+    /// <param name="value">The value.</param>
+    /// <returns>The type name and the bits (every <c>NaN</c> equal; a decimal's sign and scale included).</returns>
+    /// <remarks>
+    /// A folded constant is compared through its <see cref="ConstantExpression.Value"/>, not by compiling it: the
+    /// expression compiler re-emits an integral <see cref="decimal"/> constant from its integer value, which drops the
+    /// sign of a decimal <c>-0</c> (the runtime result of <c>0m / -7m</c>).
+    /// </remarks>
+    private static string ValueKey(object value)
+    {
+        string bits = value switch
+        {
+            double d => Key(d),
+            float f => Key(f),
+            decimal m => string.Join(",", decimal.GetBits(m)),
+            _ => Convert.ToString(value, System.Globalization.CultureInfo.InvariantCulture)!,
+        };
+        return value.GetType().Name + ":" + bits;
+    }
+
+    /// <summary>Simplifies <paramref name="expression"/>, reporting a rule exception by its type.</summary>
+    /// <param name="expression">The source expression.</param>
+    /// <param name="simplified">Receives the simplified expression, or <see langword="null"/> when simplifying threw.</param>
+    /// <returns>The exception's comparison key, or <see langword="null"/> when simplifying succeeded.</returns>
+    private static string? TrySimplify(Expression expression, out Expression? simplified)
+    {
+        try
+        {
+            simplified = Simplify(expression);
+            return null;
+        }
+        catch (Exception exception)
+        {
+            while (exception is TargetInvocationException { InnerException: not null } wrapper) exception = wrapper.InnerException;
+            simplified = null;
+            return "throws " + exception.GetType().Name;
+        }
+    }
+
+    /// <summary>
+    /// A <see cref="short"/> or <see cref="ushort"/> division of two constants folds to a constant of the operand type
+    /// (Codex review of PR #665). The <c>dynamic</c> folding applied the C# promotions and returned an
+    /// <see cref="int"/>; P12 made <c>0 / 3</c> reach it (the <c>0 / x</c> identity returned the typed dividend
+    /// before), and <c>7 / 2</c> already did.
+    /// </summary>
+    [TestMethod]
+    public void Simplify_SmallIntegralConstantDivision_KeepsOperandType()
+    {
+        Assert.AreEqual((short)0, AssertConstant(typeof(short), Simplify(Expression.Divide(Expression.Constant((short)0), Expression.Constant((short)3)))));
+        Assert.AreEqual((short)3, AssertConstant(typeof(short), Simplify(Expression.Divide(Expression.Constant((short)7), Expression.Constant((short)2)))));
+        Assert.AreEqual((short)short.MinValue, AssertConstant(typeof(short), Simplify(Expression.Divide(Expression.Constant(short.MinValue), Expression.Constant((short)1)))));
+        Assert.AreEqual((ushort)0, AssertConstant(typeof(ushort), Simplify(Expression.Divide(Expression.Constant((ushort)0), Expression.Constant((ushort)3)))));
+        Assert.AreEqual((ushort)3, AssertConstant(typeof(ushort), Simplify(Expression.Divide(Expression.Constant((ushort)7), Expression.Constant((ushort)2)))));
+
+        // The reported failure: the folded constant used as the body of a lambda returning short, or as the operand of
+        // another short node, threw a type-mismatch exception.
+        var lambda = (Expression<Func<short>>)Simplify(Expression.Lambda<Func<short>>(Expression.Divide(Expression.Constant((short)0), Expression.Constant((short)3))));
+        Assert.AreEqual((short)0, lambda.Compile()());
+        ParameterExpression s = Expression.Parameter(typeof(short), "s");
+        Expression sum = Simplify(Expression.Add(s, Expression.Divide(Expression.Constant((short)7), Expression.Constant((short)2))));
+        Assert.AreEqual((short)8, Expression.Lambda<Func<short, short>>(sum, s).Compile()(5));
+    }
+
+    /// <summary>
+    /// Every ordinary division of two constants folds to a constant of the node's type whose value (or exception) is
+    /// the compiled node's: truncation, <c>DivideByZeroException</c>, decimal <c>OverflowException</c>, and IEEE-754
+    /// <c>NaN</c>, infinities and signed zeros.
+    /// </summary>
+    [TestMethod]
+    public void Simplify_OrdinaryConstantDivision_FoldsInNodeType()
+        => AssertConstantArithmeticFoldsInNodeType([Expression.Divide]);
+
+    /// <summary>
+    /// <see cref="short"/> and <see cref="ushort"/> additions, subtractions and multiplications of two constants fold in
+    /// the operand type with wrap-around: <c>32767 + 1</c> is <c>-32768</c> and <c>(ushort)3 - 4</c> is <c>65535</c>
+    /// (the <c>dynamic</c> folding returned the <see cref="int"/> constants <c>32768</c> and <c>-1</c>).
+    /// </summary>
+    [TestMethod]
+    public void Simplify_SmallIntegralConstantArithmetic_WrapsInOperandType()
+    {
+        Assert.AreEqual(short.MinValue, AssertConstant(typeof(short), Simplify(Expression.Add(Expression.Constant(short.MaxValue), Expression.Constant((short)1)))));
+        Assert.AreEqual(short.MaxValue, AssertConstant(typeof(short), Simplify(Expression.Subtract(Expression.Constant(short.MinValue), Expression.Constant((short)1)))));
+        Assert.AreEqual(unchecked((short)(300 * 300)), AssertConstant(typeof(short), Simplify(Expression.Multiply(Expression.Constant((short)300), Expression.Constant((short)300)))));
+        Assert.AreEqual(ushort.MaxValue, AssertConstant(typeof(ushort), Simplify(Expression.Subtract(Expression.Constant((ushort)3), Expression.Constant((ushort)4)))));
+        Assert.AreEqual((ushort)7, AssertConstant(typeof(ushort), Simplify(Expression.Add(Expression.Constant((ushort)3), Expression.Constant((ushort)4)))));
+        Assert.AreEqual(unchecked((ushort)(300 * 300)), AssertConstant(typeof(ushort), Simplify(Expression.Multiply(Expression.Constant((ushort)300), Expression.Constant((ushort)300)))));
+    }
+
+    /// <summary>
+    /// Checks every pair of <see cref="TypedSamples"/> under <paramref name="operators"/>: simplifying either throws the
+    /// exception the compiled node throws, or returns a constant of the node's type with the compiled node's value.
+    /// </summary>
+    /// <param name="operators">The node factories to check.</param>
+    private static void AssertConstantArithmeticFoldsInNodeType(Func<Expression, Expression, BinaryExpression>[] operators)
+    {
+        int checkedCases = 0;
+        int expectedCases = 0;
+        foreach ((Type type, object[] values) in TypedSamples)
+        {
+            foreach (Func<Expression, Expression, BinaryExpression> make in operators)
+            {
+                foreach (object left in values)
+                {
+                    foreach (object right in values)
+                    {
+                        BinaryExpression source = make(Expression.Constant(left, type), Expression.Constant(right, type));
+                        string expected = EvaluateKey(source);
+                        string? thrown = TrySimplify(source, out Expression? simplified);
+                        if (thrown is not null)
+                        {
+                            Assert.AreEqual(expected, thrown, $"{type.Name} {source} threw while simplifying.");
+                        }
+                        else
+                        {
+                            Assert.AreEqual(type, simplified!.Type, $"{type.Name} {source} => {simplified}");
+                            ConstantExpression folded = simplified as ConstantExpression
+                                ?? throw new AssertFailedException($"{type.Name} {source} => {simplified} is not a constant.");
+                            Assert.AreEqual(expected, ValueKey(folded.Value!), $"{type.Name} {source} => {simplified}");
+                        }
+                        checkedCases++;
+                    }
+                }
+            }
+        }
+
+        foreach ((Type _, object[] values) in TypedSamples) expectedCases += operators.Length * values.Length * values.Length;
+        Assert.AreEqual(expectedCases, checkedCases);
+    }
+
+    /// <summary>
+    /// The constant-combining multiplication rules fold in the operand type: <c>3 * (4 * s)</c> and
+    /// <c>(3 * s) * (4 * t)</c> on <see cref="short"/> threw <see cref="InvalidOperationException"/> because the
+    /// <c>dynamic</c> product was an <see cref="int"/>.
+    /// </summary>
+    [TestMethod]
+    public void Simplify_SmallIntegralConstantFactors_CombineInOperandType()
+    {
+        ParameterExpression s = Expression.Parameter(typeof(short), "s");
+        ParameterExpression t = Expression.Parameter(typeof(short), "t");
+        Expression nested = Simplify(Expression.Multiply(Expression.Constant((short)3), Expression.Multiply(Expression.Constant((short)4), s)));
+        Assert.AreEqual(typeof(short), nested.Type);
+        Assert.AreEqual((short)(12 * 5), Expression.Lambda<Func<short, short>>(nested, s).Compile()(5));
+
+        Expression pair = Simplify(Expression.Multiply(Expression.Multiply(Expression.Constant((short)3), s), Expression.Multiply(Expression.Constant((short)4), t)));
+        Assert.AreEqual(typeof(short), pair.Type);
+        Assert.AreEqual(unchecked((short)(12 * 5 * 7)), Expression.Lambda<Func<short, short, short>>(pair, s, t).Compile()(5, 7));
+
+        ParameterExpression u = Expression.Parameter(typeof(ushort), "u");
+        Expression wrapped = Simplify(Expression.Multiply(Expression.Constant((ushort)300), Expression.Multiply(Expression.Constant((ushort)300), u)));
+        Assert.AreEqual(typeof(ushort), wrapped.Type);
+        Assert.AreEqual(unchecked((ushort)(300 * 300)), Expression.Lambda<Func<ushort, ushort>>(wrapped, u).Compile()(1));
+    }
+
+    /// <summary>A custom division of two short constants is neither folded nor retyped (control).</summary>
+    [TestMethod]
+    public void Simplify_CustomSmallIntegralDivision_IsUntouched()
+    {
+        MethodInfo custom = typeof(ExpressionSimplifierIeeeDivisionPowerTests).GetMethod(nameof(CustomShortDivide))!;
+        Expression simplified = Simplify(Expression.Divide(Expression.Constant((short)0), Expression.Constant((short)3), custom));
+        Assert.AreEqual(custom, ((BinaryExpression)simplified).Method);
+        Assert.AreEqual((short)42, Expression.Lambda<Func<short>>(simplified).Compile()());
+    }
+
+    /// <summary>A user-defined <see cref="short"/> division, so a node built with it is never ordinary arithmetic.</summary>
+    /// <param name="a">The dividend.</param>
+    /// <param name="b">The divisor.</param>
+    /// <returns>Always <c>42</c>.</returns>
+    public static short CustomShortDivide(short a, short b) => 42;
 }

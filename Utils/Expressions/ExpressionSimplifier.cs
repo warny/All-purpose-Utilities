@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Numerics;
 using System.Reflection;
 using Utils.Expressions;
 using Utils.Objects;
@@ -588,6 +589,7 @@ namespace Utils.Mathematics.Expressions
             [typeof(byte)] = static (value, target) => (byte)value == target,
         };
 
+
         /// <summary>
         /// Determines whether <paramref name="expression"/> is a <see cref="double"/> or <see cref="float"/> constant
         /// holding <c>NaN</c> or an infinity.
@@ -609,6 +611,91 @@ namespace Utils.Mathematics.Expressions
                     float floatValue => !float.IsFinite(floatValue),
                     _ => false,
                 };
+
+        #endregion
+
+        #region Typed constant folding
+
+        /// <summary>
+        /// Evaluates an ordinary addition, subtraction, multiplication or division of two constants exactly as the
+        /// compiled node would, and returns the result as a constant of the node's type.
+        /// </summary>
+        /// <param name="nodeType">The operator: <see cref="ExpressionType.Add"/>, <see cref="ExpressionType.Subtract"/>,
+        /// <see cref="ExpressionType.Multiply"/> or <see cref="ExpressionType.Divide"/>.</param>
+        /// <param name="type">The node's type, which is also the type of both operands.</param>
+        /// <param name="left">The left constant.</param>
+        /// <param name="right">The right constant.</param>
+        /// <returns>The folded constant, or <see langword="null"/> when an operand is <see langword="null"/> or the
+        /// (operator, type) pair has no folder.</returns>
+        /// <remarks>
+        /// <para>
+        /// The caller must have proven the node ordinary (<see cref="IsOrdinaryBinaryArithmetic(BinaryExpression)"/>):
+        /// both operands then have exactly <paramref name="type"/>, and their boxed values are of that type.
+        /// </para>
+        /// <para>
+        /// Replaces the <c>dynamic</c> arithmetic used before S5 P12, which applied the C# binary numeric promotions:
+        /// <see cref="short"/> and <see cref="ushort"/> operands were widened to <see cref="int"/>, so <c>(short)0 / (short)3</c>
+        /// folded to an <see cref="int"/> constant (a type mismatch for the parent node or the lambda) and
+        /// <c>(short)32767 + (short)1</c> to <c>32768</c> instead of the wrapped <c>-32768</c>. The folders of
+        /// <see cref="ConstantFolders"/> keep the operand type and the unchecked semantics of the ordinary node, raise
+        /// the exceptions its evaluation raises (<see cref="DivideByZeroException"/> for an integral or decimal zero
+        /// divisor, <see cref="OverflowException"/> for <c>int.MinValue / -1</c>, <c>long.MinValue / -1</c> and a
+        /// decimal overflow), and follow IEEE-754 for <see cref="float"/> and <see cref="double"/> (<c>NaN</c>,
+        /// infinities and signed zeros).
+        /// </para>
+        /// </remarks>
+        private static ConstantExpression? FoldConstants(ExpressionType nodeType, Type type, object? left, object? right)
+            => left is not null
+                && right is not null
+                && ConstantFolders.TryGetValue((nodeType, type), out Func<object, object, object>? folder)
+                ? Expression.Constant(folder(left, right), type)
+                : null;
+
+        /// <summary>
+        /// Typed evaluators of the ordinary binary operators, indexed by operator and operand type; used by
+        /// <see cref="FoldConstants"/>.
+        /// </summary>
+        /// <remarks>
+        /// Covers the four operators on the nine types for which <see cref="_ordinaryBinaryOperatorMethods"/> defines
+        /// them (every <see cref="Types.Number"/> entry but <see cref="byte"/> and <see cref="sbyte"/>). Each entry is a
+        /// generic-math operator call specialized by the JIT for its value type: no reflection, no dynamic binding and
+        /// no implicit conversion. Read-only after the type initializer, hence safe for concurrent lookups.
+        /// </remarks>
+        private static readonly Dictionary<(ExpressionType NodeType, Type Type), Func<object, object, object>> ConstantFolders = BuildConstantFolders();
+
+        /// <summary>Builds <see cref="ConstantFolders"/> once.</summary>
+        /// <returns>The table of typed evaluators.</returns>
+        private static Dictionary<(ExpressionType NodeType, Type Type), Func<object, object, object>> BuildConstantFolders()
+        {
+            var table = new Dictionary<(ExpressionType NodeType, Type Type), Func<object, object, object>>();
+            AddConstantFolders<double>(table);
+            AddConstantFolders<float>(table);
+            AddConstantFolders<decimal>(table);
+            AddConstantFolders<int>(table);
+            AddConstantFolders<long>(table);
+            AddConstantFolders<uint>(table);
+            AddConstantFolders<ulong>(table);
+            AddConstantFolders<short>(table);
+            AddConstantFolders<ushort>(table);
+            return table;
+        }
+
+        /// <summary>Registers the unchecked addition, subtraction, multiplication and division of <typeparamref name="T"/>.</summary>
+        /// <typeparam name="T">The operand type.</typeparam>
+        /// <param name="table">The table being built.</param>
+        /// <remarks>
+        /// The generic-math operators of the primitive types compute in the operand type: <see cref="short"/> and
+        /// <see cref="ushort"/> results are truncated exactly like the <c>conv</c> the expression compiler emits after
+        /// the widened IL operation.
+        /// </remarks>
+        private static void AddConstantFolders<T>(Dictionary<(ExpressionType NodeType, Type Type), Func<object, object, object>> table)
+            where T : INumber<T>
+        {
+            table[(ExpressionType.Add, typeof(T))] = static (left, right) => unchecked((T)left + (T)right);
+            table[(ExpressionType.Subtract, typeof(T))] = static (left, right) => unchecked((T)left - (T)right);
+            table[(ExpressionType.Multiply, typeof(T))] = static (left, right) => unchecked((T)left * (T)right);
+            table[(ExpressionType.Divide, typeof(T))] = static (left, right) => unchecked((T)left / (T)right);
+        }
 
         #endregion
 
@@ -915,8 +1002,7 @@ namespace Utils.Mathematics.Expressions
         [ExpressionSignature(ExpressionType.Add)]
         protected Expression AdditionOfConstants(BinaryExpression e, [ConstantNumeric] ConstantExpression left, [ConstantNumeric] ConstantExpression right)
         {
-            if (!IsOrdinaryBinaryArithmetic(e)) return null;
-            return Expression.Constant((object)((dynamic)left.Value + (dynamic)right.Value));
+            return IsOrdinaryBinaryArithmetic(e) ? FoldConstants(ExpressionType.Add, e.Type, left.Value, right.Value) : null;
         }
 
         /// <summary>
@@ -1019,8 +1105,7 @@ namespace Utils.Mathematics.Expressions
         [ExpressionSignature(ExpressionType.Subtract)]
         protected Expression SubstractionOfConstants(BinaryExpression e, [ConstantNumeric] ConstantExpression left, [ConstantNumeric] ConstantExpression right)
         {
-            if (!IsOrdinaryBinaryArithmetic(e)) return null;
-            return Expression.Constant((object)((dynamic)left.Value - (dynamic)right.Value));
+            return IsOrdinaryBinaryArithmetic(e) ? FoldConstants(ExpressionType.Subtract, e.Type, left.Value, right.Value) : null;
         }
 
         /// <summary>
@@ -1509,8 +1594,7 @@ namespace Utils.Mathematics.Expressions
             [ConstantNumeric] ConstantExpression left,
             [ConstantNumeric] ConstantExpression right)
         {
-            if (!IsOrdinaryBinaryArithmetic(e)) return null;
-            return Expression.Constant((object)((dynamic)left.Value * (dynamic)right.Value));
+            return IsOrdinaryBinaryArithmetic(e) ? FoldConstants(ExpressionType.Multiply, e.Type, left.Value, right.Value) : null;
         }
 
         /// <summary>
@@ -1534,12 +1618,10 @@ namespace Utils.Mathematics.Expressions
         {
             if (!IsOrdinaryBinaryArithmetic(e) || !IsOrdinaryBinaryArithmetic(right)) return null;
 
-            if (right.Left is ConstantExpression rightLeftConst)
+            if (right.Left is ConstantExpression rightLeftConst
+                && FoldConstants(ExpressionType.Multiply, e.Type, left.Value, rightLeftConst.Value) is ConstantExpression product)
             {
-                return Expression.Multiply(
-                    Expression.Constant((object)((dynamic)left.Value * (dynamic)rightLeftConst.Value)),
-                    right.Right
-                );
+                return Expression.Multiply(product, right.Right);
             }
             return null;
         }
@@ -1556,12 +1638,10 @@ namespace Utils.Mathematics.Expressions
         {
             if (!IsOrdinaryBinaryArithmetic(e) || !IsOrdinaryBinaryArithmetic(left) || !IsOrdinaryBinaryArithmetic(right)) return null;
 
-            if (left.Left is ConstantExpression leftLeft && right.Left is ConstantExpression rightLeft)
+            if (left.Left is ConstantExpression leftLeft && right.Left is ConstantExpression rightLeft
+                && FoldConstants(ExpressionType.Multiply, e.Type, leftLeft.Value, rightLeft.Value) is ConstantExpression product)
             {
-                return Expression.Multiply(
-                    Expression.Constant((object)((dynamic)leftLeft.Value * (dynamic)rightLeft.Value)),
-                    TransformCore(Expression.Multiply(left.Right, right.Right))
-                );
+                return Expression.Multiply(product, TransformCore(Expression.Multiply(left.Right, right.Right)));
             }
             return null;
         }
@@ -1569,14 +1649,17 @@ namespace Utils.Mathematics.Expressions
         /// <summary>
         /// Simplifies constant division <c>(a / b)</c> when both are numeric constants.
         /// </summary>
+        /// <remarks>
+        /// Folded by <see cref="FoldConstants"/> in the node's own type: an integral or decimal zero divisor and
+        /// <c>int.MinValue / -1</c> throw as the compiled node would, and a floating-point division follows IEEE-754.
+        /// </remarks>
         [ExpressionSignature(ExpressionType.Divide)]
         protected Expression DivisionOfConstants(
             BinaryExpression e,
             [ConstantNumeric] ConstantExpression left,
             [ConstantNumeric] ConstantExpression right)
         {
-            if (!IsOrdinaryBinaryArithmetic(e)) return null;
-            return Expression.Constant((object)((dynamic)left.Value / (dynamic)right.Value));
+            return IsOrdinaryBinaryArithmetic(e) ? FoldConstants(ExpressionType.Divide, e.Type, left.Value, right.Value) : null;
         }
 
         /// <summary>
