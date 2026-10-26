@@ -58,8 +58,10 @@ namespace Utils.Mathematics.Expressions
     /// nevertheless run indirectly while simplifying: structural comparisons, notably those of the factoring rules
     /// (<c>FactorEqualityProbe</c>) through <see cref="ExpressionComparer"/>, may call the
     /// <see cref="object.Equals(object?)"/> or <see cref="object.GetHashCode"/> of custom constant values, and an
-    /// exception they throw propagates out of <see cref="Simplify(Expression)"/>; the S5 P3 factor cache is designed
-    /// to keep the number and order of those calls exactly as an uncached comparison would. Callers must therefore not
+    /// exception they throw propagates out of <see cref="Simplify(Expression)"/>; the S5 P3 factor cache, the S5 P9
+    /// comparison memo and the S5 P15 observed comparison memo (which only reuses a comparer simplification observed
+    /// to call no user code) are designed to keep the number and order of those calls exactly as an uncached
+    /// comparison would. Callers must therefore not
     /// assume that simplification is free of user code when the tree holds custom constants. (3) The simplified tree
     /// may contain fewer calls than the source (see the previous paragraph), so evaluating it may run less user code.
     /// </para>
@@ -1233,11 +1235,14 @@ namespace Utils.Mathematics.Expressions
         /// conservatively predicts this risk from a candidate's STATIC SHAPE alone - it never itself
         /// simplifies or compares anything, so it never runs the very user code it is trying to avoid running
         /// an extra time - and <see cref="GetOrSimplify"/> only caches (and therefore only
-        /// deduplicates re-simplification of) a candidate <see cref="IsCacheable"/> has cleared. A candidate
-        /// that is not cacheable falls back, on EVERY comparison it participates in, to calling
-        /// <see cref="ExpressionComparer.Default"/>'s public <see cref="ExpressionComparer.Equals(Expression?, Expression?)"/>
-        /// directly - the exact call, and therefore the exact user-code invocation count, this type replaces
-        /// for a cacheable candidate - so this type never reduces how many times user code observably runs
+        /// deduplicates re-simplification of) a candidate <see cref="IsCacheable"/> has cleared. A comparison
+        /// involving a candidate that is not cacheable runs the public
+        /// <see cref="ExpressionComparer.Equals(Expression?, Expression?)"/> sequence itself (fast path, then
+        /// <c>Simplify(x)</c>, then <c>Simplify(y)</c>, then the structural comparison), through
+        /// <see cref="GetOrSimplifyObserved"/>: an operand is simplified again for every such comparison, exactly as
+        /// the public comparer does, unless this probe already simplified that same reference and observed that the
+        /// simplification called no user code (S5 P15) - a case in which simplifying it again would call no user code
+        /// either. So this type never reduces how many times, or changes in which order, user code observably runs
         /// relative to the pre-existing per-comparison behavior, for any candidate.
         /// </para>
         /// <para>
@@ -1255,8 +1260,8 @@ namespace Utils.Mathematics.Expressions
         /// anything; simplification (<see cref="GetOrSimplify"/>) then only ever runs, in `x`-then-`y` order,
         /// once both operands are already known cacheable - exactly reproducing
         /// <see cref="ExpressionComparer.Equals(Expression?, Expression?)"/>'s own <c>Simplify(x)</c>-then-
-        /// <c>Simplify(y)</c> sequence for that case, and never simplifying anything at all (deferring fully to
-        /// the fallback) for every other case.
+        /// <c>Simplify(y)</c> sequence for that case. In every other case, the fallback simplifies <c>x</c> then
+        /// <c>y</c>, in that order and only after both were classified, as the public comparer does.
         /// </para>
         /// <para>
         /// <b>Lifetime.</b> A fresh instance is created at the top of each
@@ -1285,9 +1290,9 @@ namespace Utils.Mathematics.Expressions
             /// Compares <paramref name="x"/> and <paramref name="y"/> exactly like the public
             /// <see cref="ExpressionComparer.Equals(Expression?, Expression?)"/>, reusing a previously
             /// simplified form for either operand when this instance has already computed one AND that
-            /// operand was proven safe to cache (see "Side-effect safety" above) - otherwise falling back,
-            /// for this one comparison, to calling <see cref="ExpressionComparer.Default"/> directly, exactly
-            /// as every comparison did before this type existed.
+            /// operand was proven safe to cache (see "Side-effect safety" above) - otherwise running, for this
+            /// one comparison, the public comparer's own sequence, which only skips a simplification this
+            /// probe already observed to call no user code (<see cref="GetOrSimplifyObserved"/>).
             /// </summary>
             /// <param name="x">The first candidate operand.</param>
             /// <param name="y">The second candidate operand.</param>

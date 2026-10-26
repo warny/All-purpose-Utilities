@@ -45,8 +45,10 @@ namespace Utils.Mathematics.Expressions
     /// bits, and every other constant by its declared type and the reference identity of its value. Eligible nodes:
     /// parameters, constants, unary nodes other than <see cref="ExpressionType.Quote"/> and
     /// <see cref="ExpressionType.Throw"/>, binary nodes without conversion lambda, method calls and member accesses.
-    /// Lambdas, conditionals and every other node kind (including extension nodes, whose members are user code) make
-    /// the operand ineligible. The same 1,024-node per-path budget as P9 bounds key work and recursion.
+    /// A unary or binary node with a user-defined operator method stays ineligible, exactly as in P9 (a custom
+    /// operator operand is never memoized). Lambdas, conditionals and every other node kind (including extension
+    /// nodes, whose members are user code) make the operand ineligible. The same 1,024-node per-path budget as P9
+    /// bounds key work and recursion.
     /// </para>
     /// <para>
     /// <b>Lifetime.</b> The observed memo belongs to the P9 session: it is allocated lazily after activation, detached
@@ -69,6 +71,15 @@ namespace Utils.Mathematics.Expressions
         /// <param name="expression">The operand.</param>
         /// <returns><see langword="true"/> when an observed key can be built.</returns>
         internal static bool IsObservedComparisonMemoEligible(Expression expression) => ObservedComparisonMemoKey.TryCreate(expression, out _);
+
+        /// <summary>Determines whether two operands have equal strict observed memo keys (focused tests).</summary>
+        /// <param name="x">The first operand.</param>
+        /// <param name="y">The second operand.</param>
+        /// <returns><see langword="true"/> when both are eligible and their strict observed keys are equal.</returns>
+        internal static bool ObservedComparisonMemoKeysEqual(Expression x, Expression y)
+            => ObservedComparisonMemoKey.TryCreate(x, out ObservedComparisonMemoKey xKey)
+                && ObservedComparisonMemoKey.TryCreate(y, out ObservedComparisonMemoKey yKey)
+                && ObservedComparisonMemoKeyComparer.Instance.Equals(xKey, yKey);
 
         /// <summary>
         /// Simplifies an operand of an active session that the P9 memo does not accept, reusing a result recorded for a
@@ -187,13 +198,13 @@ namespace Utils.Mathematics.Expressions
                         return true;
 
                     case UnaryExpression unary:
-                        if (unary.NodeType is ExpressionType.Quote or ExpressionType.Throw || unary.Operand is null) return false;
+                        if (unary.NodeType is ExpressionType.Quote or ExpressionType.Throw || unary.Operand is null || unary.Method is not null) return false;
                         if (!TryHash(unary.Operand, ref budget, out int operandHash)) return false;
                         hash = HashCode.Combine(unary.NodeType, unary.Type, unary.Method, unary.IsLiftedToNull, operandHash);
                         return true;
 
                     case BinaryExpression binary:
-                        if (binary.Conversion is not null) return false;
+                        if (binary.Conversion is not null || binary.Method is not null) return false;
                         if (!TryHash(binary.Left, ref budget, out int leftHash)) return false;
                         if (!TryHash(binary.Right, ref budget, out int rightHash)) return false;
                         hash = HashCode.Combine(binary.NodeType, binary.Type, binary.Method, binary.IsLiftedToNull, leftHash, rightHash);

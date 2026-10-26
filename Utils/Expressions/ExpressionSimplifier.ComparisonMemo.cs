@@ -40,6 +40,12 @@ namespace Utils.Mathematics.Expressions
     /// ineligible. Simplifying an eligible operand cannot reach user code, so skipping a repeated simplification
     /// is not observable beyond its cost. Exceptions are never cached.
     /// </para>
+    /// <para>
+    /// <b>Observed tier (S5 P15).</b> An operand of an active session that is not eligible here is handed to the
+    /// observed comparison memo (<c>ExpressionSimplifier.ObservedComparisonMemo.cs</c>), which accepts calls, members
+    /// and opaque constants but stores a result only when its simplification called no user code. Eligibility,
+    /// keys and entries of this memo are unchanged.
+    /// </para>
     /// </remarks>
     public partial class ExpressionSimplifier
     {
