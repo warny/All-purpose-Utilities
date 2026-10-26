@@ -4796,6 +4796,48 @@ tier disabled -> 4; session guard removed -> 7; counter increment removed -> 16.
 no rule change, no threshold change; user-code calls, their order and exceptions are identical on every tested
 scenario; no existing family regresses.
 
+##### S5 P15 review, round 1 (PR #667 review at `1ae4b5b0`)
+
+**P2 — the probe could skip user code the counter does not see (FIXED, `b5171b9f`).** `UserCodeInvocationCount` only
+sees the comparer's calls into constant values. The virtual members of an `ExpressionType.Extension` node are user code
+too: rule dispatch reads `NodeType` (`TryTransform`), the factories and copies read `Type`. C1 was safe (its key rejects
+extension nodes), but C2 kept the form of any non-cacheable operand whose counter was unchanged, so an operand holding an
+extension node was simplified once instead of once per comparison. Reproduced with an extension whose `NodeType` and
+`Type` getters log every read: 48 of 72 new adversarial cases differed from the baseline (e.g. 99 -> 57 reads for a
+3-term chain); the reviewer's repro gave 1 getter read instead of 3. Fix: `GetOrSimplifyObserved` keeps a form only when
+the counter is unchanged AND the operand is statically cacheable or has a strict observed key
+(`IsObservedComparisonMemoEligible`, the C1 policy: parameters, constants, built-in unary/binary nodes without
+user-defined operator, calls, members, inspected by type tests only, never through a virtual member). The check runs
+once per kept operand per probe. Other user-code entry points of eligible shapes were re-audited: no string conversion
+of a value (no `ToString`/interpolation of a constant anywhere in the simplifier, transformer, canonical order or
+comparer), numeric-like values excluded, the canonical order never calls value code.
+
+Tests (`ExpressionSimplifierOpaqueConstantInvariantTests`, pinned on `ac702499`, 27 cases now): extension getters read
+exactly as on the baseline (n = 4/6/8, both orders; counts 158 / 494 / 12,346 / 308,598 plus the digest of the read
+sequence), a `NodeType` getter throwing on its k-th read (same read, same message), a re-entrant getter calling the
+public comparer (12,346 reads, 9,143 inner comparisons), one extension instance shared by two terms and two distinct
+twins (12,364 reads each). On `1ae4b5b0` the four getter-count cases and the re-entrant/shared/twin test fail (5
+failures); the throwing cases pass there too, because the exception is raised before any reuse happens. Adversarial
+harness: 534 scenarios (462 + 72 extension cases: counting, throwing at the 2nd/5th/12th/30th read, re-entrant,
+shared, twins, with and without an opaque constant), 0 differences from the baseline in call/read order, exceptions and
+trees; 73 benchmark trees identical.
+
+**P1 — oversized switches (FIXED, `0c7afa3e`).** `ObservedComparisonMemoKey.TryHash` (47 lines) and
+`ObservedComparisonMemoKeyComparer.StrictEquals` (41 lines) violated AGENTS.md. Both now dispatch through a static
+`Dictionary<ObservedNodeKind, handler>` (delegates created once, no per-call allocation); `ClassifyObservedNode` maps a
+node to its kind by type tests only (6 kinds). Keys, eligibility, orientation, parameter/opaque reference identity,
+bit-exact floating constants, decimal scale and the 1,024-node budget are unchanged; the key tests, the Security
+budget/recursion tests and the identical trace/dump comparisons cover them.
+
+**Measurements (paired, alternated).** Baseline vs fixed head: A/B/C/G/H/J/K/Y n = 4..16 within -3.5..+1.5 % except A4
++7.8 % (8/12), rechecked with 16 pairs: -11.3 % (A/A +1.3 %), the known bimodal scenario (its path does not change);
+allocations identical. z8 -90.4 %, e8 -90.3 %, a10 -97.4 %, c8 -90.5 %, k8 -45.8 %, o7 -8.7 %. Cost of the fixes,
+measured separately (6 pairs): P2 eligibility +0.8 % z8, +2.5 % a10, +0.1 % k8; P1 dispatch +1.4 % z8, +1.3 % a10, -0.6 %
+k8 (bytes unchanged within 120 B).
+
+**Validation.** Solution build: 0 errors. Unit 14,110/14,110, Functional 383/383, Security 244/244 (3 non-Windows
+platform tests not executed on Windows), at `0c7afa3e`.
+
 ## Execution-optimizer stages
 
 These remain separate from the simplifier stages above.
