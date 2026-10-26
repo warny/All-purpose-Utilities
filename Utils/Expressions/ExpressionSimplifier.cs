@@ -831,11 +831,10 @@ namespace Utils.Mathematics.Expressions
             if (!IsOrdinaryBinaryArithmetic(e)) return null;
             if (NumericValueEquals(right.Value, 0))
             {
-                if (e.Type == typeof(double) || e.Type == typeof(float)) return null;
-                throw new DivideByZeroException();
+                if (e.Type != typeof(double) && e.Type != typeof(float)) throw new DivideByZeroException();
             }
-            if (NumericValueEquals(right.Value, 1)) return left;
-            if (NumericValueEquals(right.Value, -1)) return Expression.Negate(left);
+            else if (NumericValueEquals(right.Value, 1)) return left;
+            else if (NumericValueEquals(right.Value, -1)) return Expression.Negate(left);
             return null;
         }
 
