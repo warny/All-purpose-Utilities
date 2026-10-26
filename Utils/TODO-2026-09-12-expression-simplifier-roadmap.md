@@ -4307,7 +4307,8 @@ rightCoefficient, factor)`:
   directly on the product (no rule dispatch, no traversal of the factor): `2x - x -> x`, `2x - 3x -> -x`,
   `2x + (-2)x -> 0` (the symbolic `x * 0 -> 0`, as the baseline's second call gave).
 - Any other coefficient (parameter, call, custom-operator node, unevaluated opaque sum) is combined with the ordinary
-  factory exactly as before; nothing is simplified again, so no user code runs and no comparer call is added.
+  factory exactly as before; nothing is simplified again, so building the coefficient runs no user code and no
+  comparer call is added (the factor comparisons before it are unchanged and may, see follow-up C).
 
 **Floating-point association.** Folding `(2 + 3) + 4` to `5 + 4` and then `9` evaluates each constant node exactly as
 built, in the order the factoring produced it, which is also the order of the baseline's second pass: that is constant
@@ -4390,7 +4391,8 @@ scenarios (A16, B16, K16, Q16) are unchanged; no new traversal or comparer path 
 **S3 contract documentation (0263e47b, documentation only).** The `ExpressionSimplifier` class remarks now state that
 the simplifier is algebraic and not required to preserve runtime side effects: `0 * (4 + Function()) -> 0` and
 `0 * (4 * Function()) -> 0` are intentional; the call, its side effects and its exceptions can disappear (verified:
-both shapes, `0 * (4 + Throw())` and `(4 * Function()) * 0` give `0`, with no user code run while simplifying);
+both shapes, `0 * (4 + Throw())` and `(4 * Function()) * 0` give `0`, without invoking `Function()` or `Throw()`
+while simplifying);
 symbolic equivalence is not runtime observational equivalence; floating-point identities are not bit-exact for `NaN`,
 infinities or signed zeros. The P11 `NaN` propagation's stricter eliminability predicate is described as a deliberate
 restriction of that transformation only. `MultiplicationWithZeroOrOne` and the contract itself are unchanged.

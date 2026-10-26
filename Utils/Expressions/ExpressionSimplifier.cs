@@ -49,8 +49,19 @@ namespace Utils.Mathematics.Expressions
     /// mathematical expressions over the identity's domain, not identical observable behavior when the trees run;
     /// for floating-point arithmetic the symbolic identities are not necessarily bit-exact either, and may differ for
     /// <c>NaN</c>, infinities or signed zeros (<c>x * 0 -&gt; 0</c> is <c>0</c> where the source gives <c>NaN</c>
-    /// for an infinite <c>x</c>). The simplifier itself never runs user code while simplifying (see the factor
-    /// comparison remarks), but the expression it returns may run less of it.
+    /// for an infinite <c>x</c>).
+    /// </para>
+    /// <para>
+    /// <b>User code during simplification.</b> Three different things must be told apart. (1) The simplifier never
+    /// evaluates the source tree: a <see cref="MethodCallExpression"/> such as <c>Function()</c> is not invoked to
+    /// compute its result, and constant folding only operates on boxed primitive values. (2) User code can
+    /// nevertheless run indirectly while simplifying: structural comparisons, notably those of the factoring rules
+    /// (<c>FactorEqualityProbe</c>) through <see cref="ExpressionComparer"/>, may call the
+    /// <see cref="object.Equals(object?)"/> or <see cref="object.GetHashCode"/> of custom constant values, and an
+    /// exception they throw propagates out of <see cref="Simplify(Expression)"/>; the S5 P3 factor cache is designed
+    /// to keep the number and order of those calls exactly as an uncached comparison would. Callers must therefore not
+    /// assume that simplification is free of user code when the tree holds custom constants. (3) The simplified tree
+    /// may contain fewer calls than the source (see the previous paragraph), so evaluating it may run less user code.
     /// </para>
     /// <para>
     /// The <c>NaN</c> propagation of S5 P11 (<see cref="FoldNaNOperand"/>) is deliberately stricter: it only drops
@@ -1640,7 +1651,8 @@ namespace Utils.Mathematics.Expressions
         /// <c>0</c> for <c>x = 0</c>), so simplifying must not throw. A pair of coefficients that holds at least two
         /// constants through ordinary additive nodes has them summed by <see cref="AggregateFactoredCoefficient"/>
         /// (<c>(5 + a) + 5 -&gt; 10 + a</c>). Any other coefficient (a parameter, a call, a custom-operator node) is
-        /// combined with the ordinary factory as before and is not simplified again, so no user code runs and no
+        /// combined with the ordinary factory as before and is not simplified again, so building the product runs no
+        /// user code of its own (the factor comparisons that precede it may, see the class remarks) and no
         /// comparer or rule dispatch is added.
         /// </para>
         /// <para>
@@ -2326,7 +2338,7 @@ namespace Utils.Mathematics.Expressions
         /// takes the place of the first constant: <c>(a + 5) + 6 -&gt; 11 + a</c>, <c>(a - 5) + 3 -&gt; -2 + a</c>. A sum
         /// equal to zero is dropped, as <see cref="IsOrdinaryZeroConstant"/> drops a zero term. The other terms keep
         /// their order; nothing is compared, simplified or evaluated beyond the constants' own boxed primitives, so
-        /// no user code runs.
+        /// the aggregation itself runs no user code.
         /// </para>
         /// <para>
         /// This regroups constants that the source adds at different places, so it is a reassociation, not the
