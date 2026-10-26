@@ -318,6 +318,37 @@ public class ExpressionSimplifierFactoringCoefficientTests
         AssertSameValues(x, infinities, simplified, Samples);
     }
 
+    /// <summary>
+    /// Nested factoring with constant coefficients folds in the first pass, with free and bound lambda parameters:
+    /// <c>(2*x + 3*x) + 5*z</c> gives <c>(x + z) * 5</c>; before P14 the inner factoring left <c>(2 + 3)</c>, which the
+    /// outer probe simplified on a copy to recognize <c>5</c>, and the result kept <c>(x + z) * (2 + 3)</c>. The
+    /// unfolded-coefficient comparison path itself is covered with an opaque coefficient by
+    /// <c>ExpressionSimplifierComparerBatchingTests.EndToEnd_NestedAdditionOfEqualsElements_ProducesSecondPassFactoredShape</c>.
+    /// </summary>
+    [TestMethod]
+    public void Simplify_NestedFactoringWithConstantCoefficients_FoldsInFirstPass()
+    {
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+        ParameterExpression z = Expression.Parameter(typeof(double), "z");
+        Expression body = Expression.Add(Expression.Add(Term(2, x), Term(3, x)), Term(5, z));
+
+        void AssertShape(Expression result)
+        {
+            var product = (BinaryExpression)result;
+            Assert.AreEqual(ExpressionType.Multiply, product.NodeType, result.ToString());
+            var variables = (BinaryExpression)product.Left;
+            Assert.AreSame(x, variables.Left);
+            Assert.AreSame(z, variables.Right);
+            Assert.AreEqual(5.0, (double)((ConstantExpression)product.Right).Value!);
+        }
+
+        AssertShape(Simplify(body));
+        var lambda = (LambdaExpression)Simplify(Expression.Lambda(body, x, z));
+        AssertShape(lambda.Body);
+        Assert.AreSame(x, lambda.Parameters[0]);
+        Assert.AreSame(z, lambda.Parameters[1]);
+    }
+
     // ------------------------------------------------------------------------------------------
     // Opaque coefficients, calls, custom operators, scope and derived simplifiers
     // ------------------------------------------------------------------------------------------
