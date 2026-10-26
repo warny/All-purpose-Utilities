@@ -4079,9 +4079,165 @@ observable base (`Sin(x) ^ 0 -> 1`, S3 purity assumption).
 
 **Newly observed defects (out of scope, not changed).**
 
-- `c / -1` for a constant `c` leaves `Negate(Constant c)` instead of the folded constant (value correct).
+- `c / -1` for a constant `c` leaves `Negate(Constant c)` instead of the folded constant (value correct). Fixed by the
+  follow-up below (825523ba).
 - A rule's rewritten division is not simplified again: `1 / x ^ -2` gives `(x ^ 2) / 1`, and
-  `x / (x / 0.0)` gives `0 / x` rather than `0`.
+  `x / (x / 0.0)` gives `0 / x` rather than `0`. The follow-up below shows that the `0 / x` result came from an invalid
+  field rewrite on a zero divisor, now declined (108f7b60); `(x ^ 2) / 1` remains.
+
+#### S5 P12–P13 follow-up — typed constant folding, constant pairs and nested zero divisors (ACCEPTED)
+
+Review of PR #665 before merge: fix the defects found around P12–P13 and replace the `dynamic` constant folding by a
+typed dispatch. Baseline `036978d1` (P12–P13 head); five commits on the same branch.
+
+**1. Typed constant folding (21e5b8bd, 637be46d).** `AdditionOfConstants`, `SubstractionOfConstants`,
+`MultiplicationOfConstants`, `DivisionOfConstants` and the two constant-combining `Multiplication` rules computed
+`(dynamic)left.Value op (dynamic)right.Value`. `dynamic` applies the C# binary numeric promotions, so `short` and
+`ushort` operands were widened to `int`. The Codex review of #665 reported `(short)0 / (short)3`, which P12 sent to
+`DivisionOfConstants` (the `0 / x` identity used to return the typed dividend). Reproduction: `Expression.Divide` does
+accept `Int16`/`UInt16` operands (only `Byte`/`SByte` throw `InvalidOperationException`), so the scenario is real, and
+the defect is older and wider than P12:
+
+| Source (`short`/`ushort` constants) | Compiled node | Simplified on `036978d1` |
+|---|---|---|
+| `(short)0 / (short)3`, `(ushort)0 / (ushort)3` | `0` (`Int16`/`UInt16`) | `0 : Int32` |
+| `(short)7 / (short)2` | `3 : Int16` | `3 : Int32` (before P12 too) |
+| `(short)32767 + (short)1` | `-32768 : Int16` | `32768 : Int32` |
+| `(ushort)3 - (ushort)4` | `65535 : UInt16` | `-1 : Int32` |
+| `Lambda<Func<short>>((short)0 / (short)3)` | — | `ArgumentException` (body type) |
+| `s + (short)0 / (short)3`, `3 * (4 * s)`, `(3 * s) * (4 * t)` | — | `InvalidOperationException` (`Int16` with `Int32`) |
+
+`FoldConstants(nodeType, type, left, right)` looks up a `(ExpressionType, Type)` table of evaluators built once by
+`AddConstantFolders<T>() where T : INumber<T>` for the nine types with ordinary `+ - * /` (`Types.Number` minus
+`byte`/`sbyte`, exactly the pairs of `_ordinaryBinaryOperatorMethods`). Each evaluator is an unchecked generic-math
+operator, specialized by the JIT per value type: no `dynamic` binder, no reflection, no conversion. The operand type is
+kept (`short`/`ushort` wrap and truncate like the `conv` the expression compiler emits), the compiled node's exceptions
+are raised while simplifying (`DivideByZeroException`, `OverflowException` for `int.MinValue / -1`, `long.MinValue / -1`
+and decimal overflow), and `float`/`double` follow IEEE-754. `PowerOfConstants` already used `double.Pow` on the only
+type with ordinary `Power` and is unchanged.
+
+A micro-benchmark of the fold path (2.0 + 3.0, 5 M iterations, steady state): cached `dynamic` 7–9 ns, table +
+`Expression.Constant(value, type)` 19 ns, table + `Expression.Constant(object)` 11 ns. The typed overload only adds an
+assignability check, and the folder already returns a boxed value of the node type, so 637be46d uses the untyped one.
+
+**2. Constant divided by ±1 (825523ba).** `DivideWithZeroOrOne` runs before `DivisionOfConstants` and applied its ±1
+identities to a constant dividend: `5 / -1` stayed `Negate(Constant 5)` (value right, not folded), and
+`int.MinValue / -1` (`long.MinValue / -1`) became `-(MinValue)`, which wraps to `MinValue` where the compiled division
+throws `OverflowException`. Local guard: the ±1 identities decline on a constant dividend; the typed fold then returns
+the constant, or throws `OverflowException` while simplifying, as an integral zero divisor already throws
+`DivideByZeroException`. Checked: `5 / 1 = 5`, `5 / -1 = -5`, `0 / 3 = 0`, `0 / -3 = 0` (`int`, integral zero has no
+sign), `int.MinValue / -1` and `long.MinValue / -1` throw, `(short)short.MinValue / -1 = -32768` (computed in `int`
+then truncated, no throw, as at runtime), `long`/`uint`/`ulong`/`decimal`/`float`/`double` all folded to the node
+type, `-0.0 / -1 = +0`, `0.0 / -1 = -0`, `NaN / -1 = NaN`. Rule order unchanged.
+
+**3. Zero/one identities on constant pairs (a5513b10).** Found by the all-types matrix of item 1, same cause as item 2:
+`AdditionWithZero`, `SubstractionWithZero` and `MultiplicationWithZeroOrOne` returned one constant operand unevaluated
+before the fold: `-0.0 + 0.0` gave `-0` (runtime `+0`), `0.0 - 0.0` gave `-(0)` (`-0`), `-0.0 * 0.0` gave `+0`
+(runtime `-0`), `0m * 2.5m` dropped the decimal scale of `0.0m`, `5 * -1` gave `-(5)`. Same local guard as the P12
+division identities: they decline when both operands are constants (`IsConstantPair`). It subsumes the P11 non-finite
+guard (`IsNonFiniteFloatingConstant`, removed). This commit is independent of the others and can be dropped alone.
+
+**4. Nested divisions with a zero constant divisor (108f7b60).** `x / (x / 0.0)` simplified to `0 / x`. Trace:
+`DivisionOfDivision(e, x, x / 0)` (the `x / (y / z) -> (x*z) / y` overload) built `Divide(TransformCore(x * 0), x)`;
+`MultiplicationWithZeroOrOne` turned `x * 0` into `0` (the documented S3 identity `x * 0 -> 0`), and the returned
+`Divide(0, x)` is not simplified again (so `0 / x -> 0` did not follow). Discriminating comparison of the source, the
+raw field reconstruction (before the inner simplification) and the simplifier output on `x, y` in
+{±2, 0.5, ±0, ±inf, NaN, MaxValue, Epsilon} (100 pairs, bit-exact, every `NaN` equal):
+
+| Shape | Raw reconstruction vs source | Output on `036978d1` vs source |
+|---|---|---|
+| `x / (x / 0.0)` → `0 / x` | 0 differences | 30 (20 beyond ±0: `+0` for `x = ±inf` where the source is `NaN`) |
+| `x / (y / ±0.0)` → `±0 / y` | 0 | 35 (21 beyond ±0) |
+| `(x / 0.0) / y`, `(x / 0.0) / x` → `x / 0` | 0 | 35 / 30, all beyond ±0 (`+inf` instead of `-inf` at `x = 2, y = -2`; `-inf` instead of `+inf` for `(x / 0.0) / x` at `x < 0`) |
+| `(x / y) / 0.0` → `x / 0` | 3 | 37, all beyond ±0 (sign of `y` lost) |
+| `(x / 0.0) / (y / 2)`, `(x / 2) / (y / 0.0)` | 0 | 35 each |
+| controls `x / (y / 2)`, `(x / 2) / y`, `(x / y) / (z / w)`, `x / (x / y)` | 8–16 | same 8–16: rounding and intermediate overflow/underflow at `MaxValue`/`Epsilon` only |
+| infinite constant divisor (`x / (y / inf)`, `(x / inf) / y`, …) | 0–12 | same 0–12, extreme magnitudes only |
+
+The field identities `x / (y / z) = (x*z) / y`, `(x / y) / z = x / (y*z)` and `(x / y) / (z / w) = (x*w) / (y*z)` hold
+for non-zero divisors. With a constant zero divisor the precondition is statically false, and the rewrite moves the
+zero from a divisor (an IEEE-defined `±inf`/`NaN`) into a product, where `x * 0 -> 0` or `0 / x -> 0` then discards the
+other operand. The fault is the condition of application, not the missing re-simplification: simplifying the result
+further (`0 / x -> 0`) would lose even more. Fix: the three overloads decline when a source divisor is an ordinary
+zero constant (`IsZeroDivisorOutsideFieldDomain`, a `params ReadOnlySpan<Expression>` so the hot path allocates
+nothing). Every zero-divisor shape above now keeps its node and evaluates bit-exactly like the source; results are
+stable when simplified again (no rewrite loop); a call operand keeps its single evaluation and its exception, and a
+custom inner division is untouched. Non-zero constant, infinite and symbolic divisors keep the rewrites (S3 field
+reassociation latitude), and the `NaN` constant case is folded by `FoldNaNOperand`.
+
+**Tests.** `ExpressionSimplifierIeeeDivisionPowerTests`, three new sections, 15 methods: typed folding (Codex
+scenario as a constant, a `Func<short>` body and an operand of a `short` sum; `short`/`ushort` wrap-around; constant
+factors combined in the operand type; custom `short` division untouched), division and additive/multiplicative
+matrices over every ordinary type (669 constant pairs per operator, limits, ±0, ±1, `NaN`, ±inf, decimal scale; each
+either throws the compiled node's exception or yields a constant of the node type with the same value, compared on
+`ConstantExpression.Value` because the expression compiler re-emits a decimal `-0` without its sign), constant ±1
+divisors, `MinValue / -1` overflow (with a precondition that the compiled node throws), constant pairs with zero/one,
+symbolic zero/one/±1 identities unchanged (controls), nested divisions by a zero constant (double on 81 sample pairs,
+float, stability), nested divisions by non-zero divisors keep their rewrites (control), calls/exceptions/custom
+operator kept. Against `036978d1`: 11 of the 15 fail; the 4 controls pass. The P3, P9, P10, P11 and P12–P13 tests are
+unchanged and pass.
+
+**Rule inventory and dispatch.** No rule added, removed or reordered; `ExpressionTransformationRuleInventoryTests` is
+unchanged and passes. Instrumented scratch builds (signature checks / rule invocations / comparer events / result),
+`036978d1` vs `108f7b60`: identical on A4–A16, B4–B16, C4–C16, G4–G16, H4–H16, K4/K16, N16, I16, D64, P4–P16,
+Q4–Q16, M8, E4/E16, W4/W16, Z4/Z16 and the new F4–F16 (sum of `x_i / (x_i+1 / x_i+2)`). Only the new V family
+(sum + `x0 / (x1 / 0.0)`) differs, by design: V4 424 → 447 checks, 19 → 21 nodes, `x0 / (x1 / 0)` kept instead of
+`0 / x1`.
+
+**Performance (counter-free, paired, alternated order, idle machine, background CPU ≈ 2%).** Same method as P11–P13:
+sacrificial G5, warmup, 21 GC-isolated rounds ≥ 50 ms (7 ≥ 100 ms for n = 16); paired delta = median of same-pair
+ratios; 12 pairs (n ≤ 8), 6 (n = 12), 4 (n = 16). Baseline `036978d1`, candidate `637be46d`:
+
+| Scenario | Base ms/op | Cand ms/op | Paired | Pairs > +5% |
+|---|---:|---:|---:|---:|
+| A4 / A8 / A12 / A16 | 0.0480 / 1.297 / 2.810 / 6.524 | 0.0455 / 1.295 / 2.825 / 6.445 | -6.6% / -0.3% / +0.4% / -1.1% | 3/12, 0/12, 0/6, 0/4 |
+| B4 / B8 / B12 / B16 | 0.0614 / 3.105 / 12.24 / 29.51 | 0.0616 / 3.101 / 12.36 / 29.46 | -0.2% / -0.1% / +1.0% / +0.2% | 0/12, 0/12, 0/6, 1/4 |
+| C4 / C8 / C12 / C16 | 0.0384 / 1.299 / 5.069 / 11.83 | 0.0608 / 1.301 / 5.112 / 11.72 | +6.2% (recheck +0.2%) / +0.0% / +1.2% / -0.9% | 6/12 (recheck 1/16), 0/12, 0/6, 0/4 |
+| G4 / G8 / G12 / G16 | 0.0090 / 0.1681 / 0.9740 / 2.192 | 0.0090 / 0.1667 / 0.9785 / 2.193 | +0.4% / -0.7% / +0.4% / +0.3% | 0/12, 0/12, 0/6, 0/4 |
+| H4 / H8 / H12 / H16 | 0.0179 / 0.0506 / 0.0977 / 0.1582 | 0.0183 / 0.0520 / 0.1003 / 0.1663 | +1.3% / +2.3% / +3.1% / +4.1% (recheck +0.3%) | 1/12, 0/12, 0/6, 1/4 (recheck 0/16) |
+| Q4 / Q8 / Q16 | 0.0734 / 1.157 / 10.69 | 0.0741 / 1.157 / 10.82 | +0.6% / -0.8% / +1.1% | 0/12, 0/12, 0/4 |
+| F4 / F8 / F12 / F16 | 0.0722 / 1.030 / 3.348 / 7.772 | 0.0725 / 1.029 / 3.375 / 7.853 | +0.4% / +0.2% / +1.0% / +0.8% | 1/12, 0/12, 0/6, 0/4 |
+| K4 / K16, M8 | 0.1477 / 14.01, 2.061 | 0.1473 / 14.14, 2.051 | -0.4% / +1.1%, -0.6% | 0/12, 0/4, 0/12 |
+
+Allocations are unchanged on every row (within ±100 bytes/op of GC sampling). The C4 and H16 outliers were rechecked
+with 16 pairs next to an A/A control (the baseline binary against a copy of itself): C4 +0.2% (A/A +0.0%), H16 +0.3%
+(A/A +1.9%). These small scenarios are bimodal across processes (C4 medians of 0.038 and 0.095 ms, H4/H8 swings of
+±45% between campaigns, A/A up to 5/16 pairs above +5%), and their dispatch counts are identical. An earlier
+campaign on `108f7b60` (before 637be46d) gave the same picture: every family within +3.8% except H12 +5.4% on 6 pairs,
+not reproduced with 12 and 16 pairs. V (zero-divisor nested division) is unchanged: V4 0.0858 → 0.0860 ms,
+V16 14.07 → 13.86 ms. No row is repeatably above +5%; the P3 cache and the P9 sessions, keys and thresholds are untouched.
+
+**Validation.** Release `Utils.sln` build with 0 errors; `--no-incremental` builds of both trees compared per file and
+warning code: no new warning, one `CS8600` fewer in `ExpressionSimplifier.cs`. Unit 14,034/14,034 (+15), Functional
+383/383, Security 241 passed + 3 skipped, on `108f7b60` and again on `637be46d`. In the second run
+`MapFromInterfaceInIsolatedWorkerTest` (isolated worker process, unrelated to the simplifier) failed once while another
+test build ran in parallel; it passed on three isolated reruns and on a full Functional rerun.
+
+| Stage | Decision | Reason |
+|---|---|---|
+| Typed `FoldConstants` table replacing `dynamic` in the six folding sites | ACCEPT | keeps the node type, exceptions and IEEE results; no reflection or binder per fold |
+| ±1 identities decline on a constant dividend | ACCEPT | exact folded constant; `MinValue / -1` throws as at runtime |
+| Additive/multiplicative zero/one identities decline on constant pairs | ACCEPT | exact signed zeros and decimal scale; independent commit |
+| `DivisionOfDivision` declines a zero constant divisor | ACCEPT | field-identity precondition statically false; bit-exact on every zero-divisor shape |
+| Re-simplify the division returned by `DivisionOfDivision` | REJECT | does not fix the invalid rewrite (`0 / x -> 0` loses more); extra outer pass on every nested division |
+| Exclude infinite or non-zero constant divisors too | REJECT | differences limited to extreme magnitudes, as for symbolic divisors (S3 latitude) |
+| Rule reorder (folding first) | REJECT | local guards suffice; reorder changes unrelated results and dispatch |
+
+**Not reproduced / not defects.** `Expression.Divide` on `byte`/`sbyte` is rejected by the factory, so no small-type
+case exists below `short`. The decimal `-0` sign loss seen through compilation comes from the expression compiler
+re-emitting an integral decimal constant, not from the simplifier (the folded `ConstantExpression.Value` keeps it).
+`(short)short.MinValue / -1` does not throw at runtime (computed in `int`), and the fold agrees.
+
+**Remaining limitations that depend on the S3 symbolic contract (unchanged).**
+
+- `x / -1 -> -x` on a non-constant integral `x`: for `x = int.MinValue` (`long.MinValue`) the negation wraps where the
+  division throws `OverflowException` (S3: overflow and exceptions are not preserved). Exact for IEEE-754 and decimal.
+- `0 / y -> 0` on a symbolic `y` loses the sign of the zero; it propagates into a later division:
+  `(x / 2) / (0 / y)` becomes `(x / 2) / 0` (`+inf` where the source is `-inf` for `y < 0`), and `x / (0 / x)` becomes
+  `x / 0`. That is the documented `0 / x` identity, not `DivisionOfDivision` (which now declines on the zero divisor).
+- Field reassociation on non-zero divisors (`x / (y / z) -> (x*z) / y`, …) rounds differently and can overflow or
+  underflow at extreme magnitudes; a symbolic divisor that is zero at runtime is outside the identity's domain.
+- A rule's rewritten division is still not simplified again: `x / (1 / x)` gives `(x ^ 2) / 1` (value exact).
 
 ## Execution-optimizer stages
 
