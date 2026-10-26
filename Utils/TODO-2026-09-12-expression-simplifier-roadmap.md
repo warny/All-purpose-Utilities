@@ -3904,9 +3904,11 @@ dictionary (boxed `GetType` and cached static delegates allocate nothing).
 keeps its documented decimal-based behavior for other callers (none remain in the repository).
 **Remaining risks and follow-up defects (out of scope, not changed).**
 
-- `float`/`double` division by a zero constant throws `DivideByZeroException` while simplifying (IEEE gives `±inf`/`NaN`).
+- `float`/`double` division by a zero constant throws `DivideByZeroException` while simplifying (IEEE gives
+  `±inf`/`NaN`) (fixed in S5 P12).
 - `0 ^ 0` simplifies to `0` (`PowerOfZeroOrOne` runs before `PowerByZeroOrOne`; `Pow(0, 0) = 1`), and `0 ^ c` for a
-  negative constant `c` to `0` (`+inf`): a finite domain-sensitive identity of S3.
+  negative constant `c` to `0` (`+inf`): a finite domain-sensitive identity of S3 (fixed in S5 P13 for a constant
+  exponent; the symbolic `0 ^ x -> 0` is kept).
 - Decimal factoring can introduce an overflow: `m * decimal.MaxValue + m -> (Max + 1) * m` throws at evaluation for
   every `m`, including `m = 0` where the source returns `0`.
 - `NumberUtils.TryCompareNumeric`: the integral branches return the *equality* as the success flag and leave
@@ -3916,6 +3918,170 @@ keeps its documented decimal-based behavior for other callers (none remain in th
 - `ExpressionUtils.CheckConstant<T>` unboxes with `(decimal)value`, which throws for any non-`decimal` numeric value;
   no caller in the repository.
 - Factoring leaves unfolded constant sums (`(NaN + 1) * x` before P11b, H family `(2 + 3 + 4) * x`).
+
+#### S5 P12–P13 — IEEE-754 division (P12 ACCEPTED) and power edge cases (P13 ACCEPTED)
+
+Baseline: `master` at `dba06406` (S5 P11 merged), runtime .NET 8.0.32 for the harness and .NET 9 for the test projects.
+Both stages are confined to four rule guards in `ExpressionSimplifier.cs`; no rule is added, removed or reordered, and
+`ExpressionTransformer.BuildPlan`, `ExpressionOptimiser`, the P3 cache, the P9 memo (thresholds, keys, session
+lifetime), P10 canonicalization and the P11 post-rule `NaN` fold are unchanged. The public API is unchanged.
+
+**Reference semantics.** Every expected value is the result of compiling the same `System.Linq.Expressions` tree. For
+`Power`, the compiled node (`Math.Pow`), `double.Pow` and `Math.Pow` were compared on the whole matrix below and agree
+bit for bit on .NET 8.0.32. Signed zeros are compared by bits; every `NaN` counts as equal (payloads are not
+promised).
+
+**Failure matrix at `dba06406`** (scratch harness, `double` and `float`; "throws" = `DivideByZeroException` while
+simplifying):
+
+| Expression | Runtime | Baseline result | Root cause (line at `dba06406`) |
+|---|---|---|---|
+| `±1 / ±0`, `±inf / ±0`, `Epsilon / 0`, `MaxValue / 0` | `±inf` | throws | `DivideWithZeroOrOne` (`ExpressionSimplifier.cs:829`) |
+| `±0 / ±0`, `NaN / ±0` | `NaN` | throws | same |
+| `x / ±0`, `(x + 1) / 0`, `Sin(x) / 0`, `-x / 0`, `(x / 0) / 2`, lambda bodies | IEEE | throws | same |
+| `0 / -3` | `-0` | `+0` | `DivideWithZero` (`:840-845`) returns the dividend before `DivisionOfConstants` (`:1545`) |
+| `0 ^ 0`, `-0 ^ 0`, `0 ^ -0`, `-0 ^ -0` | `1` | `0` / `-0` | `PowerOfZeroOrOne` (`:855`) returns the base before `PowerOfConstants` (`:1802`) |
+| `0 ^ -1`, `0 ^ -2`, `0 ^ -0.5` | `+inf` | `0` | same |
+| `-0 ^ 2`, `-0 ^ -1`, `-0 ^ -2`, `-0 ^ -3` | `+0`, `-inf`, `+inf`, `-inf` | `-0` | same |
+| `2 ^ -2`, `-2 ^ -3`, `-inf ^ -2`, `-inf ^ -3`, `10 ^ -400`, `1e-300 ^ -2` | `Pow` | right value, unevaluated `1 / c` | `PowerByZeroOrOne` (`:875-876`) rewrites before `PowerOfConstants` |
+| integral/decimal `p / 0`, `1 / 0` | throws | throws | correct, kept |
+
+Every other row of the brief's division and power matrices (`inf / inf`, `±0 / inf`, `0 / NaN`, `1 ^ NaN`,
+`NaN ^ 0|1|-1`, `0 ^ ±inf`, `±1 ^ ±inf`, `inf ^ 0|-1`, `-inf ^ 2|3`, subnormal and large finite operands) was already
+correct, partly thanks to P11.
+
+**P12 correction (division).**
+
+- `DivideWithZeroOrOne` declines a `float`/`double` zero divisor instead of throwing; an integral or `decimal` zero
+  divisor still throws `DivideByZeroException`, as evaluation does. A constant dividend is then folded exactly by
+  `DivisionOfConstants`; a non-constant dividend keeps its division node.
+- `DivideWithZero` (`0 / x -> 0`) declines on any constant divisor (P11 declined only on a non-finite one), so
+  `DivisionOfConstants` folds `0 / -3` to `-0` and `0 / 0.0` to `NaN`; without this guard P12 would have turned
+  `0 / 0.0` into `0`.
+- P11 integration: `NaN / 0.0` now folds to `NaN` (it threw before, the zero-divisor rule running before the
+  post-rule fold), directly through `DivisionOfConstants` or once a `NaN` dividend has been folded by
+  `FoldNaNOperand`. No `NaN`-specific rule was added.
+- Kept on purpose (S3): `0 / x -> 0` on a non-constant divisor (sign of the zero and `NaN` for `x = 0`, `NaN` not
+  preserved), and the field reassociations: `x / (x / 0.0)` becomes `(x * 0) / x -> 0 / x` (evaluates `0` where the
+  source gives `NaN` at `x = ±inf`, signed zeros differ for negative `x`).
+
+**P13 correction (power).**
+
+- `PowerOfZeroOrOne` (`0 ^ x -> 0`, `1 ^ x -> 1`) declines on a constant exponent; `PowerOfConstants` folds with
+  `double.Pow`.
+- `PowerByZeroOrOne` declines on a constant base, so a power of two constants is never rewritten into `1 / c` or
+  `1 / c ^ n`: those round independently of `Pow(c, -n)` (see below) and were left unevaluated.
+- Kept on purpose (S3, symbolic operand): `x ^ 0 -> 1`, `x ^ 1 -> x`, `x ^ -1 -> 1 / x`, `x ^ -n -> 1 / x ^ n`,
+  `0 ^ x -> 0` and `1 ^ x -> 1`.
+
+*Negative-exponent rewrite.* `Math.Pow(x, -n)` versus `1 / Math.Pow(x, n)`, bit for bit, on 2,028 bases (special
+values, subnormals, `MinValue`/`MaxValue`, 2,000 random magnitudes over 1e-20..1e20 of both signs):
+
+| `n` | 1 | 2 | 3 | 0.5 | 1.5 | 2.5 | 7 | 0.1 | 400 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| bases that differ | 4 | 526 | 552 | 291 | 292 | 303 | 542 | 277 | 18 |
+| of which overflow/underflow | 0 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 1 |
+
+All other differences are one unit in the last place. The exceptional values agree: `±0`, `±inf` and `NaN` bases give
+the same result in both forms, parity of the exponent included (`(-0) ^ -3 = 1 / (-0) ^ 3 = -inf`). The two special
+cases are `x ^ n` overflowing to `inf` while `x ^ -n` is still subnormal (`1e160 ^ -2 = 1e-320`, `1 / inf = 0`). For a
+symbolic base that is the rounding and overflow latitude of S3, so the rewrite is kept; for a constant base the exact
+value is known, so it is now folded instead.
+
+**Exception-test replacements.** Four P3/P9 tests used `x / 0.0` (or `1.0 / 0.0`) as a deterministic exception
+source; it now simplifies without throwing. Each keeps its purpose with an integral division by zero, which throws at
+runtime as well (no production exception was added):
+
+| Test | Purpose kept | Replacement |
+|---|---|---|
+| `ExpressionTransformationRuleBranchTests` (direct `DivideWithZeroOrOne` call) | the rule's zero-divisor branch | split: integral and decimal zero throw; `float`/`double` `±0` decline (`null`) |
+| `ExpressionSimplifierComparisonMemoTests.Exceptions_AreNeverCached` | a throwing *memo-eligible* operand is never cached, depth restored | `i / 0` (`int`, memo-eligible) |
+| `ExpressionSimplifierComparisonMemoTests.ComparerExceptionOrder_IsPreservedInSession` | x-before-y exception order in a session | `(double)(i / 0)`, so both operands stay `double` |
+| `ExpressionSimplifierComparerBatchingTests.NonCacheableThenCacheableOperand_…` | a *cacheable* second operand whose own simplification throws a different exception type | `(double)(1 / 0)`, plus a precondition asserting that it throws, so the test cannot pass vacuously (on P12 with the old operand it still passed, without testing anything) |
+
+`ExpressionSimplifierNumericRobustnessTests.Simplify_ZeroDivisor_KeepsHistoricalBehavior` characterized the P12 defect;
+it keeps only its integral/decimal assertions (`Simplify_IntegralOrDecimalZeroDivisor_Throws`).
+
+**Correctness tests.** `UtilsTest/Mathematics/Expressions/ExpressionSimplifierIeeeDivisionPowerTests.cs`, P12 and P13
+sections, 90 cases: constant division matrices (`double` 24 rows, `float` 14 rows, type kept), symbolic dividends over
+`±0` (runtime-equivalent on special samples, stable when simplified again), `NaN / ±0`, the symbolic `0 / x` control,
+integral/decimal zero divisors, no user code while simplifying and calls/exceptions kept at evaluation, custom and
+lifted division untouched, lambda bodies and a derived simplifier; constant power matrix (37 rows, each checked against
+`double.Pow` and the compiled node), constant negative exponents without reciprocal rounding (4 bases where the two
+forms differ), symbolic power identities unchanged, custom power untouched, combined power/division constants. Against
+`dba06406`: 52 cases fail (51 in the new class, plus the new `DivideWithZeroOrOne` decline test); the controls (symbolic
+identities, custom and lifted operators, integral/decimal zero divisors, finite rows of the matrices) and the four
+replaced exception tests pass on both.
+
+**Rule-dispatch counts (instrumented scratch builds, never timed).** Signature checks / rule invocations / comparer
+events, `dba06406` vs P12+P13:
+
+| Scenario | Baseline | P12+P13 |
+|---|---|---|
+| A, B, C, G, H, K, N, I, D64 (n = 4..16) | — | identical on every row |
+| P4/P8/P16 (`sum of x_i ^ -2`) | 335/4,953/28,001 checks | identical |
+| Q4/Q8/Q16 (`sum of x_i ^ 2 / x_i+1`) | 371/5,025/28,145 checks | identical |
+| M8 (sum + custom `x0 / 0`) | 5,590 checks | identical |
+| E4 / E16 (sum + `0 ^ 0`) | 396 / 52,086 checks, wrong result (`+ 0`) | 200 / 26,018 checks, `1 + ...` |
+| W4 / W16 (sum + `2 ^ -3`) | 411 / 30,120, `1 / 8` term | 406 / 30,115, `0.125` term |
+| Z4 / Z16 (sum + `1.0 / 0.0`) | throws | 406 / 30,115, `inf` term |
+| U4 / U16 (call-bearing sum + `Sin(x0) / 0.0`) | throws | 705 / 1,664,523 checks, 203,152 events |
+
+U16 matches the finite control S16 on the baseline (1,664,445 checks, 203,152 events): it is the pre-existing
+user-code tail of call-bearing sums listed under P10, not new work.
+
+**Performance (counter-free, paired, alternated order, idle machine).** Same method as P11: a sacrificial G5 first,
+>= 10 warmup operations and 1.5 s per scenario, 21 GC-isolated rounds of >= 50 ms (7 of >= 100 ms for n = 16); paired
+delta = median of same-pair ratios; 12 pairs (n <= 8), 6 (n = 12), 4 (n = 16); background CPU below 3%.
+
+| Scenario | Base ms/op | P12+P13 ms/op | Paired | Pairs > +5% | Base bytes/op | P12+P13 bytes/op |
+|---|---:|---:|---:|---:|---:|---:|
+| A4 / A8 / A12 / A16 | 0.0442 / 1.306 / 2.659 / 6.115 | 0.0448 / 1.305 / 2.656 / 6.217 | -1.3% / +0.0% / -0.3% / +2.8% | 4/12, 1/12, 0/6, 1/4 | unchanged | unchanged |
+| B4 / B8 / B12 / B16 | 0.0607 / 3.110 / 12.19 / 28.79 | 0.0605 / 3.116 / 12.30 / 29.03 | -0.7% / +0.3% / +1.0% / +2.0% | 0/12, 0/12, 0/6, 0/4 | 89,365 / 2,334,474 / 8,880,888 / 20,327,160 | unchanged |
+| C4 / C8 / C12 / C16 | 0.0382 / 1.312 / 5.047 / 11.57 | 0.0377 / 1.310 / 5.062 / 11.68 | -2.2% / +0.2% / -0.3% / +2.9% | 4/12, 1/12, 0/6, 1/4 | unchanged | unchanged |
+| G4 / G8 / G12 / G16 | 0.0091 / 0.1702 / 0.9755 / 2.237 | 0.0091 / 0.1691 / 0.9598 / 2.201 | +1.9% / -0.1% / -1.7% / -0.8% | 0/12, 0/12, 0/6, 0/4 | unchanged | unchanged |
+| H4 / H8 / H12 / H16 | 0.0180 / 0.0509 / 0.0962 / 0.1553 | 0.0183 / 0.0511 / 0.0973 / 0.1572 | +1.5% / +0.2% / +2.1% / +2.2% | 1/12, 0/12, 1/6, 0/4 | unchanged | unchanged |
+| K4 / K16, N16, I16, D64 | 0.1482 / 13.93, 13.91, 13.80, 0.1941 | 0.1475 / 13.92, 13.90, 13.94, 0.1937 | +0.2% / +0.6%, +1.0%, -0.5%, -0.9% | 0/12, 0/4, 0/4, 0/4, 2/12 | unchanged | unchanged |
+| P4 / P8 / P12 / P16 | 0.1022 / 1.613 / 5.876 / 14.95 | 0.1029 / 1.618 / 5.902 / 15.09 | +1.5% / +0.2% / -0.5% / +0.6% | 1/12, 0/12, 0/6, 0/4 | unchanged | unchanged |
+| Q4 / Q8 / Q12 / Q16 | 0.0732 / 1.163 / 4.217 / 10.69 | 0.0741 / 1.170 / 4.266 / 10.89 | +1.5% / -0.3% / -0.1% / +1.8% | 0/12, 0/12, 0/6, 1/4 | unchanged | unchanged |
+| M8 | 2.075 | 2.069 | -0.9% | 2/12 | 1,502,741 | 1,502,740 |
+| E4 / E8 / E12 / E16 | 0.1374 / 2.617 / 10.11 / 23.36 | 0.0788 / 1.328 / 5.015 / 11.65 | -42% / -49% / -50% / -50% | 0 | 101,573 / ... / 16,267,806 | 56,149 / ... / 8,146,424 |
+| W4 / W8 / W16 | 0.1506 / 2.066 / 13.86 | 0.1507 / 2.053 / 13.82 | +0.0% / -0.5% / -0.2% | 0/12, 1/12, 0/4 | 110,352 / 1,505,836 / 9,659,207 | 108,531 / 1,504,005 / 9,657,072 |
+
+Every existing family stays within +2.9% (no row repeatably above +5%), allocations are unchanged or lower, the P9 and
+P10 gains are untouched (identical dispatch counts and timings), and the P11 `NaN`/infinity scenarios (N, I, D) are
+unchanged and still fold. P12/P13-only scenarios (baseline throws): Z4 0.097 ms, Z16 13.6 ms (= K16), U4 0.152 ms,
+U8 2.55 ms. The guards are type tests on the existing rules' operands; the E family is faster because the correct
+`1` term is folded into the sum instead of the wrong `0` term being carried through factoring.
+
+The timings were taken on the P13 commit; the follow-up commit only rewrites one branch of `DivideWithZeroOrOne` as
+`if`/`else if` (same tests, same order) to avoid one extra nullable warning.
+
+**Validation.** Release `Utils.sln` build with 0 errors and, with a `--no-incremental` build of both trees compared per
+file and warning code, the same warnings as `dba06406` (2,940 unique); Unit 14,019/14,019 (+91 against P11:
+90 new cases plus the split `DivideWithZeroOrOne` test), Functional 383/383, Security 241 passed + 3 skipped. The
+rule inventory test is unchanged and passes; the P3/P9 exception-path, P10 canonicalization and P11 robustness tests
+pass.
+
+| Stage | Decision | Reason |
+|---|---|---|
+| P12 — floating division by `±0` declined; `0 / c` folded exactly | ACCEPT | exact IEEE results, no throw, integral/decimal unchanged, no dispatch or CPU change |
+| P13 — constant powers folded by `double.Pow` before the zero/one/reciprocal identities | ACCEPT | exact `Pow` results incl. signed zero and parity, no dispatch or CPU change |
+| Throw on floating `±0` divisor (historical) | REJECT | not runtime behavior |
+| Return a constant from `DivideWithZeroOrOne` for constant/constant | REJECT | duplicates `DivisionOfConstants`, which already folds once the rule declines |
+| A new rule or a rule reorder (constant folding first) | REJECT | adds dispatch candidates (P11 measured +9-16% for such rules) or changes unrelated results |
+| Restrict the symbolic `x ^ -n -> 1 / x ^ n` rewrite | REJECT | differences are rounding/overflow allowed by S3; exceptional values agree |
+| Make symbolic `0 / x`, `0 ^ x` IEEE-exact | REJECT | S3 symbolic identities on their domain; would need a domain solver |
+
+**Remaining symbolic-contract limitations (unchanged).** `0 / x -> 0` and `0 ^ x -> 0` for a non-constant `x`;
+`x * 0 -> 0` (hence `x / (x / 0.0) -> 0 / x`); `x ^ -n -> 1 / x ^ n` rounding and overflow; `x ^ 0 -> 1` drops an
+observable base (`Sin(x) ^ 0 -> 1`, S3 purity assumption).
+
+**Newly observed defects (out of scope, not changed).**
+
+- `c / -1` for a constant `c` leaves `Negate(Constant c)` instead of the folded constant (value correct).
+- A rule's rewritten division is not simplified again: `1 / x ^ -2` gives `(x ^ 2) / 1`, and
+  `x / (x / 0.0)` gives `0 / x` rather than `0`.
 
 ## Execution-optimizer stages
 
