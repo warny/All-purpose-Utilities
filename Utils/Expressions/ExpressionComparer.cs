@@ -49,6 +49,15 @@ public class ExpressionComparer : IEqualityComparer<Expression>
     private static ComparisonOrigin _currentComparisonOrigin;
 
     /// <summary>
+    /// Counts, on this thread, every call this comparer is about to make into a constant value's own
+    /// <see cref="object.Equals(object?)"/> or <see cref="object.GetHashCode"/> when that value is not known safe
+    /// (see <see cref="IsKnownSafeConstantValue(object)"/>). Incremented before the call, so a call that throws is
+    /// counted too. Only ever compared for equality between two reads (roadmap S5 P15).
+    /// </summary>
+    [ThreadStatic]
+    private static long _userCodeInvocationCount;
+
+    /// <summary>
     /// Identifies the active outer simplifier comparison context. Nested direct comparer calls can inherit
     /// this value, so it does not necessarily identify their immediate call site.
     /// </summary>
@@ -90,6 +99,14 @@ public class ExpressionComparer : IEqualityComparer<Expression>
 
     /// <summary>Gets whether diagnostic event capture is active on the current thread.</summary>
     internal static bool IsDiagnosticCaptureActive => _diagnosticEvents is not null;
+
+    /// <summary>
+    /// Gets the number of calls this comparer has made, on the current thread, into the
+    /// <see cref="object.Equals(object?)"/> or <see cref="object.GetHashCode"/> of a constant value that is not known
+    /// safe. Two equal reads around an operation prove that the comparer ran no such user code during it (roadmap
+    /// S5 P15, <c>ExpressionSimplifier</c>'s observed comparison memo).
+    /// </summary>
+    internal static long UserCodeInvocationCount => _userCodeInvocationCount;
 
     /// <summary>Starts event capture on the current thread.</summary>
     internal static void BeginDiagnosticCapture()
@@ -532,11 +549,13 @@ public class ExpressionComparer : IEqualityComparer<Expression>
         if (x.Type != y.Type) return false;
         if (x.Value is null || y.Value is null) return x.Value is null && y.Value is null;
 
-        if (safeConstantsOnly && !IsKnownSafeConstantValue(x.Value))
+        bool knownSafe = IsKnownSafeConstantValue(x.Value);
+        if (safeConstantsOnly && !knownSafe)
         {
             return ReferenceEquals(x.Value, y.Value);
         }
 
+        if (!knownSafe) _userCodeInvocationCount++;
         return x.Value.Equals(y.Value);
     }
 
@@ -717,11 +736,23 @@ public class ExpressionComparer : IEqualityComparer<Expression>
             {
                 null => 0,
                 var value when safeConstantsOnly && !IsKnownSafeConstantValue(value) => RuntimeHelpers.GetHashCode(value),
-                var value => value.GetHashCode(),
+                var value => HashConstantValue(value),
             });
         }
 
         return hc.ToHashCode();
+    }
+
+    /// <summary>
+    /// Calls a constant value's own <see cref="object.GetHashCode"/>, counting the call in
+    /// <see cref="UserCodeInvocationCount"/> first when the value is not known safe.
+    /// </summary>
+    /// <param name="value">The non-null boxed constant value.</param>
+    /// <returns>The value's hash code.</returns>
+    private static int HashConstantValue(object value)
+    {
+        if (!IsKnownSafeConstantValue(value)) _userCodeInvocationCount++;
+        return value.GetHashCode();
     }
 
     /// <summary>Hashes a <see cref="UnaryExpression"/>: node type, result type, operator method, lifting flags, then the operand.</summary>

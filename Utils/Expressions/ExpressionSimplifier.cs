@@ -132,9 +132,11 @@ namespace Utils.Mathematics.Expressions
             int callerMemoDepth = _comparisonMemoDepth;
             bool callerMemoActive = _comparisonMemoActive;
             Dictionary<ComparisonMemoKey, Expression>? callerMemo = _comparisonMemo;
+            Dictionary<ObservedComparisonMemoKey, Expression>? callerObservedMemo = _observedComparisonMemo;
             _comparisonMemoDepth = 0;
             _comparisonMemoActive = false;
             _comparisonMemo = null;
+            _observedComparisonMemo = null;
             try
             {
                 return TransformWithinBoundary(expression);
@@ -144,6 +146,7 @@ namespace Utils.Mathematics.Expressions
                 _comparisonMemoDepth = callerMemoDepth;
                 _comparisonMemoActive = callerMemoActive;
                 _comparisonMemo = callerMemo;
+                _observedComparisonMemo = callerObservedMemo;
             }
         }
 
