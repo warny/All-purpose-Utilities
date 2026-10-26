@@ -627,7 +627,10 @@ namespace Utils.Mathematics.Expressions
         /// <remarks>
         /// <para>
         /// The caller must have proven the node ordinary (<see cref="IsOrdinaryBinaryArithmetic(BinaryExpression)"/>):
-        /// both operands then have exactly <paramref name="type"/>, and their boxed values are of that type.
+        /// both operands then have exactly <paramref name="type"/>, and their boxed values are of that type. The folder
+        /// returns a boxed <paramref name="type"/> too, so <see cref="Expression.Constant(object)"/> already types the
+        /// constant exactly; the <see cref="Expression.Constant(object, Type)"/> overload would only add an
+        /// assignability check (about 8 ns per fold, measurable on factored sums of constants).
         /// </para>
         /// <para>
         /// Replaces the <c>dynamic</c> arithmetic used before S5 P12, which applied the C# binary numeric promotions:
@@ -645,7 +648,7 @@ namespace Utils.Mathematics.Expressions
             => left is not null
                 && right is not null
                 && ConstantFolders.TryGetValue((nodeType, type), out Func<object, object, object>? folder)
-                ? Expression.Constant(folder(left, right), type)
+                ? Expression.Constant(folder(left, right))
                 : null;
 
         /// <summary>
