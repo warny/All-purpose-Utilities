@@ -4405,12 +4405,146 @@ shape tests updated as described above).
 
 - Opaque coefficients are not normalized: once a non-constant coefficient enters a factored sum, later constants are
   combined with it unevaluated (J family: `((5 + a) + 5) + 6 ...`, and `(a + 2)*x + 3*x -> ((2 + a) + 3) * x`).
-  Folding them would need reassociation of the coefficient sum (a separate, benchmarked design).
+  Folding them would need reassociation of the coefficient sum (a separate, benchmarked design). *Addressed for the
+  constants by follow-up B below (`(16 + a) * x`); repeated opaque terms are still not merged.*
 - A decimal coefficient whose sum overflows stays unevaluated; the simplified tree then throws for `x = 0` where the
   source does not (unchanged from the baseline).
 - The symbolic factoring and the zero/one identity keep their S3 latitude: `2x + (-2)x -> 0` drops a call factor and
   gives `0` for an infinite `x` (as the baseline's second pass did); subtractions lose the sign of a zero.
 - The P10 subtractive-chain idempotence cycle is untouched.
+
+##### S5 P14 follow-up A — P3 second-pass coverage restored (review P1, be9f1e3d)
+
+The review of #666 (P1) noted that dec77da9 had rewritten three P3 tests of `ExpressionSimplifierComparerBatchingTests`
+to expect the folded `5`, dropping their purpose: an *unfolded* coefficient reaching the factor probe through the
+public pipeline, with free and bound lambda parameters. The tests keep their original names and structural
+assertions with an opaque coefficient that no constant folding or aggregation can remove:
+
+- `((a + b)*x - b*x) + a*z`: the inner factoring yields the unfolded `(a + b) - b`; the outer probe must simplify it
+  to `a` to recognize the right term's coefficient; the result is `(x + z) * ((a + b) - b)` with the raw coefficient
+  (asserted by reference). A precondition asserts that `StructuralEqualsRaw((a + b) - b, a)` is false; an operand
+  swap such as `a + 2` against `2 + a` was tried first and rejected, because the raw comparison already treats
+  addition as commutative, so it would not need the simplification. A diagnostic capture asserts that the
+  `FactorEqualityProbe` simplified a `Subtract` root for comparison.
+- The bound-lambda variant binds `x, z, a, b`, checks the parameter list and evaluations, and simplifies a second
+  lambda with same-named distinct parameters through the same simplifier instance.
+- `OrdinaryFactorMatch_SameReferenceVariable_StillFactors` factors `a*x + b*x` and asserts `Add(a, b)` by reference.
+
+Verification: the three tests pass on `32cc4647` (pre-P14) and on the branch; with the probe mutated to compare
+without simplifying (`StructuralEqualsRaw` after the fast path), both end-to-end tests fail and the ordinary control
+(same-reference factor) passes, as expected. The constant-coefficient expectations moved to
+`ExpressionSimplifierFactoringCoefficientTests.Simplify_NestedFactoringWithConstantCoefficients_FoldsInFirstPass`
+(free and bound parameters). The P3 cache, the classification-before-simplification order and the P9 memo are
+untouched; these small scenarios never reach the P9 activation thresholds.
+
+##### S5 P14 follow-up B — local aggregation of additive constants (ACCEPTED, d6fd9035)
+
+**Audit.** Characterized on the P14 head (one call, then a second):
+
+| Source | P14, call 1 (= call 2) | Follow-up |
+|---|---|---|
+| `(a+5)+6`, `(5+a)+6`, `6+(a+5)`, `6+(5+a)` | `(5 + (6 + a))` | `(11 + a)` |
+| `((a+5)+6)+7` | `(5 + (6 + (7 + a)))` | `(18 + a)` |
+| `(a+5)-3` / `(a-5)+3` / `(a-5)-3` | `((0 - 3) + (5 + a))` / `(3 + ((0 - 5) + a))` / `((0 - 3) + ((0 - 5) + a))` | `(2 + a)` / `(-2 + a)` / `(-8 + a)` |
+| `((a+5)+b)+6`, `(a+5)+(b+6)` | `(5 + (6 + (a + b)))` | `(11 + (a + b))` |
+| `((5+a)+5)+6` | `((5 + 5) + (6 + a))`, call 2 `(6 + (10 + a))` | `(16 + a)` |
+| J `(5+a)x + 5x + 6x` | `((((5 + a) + 5) + 6) * x)` (9 nodes, 3 constants), call 3 `(x * (6 + (10 + a)))` | `((16 + a) * x)` (5 nodes, 1 constant) |
+| `(a+2)x + 3x`, `(2+a)x + 3x`, `2x + ax + 3x` (both associations) | `(((2 + a) + 3) * x)` | `((5 + a) * x)` |
+| `(a+2)x - 3x` | `(((2 + a) - 3) * x)` | `((-1 + a) * x)` |
+| `(2+a)x + (b+3)x` | `(((2 + a) + (3 + b)) * x)` | `((5 + (a + b)) * x)` |
+
+Findings: (1) the additive canonicalization (`FinalizeExpression` → `CanonicalizeAdditiveExpression`, run when no rule
+applies) already collects every term and sorts constants first, in a stable place, but treats each constant as an
+opaque term grouped only with structurally equal ones, so `5` and `6` were never added, at any call; (2) no rule
+reassociates `(e + c) + d`; (3) the J coefficient is built by the factoring rules and returned without simplification,
+so it never reaches the canonicalization in the first pass; (4) hence an aggregation inside the canonicalization
+alone fixes the plain sums (all associations, dispersed constants) but not J, and a local rule on `(e + c) + d` fixes
+neither dispersed constants nor J without a new dispatch candidate.
+
+**Strategy.** One mechanism at two existing construction points (no competing implementations):
+`AggregateAdditiveConstants(terms, type)` sums the numeric constants of a list of signed additive terms with
+`FoldConstants`, in collection order, puts the sum in place of the first constant (a zero sum is dropped, as
+`IsOrdinaryZeroConstant` drops zero terms), and leaves the other terms in order. It runs (1) in
+`CanonicalizeAdditiveExpression`, on the terms already collected, before sorting; (2) in `BuildFactoredProduct`, for
+a coefficient pair with at least two constants reachable through ordinary additive nodes (an allocation-free
+pre-count, `CountAdditiveConstants`, rejects every other pair), rebuilding the coefficient with the existing
+`BuildAdditiveExpression`. Rejected: a new `(e + c) + d` rule (dispatch candidate on every `Add`, misses dispersed
+constants and J), canonicalizing whole coefficients (re-simplifies opaque coefficients), merging repeated opaque
+terms (`a + a -> 2a`, a general normalization outside the request).
+
+**Numerics.** Integral types: exact (unchecked modular arithmetic is associative): `short` `(a + 32000) + 1000 ->
+-32536 + a` (Int16), `int` `(a + MaxValue) + 1 -> MinValue + a`, `long` `MaxValue + MaxValue -> -2`; an unsigned type
+sums positives and negatives apart and keeps the sign (`(a - 5u) + 3u -> (0 - 2) + a`, `ulong (a - MaxValue) + 1 ->
+(0 - 18446744073709551614) + a`); evaluations equal the source on every sample. Decimal: exact (`1.5 + 2.25 ->
+3.75`); an overflowing sum declines and keeps the terms (`(decimal.MaxValue + a) + 1m` evaluates for `a < 0`, so
+simplifying must not throw); `MaxValue + (-1)` folds. Floating point: summing constants that the source adds at
+different places is a reassociation, accepted under the S3 contract and characterized: `(a + 0.1f) + 0.2f -> 0.3f + a`
+gives `1.3f` instead of `1.3000001f` at `a = 1`; `(a + 1e16) + 1 -> 1e16 + a` gives `0` instead of `1` at
+`a = -1e16`; `(a + 5) + -5 -> a` keeps `-0` where the source gives `+0`; `inf - inf -> NaN` (as the source for every
+`a`), `inf + 5 -> inf`, `NaN` folds as before (P11), subnormals add exactly (`Epsilon + Epsilon`). The
+catastrophic-cancellation case `((a + 1e16) + 1) - 1e16` and `(a + 1e308) + 1e308` already differed from the source on
+the P14 head (P10 cancellation and grouping); they still do. No user code runs (a call term is kept and evaluated once
+per call); custom and lifted additions are never aggregated.
+
+**Tests.** `ExpressionSimplifierAdditiveConstantAggregationTests`, 11 methods, all after one call: nested additions
+(9 associations/orders, values on special samples, idempotence), opaque terms between constants, J-style factored
+coefficients (8 shapes, one constant left), coefficients without two constants (control), integral typing and wrap
+with unsigned sign handling, decimal sum and overflow decline, IEEE combinations, the floating reassociation
+characterization, call term without user code, custom/lifted control, lambda and derived simplifier. Against the
+P14 head: 9 of the 11 fail; the 2 controls pass. The P14 control `Simplify_OpaqueCoefficients_KeepExistingFactoring`
+no longer pins `((2 + a) + 3) * x` (now covered here) and keeps its two pair-free cases.
+
+**Dispatch and comparer counts (instrumented, never timed).** Identical on A, B, C, G, H, L, Y, X, O, K, P, Q, F, M, E,
+W (n = 4..16), including P9 memo activations and factoring attempts. New families: `d` (sum of `x_i` and dispersed
+constants), `j` (J with coefficients `a + i` every third term), `l` (`j` inside a lambda).
+
+| Scenario | Nodes | Checks | Invocations | Comparer events | Attempts | Memo | Aggregations |
+|---|---|---|---|---|---|---|---|
+| J4 / J8 / J16 | 7→5 / 15→7 / 31→13 | 79 / 462→215 / 11,561→634 | 8 / 54→23 / 1,238→73 | 21 / 166→68 / 4,063→221 | 4 / 39→15 / 903→54 | 0 / 0 / 5→0 | 1 / 4 / 9 |
+| d4 / d8 / d16 | 15→9 / 31→17 / 63→33 | 630→378 / 11,169→5,778 / 62,073→31,806 | 70→42 / 1,241→642 / 6,897→3,534 | 252→156 / 4,904→2,556 / 27,464→14,124 | — | 0 / 7→3 / 23→19 | 3 / 7 / 15 |
+| j4 / j8 / j16 (l: same) | 9→5 / 19→7 / 41→13 | 124→106 / 905→257 / 19,591→682 | 13→11 / 103→28 / 2,118→81 | 41→33 / 354→87 / 7,017→255 | 9→7 / 85→20 / 1,573→65 | 0 / 0 / 7→0 | 2 / 6 / 14 |
+
+Fewer memo activations on d/j/J16 follow from fewer, smaller comparisons; thresholds, keys and sessions are unchanged.
+
+**Performance (counter-free, paired, alternated, idle machine; baseline: the P14 head).**
+
+| Scenario | P14 ms/op | Follow-up ms/op | Paired | Pairs > +5% | P14 bytes/op | Follow-up bytes/op |
+|---|---:|---:|---:|---:|---:|---:|
+| A4 / A8 / A12 / A16 | 0.0458 / 1.503 / 2.823 / 6.407 | 0.0494 / 1.466 / 2.818 / 6.413 | +11.4% (recheck -1.6%) / -1.9% / -0.3% / +0.8% | 7/12 (recheck 7/16, A/A 5/16) | unchanged | unchanged |
+| B4 / B8 / B12 / B16 | 0.0644 / 3.656 / 12.63 / 30.10 | 0.0643 / 3.599 / 12.76 / 30.63 | +0.4% / -0.7% / +1.3% / +1.7% | 0/12, 2/12, 1/6, 0/4 | unchanged | unchanged |
+| C4 / C8 / C12 / C16 | 0.0619 / 1.507 / 5.198 / 12.16 | 0.0417 / 1.496 / 5.232 / 12.13 | -7.6% / +0.5% / +0.5% / -0.5% | 3/12, 2/12, 1/6, 1/4 | unchanged | unchanged |
+| G4 / G8 / G12 / G16 | 0.0106 / 0.1963 / 1.003 / 2.219 | 0.0102 / 0.1955 / 0.9956 / 2.241 | -1.9% / -1.4% / +0.0% / -0.2% | 1/12, 2/12, 1/6, 0/4 | unchanged | unchanged |
+| H4 / H8 / H12 / H16, L16 | 0.0187 / 0.0382 / 0.0525 / 0.0736, 0.0674 | 0.0180 / 0.0380 / 0.0534 / 0.0732, 0.0671 | -2.2% / +1.3% / +1.9% / -2.6%, +0.0% | ≤ 4/12 | unchanged (P14 gains kept) | unchanged |
+| Y4 / Y8 / Y12 / Y16 | 0.0500 / 0.0970 / 0.1358 / 0.1835 | 0.0465 / 0.0957 / 0.1346 / 0.1909 | -3.3% / +0.1% / +0.1% / +4.1% (recheck -1.4%) | 2/12, 1/12, 1/6, 2/4 | unchanged | unchanged |
+| X4 / X16, O4 / O16 | 0.0969 / 418.5, 0.0232 / 0.1169 | 0.0943 / 418.2, 0.0231 / 0.1195 | -1.3% / -0.1%, +2.1% / +2.2% | ≤ 4/12 | unchanged | unchanged |
+| K4 / K16, Q16 | 0.1696 / 14.30, 11.06 | 0.1750 / 14.41, 11.04 | +4.1% (recheck -1.1%) / +0.5%, +0.0% | 5/12 (recheck 1/16) | unchanged | unchanged |
+| J4 (16-pair recheck) / J8 / J12 / J16 | 0.0134 / 0.2788 / 1.978 / 7.731 | 0.0128 / 0.0821 / 0.1409 / 0.2370 | +1.3% / -70.1% / -92.9% / -96.9% | 8/16, 0/12, 0/6, 0/4 | 13,324 / 167,321 / 1,319,017 / 4,949,762 | 13,516 / 48,380 / 88,735 / 144,150 |
+| j4 / j8 / j12 / j16, l4 / l16 | 0.0545 / 0.6305 / 3.789 / 14.15, 0.0583 / 14.26 | 0.0436 / 0.1142 / 0.1969 / 0.2823, 0.0472 / 0.2888 | -18.6% / -81.6% / -94.8% / -98.0%, -18.9% / -98.0% | 0 | 33,688 / … / 8,968,384 | 25,438 / … / 170,416 |
+| d4 / d8 / d12 / d16 | 0.314 / 5.648 / 16.75 / 42.98 | 0.181 / 2.369 / 6.362 / 13.05 | -42.0% / -57.4% / -61.9% / -69.5% | 0 | 255,512 / … / 40,181,024 | 143,733 / … / 13,654,340 |
+
+Rechecks (16 pairs, A/A control = the P14 binary against a copy of itself): A4 A/B -1.6% (A/A -0.7%), K4 -1.1%
+(-0.1%), Y16 -1.4% (-3.0%): noise. J4 was a real +5.2% (10/16 pairs, A/A -0.5%, 0/16) with +289 bytes/op: the
+aggregation path itself (term list, collection, rebuild) on a 4-term expression whose output shrinks from 7 to 5
+nodes. Starting the running totals from the first constant (no boxed zero, no `0 + c` fold) and pre-sizing the term
+list brought it to +1.3% (16 pairs) and +192 bytes/op, J8 -71.6%, j4 -22.4%; the table's J4 row is that remeasured
+pair, and d6fd9035 contains that version. The other rows come from the campaign on the version before this tweak,
+which only removes work on the aggregating path (identical dispatch counts). No existing family regresses repeatably beyond +5%; allocations are unchanged outside the aggregating
+families; the P14 H gains are kept; X16 (the exponential custom-operator control) is unchanged.
+
+**Remaining limitations.**
+
+- Repeated opaque terms are not merged: J8 gives `(33 + (a + a)) * x`, J16 `(102 + (a + (a + (a + (a + a))))) * x`
+  (a general normalization, out of scope).
+- Constant pairs built unevaluated by the subtraction-distribution rules are not aggregated in the first pass:
+  `3 - (a + 5) -> ((3 - 5) - a)`, `(0 - (a + 5)) + 5 -> ((5 - 5) - a)` (a rule result, not a canonical sum or a
+  factored coefficient).
+- A factored product is reordered by a second call (`(16 + a) * x -> x * (16 + a)`), as on the P14 head.
+- Floating-point aggregation is a reassociation (S3), not bit-exact; signed zero may differ (`(a + 5) + -5 -> a`).
+
+**Validation (be9f1e3d + d6fd9035).** Release `Utils.sln` build with 0 errors; `--no-incremental` builds of the P14
+head and the follow-up compared per file and warning message: identical (896 unique). Unit 14,066/14,066 (+12: the
+11 aggregation tests and the moved nested constant-coefficient test), Functional 383/383, Security 241 passed + 3
+skipped; the rule inventory, P3/P9, S4/P10, P11, P12–P13 and P14 tests pass.
 
 ## Execution-optimizer stages
 
