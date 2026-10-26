@@ -571,7 +571,7 @@ protected Expression AbsConversionMath(Expression e, Expression[] expressions)</
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionSimplifier_AdditionOfConstants_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_ConstantExpression_System_Linq_Expressions_ConstantExpression_" data-uid="Utils.Mathematics.Expressions.ExpressionSimplifier.AdditionOfConstants(System.Linq.Expressions.BinaryExpression,System.Linq.Expressions.ConstantExpression,System.Linq.Expressions.ConstantExpression)">
   AdditionOfConstants(BinaryExpression, ConstantExpression, ConstantExpression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L887"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L1018"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Simplifies constant addition <code>(a + b)</code> where both are numeric constants.</p>
@@ -659,7 +659,7 @@ protected Expression AdditionOfCos2andSin2Number(Expression e, BinaryExpression 
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionSimplifier_AdditionOfEqualsElements_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_Expression_System_Linq_Expressions_Expression_" data-uid="Utils.Mathematics.Expressions.ExpressionSimplifier.AdditionOfEqualsElements(System.Linq.Expressions.BinaryExpression,System.Linq.Expressions.Expression,System.Linq.Expressions.Expression)">
   AdditionOfEqualsElements(BinaryExpression, Expression, Expression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L1305"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L1434"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Attempts to factor out common elements in <code>left + right</code> if possible.
@@ -702,7 +702,7 @@ protected Expression AdditionOfEqualsElements(BinaryExpression e, Expression lef
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionSimplifier_AdditionWithNegate_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_Expression_System_Linq_Expressions_UnaryExpression_" data-uid="Utils.Mathematics.Expressions.ExpressionSimplifier.AdditionWithNegate(System.Linq.Expressions.BinaryExpression,System.Linq.Expressions.Expression,System.Linq.Expressions.UnaryExpression)">
   AdditionWithNegate(BinaryExpression, Expression, UnaryExpression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L897"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L1027"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Rewrites <code>left + (-right)</code> as <code>left - right</code>.</p>
@@ -744,7 +744,7 @@ protected Expression AdditionWithNegate(BinaryExpression e, Expression left, Una
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionSimplifier_AdditionWithNegate_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_UnaryExpression_System_Linq_Expressions_Expression_" data-uid="Utils.Mathematics.Expressions.ExpressionSimplifier.AdditionWithNegate(System.Linq.Expressions.BinaryExpression,System.Linq.Expressions.UnaryExpression,System.Linq.Expressions.Expression)">
   AdditionWithNegate(BinaryExpression, UnaryExpression, Expression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L914"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L1044"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Simplifies <code>(-left) + right</code> to <code>0</code> when both operands are equal.
@@ -787,7 +787,7 @@ protected Expression AdditionWithNegate(BinaryExpression e, UnaryExpression left
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionSimplifier_AdditionWithZero_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_ConstantExpression_System_Linq_Expressions_Expression_" data-uid="Utils.Mathematics.Expressions.ExpressionSimplifier.AdditionWithZero(System.Linq.Expressions.BinaryExpression,System.Linq.Expressions.ConstantExpression,System.Linq.Expressions.Expression)">
   AdditionWithZero(BinaryExpression, ConstantExpression, Expression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L752"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L843"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Simplifies <code>0 + right</code> to <code>right</code>.</p>
@@ -821,6 +821,9 @@ public Expression AdditionWithZero(BinaryExpression e, ConstantExpression left, 
 
 
 
+  <h4 class="section" id="Utils_Mathematics_Expressions_ExpressionSimplifier_AdditionWithZero_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_ConstantExpression_System_Linq_Expressions_Expression__remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>Declines when <code class="paramref">right</code> is a constant: see <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.binaryexpression">IsConstantPair(BinaryExpression)</a>.</p>
+</div>
 
 
 
@@ -829,7 +832,7 @@ public Expression AdditionWithZero(BinaryExpression e, ConstantExpression left, 
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionSimplifier_AdditionWithZero_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_Expression_System_Linq_Expressions_ConstantExpression_" data-uid="Utils.Mathematics.Expressions.ExpressionSimplifier.AdditionWithZero(System.Linq.Expressions.BinaryExpression,System.Linq.Expressions.Expression,System.Linq.Expressions.ConstantExpression)">
   AdditionWithZero(BinaryExpression, Expression, ConstantExpression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L741"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L831"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Simplifies <code>left + 0</code> to <code>left</code>.</p>
@@ -863,6 +866,9 @@ public Expression AdditionWithZero(BinaryExpression e, Expression left, Constant
 
 
 
+  <h4 class="section" id="Utils_Mathematics_Expressions_ExpressionSimplifier_AdditionWithZero_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_Expression_System_Linq_Expressions_ConstantExpression__remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>Declines when <code class="paramref">left</code> is a constant: see <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.binaryexpression">IsConstantPair(BinaryExpression)</a>.</p>
+</div>
 
 
 
@@ -1071,10 +1077,10 @@ protected Expression CoshConversionMath(Expression e, Expression[] expressions)<
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionSimplifier_DivideWithZero_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_ConstantExpression_System_Linq_Expressions_Expression_" data-uid="Utils.Mathematics.Expressions.ExpressionSimplifier.DivideWithZero(System.Linq.Expressions.BinaryExpression,System.Linq.Expressions.ConstantExpression,System.Linq.Expressions.Expression)">
   DivideWithZero(BinaryExpression, ConstantExpression, Expression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L839"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L954"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Simplifies <code>0 / x</code> to <code>0</code>.</p>
+  <div class="markdown level1 summary"><p>Simplifies <code>0 / x</code> to <code>0</code> for a non-constant <code>x</code>.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -1106,7 +1112,11 @@ public Expression DivideWithZero(BinaryExpression e, ConstantExpression left, Ex
 
 
   <h4 class="section" id="Utils_Mathematics_Expressions_ExpressionSimplifier_DivideWithZero_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_ConstantExpression_System_Linq_Expressions_Expression__remarks">Remarks</h4>
-  <div class="markdown level1 remarks"><p>Declines when <code class="paramref">right</code> is a non-finite constant: see <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">IsNonFiniteFloatingConstant(Expression)</a>.</p>
+  <div class="markdown level1 remarks"><p>Declines when <code class="paramref">right</code> is a constant, which <a class="xref" href="Utils.Mathematics.Expressions.ExpressionSimplifier.html#Utils_Mathematics_Expressions_ExpressionSimplifier_DivisionOfConstants_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_ConstantExpression_System_Linq_Expressions_ConstantExpression_">DivisionOfConstants(BinaryExpression, ConstantExpression, ConstantExpression)</a> then folds
+exactly (S5 P12): <code>0 / -3</code> is <code>-0</code>, <code>0 / 0.0</code> is <code>NaN</code> and <code>0 / inf</code> is <code>0</code>,
+whereas this identity returned the dividend (S5 P11 already declined on a non-finite constant). On a
+non-constant divisor it is the symbolic identity of the &quot;Symbolic-equivalence contract&quot; (the sign of the
+zero and a <code>NaN</code> for <code>x = 0</code> or <code>x = NaN</code> are not preserved).</p>
 </div>
 
 
@@ -1116,10 +1126,10 @@ public Expression DivideWithZero(BinaryExpression e, ConstantExpression left, Ex
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionSimplifier_DivideWithZeroOrOne_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_Expression_System_Linq_Expressions_ConstantExpression_" data-uid="Utils.Mathematics.Expressions.ExpressionSimplifier.DivideWithZeroOrOne(System.Linq.Expressions.BinaryExpression,System.Linq.Expressions.Expression,System.Linq.Expressions.ConstantExpression)">
   DivideWithZeroOrOne(BinaryExpression, Expression, ConstantExpression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L825"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L928"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Simplifies division by 0, 1, or -1 (throwing if 0).</p>
+  <div class="markdown level1 summary"><p>Simplifies division by 1 or -1, and throws on an integral or decimal zero divisor.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -1152,10 +1162,20 @@ public Expression DivideWithZeroOrOne(BinaryExpression e, Expression left, Const
 
   <h4 class="section" id="Utils_Mathematics_Expressions_ExpressionSimplifier_DivideWithZeroOrOne_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_Expression_System_Linq_Expressions_ConstantExpression__remarks">Remarks</h4>
   <div class="markdown level1 remarks"><p>Any other divisor, including <code>NaN</code>, an infinity or a value beyond the decimal range, leaves the node to
-the following rules (S5 P11; it threw <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.overflowexception">OverflowException</a> before). A <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">float</a> or
-<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a> zero divisor still throws <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.dividebyzeroexception">DivideByZeroException</a> although IEEE-754 division
-by zero yields an infinity or <code>NaN</code>: that historical behavior is recorded as a separate defect in the
-S5 P11 roadmap entry, not changed here.</p>
+the following rules (S5 P11; it threw <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.overflowexception">OverflowException</a> before). An integral or
+<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.decimal">decimal</a> zero divisor throws <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.dividebyzeroexception">DivideByZeroException</a>, as evaluating the node would.
+A <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.single">float</a> or <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double">double</a> zero divisor is declined instead (S5 P12; it threw before):
+IEEE-754 division by <code>±0</code> is defined (an infinity or <code>NaN</code>), so <a class="xref" href="Utils.Mathematics.Expressions.ExpressionSimplifier.html#Utils_Mathematics_Expressions_ExpressionSimplifier_DivisionOfConstants_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_ConstantExpression_System_Linq_Expressions_ConstantExpression_">DivisionOfConstants(BinaryExpression, ConstantExpression, ConstantExpression)</a>
+folds a constant dividend exactly and a non-constant dividend keeps the division node.</p>
+<p>
+The <code>±1</code> identities decline on a constant dividend, which <a class="xref" href="Utils.Mathematics.Expressions.ExpressionSimplifier.html#Utils_Mathematics_Expressions_ExpressionSimplifier_DivisionOfConstants_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_ConstantExpression_System_Linq_Expressions_ConstantExpression_">DivisionOfConstants(BinaryExpression, ConstantExpression, ConstantExpression)</a> folds to
+a constant of the node's type instead: <code>5 / -1</code> was left as the unevaluated <code>-(5)</code>, and
+<code>int.MinValue / -1</code> (or <code>long.MinValue / -1</code>) became <code>-(MinValue)</code>, which evaluates to
+<code>MinValue</code> where the source throws <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.overflowexception">OverflowException</a>; the fold throws it while simplifying,
+as a zero divisor does. On a non-constant dividend <code>x / -1 -&gt; -x</code> stays: it is exact in IEEE-754 and
+for decimals, but for <code>x = int.MinValue</code> (or <code>long.MinValue</code>) the negation wraps where the division
+throws, which the "Symbolic-equivalence contract" leaves open (overflow and exceptions are not preserved).
+</p>
 </div>
 
 
@@ -1165,7 +1185,7 @@ S5 P11 roadmap entry, not changed here.</p>
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionSimplifier_DivisionOfConstants_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_ConstantExpression_System_Linq_Expressions_ConstantExpression_" data-uid="Utils.Mathematics.Expressions.ExpressionSimplifier.DivisionOfConstants(System.Linq.Expressions.BinaryExpression,System.Linq.Expressions.ConstantExpression,System.Linq.Expressions.ConstantExpression)">
   DivisionOfConstants(BinaryExpression, ConstantExpression, ConstantExpression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L1544"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L1672"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Simplifies constant division <code>(a / b)</code> when both are numeric constants.</p>
@@ -1199,6 +1219,10 @@ protected Expression DivisionOfConstants(BinaryExpression e, ConstantExpression 
 
 
 
+  <h4 class="section" id="Utils_Mathematics_Expressions_ExpressionSimplifier_DivisionOfConstants_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_ConstantExpression_System_Linq_Expressions_ConstantExpression__remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>Folded by <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expressiontype">FoldConstants(ExpressionType, Type, object, object)</a> in the node's own type: an integral or decimal zero divisor and
+<code>int.MinValue / -1</code> throw as the compiled node would, and a floating-point division follows IEEE-754.</p>
+</div>
 
 
 
@@ -1253,7 +1277,7 @@ protected Expression DivisionOfCosAndSinNumber(Expression e, MethodCallExpressio
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionSimplifier_DivisionOfDivision_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_BinaryExpression_" data-uid="Utils.Mathematics.Expressions.ExpressionSimplifier.DivisionOfDivision(System.Linq.Expressions.BinaryExpression,System.Linq.Expressions.BinaryExpression,System.Linq.Expressions.BinaryExpression)">
   DivisionOfDivision(BinaryExpression, BinaryExpression, BinaryExpression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L1750"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L1878"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Simplifies nested divisions, e.g. <code>(x / y) / (z / w)</code> =&gt; <code>(x<em>w) / (y</em>z)</code>.</p>
@@ -1287,6 +1311,9 @@ protected Expression DivisionOfDivision(BinaryExpression e, BinaryExpression lef
 
 
 
+  <h4 class="section" id="Utils_Mathematics_Expressions_ExpressionSimplifier_DivisionOfDivision_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_BinaryExpression__remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>Declines when <code>y</code>, <code>z</code> or <code>w</code> is a zero constant: see <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.readonlyspan-1">IsZeroDivisorOutsideFieldDomain(params ReadOnlySpan&lt;Expression&gt;)</a>.</p>
+</div>
 
 
 
@@ -1295,7 +1322,7 @@ protected Expression DivisionOfDivision(BinaryExpression e, BinaryExpression lef
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionSimplifier_DivisionOfDivision_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_Expression_" data-uid="Utils.Mathematics.Expressions.ExpressionSimplifier.DivisionOfDivision(System.Linq.Expressions.BinaryExpression,System.Linq.Expressions.BinaryExpression,System.Linq.Expressions.Expression)">
   DivisionOfDivision(BinaryExpression, BinaryExpression, Expression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L1780"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L1912"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Simplifies nested divisions, e.g. <code>(x / y) / z</code> =&gt; <code>x / (y*z)</code>.</p>
@@ -1329,6 +1356,9 @@ protected Expression DivisionOfDivision(BinaryExpression e, BinaryExpression lef
 
 
 
+  <h4 class="section" id="Utils_Mathematics_Expressions_ExpressionSimplifier_DivisionOfDivision_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_Expression__remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>Declines when <code>y</code> or <code>z</code> is a zero constant: see <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.readonlyspan-1">IsZeroDivisorOutsideFieldDomain(params ReadOnlySpan&lt;Expression&gt;)</a>.</p>
+</div>
 
 
 
@@ -1337,7 +1367,7 @@ protected Expression DivisionOfDivision(BinaryExpression e, BinaryExpression lef
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionSimplifier_DivisionOfDivision_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_Expression_System_Linq_Expressions_BinaryExpression_" data-uid="Utils.Mathematics.Expressions.ExpressionSimplifier.DivisionOfDivision(System.Linq.Expressions.BinaryExpression,System.Linq.Expressions.Expression,System.Linq.Expressions.BinaryExpression)">
   DivisionOfDivision(BinaryExpression, Expression, BinaryExpression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L1766"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L1896"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Simplifies nested divisions, e.g. <code>x / (y / z)</code> =&gt; <code>(x*z) / y</code>.</p>
@@ -1371,6 +1401,9 @@ protected Expression DivisionOfDivision(BinaryExpression e, Expression left, Bin
 
 
 
+  <h4 class="section" id="Utils_Mathematics_Expressions_ExpressionSimplifier_DivisionOfDivision_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_Expression_System_Linq_Expressions_BinaryExpression__remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>Declines when <code>y</code> or <code>z</code> is a zero constant: see <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.readonlyspan-1">IsZeroDivisorOutsideFieldDomain(params ReadOnlySpan&lt;Expression&gt;)</a>.</p>
+</div>
 
 
 
@@ -1471,7 +1504,7 @@ protected Expression DivisionOfSinAndTanNumber(Expression e, MethodCallExpressio
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionSimplifier_DivisionWithNegate_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_Expression_System_Linq_Expressions_UnaryExpression_" data-uid="Utils.Mathematics.Expressions.ExpressionSimplifier.DivisionWithNegate(System.Linq.Expressions.BinaryExpression,System.Linq.Expressions.Expression,System.Linq.Expressions.UnaryExpression)">
   DivisionWithNegate(BinaryExpression, Expression, UnaryExpression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L1583"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L1710"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Rewrites <code>left / (-right)</code> as <code>-(left / right)</code>.</p>
@@ -1513,7 +1546,7 @@ protected Expression DivisionWithNegate(BinaryExpression e, Expression left, Una
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionSimplifier_DivisionWithNegate_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_UnaryExpression_System_Linq_Expressions_Expression_" data-uid="Utils.Mathematics.Expressions.ExpressionSimplifier.DivisionWithNegate(System.Linq.Expressions.BinaryExpression,System.Linq.Expressions.UnaryExpression,System.Linq.Expressions.Expression)">
   DivisionWithNegate(BinaryExpression, UnaryExpression, Expression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L1596"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L1723"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Rewrites <code>(-left) / right</code> as <code>-(left / right)</code>.</p>
@@ -1555,7 +1588,7 @@ protected Expression DivisionWithNegate(BinaryExpression e, UnaryExpression left
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionSimplifier_FinalizeExpression_System_Linq_Expressions_Expression_System_Linq_Expressions_Expression___" data-uid="Utils.Mathematics.Expressions.ExpressionSimplifier.FinalizeExpression(System.Linq.Expressions.Expression,System.Linq.Expressions.Expression[])">
   FinalizeExpression(Expression, Expression[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L1839"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L2012"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Called when no custom transformation method matches. In this partial class, it
@@ -1638,7 +1671,7 @@ protected Expression FloorConversionMath(Expression e, Expression[] expressions)
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionSimplifier_InvokeExpression_System_Linq_Expressions_InvocationExpression_" data-uid="Utils.Mathematics.Expressions.ExpressionSimplifier.InvokeExpression(System.Linq.Expressions.InvocationExpression)">
   InvokeExpression(InvocationExpression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L1817"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L1990"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Inlines or transforms an <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.invocationexpression">InvocationExpression</a> that calls a lambda
@@ -2061,7 +2094,7 @@ protected Expression MinConversionMath(Expression e, Expression[] expressions)</
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionSimplifier_Multiplication_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_BinaryExpression_" data-uid="Utils.Mathematics.Expressions.ExpressionSimplifier.Multiplication(System.Linq.Expressions.BinaryExpression,System.Linq.Expressions.BinaryExpression,System.Linq.Expressions.BinaryExpression)">
   Multiplication(BinaryExpression, BinaryExpression, BinaryExpression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L1523"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L1649"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Combines two multiply expressions if both have a constant factor,
@@ -2104,7 +2137,7 @@ protected Expression Multiplication(BinaryExpression e, BinaryExpression left, B
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionSimplifier_Multiplication_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_ConstantExpression_System_Linq_Expressions_BinaryExpression_" data-uid="Utils.Mathematics.Expressions.ExpressionSimplifier.Multiplication(System.Linq.Expressions.BinaryExpression,System.Linq.Expressions.ConstantExpression,System.Linq.Expressions.BinaryExpression)">
   Multiplication(BinaryExpression, ConstantExpression, BinaryExpression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L1501"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L1629"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Combines a constant with another multiply expression, e.g., <code>c * (c2 * rest)</code> =&gt; <code>(c*c2) * rest</code>.</p>
@@ -2146,7 +2179,7 @@ protected Expression Multiplication(BinaryExpression e, ConstantExpression left,
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionSimplifier_Multiplication_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_Expression_System_Linq_Expressions_ConstantExpression_" data-uid="Utils.Mathematics.Expressions.ExpressionSimplifier.Multiplication(System.Linq.Expressions.BinaryExpression,System.Linq.Expressions.Expression,System.Linq.Expressions.ConstantExpression)">
   Multiplication(BinaryExpression, Expression, ConstantExpression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L1491"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L1619"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Commutes <code>left * constant</code> to <code>constant * left</code> for consistent transformations.</p>
@@ -2188,7 +2221,7 @@ protected Expression Multiplication(BinaryExpression e, Expression left, Constan
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionSimplifier_MultiplicationOfConstants_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_ConstantExpression_System_Linq_Expressions_ConstantExpression_" data-uid="Utils.Mathematics.Expressions.ExpressionSimplifier.MultiplicationOfConstants(System.Linq.Expressions.BinaryExpression,System.Linq.Expressions.ConstantExpression,System.Linq.Expressions.ConstantExpression)">
   MultiplicationOfConstants(BinaryExpression, ConstantExpression, ConstantExpression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L1478"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L1607"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Simplifies constant multiplication <code>(a * b)</code> where both are numeric constants.</p>
@@ -2276,7 +2309,7 @@ protected Expression MultiplicationOfCosAndTanNumber(Expression e, MethodCallExp
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionSimplifier_MultiplicationOfEqualsElements_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_Expression_" data-uid="Utils.Mathematics.Expressions.ExpressionSimplifier.MultiplicationOfEqualsElements(System.Linq.Expressions.BinaryExpression,System.Linq.Expressions.BinaryExpression,System.Linq.Expressions.Expression)">
   MultiplicationOfEqualsElements(BinaryExpression, BinaryExpression, Expression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L1610"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L1737"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Distributes multiplication if one side is <code>(constant * part)</code>, e.g.,
@@ -2319,7 +2352,7 @@ protected Expression MultiplicationOfEqualsElements(BinaryExpression e, BinaryEx
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionSimplifier_MultiplicationOfEqualsElements_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_Expression_System_Linq_Expressions_BinaryExpression_" data-uid="Utils.Mathematics.Expressions.ExpressionSimplifier.MultiplicationOfEqualsElements(System.Linq.Expressions.BinaryExpression,System.Linq.Expressions.Expression,System.Linq.Expressions.BinaryExpression)">
   MultiplicationOfEqualsElements(BinaryExpression, Expression, BinaryExpression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L1645"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L1772"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Distributes multiplication if one side is <code>(constant * part)</code>, e.g.,
@@ -2362,7 +2395,7 @@ protected Expression MultiplicationOfEqualsElements(BinaryExpression e, Expressi
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionSimplifier_MultiplicationOfEqualsElements_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_Expression_System_Linq_Expressions_Expression_" data-uid="Utils.Mathematics.Expressions.ExpressionSimplifier.MultiplicationOfEqualsElements(System.Linq.Expressions.BinaryExpression,System.Linq.Expressions.Expression,System.Linq.Expressions.Expression)">
   MultiplicationOfEqualsElements(BinaryExpression, Expression, Expression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L1680"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L1807"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Attempts to combine exponent factors if they share a common base, e.g.
@@ -2451,7 +2484,7 @@ protected Expression MultiplicationOfTanAndCosNumber(Expression e, MethodCallExp
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionSimplifier_MultiplicationWithNegate_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_Expression_System_Linq_Expressions_UnaryExpression_" data-uid="Utils.Mathematics.Expressions.ExpressionSimplifier.MultiplicationWithNegate(System.Linq.Expressions.BinaryExpression,System.Linq.Expressions.Expression,System.Linq.Expressions.UnaryExpression)">
   MultiplicationWithNegate(BinaryExpression, Expression, UnaryExpression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L1557"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L1684"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Rewrites <code>left * (-right)</code> as <code>-(left * right)</code>.</p>
@@ -2493,7 +2526,7 @@ protected Expression MultiplicationWithNegate(BinaryExpression e, Expression lef
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionSimplifier_MultiplicationWithNegate_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_UnaryExpression_System_Linq_Expressions_Expression_" data-uid="Utils.Mathematics.Expressions.ExpressionSimplifier.MultiplicationWithNegate(System.Linq.Expressions.BinaryExpression,System.Linq.Expressions.UnaryExpression,System.Linq.Expressions.Expression)">
   MultiplicationWithNegate(BinaryExpression, UnaryExpression, Expression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L1570"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L1697"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Rewrites <code>(-left) * right</code> as <code>-(left * right)</code>.</p>
@@ -2535,7 +2568,7 @@ protected Expression MultiplicationWithNegate(BinaryExpression e, UnaryExpressio
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionSimplifier_MultiplicationWithZeroOrOne_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_ConstantExpression_System_Linq_Expressions_Expression_" data-uid="Utils.Mathematics.Expressions.ExpressionSimplifier.MultiplicationWithZeroOrOne(System.Linq.Expressions.BinaryExpression,System.Linq.Expressions.ConstantExpression,System.Linq.Expressions.Expression)">
   MultiplicationWithZeroOrOne(BinaryExpression, ConstantExpression, Expression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L805"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L898"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Simplifies multiplication by 0, 1, or -1 (e.g., <code>0 * x</code>, <code>1 * x</code>, <code>-1 * x</code>).</p>
@@ -2570,7 +2603,7 @@ public Expression MultiplicationWithZeroOrOne(BinaryExpression e, ConstantExpres
 
 
   <h4 class="section" id="Utils_Mathematics_Expressions_ExpressionSimplifier_MultiplicationWithZeroOrOne_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_ConstantExpression_System_Linq_Expressions_Expression__remarks">Remarks</h4>
-  <div class="markdown level1 remarks"><p>Declines when <code class="paramref">right</code> is a non-finite constant: see <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">IsNonFiniteFloatingConstant(Expression)</a>.</p>
+  <div class="markdown level1 remarks"><p>Declines when <code class="paramref">right</code> is a constant: see <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.binaryexpression">IsConstantPair(BinaryExpression)</a>.</p>
 </div>
 
 
@@ -2580,7 +2613,7 @@ public Expression MultiplicationWithZeroOrOne(BinaryExpression e, ConstantExpres
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionSimplifier_MultiplicationWithZeroOrOne_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_Expression_System_Linq_Expressions_ConstantExpression_" data-uid="Utils.Mathematics.Expressions.ExpressionSimplifier.MultiplicationWithZeroOrOne(System.Linq.Expressions.BinaryExpression,System.Linq.Expressions.Expression,System.Linq.Expressions.ConstantExpression)">
   MultiplicationWithZeroOrOne(BinaryExpression, Expression, ConstantExpression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L791"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L884"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Simplifies multiplication by 0, 1, or -1 (e.g., <code>x * 0</code> to 0, <code>x * 1</code> to <code>x</code>, etc.).</p>
@@ -2615,7 +2648,7 @@ public Expression MultiplicationWithZeroOrOne(BinaryExpression e, Expression lef
 
 
   <h4 class="section" id="Utils_Mathematics_Expressions_ExpressionSimplifier_MultiplicationWithZeroOrOne_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_Expression_System_Linq_Expressions_ConstantExpression__remarks">Remarks</h4>
-  <div class="markdown level1 remarks"><p>Declines when <code class="paramref">left</code> is a non-finite constant: see <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">IsNonFiniteFloatingConstant(Expression)</a>.</p>
+  <div class="markdown level1 remarks"><p>Declines when <code class="paramref">left</code> is a constant: see <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.binaryexpression">IsConstantPair(BinaryExpression)</a>.</p>
 </div>
 
 
@@ -2625,7 +2658,7 @@ public Expression MultiplicationWithZeroOrOne(BinaryExpression e, Expression lef
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionSimplifier_NegateWithSubstraction_System_Linq_Expressions_UnaryExpression_System_Linq_Expressions_BinaryExpression_" data-uid="Utils.Mathematics.Expressions.ExpressionSimplifier.NegateWithSubstraction(System.Linq.Expressions.UnaryExpression,System.Linq.Expressions.BinaryExpression)">
   NegateWithSubstraction(UnaryExpression, BinaryExpression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L952"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L1082"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Rewrites <code>-(left - right)</code> as <code>-right + left</code>.</p>
@@ -2665,7 +2698,7 @@ protected Expression NegateWithSubstraction(UnaryExpression e, BinaryExpression 
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionSimplifier_PowerByZeroOrOne_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_Expression_System_Linq_Expressions_ConstantExpression_" data-uid="Utils.Mathematics.Expressions.ExpressionSimplifier.PowerByZeroOrOne(System.Linq.Expressions.BinaryExpression,System.Linq.Expressions.Expression,System.Linq.Expressions.ConstantExpression)">
   PowerByZeroOrOne(BinaryExpression, Expression, ConstantExpression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L869"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L1000"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Simplifies <code>x^0</code> or <code>x^1</code> to <code>1</code> or <code>x</code> respectively.</p>
@@ -2704,6 +2737,15 @@ public Expression PowerByZeroOrOne(BinaryExpression e, Expression left, Constant
 (<code>NaN</code> or an infinity) is left to <a class="xref" href="Utils.Mathematics.Expressions.ExpressionSimplifier.html#Utils_Mathematics_Expressions_ExpressionSimplifier_PowerOfConstants_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_ConstantExpression_System_Linq_Expressions_ConstantExpression_">PowerOfConstants(BinaryExpression, ConstantExpression, ConstantExpression)</a> or kept as is (S5 P11; it threw
 <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.overflowexception">OverflowException</a> before), and an exponent is compared exactly, so <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double.epsilon">Epsilon</a>
 is no longer taken for zero (<code>x^Epsilon</code> was rewritten to <code>1</code>).</p>
+<p>
+Declines when <code class="paramref">left</code> is also a constant, which <a class="xref" href="Utils.Mathematics.Expressions.ExpressionSimplifier.html#Utils_Mathematics_Expressions_ExpressionSimplifier_PowerOfConstants_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_ConstantExpression_System_Linq_Expressions_ConstantExpression_">PowerOfConstants(BinaryExpression, ConstantExpression, ConstantExpression)</a> then folds
+exactly (S5 P13). The reciprocal rewrites <code>x^-1 -&gt; 1/x</code> and <code>x^-n -&gt; 1/x^n</code> are not
+bit-exact: <code>Pow(x, -n)</code> and <code>1 / Pow(x, n)</code> round independently (one unit in the last place on
+about a quarter of finite bases) and part ways where <code>x^n</code> overflows while <code>x^-n</code> is still a
+subnormal value. That is the rounding and overflow latitude of the "Symbolic-equivalence contract" for a
+symbolic base, but a constant base has an exact value, so it is folded instead (<code>2^-2</code> was left as the
+unevaluated <code>1 / 4</code>, and <code>0^-2</code> became <code>0</code> through <a class="xref" href="Utils.Mathematics.Expressions.ExpressionSimplifier.html#Utils_Mathematics_Expressions_ExpressionSimplifier_PowerOfZeroOrOne_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_ConstantExpression_System_Linq_Expressions_Expression_">PowerOfZeroOrOne(BinaryExpression, ConstantExpression, Expression)</a>).
+</p>
 </div>
 
 
@@ -2851,7 +2893,7 @@ protected Expression PowerConvertionNumber2(Expression e, Expression left, Expre
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionSimplifier_PowerOfConstants_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_ConstantExpression_System_Linq_Expressions_ConstantExpression_" data-uid="Utils.Mathematics.Expressions.ExpressionSimplifier.PowerOfConstants(System.Linq.Expressions.BinaryExpression,System.Linq.Expressions.ConstantExpression,System.Linq.Expressions.ConstantExpression)">
   PowerOfConstants(BinaryExpression, ConstantExpression, ConstantExpression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L1801"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L1974"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Simplifies power expressions when both base and exponent are numeric constants,
@@ -2894,10 +2936,10 @@ protected Expression PowerOfConstants(BinaryExpression e, ConstantExpression lef
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionSimplifier_PowerOfZeroOrOne_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_ConstantExpression_System_Linq_Expressions_Expression_" data-uid="Utils.Mathematics.Expressions.ExpressionSimplifier.PowerOfZeroOrOne(System.Linq.Expressions.BinaryExpression,System.Linq.Expressions.ConstantExpression,System.Linq.Expressions.Expression)">
   PowerOfZeroOrOne(BinaryExpression, ConstantExpression, Expression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L851"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L973"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Simplifies <code>0^x</code> or <code>1^x</code> to 0 or 1 respectively.</p>
+  <div class="markdown level1 summary"><p>Simplifies <code>0^x</code> or <code>1^x</code> to 0 or 1 respectively, for a non-constant <code>x</code>.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -2929,7 +2971,12 @@ public Expression PowerOfZeroOrOne(BinaryExpression e, ConstantExpression left, 
 
 
   <h4 class="section" id="Utils_Mathematics_Expressions_ExpressionSimplifier_PowerOfZeroOrOne_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_ConstantExpression_System_Linq_Expressions_Expression__remarks">Remarks</h4>
-  <div class="markdown level1 remarks"><p>Declines when <code class="paramref">right</code> is a non-finite constant: see <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">IsNonFiniteFloatingConstant(Expression)</a>.</p>
+  <div class="markdown level1 remarks"><p>Declines when <code class="paramref">right</code> is a constant, which <a class="xref" href="Utils.Mathematics.Expressions.ExpressionSimplifier.html#Utils_Mathematics_Expressions_ExpressionSimplifier_PowerOfConstants_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_ConstantExpression_System_Linq_Expressions_ConstantExpression_">PowerOfConstants(BinaryExpression, ConstantExpression, ConstantExpression)</a> then folds with
+<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.double.pow">Pow(double, double)</a> (S5 P13): <code>0^0</code> is <code>1</code>, <code>0^-1</code> is <code>+inf</code>,
+<code>(-0)^2</code> is <code>+0</code> and <code>(-0)^-3</code> is <code>-inf</code>, whereas this identity returned the base
+(S5 P11 already declined on a non-finite constant). On a non-constant exponent <code>0^x -&gt; 0</code> stays the
+domain-sensitive identity of the &quot;Symbolic-equivalence contract&quot; (valid for <code>x &gt; 0</code>; the sign of a
+<code>-0</code> base is not preserved).</p>
 </div>
 
 
@@ -2939,7 +2986,7 @@ public Expression PowerOfZeroOrOne(BinaryExpression e, ConstantExpression left, 
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionSimplifier_PrepareExpression_System_Linq_Expressions_Expression_" data-uid="Utils.Mathematics.Expressions.ExpressionSimplifier.PrepareExpression(System.Linq.Expressions.Expression)">
   PrepareExpression(Expression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L359"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L360"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Prepares an expression for transformation by calling <a class="xref" href="Utils.Expressions.ExpressionTransformer.html#Utils_Expressions_ExpressionTransformer_TransformCore_System_Linq_Expressions_Expression_">TransformCore(Expression)</a>
@@ -3071,7 +3118,7 @@ protected Expression SignConversionMath(Expression e, Expression[] expressions)<
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionSimplifier_Simplify_System_Linq_Expressions_Expression_" data-uid="Utils.Mathematics.Expressions.ExpressionSimplifier.Simplify(System.Linq.Expressions.Expression)">
   Simplify(Expression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L339"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L340"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Simplifies the given <code class="paramref">e</code> by calling <a class="xref" href="Utils.Mathematics.Expressions.ExpressionSimplifier.html#Utils_Mathematics_Expressions_ExpressionSimplifier_Transform_System_Linq_Expressions_Expression_">Transform(Expression)</a>.</p>
@@ -3237,7 +3284,7 @@ protected Expression SqrtConversionMath(Expression e, Expression[] expressions)<
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionSimplifier_SubstractionOfConstants_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_ConstantExpression_System_Linq_Expressions_ConstantExpression_" data-uid="Utils.Mathematics.Expressions.ExpressionSimplifier.SubstractionOfConstants(System.Linq.Expressions.BinaryExpression,System.Linq.Expressions.ConstantExpression,System.Linq.Expressions.ConstantExpression)">
   SubstractionOfConstants(BinaryExpression, ConstantExpression, ConstantExpression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L991"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L1121"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Simplifies constant subtraction <code>(a - b)</code> where both are numeric constants.</p>
@@ -3279,7 +3326,7 @@ protected Expression SubstractionOfConstants(BinaryExpression e, ConstantExpress
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionSimplifier_SubstractionOfEqualsElements_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_Expression_System_Linq_Expressions_Expression_" data-uid="Utils.Mathematics.Expressions.ExpressionSimplifier.SubstractionOfEqualsElements(System.Linq.Expressions.BinaryExpression,System.Linq.Expressions.Expression,System.Linq.Expressions.Expression)">
   SubstractionOfEqualsElements(BinaryExpression, Expression, Expression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L1392"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L1521"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Attempts to factor out common elements in <code>left - right</code> if possible.
@@ -3322,7 +3369,7 @@ protected Expression SubstractionOfEqualsElements(BinaryExpression e, Expression
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionSimplifier_SubstractionWithAddition_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_Expression_System_Linq_Expressions_BinaryExpression_" data-uid="Utils.Mathematics.Expressions.ExpressionSimplifier.SubstractionWithAddition(System.Linq.Expressions.BinaryExpression,System.Linq.Expressions.Expression,System.Linq.Expressions.BinaryExpression)">
   SubstractionWithAddition(BinaryExpression, Expression, BinaryExpression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L963"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L1093"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Simplifies <code>left - (right1 + right2)</code> to <code>(left - right1) - right2</code>.</p>
@@ -3364,7 +3411,7 @@ protected Expression SubstractionWithAddition(BinaryExpression e, Expression lef
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionSimplifier_SubstractionWithNegate_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_Expression_System_Linq_Expressions_UnaryExpression_" data-uid="Utils.Mathematics.Expressions.ExpressionSimplifier.SubstractionWithNegate(System.Linq.Expressions.BinaryExpression,System.Linq.Expressions.Expression,System.Linq.Expressions.UnaryExpression)">
   SubstractionWithNegate(BinaryExpression, Expression, UnaryExpression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L930"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L1060"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Rewrites <code>left - (-right)</code> as <code>left + right</code>.</p>
@@ -3406,7 +3453,7 @@ protected Expression SubstractionWithNegate(BinaryExpression e, Expression left,
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionSimplifier_SubstractionWithNegate_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_UnaryExpression_System_Linq_Expressions_Expression_" data-uid="Utils.Mathematics.Expressions.ExpressionSimplifier.SubstractionWithNegate(System.Linq.Expressions.BinaryExpression,System.Linq.Expressions.UnaryExpression,System.Linq.Expressions.Expression)">
   SubstractionWithNegate(BinaryExpression, UnaryExpression, Expression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L941"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L1071"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Rewrites <code>(-left) - right</code> as <code>-(left + right)</code>.</p>
@@ -3448,7 +3495,7 @@ protected Expression SubstractionWithNegate(BinaryExpression e, UnaryExpression 
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionSimplifier_SubstractionWithSubstraction_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_Expression_System_Linq_Expressions_BinaryExpression_" data-uid="Utils.Mathematics.Expressions.ExpressionSimplifier.SubstractionWithSubstraction(System.Linq.Expressions.BinaryExpression,System.Linq.Expressions.Expression,System.Linq.Expressions.BinaryExpression)">
   SubstractionWithSubstraction(BinaryExpression, Expression, BinaryExpression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L977"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L1107"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Simplifies <code>left - (right1 - right2)</code> to <code>(left + right2) - right1</code>.</p>
@@ -3490,7 +3537,7 @@ protected Expression SubstractionWithSubstraction(BinaryExpression e, Expression
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionSimplifier_SubstractionWithZero_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_ConstantExpression_System_Linq_Expressions_Expression_" data-uid="Utils.Mathematics.Expressions.ExpressionSimplifier.SubstractionWithZero(System.Linq.Expressions.BinaryExpression,System.Linq.Expressions.ConstantExpression,System.Linq.Expressions.Expression)">
   SubstractionWithZero(BinaryExpression, ConstantExpression, Expression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L779"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L872"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Simplifies <code>0 - right</code> to <code>-right</code>.</p>
@@ -3527,7 +3574,8 @@ public Expression SubstractionWithZero(BinaryExpression e, ConstantExpression le
   <h4 class="section" id="Utils_Mathematics_Expressions_ExpressionSimplifier_SubstractionWithZero_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_ConstantExpression_System_Linq_Expressions_Expression__remarks">Remarks</h4>
   <div class="markdown level1 remarks"><p>Not applied to a type without an ordinary unary negation (the unsigned integers), where
 <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression.negate#system-linq-expressions-expression-negate(system-linq-expressions-expression)">Negate(Expression)</a> would throw; <code>0 - right</code> is then already the simplest
-form and is also what <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expressiontype">CanonicalizeAdditiveExpression(ExpressionType, Expression, Expression)</a> produces for such a type (S5 P10).</p>
+form and is also what <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expressiontype">CanonicalizeAdditiveExpression(ExpressionType, Expression, Expression)</a> produces for such a type (S5 P10).
+Declines when <code class="paramref">right</code> is a constant: see <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.binaryexpression">IsConstantPair(BinaryExpression)</a>.</p>
 </div>
 
 
@@ -3537,7 +3585,7 @@ form and is also what <a class="xref" href="https://learn.microsoft.com/dotnet/a
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionSimplifier_SubstractionWithZero_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_Expression_System_Linq_Expressions_ConstantExpression_" data-uid="Utils.Mathematics.Expressions.ExpressionSimplifier.SubstractionWithZero(System.Linq.Expressions.BinaryExpression,System.Linq.Expressions.Expression,System.Linq.Expressions.ConstantExpression)">
   SubstractionWithZero(BinaryExpression, Expression, ConstantExpression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L763"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L855"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Simplifies <code>left - 0</code> to <code>left</code>.</p>
@@ -3571,6 +3619,9 @@ public Expression SubstractionWithZero(BinaryExpression e, Expression left, Cons
 
 
 
+  <h4 class="section" id="Utils_Mathematics_Expressions_ExpressionSimplifier_SubstractionWithZero_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_Expression_System_Linq_Expressions_ConstantExpression__remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>Declines when <code class="paramref">left</code> is a constant: see <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.binaryexpression">IsConstantPair(BinaryExpression)</a>.</p>
+</div>
 
 
 
@@ -3659,7 +3710,7 @@ protected Expression TanhConversionMath(Expression e, Expression[] expressions)<
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionSimplifier_Transform_System_Linq_Expressions_Expression_" data-uid="Utils.Mathematics.Expressions.ExpressionSimplifier.Transform(System.Linq.Expressions.Expression)">
   Transform(Expression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L96"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionSimplifier.cs/#L97"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>The exact built-in <a class="xref" href="Utils.Mathematics.Expressions.ExpressionSimplifier.html">ExpressionSimplifier</a> requires no extra preparation beyond
