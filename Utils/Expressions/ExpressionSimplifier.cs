@@ -1637,9 +1637,11 @@ namespace Utils.Mathematics.Expressions
         /// factoring itself (<c>a*x + b*x -&gt; (a + b)*x</c>) remains the symbolic identity of the
         /// "Symbolic-equivalence contract" and is unchanged. A decimal coefficient that overflows keeps its
         /// unevaluated node: the source terms may still evaluate (<c>decimal.MaxValue * x + decimal.MaxValue * x</c> is
-        /// <c>0</c> for <c>x = 0</c>), so simplifying must not throw. Any other coefficient (a parameter, a call, a
-        /// custom-operator node) is combined with the ordinary factory as before and is not simplified again, so no
-        /// user code runs and no comparer or rule dispatch is added.
+        /// <c>0</c> for <c>x = 0</c>), so simplifying must not throw. A pair of coefficients that holds at least two
+        /// constants through ordinary additive nodes has them summed by <see cref="AggregateFactoredCoefficient"/>
+        /// (<c>(5 + a) + 5 -&gt; 10 + a</c>). Any other coefficient (a parameter, a call, a custom-operator node) is
+        /// combined with the ordinary factory as before and is not simplified again, so no user code runs and no
+        /// comparer or rule dispatch is added.
         /// </para>
         /// <para>
         /// A folded coefficient of <c>0</c>, <c>1</c> or <c>-1</c> is handed to the existing
@@ -1650,18 +1652,56 @@ namespace Utils.Mathematics.Expressions
         /// </remarks>
         private Expression BuildFactoredProduct(ExpressionType nodeType, Expression leftCoefficient, Expression rightCoefficient, Expression factor)
         {
-            if (TryFoldFactoredCoefficient(nodeType, leftCoefficient, rightCoefficient) is ConstantExpression coefficient)
+            Expression coefficient = TryFoldFactoredCoefficient(nodeType, leftCoefficient, rightCoefficient)
+                ?? AggregateFactoredCoefficient(nodeType, leftCoefficient, rightCoefficient)
+                ?? (nodeType == ExpressionType.Add ? Expression.Add(leftCoefficient, rightCoefficient) : Expression.Subtract(leftCoefficient, rightCoefficient));
+
+            BinaryExpression product = Expression.Multiply(coefficient, factor);
+            return coefficient is ConstantExpression constant
+                && (NumericValueEquals(constant.Value, 0) || NumericValueEquals(constant.Value, 1) || NumericValueEquals(constant.Value, -1))
+                && MultiplicationWithZeroOrOne(product, constant, factor) is Expression identity
+                ? identity
+                : product;
+        }
+
+        /// <summary>
+        /// Builds the coefficient <c>leftCoefficient op rightCoefficient</c> of a factored sum with its numeric constants
+        /// summed, when the two coefficients hold at least two of them through ordinary additive nodes (S5 P14
+        /// follow-up).
+        /// </summary>
+        /// <param name="nodeType"><see cref="ExpressionType.Add"/> or <see cref="ExpressionType.Subtract"/>.</param>
+        /// <param name="leftCoefficient">The coefficient of the left term.</param>
+        /// <param name="rightCoefficient">The coefficient of the right term.</param>
+        /// <returns>The coefficient, or <see langword="null"/> when there is nothing to aggregate.</returns>
+        /// <remarks>
+        /// Repeated factoring with a non-constant coefficient (the J benchmark family) built
+        /// <c>((5 + a) + 5) + 6</c>: <see cref="TryFoldFactoredCoefficient"/> only folds a pair of constants. The terms
+        /// of both coefficients are collected (<see cref="CollectAdditiveTerms"/>, ordinary nodes only) and their
+        /// constants summed by <see cref="AggregateAdditiveConstants"/>, the mechanism the additive canonicalization
+        /// uses, with the same numeric rules; the other terms keep their order and are rebuilt by
+        /// <see cref="BuildAdditiveExpression"/>, so <c>(5 + a) + 5</c> gives <c>10 + a</c> and the next factoring
+        /// <c>16 + a</c>. A coefficient without two constants (the common case, checked first without allocating by
+        /// <see cref="CountAdditiveConstants"/>) is left to the ordinary factory, unchanged.
+        /// </remarks>
+        private Expression? AggregateFactoredCoefficient(ExpressionType nodeType, Expression leftCoefficient, Expression rightCoefficient)
+        {
+            Type type = leftCoefficient.Type;
+            if (rightCoefficient.Type != type || CountAdditiveConstants(rightCoefficient, type, CountAdditiveConstants(leftCoefficient, type, 0)) < 2)
             {
-                BinaryExpression product = Expression.Multiply(coefficient, factor);
-                return (NumericValueEquals(coefficient.Value, 0) || NumericValueEquals(coefficient.Value, 1) || NumericValueEquals(coefficient.Value, -1))
-                    && MultiplicationWithZeroOrOne(product, coefficient, factor) is Expression identity
-                    ? identity
-                    : product;
+                return null;
             }
 
-            return Expression.Multiply(
-                nodeType == ExpressionType.Add ? Expression.Add(leftCoefficient, rightCoefficient) : Expression.Subtract(leftCoefficient, rightCoefficient),
-                factor);
+            var terms = new List<(Expression Term, bool IsNegative)>(4);
+            CollectAdditiveTerms(terms, leftCoefficient, false);
+            CollectAdditiveTerms(terms, rightCoefficient, nodeType == ExpressionType.Subtract);
+            if (!AggregateAdditiveConstants(terms, type)) return null;
+
+            return terms.Count switch
+            {
+                0 => Expression.Constant(Convert.ChangeType(0, type), type),
+                1 when !terms[0].IsNegative => terms[0].Term,
+                _ => BuildAdditiveExpression(terms, type),
+            };
         }
 
         /// <summary>
@@ -2186,6 +2226,7 @@ namespace Utils.Mathematics.Expressions
             CollectAdditiveTerms(terms, left, false);
             CollectAdditiveTerms(terms, right, nodeType == ExpressionType.Subtract);
             terms.RemoveAll(static term => IsOrdinaryZeroConstant(term.Term));
+            AggregateAdditiveConstants(terms, left.Type);
 
             if (terms.Count == 0)
             {
@@ -2270,6 +2311,161 @@ namespace Utils.Mathematics.Expressions
             => term is ConstantExpression { Value: not null } constant
                 && Types.Number.Contains(constant.Type)
                 && NumericValueEquals(constant.Value, 0);
+
+        /// <summary>
+        /// Replaces the numeric constant terms of a collected additive chain by their sum (S5 P14 follow-up).
+        /// </summary>
+        /// <param name="terms">The signed terms of an ordinary additive chain of type <paramref name="type"/>; updated in place.</param>
+        /// <param name="type">The type of the chain, hence of every term.</param>
+        /// <returns><see langword="true"/> when at least two constants were aggregated.</returns>
+        /// <remarks>
+        /// <para>
+        /// Constants separated by other terms were never added: <c>(a + 5) + 6</c> canonicalized to
+        /// <c>5 + (6 + a)</c>, at every call. When the chain holds two or more constants of <paramref name="type"/>,
+        /// they are summed with <see cref="FoldConstants"/>, in collection order and with their signs, and the sum
+        /// takes the place of the first constant: <c>(a + 5) + 6 -&gt; 11 + a</c>, <c>(a - 5) + 3 -&gt; -2 + a</c>. A sum
+        /// equal to zero is dropped, as <see cref="IsOrdinaryZeroConstant"/> drops a zero term. The other terms keep
+        /// their order; nothing is compared, simplified or evaluated beyond the constants' own boxed primitives, so
+        /// no user code runs.
+        /// </para>
+        /// <para>
+        /// This regroups constants that the source adds at different places, so it is a reassociation, not the
+        /// folding of an existing node. It is exact for the integral types (unchecked modular arithmetic is
+        /// associative). For <see cref="float"/> and <see cref="double"/> it is the reassociation latitude of the
+        /// "Symbolic-equivalence contract": <c>(a + 1e16) + 1</c> becomes <c>1.0000000000000002E+16 + a</c>, which rounds
+        /// differently for some <c>a</c>, and <c>(a + 1e308) + 1e308</c> becomes <c>inf + a</c>, which is <c>inf</c>
+        /// where the source can still be finite (for <c>a = -1e308</c>); constant <c>NaN</c> and infinities combine
+        /// with IEEE-754 rules (<c>inf - inf</c> is <c>NaN</c>, as the source gives whatever <c>a</c> is). For
+        /// <see cref="decimal"/>, whose addition throws on overflow, an overflowing sum leaves the terms unchanged:
+        /// <c>(decimal.MaxValue + a) + 1m</c> evaluates for a negative <c>a</c>, so simplifying must not throw. For an
+        /// unsigned type the sign is kept separately (positives and negatives are summed apart and the smaller is
+        /// subtracted from the larger), so <c>(a - 5u) + 3u</c> gives <c>a - 2u</c>, not <c>4294967294 + a</c>.
+        /// </para>
+        /// </remarks>
+        private static bool AggregateAdditiveConstants(List<(Expression Term, bool IsNegative)> terms, Type type)
+        {
+            int firstConstant = -1;
+            int constantCount = 0;
+            for (int index = 0; index < terms.Count; index++)
+            {
+                if (IsAggregatableConstant(terms[index].Term, type))
+                {
+                    if (firstConstant < 0) firstConstant = index;
+                    constantCount++;
+                }
+            }
+
+            if (constantCount < 2 || !TrySumConstants(terms, type, out object? sum, out bool sumIsNegative)) return false;
+
+            int kept = 0;
+            for (int index = 0; index < terms.Count; index++)
+            {
+                if (index == firstConstant)
+                {
+                    if (!NumericValueEquals(sum, 0)) terms[kept++] = (Expression.Constant(sum), sumIsNegative);
+                }
+                else if (!IsAggregatableConstant(terms[index].Term, type))
+                {
+                    terms[kept++] = terms[index];
+                }
+            }
+
+            terms.RemoveRange(kept, terms.Count - kept);
+            return true;
+        }
+
+        /// <summary>Determines whether <paramref name="term"/> is a numeric constant of <paramref name="type"/> that <see cref="AggregateAdditiveConstants"/> may combine.</summary>
+        /// <param name="term">A collected additive term.</param>
+        /// <param name="type">The type of the chain.</param>
+        /// <returns><see langword="true"/> for a non-null constant of exactly <paramref name="type"/>, a <see cref="Types.Number"/> type.</returns>
+        private static bool IsAggregatableConstant(Expression term, Type type)
+            => term is ConstantExpression { Value: not null } constant
+                && constant.Type == type
+                && Types.Number.Contains(type);
+
+        /// <summary>Sums the constant terms of <paramref name="terms"/> with their signs, in order.</summary>
+        /// <param name="terms">The signed terms.</param>
+        /// <param name="type">The type of the chain.</param>
+        /// <param name="sum">Receives the sum (its magnitude for an unsigned type).</param>
+        /// <param name="sumIsNegative">Receives whether the sum is to be subtracted (unsigned types only).</param>
+        /// <returns><see langword="false"/> when a decimal sum overflows or the type has no ordinary addition.</returns>
+        private static bool TrySumConstants(List<(Expression Term, bool IsNegative)> terms, Type type, out object? sum, out bool sumIsNegative)
+        {
+            sum = null;
+            sumIsNegative = false;
+            bool unsigned = Types.UnsignedNumber.Contains(type);
+
+            // A running total starts at the first constant of its sign (null until then), so no zero is boxed or
+            // added; a signed type keeps a single total, an unsigned type one per sign.
+            object? positive = null;
+            object? negative = null;
+            try
+            {
+                foreach ((Expression term, bool isNegative) in terms)
+                {
+                    if (!IsAggregatableConstant(term, type)) continue;
+                    object value = ((ConstantExpression)term).Value!;
+                    if (unsigned && isNegative)
+                    {
+                        negative = negative is null ? value : FoldConstants(ExpressionType.Add, type, negative, value)?.Value;
+                        if (negative is null) return false;
+                    }
+                    else if (positive is null && !isNegative)
+                    {
+                        positive = value;
+                    }
+                    else
+                    {
+                        positive = FoldConstants(isNegative ? ExpressionType.Subtract : ExpressionType.Add, type, positive ?? Convert.ChangeType(0, type), value)?.Value;
+                        if (positive is null) return false;
+                    }
+                }
+
+                if (!unsigned || negative is null)
+                {
+                    sum = positive;
+                    return sum is not null;
+                }
+
+                if (positive is null)
+                {
+                    sumIsNegative = true;
+                    sum = negative;
+                    return true;
+                }
+
+                // Unsigned: subtract the smaller total from the larger one and keep the sign as the term's sign.
+                sumIsNegative = ((IComparable)negative).CompareTo(positive) > 0;
+                sum = sumIsNegative
+                    ? FoldConstants(ExpressionType.Subtract, type, negative, positive)?.Value
+                    : FoldConstants(ExpressionType.Subtract, type, positive, negative)?.Value;
+                return sum is not null;
+            }
+            catch (OverflowException)
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Counts, up to two, the numeric constants of <paramref name="type"/> reachable from <paramref name="expression"/>
+        /// through ordinary additions, subtractions and negations, without allocating.
+        /// </summary>
+        /// <param name="expression">A coefficient of a factored sum.</param>
+        /// <param name="type">The coefficient type.</param>
+        /// <param name="count">The running count.</param>
+        /// <returns>The updated count, capped at two.</returns>
+        private static int CountAdditiveConstants(Expression expression, Type type, int count)
+        {
+            if (count >= 2) return count;
+            return expression switch
+            {
+                BinaryExpression { NodeType: ExpressionType.Add or ExpressionType.Subtract } binary when IsOrdinaryBinaryArithmetic(binary)
+                    => CountAdditiveConstants(binary.Right, type, CountAdditiveConstants(binary.Left, type, count)),
+                UnaryExpression unary when IsOrdinaryUnaryNegate(unary) => CountAdditiveConstants(unary.Operand, type, count),
+                _ => IsAggregatableConstant(expression, type) ? count + 1 : count,
+            };
+        }
 
         /// <summary>
         /// Copies one additive group's signed terms, in order, into <paramref name="signedTerms"/>, leaving out the

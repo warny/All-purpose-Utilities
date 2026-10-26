@@ -354,8 +354,9 @@ public class ExpressionSimplifierFactoringCoefficientTests
     // ------------------------------------------------------------------------------------------
 
     /// <summary>
-    /// Non-constant coefficients keep the existing factoring and are not simplified again (controls):
-    /// <c>a*x + b*x -&gt; (a + b)*x</c>, <c>a*x + 3*x -&gt; (a + 3)*x</c>, <c>(a + 2)*x + 3*x -&gt; ((2 + a) + 3)*x</c>.
+    /// Non-constant coefficients without two constants keep the existing factoring and are not simplified again
+    /// (controls): <c>a*x + b*x -&gt; (a + b)*x</c>, <c>a*x + 3*x -&gt; (a + 3)*x</c>. Coefficients holding two
+    /// constants, such as <c>(a + 2)*x + 3*x</c>, are covered by <c>ExpressionSimplifierAdditiveConstantAggregationTests</c>.
     /// </summary>
     [TestMethod]
     public void Simplify_OpaqueCoefficients_KeepExistingFactoring()
@@ -365,7 +366,6 @@ public class ExpressionSimplifierFactoringCoefficientTests
         ParameterExpression b = Expression.Parameter(typeof(double), "b");
         Assert.AreEqual("((a + b) * x)", Simplify(Expression.Add(Expression.Multiply(a, x), Expression.Multiply(b, x))).ToString());
         Assert.AreEqual("((a + 3) * x)", Simplify(Expression.Add(Expression.Multiply(a, x), Term(3, x))).ToString());
-        Assert.AreEqual("(((2 + a) + 3) * x)", Simplify(Expression.Add(Expression.Multiply(Expression.Add(a, Expression.Constant(2.0)), x), Term(3, x))).ToString());
     }
 
     /// <summary>
