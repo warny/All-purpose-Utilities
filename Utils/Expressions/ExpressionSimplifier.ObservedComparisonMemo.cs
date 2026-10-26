@@ -136,6 +136,54 @@ namespace Utils.Mathematics.Expressions
             memo.TryAdd(key, result);
         }
 
+        /// <summary>The node kinds an observed memo key accepts.</summary>
+        private enum ObservedNodeKind
+        {
+            /// <summary>A <see cref="ParameterExpression"/>.</summary>
+            Parameter,
+            /// <summary>A <see cref="ConstantExpression"/>.</summary>
+            Constant,
+            /// <summary>A <see cref="UnaryExpression"/>.</summary>
+            Unary,
+            /// <summary>A <see cref="BinaryExpression"/>.</summary>
+            Binary,
+            /// <summary>A <see cref="MethodCallExpression"/>.</summary>
+            Call,
+            /// <summary>A <see cref="MemberExpression"/>.</summary>
+            Member,
+        }
+
+        /// <summary>Hashes one node of a known kind for an observed memo key.</summary>
+        /// <param name="expression">The node, of the handler's kind.</param>
+        /// <param name="budget">The remaining per-path node budget.</param>
+        /// <param name="hash">The node hash.</param>
+        /// <returns><see langword="true"/> when the node and its subtree are eligible.</returns>
+        private delegate bool ObservedHashHandler(Expression expression, ref int budget, out int hash);
+
+        /// <summary>Strictly compares two nodes of the same known kind.</summary>
+        /// <param name="x">The first node.</param>
+        /// <param name="y">The second node.</param>
+        /// <returns><see langword="true"/> when both nodes are strictly identical.</returns>
+        private delegate bool ObservedEqualityHandler(Expression x, Expression y);
+
+        /// <summary>
+        /// Classifies a node by type tests only. The built-in node classes cannot be derived outside the framework, and a
+        /// type test never runs a virtual member, so an extension node (whose <see cref="Expression.NodeType"/> and
+        /// <see cref="Expression.Type"/> are user code) is rejected without running any of its code.
+        /// </summary>
+        /// <param name="expression">The node.</param>
+        /// <returns>The node kind, or <see langword="null"/> for any other node.</returns>
+        private static ObservedNodeKind? ClassifyObservedNode(Expression expression) => expression switch
+        {
+            ParameterExpression => ObservedNodeKind.Parameter,
+            ConstantExpression => ObservedNodeKind.Constant,
+            UnaryExpression => ObservedNodeKind.Unary,
+            BinaryExpression => ObservedNodeKind.Binary,
+            MethodCallExpression => ObservedNodeKind.Call,
+            MemberExpression => ObservedNodeKind.Member,
+            _ => null,
+        };
+
         /// <summary>A strict structural key of the observed memo: the operand plus its precomputed strict hash.</summary>
         private readonly struct ObservedComparisonMemoKey
         {
@@ -185,53 +233,119 @@ namespace Utils.Mathematics.Expressions
                 if (expression is null) return true;
                 if (--budget < 0) return false;
 
-                switch (expression)
+                return ClassifyObservedNode(expression) is ObservedNodeKind kind
+                    && HashHandlers[kind](expression, ref budget, out hash);
+            }
+
+            /// <summary>
+            /// The node hashers of <see cref="TryHash"/>, one per accepted node kind (dictionary dispatch, AGENTS.md).
+            /// The delegates are created once; a handler receives a node of its kind.
+            /// </summary>
+            private static readonly Dictionary<ObservedNodeKind, ObservedHashHandler> HashHandlers = new()
+            {
+                [ObservedNodeKind.Parameter] = HashParameter,
+                [ObservedNodeKind.Constant] = HashConstantNode,
+                [ObservedNodeKind.Unary] = HashUnary,
+                [ObservedNodeKind.Binary] = HashBinary,
+                [ObservedNodeKind.Call] = HashCall,
+                [ObservedNodeKind.Member] = HashMember,
+            };
+
+            /// <summary>Hashes a parameter by reference identity; a by-reference parameter is ineligible.</summary>
+            /// <param name="expression">A <see cref="ParameterExpression"/>.</param>
+            /// <param name="budget">The remaining per-path node budget (unused: a leaf).</param>
+            /// <param name="hash">The node hash.</param>
+            /// <returns><see langword="true"/> when the parameter is eligible.</returns>
+            private static bool HashParameter(Expression expression, ref int budget, out int hash)
+            {
+                var parameter = (ParameterExpression)expression;
+                hash = HashCode.Combine(ExpressionType.Parameter, RuntimeHelpers.GetHashCode(parameter));
+                return !parameter.IsByRef;
+            }
+
+            /// <summary>Hashes a constant node: declared type and value hash (see <see cref="TryHashConstant"/>).</summary>
+            /// <param name="expression">A <see cref="ConstantExpression"/>.</param>
+            /// <param name="budget">The remaining per-path node budget (unused: a leaf).</param>
+            /// <param name="hash">The node hash.</param>
+            /// <returns><see langword="true"/> when the constant is eligible.</returns>
+            private static bool HashConstantNode(Expression expression, ref int budget, out int hash)
+            {
+                var constant = (ConstantExpression)expression;
+                bool eligible = TryHashConstant(constant, out int valueHash);
+                hash = HashCode.Combine(ExpressionType.Constant, constant.Type, valueHash);
+                return eligible;
+            }
+
+            /// <summary>
+            /// Hashes a built-in unary node; quotes, throws, an absent operand and a user-defined operator method are
+            /// ineligible.
+            /// </summary>
+            /// <param name="expression">A <see cref="UnaryExpression"/>.</param>
+            /// <param name="budget">The remaining per-path node budget.</param>
+            /// <param name="hash">The node hash.</param>
+            /// <returns><see langword="true"/> when the node and its operand are eligible.</returns>
+            private static bool HashUnary(Expression expression, ref int budget, out int hash)
+            {
+                var unary = (UnaryExpression)expression;
+                hash = 0;
+                if (unary.NodeType is ExpressionType.Quote or ExpressionType.Throw || unary.Operand is null || unary.Method is not null) return false;
+                if (!TryHash(unary.Operand, ref budget, out int operandHash)) return false;
+                hash = HashCode.Combine(unary.NodeType, unary.Type, unary.Method, unary.IsLiftedToNull, operandHash);
+                return true;
+            }
+
+            /// <summary>Hashes a built-in binary node; a conversion lambda or a user-defined operator method is ineligible.</summary>
+            /// <param name="expression">A <see cref="BinaryExpression"/>.</param>
+            /// <param name="budget">The remaining per-path node budget.</param>
+            /// <param name="hash">The node hash.</param>
+            /// <returns><see langword="true"/> when the node and its operands are eligible.</returns>
+            private static bool HashBinary(Expression expression, ref int budget, out int hash)
+            {
+                var binary = (BinaryExpression)expression;
+                hash = 0;
+                if (binary.Conversion is not null || binary.Method is not null) return false;
+                if (!TryHash(binary.Left, ref budget, out int leftHash)) return false;
+                if (!TryHash(binary.Right, ref budget, out int rightHash)) return false;
+                hash = HashCode.Combine(binary.NodeType, binary.Type, binary.Method, binary.IsLiftedToNull, leftHash, rightHash);
+                return true;
+            }
+
+            /// <summary>Hashes a method call: method, receiver (absent for a static call) and ordered arguments.</summary>
+            /// <param name="expression">A <see cref="MethodCallExpression"/>.</param>
+            /// <param name="budget">The remaining per-path node budget.</param>
+            /// <param name="hash">The node hash.</param>
+            /// <returns><see langword="true"/> when the receiver and every argument are eligible.</returns>
+            private static bool HashCall(Expression expression, ref int budget, out int hash)
+            {
+                var call = (MethodCallExpression)expression;
+                hash = 0;
+                if (!TryHash(call.Object, ref budget, out int objectHash)) return false;
+                var callHash = new HashCode();
+                callHash.Add(ExpressionType.Call);
+                callHash.Add(call.Method);
+                callHash.Add(objectHash);
+                for (int i = 0; i < call.Arguments.Count; i++)
                 {
-                    case ParameterExpression parameter:
-                        if (parameter.IsByRef) return false;
-                        hash = HashCode.Combine(ExpressionType.Parameter, RuntimeHelpers.GetHashCode(parameter));
-                        return true;
-
-                    case ConstantExpression constant:
-                        if (!TryHashConstant(constant, out int valueHash)) return false;
-                        hash = HashCode.Combine(ExpressionType.Constant, constant.Type, valueHash);
-                        return true;
-
-                    case UnaryExpression unary:
-                        if (unary.NodeType is ExpressionType.Quote or ExpressionType.Throw || unary.Operand is null || unary.Method is not null) return false;
-                        if (!TryHash(unary.Operand, ref budget, out int operandHash)) return false;
-                        hash = HashCode.Combine(unary.NodeType, unary.Type, unary.Method, unary.IsLiftedToNull, operandHash);
-                        return true;
-
-                    case BinaryExpression binary:
-                        if (binary.Conversion is not null || binary.Method is not null) return false;
-                        if (!TryHash(binary.Left, ref budget, out int leftHash)) return false;
-                        if (!TryHash(binary.Right, ref budget, out int rightHash)) return false;
-                        hash = HashCode.Combine(binary.NodeType, binary.Type, binary.Method, binary.IsLiftedToNull, leftHash, rightHash);
-                        return true;
-
-                    case MethodCallExpression call:
-                        if (!TryHash(call.Object, ref budget, out int objectHash)) return false;
-                        var callHash = new HashCode();
-                        callHash.Add(ExpressionType.Call);
-                        callHash.Add(call.Method);
-                        callHash.Add(objectHash);
-                        for (int i = 0; i < call.Arguments.Count; i++)
-                        {
-                            if (!TryHash(call.Arguments[i], ref budget, out int argumentHash)) return false;
-                            callHash.Add(argumentHash);
-                        }
-                        hash = callHash.ToHashCode();
-                        return true;
-
-                    case MemberExpression member:
-                        if (!TryHash(member.Expression, ref budget, out int ownerHash)) return false;
-                        hash = HashCode.Combine(ExpressionType.MemberAccess, member.Type, member.Member, ownerHash);
-                        return true;
-
-                    default:
-                        return false;
+                    if (!TryHash(call.Arguments[i], ref budget, out int argumentHash)) return false;
+                    callHash.Add(argumentHash);
                 }
+
+                hash = callHash.ToHashCode();
+                return true;
+            }
+
+            /// <summary>Hashes a member access: type, member and owner (absent for a static member).</summary>
+            /// <param name="expression">A <see cref="MemberExpression"/>.</param>
+            /// <param name="budget">The remaining per-path node budget.</param>
+            /// <param name="hash">The node hash.</param>
+            /// <returns><see langword="true"/> when the owner is eligible.</returns>
+            private static bool HashMember(Expression expression, ref int budget, out int hash)
+            {
+                var member = (MemberExpression)expression;
+                hash = 0;
+                if (!TryHash(member.Expression, ref budget, out int ownerHash)) return false;
+                hash = HashCode.Combine(ExpressionType.MemberAccess, member.Type, member.Member, ownerHash);
+                return true;
             }
 
             /// <summary>
@@ -295,47 +409,73 @@ namespace Utils.Mathematics.Expressions
                 if (x is null || y is null) return false;
                 if (x.NodeType != y.NodeType || x.Type != y.Type) return false;
 
-                switch (x)
+                // Equal node types of built-in nodes imply the same node class, hence the same kind for y.
+                return ClassifyObservedNode(x) is ObservedNodeKind kind
+                    && ClassifyObservedNode(y) == kind
+                    && EqualityHandlers[kind](x, y);
+            }
+
+            /// <summary>
+            /// The node comparers of <see cref="StrictEquals"/>, one per accepted node kind (dictionary dispatch,
+            /// AGENTS.md). The delegates are created once; a handler receives two nodes of its kind.
+            /// </summary>
+            private static readonly Dictionary<ObservedNodeKind, ObservedEqualityHandler> EqualityHandlers = new()
+            {
+                [ObservedNodeKind.Parameter] = static (_, _) => false,
+                [ObservedNodeKind.Constant] = static (x, y) => ConstantValuesEqual(((ConstantExpression)x).Value, ((ConstantExpression)y).Value),
+                [ObservedNodeKind.Unary] = UnaryEquals,
+                [ObservedNodeKind.Binary] = BinaryEquals,
+                [ObservedNodeKind.Call] = CallEquals,
+                [ObservedNodeKind.Member] = static (x, y) => ((MemberExpression)x).Member == ((MemberExpression)y).Member
+                    && StrictEquals(((MemberExpression)x).Expression, ((MemberExpression)y).Expression),
+            };
+
+            /// <summary>Compares two unary nodes: method, lifting flags and operand.</summary>
+            /// <param name="x">The first node.</param>
+            /// <param name="y">The second node.</param>
+            /// <returns><see langword="true"/> when both nodes are strictly identical.</returns>
+            private static bool UnaryEquals(Expression x, Expression y)
+            {
+                var xu = (UnaryExpression)x;
+                var yu = (UnaryExpression)y;
+                return xu.Method == yu.Method
+                    && xu.IsLifted == yu.IsLifted
+                    && xu.IsLiftedToNull == yu.IsLiftedToNull
+                    && StrictEquals(xu.Operand, yu.Operand);
+            }
+
+            /// <summary>Compares two binary nodes: method, lifting flags, absent conversion and ordered operands.</summary>
+            /// <param name="x">The first node.</param>
+            /// <param name="y">The second node.</param>
+            /// <returns><see langword="true"/> when both nodes are strictly identical.</returns>
+            private static bool BinaryEquals(Expression x, Expression y)
+            {
+                var xb = (BinaryExpression)x;
+                var yb = (BinaryExpression)y;
+                return xb.Method == yb.Method
+                    && xb.IsLifted == yb.IsLifted
+                    && xb.IsLiftedToNull == yb.IsLiftedToNull
+                    && xb.Conversion is null && yb.Conversion is null
+                    && StrictEquals(xb.Left, yb.Left)
+                    && StrictEquals(xb.Right, yb.Right);
+            }
+
+            /// <summary>Compares two method calls: method, receiver and ordered arguments.</summary>
+            /// <param name="x">The first call.</param>
+            /// <param name="y">The second call.</param>
+            /// <returns><see langword="true"/> when both calls are strictly identical.</returns>
+            private static bool CallEquals(Expression x, Expression y)
+            {
+                var xm = (MethodCallExpression)x;
+                var ym = (MethodCallExpression)y;
+                if (xm.Method != ym.Method || xm.Arguments.Count != ym.Arguments.Count) return false;
+                if (!StrictEquals(xm.Object, ym.Object)) return false;
+                for (int i = 0; i < xm.Arguments.Count; i++)
                 {
-                    case ParameterExpression:
-                        return false;
-
-                    case ConstantExpression xc:
-                        return ConstantValuesEqual(xc.Value, ((ConstantExpression)y).Value);
-
-                    case UnaryExpression xu:
-                        UnaryExpression yu = (UnaryExpression)y;
-                        return xu.Method == yu.Method
-                            && xu.IsLifted == yu.IsLifted
-                            && xu.IsLiftedToNull == yu.IsLiftedToNull
-                            && StrictEquals(xu.Operand, yu.Operand);
-
-                    case BinaryExpression xb:
-                        BinaryExpression yb = (BinaryExpression)y;
-                        return xb.Method == yb.Method
-                            && xb.IsLifted == yb.IsLifted
-                            && xb.IsLiftedToNull == yb.IsLiftedToNull
-                            && xb.Conversion is null && yb.Conversion is null
-                            && StrictEquals(xb.Left, yb.Left)
-                            && StrictEquals(xb.Right, yb.Right);
-
-                    case MethodCallExpression xm:
-                        MethodCallExpression ym = (MethodCallExpression)y;
-                        if (xm.Method != ym.Method || xm.Arguments.Count != ym.Arguments.Count) return false;
-                        if (!StrictEquals(xm.Object, ym.Object)) return false;
-                        for (int i = 0; i < xm.Arguments.Count; i++)
-                        {
-                            if (!StrictEquals(xm.Arguments[i], ym.Arguments[i])) return false;
-                        }
-                        return true;
-
-                    case MemberExpression xa:
-                        MemberExpression ya = (MemberExpression)y;
-                        return xa.Member == ya.Member && StrictEquals(xa.Expression, ya.Expression);
-
-                    default:
-                        return false;
+                    if (!StrictEquals(xm.Arguments[i], ym.Arguments[i])) return false;
                 }
+
+                return true;
             }
 
             /// <summary>
