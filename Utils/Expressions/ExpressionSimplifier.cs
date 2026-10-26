@@ -39,6 +39,26 @@ namespace Utils.Mathematics.Expressions
     /// pass such expressions through this simplifier.
     /// </para>
     /// <para>
+    /// <b>Algebraic simplification, not runtime observational equivalence.</b> This class is an algebraic
+    /// simplifier and is not required to preserve the runtime side effects of the expressions it rewrites. For
+    /// example <c>0 * (4 + Function()) -&gt; 0</c> and <c>0 * (4 * Function()) -&gt; 0</c> are both intentional
+    /// (<see cref="MultiplicationWithZeroOrOne(BinaryExpression, ConstantExpression, Expression)"/>): the call to
+    /// <c>Function()</c> disappears from the simplified tree, so its side effects no longer happen and an exception
+    /// it would throw is no longer thrown. The same holds for any rule that discards a sub-expression, such as
+    /// <c>2 * Function() + (-2) * Function() -&gt; 0</c> through factoring. Symbolic equivalence means equality as
+    /// mathematical expressions over the identity's domain, not identical observable behavior when the trees run;
+    /// for floating-point arithmetic the symbolic identities are not necessarily bit-exact either, and may differ for
+    /// <c>NaN</c>, infinities or signed zeros (<c>x * 0 -&gt; 0</c> is <c>0</c> where the source gives <c>NaN</c>
+    /// for an infinite <c>x</c>). The simplifier itself never runs user code while simplifying (see the factor
+    /// comparison remarks), but the expression it returns may run less of it.
+    /// </para>
+    /// <para>
+    /// The <c>NaN</c> propagation of S5 P11 (<see cref="FoldNaNOperand"/>) is deliberately stricter: it only drops
+    /// an operand that <see cref="IsEliminableFloatingOperand"/> proves free of effects and exceptions. That is a
+    /// restriction chosen for that one transformation, not a promise that the other algebraic rules preserve side
+    /// effects or exceptions.
+    /// </para>
+    /// <para>
     /// <b>Domain-sensitive identities.</b> Rules with a mathematical precondition are valid only on their
     /// common domain. <c>Log(x) + Log(y) -&gt; Log(x*y)</c> (and the <c>Log10</c>/subtraction variants)
     /// assume <c>x</c> and <c>y</c> lie in the supported positive finite real domain; power identities such
