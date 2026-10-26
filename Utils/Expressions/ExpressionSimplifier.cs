@@ -1871,12 +1871,14 @@ namespace Utils.Mathematics.Expressions
         /// <summary>
         /// Simplifies nested divisions, e.g. <c>(x / y) / (z / w)</c> =&gt; <c>(x*w) / (y*z)</c>.
         /// </summary>
+        /// <remarks>Declines when <c>y</c>, <c>z</c> or <c>w</c> is a zero constant: see <see cref="IsZeroDivisorOutsideFieldDomain"/>.</remarks>
         [ExpressionSignature(ExpressionType.Divide)]
         protected Expression DivisionOfDivision(BinaryExpression e,
             [ExpressionSignature(ExpressionType.Divide)] BinaryExpression left,
             [ExpressionSignature(ExpressionType.Divide)] BinaryExpression right)
         {
-            if (!IsOrdinaryFieldDivision(e) || !IsOrdinaryFieldDivision(left) || !IsOrdinaryFieldDivision(right)) return null;
+            if (!IsOrdinaryFieldDivision(e) || !IsOrdinaryFieldDivision(left) || !IsOrdinaryFieldDivision(right)
+                || IsZeroDivisorOutsideFieldDomain(left.Right, right.Left, right.Right)) return null;
 
             return Expression.Divide(
                 TransformCore(Expression.Multiply(left.Left, right.Right)),
@@ -1887,10 +1889,12 @@ namespace Utils.Mathematics.Expressions
         /// <summary>
         /// Simplifies nested divisions, e.g. <c>x / (y / z)</c> =&gt; <c>(x*z) / y</c>.
         /// </summary>
+        /// <remarks>Declines when <c>y</c> or <c>z</c> is a zero constant: see <see cref="IsZeroDivisorOutsideFieldDomain"/>.</remarks>
         [ExpressionSignature(ExpressionType.Divide)]
         protected Expression DivisionOfDivision(BinaryExpression e, Expression left, [ExpressionSignature(ExpressionType.Divide)] BinaryExpression right)
         {
-            if (!IsOrdinaryFieldDivision(e) || !IsOrdinaryFieldDivision(right)) return null;
+            if (!IsOrdinaryFieldDivision(e) || !IsOrdinaryFieldDivision(right)
+                || IsZeroDivisorOutsideFieldDomain(right.Left, right.Right)) return null;
 
             return Expression.Divide(
                 TransformCore(Expression.Multiply(left, right.Right)),
@@ -1901,17 +1905,59 @@ namespace Utils.Mathematics.Expressions
         /// <summary>
         /// Simplifies nested divisions, e.g. <c>(x / y) / z</c> =&gt; <c>x / (y*z)</c>.
         /// </summary>
+        /// <remarks>Declines when <c>y</c> or <c>z</c> is a zero constant: see <see cref="IsZeroDivisorOutsideFieldDomain"/>.</remarks>
         [ExpressionSignature(ExpressionType.Divide)]
         protected Expression DivisionOfDivision(BinaryExpression e,
             [ExpressionSignature(ExpressionType.Divide)] BinaryExpression left,
             Expression right)
         {
-            if (!IsOrdinaryFieldDivision(e) || !IsOrdinaryFieldDivision(left)) return null;
+            if (!IsOrdinaryFieldDivision(e) || !IsOrdinaryFieldDivision(left)
+                || IsZeroDivisorOutsideFieldDomain(left.Right, right)) return null;
 
             return Expression.Divide(
                 left.Left,
                 TransformCore(Expression.Multiply(left.Right, right))
             );
+        }
+
+        /// <summary>
+        /// Determines whether one of the divisors of a nested division is a zero constant, which puts the node outside
+        /// the domain of the <see cref="DivisionOfDivision(BinaryExpression, BinaryExpression, BinaryExpression)"/>
+        /// field identities (S5 P12).
+        /// </summary>
+        /// <param name="divisors">The operands that are divisors in the source: two or three, depending on the overload.</param>
+        /// <returns><see langword="true"/> when a divisor is a zero constant.</returns>
+        /// <remarks>
+        /// <para>
+        /// <c>x / (y / z) = (x*z) / y</c> and its two siblings hold in a field for non-zero divisors only. A divisor
+        /// that is a constant zero is known to violate that precondition, and IEEE-754 gives the source a value the
+        /// rewrite does not keep: the rewrite moves the zero from a divisor into a product, where the symbolic
+        /// <c>x * 0 -&gt; 0</c> identity (or the <c>0 / x -&gt; 0</c> one) then discards the other factor. Measured on
+        /// <c>x, y</c> in {±2, 0.5, ±0, ±inf, NaN, MaxValue, Epsilon}: <c>x / (x / 0.0)</c> became <c>0 / x</c>
+        /// (<c>+0</c> where the source is <c>NaN</c> for an infinite <c>x</c>, and <c>-0</c> for a negative <c>x</c>),
+        /// <c>(x / 0.0) / x</c> became <c>x / 0</c> (<c>-inf</c> where the source is <c>+inf</c> for a negative
+        /// <c>x</c>), and <c>(x / y) / 0.0</c> became <c>x / 0</c> (the sign of <c>y</c> lost). The reconstructed
+        /// form before that second rewrite is itself IEEE-exact in most of these cases; the defect is applying a
+        /// field identity whose precondition is statically false, so the node is left as is.
+        /// </para>
+        /// <para>
+        /// Only a zero constant is excluded. A non-zero constant or symbolic divisor keeps the rewrite: its
+        /// differences with the source (rounding, intermediate overflow or underflow at extreme magnitudes, and a
+        /// runtime zero divisor) are the field-reassociation latitude of the "Symbolic-equivalence contract". An
+        /// infinite constant divisor only diverges at such extreme magnitudes, like any finite constant; a
+        /// <c>NaN</c> constant is folded by <see cref="FoldNaNOperand"/>.
+        /// </para>
+        /// <para>
+        /// The <see cref="ReadOnlySpan{T}"/> parameter keeps the call allocation-free on this hot path.
+        /// </para>
+        /// </remarks>
+        private static bool IsZeroDivisorOutsideFieldDomain(params ReadOnlySpan<Expression> divisors)
+        {
+            foreach (Expression divisor in divisors)
+            {
+                if (IsOrdinaryZeroConstant(divisor)) return true;
+            }
+            return false;
         }
 
         #endregion

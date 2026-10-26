@@ -758,6 +758,121 @@ public class ExpressionSimplifierIeeeDivisionPowerTests
         Assert.AreEqual((short)42, Expression.Lambda<Func<short>>(simplified).Compile()());
     }
 
+    // ------------------------------------------------------------------------------------------
+    // P12 follow-up - nested divisions with a zero constant divisor
+    // ------------------------------------------------------------------------------------------
+
+    /// <summary>
+    /// Simplifies a two-parameter body, asserting that the result computes the same values as the source on every
+    /// pair of <see cref="Samples"/> (signed zeros, infinities and <c>NaN</c> included) and that simplifying it again
+    /// changes nothing.
+    /// </summary>
+    /// <param name="x">The first parameter.</param>
+    /// <param name="y">The second parameter.</param>
+    /// <param name="body">The source expression.</param>
+    /// <returns>The simplified expression.</returns>
+    private static Expression AssertSimplifiesEquivalently(ParameterExpression x, ParameterExpression y, Expression body)
+    {
+        Expression simplified = Simplify(body);
+        Assert.AreEqual(body.Type, simplified.Type);
+        Func<double, double, double> source = Expression.Lambda<Func<double, double, double>>(body, x, y).Compile();
+        Func<double, double, double> result = Expression.Lambda<Func<double, double, double>>(simplified, x, y).Compile();
+        foreach (double first in Samples)
+        {
+            foreach (double second in Samples)
+            {
+                Assert.AreEqual(Key(source(first, second)), Key(result(first, second)), $"{body} => {simplified} differs at x = {first}, y = {second}.");
+            }
+        }
+
+        Assert.AreEqual(simplified.ToString(), Simplify(simplified).ToString(), $"Simplifying {body} again must be stable.");
+        return simplified;
+    }
+
+    /// <summary>
+    /// A nested division whose divisor is a zero constant is outside the domain of the field identities of
+    /// <c>DivisionOfDivision</c> and keeps its runtime value. Before, <c>x / (x / 0.0)</c> became <c>0 / x</c>
+    /// (<c>x / (y / z) -&gt; (x*z) / y</c>, then <c>x * 0 -&gt; 0</c>), <c>(x / 0.0) / x</c> became <c>x / 0</c>
+    /// (<c>-inf</c> instead of <c>+inf</c> for a negative <c>x</c>) and <c>(x / y) / 0.0</c> became <c>x / 0</c>.
+    /// </summary>
+    [TestMethod]
+    public void Simplify_NestedDivisionByZeroConstant_KeepsRuntimeSemantics()
+    {
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+        ParameterExpression y = Expression.Parameter(typeof(double), "y");
+        Expression zero = Expression.Constant(0.0);
+        Expression negativeZero = Expression.Constant(-0.0);
+        Expression two = Expression.Constant(2.0);
+
+        Assert.AreEqual("(x / (x / 0))", AssertSimplifiesEquivalently(x, y, Expression.Divide(x, Expression.Divide(x, zero))).ToString());
+        AssertSimplifiesEquivalently(x, y, Expression.Divide(x, Expression.Divide(y, zero)));
+        AssertSimplifiesEquivalently(x, y, Expression.Divide(x, Expression.Divide(y, negativeZero)));
+        Assert.AreEqual("((x / 0) / x)", AssertSimplifiesEquivalently(x, y, Expression.Divide(Expression.Divide(x, zero), x)).ToString());
+        AssertSimplifiesEquivalently(x, y, Expression.Divide(Expression.Divide(x, zero), y));
+        AssertSimplifiesEquivalently(x, y, Expression.Divide(Expression.Divide(x, y), zero));
+        AssertSimplifiesEquivalently(x, y, Expression.Divide(Expression.Divide(x, zero), Expression.Divide(y, two)));
+        AssertSimplifiesEquivalently(x, y, Expression.Divide(Expression.Divide(x, two), Expression.Divide(y, zero)));
+        AssertSimplifiesEquivalently(x, y, Expression.Divide(Expression.Divide(x, zero), Expression.Divide(x, zero)));
+    }
+
+    /// <summary>The <see cref="float"/> counterpart of <see cref="Simplify_NestedDivisionByZeroConstant_KeepsRuntimeSemantics"/>.</summary>
+    [TestMethod]
+    public void Simplify_NestedFloatDivisionByZeroConstant_KeepsRuntimeSemantics()
+    {
+        ParameterExpression x = Expression.Parameter(typeof(float), "x");
+        Expression source = Expression.Divide(x, Expression.Divide(x, Expression.Constant(0f)));
+        Expression simplified = Simplify(source);
+        Func<float, float> expected = Expression.Lambda<Func<float, float>>(source, x).Compile();
+        Func<float, float> actual = Expression.Lambda<Func<float, float>>(simplified, x).Compile();
+        foreach (double sample in Samples)
+        {
+            Assert.AreEqual(Key(expected((float)sample)), Key(actual((float)sample)), $"{source} => {simplified} differs at x = {sample}.");
+        }
+    }
+
+    /// <summary>
+    /// Nested divisions with non-zero divisors keep the field rewrites (controls, "Symbolic-equivalence contract":
+    /// rounding and intermediate overflow are not preserved): <c>x / (y / z) -&gt; (x*z) / y</c>,
+    /// <c>(x / y) / z -&gt; x / (y*z)</c> and <c>(x / y) / (z / w) -&gt; (x*w) / (y*z)</c>, with constant divisors too.
+    /// </summary>
+    [TestMethod]
+    public void Simplify_NestedDivisionByNonZero_KeepsFieldRewrites()
+    {
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+        ParameterExpression y = Expression.Parameter(typeof(double), "y");
+        ParameterExpression z = Expression.Parameter(typeof(double), "z");
+        ParameterExpression w = Expression.Parameter(typeof(double), "w");
+        Assert.AreEqual("((x * z) / y)", Simplify(Expression.Divide(x, Expression.Divide(y, z))).ToString());
+        Assert.AreEqual("(x / (y * z))", Simplify(Expression.Divide(Expression.Divide(x, y), z)).ToString());
+        Assert.AreEqual("((x * w) / (y * z))", Simplify(Expression.Divide(Expression.Divide(x, y), Expression.Divide(z, w))).ToString());
+        Assert.AreEqual("((2 * x) / y)", Simplify(Expression.Divide(x, Expression.Divide(y, Expression.Constant(2.0)))).ToString());
+        Assert.AreEqual("(x / (2 * y))", Simplify(Expression.Divide(Expression.Divide(x, Expression.Constant(2.0)), y)).ToString());
+    }
+
+    /// <summary>
+    /// A declined nested division by zero runs no user code while simplifying, keeps the observable dividend's single
+    /// evaluation and its exception, and leaves a custom inner division untouched.
+    /// </summary>
+    [TestMethod]
+    public void Simplify_ObservableNestedDivisionByZero_KeepsCallsExceptionsAndCustomOperators()
+    {
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+        Expression zero = Expression.Constant(0.0);
+        _countingIdentityCalls = 0;
+        Expression counting = Simplify(Expression.Divide(Expression.Call(Method(nameof(CountingIdentity)), x), Expression.Divide(x, zero)));
+        Assert.AreEqual(0, _countingIdentityCalls, "Simplifying must not call user code.");
+        Assert.AreEqual(Key(0.0), Key(Expression.Lambda<Func<double, double>>(counting, x).Compile()(-2.0)), "-2 / (-2 / 0) is -2 / -inf, +0.");
+        Assert.AreEqual(1, _countingIdentityCalls);
+
+        Expression throwing = Simplify(Expression.Divide(Expression.Divide(Expression.Call(Method(nameof(Throwing)), x), zero), x));
+        Func<double, double> compiled = Expression.Lambda<Func<double, double>>(throwing, x).Compile();
+        Assert.ThrowsExactly<InvalidOperationException>(() => compiled(1.0));
+
+        BinaryExpression custom = (BinaryExpression)Simplify(Expression.Divide(x, Expression.Divide(x, zero, Method(nameof(CustomDivide)))));
+        Assert.AreEqual(Method(nameof(CustomDivide)), ((BinaryExpression)custom.Right).Method);
+        Assert.AreEqual(1.0 / 42.0, Expression.Lambda<Func<double, double>>(custom, x).Compile()(1.0));
+    }
+
     /// <summary>A user-defined <see cref="short"/> division, so a node built with it is never ordinary arithmetic.</summary>
     /// <param name="a">The dividend.</param>
     /// <param name="b">The divisor.</param>
