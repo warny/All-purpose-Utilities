@@ -8,11 +8,12 @@ using Utils.Mathematics.Expressions;
 namespace UtilsTest.Mathematics.Expressions;
 
 /// <summary>
-/// Regression coverage for roadmap stage S5 P12 (IEEE-754 floating-point division by zero), see
-/// <c>Utils/TODO-2026-09-12-expression-simplifier-roadmap.md</c>. P12: an ordinary
+/// Regression coverage for roadmap stages S5 P12 (IEEE-754 floating-point division by zero) and S5 P13 (constant
+/// power edge cases), see <c>Utils/TODO-2026-09-12-expression-simplifier-roadmap.md</c>. P12: an ordinary
 /// <see cref="double"/>/<see cref="float"/> division by <c>±0</c> no longer throws while simplifying, a constant
 /// division folds to the exact runtime result (infinities, <c>NaN</c>, signed zeros), and integral and decimal
-/// division by zero keep throwing.
+/// division by zero keep throwing. P13: a power of two constants folds to <see cref="double.Pow(double, double)"/>
+/// instead of being rewritten by the zero/one and reciprocal identities first.
 /// </summary>
 /// <remarks>
 /// Every reference value is computed by compiling the same <see cref="System.Linq.Expressions"/> tree, the semantics
@@ -330,5 +331,126 @@ public class ExpressionSimplifierIeeeDivisionPowerTests
     /// <summary>A derived simplifier with no overrides, used to check that subclasses get the same rules.</summary>
     private sealed class MinimalDerivedSimplifier : ExpressionSimplifier
     {
+    }
+
+    // ------------------------------------------------------------------------------------------
+    // P13 - power of constants
+    // ------------------------------------------------------------------------------------------
+
+    /// <summary>
+    /// A power of two constants folds to <see cref="double.Pow(double, double)"/>, which is also what the compiled
+    /// <see cref="ExpressionType.Power"/> node computes. Before P13 <c>PowerOfZeroOrOne</c> returned the base for every
+    /// <c>0 ^ c</c> (<c>0^0</c> was <c>0</c>, <c>0^-1</c> was <c>0</c>, <c>(-0)^2</c> was <c>-0</c>) and
+    /// <c>PowerByZeroOrOne</c> rewrote a negative exponent into an unevaluated reciprocal.
+    /// </summary>
+    /// <param name="baseValue">The base.</param>
+    /// <param name="exponent">The exponent.</param>
+    /// <param name="expected">The IEEE-754 result.</param>
+    [TestMethod]
+    [DataRow(0.0, 0.0, 1.0)]
+    [DataRow(0.0, 1.0, 0.0)]
+    [DataRow(0.0, 2.0, 0.0)]
+    [DataRow(0.0, -1.0, double.PositiveInfinity)]
+    [DataRow(0.0, -2.0, double.PositiveInfinity)]
+    [DataRow(0.0, 0.5, 0.0)]
+    [DataRow(0.0, -0.5, double.PositiveInfinity)]
+    [DataRow(-0.0, 0.0, 1.0)]
+    [DataRow(-0.0, 1.0, -0.0)]
+    [DataRow(-0.0, 2.0, 0.0)]
+    [DataRow(-0.0, 3.0, -0.0)]
+    [DataRow(-0.0, -1.0, double.NegativeInfinity)]
+    [DataRow(-0.0, -2.0, double.PositiveInfinity)]
+    [DataRow(-0.0, -3.0, double.NegativeInfinity)]
+    [DataRow(0.0, -0.0, 1.0)]
+    [DataRow(1.0, double.NaN, 1.0)]
+    [DataRow(double.NaN, 0.0, 1.0)]
+    [DataRow(double.NaN, 1.0, double.NaN)]
+    [DataRow(double.NaN, -1.0, double.NaN)]
+    [DataRow(0.0, double.NaN, double.NaN)]
+    [DataRow(0.0, double.PositiveInfinity, 0.0)]
+    [DataRow(0.0, double.NegativeInfinity, double.PositiveInfinity)]
+    [DataRow(1.0, double.PositiveInfinity, 1.0)]
+    [DataRow(1.0, double.NegativeInfinity, 1.0)]
+    [DataRow(-1.0, double.PositiveInfinity, 1.0)]
+    [DataRow(-1.0, double.NegativeInfinity, 1.0)]
+    [DataRow(double.PositiveInfinity, 0.0, 1.0)]
+    [DataRow(double.PositiveInfinity, -1.0, 0.0)]
+    [DataRow(double.NegativeInfinity, 2.0, double.PositiveInfinity)]
+    [DataRow(double.NegativeInfinity, 3.0, double.NegativeInfinity)]
+    [DataRow(double.NegativeInfinity, -2.0, 0.0)]
+    [DataRow(double.NegativeInfinity, -3.0, -0.0)]
+    [DataRow(2.0, -2.0, 0.25)]
+    [DataRow(-2.0, -3.0, -0.125)]
+    [DataRow(10.0, -400.0, 0.0)]
+    [DataRow(1e-300, -2.0, double.PositiveInfinity)]
+    [DataRow(-8.0, 0.5, double.NaN)]
+    public void Simplify_ConstantPower_FoldsToPow(double baseValue, double exponent, double expected)
+    {
+        Expression source = Expression.Power(Expression.Constant(baseValue), Expression.Constant(exponent));
+        Assert.AreEqual(Key(expected), Key(double.Pow(baseValue, exponent)), "Reference: double.Pow.");
+        Assert.AreEqual(Key(expected), Key(Evaluate(source)), "Reference: the compiled Power node.");
+        Assert.AreEqual(Key(expected), Key((double)AssertConstant(typeof(double), Simplify(source))));
+    }
+
+    /// <summary>
+    /// A constant base with a negative exponent folds to <c>Pow(b, -n)</c> bit for bit, not to <c>1 / Pow(b, n)</c>,
+    /// which rounds independently: for these bases the two differ in the last place.
+    /// </summary>
+    /// <param name="baseValue">The base.</param>
+    /// <param name="exponent">The negative exponent.</param>
+    [TestMethod]
+    [DataRow(3.7, -3.0)]
+    [DataRow(1.5, -0.5)]
+    [DataRow(0.5, -2.5)]
+    [DataRow(1e160, -2.0)]
+    public void Simplify_ConstantBaseNegativeExponent_FoldsWithoutReciprocalRounding(double baseValue, double exponent)
+    {
+        double direct = double.Pow(baseValue, exponent);
+        Assert.AreNotEqual(Key(direct), Key(1.0 / double.Pow(baseValue, -exponent)), "Precondition: the reciprocal form rounds differently.");
+        Expression simplified = Simplify(Expression.Power(Expression.Constant(baseValue), Expression.Constant(exponent)));
+        Assert.AreEqual(Key(direct), Key((double)AssertConstant(typeof(double), simplified)));
+    }
+
+    /// <summary>
+    /// The symbolic power identities are unchanged on a non-constant operand (controls): <c>x^0 -&gt; 1</c>,
+    /// <c>x^1 -&gt; x</c>, <c>x^-1 -&gt; 1/x</c>, <c>x^-2 -&gt; 1/x^2</c>, <c>0^x -&gt; 0</c> and <c>1^x -&gt; 1</c>.
+    /// </summary>
+    [TestMethod]
+    public void Simplify_SymbolicPowerIdentities_AreUnchanged()
+    {
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+        Assert.AreEqual(Key(1.0), Key((double)AssertConstant(typeof(double), Simplify(Expression.Power(x, Expression.Constant(0.0))))));
+        Assert.AreSame(x, Simplify(Expression.Power(x, Expression.Constant(1.0))));
+        Assert.AreEqual("(1 / x)", Simplify(Expression.Power(x, Expression.Constant(-1.0))).ToString());
+        Assert.AreEqual("(1 / (x ** 2))", Simplify(Expression.Power(x, Expression.Constant(-2.0))).ToString());
+        Assert.AreEqual(Key(0.0), Key((double)AssertConstant(typeof(double), Simplify(Expression.Power(Expression.Constant(0.0), x)))));
+        Assert.AreEqual(Key(1.0), Key((double)AssertConstant(typeof(double), Simplify(Expression.Power(Expression.Constant(1.0), x)))));
+    }
+
+    /// <summary>A custom power of two constants is neither folded nor rewritten (control).</summary>
+    [TestMethod]
+    public void Simplify_CustomPowerOfConstants_IsUntouched()
+    {
+        Expression custom = Simplify(Expression.Power(Expression.Constant(0.0), Expression.Constant(0.0), Method(nameof(CustomPower))));
+        Assert.AreEqual(Method(nameof(CustomPower)), ((BinaryExpression)custom).Method);
+        Assert.AreEqual(42.0, Evaluate(custom));
+    }
+
+    /// <summary>
+    /// Powers and divisions of constants combine through their exact folds: <c>1 / 0^2</c> is <c>+inf</c>,
+    /// <c>(1 / 0)^-1</c> is <c>0</c>, <c>(-0)^-1 / 2</c> is <c>-inf</c>, and a symbolic factor over a folded infinity
+    /// keeps evaluating like the source.
+    /// </summary>
+    [TestMethod]
+    public void Simplify_CombinedPowerAndDivisionOfConstants_FoldExactly()
+    {
+        Expression c(double value) => Expression.Constant(value);
+        Assert.AreEqual(double.PositiveInfinity, (double)AssertConstant(typeof(double), Simplify(Expression.Divide(c(1.0), Expression.Power(c(0.0), c(2.0))))));
+        Assert.AreEqual(Key(0.0), Key((double)AssertConstant(typeof(double), Simplify(Expression.Power(Expression.Divide(c(1.0), c(0.0)), c(-1.0))))));
+        Assert.AreEqual(double.NegativeInfinity, (double)AssertConstant(typeof(double), Simplify(Expression.Divide(Expression.Power(c(-0.0), c(-1.0)), c(2.0)))));
+
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+        AssertSimplifiesEquivalently(x, Expression.Multiply(x, Expression.Power(c(0.0), c(-1.0))));
+        AssertSimplifiesEquivalently(x, Expression.Add(x, Expression.Power(c(0.0), c(0.0))));
     }
 }

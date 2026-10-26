@@ -595,10 +595,11 @@ namespace Utils.Mathematics.Expressions
         /// <param name="expression">The operand to test.</param>
         /// <returns><see langword="true"/> for a non-finite floating-point constant.</returns>
         /// <remarks>
-        /// The multiplicative and power zero/one identities decline on such an operand (S5 P11), so the exact constant
-        /// folding that follows them applies instead: <c>inf * 0</c> is <c>NaN</c>, not <c>0</c>, and <c>0 ^ NaN</c> is
-        /// <c>NaN</c>. Identities on a non-constant operand keep the symbolic treatment of the "Symbolic-equivalence
-        /// contract". <see cref="DivideWithZero"/> declines on any constant divisor instead (S5 P12).
+        /// The multiplicative zero/one identities decline on such an operand (S5 P11), so the exact constant folding
+        /// that follows them applies instead: <c>inf * 0</c> is <c>NaN</c>, not <c>0</c>. Identities on a non-constant
+        /// operand keep the symbolic treatment of the "Symbolic-equivalence contract". The division and power
+        /// identities decline on any constant operand instead (S5 P12/P13, see <see cref="DivideWithZero"/> and
+        /// <see cref="PowerOfZeroOrOne"/>).
         /// </remarks>
         private static bool IsNonFiniteFloatingConstant(Expression expression)
             => expression is ConstantExpression constant
@@ -857,13 +858,20 @@ namespace Utils.Mathematics.Expressions
         }
 
         /// <summary>
-        /// Simplifies <c>0^x</c> or <c>1^x</c> to 0 or 1 respectively.
+        /// Simplifies <c>0^x</c> or <c>1^x</c> to 0 or 1 respectively, for a non-constant <c>x</c>.
         /// </summary>
-        /// <remarks>Declines when <paramref name="right"/> is a non-finite constant: see <see cref="IsNonFiniteFloatingConstant"/>.</remarks>
+        /// <remarks>
+        /// Declines when <paramref name="right"/> is a constant, which <see cref="PowerOfConstants"/> then folds with
+        /// <see cref="double.Pow(double, double)"/> (S5 P13): <c>0^0</c> is <c>1</c>, <c>0^-1</c> is <c>+inf</c>,
+        /// <c>(-0)^2</c> is <c>+0</c> and <c>(-0)^-3</c> is <c>-inf</c>, whereas this identity returned the base
+        /// (S5 P11 already declined on a non-finite constant). On a non-constant exponent <c>0^x -&gt; 0</c> stays the
+        /// domain-sensitive identity of the "Symbolic-equivalence contract" (valid for <c>x &gt; 0</c>; the sign of a
+        /// <c>-0</c> base is not preserved).
+        /// </remarks>
         [ExpressionSignature(ExpressionType.Power)]
         public Expression PowerOfZeroOrOne(BinaryExpression e, [ConstantNumeric(0, 1)] ConstantExpression left, Expression right)
         {
-            if (!IsOrdinaryBinaryArithmetic(e) || IsNonFiniteFloatingConstant(right)) return null;
+            if (!IsOrdinaryBinaryArithmetic(e) || right is ConstantExpression) return null;
             if (NumericValueEquals(left.Value, 0)) return left; // 0^x => 0
             if (NumericValueEquals(left.Value, 1)) return left; // 1^x => 1
             return null;
@@ -877,11 +885,20 @@ namespace Utils.Mathematics.Expressions
         /// (<c>NaN</c> or an infinity) is left to <see cref="PowerOfConstants"/> or kept as is (S5 P11; it threw
         /// <see cref="OverflowException"/> before), and an exponent is compared exactly, so <see cref="double.Epsilon"/>
         /// is no longer taken for zero (<c>x^Epsilon</c> was rewritten to <c>1</c>).
+        /// <para>
+        /// Declines when <paramref name="left"/> is also a constant, which <see cref="PowerOfConstants"/> then folds
+        /// exactly (S5 P13). The reciprocal rewrites <c>x^-1 -&gt; 1/x</c> and <c>x^-n -&gt; 1/x^n</c> are not
+        /// bit-exact: <c>Pow(x, -n)</c> and <c>1 / Pow(x, n)</c> round independently (one unit in the last place on
+        /// about a quarter of finite bases) and part ways where <c>x^n</c> overflows while <c>x^-n</c> is still a
+        /// subnormal value. That is the rounding and overflow latitude of the "Symbolic-equivalence contract" for a
+        /// symbolic base, but a constant base has an exact value, so it is folded instead (<c>2^-2</c> was left as the
+        /// unevaluated <c>1 / 4</c>, and <c>0^-2</c> became <c>0</c> through <see cref="PowerOfZeroOrOne"/>).
+        /// </para>
         /// </remarks>
         [ExpressionSignature(ExpressionType.Power)]
         public Expression PowerByZeroOrOne(BinaryExpression e, Expression left, ConstantExpression right)
         {
-            if (!IsOrdinaryBinaryArithmetic(e) || right.Value is not double exponent || !double.IsFinite(exponent)) return null;
+            if (!IsOrdinaryBinaryArithmetic(e) || left is ConstantExpression || right.Value is not double exponent || !double.IsFinite(exponent)) return null;
             if (exponent == 0) return Expression.Constant(Convert.ChangeType(1, right.Type));
             if (exponent == 1) return TransformCore(left);
             if (exponent == -1) return TransformCore(Expression.Divide(Expression.Constant(Convert.ChangeType(1, left.Type)), left));
