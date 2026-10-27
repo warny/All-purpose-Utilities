@@ -4838,6 +4838,225 @@ k8 (bytes unchanged within 120 B).
 **Validation.** Solution build: 0 errors. Unit 14,110/14,110, Functional 383/383, Security 244/244 (3 non-Windows
 platform tests not executed on Windows), at `0c7afa3e`.
 
+#### S5 P16 — Exponential comparer request growth on pure numeric canonical chains (C ACCEPTED, narrowed)
+
+**Provenance.** Baseline: `master` at `9b4bc462d06c27ddf4ea5a90c7c8c676efd4afc3` (post-P15, PR #667), verified as the
+current HEAD before starting. Environment as P9–P15 (Windows 11 Pro 10.0.26300, SDK 10.0.403, harness `net8.0`,
+workstation non-concurrent GC, Release, `ProjectReference` to each variant's `Utils.csproj` from separate worktrees).
+Counters (`TransformCore` visits, entries by origin, `PrepareExpression`/`FinalizeExpression` calls, canonicalizations
+and no-op canonicalizations, rule candidates and rule hits per rule, factor attempts and hits, probe comparisons and
+those with an additive operand, probe reuses, public comparer calls, comparer simplifications and their depth
+histogram, P9 hits/stores, P15 observed hits/stores, user `Equals`) and diagnostic knobs exist only in instrumented
+scratch worktrees, never in timed runs. The harness lives outside the repository. Observed results and hypotheses are
+labelled as such below.
+
+**Exact reproduction (family `p`, the P15 residual).**
+
+```csharp
+// 100*x0 - x1*3 - 4*x2 - x3*5 - ...   (left-associated; x0 sorts last canonically)
+Expression acc = Expression.Multiply(Expression.Constant(100.0), x[0]);
+for (int i = 1; i < n; i++)
+    acc = Expression.Subtract(acc, i % 2 == 0
+        ? Expression.Multiply(Expression.Constant((double)(i + 2)), x[i])
+        : Expression.Multiply(x[i], Expression.Constant((double)(i + 2))));
+new ExpressionSimplifier().Simplify(acc);   // -> (0 - 3*x1) + ((0 - 4*x2) + (... + (100*x0)))
+```
+
+Variants measured: `q` (first term sorted first: negated head), `i` (same terms in reverse source order), `h`
+(addition), `g` (equal coefficients), `t` (distinct permuted coefficients), `x` (repeated terms through shared
+references), `D` (`x` with structurally equal copies), `R` (right-associated source), `z`/`k`/`n`/`e`/`o` (P15
+opaque, known-safe, call and user-code controls), `F` (custom multiplication operator), `B`, `a`, typed chains
+(`int`, `long`, `short`, `uint`, `ulong`, `float`, `decimal`) and lambda-bound variants.
+
+**Confirmed causal diagram (rule traces and counters, observed).**
+
+1. Public pass: at each source level `SubstractionOfEqualsElements(C_k, t)` augments the canonical accumulator `C_k` as
+   `1 * C_k` and its probe requests `Simplify(C_k)` (the only rule hits of the public pass are the four
+   `Multiplication` reorderings; the canonicalizations of the public pass are direct).
+2. Re-simplifying the canonical form `(0 - a) + R` is not a no-op in work, although it is in result: `0 - a` is
+   prepared by `SubstractionWithZero` into `-a` (`TransformCore(Negate(a))`), then `AdditionWithNegate(-a, R')`
+   (i) compares `a` with `R'` through the public comparer, which simplifies `R'` one comparison level deeper, and
+   (ii) returns `TransformCore(R' - a)`, which **prepares `R'` again** at the same level; inside it
+   `SubstractionOfEqualsElements(R'', a)` requests `Simplify(R'')`; `FinalizeExpression` canonicalizes back to
+   `(0 - a) + R''`. On p8 none of the 976 canonicalizations is a no-op (B8: 271 of 279), and the two rules fire
+   969 times each (B8: 21).
+3. So simplifying a chain of k negative groups costs one preparation of the rest at the same level plus a second
+   preparation (rule re-entry) plus two comparer requests one level down: `T(k) ≈ 2 T(k-1)` from the re-entry alone,
+   the comparer requests adding the fan-out across levels. P9 serves the comparer requests from depth 6 on, never the
+   re-entry preparation.
+4. Why `B` (`2*x0 - x1*3 - ...`, first term sorted first) is polynomial: there the last pair of negative groups
+   `-(8*x6) + -(9*x7)` merges into one negation (`SubstractionWithNegate`), so the re-entries operate on short operands.
+
+**Recursive-call inventory (rule re-entries into `TransformCore`, p8 baseline).** `AdditionWithNegate`: 969 entries,
+8,877 node visits (re-preparation of `R'` and `a`); `SubstractionWithZero`: 969 entries, 3,876 visits (re-preparation
+of the small term `a`); the 24,709 other visits run in comparer simplifications. Other re-entering rules
+(`SubstractionWithNegate`, `NegateWithSubstraction`, `MultiplicationWithNegate`, `PowerByZeroOrOne`, ...) never fire on
+`p`.
+
+**Causal experiment (diagnostic knobs in a separate worktree, never merged), `TransformCore` visits for p6 / p8 / p10 /
+p12, all with identical output sizes.**
+
+| Knob | p6 | p8 | p10 | p12 |
+|---|---:|---:|---:|---:|
+| baseline | 4,541 | 37,493 | 84,788 | 171,231 |
+| additive factoring off | 4,541 | 37,493 | 84,788 | 171,231 |
+| subtractive factoring off | 29 | 39 | 49 | 59 |
+| additive canonicalization off | 369 | 1,515 | 3,156 | 4,961 |
+| `AdditionWithNegate` re-entry without re-preparation | 1,819 | 11,092 | 22,582 | 34,516 |
+| `AdditionWithNegate` comparison skipped | 1,819 | 16,544 | 47,322 | 117,236 |
+| both of the previous two | 603 | 2,593 | 5,530 | 8,899 |
+| P9 off | 4,541 | 72,805 | 1,165,069 | 18,641,333 |
+| P15 probe reuse off | identical to baseline | | | |
+
+Answers. (1) The growing comparisons come from `SubstractionOfEqualsElements` probes of canonical chains (the root
+request) and from `AdditionWithNegate`'s comparison and re-entry inside each comparer simplification. (2) P9 hits
+(50,641 of 101,414 requests at p12) do not stop the growth because the re-entry preparation never goes through the
+comparer, and the requests concentrate at depths 2–3 before activation (p20: 7.34 M and 7.35 M). (3) Neither alone:
+the subtractive probe is the root, the canonical shape `(0 - a) + R` creates the round trip, the re-entry doubles it.
+(4) All probes of `SubstractionOfEqualsElements(R'', c*x)` fail; impossibility cannot be proved without simplifying
+(see A). (5) Yes: the re-entry re-prepares operands that the comparison has just simplified with the same function.
+(6) Yes: canonicalization rebuilds new chain nodes at every round trip, so no reference-keyed reuse applies.
+(7) Right association is what makes every right sub-chain a full operand (load-bearing per P10, not changed).
+(8) Requests grow after canonical sorting (the public pass itself is linear). (9) Disabling the subtractive
+factoring or the canonicalization removes the growth (output-changing, diagnostic only). (10) Yes, see C.
+
+**Experiment A — reject impossible comparisons (REJECTED).** The expensive probe is `Equals(R'', c)`: a chain against
+the constant coefficient. A free-parameter argument only proves inequality when a parameter of the simplified small
+side is absent from the big side; a constant has none, and a second pass can fold a chain to a constant (P3
+second-pass dependencies), so only the simplifier's mathematical soundness would prove it, which is not an admissible
+premise. `NodeType` and hash differences of unsimplified operands are not proofs (refuted by `(a + b) - b`,
+`a + 0`, `a * 1`, `(a - b) + b`, pinned in `NegatedAdditions_SimplifiedForm`).
+
+**Experiment B — exploit canonicalization results (REJECTED).** A canonical chain is not a fixed point of the rule set
+in general: re-simplifying the canonical `B` chain rewrites it into a left-associated difference (P10's non-
+idempotence), so no "already canonical, skip" certificate exists without running the rules; a structural certificate
+for the `p` shape alone would be fitted to the benchmark.
+
+**Experiment C — avoid the re-entry preparation (ACCEPTED, narrowed).** `AdditionWithNegate` now runs the public
+comparer's own sequence (fast path, `SimplifyForComparison(x)`, `SimplifyForComparison(y)`,
+`StructuralEqualsAfterSimplification`) and, when the operands are not equal, transforms `x - y` with
+`ExpressionTransformer.TransformCoreWithPreparedOperands` (the part of `TransformCore` after `PrepareTransform`, the
+node rebuilt by `CopyBinaryExpression` exactly as `PrepareBinary` does) from the two compared forms instead of
+preparing them again — only when all of: exact built-in type; no enclosing lambda scope; both operands and both forms
+are *inert arithmetic* (`IsInertArithmetic`: numeric parameters and non-null constants of primitive numeric types
+other than `decimal`, ordinary negation, ordinary `+ - * ^` and floating-point `/`). Otherwise the rule is unchanged.
+
+*Proof of equivalence.* (a) The comparison makes the same calls in the same order as `ExpressionComparer.Equals`.
+(b) With the exact type and an empty scope, `PrepareExpression(o)` and the comparer's `TransformWithinBoundary(o)` both
+compute `FoldNaNOperand(TransformCore(o))` on the same instance type with the same (empty) scope snapshot; the P9 memo
+only substitutes the result of an earlier successful run on a strictly identical operand. (c) On inert arithmetic that
+function calls no user code (no opaque or known-safe constant, no extension node, no call, member, lambda or custom
+operator) and cannot throw (the folders are unchecked for integral `+ - *`, IEEE-754 for floating types; only `decimal`
+arithmetic and integral division can throw, both excluded), so skipping the second run is not observable. (d) The
+reused forms may be memo objects shared with other comparisons, so the output can hold one object where a second
+preparation built distinct copies; a later probe that compares two such places is decided by the
+`ReferenceEquals` fast path instead of simplifying and comparing two copies. On inert arithmetic both decide `true`
+(deterministic, user-code-free, exception-free re-simplification to identical trees, and `EqualsCore` is reflexive on
+them: the exact numeric model compares `NaN` equal to `NaN`, and parameters compare by binding). This is why the guard
+is not the P3/P15 user-code classification: an opaque value's own `Equals(self, self)` may answer `false`, and a
+shared reference would skip that call. Known-safe constants are excluded with the opaque ones so that the P15 property
+"an opaque term never compared costs exactly its known-safe control" still holds.
+
+*Rejected variants.* Reusing the forms for every operand the P3 probe cache accepts, or for opaque operands under the
+P15 counter guard: the guard-free mutation changes 23 pinned user-call/extension-read cases of the P15 and P16
+invariant tests; the counter-guarded variant passed every corpus but is rejected by the sharing argument above (a
+user `Equals(c, c) == false` reached through a shared reference). Re-entry without re-preparation and without the
+comparison's forms (knob `NOREPREP`): output-equal on the families measured, but not provably so (non-idempotence).
+Using the fresh re-preparation for the comparison instead of the comparer form keeps master's object sharing but
+removes only memoizable work (two unmemoized preparations per level remain: still exponential).
+
+**Experiment D — cheaper P9 hits (NOT PURSUED).** After C the P9 hits of p20 drop from 14.66 M to 8,315 (p12: 50,641 →
+875); key construction, hashing and lookup are no longer a material share, and D cannot change the growth.
+
+**Growth (instrumented, one public call; base → P16).**
+
+| Scenario | `TransformCore` | Comparer simplifications | `PrepareExpression` | Rule hits | Probe comparisons | P9 hits | Canonicalizations |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| p4 | 277 → 188 | 130 → 92 | 134 → 85 | 14 → 12 | 33 → 29 | 0 → 0 | 9 → 8 |
+| p8 | 37,493 → 11,092 | 17,718 → 5,376 | 18,681 → 5,006 | 1,942 → 732 | 3,643 → 1,357 | 845 → 19 | 976 → 371 |
+| p10 | 84,788 → 22,582 | 43,458 → 11,054 | 45,960 → 10,290 | 5,025 → 1,517 | 9,274 → 2,786 | 9,651 → 275 | 2,519 → 765 |
+| p12 | 171,231 → 34,516 | 101,414 → 17,108 | 107,755 → 15,914 | 12,708 → 2,374 | 22,957 → 4,327 | 50,641 → 875 | 6,362 → 1,195 |
+| p14 | 414,326 → 46,982 | 288,354 → 23,618 | 307,746 → 21,950 | 38,815 → 3,319 | 68,884 → 6,004 | 220,583 → 1,899 | 19,417 → 1,669 |
+| p16 | 1,284,089 → 60,068 | 991,350 → 30,664 | 1,060,653 → 28,470 | 138,642 → 4,368 | 243,823 → 7,841 | 906,549 → 3,427 | 69,332 → 2,195 |
+| p18 | 4,660,584 → 73,862 | 3,758,690 → 38,326 | 4,025,356 → 35,546 | 533,373 → 5,537 | 934,846 → 9,862 | 3,656,827 → 5,539 | 266,699 → 2,781 |
+| p20 | 18,064,067 → 88,452 | 14,783,526 → 46,684 | 15,837,375 → 43,250 | 2,107,744 → 6,842 | 3,690,241 → 12,091 | 14,664,569 → 8,315 | 1,053,886 → 3,435 |
+| g8 / g12 (equal coefficients) | 6,646 → 3,040 / 166,692 → 33,128 | 2,922 → 1,518 / 105,408 → 24,072 | | | | | |
+| i16 (reverse order) | 47,812 → 39,729 | 31,542 → 25,946 | | | | | |
+| B16 | 24,369 → 18,802 | 16,976 → 12,600 | | | | | |
+| x16, D16 (shared / copied) | 4,459 → 3,422 (both) | 2,020 → 1,574 (both) | | | | | |
+| q16, h16, R16, a8 | identical | identical | | | | | |
+| z8, k8, n8 (P15 opaque / safe / call), e8, o7, F8, F10 | identical | identical | | | | | |
+
+Growth of `p` (comparer simplifications per +2 terms, n = 12 → 20): baseline ×2.8 / ×3.4 / ×3.8 / ×3.9 (about ×1.95
+per term, exponential); P16 ×1.38 / ×1.30 / ×1.25 / ×1.22 (log-log slope ≈ 1.8: polynomial, about n²). Requests and
+executed work fall together: the depth-2/3 requests of p20 go from 7.34 M / 7.35 M to 1,746 / 11,998, the rule hits
+from 2.1 M to 6,842, and P9 hits (requests served without work) from 14.66 M to 8,315 — the reduction is in the work
+requested, not in memo hits. Output trees are identical everywhere. The remaining shapes `g` and `F` still grow
+exponentially (see limits).
+
+**Functional verification.** Differential corpora, baseline vs final, byte-for-byte on simplified trees (node-level
+dump with constant bits, methods and lifting flags), user `Equals`/`GetHashCode` counts and call logs, exception types
+and messages: 322 benchmark scenarios (every family of P9–P16, n = 3..12) identical; the 534 P15 adversarial
+user-code scenarios identical (call order and arguments, exceptions, trees); random corpus (typed `p` chains over the
+eight ordinary numeric types, 81 special-constant and 25 `decimal` extreme cases, then random trees rich in
+negations, zeros, ones, `NaN`, `-0`, shared nodes, calls, custom operators, divisions, opaque constants and lambdas):
+0 differences over the first 6,514 cases compared, with identical crash sets (165 pre-existing stack overflows on the
+baseline, same seeds). Characterization tests (`ExpressionSimplifierNumericChainGrowthTests`, committed first and
+passing on `9b4bc462`): simplified forms of `p` (n = 2..9), `q`, `i`, `R`, `h`, `g`, `t`, lambda-bound and
+negated-in-lambda shapes, all 48 term orders/associations, cancellations and factorings of negated additions,
+shared/copied repeated terms, `int`/`long`/`uint`/`float`/`decimal` chains, `NaN`/`∞`/`-0`/`decimal.MaxValue`
+cases, custom-operator chain, a counting subclass (`PrepareExpression`/`FinalizeExpression` counts, including a
+negated addition at the subclass's own level), opaque negated additions (user call log digests, throwing at the
+1st/3rd/40th/400th call, re-entrant public simplifier and comparer), P9 keys, and the unchanged comparer work of
+opaque, known-safe, call and `decimal` chains. Work bounds (fail on `9b4bc462`): p12 < 20,000 comparer
+simplifications and p16 < 2 × p12; `long` p12 < 20,000. Mutation checks (P16 + P15 + P9 + P3 test classes): reuse
+disabled → 2 failures; exact-type guard removed → 2; inert guard removed → 23; `decimal` treated as inert → 1;
+lexical-scope guard removed → 0 (no constructed lambda case distinguishes it: 40 lambda scenarios with parameter
+orders contradicting the names are identical with and without it; it is kept as a conservative guard, see limits).
+
+**Performance (counter-free, paired, alternated order; median paired delta, pairs above +5 %, bytes per op).**
+
+| Scenario | Base ms/op | P16 ms/op | Paired | Base bytes | P16 bytes |
+|---|---:|---:|---:|---:|---:|
+| p4 / p8 / p12 (12 / 12 / 6 pairs) | 0.091 / 11.90 / 137.4 | 0.067 / 3.87 / 24.06 | -28.5 / -67.5 / -82.5 % | 133 kB / 17.7 MB / 101 MB | 94 kB / 5.3 MB / 17.1 MB |
+| g8 / g12 | 2.20 / 100.9 | 0.66 / 26.8 | -47.5 / -73.5 % | 1.9 / 71.6 MB | 1.0 / 18.1 MB |
+| i4 / i8 / i12 / i16 | 0.061 / 2.39 / 16.3 / 54.2 | 0.045 / 1.05 / 12.4 / 43.3 | -26.2 / -31.1 / -24.2 / -21.3 % | | -24 to -27 % |
+| B4 / B8 / B12 / B16 | 0.061 / 1.68 / 12.3 / 29.2 | 0.050 / 1.27 / 9.28 / 21.6 | -18.1 / -24.4 / -24.7 / -26.3 % | | -21 to -27 % |
+| x8 / x12 | 0.74 / 1.67 | 0.33 / 1.32 | -25.5 / -21.5 % | | -29 / -26 % |
+| unchanged paths, n = 4 (A C G H J Y X O d j K g) | | | -4.6 .. +1.5 % (≤ 3/12 pairs > +5 %) | identical (±1 B) | |
+| unchanged paths, n = 8 (A C G H J Y d j T z k n a q h R) | | | -2.8 .. +2.6 % (A8, G8, H8, Y8: 4/12 pairs > +5 %) | identical (±300 B) | |
+| unchanged paths, n = 12 (A C G H J Y d j T X) | | | -4.1 .. +1.5 % (≤ 2/6) | identical | |
+| unchanged paths, n = 16 (A C G H L J Y O X d j l K Q h) | | | -0.6 .. +2.5 % (≤ 1/4) | identical | |
+| F8 (custom operator, counts identical) | 36.8 | 20.2 | -14.3 % (2/12 pairs > +5 %: noise) | identical | |
+
+The unchanged families run the same dispatch (identical counters); their small positive medians at n = 8 (+1.4 to
++2.6 %) are within the noise this machine shows on such scenarios (P14/P15 A/A controls: ±1–3 %, bimodal A4/H4).
+PENDING: the A/A control (base binary against a copy of itself) and the pathological series (p10..p16, z8, e8, a10,
+o7, r7; p18/p20 on P16 only) were still running when the PR was opened and are added in a follow-up commit.
+
+**Compatibility.** P3 (probe classification and order unchanged), P9 (keys, thresholds, sessions unchanged; the
+historical tests including `CustomOperator_IsIneligible` pass unmodified), P10 (canonical form and the `0 - term`
+representation unchanged; identical trees), P14 (H/J paths unchanged), P15 (observed tiers unchanged; z = k still
+holds, the P15 tests pass unmodified). No public API change; `TransformCoreWithPreparedOperands` is internal.
+
+**Remaining limits.**
+
+- `g` (equal coefficients, the chain collapses into one factored product) and `F` (custom operator terms) remain
+  exponential (g12 → g16: 33,128 → 1.09 M visits; F10: 848,334, unchanged). Their growth comes from factoring probes
+  of non-canonical left-associated differences and, for `F`, from custom-operator terms that are deliberately outside
+  the inert class; a separate stage would have to study them.
+- The opaque/known-safe/call chains (`z`, `k`, `n`) keep the P15 cost (z8 = 42,336 visits, z16 = 1.37 M). Extending the
+  reuse to them needs a proof that no shared reference reaches a self-comparison of an opaque value, or a comparer that
+  never short-circuits on reference identity for non-inert trees; both are contract-level changes.
+- Interaction with infinite rule recursion: the pre-existing stack overflow on some inputs (`a*x + (1 - a)*x`) is
+  unchanged on every input of the corpora (identical crash sets), but in principle a shared inert reference could
+  skip a second pass that recurses without bound; no such input is known.
+- The lexical-scope guard is not discriminated by any test (mutation survives); it is kept because the comparer
+  simplifies outside any lambda scope while a re-preparation orders bound parameters by the enclosing scopes.
+
+**Decision: ACCEPT** experiment C in the narrowed form above. No rule change in result, no canonical-form change, no
+threshold change; user-code calls, their order, exceptions and trees are identical on every tested input.
+
 ## Execution-optimizer stages
 
 These remain separate from the simplifier stages above.
