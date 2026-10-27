@@ -325,8 +325,8 @@ compare equal; (2) every equality extension ships its hash, its canonical key (E
 
 | Change | File / method | Tests |
 |---|---|---|
-| Add `PrepareMember`, `PrepareTypeBinary`, `PrepareNew`, `PrepareNewArray`; `Default` explicit leaf. Replace the `PrepareTransform` type switch (would exceed 10 cases, AGENTS.md) by a family dispatch table or a two-level family switch, benchmarked | `ExpressionTransformer.PrepareTransform` and new `Prepare*` | rows flip to `Rewrites` for G/S/D; preparation order test per family (H-2); subclass rule shape test (H-1) |
-| Per-family rebuilders replacing the 80-case `CopyExpression` switch: `MakeMemberAccess`, `TypeIs`/`TypeEqual`, `New(ctor, args, members)` and `New(type)`, `NewArrayInit`/`NewArrayBounds` | `CopyExpression` → dictionary of rebuilders | `RootMetadata` unchanged for every R1 sample (G, R) |
+| Add `PrepareMember`, `PrepareTypeBinary`, `PrepareNew`, `PrepareNewArray`; `Default` explicit leaf. `PrepareTransform` stays a type-pattern dispatch `switch` (allowed by the local exception of `Utils/AGENTS.md`); dispatch-order change benchmarked on the hot path | `ExpressionTransformer.PrepareTransform` and new `Prepare*` | rows flip to `Rewrites` for G/S/D; preparation order test per family (H-2); subclass rule shape test (H-1) |
+| Per-family rebuilders called from the `CopyExpression` dispatch `switch` (kept as a `switch`; each branch becomes a short call): `MakeMemberAccess`, `TypeIs`/`TypeEqual`, `New(ctor, args, members)` and `New(type)`, `NewArrayInit`/`NewArrayBounds` | `CopyExpression` + named `Rebuild*` methods | `RootMetadata` unchanged for every R1 sample (G, R) |
 | C-01 faithful unary/lambda rebuild as base default | `RebuildUnaryExpression`, `RebuildLambdaExpression`, `CopyUnaryExpression`, `CopyExpression` unary branches, `ReplaceArgumentsCore` | rows `Negate.CustomMethod`, `Convert.CustomMethod`, `Throw`, `Lambda.Metadata` → `Rewrites` in G/D/R; update `ExpressionTransformerUnaryLazyParametersTests` only where it pins the loss (recorded here) |
 | C-06 side-effect opacity | `ExpressionSimplifier` rule guards (`IsOrdinaryBinaryArithmetic`/operand classification used by additive/multiplicative grouping, `AdditionOfEqualsElements`, factoring, zero rules) | `ETC15_*` flipped to evaluation-preserving results; S5 corpora unchanged |
 | Substitution through Member, TypeBinary, New, NewArray, Unary (faithful) | `ReplaceArgumentsCore` | rows → `Rewrites` in R |
@@ -335,7 +335,7 @@ compare equal; (2) every equality extension ships its hash, its canonical key (E
 
 | Change | File / method | Tests |
 |---|---|---|
-| Equality + hash for Conditional, Invoke, TypeBinary, Default, New (ctor, members), NewArray | `ExpressionComparer.EqualsCore`, `Hash` (family dispatch, AGENTS.md switch rule) | positive/negative pairs per metadata field; `Dictionary`/`HashSet` membership with identical references and independent trees; reflexivity/symmetry/transitivity on catalog pairs |
+| Equality + hash for Conditional, Invoke, TypeBinary, Default, New (ctor, members), NewArray | `ExpressionComparer.EqualsCore`, `Hash` (dispatch `switch`es with one short call per family, `Utils/AGENTS.md` exception) | positive/negative pairs per metadata field; `Dictionary`/`HashSet` membership with identical references and independent trees; reflexivity/symmetry/transitivity on catalog pairs |
 | Canonical keys for the same families | `ExpressionCanonicalOrder.Build` + new key nodes | `ETC14_*` flipped; S4 idempotence tests |
 | Stack guards on new recursion | comparer, hash, canonical key | isolated-process depth test (Functional) |
 | `New`/`NewArray` are never merged as equal terms by algebra (allocation identity) | simplifier grouping | dedicated tests |
@@ -377,5 +377,6 @@ compare equal; (2) every equality extension ships its hash, its canonical key (E
 
 1. C-01 … C-07 (table §4).
 2. Whether R1a may ship before the rest of R1 (recommended: yes, it only removes corruption and exceptions).
-3. Whether the `PrepareTransform`/`CopyExpression`/`EqualsCore`/`Hash` switches are converted to dictionaries now (AGENTS.md rule
-   over 10 cases) or in a dedicated, benchmarked refactoring PR before R1b.
+3. ~~Whether the dispatch switches are converted to dictionaries~~ — resolved 2026-10-27: `Utils/AGENTS.md` allows node-type
+   dispatch `switch`es with more than ten short cases. `PrepareTransform`, `CopyExpression`, `EqualsCore` and `Hash` stay
+   `switch`es; a handler dictionary is adopted only if a measurement or an architectural reason justifies it.
