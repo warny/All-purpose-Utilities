@@ -5031,8 +5031,20 @@ orders contradicting the names are identical with and without it; it is kept as 
 
 The unchanged families run the same dispatch (identical counters); their small positive medians at n = 8 (+1.4 to
 +2.6 %) are within the noise this machine shows on such scenarios (P14/P15 A/A controls: ±1–3 %, bimodal A4/H4).
-PENDING: the A/A control (base binary against a copy of itself) and the pathological series (p10..p16, z8, e8, a10,
-o7, r7; p18/p20 on P16 only) were still running when the PR was opened and are added in a follow-up commit.
+A/A control (the baseline binary against a copy of itself, 8 pairs): A4 / B4 / p8 / A8 / B8 / G8 / Y8 / j8 -0.7 / -0.6
+/ +0.6 / +1.0 / +0.4 / -0.5 / -0.5 / -0.7 %, at most 2/8 pairs above +5 %.
+
+| Scenario (pathological series) | Base ms/op | P16 ms/op | Paired | Bytes base → P16 |
+|---|---:|---:|---:|---:|
+| p10 / p12 / p14 / p16 (4 pairs) | 29.6 / 135.8 / 402.0 / 1,080.3 | 7.91 / 23.8 / 33.4 / 46.1 | -73.1 / -82.3 / -91.5 / -95.4 % | 43.4 MB → 11.0 MB / 101 → 17.1 / 288 → 23.9 / 989 → 31.5 MB |
+| p18 / p20 (P16 only, 7 rounds) | — | 30.9 / 75.5 | — | 40.1 / 49.8 MB |
+| z8 / e8 / a10 / o7 / r7 / k8 (8 pairs) | | | -0.2 / -0.7 / -1.6 / -1.1 / +0.0 / +0.2 % (≤ 2/8 pairs > +5 %) | identical (±130 B) |
+| A/A on the same five (6 pairs) | | | -0.1 / +3.0 / +1.2 / +0.5 / +0.8 % | identical |
+
+A first 4-pair run of z8 / e8 / a10 / o7 / r7 gave +57 to +115 % with identical counters and bytes while the absolute
+times of both sides drifted by a factor of about two (machine state, observed); rerun on an idle machine with 8 pairs and
+an A/A control it is within noise, as the 12-pair n = 8 campaign (z8 +1.0 %) already showed. Absolute times differ
+between campaigns for the same reason; only paired deltas are compared.
 
 **Compatibility.** P3 (probe classification and order unchanged), P9 (keys, thresholds, sessions unchanged; the
 historical tests including `CustomOperator_IsIneligible` pass unmodified), P10 (canonical form and the `0 - term`
