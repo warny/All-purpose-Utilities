@@ -823,9 +823,33 @@ public abstract class ExpressionTransformer
     /// <param name="e">The expression to transform.</param>
     /// <returns>A possibly rewritten expression.</returns>
     protected Expression TransformCore(Expression e)
-    {
-        TransformContext context = PrepareTransform(e);
+        => TransformPrepared(PrepareTransform(e));
 
+    /// <summary>
+    /// Runs <see cref="TransformCore"/> on a binary node whose two operands are already prepared: the node is rebuilt
+    /// from <paramref name="preparedLeft"/> and <paramref name="preparedRight"/> exactly as <see cref="PrepareBinary"/>
+    /// rebuilds it, then the rules and <see cref="FinalizeExpression"/> run as in <see cref="TransformCore"/>. Only the
+    /// two <see cref="PrepareExpression"/> calls are left out.
+    /// </summary>
+    /// <param name="expression">The binary node to transform.</param>
+    /// <param name="preparedLeft">What <see cref="PrepareExpression"/> returns for <paramref name="expression"/>'s left operand.</param>
+    /// <param name="preparedRight">What <see cref="PrepareExpression"/> returns for <paramref name="expression"/>'s right operand.</param>
+    /// <returns>The result <see cref="TransformCore"/> returns for <paramref name="expression"/>.</returns>
+    /// <remarks>
+    /// The caller must guarantee that each prepared operand is the result <see cref="PrepareExpression"/> would build
+    /// (same structure) and that skipping its preparation is not observable, so this is not an extensibility point.
+    /// </remarks>
+    internal Expression TransformCoreWithPreparedOperands(BinaryExpression expression, Expression preparedLeft, Expression preparedRight)
+        => TransformPrepared(new TransformContext(CopyBinaryExpression(expression, preparedLeft, preparedRight)));
+
+    /// <summary>
+    /// Applies the rules to a prepared node and, when none matches, <see cref="FinalizeExpression"/>: the part of
+    /// <see cref="TransformCore"/> that follows <see cref="PrepareTransform"/>.
+    /// </summary>
+    /// <param name="context">The prepared node and its prepared sub-expressions.</param>
+    /// <returns>A possibly rewritten expression.</returns>
+    private Expression TransformPrepared(TransformContext context)
+    {
         if (TryTransform(context, out Expression? result))
         {
             // Preserves the pre-refactor behavior where a matching rule returning null (allowed for the

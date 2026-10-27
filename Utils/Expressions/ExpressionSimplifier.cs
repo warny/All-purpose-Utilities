@@ -1060,35 +1060,144 @@ namespace Utils.Mathematics.Expressions
         /// <summary>
         /// Rewrites <c>left + (-right)</c> as <c>left - right</c>.
         /// </summary>
+        /// <remarks>The rewritten difference reuses the forms simplified by the comparison: see <see cref="EqualsKeepingSimplifiedForms"/>.</remarks>
         [ExpressionSignature(ExpressionType.Add)]
         protected Expression AdditionWithNegate(BinaryExpression e, Expression left, [ExpressionSignature(ExpressionType.Negate)] UnaryExpression right)
         {
             if (!IsOrdinaryBinaryArithmetic(e) || !IsOrdinaryUnaryNegate(right)) return null;
 
-            if (ExpressionComparer.Default.Equals(left, right.Operand))
+            if (EqualsKeepingSimplifiedForms(left, right.Operand, out Expression? simplifiedLeft, out Expression? simplifiedOperand))
             {
                 return Expression.Constant(Convert.ChangeType(0, left.Type), left.Type);
             }
 
-            return TransformCore(Expression.Subtract(left, right.Operand));
+            BinaryExpression difference = Expression.Subtract(left, right.Operand);
+            return simplifiedLeft is null
+                ? TransformCore(difference)
+                : TransformCoreWithPreparedOperands(difference, simplifiedLeft, simplifiedOperand!);
         }
 
         /// <summary>
         /// Simplifies <c>(-left) + right</c> to <c>0</c> when both operands are equal.
         /// Otherwise rewrites it as <c>right - left</c>.
         /// </summary>
+        /// <remarks>The rewritten difference reuses the forms simplified by the comparison: see <see cref="EqualsKeepingSimplifiedForms"/>.</remarks>
         [ExpressionSignature(ExpressionType.Add)]
         protected Expression AdditionWithNegate(BinaryExpression e, [ExpressionSignature(ExpressionType.Negate)] UnaryExpression left, Expression right)
         {
             if (!IsOrdinaryBinaryArithmetic(e) || !IsOrdinaryUnaryNegate(left)) return null;
 
-            if (ExpressionComparer.Default.Equals(left.Operand, right))
+            if (EqualsKeepingSimplifiedForms(left.Operand, right, out Expression? simplifiedOperand, out Expression? simplifiedRight))
             {
                 return Expression.Constant(Convert.ChangeType(0, right.Type), right.Type);
             }
 
-            return TransformCore(Expression.Subtract(right, left.Operand));
+            BinaryExpression difference = Expression.Subtract(right, left.Operand);
+            return simplifiedRight is null
+                ? TransformCore(difference)
+                : TransformCoreWithPreparedOperands(difference, simplifiedRight, simplifiedOperand!);
         }
+
+        /// <summary>
+        /// Compares two operands exactly like <see cref="ExpressionComparer.Equals(Expression?, Expression?)"/> and, when
+        /// the forms that comparison simplified are what preparing the operands again would build, returns them (S5 P16).
+        /// </summary>
+        /// <param name="x">The first operand, already prepared.</param>
+        /// <param name="y">The second operand, already prepared.</param>
+        /// <param name="simplifiedX">Receives the simplified form of <paramref name="x"/>, or <see langword="null"/> when none may be reused.</param>
+        /// <param name="simplifiedY">Receives the simplified form of <paramref name="y"/>, or <see langword="null"/> when none may be reused.</param>
+        /// <returns><see langword="true"/> when the operands are equal under the public comparer contract.</returns>
+        /// <remarks>
+        /// <para>
+        /// <see cref="AdditionWithNegate(BinaryExpression, Expression, UnaryExpression)"/> compares its operands, which
+        /// simplifies both of them, then transforms the difference it builds from them, which prepares both of them
+        /// again: <see cref="PrepareExpression"/> runs the same simplification on the same operands. On an additive
+        /// canonical chain each level of <c>(0 - a) + R</c> takes that path (<c>0 - a</c> becomes <c>-a</c>, then
+        /// <c>-a + R</c> becomes <c>R - a</c>, canonicalized back to <c>(0 - a) + R</c>), so the rest of the chain
+        /// <c>R</c> was simplified once more at every level: the work doubled with each term (roadmap S5 P16).
+        /// </para>
+        /// <para>
+        /// The comparison always makes, in the same order, the calls of the public comparer: the fast path, then
+        /// <see cref="ExpressionComparer.SimplifyForComparison"/> of <paramref name="x"/>, then of <paramref name="y"/>,
+        /// then the structural comparison. The forms are then reused only when preparing the operands again would build
+        /// the same trees and nothing can tell the reused forms from the prepared ones:
+        /// </para>
+        /// <list type="bullet">
+        /// <item>The simplifier is the exact built-in type: a subclass observes its own <see cref="PrepareExpression"/>,
+        /// <see cref="FinalizeExpression"/> and rules.</item>
+        /// <item>No lambda encloses the node: the comparer simplifies an operand outside any lambda scope, as a public call
+        /// does, while <see cref="PrepareExpression"/> orders bound parameters by the enclosing scopes. With an empty scope
+        /// both compute <c>FoldNaNOperand(TransformCore(operand))</c> with the same instance type, a deterministic function
+        /// of the operand when it calls no user code.</item>
+        /// <item>Both operands and both forms are inert arithmetic (<see cref="IsInertArithmetic"/>): ordinary arithmetic
+        /// over numeric parameters and primitive numeric constants. Simplifying such a tree calls no user code and no rule
+        /// can throw on it, so the second preparation would have built the same trees without any observable effect.
+        /// The forms may be objects the comparison memo (S5 P9) shares with other comparisons, so a reused form can
+        /// appear at several places where a second preparation built distinct copies, and a later comparison of two
+        /// such places is then decided by the fast path (<see cref="object.ReferenceEquals(object?, object?)"/>) instead
+        /// of simplifying and comparing two copies. On inert arithmetic both decide the same: the copies simplify
+        /// without user code or exception to identical trees, and the structural comparison is reflexive on them (the
+        /// exact numeric model compares <c>NaN</c> equal to <c>NaN</c>). An opaque or known-safe constant, a call, a
+        /// member access, a lambda or a custom operator therefore keeps the second preparation: a user
+        /// <see cref="object.Equals(object?)"/> could answer <see langword="false"/> for one shared value, and a known-safe
+        /// constant is kept with the opaque ones so that an opaque term never compared still costs exactly its
+        /// known-safe control (S5 P15).</item>
+        /// </list>
+        /// </remarks>
+        private bool EqualsKeepingSimplifiedForms(Expression x, Expression y, out Expression? simplifiedX, out Expression? simplifiedY)
+        {
+            simplifiedX = null;
+            simplifiedY = null;
+            if (ExpressionComparer.TryFastPathEquals(x, y, out bool fastResult)) return fastResult;
+
+            Expression formX = ExpressionComparer.SimplifyForComparison(x);
+            Expression formY = ExpressionComparer.SimplifyForComparison(y);
+
+            if (GetType() == typeof(ExpressionSimplifier)
+                && _lexicalScopeStack is not { Count: > 0 }
+                && IsInertArithmetic(x)
+                && IsInertArithmetic(y)
+                && IsInertArithmetic(formX)
+                && IsInertArithmetic(formY))
+            {
+                simplifiedX = formX;
+                simplifiedY = formY;
+            }
+
+            return ExpressionComparer.StructuralEqualsAfterSimplification(formX, formY);
+        }
+
+        /// <summary>
+        /// Determines whether <paramref name="expression"/> is inert arithmetic: numeric parameters and non-null constants
+        /// of the primitive numeric types other than <see cref="decimal"/>, combined by ordinary negation and ordinary
+        /// addition, subtraction, multiplication, power and floating-point division (see
+        /// <see cref="EqualsKeepingSimplifiedForms"/>).
+        /// </summary>
+        /// <param name="expression">The tree to classify.</param>
+        /// <returns><see langword="true"/> when simplifying the tree can neither call user code nor throw.</returns>
+        /// <remarks>
+        /// Every other node is rejected, by type tests only. The rules fold these operators with the unchecked semantics
+        /// of the ordinary nodes (<see cref="FoldConstants"/>): on the excluded <see cref="decimal"/> type they throw on
+        /// overflow, and an integral division throws on a zero divisor or on <c>MinValue / -1</c>, which a later pass
+        /// could expose; integral addition, subtraction and multiplication wrap and floating-point arithmetic follows
+        /// IEEE-754, so neither throws.
+        /// </remarks>
+        private static bool IsInertArithmetic(Expression expression) => expression switch
+        {
+            ParameterExpression parameter => IsInertArithmeticType(parameter.Type),
+            ConstantExpression constant => constant.Value is not null && IsInertArithmeticType(constant.Type),
+            UnaryExpression unary => IsOrdinaryUnaryNegate(unary) && IsInertArithmetic(unary.Operand),
+            BinaryExpression binary => IsOrdinaryBinaryArithmetic(binary)
+                && (binary.NodeType != ExpressionType.Divide || binary.Type == typeof(double) || binary.Type == typeof(float))
+                && IsInertArithmetic(binary.Left)
+                && IsInertArithmetic(binary.Right),
+            _ => false,
+        };
+
+        /// <summary>Determines whether <paramref name="type"/> is a primitive numeric type other than <see cref="decimal"/>.</summary>
+        /// <param name="type">The type of a parameter or constant.</param>
+        /// <returns><see langword="true"/> for the inert arithmetic types.</returns>
+        private static bool IsInertArithmeticType(Type type) => type != typeof(decimal) && Types.Number.Contains(type);
 
         /// <summary>
         /// Rewrites <c>left - (-right)</c> as <c>left + right</c>.

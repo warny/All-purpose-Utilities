@@ -650,4 +650,33 @@ public class ExpressionSimplifierNumericChainGrowthTests
         Assert.AreEqual(expected, CountComparerSimplifications(source));
         Assert.AreEqual(0, log.Count);
     }
+
+    // ------------------------------------------------------------------------------------------
+    // Work bounds (fail on 9b4bc462)
+    // ------------------------------------------------------------------------------------------
+
+    /// <summary>
+    /// The comparer work of the P16 chain no longer doubles with each term: 12 terms cost under 20,000 comparer
+    /// simplifications (101,414 before P16) and 16 terms under twice as many as 12 (991,350 before P16, about 9.8 times).
+    /// </summary>
+    [TestMethod]
+    public void TailSortedChain_ComparerWorkIsPolynomial()
+    {
+        int twelve = CountComparerSimplifications(TailSortedChain(12));
+        int sixteen = CountComparerSimplifications(TailSortedChain(16));
+
+        Assert.IsTrue(twelve < 20_000, $"{twelve} comparer simplifications for 12 terms.");
+        Assert.IsTrue(sixteen < 2 * twelve, $"{sixteen} comparer simplifications for 16 terms, {twelve} for 12.");
+    }
+
+    /// <summary>
+    /// The integral chain benefits like the floating-point one: its operands are inert arithmetic (no integral division).
+    /// </summary>
+    [TestMethod]
+    public void TailSortedIntegralChain_ComparerWorkIsBounded()
+    {
+        int events = CountComparerSimplifications(TailSortedChain(12, typeof(long)));
+
+        Assert.IsTrue(events < 20_000, $"{events} comparer simplifications for 12 terms.");
+    }
 }
