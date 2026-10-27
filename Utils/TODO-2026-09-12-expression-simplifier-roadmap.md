@@ -5000,8 +5000,8 @@ and messages: 322 benchmark scenarios (every family of P9–P16, n = 3..12) iden
 user-code scenarios identical (call order and arguments, exceptions, trees); random corpus (typed `p` chains over the
 eight ordinary numeric types, 81 special-constant and 25 `decimal` extreme cases, then random trees rich in
 negations, zeros, ones, `NaN`, `-0`, shared nodes, calls, custom operators, divisions, opaque constants and lambdas):
-0 differences over the first 6,514 cases compared, with identical crash sets (165 pre-existing stack overflows on the
-baseline, same seeds). Characterization tests (`ExpressionSimplifierNumericChainGrowthTests`, committed first and
+0 differences over the full corpus (20,266 lines, typed cases and 20,000 random seeds), with identical crash sets
+(462 pre-existing stack overflows on the baseline, same seeds). Characterization tests (`ExpressionSimplifierNumericChainGrowthTests`, committed first and
 passing on `9b4bc462`): simplified forms of `p` (n = 2..9), `q`, `i`, `R`, `h`, `g`, `t`, lambda-bound and
 negated-in-lambda shapes, all 48 term orders/associations, cancellations and factorings of negated additions,
 shared/copied repeated terms, `int`/`long`/`uint`/`float`/`decimal` chains, `NaN`/`∞`/`-0`/`decimal.MaxValue`
