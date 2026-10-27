@@ -1,0 +1,4 @@
+﻿"scenario","operation","size","thread","platform","classification","exitCode","peakWorkingSetMB","result"
+"E-csyntax-parens","parse","2","stack:256","windows","ok","0","41","RESULT scenario=E-csyntax-parens family=E size=2 op=parse thread=stack:256 os=windows runtime=.NET_8.0.33 arch=X64 nodes=- distinct=- depth=- parameters=- text=6 ms=3.416 allocated=1748768 visits=n/a comparerSimplifications=n/a comparerMaxDepth=n/a userCode=0 outcome=ok"
+"E-csyntax-parens","parse","3","stack:256","windows","stack-overflow","-1073741571","50",""
+"E-vbsyntax-parens","parse","2","stack:256","windows","stack-overflow","-1073741571","45",""
