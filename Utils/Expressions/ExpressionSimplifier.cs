@@ -382,7 +382,7 @@ namespace Utils.Mathematics.Expressions
         /// Prepares an expression for transformation by calling <see cref="ExpressionTransformer.TransformCore(Expression)"/>
         /// Subclasses can override for custom logic, but here it simply re-applies <see cref="ExpressionTransformer.TransformCore(Expression)"/>
         /// </summary>
-        /// <param name="e">The expression to prepare, or <see langword="null"/> for an absent optional sub-expression such as <see cref="Expression.Rethrow()"/>'s <see langword="null"/> operand.</param>
+        /// <param name="e">The expression to prepare, or <see langword="null"/> for an absent optional sub-expression (since ETC R1a, a <see cref="Expression.Rethrow()"/>'s <see langword="null"/> operand is no longer prepared at all).</param>
         /// <returns>The transformed expression, or <see langword="null"/> unchanged, for the exact built-in type.</returns>
         /// <remarks>
         /// The null short-circuit is gated to the exact built-in runtime type for the same reason as
@@ -2313,15 +2313,31 @@ namespace Utils.Mathematics.Expressions
         /// Inlines or transforms an <see cref="InvocationExpression"/> that calls a lambda
         /// by substituting the lambda parameters with the invocation arguments and re-transforming the result.
         /// </summary>
+        /// <param name="expression">The prepared invocation: its target and arguments are already transformed.</param>
+        /// <returns>The transformed inlined body, or <paramref name="expression"/> itself when inlining is not proven safe.</returns>
+        /// <remarks>
+        /// ETC R1a (ETC-11): inlining happens only when <see cref="InvocationInliningAnalysis"/> proves that every use of
+        /// the parameters is substituted and that the arguments' evaluation cannot be observed to move, repeat or
+        /// disappear. Otherwise the prepared invocation is returned as is, without another <c>TransformCore</c> pass, so
+        /// it is not transformed again and no rewrite cycle can start.
+        /// </remarks>
         [ExpressionSignature(ExpressionType.Invoke)]
         protected Expression InvokeExpression(InvocationExpression expression)
         {
             if (expression.Expression is LambdaExpression le)
             {
-                // le.Parameters and expression.Arguments are already indexable ReadOnlyCollection<T>
-                // instances; ReplaceArgumentsCore accepts them directly, so no array copy is needed
-                // just to adapt them to the historical array-based ReplaceArguments signature.
-                return TransformCore(ReplaceArgumentsCore(le.Body, le.Parameters, expression.Arguments));
+                switch (InvocationInliningAnalysis.Analyze(le, expression))
+                {
+                    case InvocationInliningKind.InlineBody:
+                        // No parameter is read and every argument is inert: nothing to substitute.
+                        return TransformCore(le.Body);
+
+                    case InvocationInliningKind.Substitute:
+                        // le.Parameters and expression.Arguments are already indexable ReadOnlyCollection<T>
+                        // instances; ReplaceArgumentsCore accepts them directly, so no array copy is needed
+                        // just to adapt them to the historical array-based ReplaceArguments signature.
+                        return TransformCore(ReplaceArgumentsCore(le.Body, le.Parameters, expression.Arguments));
+                }
             }
             return expression;
         }

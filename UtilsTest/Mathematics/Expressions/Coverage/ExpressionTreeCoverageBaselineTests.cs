@@ -8,7 +8,8 @@ namespace UtilsTest.Mathematics.Expressions.Coverage;
 /// <summary>
 /// ETC R0: executable baseline of the expression-tree coverage matrix. For every catalog sample, every
 /// <see cref="ExpressionContract"/> is run and its classified outcome is compared with the row recorded here, which
-/// is the observed behavior of <c>master</c> at <c>b5c05dc3</c>.
+/// is the observed behavior of <c>master</c> at <c>b5c05dc3</c>, updated by ETC R1a for the rows of ETC-08, ETC-09 and
+/// ETC-13 (<c>TypeIs</c>, <c>TypeEqual</c>, <c>New*</c>, <c>NewArray*</c>, <c>Block*</c>, <c>Loop</c>, <c>Throw.Rethrow</c>).
 /// </summary>
 /// <remarks>
 /// <para>
@@ -97,18 +98,18 @@ public class ExpressionTreeCoverageBaselineTests
         ["Invoke"] = "Rewrites | Rewrites | Rewrites | Partial | Equal | Consistent",
         ["Lambda"] = "Rewrites | Rewrites | Rewrites | Opaque | Equal | Consistent",
         ["Conditional"] = "Rewrites | Rewrites | Rewrites | Rewrites | Unequal | Consistent",
-        ["TypeIs"] = "Throws:IndexOutOfRangeException | Throws:IndexOutOfRangeException | Throws:IndexOutOfRangeException | Opaque | Throws:IndexOutOfRangeException | Throws:IndexOutOfRangeException",
-        ["TypeEqual"] = "Throws:IndexOutOfRangeException | Throws:IndexOutOfRangeException | Throws:IndexOutOfRangeException | Opaque | Throws:IndexOutOfRangeException | Throws:IndexOutOfRangeException",
-        ["New"] = "Throws:ArgumentException | Throws:ArgumentException | Throws:ArgumentException | Opaque | Throws:ArgumentException | Throws:ArgumentException",
-        ["NewArrayInit"] = "Corrupts | Corrupts | Corrupts | Opaque | Unequal | Consistent",
-        ["NewArrayBounds"] = "Throws:ArgumentException | Throws:ArgumentException | Throws:ArgumentException | Opaque | Throws:ArgumentException | Throws:ArgumentException",
+        ["TypeIs"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
+        ["TypeEqual"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
+        ["New"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
+        ["NewArrayInit"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
+        ["NewArrayBounds"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
         ["MemberInit"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
         ["ListInit"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
         ["Index"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
-        ["Block"] = "Corrupts | Corrupts | Corrupts | Opaque | Unequal | Consistent",
+        ["Block"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
         ["Try"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
         ["Switch"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
-        ["Loop"] = "Throws:IndexOutOfRangeException | Throws:IndexOutOfRangeException | Throws:IndexOutOfRangeException | Opaque | Throws:IndexOutOfRangeException | Throws:IndexOutOfRangeException",
+        ["Loop"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
         ["Goto"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
         ["Label"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
         ["RuntimeVariables"] = "Same | Same | Same | Opaque | Unequal | Consistent",
@@ -123,18 +124,18 @@ public class ExpressionTreeCoverageBaselineTests
         ["Negate.CustomMethod"] = "Drops | Rewrites | Corrupts | Drops | Equal | Consistent",
         ["Convert.CustomMethod"] = "Drops | Rewrites | Corrupts | Drops | Equal | Consistent",
         ["PreIncrementAssign.CustomMethod"] = "Drops | Rebuilt | Corrupts | Drops | Equal | Consistent",
-        ["Throw.Rethrow"] = "Throws:NullReferenceException | Rebuilt | Throws:NullReferenceException | Corrupts | Equal | Consistent",
+        ["Throw.Rethrow"] = "Same | Same | Same | Same | Equal | Consistent",
         ["Call.InstanceReceiver"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent",
         ["MemberAccess.Static"] = "Same | Same | Same | Same | Equal | Consistent",
         ["Invoke.Delegate"] = "Rewrites | Rewrites | Rewrites | Rewrites | Unequal | Consistent",
         ["Lambda.Metadata"] = "Corrupts | Rewrites | Corrupts | Opaque | Equal | Consistent",
-        ["New.Members"] = "Throws:ArgumentException | Throws:ArgumentException | Throws:ArgumentException | Opaque | Throws:ArgumentException | Throws:ArgumentException",
-        ["New.ValueTypeDefault"] = "Throws:ArgumentNullException | Throws:ArgumentNullException | Throws:ArgumentNullException | Same | Throws:ArgumentNullException | Throws:ArgumentNullException",
-        ["Block.TypedResult"] = "Corrupts | Corrupts | Corrupts | Opaque | Unequal | Consistent",
-        ["Block.Shadowing"] = "Corrupts | Corrupts | Corrupts | Opaque | Unequal | Consistent",
-        ["Block.DebugInfo"] = "Corrupts | Corrupts | Corrupts | Opaque | Unequal | Consistent",
-        ["Block.GotoLabel"] = "Corrupts | Corrupts | Corrupts | Opaque | Unequal | Consistent",
-        ["Block.RuntimeVariables"] = "Corrupts | Corrupts | Corrupts | Opaque | Unequal | Consistent",
+        ["New.Members"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
+        ["New.ValueTypeDefault"] = "Same | Same | Same | Same | Unequal | Consistent",
+        ["Block.TypedResult"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
+        ["Block.Shadowing"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
+        ["Block.DebugInfo"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
+        ["Block.GotoLabel"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
+        ["Block.RuntimeVariables"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
         ["Try.CatchVariableFilter"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
         ["Try.Finally"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
         ["Try.Fault"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",

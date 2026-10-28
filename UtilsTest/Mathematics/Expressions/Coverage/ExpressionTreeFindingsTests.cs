@@ -12,7 +12,8 @@ namespace UtilsTest.Mathematics.Expressions.Coverage;
 /// <summary>
 /// ETC R0: minimal, named reproducers of the findings registered in
 /// <c>Utils/TODO-2026-10-27-etc-expression-tree-coverage-roadmap.md</c>. Every test pins the behavior of
-/// <c>master</c> at <c>b5c05dc3</c>. A test asserting a defect states, in its summary, the corrected contract
+/// <c>master</c> at <c>b5c05dc3</c>, except the ETC-02 (Block, Loop, New), ETC-08, ETC-09, ETC-11 and ETC-13 tests,
+/// which ETC R1a replaced by the corrected contract. A test asserting a defect states, in its summary, the corrected contract
 /// and the round expected to replace the assertion; that replacement is part of the finding's resolution and is
 /// recorded in the roadmap's compatibility register.
 /// </summary>
@@ -137,43 +138,47 @@ public class ExpressionTreeFindingsTests
     // ETC-02: reconstruction disagrees with traversal and loses metadata.
     // ------------------------------------------------------------------------------------------
 
-    /// <summary>ETC-02: <c>CopyExpression</c> rebuilds a block from its children only, losing its declared variables (and its explicit type).</summary>
+    /// <summary>
+    /// ETC-02, resolved for <c>Block</c> by ETC R1a (C-02): an explicit <c>CopyExpression</c> of a block keeps its declared
+    /// variables and its result type (R0 pinned the loss of the variables, which made the copy uncompilable).
+    /// </summary>
     [TestMethod]
-    public void ETC02_CopyExpression_Block_LosesVariables()
+    public void ETC02_CopyExpression_Block_KeepsVariables()
     {
         ParameterExpression local = Expression.Variable(typeof(double), "local");
         BlockExpression block = Expression.Block(typeof(object), [local], Expression.Assign(local, P), Expression.Convert(local, typeof(object)));
 
         var copy = (BlockExpression)ExposedTransformer.Copy(block, [.. block.Expressions]);
 
-        Assert.AreEqual(0, copy.Variables.Count);
-        Assert.AreEqual(typeof(object), copy.Type, "The type survives here only because the last child already has it.");
-        Assert.ThrowsExactly<InvalidOperationException>(() => Expression.Lambda<Func<double, object>>(copy, P).Compile());
+        CollectionAssert.AreEqual(block.Variables.ToArray(), copy.Variables.ToArray());
+        Assert.AreEqual(typeof(object), copy.Type);
+        Assert.AreEqual(3.0, Expression.Lambda<Func<double, object>>(copy, P).Compile()(3.0));
     }
 
-    /// <summary>ETC-02: <c>CopyExpression</c> rebuilds a loop without its break and continue labels.</summary>
+    /// <summary>ETC-02, resolved for <c>Loop</c> by ETC R1a (C-02): an explicit copy keeps the break and continue labels and the loop type.</summary>
     [TestMethod]
-    public void ETC02_CopyExpression_Loop_LosesLabels()
+    public void ETC02_CopyExpression_Loop_KeepsLabels()
     {
         LabelTarget breakLabel = Expression.Label(typeof(double), "break");
         LoopExpression loop = Expression.Loop(Expression.Break(breakLabel, P), breakLabel);
 
         var copy = (LoopExpression)ExposedTransformer.Copy(loop, loop.Body);
 
-        Assert.IsNull(copy.BreakLabel);
-        Assert.AreEqual(typeof(void), copy.Type);
+        Assert.AreSame(breakLabel, copy.BreakLabel);
+        Assert.AreEqual(typeof(double), copy.Type);
+        Assert.AreEqual(3.0, Evaluate<double>(copy));
     }
 
-    /// <summary>ETC-02: <c>CopyExpression</c> rebuilds a <see cref="NewExpression"/> without its <see cref="NewExpression.Members"/>.</summary>
+    /// <summary>ETC-02, resolved for <c>New</c> by ETC R1a (C-02): an explicit copy keeps <see cref="NewExpression.Members"/>.</summary>
     [TestMethod]
-    public void ETC02_CopyExpression_NewWithMembers_LosesMembers()
+    public void ETC02_CopyExpression_NewWithMembers_KeepsMembers()
     {
         NewExpression creation = (NewExpression)ExpressionNodeCatalog.Get("New.Members").Build();
 
         var copy = (NewExpression)ExposedTransformer.Copy(creation, [.. creation.Arguments]);
 
         Assert.IsNotNull(creation.Members);
-        Assert.IsNull(copy.Members);
+        CollectionAssert.AreEqual(creation.Members.ToArray(), copy.Members!.ToArray());
     }
 
     /// <summary>ETC-02: for many families <c>CopyExpression</c> ignores the supplied children and returns the original node.</summary>
@@ -311,63 +316,85 @@ public class ExpressionTreeFindingsTests
     // ETC-08: silent corruption through PrepareDefault + CopyExpression.
     // ------------------------------------------------------------------------------------------
 
-    /// <summary>ETC-08 (critical): <c>Simplify(new[] { p * 1, p * 1 })</c> returns an empty array. R1 must rebuild array initializers from their prepared elements.</summary>
+    /// <summary>
+    /// ETC-08 (critical), resolved by ETC R1a: <c>Simplify(new[] { p * 1, p * 1 })</c> returned an empty array; the array
+    /// initializer is now passed through unchanged (its elements are traversed by R1b), by the exact simplifier, a
+    /// derived simplifier and a generic transformer finalizing with <c>CopyExpression</c>.
+    /// </summary>
     [TestMethod]
-    public void ETC08_ExactSimplifier_NewArrayInit_DropsEveryElement()
+    public void ETC08_ExactSimplifier_NewArrayInit_KeepsEveryElement()
     {
         Expression array = Expression.NewArrayInit(typeof(double), Leaf(), Leaf());
 
-        Expression simplified = new ExpressionSimplifier().Simplify(array);
+        Expression[] results = [new ExpressionSimplifier().Simplify(array), new DerivedSimplifier().Simplify(array), new RecursiveTransformer().Transform(array)];
 
         double[] expected = [3.0, 3.0];
         CollectionAssert.AreEqual(expected, Evaluate<double[]>(array));
-        Assert.AreEqual(0, Evaluate<double[]>(simplified).Length);
+        foreach (Expression result in results)
+        {
+            Assert.AreSame(array, result);
+        }
     }
 
-    /// <summary>ETC-08 (critical): a block is replaced by an empty <see cref="void"/> block, losing its statements, variables and result.</summary>
+    /// <summary>
+    /// ETC-08 (critical), resolved by ETC R1a: a block was replaced by an empty <see cref="void"/> block; it now keeps its
+    /// statements, variables and result.
+    /// </summary>
     [TestMethod]
-    public void ETC08_ExactSimplifier_Block_BecomesEmptyVoid()
+    public void ETC08_ExactSimplifier_Block_KeepsStatementsVariablesAndResult()
     {
         Expression block = ExpressionNodeCatalog.Get("Block").Build();
 
-        Expression simplified = new ExpressionSimplifier().Simplify(block);
+        Expression[] results = [new ExpressionSimplifier().Simplify(block), new DerivedSimplifier().Simplify(block), new RecursiveTransformer().Transform(block)];
 
         Assert.AreEqual(typeof(double), block.Type);
-        Assert.AreEqual(typeof(void), simplified.Type);
-        var emptyBlock = (BlockExpression)simplified;
-        Assert.AreEqual(0, emptyBlock.Expressions.Count);
-        Assert.AreEqual(0, emptyBlock.Variables.Count);
+        foreach (Expression result in results)
+        {
+            Assert.AreSame(block, result);
+        }
     }
 
     // ------------------------------------------------------------------------------------------
     // ETC-09: valid trees throw in the simplifier and in the public comparer.
     // ------------------------------------------------------------------------------------------
 
-    /// <summary>ETC-09: type tests, loops, constructions with arguments and array bounds throw from <c>Simplify</c>.</summary>
+    /// <summary>
+    /// ETC-09, resolved by ETC R1a: type tests, loops, constructions with arguments and array bounds threw from
+    /// <c>Simplify</c>; they are now returned unchanged by the exact and a derived simplifier.
+    /// </summary>
     [TestMethod]
-    public void ETC09_ExactSimplifier_ThrowsOnValidTrees()
+    public void ETC09_ExactSimplifier_DoesNotThrowOnValidTrees()
     {
-        var simplifier = new ExpressionSimplifier();
+        Expression[] trees =
+        [
+            Expression.TypeIs(Expression.Convert(P, typeof(object)), typeof(double)),
+            ExpressionNodeCatalog.Get("Loop").Build(),
+            Expression.New(typeof(StrongBox<double>).GetConstructor([typeof(double)])!, P),
+            Expression.New(typeof(DateTime)),
+            Expression.NewArrayBounds(typeof(double), Expression.Constant(2)),
+        ];
 
-        Assert.ThrowsExactly<IndexOutOfRangeException>(() => simplifier.Simplify(Expression.TypeIs(Expression.Convert(P, typeof(object)), typeof(double))));
-        Assert.ThrowsExactly<IndexOutOfRangeException>(() => simplifier.Simplify(ExpressionNodeCatalog.Get("Loop").Build()));
-        Assert.ThrowsExactly<ArgumentException>(() => simplifier.Simplify(Expression.New(typeof(StrongBox<double>).GetConstructor([typeof(double)])!, P)));
-        Assert.ThrowsExactly<ArgumentNullException>(() => simplifier.Simplify(Expression.New(typeof(DateTime))));
-        Assert.ThrowsExactly<ArgumentException>(() => simplifier.Simplify(Expression.NewArrayBounds(typeof(double), Expression.Constant(2))));
+        foreach (Expression tree in trees)
+        {
+            Assert.AreSame(tree, new ExpressionSimplifier().Simplify(tree), tree.NodeType.ToString());
+            Assert.AreSame(tree, new DerivedSimplifier().Simplify(tree), tree.NodeType.ToString());
+        }
     }
 
     /// <summary>
-    /// ETC-09: the public comparer cannot hash such a tree, so it cannot be added to a <see cref="HashSet{T}"/>, although
-    /// <c>Equals(x, x)</c> is <see langword="true"/> through the reference fast path.
+    /// ETC-09, resolved by ETC R1a: the public comparer could not hash such a tree, so it could not enter a
+    /// <see cref="HashSet{T}"/>. It now hashes it (coarsely, ETC-07) and the set finds it again; structural equality of two
+    /// distinct instances stays conservative until R1c.
     /// </summary>
     [TestMethod]
-    public void ETC09_Comparer_CannotHashValidTree()
+    public void ETC09_Comparer_HashesValidTree()
     {
         Expression typeTest = Expression.TypeIs(Expression.Constant("text"), typeof(string));
 
         Assert.IsTrue(ExpressionComparer.Default.Equals(typeTest, typeTest));
-        Assert.ThrowsExactly<IndexOutOfRangeException>(() => ExpressionComparer.Default.GetHashCode(typeTest));
-        Assert.ThrowsExactly<IndexOutOfRangeException>(() => new HashSet<Expression>(ExpressionComparer.Default) { typeTest });
+        Assert.AreEqual(ExpressionComparer.Default.GetHashCode(typeTest), ExpressionComparer.Default.GetHashCode(typeTest));
+        var set = new HashSet<Expression>(ExpressionComparer.Default) { typeTest };
+        Assert.IsTrue(set.Contains(typeTest));
     }
 
     // ------------------------------------------------------------------------------------------
@@ -385,11 +412,12 @@ public class ExpressionTreeFindingsTests
     }
 
     /// <summary>
-    /// ETC-11 (high): inlining an invoked lambda leaves its parameter unbound when the body holds the parameter in a nested
-    /// lambda or a member access, so the simplified tree can no longer be compiled.
+    /// ETC-11 (high), guarded by ETC R1a: inlining an invoked lambda left its parameter unbound when the body held the
+    /// parameter in a nested lambda or a member access. Such an invocation is now kept, so the result compiles and
+    /// computes the same value; capture-avoiding inlining is R2.
     /// </summary>
     [TestMethod]
-    public void ETC11_InvokeInlining_LeavesUnboundParameter()
+    public void ETC11_InvokeInlining_KeepsInvocationWhenParameterIsNotSubstitutable()
     {
         ParameterExpression q = Expression.Parameter(typeof(double), "q");
         Expression<Func<double, double>> nestedLambda = Expression.Lambda<Func<double, double>>(
@@ -400,8 +428,13 @@ public class ExpressionTreeFindingsTests
         Assert.AreEqual(3.0, nestedLambda.Compile()(3.0));
         Assert.AreEqual(3.0, memberBody.Compile()(3.0));
         var simplifier = new ExpressionSimplifier();
-        Assert.ThrowsExactly<InvalidOperationException>(() => ((LambdaExpression)simplifier.Simplify(nestedLambda)).Compile());
-        Assert.ThrowsExactly<InvalidOperationException>(() => ((LambdaExpression)simplifier.Simplify(memberBody)).Compile());
+        var simplifiedNested = (Expression<Func<double, double>>)simplifier.Simplify(nestedLambda);
+        var simplifiedMember = (Expression<Func<double, double>>)simplifier.Simplify(memberBody);
+        Assert.AreEqual(3.0, simplifiedNested.Compile()(3.0));
+        Assert.AreEqual(3.0, simplifiedMember.Compile()(3.0));
+        var keptInvocation = (InvocationExpression)((InvocationExpression)simplifiedNested.Body).Expression;
+        Assert.AreSame(q, ((LambdaExpression)keptInvocation.Expression).Parameters[0]);
+        Assert.IsInstanceOfType<InvocationExpression>(simplifiedMember.Body);
     }
 
     /// <summary>ETC-12 (policy): the simplifier rewrites the contents of a quoted lambda, which is data for its consumer.</summary>
@@ -416,16 +449,19 @@ public class ExpressionTreeFindingsTests
         Assert.AreSame(x, ((LambdaExpression)simplified.Operand).Body);
     }
 
-    /// <summary>ETC-13: a rethrow (a <c>Throw</c> without operand) crashes the generic recursive transformer and a derived simplifier, and loses its type through substitution.</summary>
+    /// <summary>
+    /// ETC-13, resolved by ETC R1a: a rethrow (a <c>Throw</c> without operand) crashed the generic recursive transformer
+    /// and a derived simplifier, and lost its type through substitution. It is now a leaf kept unchanged by every path.
+    /// </summary>
     [TestMethod]
     public void ETC13_Rethrow_NullOperand()
     {
         UnaryExpression rethrow = Expression.Rethrow(typeof(double));
 
-        Assert.ThrowsExactly<NullReferenceException>(() => new RecursiveTransformer().Transform(rethrow));
-        Assert.ThrowsExactly<NullReferenceException>(() => new DerivedSimplifier().Simplify(rethrow));
-        Assert.AreEqual(typeof(double), new ExpressionSimplifier().Simplify(rethrow).Type);
-        Assert.AreEqual(typeof(void), new ExposedTransformer().Replace(rethrow, P, Expression.Constant(5.0)).Type);
+        Assert.AreSame(rethrow, new RecursiveTransformer().Transform(rethrow));
+        Assert.AreSame(rethrow, new DerivedSimplifier().Simplify(rethrow));
+        Assert.AreSame(rethrow, new ExpressionSimplifier().Simplify(rethrow));
+        Assert.AreSame(rethrow, new ExposedTransformer().Replace(rethrow, P, Expression.Constant(5.0)));
     }
 
     /// <summary>

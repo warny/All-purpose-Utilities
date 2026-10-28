@@ -335,22 +335,21 @@ public class ExpressionSimplifierFinalizationTests
     // ------------------------------------------------------------------------------------------
 
     /// <summary>
-    /// Characterizes the current (arguably broken) behavior of a <see cref="TypeBinaryExpression"/>
-    /// (<c>TypeIs</c>) reaching the fallback: <c>PrepareDefault</c> passes through with an empty
-    /// parameters array, and <c>CopyExpression</c>'s <c>TypeIs</c> branch indexes
-    /// <c>parameters[0]</c>, which throws. This is a known, pre-existing limitation of
-    /// <c>PrepareDefault</c>/<c>CopyExpression</c> and must NOT be "fixed" by this test or by any
-    /// fast-path optimization scoped to <see cref="UnaryExpression"/>/<see cref="BinaryExpression"/>/
-    /// <see cref="MethodCallExpression"/>/<see cref="ConditionalExpression"/> only.
+    /// A <see cref="TypeBinaryExpression"/> (<c>TypeIs</c>) reaching the fallback: <c>PrepareDefault</c> passes
+    /// through with an empty parameters array. Until ETC R1a, <c>CopyExpression</c>'s <c>TypeIs</c> branch indexed
+    /// <c>parameters[0]</c> and threw <see cref="IndexOutOfRangeException"/> (finding ETC-09, which this test used to
+    /// pin as a known limitation); the arity contract C-02 now returns the untraversed node unchanged. The fast path
+    /// scoped to <see cref="UnaryExpression"/>/<see cref="BinaryExpression"/>/<see cref="MethodCallExpression"/>/
+    /// <see cref="ConditionalExpression"/> is still not involved: the node is kept by <c>CopyExpression</c> itself.
     /// </summary>
     [TestMethod]
-    public void Simplify_TypeBinaryWithoutRule_ThrowsIndexOutOfRange()
+    public void Simplify_TypeBinaryWithoutRule_ReturnsNodeUnchanged()
     {
         var simplifier = new ExpressionSimplifier();
         ParameterExpression obj = Expression.Parameter(typeof(object), "obj");
         TypeBinaryExpression original = Expression.TypeIs(obj, typeof(string));
 
-        Assert.ThrowsExactly<IndexOutOfRangeException>(() => simplifier.Simplify(original));
+        Assert.AreSame(original, simplifier.Simplify(original));
     }
 
     // ------------------------------------------------------------------------------------------

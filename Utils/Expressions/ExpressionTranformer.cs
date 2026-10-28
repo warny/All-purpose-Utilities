@@ -646,6 +646,14 @@ public abstract class ExpressionTransformer
     private readonly struct TransformContext
     {
         /// <summary>
+        /// Private sentinel stored in <see cref="expressionParameters"/> by <see cref="Opaque"/>: an empty array whose
+        /// identity (not its length) marks a node whose children were deliberately not prepared (ETC R1a). A supported
+        /// node that legitimately has no children (a constant, a parameter, a rethrow, a parameterless call) stores
+        /// <see cref="Array.Empty{T}"/> instead, so the two cases are never confused.
+        /// </summary>
+        private static readonly Expression[] OpaqueChildren = new Expression[0];
+
+        /// <summary>
         /// The prepared sub-expressions of <see cref="Expression"/>, or <see langword="null"/> exactly
         /// when <see cref="Expression"/> is a <see cref="UnaryExpression"/> prepared by
         /// <see cref="PrepareUnary"/> or a <see cref="BinaryExpression"/> prepared by
@@ -673,6 +681,17 @@ public abstract class ExpressionTransformer
 
         /// <summary>Gets the number of arguments in the historical positional invocation layout.</summary>
         public int InvocationArgumentCount => Expression is ConstantExpression ? 2 : ExpressionParameterCount + 1;
+
+        /// <summary>
+        /// Gets whether <see cref="Expression"/> belongs to a family this transformer does not traverse yet: its
+        /// children were not prepared, so an empty child list here means "unknown", not "no children".
+        /// </summary>
+        public bool IsOpaque => ReferenceEquals(expressionParameters, OpaqueChildren);
+
+        /// <summary>Creates the context of a node whose children are deliberately not prepared (see <see cref="IsOpaque"/>).</summary>
+        /// <param name="expression">The original node, returned unchanged.</param>
+        /// <returns>An opaque context exposing no sub-expression.</returns>
+        public static TransformContext Opaque(Expression expression) => new(expression, OpaqueChildren);
 
         /// <summary>
         /// Initializes a new <see cref="TransformContext"/> with an already-prepared expression and its
@@ -759,7 +778,8 @@ public abstract class ExpressionTransformer
         {
             if (expressionParameters is not null)
             {
-                return expressionParameters;
+                // The opaque sentinel never escapes: rules keep receiving the historical empty array.
+                return IsOpaque ? Array.Empty<Expression>() : expressionParameters;
             }
 
             if (Expression is BinaryExpression binary)
@@ -858,6 +878,9 @@ public abstract class ExpressionTransformer
             return result!;
         }
 
+        // An untraversed node (PrepareDefault) is finalized with an empty child list, exactly as before ETC R1a (its opaque
+        // context materializes Array.Empty), so every subclass observes the same FinalizeExpression calls;
+        // CopyExpression's arity contract (C-02) then keeps it.
         return context.Expression is ConstantExpression
             ? FinalizeExpression(context.Expression, Array.Empty<Expression>())
             : FinalizeExpression(context.Expression, context.MaterializeExpressionParameters());
@@ -908,6 +931,14 @@ public abstract class ExpressionTransformer
     /// </remarks>
     private TransformContext PrepareUnary(UnaryExpression ue)
     {
+        // A rethrow (Throw without operand, possibly typed) has nothing to prepare: its null operand is never passed to
+        // PrepareExpression (ETC-13) and the node is not rebuilt, so its declared Type is kept. The lazy context still
+        // exposes the historical [null] child list to rules and FinalizeExpression.
+        if (ue.Operand is null)
+        {
+            return new TransformContext(ue);
+        }
+
         Expression operand = PrepareExpression(ue.Operand);
         UnaryExpression copied = RebuildUnaryExpression(ue, operand);
         return new TransformContext(copied);
@@ -1158,9 +1189,9 @@ public abstract class ExpressionTransformer
     /// attempted, and the node is passed through unchanged.
     /// </summary>
     /// <param name="e">The expression to prepare.</param>
-    /// <returns>The resulting <see cref="TransformContext"/>.</returns>
+    /// <returns>An opaque <see cref="TransformContext"/> (see <see cref="TransformContext.IsOpaque"/>).</returns>
     private TransformContext PrepareDefault(Expression e)
-        => new(e, Array.Empty<Expression>());
+        => TransformContext.Opaque(e);
 
     /// <summary>
     /// Iterates the candidate rules for <c>context.Expression.NodeType</c> — from
@@ -1491,6 +1522,10 @@ public abstract class ExpressionTransformer
                     // element access exactly like the historical array-typed overload did.
                     return newParameters is Expression[] newArray ? newArray[i] : newParameters![i];
                 }
+            case UnaryExpression { Operand: null }:
+                // A rethrow has nothing to substitute; rebuilding it would lose a typed rethrow's Type (ETC-13).
+                return e;
+
             case UnaryExpression ue:
                 return CopyExpression(ue, ReplaceArgumentsCore(ue.Operand, oldParameters, newParameters));
 
@@ -1655,6 +1690,14 @@ public abstract class ExpressionTransformer
     /// If certain <see cref="ExpressionType"/> values are not supported by this switch,
     /// they are simply returned as-is or an exception is thrown.
     /// </summary>
+    /// <remarks>
+    /// Since ETC R1a (compatibility entry C-02), <c>New</c>, <c>NewArrayInit</c>, <c>NewArrayBounds</c>, <c>TypeIs</c>,
+    /// <c>TypeEqual</c>, <c>Block</c> and <c>Loop</c> follow an arity contract: an empty list returns the node unchanged
+    /// (it is the child list a transformer passes for a node it did not traverse, or there is no child to replace), a
+    /// list of the node's arity rebuilds it with its metadata (members, variables, result type, labels), and any other
+    /// length throws <see cref="ArgumentException"/>. A rethrow (a <c>Throw</c> without operand) is returned
+    /// unchanged. Other families keep their historical behavior.
+    /// </remarks>
     /// <param name="e">The original expression to copy.</param>
     /// <param name="parameters">The sub-expressions to insert into the copied expression.</param>
     /// <returns>
@@ -1704,9 +1747,8 @@ public abstract class ExpressionTransformer
             ExpressionType.Negate => Expression.Negate(parameters[0]),
             ExpressionType.UnaryPlus => Expression.UnaryPlus(parameters[0]),
             ExpressionType.NegateChecked => Expression.NegateChecked(parameters[0]),
-            ExpressionType.New => Expression.New(((NewExpression)e).Constructor, parameters),
-            ExpressionType.NewArrayInit => Expression.NewArrayInit(((NewArrayExpression)e).Type.GetElementType()!, parameters),
-            ExpressionType.NewArrayBounds => Expression.NewArrayBounds(((NewArrayExpression)e).Type.GetElementType()!, parameters),
+            ExpressionType.New => CopyNewExpression((NewExpression)e, parameters),
+            ExpressionType.NewArrayInit or ExpressionType.NewArrayBounds => CopyNewArrayExpression((NewArrayExpression)e, parameters),
             ExpressionType.Not => Expression.Not(parameters[0]),
             ExpressionType.NotEqual => Expression.NotEqual(parameters[0], parameters[1]),
             ExpressionType.Or => Expression.Or(parameters[0], parameters[1]),
@@ -1718,10 +1760,9 @@ public abstract class ExpressionTransformer
             ExpressionType.Subtract => Expression.Subtract(parameters[0], parameters[1]),
             ExpressionType.SubtractChecked => Expression.SubtractChecked(parameters[0], parameters[1]),
             ExpressionType.TypeAs => Expression.TypeAs(parameters[0], ((UnaryExpression)e).Type),
-            ExpressionType.TypeIs => Expression.TypeIs(parameters[0], ((TypeBinaryExpression)e).TypeOperand),
-            ExpressionType.TypeEqual => Expression.TypeEqual(parameters[0], ((TypeBinaryExpression)e).TypeOperand),
+            ExpressionType.TypeIs or ExpressionType.TypeEqual => CopyTypeBinaryExpression((TypeBinaryExpression)e, parameters),
             ExpressionType.Assign => Expression.Assign(parameters[0], parameters[1]),
-            ExpressionType.Block => Expression.Block(parameters),
+            ExpressionType.Block => CopyBlockExpression((BlockExpression)e, parameters),
             ExpressionType.DebugInfo => e,
             ExpressionType.Decrement => Expression.Decrement(parameters[0]),
             ExpressionType.Dynamic => e,
@@ -1732,8 +1773,9 @@ public abstract class ExpressionTransformer
             ExpressionType.Index => e,
             ExpressionType.Label => e,
             ExpressionType.RuntimeVariables => e,
-            ExpressionType.Loop => Expression.Loop(parameters[0]),
+            ExpressionType.Loop => CopyLoopExpression((LoopExpression)e, parameters),
             ExpressionType.Switch => e,
+            ExpressionType.Throw when e is UnaryExpression { Operand: null } && (parameters.Length == 0 || parameters is [null]) => e,
             ExpressionType.Throw => Expression.Throw(parameters[0]),
             ExpressionType.Try => e,
             ExpressionType.Unbox => Expression.Unbox(parameters[0], ((UnaryExpression)e).Type),
@@ -1777,6 +1819,94 @@ public abstract class ExpressionTransformer
         return original.Object is null
             ? Expression.Call(original.Method, arguments)
             : Expression.Call(original.Object, original.Method, arguments);
+    }
+
+    /// <summary>
+    /// Arity contract of <see cref="CopyExpression"/> for the families it rebuilds faithfully since ETC R1a (C-02):
+    /// an empty list keeps the node as is (it is either the child list of a node the transformer did not traverse, or
+    /// the list of a node that has no child to replace); a list of the node's own arity is an explicit reconstruction;
+    /// any other length is rejected instead of producing a corrupted node.
+    /// </summary>
+    /// <param name="e">The node being copied.</param>
+    /// <param name="parameters">The supplied children.</param>
+    /// <param name="expected">The number of children of <paramref name="e"/>.</param>
+    /// <returns><see langword="true"/> if <paramref name="e"/> must be returned unchanged; <see langword="false"/> to rebuild it.</returns>
+    /// <exception cref="ArgumentException">The length of <paramref name="parameters"/> is neither 0 nor <paramref name="expected"/>.</exception>
+    private static bool KeepsUntraversedNode(Expression e, Expression[] parameters, int expected)
+    {
+        if (parameters.Length == 0) return true;
+        if (parameters.Length == expected) return false;
+
+        throw new ArgumentException(
+            $"A '{e.NodeType}' expression has {expected} sub-expression(s), but {parameters.Length} were supplied.",
+            nameof(parameters));
+    }
+
+    /// <summary>
+    /// Rebuilds a <see cref="NewExpression"/> from its arguments, preserving <see cref="NewExpression.Members"/>. A
+    /// constructor-less value-type default construction has no argument, so it is always returned unchanged.
+    /// </summary>
+    /// <param name="original">The node being copied.</param>
+    /// <param name="arguments">The constructor arguments.</param>
+    /// <returns>The rebuilt node, or <paramref name="original"/> (see <see cref="KeepsUntraversedNode"/>).</returns>
+    private static Expression CopyNewExpression(NewExpression original, Expression[] arguments)
+    {
+        if (KeepsUntraversedNode(original, arguments, original.Arguments.Count)) return original;
+
+        // Only a value-type default construction has no constructor, and it has no argument, so it was kept above.
+        ConstructorInfo constructor = original.Constructor!;
+        return original.Members is null
+            ? Expression.New(constructor, arguments)
+            : Expression.New(constructor, arguments, original.Members);
+    }
+
+    /// <summary>Rebuilds a <see cref="NewArrayExpression"/> (initializer or bounds) from its elements or bounds.</summary>
+    /// <param name="original">The node being copied.</param>
+    /// <param name="children">The elements (<see cref="ExpressionType.NewArrayInit"/>) or bounds (<see cref="ExpressionType.NewArrayBounds"/>).</param>
+    /// <returns>The rebuilt node, or <paramref name="original"/> (see <see cref="KeepsUntraversedNode"/>).</returns>
+    private static Expression CopyNewArrayExpression(NewArrayExpression original, Expression[] children)
+    {
+        if (KeepsUntraversedNode(original, children, original.Expressions.Count)) return original;
+
+        Type elementType = original.Type.GetElementType()!;
+        return original.NodeType == ExpressionType.NewArrayInit
+            ? Expression.NewArrayInit(elementType, children)
+            : Expression.NewArrayBounds(elementType, children);
+    }
+
+    /// <summary>Rebuilds a <see cref="TypeBinaryExpression"/> (<c>TypeIs</c> or <c>TypeEqual</c>) from its operand.</summary>
+    /// <param name="original">The node being copied.</param>
+    /// <param name="children">The single operand.</param>
+    /// <returns>The rebuilt node, or <paramref name="original"/> (see <see cref="KeepsUntraversedNode"/>).</returns>
+    private static Expression CopyTypeBinaryExpression(TypeBinaryExpression original, Expression[] children)
+    {
+        if (KeepsUntraversedNode(original, children, 1)) return original;
+
+        return original.NodeType == ExpressionType.TypeIs
+            ? Expression.TypeIs(children[0], original.TypeOperand)
+            : Expression.TypeEqual(children[0], original.TypeOperand);
+    }
+
+    /// <summary>Rebuilds a <see cref="BlockExpression"/> from its statements, preserving its variables and result type.</summary>
+    /// <param name="original">The node being copied.</param>
+    /// <param name="statements">The statements, the last one giving the result.</param>
+    /// <returns>The rebuilt node, or <paramref name="original"/> (see <see cref="KeepsUntraversedNode"/>).</returns>
+    private static Expression CopyBlockExpression(BlockExpression original, Expression[] statements)
+    {
+        if (KeepsUntraversedNode(original, statements, original.Expressions.Count)) return original;
+
+        return Expression.Block(original.Type, original.Variables, statements);
+    }
+
+    /// <summary>Rebuilds a <see cref="LoopExpression"/> from its body, preserving its break and continue labels.</summary>
+    /// <param name="original">The node being copied.</param>
+    /// <param name="children">The single body.</param>
+    /// <returns>The rebuilt node, or <paramref name="original"/> (see <see cref="KeepsUntraversedNode"/>).</returns>
+    private static Expression CopyLoopExpression(LoopExpression original, Expression[] children)
+    {
+        if (KeepsUntraversedNode(original, children, 1)) return original;
+
+        return Expression.Loop(children[0], original.BreakLabel, original.ContinueLabel);
     }
 
     /// <summary>
