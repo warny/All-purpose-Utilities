@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Mathematics_Expressions_ExpressionComparer" data-uid="Utils.Mathematics.Expressions.ExpressionComparer" class="text-break">
-Class ExpressionComparer  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionComparer.cs/#L30"><i class="bi bi-code-slash"></i></a>
+Class ExpressionComparer  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionComparer.cs/#L31"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -271,10 +271,11 @@ unequal; broadening node coverage is left to a future S1 follow-up.</p>
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionComparer_Default" data-uid="Utils.Mathematics.Expressions.ExpressionComparer.Default">
   Default
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionComparer.cs/#L140"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionComparer.cs/#L150"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Gets the default <a class="xref" href="Utils.Mathematics.Expressions.ExpressionComparer.html">ExpressionComparer</a> instance for global usage.</p>
+  <div class="markdown level1 summary"><p>Gets the default <a class="xref" href="Utils.Mathematics.Expressions.ExpressionComparer.html">ExpressionComparer</a> instance for global usage, with
+<a class="xref" href="Utils.Expressions.ExpressionResourceLimits.html#Utils_Expressions_ExpressionResourceLimits_Default">Default</a> resource limits.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -299,15 +300,96 @@ unequal; broadening node coverage is left to a future S1 follow-up.</p>
 
 
 
+  <a id="Utils_Mathematics_Expressions_ExpressionComparer_ResourceLimits_" data-uid="Utils.Mathematics.Expressions.ExpressionComparer.ResourceLimits*"></a>
+
+  <h3 id="Utils_Mathematics_Expressions_ExpressionComparer_ResourceLimits" data-uid="Utils.Mathematics.Expressions.ExpressionComparer.ResourceLimits">
+  ResourceLimits
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionComparer.cs/#L171"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the resource limits of this instance. <a class="xref" href="Utils.Mathematics.Expressions.ExpressionComparer.html#Utils_Mathematics_Expressions_ExpressionComparer_Equals_System_Linq_Expressions_Expression_System_Linq_Expressions_Expression_">Equals(Expression?, Expression?)</a> and
+<a class="xref" href="Utils.Mathematics.Expressions.ExpressionComparer.html#Utils_Mathematics_Expressions_ExpressionComparer_GetHashCode_System_Linq_Expressions_Expression_">GetHashCode(Expression)</a> validate their inputs against them before simplifying, and the
+simplifications and structural walks they run (including the internal simplifier) are bounded by them. A call
+made while another expression operation runs on the thread can only tighten the active limits.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ExpressionResourceLimits ResourceLimits { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Expressions.ExpressionResourceLimits.html">ExpressionResourceLimits</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
   <h2 class="section" id="methods">Methods
 </h2>
+
+
+  <a id="Utils_Mathematics_Expressions_ExpressionComparer_Create_" data-uid="Utils.Mathematics.Expressions.ExpressionComparer.Create*"></a>
+
+  <h3 id="Utils_Mathematics_Expressions_ExpressionComparer_Create_Utils_Expressions_ExpressionResourceLimits_" data-uid="Utils.Mathematics.Expressions.ExpressionComparer.Create(Utils.Expressions.ExpressionResourceLimits)">
+  Create(ExpressionResourceLimits)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionComparer.cs/#L159"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Creates a comparer with explicit resource limits (ETC R1a-Security). Equality and hashing behave exactly like
+<a class="xref" href="Utils.Mathematics.Expressions.ExpressionComparer.html#Utils_Mathematics_Expressions_ExpressionComparer_Default">Default</a>; only the limits of the operations started by this instance differ.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ExpressionComparer Create(ExpressionResourceLimits resourceLimits)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>resourceLimits</code> <a class="xref" href="Utils.Expressions.ExpressionResourceLimits.html">ExpressionResourceLimits</a></dt>
+    <dd><p>The resource limits.</p>
+</dd>
+  </dl>
+
+  <h4 class="section">Returns</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Mathematics.Expressions.ExpressionComparer.html">ExpressionComparer</a></dt>
+    <dd><p>A new comparer.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p><code class="paramref">resourceLimits</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+  </dl>
+
 
 
   <a id="Utils_Mathematics_Expressions_ExpressionComparer_Equals_" data-uid="Utils.Mathematics.Expressions.ExpressionComparer.Equals*"></a>
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionComparer_Equals_System_Linq_Expressions_Expression_System_Linq_Expressions_Expression_" data-uid="Utils.Mathematics.Expressions.ExpressionComparer.Equals(System.Linq.Expressions.Expression,System.Linq.Expressions.Expression)">
   Equals(Expression?, Expression?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionComparer.cs/#L167"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionComparer.cs/#L207"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Determines whether two <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a> objects are equal by simplifying
@@ -357,8 +439,22 @@ themselves under a single, unambiguous binding context, so &quot;same object&quo
 meaning&quot;. <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">EqualsCore(Expression, Expression, ParameterBindingContext)</a>'s internal recursion deliberately has no equivalent shortcut,
 because a shared sub-expression object reached through two lambdas can carry two different meanings
 depending on how each lambda binds its parameters - see <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">EqualsCore(Expression, Expression, ParameterBindingContext)</a>'s remarks.</p>
+<p>
+<b>Resource limits (ETC R1a-Security).</b> When the fast path does not decide, both operands are validated
+against <a class="xref" href="Utils.Mathematics.Expressions.ExpressionComparer.html#Utils_Mathematics_Expressions_ExpressionComparer_ResourceLimits">ResourceLimits</a> before either is simplified, and the comparison is bounded by the visit
+budgets; an excess throws <a class="xref" href="Utils.Expressions.ExpressionResourceLimitException.html">ExpressionResourceLimitException</a>, never <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>. The fast
+path itself is an intentional compatibility exception: <code>Equals(x, x)</code> (same instance) and the
+<a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> cases return without validating anything, so a <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> result there is not
+evidence that <code class="paramref">x</code> satisfies the limits. <a class="xref" href="Utils.Mathematics.Expressions.ExpressionComparer.html#Utils_Mathematics_Expressions_ExpressionComparer_GetHashCode_System_Linq_Expressions_Expression_">GetHashCode(Expression)</a> always validates.
+</p>
 </div>
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Expressions.ExpressionResourceLimitException.html">ExpressionResourceLimitException</a></dt>
+    <dd><p>A resource limit was exceeded, or the stack ran out.</p>
+</dd>
+  </dl>
 
 
 
@@ -366,7 +462,7 @@ depending on how each lambda binds its parameters - see <a class="xref" href="ht
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionComparer_GetHashCode_System_Linq_Expressions_Expression_" data-uid="Utils.Mathematics.Expressions.ExpressionComparer.GetHashCode(System.Linq.Expressions.Expression)">
   GetHashCode(Expression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionComparer.cs/#L639"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionComparer.cs/#L723"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns a hash code for the specified <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a> by simplifying it and computing a
@@ -400,7 +496,18 @@ lambdas and exact cross-type numeric constants hash identically, satisfying the
 
 
 
+  <h4 class="section" id="Utils_Mathematics_Expressions_ExpressionComparer_GetHashCode_System_Linq_Expressions_Expression__remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>ETC R1a-Security: <code class="paramref">obj</code> is always validated against <a class="xref" href="Utils.Mathematics.Expressions.ExpressionComparer.html#Utils_Mathematics_Expressions_ExpressionComparer_ResourceLimits">ResourceLimits</a> (there is no
+fast path), and the simplification and hashing are bounded by the visit budgets; an excess throws
+<a class="xref" href="Utils.Expressions.ExpressionResourceLimitException.html">ExpressionResourceLimitException</a>, never a fallback hash.</p>
+</div>
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Expressions.ExpressionResourceLimitException.html">ExpressionResourceLimitException</a></dt>
+    <dd><p>A resource limit was exceeded, or the stack ran out.</p>
+</dd>
+  </dl>
 
 
 
@@ -408,7 +515,7 @@ lambdas and exact cross-type numeric constants hash identically, satisfying the
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionComparer.cs/#L30" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionComparer.cs/#L31" class="edit-link">Edit this page</a>
         </div>
 
 

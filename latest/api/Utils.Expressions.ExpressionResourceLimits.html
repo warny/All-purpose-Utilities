@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Class ExpressionResourceLimits | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Class ExpressionResourceLimits | omy.Utils Documentation ">
+      
+      <meta name="description" content="Immutable resource limits applied by the expression-tree engine (, ExpressionSimplifier, ExpressionComparer) to one public operation.">
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/new/master/apiSpec/new?filename=Utils_Expressions_ExpressionResourceLimits.md&amp;value=---%0Auid%3A%20Utils.Expressions.ExpressionResourceLimits%0Asummary%3A%20&#39;*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax&#39;%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="ManagedReference">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="Utils.Expressions.ExpressionResourceLimits">
+
+
+
+  <h1 id="Utils_Expressions_ExpressionResourceLimits" data-uid="Utils.Expressions.ExpressionResourceLimits" class="text-break">
+Class ExpressionResourceLimits  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionResourceLimits.cs/#L34"><i class="bi bi-code-slash"></i></a>
+  </h1>
+
+  <div class="facts text-secondary">
+    <dl><dt>Namespace</dt><dd><span class="xref">Utils</span>.<a class="xref" href="Utils.Expressions.html">Expressions</a></dd></dl>
+  <dl><dt>Assembly</dt><dd>Utils.dll</dd></dl>
+  </div>
+
+  <div class="markdown summary"><p>Immutable resource limits applied by the expression-tree engine (<a class="xref" href="Utils.Expressions.ExpressionTransformer.html">ExpressionTransformer</a>,
+<code>ExpressionSimplifier</code>, <code>ExpressionComparer</code>) to one public operation.</p>
+</div>
+  <div class="markdown conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public sealed record ExpressionResourceLimits : IEquatable&lt;ExpressionResourceLimits&gt;</code></pre>
+  </div>
+
+
+
+
+  <dl class="typelist inheritance">
+    <dt>Inheritance</dt>
+    <dd>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object">object</a></div>
+      <div><span class="xref">ExpressionResourceLimits</span></div>
+    </dd>
+  </dl>
+
+  <dl class="typelist implements">
+    <dt>Implements</dt>
+    <dd>
+      <div><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a class="xref" href="Utils.Expressions.ExpressionResourceLimits.html">ExpressionResourceLimits</a>&gt;</div>
+    </dd>
+  </dl>
+
+
+  <dl class="typelist inheritedMembers">
+    <dt>Inherited Members</dt>
+    <dd>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)">object.Equals(object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)">object.Equals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gethashcode">object.GetHashCode()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.gettype">object.GetType()</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.referenceequals">object.ReferenceEquals(object, object)</a>
+    </div>
+    <div>
+      <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.tostring">object.ToString()</a>
+    </div>
+  </dd></dl>
+
+  <dl class="typelist extensionMethods">
+    <dt>Extension Methods</dt>
+    <dd>
+  <div>
+      <a class="xref" href="Utils.Data.DataUtils.html#Utils_Data_DataUtils_ToDbValue_System_Object_">DataUtils.ToDbValue(object?)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Mathematics.MathEx.html#Utils_Mathematics_MathEx_Clamp__1___0___0___0_System_Collections_Generic_IComparer___0__">MathEx.Clamp&lt;T&gt;(T, T, T, IComparer&lt;T&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Failure__1___0_">FluentExtensions.Failure&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsEqualTo__2___0___1_">FluentExtensions.IsEqualTo&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsGreaterOrEqualsThan__2___0___1_">FluentExtensions.IsGreaterOrEqualsThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsGreaterThan__2___0___1_">FluentExtensions.IsGreaterThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsIn__1___0___0___">FluentExtensions.IsIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsLowerOrEqualsThan__2___0___1_">FluentExtensions.IsLowerOrEqualsThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsLowerThan__2___0___1_">FluentExtensions.IsLowerThan&lt;T, CT&gt;(T, CT)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNotIn__1___0___0___">FluentExtensions.IsNotIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNotNull__1___0_">FluentExtensions.IsNotNull&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_IsNull__1___0_">FluentExtensions.IsNull&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Success__1___0_">FluentExtensions.Success&lt;T&gt;(T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.FluentExtensions.html#Utils_Objects_FluentExtensions_Test__1___0_System_Func___0_System_Boolean__">FluentExtensions.Test&lt;T&gt;(T, Func&lt;T, bool&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Between__1___0_System_Collections_Generic_IComparer___0____0___0_">ObjectUtils.Between&lt;T&gt;(T, IComparer&lt;T&gt;, T, T)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Between__1___0_System_Collections_Generic_IComparer___0____0___0_System_Boolean_System_Boolean_">ObjectUtils.Between&lt;T&gt;(T, IComparer&lt;T&gt;, T, T, bool, bool)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0_System_Threading_Tasks_Task___1___System_Func_System_Threading_Tasks_Task___1___">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Task&lt;Result&gt;&gt;, Func&lt;Task&lt;Result&gt;&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0_System_Threading_Tasks_Task___1_____1_">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Task&lt;Result&gt;&gt;, Result)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0___1__System_Func___1__">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Func&lt;Result&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_DoAsync__2___0_System_Func___0___1____1_">ObjectUtils.DoAsync&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Result)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Do__2___0_System_Func___0___1__System_Func___1__">ObjectUtils.Do&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Func&lt;Result&gt;)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_Do__2___0_System_Func___0___1____1_">ObjectUtils.Do&lt;T, Result&gt;(T, Func&lt;T, Result&gt;, Result)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_In__1___0___0___">ObjectUtils.In&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.ObjectUtils.html#Utils_Objects_ObjectUtils_NotIn__1___0___0___">ObjectUtils.NotIn&lt;T&gt;(T, params T[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustBe__1___0_System_Func___0_System_Boolean__System_String_System_String_">Validations.ArgMustBe&lt;T&gt;(T, Func&lt;T, bool&gt;, string, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ArgMustNotBe__1___0_System_Func___0_System_Boolean__System_String_System_String_">Validations.ArgMustNotBe&lt;T&gt;(T, Func&lt;T, bool&gt;, string, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_Arg__1___0_System_String_">Validations.Arg&lt;T&gt;(T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_ValueMustNotBeNull__1___0_System_String_">Validations.ValueMustNotBeNull&lt;T&gt;(T, string)</a>
+  </div>
+  <div>
+      <a class="xref" href="Utils.Objects.Validations.html#Utils_Objects_Validations_Variable__1___0_System_String_">Validations.Variable&lt;T&gt;(T, string)</a>
+  </div>
+  </dd></dl>
+
+
+
+  <h2 id="Utils_Expressions_ExpressionResourceLimits_remarks">Remarks</h2>
+  <div class="markdown level0 remarks"><p>
+A public operation is the outermost call into the engine on a thread (for example <code>Simplify</code>, <code>Equals</code>,
+<code>GetHashCode</code>, or the first <a class="xref" href="Utils.Expressions.ExpressionTransformer.html">ExpressionTransformer</a> engine call of a custom transformer). Before any
+work, its input is validated against <a class="xref" href="Utils.Expressions.ExpressionResourceLimits.html#Utils_Expressions_ExpressionResourceLimits_MaxDepth">MaxDepth</a> and <a class="xref" href="Utils.Expressions.ExpressionResourceLimits.html#Utils_Expressions_ExpressionResourceLimits_MaxNodes">MaxNodes</a>; during the work, the
+transformation and structural visits it performs are counted against <a class="xref" href="Utils.Expressions.ExpressionResourceLimits.html#Utils_Expressions_ExpressionResourceLimits_MaxTransformVisits">MaxTransformVisits</a> and
+<a class="xref" href="Utils.Expressions.ExpressionResourceLimits.html#Utils_Expressions_ExpressionResourceLimits_MaxStructuralVisits">MaxStructuralVisits</a>. Every excess ends with an <a class="xref" href="Utils.Expressions.ExpressionResourceLimitException.html">ExpressionResourceLimitException</a>.
+</p>
+<p>
+A public call made while another one is running on the same thread (from a rule, or from user code such as a
+constant's <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)">Equals(object)</a>) joins the running operation: it validates its own input and may
+tighten the limits for its own duration, but it never loosens them and never resets the counters.
+</p>
+<p>
+<a class="xref" href="Utils.Expressions.ExpressionResourceLimits.html#Utils_Expressions_ExpressionResourceLimits_Unlimited">Unlimited</a> (or any limit set to <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32.maxvalue">MaxValue</a>/<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int64.maxvalue">MaxValue</a>) disables the
+corresponding check for trusted inputs. The execution-stack guard is never disabled: a recursion that would
+exhaust the stack still ends with an <a class="xref" href="Utils.Expressions.ExpressionResourceLimitException.html">ExpressionResourceLimitException</a> of kind
+<a class="xref" href="Utils.Expressions.ExpressionResourceLimitKind.html#Utils_Expressions_ExpressionResourceLimitKind_Stack">Stack</a>.
+</p>
+<p>
+The visit budgets bound the measured engine work; they do not bound time or memory directly. One transformation
+visit costs roughly 1–4 µs and 1–6 KB of allocations on the measured workloads, so the default budget may still
+allocate several gigabytes cumulatively before it is exhausted.
+</p>
+</div>
+
+
+  <h2 class="section" id="fields">Fields
+</h2>
+
+
+
+  <h3 id="Utils_Expressions_ExpressionResourceLimits_DefaultMaxDepth" data-uid="Utils.Expressions.ExpressionResourceLimits.DefaultMaxDepth">
+  DefaultMaxDepth
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionResourceLimits.cs/#L37"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>The default maximum depth: 512 nodes on a root-to-leaf path.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public const int DefaultMaxDepth = 512</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Expressions_ExpressionResourceLimits_DefaultMaxNodes" data-uid="Utils.Expressions.ExpressionResourceLimits.DefaultMaxNodes">
+  DefaultMaxNodes
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionResourceLimits.cs/#L40"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>The default maximum number of logical nodes: 50,000.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public const long DefaultMaxNodes = 50000</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int64">long</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Expressions_ExpressionResourceLimits_DefaultMaxStructuralVisits" data-uid="Utils.Expressions.ExpressionResourceLimits.DefaultMaxStructuralVisits">
+  DefaultMaxStructuralVisits
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionResourceLimits.cs/#L46"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>The default maximum number of structural visits per operation: 10,000,000.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public const long DefaultMaxStructuralVisits = 10000000</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int64">long</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+  <h3 id="Utils_Expressions_ExpressionResourceLimits_DefaultMaxTransformVisits" data-uid="Utils.Expressions.ExpressionResourceLimits.DefaultMaxTransformVisits">
+  DefaultMaxTransformVisits
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionResourceLimits.cs/#L43"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>The default maximum number of transformation visits per operation: 1,000,000.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public const long DefaultMaxTransformVisits = 1000000</code></pre>
+  </div>
+
+
+
+
+  <h4 class="section">Field Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int64">long</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+  <h2 class="section" id="properties">Properties
+</h2>
+
+
+  <a id="Utils_Expressions_ExpressionResourceLimits_Default_" data-uid="Utils.Expressions.ExpressionResourceLimits.Default*"></a>
+
+  <h3 id="Utils_Expressions_ExpressionResourceLimits_Default" data-uid="Utils.Expressions.ExpressionResourceLimits.Default">
+  Default
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionResourceLimits.cs/#L61"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the default limits: depth 512, 50,000 logical nodes, 1,000,000 transformation visits, 10,000,000 structural visits.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ExpressionResourceLimits Default { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Expressions.ExpressionResourceLimits.html">ExpressionResourceLimits</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Expressions_ExpressionResourceLimits_MaxDepth_" data-uid="Utils.Expressions.ExpressionResourceLimits.MaxDepth*"></a>
+
+  <h3 id="Utils_Expressions_ExpressionResourceLimits_MaxDepth" data-uid="Utils.Expressions.ExpressionResourceLimits.MaxDepth">
+  MaxDepth
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionResourceLimits.cs/#L80"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the maximum number of nodes on any root-to-leaf path of an input tree (the root alone has depth 1).
+Structural containers (switch cases, catch blocks, member bindings, element initializers) count as one level.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int MaxDepth { get; init; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int32">int</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>The value is less than 1.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Expressions_ExpressionResourceLimits_MaxNodes_" data-uid="Utils.Expressions.ExpressionResourceLimits.MaxNodes*"></a>
+
+  <h3 id="Utils_Expressions_ExpressionResourceLimits_MaxNodes" data-uid="Utils.Expressions.ExpressionResourceLimits.MaxNodes">
+  MaxNodes
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionResourceLimits.cs/#L91"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the maximum number of logical nodes of an input tree: node occurrences when the tree is unfolded, so a
+subtree shared by two parents counts twice (the engine walks it twice). Bounds the distinct nodes too.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public long MaxNodes { get; init; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int64">long</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>The value is less than 1.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Expressions_ExpressionResourceLimits_MaxStructuralVisits_" data-uid="Utils.Expressions.ExpressionResourceLimits.MaxStructuralVisits*"></a>
+
+  <h3 id="Utils_Expressions_ExpressionResourceLimits_MaxStructuralVisits" data-uid="Utils.Expressions.ExpressionResourceLimits.MaxStructuralVisits">
+  MaxStructuralVisits
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionResourceLimits.cs/#L113"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the maximum number of structural visits of one operation: one visit per node reached by structural
+equality, structural hashing, canonical-order keys and their comparisons, and parameter substitution.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public long MaxStructuralVisits { get; init; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int64">long</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>The value is less than 1.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Expressions_ExpressionResourceLimits_MaxTransformVisits_" data-uid="Utils.Expressions.ExpressionResourceLimits.MaxTransformVisits*"></a>
+
+  <h3 id="Utils_Expressions_ExpressionResourceLimits_MaxTransformVisits" data-uid="Utils.Expressions.ExpressionResourceLimits.MaxTransformVisits">
+  MaxTransformVisits
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionResourceLimits.cs/#L102"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the maximum number of transformation visits of one operation: one visit per node processed by the
+<a class="xref" href="Utils.Expressions.ExpressionTransformer.html">ExpressionTransformer</a> engine, including nested comparer simplifications and rule re-entries.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public long MaxTransformVisits { get; init; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.int64">long</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception">ArgumentOutOfRangeException</a></dt>
+    <dd><p>The value is less than 1.</p>
+</dd>
+  </dl>
+
+
+
+  <a id="Utils_Expressions_ExpressionResourceLimits_Unlimited_" data-uid="Utils.Expressions.ExpressionResourceLimits.Unlimited*"></a>
+
+  <h3 id="Utils_Expressions_ExpressionResourceLimits_Unlimited" data-uid="Utils.Expressions.ExpressionResourceLimits.Unlimited">
+  Unlimited
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionResourceLimits.cs/#L67"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets limits that disable the depth, node and work checks, for trusted inputs. The execution-stack guard stays
+active.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static ExpressionResourceLimits Unlimited { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Expressions.ExpressionResourceLimits.html">ExpressionResourceLimits</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionResourceLimits.cs/#L34" class="edit-link">Edit this page</a>
+        </div>
+
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

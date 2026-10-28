@@ -1861,6 +1861,48 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Expressions.ExpressionResourceLimitException.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Expressions.ExpressionResourceLimitException.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Expressions.ExpressionResourceLimitException",
+      "Summary": "<p sourcefile=\"api/Utils.Expressions.ExpressionResourceLimitException.yml\" sourcestartlinenumber=\"1\">Thrown when an expression-tree operation exceeds one of its <xref href=\"Utils.Expressions.ExpressionResourceLimits\" data-throw-if-not-resolved=\"false\"></xref>, or when the\nremaining execution stack is insufficient to continue it safely.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Expressions.ExpressionResourceLimitKind.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Expressions.ExpressionResourceLimitKind.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Expressions.ExpressionResourceLimitKind",
+      "Summary": "<p sourcefile=\"api/Utils.Expressions.ExpressionResourceLimitKind.yml\" sourcestartlinenumber=\"1\">The resource dimension whose limit an expression-tree operation exceeded.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Expressions.ExpressionResourceLimits.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Expressions.ExpressionResourceLimits.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Expressions.ExpressionResourceLimits",
+      "Summary": "<p sourcefile=\"api/Utils.Expressions.ExpressionResourceLimits.yml\" sourcestartlinenumber=\"1\">Immutable resource limits applied by the expression-tree engine (<xref href=\"Utils.Expressions.ExpressionTransformer\" data-throw-if-not-resolved=\"false\"></xref>,\n<code>ExpressionSimplifier</code>, <code>ExpressionComparer</code>) to one public operation.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.Expressions.ExpressionSignatureAttribute.yml",
       "output": {
         ".html": {
@@ -16237,11 +16279,11 @@
       "type": "Toc",
       "source_relative_path": "api/toc.yml",
       "output": {
-        ".html": {
-          "relative_path": "api/toc.html"
-        },
         ".json": {
           "relative_path": "api/toc.json"
+        },
+        ".html": {
+          "relative_path": "api/toc.html"
         }
       },
       "version": ""
@@ -16580,11 +16622,11 @@
       "type": "Toc",
       "source_relative_path": "docs/toc.yml",
       "output": {
-        ".html": {
-          "relative_path": "docs/toc.html"
-        },
         ".json": {
           "relative_path": "docs/toc.json"
+        },
+        ".html": {
+          "relative_path": "docs/toc.html"
         }
       },
       "version": ""
@@ -16603,11 +16645,11 @@
       "type": "Toc",
       "source_relative_path": "toc.yml",
       "output": {
-        ".html": {
-          "relative_path": "toc.html"
-        },
         ".json": {
           "relative_path": "toc.json"
+        },
+        ".html": {
+          "relative_path": "toc.html"
         }
       },
       "version": ""

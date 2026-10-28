@@ -12020,6 +12020,223 @@ references:
   isSpec: "True"
   fullName: Utils.Expressions.ExpressionOptimiser.Optimize
   nameWithType: ExpressionOptimiser.Optimize
+- uid: Utils.Expressions.ExpressionResourceLimitException
+  name: ExpressionResourceLimitException
+  href: api/Utils.Expressions.ExpressionResourceLimitException.html
+  commentId: T:Utils.Expressions.ExpressionResourceLimitException
+  fullName: Utils.Expressions.ExpressionResourceLimitException
+  nameWithType: ExpressionResourceLimitException
+- uid: Utils.Expressions.ExpressionResourceLimitException.#ctor(Utils.Expressions.ExpressionResourceLimitKind,System.Int64,System.Int64)
+  name: ExpressionResourceLimitException(ExpressionResourceLimitKind, long, long)
+  href: api/Utils.Expressions.ExpressionResourceLimitException.html#Utils_Expressions_ExpressionResourceLimitException__ctor_Utils_Expressions_ExpressionResourceLimitKind_System_Int64_System_Int64_
+  commentId: M:Utils.Expressions.ExpressionResourceLimitException.#ctor(Utils.Expressions.ExpressionResourceLimitKind,System.Int64,System.Int64)
+  name.vb: New(ExpressionResourceLimitKind, Long, Long)
+  fullName: Utils.Expressions.ExpressionResourceLimitException.ExpressionResourceLimitException(Utils.Expressions.ExpressionResourceLimitKind, long, long)
+  fullName.vb: Utils.Expressions.ExpressionResourceLimitException.New(Utils.Expressions.ExpressionResourceLimitKind, Long, Long)
+  nameWithType: ExpressionResourceLimitException.ExpressionResourceLimitException(ExpressionResourceLimitKind, long, long)
+  nameWithType.vb: ExpressionResourceLimitException.New(ExpressionResourceLimitKind, Long, Long)
+- uid: Utils.Expressions.ExpressionResourceLimitException.#ctor(Utils.Expressions.ExpressionResourceLimitKind,System.Int64,System.Int64,System.Exception)
+  name: ExpressionResourceLimitException(ExpressionResourceLimitKind, long, long, Exception?)
+  href: api/Utils.Expressions.ExpressionResourceLimitException.html#Utils_Expressions_ExpressionResourceLimitException__ctor_Utils_Expressions_ExpressionResourceLimitKind_System_Int64_System_Int64_System_Exception_
+  commentId: M:Utils.Expressions.ExpressionResourceLimitException.#ctor(Utils.Expressions.ExpressionResourceLimitKind,System.Int64,System.Int64,System.Exception)
+  name.vb: New(ExpressionResourceLimitKind, Long, Long, Exception)
+  fullName: Utils.Expressions.ExpressionResourceLimitException.ExpressionResourceLimitException(Utils.Expressions.ExpressionResourceLimitKind, long, long, System.Exception?)
+  fullName.vb: Utils.Expressions.ExpressionResourceLimitException.New(Utils.Expressions.ExpressionResourceLimitKind, Long, Long, System.Exception)
+  nameWithType: ExpressionResourceLimitException.ExpressionResourceLimitException(ExpressionResourceLimitKind, long, long, Exception?)
+  nameWithType.vb: ExpressionResourceLimitException.New(ExpressionResourceLimitKind, Long, Long, Exception)
+- uid: Utils.Expressions.ExpressionResourceLimitException.#ctor*
+  name: ExpressionResourceLimitException
+  href: api/Utils.Expressions.ExpressionResourceLimitException.html#Utils_Expressions_ExpressionResourceLimitException__ctor_
+  commentId: Overload:Utils.Expressions.ExpressionResourceLimitException.#ctor
+  isSpec: "True"
+  name.vb: New
+  fullName: Utils.Expressions.ExpressionResourceLimitException.ExpressionResourceLimitException
+  fullName.vb: Utils.Expressions.ExpressionResourceLimitException.New
+  nameWithType: ExpressionResourceLimitException.ExpressionResourceLimitException
+  nameWithType.vb: ExpressionResourceLimitException.New
+- uid: Utils.Expressions.ExpressionResourceLimitException.Kind
+  name: Kind
+  href: api/Utils.Expressions.ExpressionResourceLimitException.html#Utils_Expressions_ExpressionResourceLimitException_Kind
+  commentId: P:Utils.Expressions.ExpressionResourceLimitException.Kind
+  fullName: Utils.Expressions.ExpressionResourceLimitException.Kind
+  nameWithType: ExpressionResourceLimitException.Kind
+- uid: Utils.Expressions.ExpressionResourceLimitException.Kind*
+  name: Kind
+  href: api/Utils.Expressions.ExpressionResourceLimitException.html#Utils_Expressions_ExpressionResourceLimitException_Kind_
+  commentId: Overload:Utils.Expressions.ExpressionResourceLimitException.Kind
+  isSpec: "True"
+  fullName: Utils.Expressions.ExpressionResourceLimitException.Kind
+  nameWithType: ExpressionResourceLimitException.Kind
+- uid: Utils.Expressions.ExpressionResourceLimitException.Limit
+  name: Limit
+  href: api/Utils.Expressions.ExpressionResourceLimitException.html#Utils_Expressions_ExpressionResourceLimitException_Limit
+  commentId: P:Utils.Expressions.ExpressionResourceLimitException.Limit
+  fullName: Utils.Expressions.ExpressionResourceLimitException.Limit
+  nameWithType: ExpressionResourceLimitException.Limit
+- uid: Utils.Expressions.ExpressionResourceLimitException.Limit*
+  name: Limit
+  href: api/Utils.Expressions.ExpressionResourceLimitException.html#Utils_Expressions_ExpressionResourceLimitException_Limit_
+  commentId: Overload:Utils.Expressions.ExpressionResourceLimitException.Limit
+  isSpec: "True"
+  fullName: Utils.Expressions.ExpressionResourceLimitException.Limit
+  nameWithType: ExpressionResourceLimitException.Limit
+- uid: Utils.Expressions.ExpressionResourceLimitException.Observed
+  name: Observed
+  href: api/Utils.Expressions.ExpressionResourceLimitException.html#Utils_Expressions_ExpressionResourceLimitException_Observed
+  commentId: P:Utils.Expressions.ExpressionResourceLimitException.Observed
+  fullName: Utils.Expressions.ExpressionResourceLimitException.Observed
+  nameWithType: ExpressionResourceLimitException.Observed
+- uid: Utils.Expressions.ExpressionResourceLimitException.Observed*
+  name: Observed
+  href: api/Utils.Expressions.ExpressionResourceLimitException.html#Utils_Expressions_ExpressionResourceLimitException_Observed_
+  commentId: Overload:Utils.Expressions.ExpressionResourceLimitException.Observed
+  isSpec: "True"
+  fullName: Utils.Expressions.ExpressionResourceLimitException.Observed
+  nameWithType: ExpressionResourceLimitException.Observed
+- uid: Utils.Expressions.ExpressionResourceLimitKind
+  name: ExpressionResourceLimitKind
+  href: api/Utils.Expressions.ExpressionResourceLimitKind.html
+  commentId: T:Utils.Expressions.ExpressionResourceLimitKind
+  fullName: Utils.Expressions.ExpressionResourceLimitKind
+  nameWithType: ExpressionResourceLimitKind
+- uid: Utils.Expressions.ExpressionResourceLimitKind.Depth
+  name: Depth
+  href: api/Utils.Expressions.ExpressionResourceLimitKind.html#Utils_Expressions_ExpressionResourceLimitKind_Depth
+  commentId: F:Utils.Expressions.ExpressionResourceLimitKind.Depth
+  fullName: Utils.Expressions.ExpressionResourceLimitKind.Depth
+  nameWithType: ExpressionResourceLimitKind.Depth
+- uid: Utils.Expressions.ExpressionResourceLimitKind.Nodes
+  name: Nodes
+  href: api/Utils.Expressions.ExpressionResourceLimitKind.html#Utils_Expressions_ExpressionResourceLimitKind_Nodes
+  commentId: F:Utils.Expressions.ExpressionResourceLimitKind.Nodes
+  fullName: Utils.Expressions.ExpressionResourceLimitKind.Nodes
+  nameWithType: ExpressionResourceLimitKind.Nodes
+- uid: Utils.Expressions.ExpressionResourceLimitKind.Stack
+  name: Stack
+  href: api/Utils.Expressions.ExpressionResourceLimitKind.html#Utils_Expressions_ExpressionResourceLimitKind_Stack
+  commentId: F:Utils.Expressions.ExpressionResourceLimitKind.Stack
+  fullName: Utils.Expressions.ExpressionResourceLimitKind.Stack
+  nameWithType: ExpressionResourceLimitKind.Stack
+- uid: Utils.Expressions.ExpressionResourceLimitKind.StructuralWork
+  name: StructuralWork
+  href: api/Utils.Expressions.ExpressionResourceLimitKind.html#Utils_Expressions_ExpressionResourceLimitKind_StructuralWork
+  commentId: F:Utils.Expressions.ExpressionResourceLimitKind.StructuralWork
+  fullName: Utils.Expressions.ExpressionResourceLimitKind.StructuralWork
+  nameWithType: ExpressionResourceLimitKind.StructuralWork
+- uid: Utils.Expressions.ExpressionResourceLimitKind.Work
+  name: Work
+  href: api/Utils.Expressions.ExpressionResourceLimitKind.html#Utils_Expressions_ExpressionResourceLimitKind_Work
+  commentId: F:Utils.Expressions.ExpressionResourceLimitKind.Work
+  fullName: Utils.Expressions.ExpressionResourceLimitKind.Work
+  nameWithType: ExpressionResourceLimitKind.Work
+- uid: Utils.Expressions.ExpressionResourceLimits
+  name: ExpressionResourceLimits
+  href: api/Utils.Expressions.ExpressionResourceLimits.html
+  commentId: T:Utils.Expressions.ExpressionResourceLimits
+  fullName: Utils.Expressions.ExpressionResourceLimits
+  nameWithType: ExpressionResourceLimits
+- uid: Utils.Expressions.ExpressionResourceLimits.Default
+  name: Default
+  href: api/Utils.Expressions.ExpressionResourceLimits.html#Utils_Expressions_ExpressionResourceLimits_Default
+  commentId: P:Utils.Expressions.ExpressionResourceLimits.Default
+  fullName: Utils.Expressions.ExpressionResourceLimits.Default
+  nameWithType: ExpressionResourceLimits.Default
+- uid: Utils.Expressions.ExpressionResourceLimits.Default*
+  name: Default
+  href: api/Utils.Expressions.ExpressionResourceLimits.html#Utils_Expressions_ExpressionResourceLimits_Default_
+  commentId: Overload:Utils.Expressions.ExpressionResourceLimits.Default
+  isSpec: "True"
+  fullName: Utils.Expressions.ExpressionResourceLimits.Default
+  nameWithType: ExpressionResourceLimits.Default
+- uid: Utils.Expressions.ExpressionResourceLimits.DefaultMaxDepth
+  name: DefaultMaxDepth
+  href: api/Utils.Expressions.ExpressionResourceLimits.html#Utils_Expressions_ExpressionResourceLimits_DefaultMaxDepth
+  commentId: F:Utils.Expressions.ExpressionResourceLimits.DefaultMaxDepth
+  fullName: Utils.Expressions.ExpressionResourceLimits.DefaultMaxDepth
+  nameWithType: ExpressionResourceLimits.DefaultMaxDepth
+- uid: Utils.Expressions.ExpressionResourceLimits.DefaultMaxNodes
+  name: DefaultMaxNodes
+  href: api/Utils.Expressions.ExpressionResourceLimits.html#Utils_Expressions_ExpressionResourceLimits_DefaultMaxNodes
+  commentId: F:Utils.Expressions.ExpressionResourceLimits.DefaultMaxNodes
+  fullName: Utils.Expressions.ExpressionResourceLimits.DefaultMaxNodes
+  nameWithType: ExpressionResourceLimits.DefaultMaxNodes
+- uid: Utils.Expressions.ExpressionResourceLimits.DefaultMaxStructuralVisits
+  name: DefaultMaxStructuralVisits
+  href: api/Utils.Expressions.ExpressionResourceLimits.html#Utils_Expressions_ExpressionResourceLimits_DefaultMaxStructuralVisits
+  commentId: F:Utils.Expressions.ExpressionResourceLimits.DefaultMaxStructuralVisits
+  fullName: Utils.Expressions.ExpressionResourceLimits.DefaultMaxStructuralVisits
+  nameWithType: ExpressionResourceLimits.DefaultMaxStructuralVisits
+- uid: Utils.Expressions.ExpressionResourceLimits.DefaultMaxTransformVisits
+  name: DefaultMaxTransformVisits
+  href: api/Utils.Expressions.ExpressionResourceLimits.html#Utils_Expressions_ExpressionResourceLimits_DefaultMaxTransformVisits
+  commentId: F:Utils.Expressions.ExpressionResourceLimits.DefaultMaxTransformVisits
+  fullName: Utils.Expressions.ExpressionResourceLimits.DefaultMaxTransformVisits
+  nameWithType: ExpressionResourceLimits.DefaultMaxTransformVisits
+- uid: Utils.Expressions.ExpressionResourceLimits.MaxDepth
+  name: MaxDepth
+  href: api/Utils.Expressions.ExpressionResourceLimits.html#Utils_Expressions_ExpressionResourceLimits_MaxDepth
+  commentId: P:Utils.Expressions.ExpressionResourceLimits.MaxDepth
+  fullName: Utils.Expressions.ExpressionResourceLimits.MaxDepth
+  nameWithType: ExpressionResourceLimits.MaxDepth
+- uid: Utils.Expressions.ExpressionResourceLimits.MaxDepth*
+  name: MaxDepth
+  href: api/Utils.Expressions.ExpressionResourceLimits.html#Utils_Expressions_ExpressionResourceLimits_MaxDepth_
+  commentId: Overload:Utils.Expressions.ExpressionResourceLimits.MaxDepth
+  isSpec: "True"
+  fullName: Utils.Expressions.ExpressionResourceLimits.MaxDepth
+  nameWithType: ExpressionResourceLimits.MaxDepth
+- uid: Utils.Expressions.ExpressionResourceLimits.MaxNodes
+  name: MaxNodes
+  href: api/Utils.Expressions.ExpressionResourceLimits.html#Utils_Expressions_ExpressionResourceLimits_MaxNodes
+  commentId: P:Utils.Expressions.ExpressionResourceLimits.MaxNodes
+  fullName: Utils.Expressions.ExpressionResourceLimits.MaxNodes
+  nameWithType: ExpressionResourceLimits.MaxNodes
+- uid: Utils.Expressions.ExpressionResourceLimits.MaxNodes*
+  name: MaxNodes
+  href: api/Utils.Expressions.ExpressionResourceLimits.html#Utils_Expressions_ExpressionResourceLimits_MaxNodes_
+  commentId: Overload:Utils.Expressions.ExpressionResourceLimits.MaxNodes
+  isSpec: "True"
+  fullName: Utils.Expressions.ExpressionResourceLimits.MaxNodes
+  nameWithType: ExpressionResourceLimits.MaxNodes
+- uid: Utils.Expressions.ExpressionResourceLimits.MaxStructuralVisits
+  name: MaxStructuralVisits
+  href: api/Utils.Expressions.ExpressionResourceLimits.html#Utils_Expressions_ExpressionResourceLimits_MaxStructuralVisits
+  commentId: P:Utils.Expressions.ExpressionResourceLimits.MaxStructuralVisits
+  fullName: Utils.Expressions.ExpressionResourceLimits.MaxStructuralVisits
+  nameWithType: ExpressionResourceLimits.MaxStructuralVisits
+- uid: Utils.Expressions.ExpressionResourceLimits.MaxStructuralVisits*
+  name: MaxStructuralVisits
+  href: api/Utils.Expressions.ExpressionResourceLimits.html#Utils_Expressions_ExpressionResourceLimits_MaxStructuralVisits_
+  commentId: Overload:Utils.Expressions.ExpressionResourceLimits.MaxStructuralVisits
+  isSpec: "True"
+  fullName: Utils.Expressions.ExpressionResourceLimits.MaxStructuralVisits
+  nameWithType: ExpressionResourceLimits.MaxStructuralVisits
+- uid: Utils.Expressions.ExpressionResourceLimits.MaxTransformVisits
+  name: MaxTransformVisits
+  href: api/Utils.Expressions.ExpressionResourceLimits.html#Utils_Expressions_ExpressionResourceLimits_MaxTransformVisits
+  commentId: P:Utils.Expressions.ExpressionResourceLimits.MaxTransformVisits
+  fullName: Utils.Expressions.ExpressionResourceLimits.MaxTransformVisits
+  nameWithType: ExpressionResourceLimits.MaxTransformVisits
+- uid: Utils.Expressions.ExpressionResourceLimits.MaxTransformVisits*
+  name: MaxTransformVisits
+  href: api/Utils.Expressions.ExpressionResourceLimits.html#Utils_Expressions_ExpressionResourceLimits_MaxTransformVisits_
+  commentId: Overload:Utils.Expressions.ExpressionResourceLimits.MaxTransformVisits
+  isSpec: "True"
+  fullName: Utils.Expressions.ExpressionResourceLimits.MaxTransformVisits
+  nameWithType: ExpressionResourceLimits.MaxTransformVisits
+- uid: Utils.Expressions.ExpressionResourceLimits.Unlimited
+  name: Unlimited
+  href: api/Utils.Expressions.ExpressionResourceLimits.html#Utils_Expressions_ExpressionResourceLimits_Unlimited
+  commentId: P:Utils.Expressions.ExpressionResourceLimits.Unlimited
+  fullName: Utils.Expressions.ExpressionResourceLimits.Unlimited
+  nameWithType: ExpressionResourceLimits.Unlimited
+- uid: Utils.Expressions.ExpressionResourceLimits.Unlimited*
+  name: Unlimited
+  href: api/Utils.Expressions.ExpressionResourceLimits.html#Utils_Expressions_ExpressionResourceLimits_Unlimited_
+  commentId: Overload:Utils.Expressions.ExpressionResourceLimits.Unlimited
+  isSpec: "True"
+  fullName: Utils.Expressions.ExpressionResourceLimits.Unlimited
+  nameWithType: ExpressionResourceLimits.Unlimited
 - uid: Utils.Expressions.ExpressionSignatureAttribute
   name: ExpressionSignatureAttribute
   href: api/Utils.Expressions.ExpressionSignatureAttribute.html
@@ -12086,6 +12303,15 @@ references:
   fullName.vb: Utils.Expressions.ExpressionTransformer.New()
   nameWithType: ExpressionTransformer.ExpressionTransformer()
   nameWithType.vb: ExpressionTransformer.New()
+- uid: Utils.Expressions.ExpressionTransformer.#ctor(Utils.Expressions.ExpressionResourceLimits)
+  name: ExpressionTransformer(ExpressionResourceLimits)
+  href: api/Utils.Expressions.ExpressionTransformer.html#Utils_Expressions_ExpressionTransformer__ctor_Utils_Expressions_ExpressionResourceLimits_
+  commentId: M:Utils.Expressions.ExpressionTransformer.#ctor(Utils.Expressions.ExpressionResourceLimits)
+  name.vb: New(ExpressionResourceLimits)
+  fullName: Utils.Expressions.ExpressionTransformer.ExpressionTransformer(Utils.Expressions.ExpressionResourceLimits)
+  fullName.vb: Utils.Expressions.ExpressionTransformer.New(Utils.Expressions.ExpressionResourceLimits)
+  nameWithType: ExpressionTransformer.ExpressionTransformer(ExpressionResourceLimits)
+  nameWithType.vb: ExpressionTransformer.New(ExpressionResourceLimits)
 - uid: Utils.Expressions.ExpressionTransformer.#ctor*
   name: ExpressionTransformer
   href: api/Utils.Expressions.ExpressionTransformer.html#Utils_Expressions_ExpressionTransformer__ctor_
@@ -12157,6 +12383,19 @@ references:
   isSpec: "True"
   fullName: Utils.Expressions.ExpressionTransformer.ReplaceArguments
   nameWithType: ExpressionTransformer.ReplaceArguments
+- uid: Utils.Expressions.ExpressionTransformer.ResourceLimits
+  name: ResourceLimits
+  href: api/Utils.Expressions.ExpressionTransformer.html#Utils_Expressions_ExpressionTransformer_ResourceLimits
+  commentId: P:Utils.Expressions.ExpressionTransformer.ResourceLimits
+  fullName: Utils.Expressions.ExpressionTransformer.ResourceLimits
+  nameWithType: ExpressionTransformer.ResourceLimits
+- uid: Utils.Expressions.ExpressionTransformer.ResourceLimits*
+  name: ResourceLimits
+  href: api/Utils.Expressions.ExpressionTransformer.html#Utils_Expressions_ExpressionTransformer_ResourceLimits_
+  commentId: Overload:Utils.Expressions.ExpressionTransformer.ResourceLimits
+  isSpec: "True"
+  fullName: Utils.Expressions.ExpressionTransformer.ResourceLimits
+  nameWithType: ExpressionTransformer.ResourceLimits
 - uid: Utils.Expressions.ExpressionTransformer.Transform(System.Linq.Expressions.Expression)
   name: Transform(Expression)
   href: api/Utils.Expressions.ExpressionTransformer.html#Utils_Expressions_ExpressionTransformer_Transform_System_Linq_Expressions_Expression_
@@ -41498,6 +41737,19 @@ references:
   commentId: T:Utils.Mathematics.Expressions.ExpressionComparer
   fullName: Utils.Mathematics.Expressions.ExpressionComparer
   nameWithType: ExpressionComparer
+- uid: Utils.Mathematics.Expressions.ExpressionComparer.Create(Utils.Expressions.ExpressionResourceLimits)
+  name: Create(ExpressionResourceLimits)
+  href: api/Utils.Mathematics.Expressions.ExpressionComparer.html#Utils_Mathematics_Expressions_ExpressionComparer_Create_Utils_Expressions_ExpressionResourceLimits_
+  commentId: M:Utils.Mathematics.Expressions.ExpressionComparer.Create(Utils.Expressions.ExpressionResourceLimits)
+  fullName: Utils.Mathematics.Expressions.ExpressionComparer.Create(Utils.Expressions.ExpressionResourceLimits)
+  nameWithType: ExpressionComparer.Create(ExpressionResourceLimits)
+- uid: Utils.Mathematics.Expressions.ExpressionComparer.Create*
+  name: Create
+  href: api/Utils.Mathematics.Expressions.ExpressionComparer.html#Utils_Mathematics_Expressions_ExpressionComparer_Create_
+  commentId: Overload:Utils.Mathematics.Expressions.ExpressionComparer.Create
+  isSpec: "True"
+  fullName: Utils.Mathematics.Expressions.ExpressionComparer.Create
+  nameWithType: ExpressionComparer.Create
 - uid: Utils.Mathematics.Expressions.ExpressionComparer.Default
   name: Default
   href: api/Utils.Mathematics.Expressions.ExpressionComparer.html#Utils_Mathematics_Expressions_ExpressionComparer_Default
@@ -41540,6 +41792,19 @@ references:
   isSpec: "True"
   fullName: Utils.Mathematics.Expressions.ExpressionComparer.GetHashCode
   nameWithType: ExpressionComparer.GetHashCode
+- uid: Utils.Mathematics.Expressions.ExpressionComparer.ResourceLimits
+  name: ResourceLimits
+  href: api/Utils.Mathematics.Expressions.ExpressionComparer.html#Utils_Mathematics_Expressions_ExpressionComparer_ResourceLimits
+  commentId: P:Utils.Mathematics.Expressions.ExpressionComparer.ResourceLimits
+  fullName: Utils.Mathematics.Expressions.ExpressionComparer.ResourceLimits
+  nameWithType: ExpressionComparer.ResourceLimits
+- uid: Utils.Mathematics.Expressions.ExpressionComparer.ResourceLimits*
+  name: ResourceLimits
+  href: api/Utils.Mathematics.Expressions.ExpressionComparer.html#Utils_Mathematics_Expressions_ExpressionComparer_ResourceLimits_
+  commentId: Overload:Utils.Mathematics.Expressions.ExpressionComparer.ResourceLimits
+  isSpec: "True"
+  fullName: Utils.Mathematics.Expressions.ExpressionComparer.ResourceLimits
+  nameWithType: ExpressionComparer.ResourceLimits
 - uid: Utils.Mathematics.Expressions.ExpressionDerivation
   name: ExpressionDerivation
   href: api/Utils.Mathematics.Expressions.ExpressionDerivation.html
@@ -42637,6 +42902,34 @@ references:
   commentId: T:Utils.Mathematics.Expressions.ExpressionSimplifier
   fullName: Utils.Mathematics.Expressions.ExpressionSimplifier
   nameWithType: ExpressionSimplifier
+- uid: Utils.Mathematics.Expressions.ExpressionSimplifier.#ctor
+  name: ExpressionSimplifier()
+  href: api/Utils.Mathematics.Expressions.ExpressionSimplifier.html#Utils_Mathematics_Expressions_ExpressionSimplifier__ctor
+  commentId: M:Utils.Mathematics.Expressions.ExpressionSimplifier.#ctor
+  name.vb: New()
+  fullName: Utils.Mathematics.Expressions.ExpressionSimplifier.ExpressionSimplifier()
+  fullName.vb: Utils.Mathematics.Expressions.ExpressionSimplifier.New()
+  nameWithType: ExpressionSimplifier.ExpressionSimplifier()
+  nameWithType.vb: ExpressionSimplifier.New()
+- uid: Utils.Mathematics.Expressions.ExpressionSimplifier.#ctor(Utils.Expressions.ExpressionResourceLimits)
+  name: ExpressionSimplifier(ExpressionResourceLimits)
+  href: api/Utils.Mathematics.Expressions.ExpressionSimplifier.html#Utils_Mathematics_Expressions_ExpressionSimplifier__ctor_Utils_Expressions_ExpressionResourceLimits_
+  commentId: M:Utils.Mathematics.Expressions.ExpressionSimplifier.#ctor(Utils.Expressions.ExpressionResourceLimits)
+  name.vb: New(ExpressionResourceLimits)
+  fullName: Utils.Mathematics.Expressions.ExpressionSimplifier.ExpressionSimplifier(Utils.Expressions.ExpressionResourceLimits)
+  fullName.vb: Utils.Mathematics.Expressions.ExpressionSimplifier.New(Utils.Expressions.ExpressionResourceLimits)
+  nameWithType: ExpressionSimplifier.ExpressionSimplifier(ExpressionResourceLimits)
+  nameWithType.vb: ExpressionSimplifier.New(ExpressionResourceLimits)
+- uid: Utils.Mathematics.Expressions.ExpressionSimplifier.#ctor*
+  name: ExpressionSimplifier
+  href: api/Utils.Mathematics.Expressions.ExpressionSimplifier.html#Utils_Mathematics_Expressions_ExpressionSimplifier__ctor_
+  commentId: Overload:Utils.Mathematics.Expressions.ExpressionSimplifier.#ctor
+  isSpec: "True"
+  name.vb: New
+  fullName: Utils.Mathematics.Expressions.ExpressionSimplifier.ExpressionSimplifier
+  fullName.vb: Utils.Mathematics.Expressions.ExpressionSimplifier.New
+  nameWithType: ExpressionSimplifier.ExpressionSimplifier
+  nameWithType.vb: ExpressionSimplifier.New
 - uid: Utils.Mathematics.Expressions.ExpressionSimplifier.ACosConversionMath(System.Linq.Expressions.Expression,System.Linq.Expressions.Expression[])
   name: ACosConversionMath(Expression, Expression[])
   href: api/Utils.Mathematics.Expressions.ExpressionSimplifier.html#Utils_Mathematics_Expressions_ExpressionSimplifier_ACosConversionMath_System_Linq_Expressions_Expression_System_Linq_Expressions_Expression___

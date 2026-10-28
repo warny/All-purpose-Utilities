@@ -133,6 +133,18 @@ on a specific type. This is a specialized <a class="xref" href="Utils.Expression
 </dd>
     </dl>
     <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.ExpressionResourceLimitException.html">ExpressionResourceLimitException</a></dt>
+      <dd><p>Thrown when an expression-tree operation exceeds one of its <a class="xref" href="Utils.Expressions.ExpressionResourceLimits.html">ExpressionResourceLimits</a>, or when the
+remaining execution stack is insufficient to continue it safely.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.ExpressionResourceLimits.html">ExpressionResourceLimits</a></dt>
+      <dd><p>Immutable resource limits applied by the expression-tree engine (<a class="xref" href="Utils.Expressions.ExpressionTransformer.html">ExpressionTransformer</a>,
+<code>ExpressionSimplifier</code>, <code>ExpressionComparer</code>) to one public operation.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
       <dt><a class="xref" href="Utils.Expressions.ExpressionSignatureAttribute.html">ExpressionSignatureAttribute</a></dt>
       <dd><p>Marks a method or parameter as having a signature requirement for a certain <a class="xref" href="Utils.Expressions.ExpressionSignatureAttribute.html#Utils_Expressions_ExpressionSignatureAttribute_ExpressionType">ExpressionType</a>.
 When used on a method, the method is considered for transformation if its attribute matches the current node type.
@@ -270,6 +282,14 @@ as well as to manage constants in expressions.</p>
     <dl class="jumplist">
       <dt><a class="xref" href="Utils.Expressions.ITypeFinder.html">ITypeFinder</a></dt>
       <dd><p>Provides methods for finding types and extension methods at runtime.</p>
+</dd>
+    </dl>
+    <h3 id="enums">
+Enums
+</h3>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.ExpressionResourceLimitKind.html">ExpressionResourceLimitKind</a></dt>
+      <dd><p>The resource dimension whose limit an expression-tree operation exceeded.</p>
 </dd>
     </dl>
 

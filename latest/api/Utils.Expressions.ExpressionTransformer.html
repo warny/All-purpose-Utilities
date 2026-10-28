@@ -283,6 +283,91 @@ During construction, it retrieves (or, on first use of the concrete type, builds
 
 
 
+  <a id="Utils_Expressions_ExpressionTransformer__ctor_" data-uid="Utils.Expressions.ExpressionTransformer.#ctor*"></a>
+
+  <h3 id="Utils_Expressions_ExpressionTransformer__ctor_Utils_Expressions_ExpressionResourceLimits_" data-uid="Utils.Expressions.ExpressionTransformer.#ctor(Utils.Expressions.ExpressionResourceLimits)">
+  ExpressionTransformer(ExpressionResourceLimits)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L355"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Expressions.ExpressionTransformer.html">ExpressionTransformer</a> class with explicit resource limits,
+applied to every operation this instance starts (see <a class="xref" href="Utils.Expressions.ExpressionTransformer.html#Utils_Expressions_ExpressionTransformer_ResourceLimits">ResourceLimits</a>).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected ExpressionTransformer(ExpressionResourceLimits resourceLimits)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>resourceLimits</code> <a class="xref" href="Utils.Expressions.ExpressionResourceLimits.html">ExpressionResourceLimits</a></dt>
+    <dd><p>The resource limits of this instance.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p><code class="paramref">resourceLimits</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+  </dl>
+
+
+
+  <h2 class="section" id="properties">Properties
+</h2>
+
+
+  <a id="Utils_Expressions_ExpressionTransformer_ResourceLimits_" data-uid="Utils.Expressions.ExpressionTransformer.ResourceLimits*"></a>
+
+  <h3 id="Utils_Expressions_ExpressionTransformer_ResourceLimits" data-uid="Utils.Expressions.ExpressionTransformer.ResourceLimits">
+  ResourceLimits
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L374"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the resource limits of this instance (ETC R1a-Security). They apply when this instance starts an operation:
+the first <a class="xref" href="Utils.Expressions.ExpressionTransformer.html#Utils_Expressions_ExpressionTransformer_TransformCore_System_Linq_Expressions_Expression_">TransformCore(Expression)</a> or <a class="xref" href="Utils.Expressions.ExpressionTransformer.html#Utils_Expressions_ExpressionTransformer_ReplaceArguments_System_Linq_Expressions_Expression_System_Linq_Expressions_ParameterExpression___System_Linq_Expressions_Expression___">ReplaceArguments(Expression, ParameterExpression[], Expression[])</a> call made while no expression
+operation runs on the thread validates its input against <a class="xref" href="Utils.Expressions.ExpressionResourceLimits.html#Utils_Expressions_ExpressionResourceLimits_MaxDepth">MaxDepth</a> and
+<a class="xref" href="Utils.Expressions.ExpressionResourceLimits.html#Utils_Expressions_ExpressionResourceLimits_MaxNodes">MaxNodes</a> and bounds the whole call by the visit budgets. Inside a running
+operation, the active limits are kept: an instance can never loosen them.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected ExpressionResourceLimits ResourceLimits { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Expressions.ExpressionResourceLimits.html">ExpressionResourceLimits</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+  <h4 class="section" id="Utils_Expressions_ExpressionTransformer_ResourceLimits_remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>Only the engine methods of this class are protected. A subclass whose public <a class="xref" href="Utils.Expressions.ExpressionTransformer.html#Utils_Expressions_ExpressionTransformer_Transform_System_Linq_Expressions_Expression_">Transform(Expression)</a> never calls
+<a class="xref" href="Utils.Expressions.ExpressionTransformer.html#Utils_Expressions_ExpressionTransformer_TransformCore_System_Linq_Expressions_Expression_">TransformCore(Expression)</a> (or <a class="xref" href="Utils.Expressions.ExpressionTransformer.html#Utils_Expressions_ExpressionTransformer_ReplaceArguments_System_Linq_Expressions_Expression_System_Linq_Expressions_ParameterExpression___System_Linq_Expressions_Expression___">ReplaceArguments(Expression, ParameterExpression[], Expression[])</a>) runs its own code outside these
+limits.</p>
+</div>
+
+
+
+
   <h2 class="section" id="methods">Methods
 </h2>
 
@@ -291,7 +376,7 @@ During construction, it retrieves (or, on first use of the concrete type, builds
 
   <h3 id="Utils_Expressions_ExpressionTransformer_CopyExpression_System_Linq_Expressions_Expression_System_Linq_Expressions_Expression___" data-uid="Utils.Expressions.ExpressionTransformer.CopyExpression(System.Linq.Expressions.Expression,System.Linq.Expressions.Expression[])">
   CopyExpression(Expression, params Expression[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L1707"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L1868"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Creates a new expression of the same <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expressiontype">ExpressionType</a> as <code class="paramref">e</code>,
@@ -345,7 +430,7 @@ unchanged. Other families keep their historical behavior.</p>
 
   <h3 id="Utils_Expressions_ExpressionTransformer_FinalizeExpression_System_Linq_Expressions_Expression_System_Linq_Expressions_Expression___" data-uid="Utils.Expressions.ExpressionTransformer.FinalizeExpression(System.Linq.Expressions.Expression,System.Linq.Expressions.Expression[])">
   FinalizeExpression(Expression, Expression[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L1461"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L1601"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Called if no custom transformation method (annotated with <a class="xref" href="Utils.Expressions.ExpressionSignatureAttribute.html">ExpressionSignatureAttribute</a>)
@@ -394,7 +479,7 @@ is found. Allows final post-processing. The default implementation throws an exc
 
   <h3 id="Utils_Expressions_ExpressionTransformer_PrepareExpression_System_Linq_Expressions_Expression_" data-uid="Utils.Expressions.ExpressionTransformer.PrepareExpression(System.Linq.Expressions.Expression)">
   PrepareExpression(Expression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L622"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L656"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Prepares an expression for transformation. Subclasses can override this to apply
@@ -435,7 +520,7 @@ The default implementation returns the expression unchanged.</p>
 
   <h3 id="Utils_Expressions_ExpressionTransformer_ReplaceArguments_System_Linq_Expressions_Expression_System_Linq_Expressions_ParameterExpression___System_Linq_Expressions_Expression___" data-uid="Utils.Expressions.ExpressionTransformer.ReplaceArguments(System.Linq.Expressions.Expression,System.Linq.Expressions.ParameterExpression[],System.Linq.Expressions.Expression[])">
   ReplaceArguments(Expression, ParameterExpression[], Expression[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L1474"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L1619"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Replaces all occurrences of <code class="paramref">oldParameters</code> within <code class="paramref">e</code>
@@ -473,7 +558,17 @@ with the corresponding items in <code class="paramref">newParameters</code>.</p>
 
 
 
+  <h4 class="section" id="Utils_Expressions_ExpressionTransformer_ReplaceArguments_System_Linq_Expressions_Expression_System_Linq_Expressions_ParameterExpression___System_Linq_Expressions_Expression____remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>When no expression operation runs on the thread, this call starts one with <a class="xref" href="Utils.Expressions.ExpressionTransformer.html#Utils_Expressions_ExpressionTransformer_ResourceLimits">ResourceLimits</a> and
+validates <code class="paramref">e</code> first (ETC R1a-Security); the substitution walk counts structural visits.</p>
+</div>
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Expressions.ExpressionResourceLimitException.html">ExpressionResourceLimitException</a></dt>
+    <dd><p>A resource limit was exceeded, or the stack ran out.</p>
+</dd>
+  </dl>
 
 
 
@@ -481,7 +576,7 @@ with the corresponding items in <code class="paramref">newParameters</code>.</p>
 
   <h3 id="Utils_Expressions_ExpressionTransformer_Transform_System_Linq_Expressions_Expression_" data-uid="Utils.Expressions.ExpressionTransformer.Transform(System.Linq.Expressions.Expression)">
   Transform(Expression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L832"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L866"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Public entry point for this transformer. Concrete transformers implement this to perform any
@@ -522,7 +617,7 @@ to run the actual recursive rule-matching engine.</p>
 
   <h3 id="Utils_Expressions_ExpressionTransformer_TransformCore_System_Linq_Expressions_Expression_" data-uid="Utils.Expressions.ExpressionTransformer.TransformCore(System.Linq.Expressions.Expression)">
   TransformCore(Expression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L845"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L888"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Applies transformation rules to a given expression, returning a (potentially) modified expression.
@@ -559,7 +654,21 @@ cannot accidentally reset a transformer's per-call state.</p>
 
 
 
+  <h4 class="section" id="Utils_Expressions_ExpressionTransformer_TransformCore_System_Linq_Expressions_Expression__remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>
+Resource safety (ETC R1a-Security): when no expression operation runs on the thread, this call starts one with
+<a class="xref" href="Utils.Expressions.ExpressionTransformer.html#Utils_Expressions_ExpressionTransformer_ResourceLimits">ResourceLimits</a>: <code class="paramref">e</code> is validated first, and the whole call, including every
+recursion and nested comparison, is bounded by the visit budgets. Every call checks the execution stack before
+recursing; each node processed is counted once, by <span class="xref">Utils.Expressions.ExpressionTransformer.TransformPrepared(Utils.Expressions.ExpressionTransformer.TransformContext)</span>.
+</p>
+</div>
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Expressions.ExpressionResourceLimitException.html">ExpressionResourceLimitException</a></dt>
+    <dd><p>A resource limit was exceeded, or the stack ran out.</p>
+</dd>
+  </dl>
 
 
 
