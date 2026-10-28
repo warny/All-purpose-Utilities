@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed — `omy.Utils` (expression engine: resource limits, ETC R1a-Security)
+- **Behavioural change — resource limits on by default.** `ExpressionSimplifier.Simplify`/`Transform`,
+  `ExpressionComparer.Equals`/`GetHashCode`, `ExpressionExtensions.Simplify` and every `ExpressionTransformer` subclass
+  (through `TransformCore`/`ReplaceArguments`) now refuse an input deeper than 512 levels or larger than 50,000 logical
+  nodes, and stop an operation after 1,000,000 transformation visits or 10,000,000 structural visits, with the new
+  `ExpressionResourceLimitException` (`Kind`: `Depth`, `Nodes`, `Work`, `StructuralWork`, `Stack`; `Limit`;
+  `Observed`). Before, such inputs could run for minutes, allocate tens of gigabytes, or terminate the process with a
+  stack overflow. A recursion that would exhaust the thread's stack now ends with `Kind = Stack` instead of a process
+  crash. `ExpressionComparer.Equals(x, x)` on the same instance still returns `true` without validating `x`.
+- New public API: `ExpressionResourceLimits` (`Default`, `Unlimited`, `MaxDepth`, `MaxNodes`, `MaxTransformVisits`,
+  `MaxStructuralVisits`), `ExpressionResourceLimitException`, `ExpressionResourceLimitKind`,
+  `new ExpressionSimplifier(ExpressionResourceLimits)`, `ExpressionComparer.Create(ExpressionResourceLimits)` and
+  `ExpressionComparer.ResourceLimits`, and the protected `ExpressionTransformer(ExpressionResourceLimits)` constructor and
+  `ResourceLimits` property. A call made from a rule or from user code while another expression operation runs on the
+  same thread shares that operation's budget and can only tighten it.
+- An exception thrown by the resource limits (or by the stack guard) inside a transformation rule is no longer wrapped
+  in a `TargetInvocationException`; every other exception of a rule keeps its historical wrapping.
+
 ### Fixed — `omy.Utils` (dates: the culture's selected calendar)
 - `DateFormula` (`Calculate`, `Compile`, `ToExpression`) and `DateUtils.StartOf` / `EndOf` with a `CultureInfo` (and the
   `DayOfWeek` overloads, on the current culture) now use the culture's selected calendar,
