@@ -206,6 +206,27 @@ public class ExpressionResourceLimitsTests
         }
     }
 
+    /// <summary>
+    /// A budget exhausted inside a framework sort (canonical-key comparisons) surfaces as the resource refusal, not as the
+    /// sort's "failed to compare" <see cref="InvalidOperationException"/> wrapped in a <see cref="System.Reflection.TargetInvocationException"/>.
+    /// Regression found by the R1a-Security isolated campaign (left sum of 100 terms).
+    /// </summary>
+    [TestMethod]
+    public void StructuralWork_ExhaustedInsideASort_IsReportedAsTheRefusal()
+    {
+        (Expression sum, _) = LeftSum(100);
+
+        ExpressionResourceLimitException exception = Assert.ThrowsExactly<ExpressionResourceLimitException>(() => new ExpressionSimplifier().Simplify(sum));
+        Assert.AreEqual(ExpressionResourceLimitKind.StructuralWork, exception.Kind);
+
+        var refusal = new ExpressionResourceLimitException(ExpressionResourceLimitKind.StructuralWork, 1, 2);
+        int[] values = [3, 1, 2];
+        Assert.AreSame(refusal, Assert.ThrowsExactly<ExpressionResourceLimitException>(
+            () => ExpressionResourceBudget.ToSortedList(System.Linq.Enumerable.OrderBy(values, static v => v, Comparer<int>.Create((_, _) => throw refusal)))));
+        Assert.ThrowsExactly<InvalidOperationException>(
+            () => ExpressionResourceBudget.ToSortedList(System.Linq.Enumerable.OrderBy(values, static v => v, Comparer<int>.Create((_, _) => throw new ArgumentException("user")))));
+    }
+
     /// <summary>Runs <paramref name="walk"/> inside an operation whose structural budget is <paramref name="visits"/>.</summary>
     /// <param name="visits">The structural budget.</param>
     /// <param name="walk">The walk.</param>
@@ -388,7 +409,7 @@ public class ExpressionResourceLimitsTests
 
     /// <summary>Concurrent operations with different limits on different threads never share counters or limits.</summary>
     [TestMethod]
-    public void Concurrency_ThreadsKeepIndependentBudgets()
+    public async Task Concurrency_ThreadsKeepIndependentBudgets()
     {
         using var start = new Barrier(4);
         var strict = new RecursiveTransformer(ExpressionResourceLimits.Default with { MaxTransformVisits = 1_000 });
@@ -416,7 +437,7 @@ public class ExpressionResourceLimitsTests
             Task.Run(() => { start.SignalAndWait(); for (int i = 0; i < 50; i++) relaxed.Transform(big); }),
         ];
 
-        Assert.IsTrue(Task.WaitAll(tasks, Timeout));
+        await Task.WhenAll(tasks).WaitAsync(Timeout);
     }
 
     /// <summary>A value whose equality and hash run arbitrary engine calls (user code re-entering the engine).</summary>

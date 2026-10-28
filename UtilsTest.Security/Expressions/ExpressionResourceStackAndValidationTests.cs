@@ -372,7 +372,7 @@ public class ExpressionResourceStackAndValidationTests
     private sealed class Holder
     {
         /// <summary>A scalar field.</summary>
-        public double Value;
+        public double Value = 0.0;
 
         /// <summary>A nested object field.</summary>
         public Holder Inner = null!;
