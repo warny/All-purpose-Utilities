@@ -126,8 +126,24 @@ namespace Utils.Mathematics.Expressions
         /// subclass gets correct, isolated ambient-scope tracking too, rather than either leaking scope
         /// across independent calls or (round 6's now-superseded approach) silently losing bound-parameter
         /// canonicalization altogether. See those members' remarks for the round-6/round-7 history.
+        /// <para>
+        /// ETC R1a-Security: the call is one expression operation bounded by <see cref="ExpressionTransformer.ResourceLimits"/>
+        /// (input validated first; nested comparisons and rules counted); see <see cref="ExpressionResourceLimits"/>.
+        /// </para>
         /// </remarks>
+        /// <exception cref="ExpressionResourceLimitException">A resource limit was exceeded, or the stack ran out.</exception>
         public override Expression Transform(Expression expression)
+            => ExpressionResourceBudget.Run(ResourceLimits, this, expression, null, (Simplifier: this, Expression: expression), static state => state.Simplifier.TransformDetached(state.Expression));
+
+        /// <summary>
+        /// Body of <see cref="Transform(Expression)"/> without the resource boundary: detaches the caller's comparison
+        /// memo session and runs <see cref="TransformWithinBoundary"/>. Called by <see cref="Transform(Expression)"/>
+        /// once its operation is open and its input validated, and by <c>ExpressionComparer.GetHashCode</c> inside the
+        /// comparer's own operation (so the input is not validated twice).
+        /// </summary>
+        /// <param name="expression">The expression to transform.</param>
+        /// <returns>A possibly rewritten expression.</returns>
+        internal Expression TransformDetached(Expression expression)
         {
             // Detach the caller's comparison-memo session (S5 P9): an independent Transform call never shares
             // memo entries with, nor activates or releases, a session that is in progress on this thread.
@@ -253,6 +269,8 @@ namespace Utils.Mathematics.Expressions
         /// <returns>The immutable metrics for <paramref name="expression"/>.</returns>
         internal static ExpressionMetrics GetExpressionMetrics(Expression expression)
         {
+            // Recursive helper: guard the execution stack (ETC R1a-Security).
+            ExpressionResourceBudget.EnsureStack();
             ArgumentNullException.ThrowIfNull(expression);
             if (_expressionMetricsScopeDepth == 0)
             {
@@ -376,6 +394,27 @@ namespace Utils.Mathematics.Expressions
         public Expression Simplify(Expression e)
         {
             return Transform(e);
+        }
+
+        /// <summary>
+        /// Initializes a simplifier with <see cref="ExpressionResourceLimits.Default"/> resource limits.
+        /// </summary>
+        public ExpressionSimplifier()
+        {
+        }
+
+        /// <summary>
+        /// Initializes a simplifier with explicit resource limits (ETC R1a-Security), applied to every
+        /// <see cref="Simplify(Expression)"/>/<see cref="Transform(Expression)"/> call made on this instance: the input
+        /// is validated against the depth and node limits, and the call (nested comparer simplifications included) is
+        /// bounded by the visit budgets. A call made while another expression operation runs on the thread can only
+        /// tighten the active limits.
+        /// </summary>
+        /// <param name="resourceLimits">The resource limits.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="resourceLimits"/> is <see langword="null"/>.</exception>
+        public ExpressionSimplifier(ExpressionResourceLimits resourceLimits)
+            : base(resourceLimits)
+        {
         }
 
         /// <summary>
@@ -532,6 +571,12 @@ namespace Utils.Mathematics.Expressions
         /// </remarks>
         [ThreadStatic]
         private static List<ParameterExpression[]>? _lexicalScopeStack;
+
+        /// <summary>Gets the number of lambda scopes open on this thread's ambient lexical scope stack (diagnostics and tests).</summary>
+        internal static int LexicalScopeDepth => _lexicalScopeStack?.Count ?? 0;
+
+        /// <summary>Gets the nesting level of structural-metric lifetimes on this thread (diagnostics and tests).</summary>
+        internal static int ExpressionMetricsScopeDepth => _expressionMetricsScopeDepth;
 
         private static List<ParameterExpression[]> LexicalScopeStack => _lexicalScopeStack ??= [];
 
@@ -843,6 +888,8 @@ namespace Utils.Mathematics.Expressions
         /// </remarks>
         private static bool IsEliminableFloatingOperand(Expression expression)
         {
+            // Recursive helper: guard the execution stack (ETC R1a-Security).
+            ExpressionResourceBudget.EnsureStack();
             if (expression.Type != typeof(double) && expression.Type != typeof(float)) return false;
             return expression switch
             {
@@ -1182,17 +1229,22 @@ namespace Utils.Mathematics.Expressions
         /// could expose; integral addition, subtraction and multiplication wrap and floating-point arithmetic follows
         /// IEEE-754, so neither throws.
         /// </remarks>
-        private static bool IsInertArithmetic(Expression expression) => expression switch
+        private static bool IsInertArithmetic(Expression expression)
         {
-            ParameterExpression parameter => IsInertArithmeticType(parameter.Type),
-            ConstantExpression constant => constant.Value is not null && IsInertArithmeticType(constant.Type),
-            UnaryExpression unary => IsOrdinaryUnaryNegate(unary) && IsInertArithmetic(unary.Operand),
-            BinaryExpression binary => IsOrdinaryBinaryArithmetic(binary)
-                && (binary.NodeType != ExpressionType.Divide || binary.Type == typeof(double) || binary.Type == typeof(float))
-                && IsInertArithmetic(binary.Left)
-                && IsInertArithmetic(binary.Right),
-            _ => false,
-        };
+            // Recursive helper: guard the execution stack (ETC R1a-Security).
+            ExpressionResourceBudget.EnsureStack();
+            return expression switch
+            {
+                ParameterExpression parameter => IsInertArithmeticType(parameter.Type),
+                ConstantExpression constant => constant.Value is not null && IsInertArithmeticType(constant.Type),
+                UnaryExpression unary => IsOrdinaryUnaryNegate(unary) && IsInertArithmetic(unary.Operand),
+                BinaryExpression binary => IsOrdinaryBinaryArithmetic(binary)
+                    && (binary.NodeType != ExpressionType.Divide || binary.Type == typeof(double) || binary.Type == typeof(float))
+                    && IsInertArithmetic(binary.Left)
+                    && IsInertArithmetic(binary.Right),
+                _ => false,
+            };
+        }
 
         /// <summary>Determines whether <paramref name="type"/> is a primitive numeric type other than <see cref="decimal"/>.</summary>
         /// <param name="type">The type of a parameter or constant.</param>
@@ -1603,23 +1655,28 @@ namespace Utils.Mathematics.Expressions
             /// </remarks>
             /// <param name="expression">The candidate operand's subtree to scan, or <see langword="null"/> for an absent optional sub-expression.</param>
             /// <returns><see langword="true"/> if simplifying <paramref name="expression"/> might invoke user-defined code; <see langword="false"/> only when this is proven impossible.</returns>
-            private static bool MightInvokeUserCodeWhenSimplified(Expression? expression) => expression switch
+            private static bool MightInvokeUserCodeWhenSimplified(Expression? expression)
             {
-                null => false,
-                ParameterExpression => false,
-                ConstantExpression constant => constant.Value is not null
-                    && !Types.Number.Contains(constant.Type)
-                    && !ExpressionComparer.IsKnownSafeConstantValue(constant.Value),
-                LambdaExpression lambda => MightInvokeUserCodeWhenSimplified(lambda.Body),
-                UnaryExpression unary => MightInvokeUserCodeWhenSimplified(unary.Operand),
-                BinaryExpression binary => MightInvokeUserCodeWhenSimplified(binary.Left)
-                    || MightInvokeUserCodeWhenSimplified(binary.Right)
-                    || MightInvokeUserCodeWhenSimplified(binary.Conversion),
-                MethodCallExpression call => MightInvokeUserCodeWhenSimplified(call.Object)
-                    || AnyArgumentMightInvokeUserCodeWhenSimplified(call.Arguments),
-                MemberExpression member => MightInvokeUserCodeWhenSimplified(member.Expression),
-                _ => true,
-            };
+                // Recursive helper: guard the execution stack (ETC R1a-Security).
+                ExpressionResourceBudget.EnsureStack();
+                return expression switch
+                {
+                    null => false,
+                    ParameterExpression => false,
+                    ConstantExpression constant => constant.Value is not null
+                        && !Types.Number.Contains(constant.Type)
+                        && !ExpressionComparer.IsKnownSafeConstantValue(constant.Value),
+                    LambdaExpression lambda => MightInvokeUserCodeWhenSimplified(lambda.Body),
+                    UnaryExpression unary => MightInvokeUserCodeWhenSimplified(unary.Operand),
+                    BinaryExpression binary => MightInvokeUserCodeWhenSimplified(binary.Left)
+                        || MightInvokeUserCodeWhenSimplified(binary.Right)
+                        || MightInvokeUserCodeWhenSimplified(binary.Conversion),
+                    MethodCallExpression call => MightInvokeUserCodeWhenSimplified(call.Object)
+                        || AnyArgumentMightInvokeUserCodeWhenSimplified(call.Arguments),
+                    MemberExpression member => MightInvokeUserCodeWhenSimplified(member.Expression),
+                    _ => true,
+                };
+            }
 
             /// <summary>Determines whether any method-call argument may invoke user code when simplified.</summary>
             /// <param name="arguments">The arguments to inspect without LINQ allocation.</param>
@@ -2168,7 +2225,7 @@ namespace Utils.Mathematics.Expressions
                 ExpressionComparer.CurrentComparisonOrigin = ExpressionComparer.ComparisonOrigin.Multiplication;
                 try
                 {
-                    equalBases = ExpressionComparer.Default.Equals(leftleft, rightleft);
+                    equalBases = ExpressionComparer.EqualsWithinOperation(leftleft, rightleft);
                 }
                 finally
                 {
@@ -2177,7 +2234,7 @@ namespace Utils.Mathematics.Expressions
             }
             else
             {
-                equalBases = ExpressionComparer.Default.Equals(leftleft, rightleft);
+                equalBases = ExpressionComparer.EqualsWithinOperation(leftleft, rightleft);
             }
 
             if (equalBases)
@@ -2473,11 +2530,11 @@ namespace Utils.Mathematics.Expressions
                     argumentKeys));
             }
 
-            var orderedTerms = annotatedTerms
+            // The comparisons consume the structural budget: a refusal raised inside the sort is restored (ETC R1a-Security).
+            var orderedTerms = ExpressionResourceBudget.ToSortedList(annotatedTerms
                 .OrderBy(static term => term, AdditiveGroupingOrderComparer)
                 .ThenBy(static term => term.IsNegative ? 0 : 1)
-                .ThenBy(static term => term.Key)
-                .ToList();
+                .ThenBy(static term => term.Key));
 
             var rebuiltTerms = new List<Expression>();
             var signedTerms = new List<(Expression Term, bool IsNegative)>();
@@ -2662,6 +2719,8 @@ namespace Utils.Mathematics.Expressions
         /// <returns>The updated count, capped at two.</returns>
         private static int CountAdditiveConstants(Expression expression, Type type, int count)
         {
+            // Recursive helper: guard the execution stack (ETC R1a-Security).
+            ExpressionResourceBudget.EnsureStack();
             if (count >= 2) return count;
             return expression switch
             {
@@ -2738,9 +2797,9 @@ namespace Utils.Mathematics.Expressions
 
             ParameterExpression[][] scopes = CaptureLexicalScopeSnapshot();
 
-            var orderedFactors = factors
-                .OrderBy(factor => ExpressionCanonicalOrder.BuildKeyFromSnapshot(factor, scopes))
-                .ToList();
+            // The key comparisons consume the structural budget: a refusal raised inside the sort is restored (ETC R1a-Security).
+            var orderedFactors = ExpressionResourceBudget.ToSortedList(factors
+                .OrderBy(factor => ExpressionCanonicalOrder.BuildKeyFromSnapshot(factor, scopes)));
 
             return BuildRightAssociative(orderedFactors, Expression.Multiply);
         }
@@ -2763,6 +2822,8 @@ namespace Utils.Mathematics.Expressions
         /// </remarks>
         private void CollectAdditiveTerms(List<(Expression Term, bool IsNegative)> terms, Expression expression, bool isNegative)
         {
+            // Recursive helper: guard the execution stack (ETC R1a-Security).
+            ExpressionResourceBudget.EnsureStack();
             if (expression is BinaryExpression binaryExpression && IsOrdinaryBinaryArithmetic(binaryExpression))
             {
                 if (binaryExpression.NodeType == ExpressionType.Add)
@@ -2802,6 +2863,8 @@ namespace Utils.Mathematics.Expressions
         /// </remarks>
         private void CollectMultiplicativeFactors(List<Expression> factors, Expression expression)
         {
+            // Recursive helper: guard the execution stack (ETC R1a-Security).
+            ExpressionResourceBudget.EnsureStack();
             if (expression is BinaryExpression binaryExpression && binaryExpression.NodeType == ExpressionType.Multiply && IsOrdinaryBinaryArithmetic(binaryExpression))
             {
                 CollectMultiplicativeFactors(factors, binaryExpression.Left);

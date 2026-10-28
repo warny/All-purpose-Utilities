@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Utils.Expressions;
 using Utils.Mathematics.Expressions;
 
 namespace ExpressionResourceProbe;
@@ -18,11 +19,12 @@ namespace ExpressionResourceProbe;
 /// Usage:
 /// <code>
 /// ExpressionResourceProbe list
-/// ExpressionResourceProbe run &lt;scenario&gt; &lt;size&gt; &lt;operation&gt; [--thread main|pool|stack:&lt;KiB&gt;] [--counters]
+/// ExpressionResourceProbe run &lt;scenario&gt; &lt;size&gt; &lt;operation&gt; [--thread main|pool|stack:&lt;KiB&gt;] [--limits default|unlimited|budgets] [--counters]
 /// ExpressionResourceProbe ess [--thread ...]
 /// </code>
 /// Exit codes: 0 success, 2 usage error, 10 <see cref="InsufficientExecutionStackException"/>, 11
-/// <see cref="OutOfMemoryException"/>, 12 any other exception. A stack overflow ends the process with the operating
+/// <see cref="OutOfMemoryException"/>, 12 any other exception, 13 <see cref="ExpressionResourceLimitException"/> (a
+/// controlled refusal of the ETC R1a-Security limits; the outcome names its kind). A stack overflow ends the process with the operating
 /// system's code (Windows <c>0xC00000FD</c>, Linux <c>SIGABRT</c> 134 with "Stack overflow." on stderr).
 /// </remarks>
 internal static class Program
@@ -42,6 +44,16 @@ internal static class Program
     /// <summary>Exit code for any other exception.</summary>
     private const int ExitOtherException = 12;
 
+    /// <summary>Exit code when an <see cref="ExpressionResourceLimitException"/> was caught (controlled refusal).</summary>
+    private const int ExitResourceLimit = 13;
+
+    /// <summary>
+    /// The resource limits of the run (<c>--limits</c>): <c>default</c> (<see cref="ExpressionResourceLimits.Default"/>),
+    /// <c>unlimited</c> (only the stack guard stays active) or <c>budgets</c> (default visit budgets, no depth or node
+    /// limit, so the recursion itself meets the stack guard while the work stays bounded).
+    /// </summary>
+    private static ExpressionResourceLimits _limits = ExpressionResourceLimits.Default;
+
     /// <summary>Entry point.</summary>
     /// <param name="args">The command line.</param>
     /// <returns>The exit code.</returns>
@@ -50,6 +62,13 @@ internal static class Program
         if (args.Length == 0) return Usage();
         string thread = Option(args, "--thread") ?? "main";
         bool counters = Array.IndexOf(args, "--counters") >= 0;
+        _limits = (Option(args, "--limits") ?? "default") switch
+        {
+            "default" => ExpressionResourceLimits.Default,
+            "unlimited" => ExpressionResourceLimits.Unlimited,
+            "budgets" => ExpressionResourceLimits.Default with { MaxDepth = int.MaxValue, MaxNodes = long.MaxValue },
+            var other => throw new ArgumentException($"Unknown limits '{other}'."),
+        };
 
         return args[0] switch
         {
@@ -64,7 +83,7 @@ internal static class Program
     /// <returns><see cref="ExitUsage"/>.</returns>
     private static int Usage()
     {
-        Console.Error.WriteLine("usage: list | run <scenario> <size> <operation> [--thread main|pool|stack:<KiB>] [--counters] | ess [--thread ...]");
+        Console.Error.WriteLine("usage: list | run <scenario> <size> <operation> [--thread main|pool|stack:<KiB>] [--limits default|unlimited|budgets] [--counters] | ess [--thread ...]");
         Console.Error.WriteLine("operations: build shape simplify transform substitute hash equals rawhash rawequals canonical tokenize parse compile");
         return ExitUsage;
     }
@@ -118,7 +137,7 @@ internal static class Program
     private static int Run(string scenarioName, int size, string operation, string thread, bool counters)
     {
         Scenario scenario = Scenarios.Get(scenarioName);
-        string prefix = $"RESULT scenario={scenario.Name} family={scenario.Family} size={size} op={operation} thread={thread} os={(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "windows" : "linux")} runtime={RuntimeInformation.FrameworkDescription.Replace(' ', '_')} arch={RuntimeInformation.ProcessArchitecture}";
+        string prefix = $"RESULT scenario={scenario.Name} family={scenario.Family} size={size} op={operation} thread={thread} limits={DescribeLimits()} os={(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "windows" : "linux")} runtime={RuntimeInformation.FrameworkDescription.Replace(' ', '_')} arch={RuntimeInformation.ProcessArchitecture}";
 
         // Warm-up on a tiny instance so JIT time is not measured; it runs the same code paths.
         Execute(scenario.Create(Math.Min(size, 4)), operation);
@@ -140,6 +159,11 @@ internal static class Program
             string detail = Execute(instance, operation, tree);
             outcome = "ok" + (detail.Length > 0 ? ":" + detail : string.Empty);
             exitCode = ExitSuccess;
+        }
+        catch (ExpressionResourceLimitException exception)
+        {
+            outcome = "resource-limit:" + exception.Kind + (exception.InnerException is null ? string.Empty : "+" + exception.InnerException.GetType().Name);
+            exitCode = ExitResourceLimit;
         }
         catch (InsufficientExecutionStackException)
         {
@@ -176,6 +200,11 @@ internal static class Program
             "outcome=" + outcome));
         return exitCode;
     }
+
+    /// <summary>Names the active <c>--limits</c> choice.</summary>
+    /// <returns><c>default</c>, <c>unlimited</c> or <c>budgets</c>.</returns>
+    private static string DescribeLimits()
+        => _limits == ExpressionResourceLimits.Default ? "default" : _limits == ExpressionResourceLimits.Unlimited ? "unlimited" : "budgets";
 
     /// <summary>Formats a measured shape.</summary>
     /// <param name="shape">The shape.</param>
@@ -215,18 +244,18 @@ internal static class Program
             case "shape":
                 return ExpressionShapeMeter.Measure(tree).DistinctNodes.ToString(CultureInfo.InvariantCulture);
             case "simplify":
-                return "resultDepth" + ExpressionShapeMeter.Measure(new ExpressionSimplifier().Simplify(tree)).Depth.ToString(CultureInfo.InvariantCulture);
+                return "resultDepth" + ExpressionShapeMeter.Measure(new ExpressionSimplifier(_limits).Simplify(tree)).Depth.ToString(CultureInfo.InvariantCulture);
             case "transform":
-                new IdentityRecursiveTransformer().Transform(tree);
+                new IdentityRecursiveTransformer(_limits).Transform(tree);
                 return string.Empty;
             case "substitute":
-                new IdentityRecursiveTransformer().Substitute(tree, instance.Parameters[0], Expression.Constant(5.0));
+                new IdentityRecursiveTransformer(_limits).Substitute(tree, instance.Parameters[0], Expression.Constant(5.0));
                 return string.Empty;
             case "hash":
-                ExpressionComparer.Default.GetHashCode(tree);
+                ExpressionComparer.Create(_limits).GetHashCode(tree);
                 return string.Empty;
             case "equals":
-                return ExpressionComparer.Default.Equals(tree, instance.Build()) ? "equal" : "unequal";
+                return ExpressionComparer.Create(_limits).Equals(tree, instance.Build()) ? "equal" : "unequal";
             case "rawhash":
                 InternalDiagnostics.StructuralHashRaw(tree);
                 return string.Empty;
@@ -258,6 +287,10 @@ internal static class Program
         catch (InsufficientExecutionStackException)
         {
             failure = "insufficient-stack";
+        }
+        catch (ExpressionResourceLimitException exception)
+        {
+            failure = "resource-limit:" + exception.Kind;
         }
 
         string state = InternalDiagnostics.DescribeAmbientState();

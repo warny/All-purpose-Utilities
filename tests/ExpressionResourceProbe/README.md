@@ -45,14 +45,23 @@ the ambient thread-static state and runs a sanity simplification on the same thr
 comparer's internal diagnostic capture (this changes the code path; do not combine with timing comparisons). `ess`
 calibrates `RuntimeHelpers.EnsureSufficientExecutionStack` (cost per call and guarded frame count).
 
-Exit codes: `0` ok, `10` `InsufficientExecutionStackException`, `11` `OutOfMemoryException`, `12` other exception;
-a stack overflow ends the process with `0xC00000FD` (`-1073741571`) on Windows or `SIGABRT` (134) on Linux.
+Exit codes: `0` ok, `10` `InsufficientExecutionStackException`, `11` `OutOfMemoryException`, `12` other exception, `13`
+`ExpressionResourceLimitException` (a controlled refusal of the ETC R1a-Security limits; the outcome names its kind, for
+example `resource-limit:Stack+InsufficientExecutionStackException`); a stack overflow ends the process with `0xC00000FD`
+(`-1073741571`) on Windows or `SIGABRT` (134) on Linux.
+
+`--limits` (ETC R1a-Security) selects the resource limits of the simplifier, the generic transformer and the comparer:
+`default` (`ExpressionResourceLimits.Default`: inputs over depth 512 or 50,000 logical nodes are refused before any
+work), `budgets` (default visit budgets, no depth or node limit: the recursion itself meets the stack guard) or
+`unlimited` (only the stack guard). The raw operations (`rawhash`, `rawequals`, `canonical`) always run with the default
+budgets and no input validation. Since R1a-Security every scenario is expected to end with `ok` or `resource-limit`,
+never with `stack-overflow`, on any thread kind.
 
 Campaigns (ascending sizes, stop at the first failure of each scenario/operation pair, timeout, Windows working-set limit):
 
 ```powershell
 .\tests\ExpressionResourceProbe\run-campaign.ps1 -ProbePath $probe -Scenarios A-left-sum,B-right-sum `
-    -Operations transform,rawhash -Output (Join-Path $env:TEMP 'etc-probe\a-b.csv')
+    -Operations transform,rawhash -Limits budgets -Thread stack:256 -Output (Join-Path $env:TEMP 'etc-probe\a-b.csv')
 ```
 
 Add `-Linux` with the published linux-x64 binary to run the same campaign through WSL (`timeout --signal=KILL` enforces

@@ -36,3 +36,30 @@ ExpressionType.Lambda => PrepareLambda(expression),
 
 A dictionary of handlers remains an acceptable design when measurements or architectural reasons justify it (for
 example extensibility, or a dispatch shown to be faster), but it is not mandatory for node-type dispatch.
+
+## Expression engine — checklist for new recursive handlers
+
+The expression engine (`ExpressionTransformer`, `ExpressionSimplifier`, `ExpressionComparer`,
+`ExpressionCanonicalOrder`, substitution) runs under the shared resource session `ExpressionResourceBudget`
+(ETC R1a-Security, see `TODO-2026-10-27-etc-expression-tree-coverage-roadmap.md` §12). Every new `Prepare*`, rebuild,
+equality, hash, canonical-key or other recursive handler must:
+
+1. **Participate in the right budget.** Transformation work goes through `TransformCore`/`TransformPrepared` (one
+   visit per node, counted there). A structural walk recurses through its family dispatcher (`EqualsCore`, `Hash`,
+   `ExpressionCanonicalOrder.Build`, `KeyNode.CompareTo`, `ReplaceArgumentsCore`), which calls
+   `ExpressionResourceBudget.ConsumeStructuralVisit()`; a new walker that does not go through one of them calls it at its
+   own recursive entry.
+2. **Keep the active session.** Never start a new operation from inside the engine: internal calls use the internal
+   entry points (`EqualsWithinOperation`, `TransformDetached`, `RunInternal`), never the public ones, and an
+   engine-internal helper instance sets `JoinsRunningOperation`.
+3. **Check the stack before recursing.** Budgeted calls already do; a helper that recurses without counting work calls
+   `ExpressionResourceBudget.EnsureStack()` first. A helper that may recurse deeply before returning to its dispatcher
+   needs its own check.
+4. **Restore local scope in `finally`** (scope stacks, memo depth, diagnostics) and never throw from a `finally`.
+5. **Propagate resource exceptions.** Never catch `ExpressionResourceLimitException` or
+   `InsufficientExecutionStackException`; a `catch (InvalidOperationException)` must not wrap engine recursion (the
+   resource exception derives from it), and a catch that wraps rule exceptions must exclude both.
+6. **Never turn a refusal into a result**: no `false` from equality and no synthetic hash after a resource failure.
+7. **Test deep and shared inputs**: a deep nesting of the new family on a 256 KiB worker thread (controlled `Stack`
+   refusal), a shared DAG, and budget refusals just above the limit.
+8. **Benchmark the handler** against `master` (paired runs with an A/A control).

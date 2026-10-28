@@ -118,18 +118,23 @@ internal sealed class InvocationInliningAnalysis
     /// <summary>Scans one node of the substitutable part of the body, in evaluation order.</summary>
     /// <param name="e">The node, or <see langword="null"/> for an absent receiver.</param>
     /// <returns><see langword="false"/> if inlining is unsafe.</returns>
-    private bool Scan(Expression? e) => e switch
+    /// <remarks>Single dispatcher of the scan: one structural visit per node, stack check included (ETC R1a-Security).</remarks>
+    private bool Scan(Expression? e)
     {
-        null => true,
-        ParameterExpression parameter => ScanReference(parameter),
-        ConstantExpression or DefaultExpression => true,
-        UnaryExpression unary => ScanUnary(unary),
-        BinaryExpression binary => ScanBinary(binary),
-        MethodCallExpression call => ScanCall(call),
-        InvocationExpression invocation => ScanInvocation(invocation),
-        ConditionalExpression conditional => Scan(conditional.Test) && Scan(conditional.IfTrue) && Scan(conditional.IfFalse),
-        _ => ScanBarrier(e),
-    };
+        ExpressionResourceBudget.ConsumeStructuralVisit();
+        return e switch
+        {
+            null => true,
+            ParameterExpression parameter => ScanReference(parameter),
+            ConstantExpression or DefaultExpression => true,
+            UnaryExpression unary => ScanUnary(unary),
+            BinaryExpression binary => ScanBinary(binary),
+            MethodCallExpression call => ScanCall(call),
+            InvocationExpression invocation => ScanInvocation(invocation),
+            ConditionalExpression conditional => Scan(conditional.Test) && Scan(conditional.IfTrue) && Scan(conditional.IfFalse),
+            _ => ScanBarrier(e),
+        };
+    }
 
     /// <summary>Records a read of a parameter.</summary>
     /// <param name="parameter">The parameter read.</param>
@@ -326,7 +331,13 @@ internal sealed class InvocationInliningAnalysis
         }
 
         /// <inheritdoc/>
-        public override Expression? Visit(Expression? node) => found ? node : base.Visit(node);
+        /// <remarks>Counts one structural visit per node and checks the stack before recursing (ETC R1a-Security).</remarks>
+        public override Expression? Visit(Expression? node)
+        {
+            if (found) return node;
+            ExpressionResourceBudget.ConsumeStructuralVisit();
+            return base.Visit(node);
+        }
 
         /// <inheritdoc/>
         protected override Expression VisitParameter(ParameterExpression node)

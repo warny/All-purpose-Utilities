@@ -21,6 +21,7 @@ param(
     [Parameter(Mandatory = $true)] [string[]] $Operations,
     [int[]] $Sizes = @(100, 250, 500, 1000, 2000, 3000, 5000, 10000, 20000),
     [string] $Thread = 'main',
+    [ValidateSet('default', 'unlimited', 'budgets')] [string] $Limits = 'default',
     [int] $TimeoutSeconds = 60,
     [int] $MemoryLimitMB = 4096,
     [switch] $Counters,
@@ -44,7 +45,7 @@ Starts one probe process and returns its classified outcome and RESULT line.
 function Invoke-ProbeRun {
     param([string] $Scenario, [string] $Operation, [int] $Size)
 
-    $probeArguments = @('run', $Scenario, $Size, $Operation, '--thread', $Thread)
+    $probeArguments = @('run', $Scenario, $Size, $Operation, '--thread', $Thread, '--limits', $Limits)
     if ($Counters) { $probeArguments += '--counters' }
 
     $stdout = [System.IO.Path]::GetTempFileName()
@@ -96,12 +97,13 @@ function Invoke-ProbeRun {
             elseif ($exitCode -eq 10) { 'insufficient-stack' }
             elseif ($exitCode -eq 11) { 'out-of-memory' }
             elseif ($exitCode -eq 12) { 'exception' }
+            elseif ($exitCode -eq 13) { 'resource-limit' }
             elseif ($exitCode -eq -1073741571 -or $errorText -match 'Stack overflow') { 'stack-overflow' }
             elseif ($Linux -and ($exitCode -eq 137 -or $exitCode -eq 9)) { 'timeout' } # SIGKILL from timeout(1), relayed by wsl.exe as 9
             else { 'crash' }
 
         [pscustomobject]@{
-            scenario = $Scenario; operation = $Operation; size = $Size; thread = $Thread
+            scenario = $Scenario; operation = $Operation; size = $Size; thread = $Thread; limits = $Limits
             platform = $(if ($Linux) { 'linux' } else { 'windows' })
             classification = $classification; exitCode = $exitCode; peakWorkingSetMB = $peakMB
             result = $(if ($null -eq $resultLine) { '' } else { $resultLine })

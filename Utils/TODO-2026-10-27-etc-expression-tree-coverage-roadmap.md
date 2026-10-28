@@ -181,9 +181,9 @@ public entry point, or wrong result inside a documented scope; Medium = contract
 | ETC-14 | Medium | `ExpressionCanonicalOrder.Build` (`UnsupportedKey`) | `Compare(Conditional, Default)` | 0 for every unsupported pair | each family gaining equality also gains a canonical key, before additive/multiplicative grouping can merge it | S4 | with each equality extension | `ETC14_*` | Confirmed |
 | ETC-15 | High (within S3) | algebraic rules on Unary/Binary operands; `IsOrdinaryBinaryArithmetic` does not look at operands | `Simplify(++v + ++v)`, `((v = 5) * 0) + v`, `++v + v` | `2 * ++v` (3 → 2), `v` (5 → 0), `v + ++v` (2 → 1) | assignment, increment and throw nodes are opaque operands for symbolic rules (C-06) | S, D | R1 | `ETC15_*` | Confirmed (not in the input list) |
 | ETC-16 | **Critical (security)** | `Utils.Parser` `CompiledGrammar.Parse`, reached by `CSyntaxTokenParser.Parse`, `VBSyntaxTokenParser.Parse` and every `CompileExpression(string, …)` | `new CSyntaxExpressionCompiler().CompileExpression("((((((((((((((((((((x0))))))))))))))))))))")` | stack overflow terminates the process at 20 parenthesis pairs (CSyntax) / 18 (VBSyntax) on a default Windows thread, 2–3 on a 256 KiB thread, 16 on Linux 1 MiB, 150 on Linux 8 MB; about 50 KB of stack per nesting level; no depth limit, no guard | controlled exception for excessive nesting, configurable limit | public parsers of `Utils.Expressions.*`, `Utils.Parser.Expressions` (inherits), possibly every `Utils.Parser` grammar | dedicated `Utils.Parser` stage (S-06) | probe `E-*-parens`, `E-*-nested`; `results/2026-10-27/win-parser-nesting.csv`, `win-vb-nesting.csv`, `*-parser.csv` | Confirmed (out of ETC code scope, not fixed here) |
-| ETC-17 | High (security, availability) | `ExpressionSimplifier` rule/comparer interplay (additive canonicalization, factoring probes, comparer re-simplification) | `Simplify(x0 + x1 + … + x99)` (100 distinct parameters) | 1.5 s, 397k visits, 684k comparer re-simplifications, 2.5 GB allocated; 250 terms > 60 s; balanced 1,000 terms 30 s / 31 GB; F-g 20 terms (79 nodes) 56 s / 27.6 GB | bounded work with a controlled refusal (work budget); algorithmic improvement is a separate S5 continuation | S, D, E, H (public comparer simplifies) | R1a-Security (budget); S5 follow-up (algorithm) | `results/2026-10-27/win-simplify.csv`, `win-comparer.csv`, `win-combinatorial.csv`, `win-work-counters.csv` | Confirmed |
+| ETC-17 | High (security, availability) | `ExpressionSimplifier` rule/comparer interplay (additive canonicalization, factoring probes, comparer re-simplification) | `Simplify(x0 + x1 + … + x99)` (100 distinct parameters) | 1.5 s, 397k visits, 684k comparer re-simplifications, 2.5 GB allocated; 250 terms > 60 s; balanced 1,000 terms 30 s / 31 GB; F-g 20 terms (79 nodes) 56 s / 27.6 GB | bounded work with a controlled refusal (work budget); algorithmic improvement is a separate S5 continuation | S, D, E, H (public comparer simplifies) | R1a-Security (budget); S5 follow-up (algorithm) | `results/2026-10-27/win-simplify.csv`, `win-comparer.csv`, `win-combinatorial.csv`, `win-work-counters.csv` | **Bounded in R1a-Security** (visit budgets; the algorithmic cost itself stays for S5) |
 | ETC-18 | Medium (security) | `Utils.Parser` engine | CSyntax/VBSyntax parse of `x0 + … + x19999` (169 KB) | 6.2 s / 5.2 GB (CSyntax parse), 12.1 s / 4.7 GB (VBSyntax compile): about 30 KB allocated per input character, linear | allocation proportional to a documented, small constant; input-length guidance | parsers | `Utils.Parser` stage (S-06) | `win-parser.csv`, `win-vb-sum.csv` | Confirmed (out of ETC code scope) |
-| ETC-19 | High (security) | every recursive path: `TransformCore`/`Prepare*`, `ReplaceArgumentsCore`, `ExpressionComparer.EqualsCore`/`Hash`, `ExpressionCanonicalOrder.Build` | left sum of 3,000 terms through `ReplaceArguments`; `Abs` chain of 2,000 through the canonical order | uncatchable stack overflow at about 2,000–5,000 levels on 1 MB stacks, from 250 on 256 KiB stacks; no `EnsureSufficientExecutionStack` anywhere | controlled `ExpressionResourceLimitException` (depth limit + stack guard) | G, S, D, R, E, H, canonical order | R1a-Security | §7.2, §7.5; `win-structural.csv`, `win-*-structural.csv`, `linux-*-structural.csv` | Confirmed |
+| ETC-19 | High (security) | every recursive path: `TransformCore`/`Prepare*`, `ReplaceArgumentsCore`, `ExpressionComparer.EqualsCore`/`Hash`, `ExpressionCanonicalOrder.Build` | left sum of 3,000 terms through `ReplaceArguments`; `Abs` chain of 2,000 through the canonical order | uncatchable stack overflow at about 2,000–5,000 levels on 1 MB stacks, from 250 on 256 KiB stacks; no `EnsureSufficientExecutionStack` anywhere | controlled `ExpressionResourceLimitException` (depth limit + stack guard) | G, S, D, R, E, H, canonical order | R1a-Security | §7.2, §7.5; `win-structural.csv`, `win-*-structural.csv`, `linux-*-structural.csv` | **Fixed in R1a-Security** for the ETC engine (depth limit, stack guards; §9 R1a-Security result); the parser remains (ETC-16) |
 
 ## 4. Compatibility register
 
@@ -558,6 +558,197 @@ budget scope in `ExpressionTransformer.TransformCore` / `ExpressionSimplifier.Tr
 `ExpressionComparer.Equals`/`GetHashCode` and the raw structural entry points, `ReplaceArgumentsCore`, stack guards at every
 recursive method listed in §12.3. Tests: §12.7.
 
+#### R1a-Security result (2026-10-28)
+
+- Baseline: `master` at `8d705f2c1d37a81e8d3735437bdfa670d3697006` (R1a merged, PR #670). Final SHA: head of the
+  R1a-Security pull request (branch `etc/r1a-security-resource-limits`).
+- Decisions applied: S-01 (defaults, confirmed below), S-02, S-03, S-04, S-05. S-06 (parser) stays open: see "Unprotected
+  boundaries".
+
+**Architecture**
+
+| Piece | Where | Role |
+|---|---|---|
+| `ExpressionResourceLimits` (public sealed record) | `Utils/Expressions/ExpressionResourceLimits.cs` | immutable, validated (`>= 1`) limits; `Default` (512 / 50,000 / 1,000,000 / 10,000,000), `Unlimited` (`int.MaxValue`/`long.MaxValue`: checks off, stack guard still on) |
+| `ExpressionResourceLimitException : InvalidOperationException`, `ExpressionResourceLimitKind` | `ExpressionResourceLimitException.cs` | `Kind` (`Depth`, `Nodes`, `Work`, `StructuralWork`, `Stack`), `Limit`, `Observed` (exact, or a lower bound when the measurement stopped); `Stack` keeps the `InsufficientExecutionStackException` as inner exception. `StructuralWork` was added to the R0 proposal so the two budgets are distinguishable. |
+| `ExpressionResourceBudget` (internal) | `ExpressionResourceBudget.cs` | one `[ThreadStatic]` session object per thread: operation nesting, owner, two visit counters with deadlines, active depth/node limits; `Run` (public operation), `RunInternal` (internal walk, default limits, no validation when no operation runs), `ConsumeTransformVisit`, `ConsumeStructuralVisit`, `EnsureStack`, `ToSortedList` |
+| `ExpressionShapeValidator` (internal) | `ExpressionShapeValidator.cs` | non-recursive validation and exact measurement (below) |
+
+**Operations and nesting.** A public operation is the outermost engine call on a thread: `ExpressionSimplifier.Transform`
+(`Simplify`, `ExpressionExtensions.Simplify`), `ExpressionComparer.Equals` (after the reference fast path) and `GetHashCode`,
+and `ExpressionTransformer.TransformCore`/`ReplaceArguments` when no operation runs or when they are entered on another
+instance than the operation's owner (a nested public call of a third-party transformer). It validates its inputs, then
+runs under the visit budgets. A nested public call (rule, user `Equals`/`GetHashCode`, extension getter) joins the running
+operation: its inputs are validated against `min(active, own)` depth/node limits, each visit deadline becomes
+`min(active deadline, visits so far + own budget)`, the counters are never reset, and the previous limits come back when it
+returns (the visits it made stay counted). Engine-internal calls never start an operation: the simplifier's rules compare
+through `ExpressionComparer.EqualsWithinOperation`, `GetHashCode` simplifies through `ExpressionSimplifier.TransformDetached`,
+the comparer's own simplifier is marked `JoinsRunningOperation`, and the internal walks enter through `RunInternal`. So the
+limits configured by the caller of the public operation govern all the work it causes, and an engine-internal helper never
+applies its own defaults over them.
+
+**Validation** (`ExpressionShapeValidator.Validate`). Iterative walk of the unfolded tree with a reused per-thread stack
+(no allocation in the steady state, no user code: dispatch on the runtime class, never on the virtual `NodeType`), counting
+every item reached and the depth of every path, stopping as soon as either limit is crossed: O(min(logical items, node
+limit)) time and memory whatever the sharing, and a partial walk is never a success. It covers every child of the R0
+inventory, including R1b–R4 families that the engine does not traverse yet (`New`, `NewArray*`, `Block` variables and
+statements, `Try` handlers/filters/finally/fault, `Switch` cases, `MemberInit`/`ListInit` bindings and initializers,
+`Index`, `Loop`, `Goto`, `Label`, `RuntimeVariables`, conversion lambdas, lambda parameters); containers (`SwitchCase`,
+`CatchBlock`, `MemberBinding`, `ElementInit`) count as one item and one level. Extension and custom nodes are opaque
+leaves (no `Reduce`, `CanReduce`, `VisitChildren` or getter call). The walk descends into the first child directly and
+pushes only the others; calls and invocations read their arguments through `IArgumentProvider`. A refusal reports the
+exact value through `Measure` (post-order over distinct items, saturating `long` instead of the prototype's `BigInteger`,
+child edges bounded by the same cap, cycles of custom graphs treated as leaves) when that stays below `4 × MaxNodes`
+distinct items, otherwise the lower bound of the decision walk. Measured cost: about 3 ns per node for call chains, 4 ns
+for binary trees.
+
+**Counter and guard placement**
+
+| Path | Budget | Stack check |
+|---|---|---|
+| `ExpressionTransformer.TransformPrepared` | 1 transformation visit per node, for `TransformCore` and the P16 `TransformCoreWithPreparedOperands` path alike (single accounting point) | — |
+| `ExpressionTransformer.TransformCore`, `TransformCoreWithPreparedOperands` | — (session/owner check) | yes, every call |
+| `ExpressionTransformer.ReplaceArgumentsCore` | 1 structural visit per node | yes (with the visit) |
+| `ExpressionComparer.EqualsCore`, `Hash` (public, raw and memo-free variants) | 1 structural visit per compared pair / node | yes |
+| `ExpressionCanonicalOrder.Build`, `KeyNode.CompareTo` (base class: every key kind) | 1 structural visit per node / compared pair | yes |
+| `InvocationInliningAnalysis.Scan`, its `ReferenceFinder.Visit` | 1 structural visit per node | yes |
+| P9 and P15 memo key `TryHash`/`StrictEquals` | own 1,024-node budget (unchanged) | yes |
+| simplifier helpers `GetExpressionMetrics`, `IsEliminableFloatingOperand`, `IsInertArithmetic`, `MightInvokeUserCodeWhenSimplified`, `CountAdditiveConstants`, `CollectAdditiveTerms`, `CollectMultiplicativeFactors` | — (linear in their input) | yes |
+
+The canonical-order entry points (`BuildKey*`, `BuildKeys*`, `Compare`) and the raw comparer entry points run through
+`RunInternal`, so they are bounded even when called without a public boundary. A refusal raised by a key comparison inside
+a framework sort (`OrderBy`, which wraps comparer exceptions in an `InvalidOperationException`) is restored by
+`ToSortedList` (found by the isolated campaign: left sums of 100 terms surfaced as a `TargetInvocationException`).
+
+**Stack failures through rule invocation.** Rule invocation wrapped every exception of a rule in a new
+`TargetInvocationException` from inside a `catch` block. Measured in-process: a stack-guard exception raised under a
+recursion that goes through rules (a test transformer traversing nested arrays from a rule; symbolic derivation is built
+the same way) was re-wrapped at every level, the catch handlers running on top of the still-deep stack, until the process
+overflowed. Resource failures (`ExpressionResourceLimitException`, `InsufficientExecutionStackException`) are no longer
+caught by rule invocation (fast invokers use an exception filter; the reflection fallback uses
+`BindingFlags.DoNotWrapExceptions` when reflection binds the arguments as they are, and keeps the historical call
+otherwise); every other rule exception keeps its historical single wrapping. The outermost boundary still unwraps a
+resource exception reached only through `TargetInvocationException` layers, and turns an
+`InsufficientExecutionStackException` into a `Stack` refusal; every other exception, including a user exception wrapping
+a resource exception, propagates unchanged.
+
+**Equals/GetHashCode contract.** `Equals(x, x)` on the same instance, and the `null` cases, return without validation
+(documented compatibility exception, O(1)); two distinct instances are both validated before simplification;
+`GetHashCode` always validates. A refusal is an exception, never `false` or a fallback hash.
+
+**Compatibility (2.0.0 batch, `CHANGELOG.md`).** Default limits are on (S-04): inputs deeper than 512 levels or larger than
+50,000 logical nodes, and operations beyond the budgets, now throw. The full suites pass unchanged with the defaults
+(Unit 14,231, Functional 383, Security 244 before this round), so no existing test exceeds them; the pathological R0
+families do (left sum of 100 terms: 1.5 s and 2.5 GB on `master`, now a `StructuralWork` refusal after about 0.9 s).
+Additive public API only: `ExpressionResourceLimits`, `ExpressionResourceLimitException`, `ExpressionResourceLimitKind`,
+`new ExpressionSimplifier(ExpressionResourceLimits)`, `ExpressionComparer.Create`/`ResourceLimits`, protected
+`ExpressionTransformer(ExpressionResourceLimits)`/`ResourceLimits`. A resource failure inside a rule is no longer wrapped
+in a `TargetInvocationException`.
+
+**Subclasses.** Third-party `ExpressionTransformer` subclasses inherit the protection through `TransformCore` and
+`ReplaceArguments` (they are the only ways into the engine) with `ExpressionResourceLimits.Default` unless they call the
+new protected constructor; `ExpressionDerivation`/`ExpressionIntegration` (Utils.Mathematics) use the defaults. A subclass
+whose public `Transform` never calls `TransformCore` runs outside the limits: the library cannot intercept it.
+
+**Tests** (`UtilsTest.Security/Expressions`, 29 new tests in `ExpressionResourceLimitsTests` and
+`ExpressionResourceStackAndValidationTests`, helpers in `ExpressionResourceTestTrees`): configuration; depth and node limits
+just below and above on every public entry point; logical vs distinct nodes (shared DAG); wide and balanced trees;
+transformation and structural budgets just below and above on every walk; refusal inside a sort; comparer refusal vs
+inequality vs unsupported family; reference fast path; nested stricter and looser calls; user-code re-entrancy (constant
+`Equals` calling the simplifier, constant `GetHashCode` calling the comparer, a rule calling the comparer and re-entering
+its own `Transform`); ambient state after failures at every phase (operation, P9/P15 sessions, lexical scopes, metrics,
+comparer depth); thread isolation; stack refusals on 256 KiB threads for simplify, transform, substitution, comparer
+equality and hash, raw equality and hash, canonical keys and key comparison; validator correctness (tree, diamond, repeated
+children, many parents, 2^65 logical nodes, huge fan-out, every container, extension nodes never inspected); R1b/R1c
+future-handler fixtures (below). Results on the final head: `Utils.sln` Release build without error or new warning; UtilsTest.Unit 14,231/14,231; UtilsTest.Functional 383/383; UtilsTest.Security 273 passed (244 before + 29 new) and 3 inconclusive (platform-only, unchanged); ETC R0/R1a categories included in Unit.
+
+**Isolated campaign** (`tests/ExpressionResourceProbe`, new `--limits` option and exit code 13; raw data in
+`tests/ExpressionResourceProbe/results/2026-10-28/`). One process per run; families A-left-sum, B-right-sum, D-horner,
+D-poly-mul-shared, G-negate, G-call, G-invoke, G-conditional at sizes 1,000 / 5,000 / 20,000 (a pair stops at its first
+refusal) on the eight operations (`simplify`, `transform`, `substitute`, `hash`, `equals`, `rawhash`, `rawequals`,
+`canonical`), plus the work families (F-g, C-balanced-sum, A-left-sum at 20 / 100 / 1,000 terms):
+
+| Configuration | Runs | ok | Controlled refusals | Stack overflow / crash / other |
+|---|---|---|---|---|
+| Windows main 1 MB, `--limits default` | 98 | 40 | Depth 40, Stack 18 (raw walks: no input validation) | 0 |
+| Windows main 1 MB, `--limits budgets` | 122 | 65 | Stack 44, StructuralWork 12, Work 1 | 0 |
+| Windows 256 KiB thread, `--limits budgets` | 78 | 21 | Stack 57 | 0 |
+| Windows main, work families, `--limits default` | 18 | 9 | Work 3, StructuralWork 6 | 0 |
+| Linux (WSL2 Ubuntu) main 8 MB, `--limits budgets` | 162 | 116 | Stack 29, StructuralWork 16, Work 1 | 0 |
+| Linux 1 MiB thread, `--limits budgets` | 115 | 58 | Stack 47, StructuralWork 9, Work 1 | 0 |
+| Linux 256 KiB thread, `--limits budgets` | 78 | 21 | Stack 57 | 0 |
+
+Every run ended with a successful result or an `ExpressionResourceLimitException`, and a clean process exit: none of the
+R0 stack overflows (left/right sums, Horner, Negate, `Abs` and Invoke chains, 256 KiB threads) remains on the guarded
+paths. Work examples: S5 family g at 20 terms and a balanced sum of 1,000 terms (R0: 56 s / 27.6 GB and 30 s / 31 GB)
+now stop with a Work or StructuralWork refusal; a left sum of 100 terms (R0: 1.5 s / 2.5 GB) stops with StructuralWork after
+about 0.9 s. The first campaign run found the sort-wrapping defect described above (9 runs ended with a
+`TargetInvocationException`); the table is the run after the fix.
+
+**Performance** (Release, `net9.0`, one process per scenario and variant, 6 alternated triples base / R1a-Security / A/A copy
+of base, 1.5 s warm-up, 0.6 s measurement; A/A within −3.0 % … +2.5 %):
+
+| Scenario | base ns | R1a-Security ns | Δ | A/A | Δ ns |
+|---|---|---|---|---|---|
+| `Simplify(Constant)` (session cost) | 40 | 62 | +51.9 % | +1.2 % | +21 |
+| scalar arithmetic | 8,254 | 8,635 | +4.6 % | −0.5 % | +380 |
+| unary chain (20) | 1,081 | 1,286 | +19.0 % | +0.8 % | +205 |
+| binary sum (10 parameters) | 561,112 | 584,466 | +4.2 % | −0.2 % | +23,353 |
+| method calls | 4,162 | 4,433 | +6.5 % | +0.2 % | +270 |
+| conditional | 914 | 1,114 | +21.9 % | +0.7 % | +200 |
+| lambda | 1,826 | 2,042 | +11.9 % | +0.8 % | +217 |
+| supported Invoke inlining | 7,398 | 7,810 | +5.6 % | +0.6 % | +412 |
+| P16 numeric chain (16) | 57,629 | 58,364 | +1.3 % | −1.2 % | +735 |
+| P15 opaque grouping | 1,841,252 | 1,864,227 | +1.2 % | +0.5 % | +22,976 |
+| S5 family g, 12 terms | 11,908,616 | 12,219,556 | +2.6 % | −0.6 % | +310,940 |
+| 200-element untraversed array | 2,253 | 7,604 | +237.5 % | +0.6 % | +5,351 |
+| simplify, call chain 400 | 158,226 | 159,309 | +0.7 % | −0.3 % | +1,082 |
+| identity transformer, call chain 400 | 30,930 | 33,605 | +8.6 % | −0.6 % | +2,674 |
+| identity transformer, balanced 4,096 leaves | 274,795 | 327,776 | +19.3 % | +1.2 % | +52,982 |
+| identity transformer, shared DAG (8,191 logical) | 279,333 | 330,896 | +18.5 % | +0.4 % | +51,563 |
+| public `Equals`, call chains 400 | 344,926 | 355,123 | +3.0 % | −1.1 % | +10,197 |
+| public `GetHashCode`, call chain 400 | 177,782 | 181,360 | +2.0 % | +0.1 % | +3,579 |
+| raw structural equality, 400 | 7,784 | 9,688 | +24.5 % | +2.5 % | +1,904 |
+| raw structural hash, 400 | 11,702 | 12,794 | +9.3 % | +0.4 % | +1,092 |
+| canonical order, 400 | 20,914 | 22,340 | +6.8 % | −3.0 % | +1,427 |
+
+Allocations are unchanged in every scenario. Decomposition (measured separately): (1) one-time validation, about 3 ns per
+node for call chains and 4 ns for binary trees (`validate-*` scenarios: 79 ns for the 9-node scalar tree, 1.27 µs for 401
+nodes, 32 µs for 8,191 nodes); (2) per transformation visit, about 1–2 ns (counter in the session object plus the owner
+check of `TransformCore`); (3) stack checks, 1.0–1.35 ns per call (`ess` calibration), once per transformation step and
+once per structural visit; (4) session, about 21 ns per public operation. The relative cost is above 5 % only where the
+protected work is itself tiny: simplifications of a few nodes that finish in about 1 µs (+200 ns: validation of every
+node plus the visit accounting), the identity transformer (whose per-node work is about 35 ns), the raw structural walks
+(about 5 ns of guard and counter per 20 ns visit), and the untraversed array, whose 601 nodes `master` never visited but the
+validator must (R1b will traverse them). Two optimizations were applied after the first measurement (one thread-static
+session object instead of eleven thread-static fields; one stack check per transformation step instead of two; the
+validator's first-child descent, dispatch order and `IArgumentProvider`), which brought the unary chain from +20.5 % to
++19.0 %, the identity transformer on a call chain from +25.9 % to +8.6 % and the call-chain validation from 3.7 µs to
+1.27 µs. Sampling the stack check every N visits was rejected: it would save about 1 ns per visit, and §12.3 asks for a
+check at every recursive entry. The remaining overhead is the cost of the security contract (every input is measured, every
+step is counted and stack-checked) and is accepted as such.
+
+**Remaining risks.** The visit budgets bound measured engine work, not time or memory: 1,000,000 transformation visits
+can still mean several seconds and several gigabytes of cumulative allocation on the worst families (§7.4: 0.8–6.5 KB per
+visit). The stack guard keeps a fixed headroom (about 64–128 KB): an unguarded recursive segment deeper than that (user
+`Equals`/`GetHashCode` or extension code, framework expression compilation or `ToString`, the parser) can still overflow. A
+non-resource exception thrown by a rule deep inside a recursion that goes through rules is still re-wrapped at every
+level (historical behavior) and could exhaust the stack while unwinding.
+
+**Unprotected boundaries.** `Utils.Parser` and the `CSyntax`/`VBSyntax` front ends (ETC-16, ETC-18: a 42-character input
+still terminates the process before any expression exists; dedicated stage S-06, **critical**); `Expression.Compile`,
+`Expression.ToString` and other framework walks; `ExpressionEx`, `ExpressionOptimiser`, `BlockExpressionBuilder` and the
+expression compilers of `Utils.Expressions` (not part of the ETC engine); third-party `Transform` implementations that never
+call `TransformCore`; user code run from constants, rules and extension nodes (bounded only in the engine work it causes).
+
+**Instructions for R1b/R1c authors.** A new `Prepare*` method is reached through `PrepareTransform` and recurses through
+`PrepareExpression` → `TransformCore`, so it is stack-checked and counted (in `TransformPrepared`) without touching the
+session; a new equality, hash or canonical-key family is added as a case of `EqualsCore`, `Hash` or `Build` (or a new
+`KeyNode` kind), which already count and check. A helper that recurses on its own calls `ConsumeStructuralVisit` (counting)
+or `EnsureStack` (bounded helper). The fixtures `FutureTraversalHandler_IsBudgetedAndGuarded` and
+`FutureStructuralWalkers_AreBudgetedAndGuarded` show both patterns on deep conditionals, invocations and nested arrays.
+Follow the checklist of `Utils/AGENTS.md` ("Expression engine — checklist for new recursive handlers").
+
 ### R1b — Scalar traversal and reconstruction
 
 | Change | File / method | Tests |
@@ -611,6 +802,7 @@ recursive method listed in §12.3. Tests: §12.7.
 | R0 | 2026-10-27 | Inventory, executable baseline (117 samples × 6 contracts) and reproducers committed; ETC-01 … ETC-07 confirmed; ETC-08 … ETC-15 added; no production change, no benchmark needed. Probes (scratch, not committed): per-family probe harness linking the catalog, depth limits in isolated processes (§7). |
 | R0 complement | 2026-10-27 | `Utils/AGENTS.md` local switch exception. Resource campaign (`tests/ExpressionResourceProbe`, Windows + WSL2 Linux, 6 thread/stack configurations, families A–G, CSyntax and VBSyntax): ETC-16 … ETC-19 added (§7). Experiments, never merged: `TransformCore` visit counter and unit-suite visit histogram (accepted as calibration data); stack guards at five recursive entry points (overhead within noise, controlled failure and state restoration observed: accepted as the R1a-Security design basis, §12). No production change. |
 | R1a | 2026-10-28 | ETC-08, ETC-09 and ETC-13 fixed, ETC-11 guarded (no unbound parameter, argument evaluation preserved); C-02 and C-07 (a) adopted; 15 baseline rows moved from `Throws`/`Corrupts` to `Opaque`/`Same` (pass-through, not support); no supported-family change; no regression above 5 % (§9 R1a result). |
+| R1a-Security | 2026-10-28 | Resource limits, per-thread budget session, iterative validator, stack guards on every engine walk, nested-call and re-entrancy policy, Stack translation; ETC-19 fixed and ETC-17 bounded for the ETC engine; rule invocation no longer re-wraps resource failures (stack overflow found and fixed); measured overhead documented (§9 R1a-Security result). |
 
 ## 11. Decisions requested from the reviewer
 
@@ -742,6 +934,9 @@ stays active regardless.
 | S-04 | Default limits on by default | yes for `Default` instances; it is a 2.0.0 behavior change (record in the batched release notes) |
 | S-05 | Where the stack guard goes | every recursive method of the engine (12.3), unconditionally |
 | S-06 | Parser protection | dedicated `Utils.Parser` stage: nesting limit and guard in the grammar engine, input-length guidance |
+
+S-01 … S-05 are applied by R1a-Security (§9, "R1a-Security result"); the defaults were kept after the full Unit,
+Functional and Security suites and the S5 benchmark families passed with them. S-06 remains open.
 
 ### 12.9 Required order of rounds
 

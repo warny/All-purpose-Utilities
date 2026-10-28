@@ -2,6 +2,7 @@ using System.Linq.Expressions;
 using System.Numerics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using Utils.Expressions;
 using Utils.Objects;
 
 namespace Utils.Mathematics.Expressions;
@@ -127,17 +128,47 @@ public class ExpressionComparer : IEqualityComparer<Expression>
     /// A shared <see cref="ExpressionSimplifier"/> instance used to simplify expressions
     /// before they are compared.
     /// </summary>
-    private static readonly ExpressionSimplifier _expressionSimplifier = new ExpressionSimplifier();
+    /// <remarks>
+    /// Engine-internal (ETC R1a-Security): it always joins the comparer's running operation, so the comparer's limits
+    /// (never this instance's defaults) bound the simplifications it runs.
+    /// </remarks>
+    private static readonly ExpressionSimplifier _expressionSimplifier = new ExpressionSimplifier { JoinsRunningOperation = true };
 
     /// <summary>
-    /// Prevents direct instantiation outside of this class. Use <see cref="Default"/> instead.
+    /// Prevents direct instantiation outside of this class. Use <see cref="Default"/> or <see cref="Create"/> instead.
     /// </summary>
-    private ExpressionComparer() { }
+    /// <param name="resourceLimits">The resource limits of this instance.</param>
+    private ExpressionComparer(ExpressionResourceLimits resourceLimits)
+    {
+        ResourceLimits = resourceLimits;
+    }
 
     /// <summary>
-    /// Gets the default <see cref="ExpressionComparer"/> instance for global usage.
+    /// Gets the default <see cref="ExpressionComparer"/> instance for global usage, with
+    /// <see cref="ExpressionResourceLimits.Default"/> resource limits.
     /// </summary>
-    public static ExpressionComparer Default { get; } = new ExpressionComparer();
+    public static ExpressionComparer Default { get; } = new ExpressionComparer(ExpressionResourceLimits.Default);
+
+    /// <summary>
+    /// Creates a comparer with explicit resource limits (ETC R1a-Security). Equality and hashing behave exactly like
+    /// <see cref="Default"/>; only the limits of the operations started by this instance differ.
+    /// </summary>
+    /// <param name="resourceLimits">The resource limits.</param>
+    /// <returns>A new comparer.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="resourceLimits"/> is <see langword="null"/>.</exception>
+    public static ExpressionComparer Create(ExpressionResourceLimits resourceLimits)
+    {
+        ArgumentNullException.ThrowIfNull(resourceLimits);
+        return new ExpressionComparer(resourceLimits);
+    }
+
+    /// <summary>
+    /// Gets the resource limits of this instance. <see cref="Equals(Expression?, Expression?)"/> and
+    /// <see cref="GetHashCode(Expression)"/> validate their inputs against them before simplifying, and the
+    /// simplifications and structural walks they run (including the internal simplifier) are bounded by them. A call
+    /// made while another expression operation runs on the thread can only tighten the active limits.
+    /// </summary>
+    public ExpressionResourceLimits ResourceLimits { get; }
 
     /// <summary>
     /// Determines whether two <see cref="Expression"/> objects are equal by simplifying
@@ -163,15 +194,53 @@ public class ExpressionComparer : IEqualityComparer<Expression>
     /// meaning". <see cref="EqualsCore"/>'s internal recursion deliberately has no equivalent shortcut,
     /// because a shared sub-expression object reached through two lambdas can carry two different meanings
     /// depending on how each lambda binds its parameters - see <see cref="EqualsCore"/>'s remarks.
+    /// <para>
+    /// <b>Resource limits (ETC R1a-Security).</b> When the fast path does not decide, both operands are validated
+    /// against <see cref="ResourceLimits"/> before either is simplified, and the comparison is bounded by the visit
+    /// budgets; an excess throws <see cref="ExpressionResourceLimitException"/>, never <see langword="false"/>. The fast
+    /// path itself is an intentional compatibility exception: <c>Equals(x, x)</c> (same instance) and the
+    /// <see langword="null"/> cases return without validating anything, so a <see langword="true"/> result there is not
+    /// evidence that <paramref name="x"/> satisfies the limits. <see cref="GetHashCode(Expression)"/> always validates.
+    /// </para>
     /// </remarks>
+    /// <exception cref="ExpressionResourceLimitException">A resource limit was exceeded, or the stack ran out.</exception>
     public bool Equals(Expression? x, Expression? y)
     {
         if (TryFastPathEquals(x, y, out bool fastResult)) return fastResult;
 
-        Expression simplifiedX = SimplifyForComparison(x!);
-        Expression simplifiedY = SimplifyForComparison(y!);
+        return ExpressionResourceBudget.Run(ResourceLimits, this, x, y, (X: x!, Y: y!), static state => EqualsAfterFastPath(state.X, state.Y));
+    }
+
+    /// <summary>
+    /// The part of <see cref="Equals(Expression?, Expression?)"/> that follows the fast path: simplifies both operands
+    /// for comparison and compares them structurally.
+    /// </summary>
+    /// <param name="x">The first operand, not <see langword="null"/>.</param>
+    /// <param name="y">The second operand, not <see langword="null"/>.</param>
+    /// <returns><see langword="true"/> when both operands are equivalent after simplification.</returns>
+    private static bool EqualsAfterFastPath(Expression x, Expression y)
+    {
+        Expression simplifiedX = SimplifyForComparison(x);
+        Expression simplifiedY = SimplifyForComparison(y);
 
         return StructuralEqualsAfterSimplification(simplifiedX, simplifiedY);
+    }
+
+    /// <summary>
+    /// The comparison the simplifier's own rules use: exactly <see cref="Default"/>'s
+    /// <see cref="Equals(Expression?, Expression?)"/>, but joining the running expression operation instead of starting
+    /// a public one, so an engine-internal comparison neither validates subtrees again nor applies
+    /// <see cref="Default"/>'s limits over the limits the caller configured. Outside any operation it is the public call.
+    /// </summary>
+    /// <param name="x">The first operand.</param>
+    /// <param name="y">The second operand.</param>
+    /// <returns><see langword="true"/> when both operands are equivalent after simplification.</returns>
+    internal static bool EqualsWithinOperation(Expression? x, Expression? y)
+    {
+        if (!ExpressionResourceBudget.IsActive) return Default.Equals(x, y);
+        if (TryFastPathEquals(x, y, out bool fastResult)) return fastResult;
+
+        return EqualsAfterFastPath(x!, y!);
     }
 
     /// <summary>
@@ -278,7 +347,9 @@ public class ExpressionComparer : IEqualityComparer<Expression>
     /// <param name="simplifiedY">The second expression, already simplified via <see cref="SimplifyForComparison(Expression)"/> (or equivalent).</param>
     /// <returns><see langword="true"/> if the two already-simplified expressions are structurally equivalent under the public, non-safe-constant policy.</returns>
     internal static bool StructuralEqualsAfterSimplification(Expression? simplifiedX, Expression? simplifiedY)
-        => EqualsCore(simplifiedX, simplifiedY, new ParameterBindingContext());
+        => ExpressionResourceBudget.RunInternal(
+            (X: simplifiedX, Y: simplifiedY),
+            static state => EqualsCore(state.X, state.Y, new ParameterBindingContext()));
 
     /// <summary>
     /// Recursively compares two already-simplified expressions for structural equivalence, resolving
@@ -304,6 +375,9 @@ public class ExpressionComparer : IEqualityComparer<Expression>
     /// </remarks>
     private static bool EqualsCore(Expression? x, Expression? y, ParameterBindingContext context)
     {
+        // Single dispatcher of every recursive comparison: one structural visit per compared pair, stack check
+        // included (ETC R1a-Security). A family added to this switch is protected without further change.
+        ExpressionResourceBudget.ConsumeStructuralVisit();
         if (x is null || y is null) return ReferenceEquals(x, y);
         if (x.NodeType != y.NodeType) return false;
 
@@ -615,7 +689,10 @@ public class ExpressionComparer : IEqualityComparer<Expression>
     /// <param name="x">The first (already simplified, or otherwise final) expression to compare.</param>
     /// <param name="y">The second (already simplified, or otherwise final) expression to compare.</param>
     /// <returns><see langword="true"/> if the two sub-expressions are structurally equivalent.</returns>
-    internal static bool StructuralEqualsRaw(Expression? x, Expression? y) => EqualsCore(x, y, new ParameterBindingContext(safeConstantsOnly: true));
+    internal static bool StructuralEqualsRaw(Expression? x, Expression? y)
+        => ExpressionResourceBudget.RunInternal(
+            (X: x, Y: y),
+            static state => EqualsCore(state.X, state.Y, new ParameterBindingContext(safeConstantsOnly: true)));
 
     /// <summary>
     /// Structurally hashes an expression exactly like <see cref="GetHashCode(Expression)"/>, EXCEPT that
@@ -626,7 +703,8 @@ public class ExpressionComparer : IEqualityComparer<Expression>
     /// </summary>
     /// <param name="e">The (already simplified, or otherwise final) expression to hash, or <see langword="null"/>.</param>
     /// <returns>A hash code consistent with <see cref="StructuralEqualsRaw(Expression?, Expression?)"/>.</returns>
-    internal static int StructuralHashRaw(Expression? e) => Hash(e, new ParameterScopeStack(safeConstantsOnly: true));
+    internal static int StructuralHashRaw(Expression? e)
+        => ExpressionResourceBudget.RunInternal(e, static expression => Hash(expression, new ParameterScopeStack(safeConstantsOnly: true)));
 
     /// <summary>
     /// Returns a hash code for the specified <see cref="Expression"/> by simplifying it and computing a
@@ -636,30 +714,45 @@ public class ExpressionComparer : IEqualityComparer<Expression>
     /// </summary>
     /// <param name="obj">The <see cref="Expression"/> for which to get a hash code.</param>
     /// <returns>An integer hash code consistent with <see cref="Equals(Expression?, Expression?)"/>.</returns>
+    /// <remarks>
+    /// ETC R1a-Security: <paramref name="obj"/> is always validated against <see cref="ResourceLimits"/> (there is no
+    /// fast path), and the simplification and hashing are bounded by the visit budgets; an excess throws
+    /// <see cref="ExpressionResourceLimitException"/>, never a fallback hash.
+    /// </remarks>
+    /// <exception cref="ExpressionResourceLimitException">A resource limit was exceeded, or the stack ran out.</exception>
     public int GetHashCode(Expression obj)
     {
         ArgumentNullException.ThrowIfNull(obj);
 
-        Expression simplified = _expressionSimplifier.Simplify(obj);
-        return Hash(simplified, new ParameterScopeStack());
+        return ExpressionResourceBudget.Run(ResourceLimits, this, obj, null, obj, static expression =>
+        {
+            Expression simplified = _expressionSimplifier.TransformDetached(expression);
+            return Hash(simplified, new ParameterScopeStack());
+        });
     }
 
     /// <summary>Computes a structural hash for <paramref name="e"/>, mirroring the metadata inspected by <see cref="EqualsCore"/>.</summary>
     /// <param name="e">The (already simplified) expression to hash, or <see langword="null"/> for an absent optional sub-expression.</param>
     /// <param name="scopes">The active lambda parameter scope stack for the single tree being hashed.</param>
     /// <returns>A hash code such that structurally/alpha-equivalent expressions produce the same value.</returns>
-    private static int Hash(Expression? e, ParameterScopeStack scopes) => e switch
+    private static int Hash(Expression? e, ParameterScopeStack scopes)
     {
-        null => 0,
-        LambdaExpression le => HashLambda(le, scopes),
-        ParameterExpression pe => HashParameter(pe, scopes),
-        ConstantExpression ce => HashConstant(ce, scopes.SafeConstantsOnly),
-        UnaryExpression ue => HashUnary(ue, scopes),
-        BinaryExpression be => HashBinary(be, scopes),
-        MethodCallExpression mce => HashMethodCall(mce, scopes),
-        MemberExpression me => HashMember(me, scopes),
-        _ => HashUnsupported(e),
-    };
+        // Single dispatcher of every recursive hash: one structural visit per node, stack check included
+        // (ETC R1a-Security). A family added to this switch is protected without further change.
+        ExpressionResourceBudget.ConsumeStructuralVisit();
+        return e switch
+        {
+            null => 0,
+            LambdaExpression le => HashLambda(le, scopes),
+            ParameterExpression pe => HashParameter(pe, scopes),
+            ConstantExpression ce => HashConstant(ce, scopes.SafeConstantsOnly),
+            UnaryExpression ue => HashUnary(ue, scopes),
+            BinaryExpression be => HashBinary(be, scopes),
+            MethodCallExpression mce => HashMethodCall(mce, scopes),
+            MemberExpression me => HashMember(me, scopes),
+            _ => HashUnsupported(e),
+        };
+    }
 
     /// <summary>Hashes a <see cref="LambdaExpression"/>: metadata, parameter types, then the body under a pushed scope.</summary>
     /// <param name="le">The lambda to hash.</param>

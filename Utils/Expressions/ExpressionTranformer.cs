@@ -342,9 +342,43 @@ public abstract class ExpressionTransformer
     /// <see cref="ExpressionSignatureAttribute"/> from the derived type.
     /// </summary>
     protected ExpressionTransformer()
+        : this(ExpressionResourceLimits.Default)
     {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ExpressionTransformer"/> class with explicit resource limits,
+    /// applied to every operation this instance starts (see <see cref="ResourceLimits"/>).
+    /// </summary>
+    /// <param name="resourceLimits">The resource limits of this instance.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="resourceLimits"/> is <see langword="null"/>.</exception>
+    protected ExpressionTransformer(ExpressionResourceLimits resourceLimits)
+    {
+        ArgumentNullException.ThrowIfNull(resourceLimits);
+        ResourceLimits = resourceLimits;
         _transformPlan = _transformPlanCache.GetOrAdd(GetType(), static t => BuildPlan(t));
     }
+
+    /// <summary>
+    /// Gets the resource limits of this instance (ETC R1a-Security). They apply when this instance starts an operation:
+    /// the first <see cref="TransformCore(Expression)"/> or <see cref="ReplaceArguments"/> call made while no expression
+    /// operation runs on the thread validates its input against <see cref="ExpressionResourceLimits.MaxDepth"/> and
+    /// <see cref="ExpressionResourceLimits.MaxNodes"/> and bounds the whole call by the visit budgets. Inside a running
+    /// operation, the active limits are kept: an instance can never loosen them.
+    /// </summary>
+    /// <remarks>
+    /// Only the engine methods of this class are protected. A subclass whose public <see cref="Transform"/> never calls
+    /// <see cref="TransformCore(Expression)"/> (or <see cref="ReplaceArguments"/>) runs its own code outside these
+    /// limits.
+    /// </remarks>
+    protected ExpressionResourceLimits ResourceLimits { get; }
+
+    /// <summary>
+    /// Gets or sets whether this instance is an engine-internal helper that always joins the running operation instead
+    /// of starting a nested one (for example the simplifier the comparer uses internally), so that its default limits
+    /// never tighten the limits of the public call it serves. Never set on a user-visible instance.
+    /// </summary>
+    internal bool JoinsRunningOperation { get; init; }
 
     /// <summary>
     /// Scans <paramref name="transformerType"/> for <see cref="ExpressionSignatureAttribute"/>-annotated
@@ -842,8 +876,30 @@ public abstract class ExpressionTransformer
     /// </summary>
     /// <param name="e">The expression to transform.</param>
     /// <returns>A possibly rewritten expression.</returns>
+    /// <remarks>
+    /// <para>
+    /// Resource safety (ETC R1a-Security): when no expression operation runs on the thread, this call starts one with
+    /// <see cref="ResourceLimits"/>: <paramref name="e"/> is validated first, and the whole call, including every
+    /// recursion and nested comparison, is bounded by the visit budgets. Every call checks the execution stack before
+    /// recursing; each node processed is counted once, by <see cref="TransformPrepared"/>.
+    /// </para>
+    /// </remarks>
+    /// <exception cref="ExpressionResourceLimitException">A resource limit was exceeded, or the stack ran out.</exception>
     protected Expression TransformCore(Expression e)
-        => TransformPrepared(PrepareTransform(e));
+    {
+        // A new operation starts when none runs, or when this instance is entered from another one's operation (a
+        // nested public call: it validates its input and can only tighten the limits). Recursion on the owning
+        // instance, and engine-internal instances, join the running operation.
+        ExpressionResourceBudget.Session? session = ExpressionResourceBudget.ActiveSession;
+        if (session is null || (!JoinsRunningOperation && !ReferenceEquals(session.Owner, this)))
+        {
+            return ExpressionResourceBudget.Run(ResourceLimits, this, e, null, (Transformer: this, Expression: e), static state => state.Transformer.TransformCore(state.Expression));
+        }
+
+        // Every transformation descent goes through here: this is the stack check of the whole transformation recursion.
+        ExpressionResourceBudget.EnsureStack();
+        return TransformPrepared(PrepareTransform(e));
+    }
 
     /// <summary>
     /// Runs <see cref="TransformCore"/> on a binary node whose two operands are already prepared: the node is rebuilt
@@ -860,7 +916,11 @@ public abstract class ExpressionTransformer
     /// (same structure) and that skipping its preparation is not observable, so this is not an extensibility point.
     /// </remarks>
     internal Expression TransformCoreWithPreparedOperands(BinaryExpression expression, Expression preparedLeft, Expression preparedRight)
-        => TransformPrepared(new TransformContext(CopyBinaryExpression(expression, preparedLeft, preparedRight)));
+    {
+        // A rule may re-enter this path without passing through TransformCore: check the stack here too.
+        ExpressionResourceBudget.EnsureStack();
+        return TransformPrepared(new TransformContext(CopyBinaryExpression(expression, preparedLeft, preparedRight)));
+    }
 
     /// <summary>
     /// Applies the rules to a prepared node and, when none matches, <see cref="FinalizeExpression"/>: the part of
@@ -868,8 +928,15 @@ public abstract class ExpressionTransformer
     /// </summary>
     /// <param name="context">The prepared node and its prepared sub-expressions.</param>
     /// <returns>A possibly rewritten expression.</returns>
+    /// <remarks>
+    /// This is the single accounting point of the transformation budget: every execution of the engine on a node,
+    /// whether it entered through <see cref="TransformCore(Expression)"/> or through a prepared-operand path such as
+    /// <see cref="TransformCoreWithPreparedOperands"/>, passes here exactly once, so a future prepared path cannot
+    /// bypass the count.
+    /// </remarks>
     private Expression TransformPrepared(TransformContext context)
     {
+        ExpressionResourceBudget.ConsumeTransformVisit();
         if (TryTransform(context, out Expression? result))
         {
             // Preserves the pre-refactor behavior where a matching rule returning null (allowed for the
@@ -1344,7 +1411,7 @@ public abstract class ExpressionTransformer
             {
                 return invoker.Invoke(this, node);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (!IsResourceFailure(ex))
             {
                 // Reproduces MethodBase.Invoke's contract: any exception surfacing from the rule body
                 // (guaranteed here, since DetermineFastInvokerEligibility already validated the argument shape) is
@@ -1356,7 +1423,7 @@ public abstract class ExpressionTransformer
             }
         }
 
-        return rule.Method.Invoke(this, [node]);
+        return InvokeRuleReflectively(rule, [node]);
     }
 
     /// <summary>
@@ -1378,7 +1445,7 @@ public abstract class ExpressionTransformer
             {
                 return invoker.Invoke(this, expression, expressionParameters);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (!IsResourceFailure(ex))
             {
                 // See InvokeSingleRule's remarks: wraps exactly like MethodBase.Invoke, including
                 // double-wrapping a rule-thrown TargetInvocationException and wrapping a rule-thrown
@@ -1387,7 +1454,7 @@ public abstract class ExpressionTransformer
             }
         }
 
-        return rule.Method.Invoke(this, [expression, expressionParameters]);
+        return InvokeRuleReflectively(rule, [expression, expressionParameters]);
     }
 
     /// <summary>
@@ -1437,7 +1504,7 @@ public abstract class ExpressionTransformer
                             GetInvocationArgument(context, materializedInvocationArguments, 3));
                 }
             }
-            catch (Exception ex)
+            catch (Exception ex) when (!IsResourceFailure(ex))
             {
                 // See InvokeSingleRule's remarks: wraps exactly like MethodBase.Invoke, including
                 // double-wrapping a rule-thrown TargetInvocationException and wrapping a rule-thrown
@@ -1447,7 +1514,80 @@ public abstract class ExpressionTransformer
         }
 
         materializedInvocationArguments ??= context.MaterializeInvocationArguments();
-        return rule.Method.Invoke(this, materializedInvocationArguments);
+        return InvokeRuleReflectively(rule, materializedInvocationArguments);
+    }
+
+    /// <summary>
+    /// Whether <paramref name="exception"/> is a resource failure of the engine (ETC R1a-Security) that rule invocation
+    /// must let through untouched: a budget refusal, or the stack guard's <see cref="InsufficientExecutionStackException"/>.
+    /// </summary>
+    /// <param name="exception">The exception leaving a rule.</param>
+    /// <returns><see langword="true"/> for a resource failure.</returns>
+    /// <remarks>
+    /// Rule invocation historically wraps every exception of a rule in a new <see cref="TargetInvocationException"/>,
+    /// from inside a <c>catch</c> block. Doing so for a stack-guard failure is unsafe: a catch handler runs on top of the
+    /// still-deep stack, so wrapping again at every level of a recursion that goes through rules (inlining, symbolic
+    /// derivation, any rule calling <see cref="TransformCore(Expression)"/>) consumes stack per level until the process
+    /// overflows. A resource failure therefore propagates through rule invocation without being caught, and reaches the
+    /// operation boundary unwrapped. Every other exception keeps the historical wrapping.
+    /// </remarks>
+    private static bool IsResourceFailure(Exception exception)
+        => exception is ExpressionResourceLimitException or InsufficientExecutionStackException;
+
+    /// <summary>
+    /// Invokes <paramref name="rule"/> through reflection with <see cref="MethodBase.Invoke(object, object[])"/>'s
+    /// exception contract (an exception of the rule body is wrapped once in a new
+    /// <see cref="TargetInvocationException"/>; an argument the reflection layer rejects throws before the rule runs),
+    /// except that a resource failure is never caught (see <see cref="IsResourceFailure"/>).
+    /// </summary>
+    /// <param name="rule">The rule.</param>
+    /// <param name="arguments">The reflection arguments.</param>
+    /// <returns>The rule's return value.</returns>
+    private object? InvokeRuleReflectively(TransformRule rule, object?[] arguments)
+    {
+        if (!ArgumentsBindWithoutConversion(rule.Parameters, arguments))
+        {
+            // The reflection layer rejects (or converts) these arguments before the rule runs: keep its exact,
+            // historical behavior. No recursion can start from here.
+            return rule.Method.Invoke(this, arguments);
+        }
+
+        try
+        {
+            return rule.Method.Invoke(this, BindingFlags.DoNotWrapExceptions, binder: null, arguments, culture: null);
+        }
+        catch (Exception ex) when (!IsResourceFailure(ex))
+        {
+            throw new TargetInvocationException(ex);
+        }
+    }
+
+    /// <summary>
+    /// Whether reflection binds <paramref name="arguments"/> to <paramref name="parameters"/> as they are: same count,
+    /// and each argument an instance of its parameter type (or <see langword="null"/> for a reference or nullable type).
+    /// Only then can every exception of <see cref="MethodBase.Invoke(object, BindingFlags, Binder, object[], System.Globalization.CultureInfo)"/>
+    /// come from the rule body.
+    /// </summary>
+    /// <param name="parameters">The rule parameters.</param>
+    /// <param name="arguments">The reflection arguments.</param>
+    /// <returns><see langword="true"/> when no reflection-level argument error or conversion can occur.</returns>
+    private static bool ArgumentsBindWithoutConversion(TransformParameter[] parameters, object?[] arguments)
+    {
+        if (parameters.Length != arguments.Length) return false;
+
+        for (int i = 0; i < parameters.Length; i++)
+        {
+            Type type = parameters[i].ParameterType;
+            if (type.IsByRef || type.IsPointer || type.IsByRefLike) return false;
+
+            object? argument = arguments[i];
+            bool binds = argument is null
+                ? !type.IsValueType || Nullable.GetUnderlyingType(type) is not null
+                : type.IsInstanceOfType(argument);
+            if (!binds) return false;
+        }
+
+        return true;
     }
 
     /// <summary>
@@ -1471,8 +1611,26 @@ public abstract class ExpressionTransformer
     /// <param name="oldParameters">The parameters to remove.</param>
     /// <param name="newParameters">The new expressions that replace <paramref name="oldParameters"/>.</param>
     /// <returns>A copy of <paramref name="e"/> where specified parameters are replaced.</returns>
+    /// <remarks>
+    /// When no expression operation runs on the thread, this call starts one with <see cref="ResourceLimits"/> and
+    /// validates <paramref name="e"/> first (ETC R1a-Security); the substitution walk counts structural visits.
+    /// </remarks>
+    /// <exception cref="ExpressionResourceLimitException">A resource limit was exceeded, or the stack ran out.</exception>
     protected Expression ReplaceArguments(Expression e, ParameterExpression[] oldParameters, Expression[] newParameters)
-        => ReplaceArgumentsCore(e, oldParameters, newParameters);
+    {
+        if (!ExpressionResourceBudget.IsActive || (!JoinsRunningOperation && !ReferenceEquals(ExpressionResourceBudget.Owner, this)))
+        {
+            return ExpressionResourceBudget.Run(
+                ResourceLimits,
+                this,
+                e,
+                null,
+                (Transformer: this, Expression: e, Old: oldParameters, New: newParameters),
+                static state => state.Transformer.ReplaceArgumentsCore(state.Expression, state.Old, state.New));
+        }
+
+        return ReplaceArgumentsCore(e, oldParameters, newParameters);
+    }
 
     /// <summary>
     /// Collection-based core of <see cref="ReplaceArguments"/>. Accepts <see cref="IReadOnlyList{T}"/>
@@ -1498,6 +1656,9 @@ public abstract class ExpressionTransformer
     /// <returns>A copy of <paramref name="e"/> where specified parameters are replaced.</returns>
     internal Expression ReplaceArgumentsCore(Expression e, IReadOnlyList<ParameterExpression>? oldParameters, IReadOnlyList<Expression>? newParameters)
     {
+        // One structural visit per node walked (ETC R1a-Security), stack check included. Counting does not read
+        // either list, so the historical lazy access to oldParameters/newParameters is unchanged.
+        ExpressionResourceBudget.ConsumeStructuralVisit();
         switch (e)
         {
             case ParameterExpression pe:

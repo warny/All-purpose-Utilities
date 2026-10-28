@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
+using Utils.Expressions;
 using Utils.Objects;
 
 namespace Utils.Mathematics.Expressions
@@ -229,6 +230,8 @@ namespace Utils.Mathematics.Expressions
             /// <returns><see langword="true"/> when the node and its subtree are eligible.</returns>
             private static bool TryHash(Expression? expression, ref int budget, out int hash)
             {
+                // Recursive key walk, bounded by its own node budget: guard the stack too (ETC R1a-Security).
+                ExpressionResourceBudget.EnsureStack();
                 hash = 0;
                 if (expression is null) return true;
                 if (--budget < 0) return false;
@@ -405,6 +408,8 @@ namespace Utils.Mathematics.Expressions
             /// <returns><see langword="true"/> when both trees are strictly identical.</returns>
             private static bool StrictEquals(Expression? x, Expression? y)
             {
+                // Recursive key walk, bounded by its own node budget: guard the stack too (ETC R1a-Security).
+                ExpressionResourceBudget.EnsureStack();
                 if (ReferenceEquals(x, y)) return true;
                 if (x is null || y is null) return false;
                 if (x.NodeType != y.NodeType || x.Type != y.Type) return false;
