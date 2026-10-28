@@ -140,6 +140,13 @@ internal static class InternalDiagnostics
 /// <summary>A generic recursive transformer used to exercise the public <see cref="ExpressionTransformer.Transform"/> entry point.</summary>
 internal sealed class IdentityRecursiveTransformer : ExpressionTransformer
 {
+    /// <summary>Initializes the transformer with explicit resource limits (ETC R1a-Security).</summary>
+    /// <param name="limits">The limits.</param>
+    public IdentityRecursiveTransformer(ExpressionResourceLimits limits)
+        : base(limits)
+    {
+    }
+
     /// <inheritdoc/>
     public override Expression Transform(Expression expression) => TransformCore(expression);
 
