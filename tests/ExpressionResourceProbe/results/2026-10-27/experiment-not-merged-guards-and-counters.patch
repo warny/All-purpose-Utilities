@@ -1,0 +1,188 @@
+﻿diff --git a/Utils/Expressions/EtcGuard.cs b/Utils/Expressions/EtcGuard.cs
+new file mode 100644
+index 00000000..12dc360e
+--- /dev/null
++++ b/Utils/Expressions/EtcGuard.cs
+@@ -0,0 +1,17 @@
++using System.Runtime.CompilerServices;
++
++namespace Utils.Expressions;
++
++/// <summary>ETC R0 experiment only (never merged): optional stack guard enabled by ETC_GUARDS=1.</summary>
++internal static class EtcGuard
++{
++    /// <summary>Whether the guard is enabled for this process.</summary>
++    internal static readonly bool Enabled = System.Environment.GetEnvironmentVariable("ETC_GUARDS") == "1";
++
++    /// <summary>Calls EnsureSufficientExecutionStack when enabled.</summary>
++    [MethodImpl(MethodImplOptions.AggressiveInlining)]
++    internal static void Check()
++    {
++        if (Enabled) RuntimeHelpers.EnsureSufficientExecutionStack();
++    }
++}
+diff --git a/Utils/Expressions/EtcVisitReport.cs b/Utils/Expressions/EtcVisitReport.cs
+new file mode 100644
+index 00000000..e221f343
+--- /dev/null
++++ b/Utils/Expressions/EtcVisitReport.cs
+@@ -0,0 +1,57 @@
++using System;
++using System.Collections.Generic;
++using System.Linq;
++using System.Linq.Expressions;
++using System.Threading;
++
++namespace Utils.Expressions;
++
++/// <summary>ETC R0 experiment only (never merged): per outermost simplification visit histogram, written at process exit.</summary>
++internal static class EtcVisitReport
++{
++    [ThreadStatic] private static int _depth;
++    private static readonly object Gate = new();
++    private static readonly long[] Buckets = new long[12];
++    private static readonly List<(long Visits, string Text)> Top = [];
++    private static long _calls;
++    private static readonly string? Path = Environment.GetEnvironmentVariable("ETC_VISITS_REPORT");
++
++    static EtcVisitReport()
++    {
++        if (Path is not null) AppDomain.CurrentDomain.ProcessExit += (_, _) => Write();
++    }
++
++    internal static bool Enter() => Path is not null && _depth++ == 0;
++
++    internal static void Exit(bool outer, long before, Expression expression)
++    {
++        if (Path is null) return;
++        _depth--;
++        if (!outer) return;
++        long visits = ExpressionTransformer.EtcTransformCoreVisits - before;
++        int bucket = visits <= 0 ? 0 : Math.Min(Buckets.Length - 1, (int)Math.Floor(Math.Log10(visits)) + 1);
++        lock (Gate)
++        {
++            _calls++;
++            Buckets[bucket]++;
++            if (Top.Count < 15 || visits > Top[^1].Visits)
++            {
++                string text = expression.ToString();
++                Top.Add((visits, text.Length > 200 ? text[..200] : text));
++                Top.Sort((a, b) => b.Visits.CompareTo(a.Visits));
++                if (Top.Count > 15) Top.RemoveAt(Top.Count - 1);
++            }
++        }
++    }
++
++    private static void Write()
++    {
++        lock (Gate)
++        {
++            var lines = new List<string> { $"calls={_calls}" };
++            for (int i = 0; i < Buckets.Length; i++) lines.Add($"bucket visits<=1e{i}: {Buckets[i]}");
++            lines.AddRange(Top.Select(t => $"top {t.Visits}: {t.Text}"));
++            System.IO.File.AppendAllLines(Path!, lines);
++        }
++    }
++}
+diff --git a/Utils/Expressions/ExpressionCanonicalOrder.cs b/Utils/Expressions/ExpressionCanonicalOrder.cs
+index 24c29c6f..1a36e1d7 100644
+--- a/Utils/Expressions/ExpressionCanonicalOrder.cs
++++ b/Utils/Expressions/ExpressionCanonicalOrder.cs
+@@ -223,7 +223,14 @@ internal static class ExpressionCanonicalOrder
+     /// <param name="e">The (already simplified) sub-expression to key, or <see langword="null"/>.</param>
+     /// <param name="scopes">The local, per-<see cref="BuildKey(Expression, IReadOnlyList{ParameterExpression[]})"/>-call (or per-<see cref="BuildKeys"/>-call) scope-lookup state (ambient enclosing snapshot plus any lambda encountered so far during this walk). Threaded by <see langword="ref"/> so a lazily-allocated nested-scope frame pushed deeper in the recursion remains visible to the rest of the walk and to later sibling calls.</param>
+     /// <returns>The resulting key.</returns>
+-    private static KeyNode Build(Expression? e, ref ScopeState scopes) => e switch
++    private static KeyNode Build(Expression? e, ref ScopeState scopes)
++    {
++        Utils.Expressions.EtcGuard.Check();
++        return BuildCore(e, ref scopes);
++    }
++
++    /// <summary>Experiment split.</summary>
++    private static KeyNode BuildCore(Expression? e, ref ScopeState scopes) => e switch
+     {
+         null => NullKey.Instance,
+         ConstantExpression ce => BuildConstant(ce),
+diff --git a/Utils/Expressions/ExpressionComparer.cs b/Utils/Expressions/ExpressionComparer.cs
+index 2951b6dc..c8089f9e 100644
+--- a/Utils/Expressions/ExpressionComparer.cs
++++ b/Utils/Expressions/ExpressionComparer.cs
+@@ -304,6 +304,7 @@ public class ExpressionComparer : IEqualityComparer<Expression>
+     /// </remarks>
+     private static bool EqualsCore(Expression? x, Expression? y, ParameterBindingContext context)
+     {
++        Utils.Expressions.EtcGuard.Check();
+         if (x is null || y is null) return ReferenceEquals(x, y);
+         if (x.NodeType != y.NodeType) return false;
+ 
+@@ -648,7 +649,14 @@ public class ExpressionComparer : IEqualityComparer<Expression>
+     /// <param name="e">The (already simplified) expression to hash, or <see langword="null"/> for an absent optional sub-expression.</param>
+     /// <param name="scopes">The active lambda parameter scope stack for the single tree being hashed.</param>
+     /// <returns>A hash code such that structurally/alpha-equivalent expressions produce the same value.</returns>
+-    private static int Hash(Expression? e, ParameterScopeStack scopes) => e switch
++    private static int Hash(Expression? e, ParameterScopeStack scopes)
++    {
++        Utils.Expressions.EtcGuard.Check();
++        return HashCore(e, scopes);
++    }
++
++    /// <summary>Experiment split.</summary>
++    private static int HashCore(Expression? e, ParameterScopeStack scopes) => e switch
+     {
+         null => 0,
+         LambdaExpression le => HashLambda(le, scopes),
+diff --git a/Utils/Expressions/ExpressionSimplifier.cs b/Utils/Expressions/ExpressionSimplifier.cs
+index eb8f8520..679cbfcb 100644
+--- a/Utils/Expressions/ExpressionSimplifier.cs
++++ b/Utils/Expressions/ExpressionSimplifier.cs
+@@ -162,6 +162,20 @@ namespace Utils.Mathematics.Expressions
+         /// <param name="expression">The expression to transform.</param>
+         /// <returns>A possibly rewritten expression.</returns>
+         private Expression TransformWithinBoundary(Expression expression)
++        {
++            bool etcOuter = Utils.Expressions.EtcVisitReport.Enter();
++            long etcBefore = ExpressionTransformer.EtcTransformCoreVisits;
++            try
++            {
++                return TransformWithinBoundaryCore(expression);
++            }
++            finally
++            {
++                Utils.Expressions.EtcVisitReport.Exit(etcOuter, etcBefore, expression);
++            }
++        }
++
++        private Expression TransformWithinBoundaryCore(Expression expression)
+         {
+             bool diagnosticsActive = ExpressionComparer.IsDiagnosticCaptureActive;
+             ExpressionMetricsScope metricsScope = diagnosticsActive ? BeginExpressionMetricsScope() : default;
+diff --git a/Utils/Expressions/ExpressionTranformer.cs b/Utils/Expressions/ExpressionTranformer.cs
+index b5b1c8c6..0979c0ea 100644
+--- a/Utils/Expressions/ExpressionTranformer.cs
++++ b/Utils/Expressions/ExpressionTranformer.cs
+@@ -823,7 +823,15 @@ public abstract class ExpressionTransformer
+     /// <param name="e">The expression to transform.</param>
+     /// <returns>A possibly rewritten expression.</returns>
+     protected Expression TransformCore(Expression e)
+-        => TransformPrepared(PrepareTransform(e));
++    {
++        EtcTransformCoreVisits++;
++        EtcGuard.Check();
++        return TransformPrepared(PrepareTransform(e));
++    }
++
++    /// <summary>ETC R0 experiment counter.</summary>
++    [System.ThreadStatic]
++    internal static long EtcTransformCoreVisits;
+ 
+     /// <summary>
+     /// Runs <see cref="TransformCore"/> on a binary node whose two operands are already prepared: the node is rebuilt
+@@ -1467,6 +1475,7 @@ public abstract class ExpressionTransformer
+     /// <returns>A copy of <paramref name="e"/> where specified parameters are replaced.</returns>
+     internal Expression ReplaceArgumentsCore(Expression e, IReadOnlyList<ParameterExpression>? oldParameters, IReadOnlyList<Expression>? newParameters)
+     {
++        EtcGuard.Check();
+         switch (e)
+         {
+             case ParameterExpression pe:

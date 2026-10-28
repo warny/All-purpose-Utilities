@@ -89,7 +89,7 @@ Remaining S1 work as of 2026-09-13 (addressed below on 2026-09-14, except the la
 
 - ~~`ExpressionTransformer.CopyUnaryExpression` does not preserve an original custom unary operator `Method` through simplification~~ - fixed, see the 2026-09-14 entry below;
 - ~~a `TailCall` (or other lossy metadata) difference on a lambda *nested inside* a compared body is not recoverable~~ - fixed for `Type`/`TailCall`/`Name` at every nesting depth, see below;
-- broader `Expression` node-family coverage (`Conditional`, `New`, `Block`, etc.) remains conservatively "unequal for distinct instances", as intended - see "Do not broaden node-family support" guidance for this stage. This is an optional/conservative follow-up, not a correctness bug: the comparer never claims false equality for these kinds, it is simply silent (returns `false`) on them.
+- broader `Expression` node-family coverage (`Conditional`, `New`, `Block`, etc.) remains conservatively "unequal for distinct instances", as intended - see "Do not broaden node-family support" guidance for this stage. This is an optional/conservative follow-up, not a correctness bug: the comparer never claims false equality for these kinds, it is simply silent (returns `false`) on them. Since 2026-10-27 this follow-up, and the traversal/reconstruction defects found while auditing it, are tracked by the ETC roadmap: `Utils/TODO-2026-10-27-etc-expression-tree-coverage-roadmap.md`.
 
 #### S1 progress (2026-09-14) — reconstruction fidelity
 

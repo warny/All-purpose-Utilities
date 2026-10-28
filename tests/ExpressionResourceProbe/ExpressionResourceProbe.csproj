@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <!--
+        ETC R0 diagnostic harness: runs ONE potentially stack-exhausting expression-tree scenario per process.
+        It is deliberately not part of Utils.sln, not packable and never run by the test suites; see README.md and
+        run-campaign.ps1. EtcUtilsRoot can point at another checkout (for example an instrumented worktree).
+    -->
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net8.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>disable</ImplicitUsings>
+        <IsPackable>false</IsPackable>
+        <IsPublishable>true</IsPublishable>
+        <InvariantGlobalization>true</InvariantGlobalization>
+        <EtcUtilsRoot Condition="'$(EtcUtilsRoot)' == ''">$(MSBuildThisFileDirectory)..\..\</EtcUtilsRoot>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="$(EtcUtilsRoot)Utils\Utils.csproj" />
+        <ProjectReference Include="$(EtcUtilsRoot)Utils.Expressions.CSyntax\Utils.Expressions.CSyntax.csproj" />
+        <ProjectReference Include="$(EtcUtilsRoot)Utils.Expressions.VBSyntax\Utils.Expressions.VBSyntax.csproj" />
+    </ItemGroup>
+
+</Project>

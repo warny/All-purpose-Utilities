@@ -1,0 +1,28 @@
+calls=23609
+bucket visits<=1e0: 0
+bucket visits<=1e1: 22524
+bucket visits<=1e2: 893
+bucket visits<=1e3: 91
+bucket visits<=1e4: 45
+bucket visits<=1e5: 53
+bucket visits<=1e6: 3
+bucket visits<=1e7: 0
+bucket visits<=1e8: 0
+bucket visits<=1e9: 0
+bucket visits<=1e10: 0
+bucket visits<=1e11: 0
+top 353625: ((((((((100 * IdentityFromObject(value(UtilsTest.Mathematics.Expressions.ExpressionSimplifierOpaqueConstantInvariantTests+LoggingConstant))) - (3 * IdentityFromObject(value(UtilsTest.Mathematics.Expre
+top 353625: ((((((((100 * IdentityFromObject(value(UtilsTest.Mathematics.Expressions.ExpressionSimplifierOpaqueConstantInvariantTests+LoggingConstant))) - (3 * IdentityFromObject(value(UtilsTest.Mathematics.Expre
+top 310218: ((((((((100 * [UtilsTest.Mathematics.Expressions.ExpressionSimplifierOpaqueConstantInvariantTests+LoggingExtension]) - (x1 * 3)) - (4 * x2)) - (x3 * 5)) - (6 * x4)) - (x5 * 7)) - (8 * x6)) - (x7 * 9))
+top 95181: ((((((((((100 * IdentityFromObject(value(UtilsTest.Mathematics.Expressions.ExpressionSimplifierOpaqueConstantInvariantTests+LoggingConstant))) - (3 * IdentityFromObject(value(UtilsTest.Mathematics.Exp
+top 81111: (((((((100 * IdentityFromObject(value(UtilsTest.Mathematics.Expressions.ExpressionSimplifierOpaqueConstantInvariantTests+LoggingConstant))) - (3 * IdentityFromObject(value(UtilsTest.Mathematics.Expres
+top 74590: ((((((100 * [UtilsTest.Mathematics.Expressions.ExpressionSimplifierOpaqueConstantInvariantTests+LoggingExtension]) - (x1 * 3)) - (4 * x2)) - (x3 * 5)) - (6 * x4)) - (x5 * 7))
+top 66392: (((((((((100 * IdentityFromObject(value(UtilsTest.Mathematics.Expressions.ExpressionSimplifierObservedComparisonMemoTests+CountingConstant))) - (x1 * 3)) - (4 * x2)) - (x3 * 5)) - (6 * x4)) - (x5 * 7)
+top 66392: (((((((((100 * IdentityFromObject(value(UtilsTest.Mathematics.Expressions.ExpressionSimplifierObservedComparisonMemoTests+CountingConstant))) - (x1 * 3)) - (4 * x2)) - (x3 * 5)) - (6 * x4)) - (x5 * 7)
+top 64482: (((((((100 * IdentityFromObject(value(UtilsTest.Mathematics.Expressions.ExpressionSimplifierOpaqueConstantInvariantTests+LoggingConstant))) - (3 * IdentityFromObject(value(UtilsTest.Mathematics.Expres
+top 64482: (((((((100 * IdentityFromObject(value(UtilsTest.Mathematics.Expressions.ExpressionSimplifierOpaqueConstantInvariantTests+LoggingConstant))) - (3 * IdentityFromObject(value(UtilsTest.Mathematics.Expres
+top 64482: (((((((100 * IdentityFromObject(value(UtilsTest.Mathematics.Expressions.ExpressionSimplifierOpaqueConstantInvariantTests+LoggingConstant))) - (3 * IdentityFromObject(value(UtilsTest.Mathematics.Expres
+top 64482: (((((((100 * IdentityFromObject(value(UtilsTest.Mathematics.Expressions.ExpressionSimplifierOpaqueConstantInvariantTests+LoggingConstant))) - (3 * IdentityFromObject(value(UtilsTest.Mathematics.Expres
+top 57888: ((((((((((((((((100 * x0) - (x1 * 3)) - (4 * x2)) - (x3 * 5)) - (6 * x4)) - (x5 * 7)) - (8 * x6)) - (x7 * 9)) - (10 * x8)) - (x9 * 11)) - (12 * x10)) - (x11 * 13)) - (14 * x12)) - (x13 * 15)) - (16 * 
+top 57888: ((((((((((((((((100 * x0) - (x1 * 3)) - (4 * x2)) - (x3 * 5)) - (6 * x4)) - (x5 * 7)) - (8 * x6)) - (x7 * 9)) - (10 * x8)) - (x9 * 11)) - (12 * x10)) - (x11 * 13)) - (14 * x12)) - (x13 * 15)) - (16 * 
+top 42345: (x0, x1, x2, x3, x4, x5, x6, x7) => ((((((((100 * IdentityFromObject(value(UtilsTest.Mathematics.Expressions.ExpressionSimplifierOpaqueConstantInvariantTests+LoggingConstant))) - (x1 * 3)) - (4 * x2))
