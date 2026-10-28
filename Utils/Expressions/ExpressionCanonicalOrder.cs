@@ -4,6 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using Utils.Collections;
+using Utils.Expressions;
 using Utils.Objects;
 
 namespace Utils.Mathematics.Expressions;
@@ -122,10 +123,13 @@ internal static class ExpressionCanonicalOrder
     /// </param>
     /// <returns>A comparable, deterministic structural key.</returns>
     internal static KeyNode BuildKey(Expression? expression, IReadOnlyList<ParameterExpression[]> enclosingScopes)
-    {
-        var scopes = new ScopeState(enclosingScopes);
-        return Build(expression, ref scopes);
-    }
+        => ExpressionResourceBudget.RunInternal(
+            (Expression: expression, Scopes: enclosingScopes),
+            static state =>
+            {
+                var scopes = new ScopeState(state.Scopes);
+                return Build(state.Expression, ref scopes);
+            });
 
     /// <summary>
     /// Zero-copy counterpart of <see cref="BuildKey(Expression?, IReadOnlyList{ParameterExpression[]})"/> for a
@@ -142,10 +146,13 @@ internal static class ExpressionCanonicalOrder
     /// <param name="enclosingScopes">A snapshot array the caller guarantees nothing else can reach and mutate.</param>
     /// <returns>A comparable, deterministic structural key.</returns>
     internal static KeyNode BuildKeyFromSnapshot(Expression? expression, ParameterExpression[][] enclosingScopes)
-    {
-        var scopes = new ScopeState(enclosingScopes);
-        return Build(expression, ref scopes);
-    }
+        => ExpressionResourceBudget.RunInternal(
+            (Expression: expression, Scopes: enclosingScopes),
+            static state =>
+            {
+                var scopes = new ScopeState(state.Scopes);
+                return Build(state.Expression, ref scopes);
+            });
 
     /// <summary>
     /// Compares two expressions' complete structural canonical-order keys under the same enclosing scope.
@@ -155,7 +162,9 @@ internal static class ExpressionCanonicalOrder
     /// <param name="enclosingScopes">See <see cref="BuildKey(Expression, IReadOnlyList{ParameterExpression[]})"/>.</param>
     /// <returns>A negative value if <paramref name="x"/> sorts before <paramref name="y"/>, zero if tied, positive otherwise.</returns>
     internal static int Compare(Expression? x, Expression? y, IReadOnlyList<ParameterExpression[]> enclosingScopes)
-        => BuildKey(x, enclosingScopes).CompareTo(BuildKey(y, enclosingScopes));
+        => ExpressionResourceBudget.RunInternal(
+            (X: x, Y: y, Scopes: enclosingScopes),
+            static state => BuildKey(state.X, state.Scopes).CompareTo(BuildKey(state.Y, state.Scopes)));
 
     /// <summary>
     /// Builds the complete structural canonical-order key for each of <paramref name="expressions"/> under
@@ -180,8 +189,13 @@ internal static class ExpressionCanonicalOrder
             return [];
         }
 
-        var scopes = new ScopeState(enclosingScopes);
-        return BuildKeysCore(expressions, ref scopes);
+        return ExpressionResourceBudget.RunInternal(
+            (Expressions: expressions, Scopes: enclosingScopes),
+            static state =>
+            {
+                var scopes = new ScopeState(state.Scopes);
+                return BuildKeysCore(state.Expressions, ref scopes);
+            });
     }
 
     /// <summary>
@@ -200,8 +214,13 @@ internal static class ExpressionCanonicalOrder
             return [];
         }
 
-        var scopes = new ScopeState(enclosingScopes);
-        return BuildKeysCore(expressions, ref scopes);
+        return ExpressionResourceBudget.RunInternal(
+            (Expressions: expressions, Scopes: enclosingScopes),
+            static state =>
+            {
+                var scopes = new ScopeState(state.Scopes);
+                return BuildKeysCore(state.Expressions, ref scopes);
+            });
     }
 
     /// <summary>Shared per-element loop backing both <see cref="BuildKeys"/> and <see cref="BuildKeysFromSnapshot"/> once their <see cref="ScopeState"/> has been constructed. Named distinctly from both (rather than overloaded) so reflection-based test lookups of <c>BuildKeys</c> by name alone stay unambiguous.</summary>
@@ -223,18 +242,26 @@ internal static class ExpressionCanonicalOrder
     /// <param name="e">The (already simplified) sub-expression to key, or <see langword="null"/>.</param>
     /// <param name="scopes">The local, per-<see cref="BuildKey(Expression, IReadOnlyList{ParameterExpression[]})"/>-call (or per-<see cref="BuildKeys"/>-call) scope-lookup state (ambient enclosing snapshot plus any lambda encountered so far during this walk). Threaded by <see langword="ref"/> so a lazily-allocated nested-scope frame pushed deeper in the recursion remains visible to the rest of the walk and to later sibling calls.</param>
     /// <returns>The resulting key.</returns>
-    private static KeyNode Build(Expression? e, ref ScopeState scopes) => e switch
+    /// <remarks>
+    /// Single dispatcher of every recursive key construction: one structural visit per node, stack check included
+    /// (ETC R1a-Security). A family added to this switch is protected without further change.
+    /// </remarks>
+    private static KeyNode Build(Expression? e, ref ScopeState scopes)
     {
-        null => NullKey.Instance,
-        ConstantExpression ce => BuildConstant(ce),
-        ParameterExpression pe => BuildParameter(pe, ref scopes),
-        UnaryExpression ue => BuildUnary(ue, ref scopes),
-        BinaryExpression be => BuildBinary(be, ref scopes),
-        MethodCallExpression mce => BuildMethodCall(mce, ref scopes),
-        MemberExpression me => BuildMember(me, ref scopes),
-        LambdaExpression le => BuildLambda(le, ref scopes),
-        _ => UnsupportedKey.Instance,
-    };
+        ExpressionResourceBudget.ConsumeStructuralVisit();
+        return e switch
+        {
+            null => NullKey.Instance,
+            ConstantExpression ce => BuildConstant(ce),
+            ParameterExpression pe => BuildParameter(pe, ref scopes),
+            UnaryExpression ue => BuildUnary(ue, ref scopes),
+            BinaryExpression be => BuildBinary(be, ref scopes),
+            MethodCallExpression mce => BuildMethodCall(mce, ref scopes),
+            MemberExpression me => BuildMember(me, ref scopes),
+            LambdaExpression le => BuildLambda(le, ref scopes),
+            _ => UnsupportedKey.Instance,
+        };
+    }
 
     /// <summary>
     /// Local, per-<see cref="BuildKey(Expression?, IReadOnlyList{ParameterExpression[]})"/>-call (or per-
@@ -842,8 +869,13 @@ internal static class ExpressionCanonicalOrder
         protected abstract int Rank { get; }
 
         /// <inheritdoc/>
+        /// <remarks>
+        /// Single entry of every recursive key comparison: one structural visit per compared pair, stack check included
+        /// (ETC R1a-Security), so a new key kind is protected by deriving from this class.
+        /// </remarks>
         public int CompareTo(KeyNode? other)
         {
+            ExpressionResourceBudget.ConsumeStructuralVisit();
             if (other is null) return 1;
             if (ReferenceEquals(this, other)) return 0;
 

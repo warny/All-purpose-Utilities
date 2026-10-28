@@ -195,7 +195,7 @@ public partial class ExpressionSimplifier
 
         if (!(leftLeft.Method == sin && rightLeft.Method == cos) && !(leftLeft.Method == cos && rightLeft.Method == sin)) return null;
 
-        if (ExpressionComparer.Default.Equals(leftLeft.Arguments[0], rightLeft.Arguments[0])) return Expression.Constant(Convert.ChangeType(1.0, left.Type));
+        if (ExpressionComparer.EqualsWithinOperation(leftLeft.Arguments[0], rightLeft.Arguments[0])) return Expression.Constant(Convert.ChangeType(1.0, left.Type));
 
         return null;
     }
@@ -213,7 +213,7 @@ public partial class ExpressionSimplifier
             [ExpressionCallSignature(typeof(ITrigonometricFunctions<>), nameof(ITrigonometricFunctions<double>.Cos))] MethodCallExpression right)
     {
         if (e is not BinaryExpression outer || !IsOrdinaryBinaryArithmetic(outer)) return null;
-        if (ExpressionComparer.Default.Equals(left.Arguments[0], right.Arguments[0]))
+        if (ExpressionComparer.EqualsWithinOperation(left.Arguments[0], right.Arguments[0]))
         {
             var tan = TrigonometricMethodsByType[left.Type].Tan;
             return Expression.Call(null, tan, left.Arguments[0]);
@@ -234,7 +234,7 @@ public partial class ExpressionSimplifier
     [ExpressionCallSignature(typeof(ITrigonometricFunctions<>), nameof(ITrigonometricFunctions<double>.Sin))] MethodCallExpression right)
     {
         if (e is not BinaryExpression outer || !IsOrdinaryBinaryArithmetic(outer)) return null;
-        if (ExpressionComparer.Default.Equals(left.Arguments[0], right.Arguments[0]))
+        if (ExpressionComparer.EqualsWithinOperation(left.Arguments[0], right.Arguments[0]))
         {
             var tan = TrigonometricMethodsByType[left.Type].Tan;
             return Expression.Divide(Expression.Constant(Convert.ChangeType(1.0, left.Type)), Expression.Call(null, tan, left.Arguments[0]));
@@ -255,7 +255,7 @@ public partial class ExpressionSimplifier
             [ExpressionCallSignature(typeof(ITrigonometricFunctions<>), nameof(ITrigonometricFunctions<double>.Tan))] MethodCallExpression right)
     {
         if (e is not BinaryExpression outer || !IsOrdinaryBinaryArithmetic(outer)) return null;
-        if (ExpressionComparer.Default.Equals(left.Arguments[0], right.Arguments[0]))
+        if (ExpressionComparer.EqualsWithinOperation(left.Arguments[0], right.Arguments[0]))
         {
             var sin = TrigonometricMethodsByType[left.Type].Sin;
             return Expression.Call(null, sin, left.Arguments[0]);
@@ -276,7 +276,7 @@ public partial class ExpressionSimplifier
     [ExpressionCallSignature(typeof(ITrigonometricFunctions<>), nameof(ITrigonometricFunctions<double>.Cos))] MethodCallExpression right)
     {
         if (e is not BinaryExpression outer || !IsOrdinaryBinaryArithmetic(outer)) return null;
-        if (ExpressionComparer.Default.Equals(left.Arguments[0], right.Arguments[0]))
+        if (ExpressionComparer.EqualsWithinOperation(left.Arguments[0], right.Arguments[0]))
         {
             var sin = TrigonometricMethodsByType[left.Type].Sin;
             return Expression.Call(null, sin, left.Arguments[0]);
@@ -298,7 +298,7 @@ public partial class ExpressionSimplifier
     [ExpressionCallSignature(typeof(ITrigonometricFunctions<>), nameof(ITrigonometricFunctions<double>.Tan))] MethodCallExpression right)
     {
         if (e is not BinaryExpression outer || !IsOrdinaryBinaryArithmetic(outer)) return null;
-        if (ExpressionComparer.Default.Equals(left.Arguments[0], right.Arguments[0]))
+        if (ExpressionComparer.EqualsWithinOperation(left.Arguments[0], right.Arguments[0]))
         {
             var cos = TrigonometricMethodsByType[left.Type].Cos;
             return Expression.Call(null, cos, left.Arguments[0]);
