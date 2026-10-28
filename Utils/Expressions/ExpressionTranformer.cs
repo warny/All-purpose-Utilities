@@ -890,11 +890,13 @@ public abstract class ExpressionTransformer
         // A new operation starts when none runs, or when this instance is entered from another one's operation (a
         // nested public call: it validates its input and can only tighten the limits). Recursion on the owning
         // instance, and engine-internal instances, join the running operation.
-        if (!ExpressionResourceBudget.IsActive || (!JoinsRunningOperation && !ReferenceEquals(ExpressionResourceBudget.Owner, this)))
+        ExpressionResourceBudget.Session? session = ExpressionResourceBudget.ActiveSession;
+        if (session is null || (!JoinsRunningOperation && !ReferenceEquals(session.Owner, this)))
         {
             return ExpressionResourceBudget.Run(ResourceLimits, this, e, null, (Transformer: this, Expression: e), static state => state.Transformer.TransformCore(state.Expression));
         }
 
+        // Every transformation descent goes through here: this is the stack check of the whole transformation recursion.
         ExpressionResourceBudget.EnsureStack();
         return TransformPrepared(PrepareTransform(e));
     }
@@ -914,7 +916,11 @@ public abstract class ExpressionTransformer
     /// (same structure) and that skipping its preparation is not observable, so this is not an extensibility point.
     /// </remarks>
     internal Expression TransformCoreWithPreparedOperands(BinaryExpression expression, Expression preparedLeft, Expression preparedRight)
-        => TransformPrepared(new TransformContext(CopyBinaryExpression(expression, preparedLeft, preparedRight)));
+    {
+        // A rule may re-enter this path without passing through TransformCore: check the stack here too.
+        ExpressionResourceBudget.EnsureStack();
+        return TransformPrepared(new TransformContext(CopyBinaryExpression(expression, preparedLeft, preparedRight)));
+    }
 
     /// <summary>
     /// Applies the rules to a prepared node and, when none matches, <see cref="FinalizeExpression"/>: the part of

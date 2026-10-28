@@ -68,6 +68,41 @@ internal static class ExpressionShapeValidator
     /// <param name="Depth">The depth of <paramref name="Item"/> (the root has depth 1).</param>
     private readonly record struct Frame(object Item, int Depth);
 
+    /// <summary>The mutable state of one walk, threaded by reference through the child enumeration.</summary>
+    private ref struct Walk
+    {
+        /// <summary>The pending items.</summary>
+        public Frame[] Frames;
+
+        /// <summary>The number of pending items.</summary>
+        public int Count;
+
+        /// <summary>The remaining item budget, decremented by every child reached; exhausting it throws <see cref="NodeBudgetExhaustedException"/>.</summary>
+        public long Remaining;
+
+        /// <summary>
+        /// When <see langword="true"/>, the first child reached is kept in <see cref="First"/> instead of being pushed, so the
+        /// walk continues into it directly (no array write, hence no GC write barrier, for a single-child node).
+        /// </summary>
+        public bool TakeFirst;
+
+        /// <summary>The first child of the current item when <see cref="TakeFirst"/> is set, otherwise <see langword="null"/>.</summary>
+        public object? First;
+
+        /// <summary>Initializes a walk.</summary>
+        /// <param name="frames">The initial work stack.</param>
+        /// <param name="remaining">The item budget.</param>
+        /// <param name="takeFirst">Whether the first child is kept aside (see <see cref="TakeFirst"/>).</param>
+        public Walk(Frame[] frames, long remaining, bool takeFirst)
+        {
+            Frames = frames;
+            Count = 0;
+            Remaining = remaining;
+            TakeFirst = takeFirst;
+            First = null;
+        }
+    }
+
     /// <summary>
     /// Validates <paramref name="root"/> against the depth and node limits; returns normally only when the whole
     /// unfolded tree fits both.
@@ -80,25 +115,35 @@ internal static class ExpressionShapeValidator
     {
         if (root is null) return;
 
-        Frame[] frames = _frames ??= new Frame[InitialStackCapacity];
-        int count = 0;
-        int highWater = 1;
-
-        // Every pushed item consumes one unit; the root already consumed its own.
-        long remaining = maxNodes - 1;
-        frames[count++] = new Frame(root, 1);
+        // Every item reached consumes one unit; the root already consumed its own. The walk goes on into the first child
+        // of each item directly and pushes only the others.
+        var walk = new Walk(_frames ??= new Frame[InitialStackCapacity], maxNodes - 1, takeFirst: true);
+        int highWater = 0;
+        object current = root;
+        int depth = 1;
         try
         {
-            while (count > 0)
+            while (true)
             {
-                Frame frame = frames[--count];
-                if (frame.Depth > maxDepth)
+                if (depth > maxDepth)
                 {
-                    throw Refuse(root, ExpressionResourceLimitKind.Depth, maxDepth, maxNodes, frame.Depth);
+                    throw Refuse(root, ExpressionResourceLimitKind.Depth, maxDepth, maxNodes, depth);
                 }
 
-                PushChildren(frame.Item, frame.Depth + 1, ref frames, ref count, ref remaining);
-                if (count > highWater) highWater = count;
+                walk.First = null;
+                PushChildren(current, depth + 1, ref walk);
+                if (walk.Count > highWater) highWater = walk.Count;
+                if (walk.First is not null)
+                {
+                    current = walk.First;
+                    depth++;
+                    continue;
+                }
+
+                if (walk.Count == 0) break;
+                Frame frame = walk.Frames[--walk.Count];
+                current = frame.Item;
+                depth = frame.Depth;
             }
         }
         catch (NodeBudgetExhaustedException)
@@ -109,7 +154,8 @@ internal static class ExpressionShapeValidator
         {
             // Drop every reference written so far (popped slots included), so the reused stack keeps no tree alive;
             // a stack grown by a large input is not kept.
-            Array.Clear(frames, 0, Math.Min(Math.Max(highWater, count), frames.Length));
+            Frame[] frames = walk.Frames;
+            Array.Clear(frames, 0, Math.Min(Math.Max(highWater, walk.Count), frames.Length));
             _frames = frames.Length > 4096 ? null : frames;
         }
     }
@@ -132,9 +178,8 @@ internal static class ExpressionShapeValidator
         var finalized = new Dictionary<object, (int Depth, long Logical)>(ReferenceEqualityComparer.Instance);
         var inProgress = new HashSet<object>(ReferenceEqualityComparer.Instance);
         var pending = new Stack<(object Item, bool Expanded)>();
-        var children = new Frame[InitialStackCapacity];
+        var walk = new Walk(new Frame[InitialStackCapacity], maxDistinctItems, takeFirst: false);
         long opaque = 0;
-        long edgeBudget = maxDistinctItems;
         bool truncated = false;
         pending.Push((root, false));
 
@@ -143,13 +188,13 @@ internal static class ExpressionShapeValidator
             (object item, bool expanded) = pending.Pop();
             if (finalized.ContainsKey(item)) continue;
 
-            int childCount = 0;
+            walk.Count = 0;
             bool known;
             if (!expanded)
             {
                 try
                 {
-                    known = PushChildren(item, 0, ref children, ref childCount, ref edgeBudget);
+                    known = PushChildren(item, 0, ref walk);
                 }
                 catch (NodeBudgetExhaustedException)
                 {
@@ -159,9 +204,14 @@ internal static class ExpressionShapeValidator
             }
             else
             {
-                long unbounded = long.MaxValue;
-                known = PushChildren(item, 0, ref children, ref childCount, ref unbounded);
+                long edgeBudgetLeft = walk.Remaining;
+                walk.Remaining = long.MaxValue;
+                known = PushChildren(item, 0, ref walk);
+                walk.Remaining = edgeBudgetLeft;
             }
+
+            Frame[] children = walk.Frames;
+            int childCount = walk.Count;
 
             if (!expanded)
             {
@@ -234,127 +284,145 @@ internal static class ExpressionShapeValidator
     private static long SaturatingAdd(long a, long b) => a > long.MaxValue - b ? long.MaxValue : a + b;
 
     /// <summary>
-    /// Pushes the children of one item onto <paramref name="frames"/>, dispatching on its runtime class (never on a
+    /// Pushes the children of one item onto the work stack, dispatching on its runtime class (never on a
     /// virtual getter).
     /// </summary>
     /// <param name="item">An <see cref="Expression"/> or a structural container.</param>
     /// <param name="childDepth">The depth given to every pushed child.</param>
-    /// <param name="frames">The work stack, grown when needed.</param>
-    /// <param name="count">The number of frames in use.</param>
-    /// <param name="remaining">The remaining item budget, decremented by every push.</param>
+    /// <param name="walk">The walk state (work stack, item budget, first-child slot).</param>
     /// <returns><see langword="false"/> when <paramref name="item"/> is of an unknown class (an opaque leaf).</returns>
     /// <remarks>
     /// One dispatch case per expression class or container, each a short list of pushes (node-type dispatch
-    /// exception of <c>Utils/AGENTS.md</c>). The order of the pushes does not matter for the measured shape.
+    /// exception of <c>Utils/AGENTS.md</c>). The classes are disjoint, so the case order only affects speed: the most
+    /// frequent arithmetic classes come first (each failed type test costs a class-hierarchy walk). The order of the
+    /// pushes does not matter for the measured shape.
     /// </remarks>
-    private static bool PushChildren(object item, int childDepth, ref Frame[] frames, ref int count, ref long remaining)
+    private static bool PushChildren(object item, int childDepth, ref Walk walk)
     {
         switch (item)
         {
             case BinaryExpression binary:
-                Push(binary.Left, childDepth, ref frames, ref count, ref remaining);
-                Push(binary.Right, childDepth, ref frames, ref count, ref remaining);
-                Push(binary.Conversion, childDepth, ref frames, ref count, ref remaining);
-                return true;
-            case UnaryExpression unary:
-                Push(unary.Operand, childDepth, ref frames, ref count, ref remaining);
-                return true;
-            case ConstantExpression or ParameterExpression or DefaultExpression or DebugInfoExpression:
+                Push(binary.Left, childDepth, ref walk);
+                Push(binary.Right, childDepth, ref walk);
+                Push(binary.Conversion, childDepth, ref walk);
                 return true;
             case MethodCallExpression call:
-                Push(call.Object, childDepth, ref frames, ref count, ref remaining);
-                PushAll(call.Arguments, childDepth, ref frames, ref count, ref remaining);
+                Push(call.Object, childDepth, ref walk);
+                PushArguments(call, childDepth, ref walk);
+                return true;
+            case UnaryExpression unary:
+                Push(unary.Operand, childDepth, ref walk);
+                return true;
+            case ParameterExpression or ConstantExpression:
                 return true;
             case MemberExpression member:
-                Push(member.Expression, childDepth, ref frames, ref count, ref remaining);
+                Push(member.Expression, childDepth, ref walk);
                 return true;
             case InvocationExpression invocation:
-                Push(invocation.Expression, childDepth, ref frames, ref count, ref remaining);
-                PushAll(invocation.Arguments, childDepth, ref frames, ref count, ref remaining);
+                Push(invocation.Expression, childDepth, ref walk);
+                PushArguments(invocation, childDepth, ref walk);
                 return true;
             case LambdaExpression lambda:
-                PushAll(lambda.Parameters, childDepth, ref frames, ref count, ref remaining);
-                Push(lambda.Body, childDepth, ref frames, ref count, ref remaining);
+                PushAll(lambda.Parameters, childDepth, ref walk);
+                Push(lambda.Body, childDepth, ref walk);
                 return true;
             case ConditionalExpression conditional:
-                Push(conditional.Test, childDepth, ref frames, ref count, ref remaining);
-                Push(conditional.IfTrue, childDepth, ref frames, ref count, ref remaining);
-                Push(conditional.IfFalse, childDepth, ref frames, ref count, ref remaining);
+                Push(conditional.Test, childDepth, ref walk);
+                Push(conditional.IfTrue, childDepth, ref walk);
+                Push(conditional.IfFalse, childDepth, ref walk);
                 return true;
             case TypeBinaryExpression typeBinary:
-                Push(typeBinary.Expression, childDepth, ref frames, ref count, ref remaining);
+                Push(typeBinary.Expression, childDepth, ref walk);
                 return true;
             case NewExpression creation:
-                PushAll(creation.Arguments, childDepth, ref frames, ref count, ref remaining);
+                PushAll(creation.Arguments, childDepth, ref walk);
                 return true;
             case NewArrayExpression array:
-                PushAll(array.Expressions, childDepth, ref frames, ref count, ref remaining);
+                PushAll(array.Expressions, childDepth, ref walk);
                 return true;
             case MemberInitExpression memberInit:
-                Push(memberInit.NewExpression, childDepth, ref frames, ref count, ref remaining);
-                PushAll(memberInit.Bindings, childDepth, ref frames, ref count, ref remaining);
+                Push(memberInit.NewExpression, childDepth, ref walk);
+                PushAll(memberInit.Bindings, childDepth, ref walk);
                 return true;
             case ListInitExpression listInit:
-                Push(listInit.NewExpression, childDepth, ref frames, ref count, ref remaining);
-                PushAll(listInit.Initializers, childDepth, ref frames, ref count, ref remaining);
+                Push(listInit.NewExpression, childDepth, ref walk);
+                PushAll(listInit.Initializers, childDepth, ref walk);
                 return true;
             case IndexExpression index:
-                Push(index.Object, childDepth, ref frames, ref count, ref remaining);
-                PushAll(index.Arguments, childDepth, ref frames, ref count, ref remaining);
+                Push(index.Object, childDepth, ref walk);
+                PushAll(index.Arguments, childDepth, ref walk);
                 return true;
             case BlockExpression block:
-                PushAll(block.Variables, childDepth, ref frames, ref count, ref remaining);
-                PushAll(block.Expressions, childDepth, ref frames, ref count, ref remaining);
+                PushAll(block.Variables, childDepth, ref walk);
+                PushAll(block.Expressions, childDepth, ref walk);
                 return true;
             case TryExpression @try:
-                Push(@try.Body, childDepth, ref frames, ref count, ref remaining);
-                PushAll(@try.Handlers, childDepth, ref frames, ref count, ref remaining);
-                Push(@try.Finally, childDepth, ref frames, ref count, ref remaining);
-                Push(@try.Fault, childDepth, ref frames, ref count, ref remaining);
+                Push(@try.Body, childDepth, ref walk);
+                PushAll(@try.Handlers, childDepth, ref walk);
+                Push(@try.Finally, childDepth, ref walk);
+                Push(@try.Fault, childDepth, ref walk);
                 return true;
             case SwitchExpression @switch:
-                Push(@switch.SwitchValue, childDepth, ref frames, ref count, ref remaining);
-                PushAll(@switch.Cases, childDepth, ref frames, ref count, ref remaining);
-                Push(@switch.DefaultBody, childDepth, ref frames, ref count, ref remaining);
+                Push(@switch.SwitchValue, childDepth, ref walk);
+                PushAll(@switch.Cases, childDepth, ref walk);
+                Push(@switch.DefaultBody, childDepth, ref walk);
                 return true;
             case LoopExpression loop:
-                Push(loop.Body, childDepth, ref frames, ref count, ref remaining);
+                Push(loop.Body, childDepth, ref walk);
                 return true;
             case GotoExpression @goto:
-                Push(@goto.Value, childDepth, ref frames, ref count, ref remaining);
+                Push(@goto.Value, childDepth, ref walk);
                 return true;
             case LabelExpression label:
-                Push(label.DefaultValue, childDepth, ref frames, ref count, ref remaining);
+                Push(label.DefaultValue, childDepth, ref walk);
+                return true;
+            case DefaultExpression or DebugInfoExpression:
                 return true;
             case RuntimeVariablesExpression runtimeVariables:
-                PushAll(runtimeVariables.Variables, childDepth, ref frames, ref count, ref remaining);
+                PushAll(runtimeVariables.Variables, childDepth, ref walk);
                 return true;
             case DynamicExpression dynamic:
-                PushAll(dynamic.Arguments, childDepth, ref frames, ref count, ref remaining);
+                PushAll(dynamic.Arguments, childDepth, ref walk);
                 return true;
             case CatchBlock handler:
-                Push(handler.Variable, childDepth, ref frames, ref count, ref remaining);
-                Push(handler.Filter, childDepth, ref frames, ref count, ref remaining);
-                Push(handler.Body, childDepth, ref frames, ref count, ref remaining);
+                Push(handler.Variable, childDepth, ref walk);
+                Push(handler.Filter, childDepth, ref walk);
+                Push(handler.Body, childDepth, ref walk);
                 return true;
             case SwitchCase @case:
-                PushAll(@case.TestValues, childDepth, ref frames, ref count, ref remaining);
-                Push(@case.Body, childDepth, ref frames, ref count, ref remaining);
+                PushAll(@case.TestValues, childDepth, ref walk);
+                Push(@case.Body, childDepth, ref walk);
                 return true;
             case MemberAssignment assignment:
-                Push(assignment.Expression, childDepth, ref frames, ref count, ref remaining);
+                Push(assignment.Expression, childDepth, ref walk);
                 return true;
             case MemberMemberBinding memberBinding:
-                PushAll(memberBinding.Bindings, childDepth, ref frames, ref count, ref remaining);
+                PushAll(memberBinding.Bindings, childDepth, ref walk);
                 return true;
             case MemberListBinding listBinding:
-                PushAll(listBinding.Initializers, childDepth, ref frames, ref count, ref remaining);
+                PushAll(listBinding.Initializers, childDepth, ref walk);
                 return true;
             case ElementInit initializer:
-                PushAll(initializer.Arguments, childDepth, ref frames, ref count, ref remaining);
+                PushAll(initializer.Arguments, childDepth, ref walk);
                 return true;
             default:
                 return false;
+        }
+    }
+
+    /// <summary>
+    /// Pushes the arguments of a call or an invocation through <see cref="IArgumentProvider"/>, which reads them without
+    /// materializing (or going through) their <see cref="ReadOnlyCollection{T}"/>.
+    /// </summary>
+    /// <param name="provider">The node.</param>
+    /// <param name="childDepth">The depth of the arguments.</param>
+    /// <param name="walk">The walk state (work stack, item budget, first-child slot).</param>
+    private static void PushArguments(IArgumentProvider provider, int childDepth, ref Walk walk)
+    {
+        int count = provider.ArgumentCount;
+        for (int i = 0; i < count; i++)
+        {
+            Push(provider.GetArgument(i), childDepth, ref walk);
         }
     }
 
@@ -362,30 +430,32 @@ internal static class ExpressionShapeValidator
     /// <typeparam name="T">The child type.</typeparam>
     /// <param name="children">The children.</param>
     /// <param name="childDepth">Their depth.</param>
-    /// <param name="frames">The work stack.</param>
-    /// <param name="count">The number of frames in use.</param>
-    /// <param name="remaining">The remaining item budget.</param>
-    private static void PushAll<T>(ReadOnlyCollection<T> children, int childDepth, ref Frame[] frames, ref int count, ref long remaining) where T : class
+    /// <param name="walk">The walk state (work stack, item budget, first-child slot).</param>
+    private static void PushAll<T>(ReadOnlyCollection<T> children, int childDepth, ref Walk walk) where T : class
     {
         for (int i = 0; i < children.Count; i++)
         {
-            Push(children[i], childDepth, ref frames, ref count, ref remaining);
+            Push(children[i], childDepth, ref walk);
         }
     }
 
     /// <summary>Pushes an optional child.</summary>
     /// <param name="child">The child, or <see langword="null"/> (ignored).</param>
     /// <param name="childDepth">Its depth.</param>
-    /// <param name="frames">The work stack, doubled when full.</param>
-    /// <param name="count">The number of frames in use.</param>
-    /// <param name="remaining">The remaining item budget; <see cref="NodeBudgetExhaustedException"/> is thrown when it goes negative.</param>
+    /// <param name="walk">The walk state (work stack, item budget, first-child slot).</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void Push(object? child, int childDepth, ref Frame[] frames, ref int count, ref long remaining)
+    private static void Push(object? child, int childDepth, ref Walk walk)
     {
         if (child is null) return;
-        if (--remaining < 0) throw new NodeBudgetExhaustedException();
-        if (count == frames.Length) Array.Resize(ref frames, frames.Length * 2);
-        frames[count++] = new Frame(child, childDepth);
+        if (--walk.Remaining < 0) throw new NodeBudgetExhaustedException();
+        if (walk.TakeFirst && walk.First is null)
+        {
+            walk.First = child;
+            return;
+        }
+
+        if (walk.Count == walk.Frames.Length) Array.Resize(ref walk.Frames, walk.Frames.Length * 2);
+        walk.Frames[walk.Count++] = new Frame(child, childDepth);
     }
 
     /// <summary>Private signal of <see cref="Push"/>: the item budget of <see cref="Validate"/> is exhausted.</summary>

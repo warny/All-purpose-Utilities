@@ -23,18 +23,18 @@ namespace Utils.Expressions;
 /// </para>
 /// <para>
 /// <b>Visits.</b> <see cref="ConsumeTransformVisit"/> is called once per execution of the transformation engine on a
-/// node (whatever the entry: <c>TransformCore</c> or a prepared-operand path); <see cref="ConsumeStructuralVisit"/>
-/// once per node reached by a structural walk (equality, hashing, canonical keys and their comparisons, substitution,
-/// inlining analysis). Both also check the execution stack, so a walk that participates in a budget is
-/// stack-guarded too. <see cref="EnsureStack"/> guards recursive helpers that are bounded by the size of their input
-/// and do not count work.
+/// node (whatever the entry: <c>TransformCore</c> or a prepared-operand path); the stack of the transformation descent is
+/// checked by <c>TransformCore</c> itself, the only method every descent goes through. <see cref="ConsumeStructuralVisit"/>
+/// is called once per node reached by a structural walk (equality, hashing, canonical keys and their comparisons,
+/// substitution, inlining analysis) and also checks the stack, so a structural walk is stack-guarded by its accounting.
+/// <see cref="EnsureStack"/> guards recursive helpers that are bounded by the size of their input and do not count work.
 /// </para>
 /// <para>
-/// <b>Isolation.</b> The state is <see cref="ThreadStaticAttribute"/>: the engine is synchronous, so a thread runs at
-/// most one operation chain at a time and two threads never share counters or limits. An operation is never resumed on
-/// another thread (no <c>await</c> inside the engine), which is why an <c>AsyncLocal</c> would only add cost. Outside
-/// any operation the counters are not enforced (a walk entered without a boundary is still stack-guarded); every
-/// entry point that can be reached without an enclosing operation opens one.
+/// <b>Isolation.</b> The state lives in one per-thread object (<see cref="ThreadStaticAttribute"/>): the engine is
+/// synchronous, so a thread runs at most one operation chain at a time and two threads never share counters or limits.
+/// An operation is never resumed on another thread (no <c>await</c> inside the engine), which is why an
+/// <c>AsyncLocal</c> would only add cost. Outside any operation the counters are not enforced (a walk entered without a
+/// boundary is still stack-guarded); every entry point that can be reached without an enclosing operation opens one.
 /// </para>
 /// <para>
 /// <b>Exceptions.</b> Limits are checked only at visit and validation points, never in <c>finally</c> or <c>catch</c>
@@ -48,71 +48,33 @@ namespace Utils.Expressions;
 /// </remarks>
 internal static class ExpressionResourceBudget
 {
-    /// <summary>Nesting level of the operations running on this thread (0: none).</summary>
+    /// <summary>The session of this thread, created on its first operation and reused afterwards.</summary>
     [ThreadStatic]
-    private static int _operationDepth;
-
-    /// <summary>Transformation visits made since the outermost operation started.</summary>
-    [ThreadStatic]
-    private static long _transformVisits;
-
-    /// <summary>The value of <see cref="_transformVisits"/> above which the active transformation budget is exceeded.</summary>
-    [ThreadStatic]
-    private static long _transformDeadline;
-
-    /// <summary>The configured transformation budget that defines <see cref="_transformDeadline"/>.</summary>
-    [ThreadStatic]
-    private static long _transformLimit;
-
-    /// <summary>The value of <see cref="_transformVisits"/> when the budget of <see cref="_transformLimit"/> started.</summary>
-    [ThreadStatic]
-    private static long _transformBase;
-
-    /// <summary>Structural visits made since the outermost operation started.</summary>
-    [ThreadStatic]
-    private static long _structuralVisits;
-
-    /// <summary>The value of <see cref="_structuralVisits"/> above which the active structural budget is exceeded.</summary>
-    [ThreadStatic]
-    private static long _structuralDeadline;
-
-    /// <summary>The configured structural budget that defines <see cref="_structuralDeadline"/>.</summary>
-    [ThreadStatic]
-    private static long _structuralLimit;
-
-    /// <summary>The value of <see cref="_structuralVisits"/> when the budget of <see cref="_structuralLimit"/> started.</summary>
-    [ThreadStatic]
-    private static long _structuralBase;
-
-    /// <summary>The active depth limit.</summary>
-    [ThreadStatic]
-    private static int _maxDepth;
-
-    /// <summary>The active logical node limit.</summary>
-    [ThreadStatic]
-    private static long _maxNodes;
-
-    /// <summary>The instance that owns the innermost running operation (a transformer or a comparer), or <see langword="null"/>.</summary>
-    [ThreadStatic]
-    private static object? _owner;
+    private static Session? _session;
 
     /// <summary>Gets whether an operation is running on this thread.</summary>
-    internal static bool IsActive => _operationDepth != 0;
+    internal static bool IsActive => _session is { OperationDepth: > 0 };
+
+    /// <summary>
+    /// Gets the session of this thread when an operation runs on it, otherwise <see langword="null"/>: one thread-local
+    /// read for the hot checks of <c>TransformCore</c>.
+    /// </summary>
+    internal static Session? ActiveSession => _session is { OperationDepth: > 0 } session ? session : null;
 
     /// <summary>
     /// Gets the instance that owns the innermost running operation. <see cref="ExpressionTransformer.TransformCore(Expression)"/>
     /// recognizes its own recursion by it: a call on another (non engine-internal) instance is a nested public call.
     /// </summary>
-    internal static object? Owner => _owner;
+    internal static object? Owner => ActiveSession?.Owner;
 
     /// <summary>Gets the operation nesting level on this thread (diagnostics and tests).</summary>
-    internal static int OperationDepth => _operationDepth;
+    internal static int OperationDepth => _session?.OperationDepth ?? 0;
 
     /// <summary>Gets the transformation visits made by the running operation chain (diagnostics and tests).</summary>
-    internal static long TransformVisits => _transformVisits;
+    internal static long TransformVisits => _session?.TransformVisits ?? 0;
 
     /// <summary>Gets the structural visits made by the running operation chain (diagnostics and tests).</summary>
-    internal static long StructuralVisits => _structuralVisits;
+    internal static long StructuralVisits => _session?.StructuralVisits ?? 0;
 
     /// <summary>
     /// Runs one public operation: opens (or joins) the operation, validates up to two inputs against the active depth
@@ -131,11 +93,12 @@ internal static class ExpressionResourceBudget
     internal static TResult Run<TState, TResult>(ExpressionResourceLimits limits, object? owner, Expression? root, Expression? secondRoot, TState state, Func<TState, TResult> body)
     {
         ArgumentNullException.ThrowIfNull(limits);
-        Scope scope = Enter(limits, owner);
+        Session session = _session ??= new Session();
+        Scope scope = session.Enter(limits, owner);
         try
         {
-            ExpressionShapeValidator.Validate(root, _maxDepth, _maxNodes);
-            ExpressionShapeValidator.Validate(secondRoot, _maxDepth, _maxNodes);
+            ExpressionShapeValidator.Validate(root, session.MaxDepth, session.MaxNodes);
+            ExpressionShapeValidator.Validate(secondRoot, session.MaxDepth, session.MaxNodes);
             return body(state);
         }
         catch (Exception exception) when (scope.IsOutermost && TryTranslate(exception, out Exception? translated, out bool created))
@@ -147,7 +110,7 @@ internal static class ExpressionResourceBudget
         }
         finally
         {
-            Exit(scope);
+            session.Exit(scope);
         }
     }
 
@@ -163,16 +126,15 @@ internal static class ExpressionResourceBudget
     /// <returns>The result of <paramref name="body"/>.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static TResult RunInternal<TState, TResult>(TState state, Func<TState, TResult> body)
-        => _operationDepth != 0 ? body(state) : Run(ExpressionResourceLimits.Default, null, null, null, state, body);
+        => IsActive ? body(state) : Run(ExpressionResourceLimits.Default, null, null, null, state, body);
 
-    /// <summary>Counts one transformation visit and checks the execution stack.</summary>
+    /// <summary>Counts one transformation visit (the stack of the transformation descent is checked by <c>TransformCore</c>).</summary>
     /// <exception cref="ExpressionResourceLimitException">The transformation budget is exhausted.</exception>
-    /// <exception cref="InsufficientExecutionStackException">The remaining stack is insufficient (translated at the outermost boundary).</exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static void ConsumeTransformVisit()
     {
-        RuntimeHelpers.EnsureSufficientExecutionStack();
-        if (++_transformVisits > _transformDeadline) OnTransformBudgetExceeded();
+        Session? session = _session;
+        if (session is null || ++session.TransformVisits > session.TransformDeadline) OnTransformBudgetExceeded();
     }
 
     /// <summary>Counts one structural visit and checks the execution stack.</summary>
@@ -182,7 +144,31 @@ internal static class ExpressionResourceBudget
     internal static void ConsumeStructuralVisit()
     {
         RuntimeHelpers.EnsureSufficientExecutionStack();
-        if (++_structuralVisits > _structuralDeadline) OnStructuralBudgetExceeded();
+        Session? session = _session;
+        if (session is null || ++session.StructuralVisits > session.StructuralDeadline) OnStructuralBudgetExceeded();
+    }
+
+    /// <summary>
+    /// Materializes an ordered sequence whose comparisons may consume the budget (canonical keys), restoring a resource
+    /// failure that the framework's sort wrapped: <c>Array.Sort</c>/<c>OrderBy</c> report any comparer exception as an
+    /// <see cref="InvalidOperationException"/> ("Failed to compare two elements") whose inner exception is the original.
+    /// </summary>
+    /// <typeparam name="T">The element type.</typeparam>
+    /// <param name="ordered">The ordered sequence (sorted lazily on enumeration).</param>
+    /// <returns>The sorted elements.</returns>
+    /// <exception cref="ExpressionResourceLimitException">A comparison exhausted a budget.</exception>
+    /// <exception cref="InsufficientExecutionStackException">A comparison ran out of stack (translated at the outermost boundary).</exception>
+    internal static System.Collections.Generic.List<T> ToSortedList<T>(System.Collections.Generic.IEnumerable<T> ordered)
+    {
+        try
+        {
+            return System.Linq.Enumerable.ToList(ordered);
+        }
+        catch (InvalidOperationException exception) when (exception.InnerException is ExpressionResourceLimitException or InsufficientExecutionStackException)
+        {
+            ExceptionDispatchInfo.Capture(exception.InnerException).Throw();
+            throw;
+        }
     }
 
     /// <summary>Checks the execution stack before a recursive step that does not count work.</summary>
@@ -195,13 +181,14 @@ internal static class ExpressionResourceBudget
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void OnTransformBudgetExceeded()
     {
-        if (_operationDepth == 0)
+        Session session = _session ??= new Session();
+        if (session.OperationDepth == 0)
         {
-            _transformDeadline = long.MaxValue;
+            session.TransformDeadline = long.MaxValue;
             return;
         }
 
-        throw new ExpressionResourceLimitException(ExpressionResourceLimitKind.Work, _transformLimit, _transformVisits - _transformBase);
+        throw new ExpressionResourceLimitException(ExpressionResourceLimitKind.Work, session.TransformLimit, session.TransformVisits - session.TransformBase);
     }
 
     /// <summary>Slow path of <see cref="ConsumeStructuralVisit"/>: throws inside an operation, otherwise disables the check until the next one.</summary>
@@ -209,92 +196,14 @@ internal static class ExpressionResourceBudget
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void OnStructuralBudgetExceeded()
     {
-        if (_operationDepth == 0)
+        Session session = _session ??= new Session();
+        if (session.OperationDepth == 0)
         {
-            _structuralDeadline = long.MaxValue;
+            session.StructuralDeadline = long.MaxValue;
             return;
         }
 
-        throw new ExpressionResourceLimitException(ExpressionResourceLimitKind.StructuralWork, _structuralLimit, _structuralVisits - _structuralBase);
-    }
-
-    /// <summary>Opens or joins an operation and returns the state to restore.</summary>
-    /// <param name="limits">The limits of the entering instance.</param>
-    /// <param name="owner">The entering instance.</param>
-    /// <returns>The saved state.</returns>
-    private static Scope Enter(ExpressionResourceLimits limits, object? owner)
-    {
-        var scope = new Scope(
-            _owner,
-            _operationDepth,
-            _transformDeadline,
-            _transformLimit,
-            _transformBase,
-            _structuralDeadline,
-            _structuralLimit,
-            _structuralBase,
-            _maxDepth,
-            _maxNodes);
-
-        if (_operationDepth == 0)
-        {
-            _transformVisits = 0;
-            _structuralVisits = 0;
-            _transformBase = 0;
-            _structuralBase = 0;
-            _transformLimit = limits.MaxTransformVisits;
-            _structuralLimit = limits.MaxStructuralVisits;
-            _transformDeadline = limits.MaxTransformVisits;
-            _structuralDeadline = limits.MaxStructuralVisits;
-            _maxDepth = limits.MaxDepth;
-            _maxNodes = limits.MaxNodes;
-        }
-        else
-        {
-            long transformDeadline = SaturatingAdd(_transformVisits, limits.MaxTransformVisits);
-            if (transformDeadline < _transformDeadline)
-            {
-                _transformDeadline = transformDeadline;
-                _transformLimit = limits.MaxTransformVisits;
-                _transformBase = _transformVisits;
-            }
-
-            long structuralDeadline = SaturatingAdd(_structuralVisits, limits.MaxStructuralVisits);
-            if (structuralDeadline < _structuralDeadline)
-            {
-                _structuralDeadline = structuralDeadline;
-                _structuralLimit = limits.MaxStructuralVisits;
-                _structuralBase = _structuralVisits;
-            }
-
-            _maxDepth = Math.Min(_maxDepth, limits.MaxDepth);
-            _maxNodes = Math.Min(_maxNodes, limits.MaxNodes);
-        }
-
-        _operationDepth++;
-        _owner = owner;
-        return scope;
-    }
-
-    /// <summary>Restores the state saved by <see cref="Enter"/>; the outermost exit also clears the counters.</summary>
-    /// <param name="scope">The saved state.</param>
-    private static void Exit(in Scope scope)
-    {
-        _owner = scope.Owner;
-        _operationDepth = scope.OperationDepth;
-        _transformDeadline = scope.TransformDeadline;
-        _transformLimit = scope.TransformLimit;
-        _transformBase = scope.TransformBase;
-        _structuralDeadline = scope.StructuralDeadline;
-        _structuralLimit = scope.StructuralLimit;
-        _structuralBase = scope.StructuralBase;
-        _maxDepth = scope.MaxDepth;
-        _maxNodes = scope.MaxNodes;
-        if (scope.IsOutermost)
-        {
-            _transformVisits = 0;
-            _structuralVisits = 0;
-        }
+        throw new ExpressionResourceLimitException(ExpressionResourceLimitKind.StructuralWork, session.StructuralLimit, session.StructuralVisits - session.StructuralBase);
     }
 
     /// <summary>
@@ -331,6 +240,127 @@ internal static class ExpressionResourceBudget
     /// <returns>The saturated sum.</returns>
     private static long SaturatingAdd(long a, long b) => a > long.MaxValue - b ? long.MaxValue : a + b;
 
+    /// <summary>The mutable resource state of one thread; only its own thread ever reads or writes it.</summary>
+    internal sealed class Session
+    {
+        /// <summary>Nesting level of the operations running on the thread (0: none).</summary>
+        public int OperationDepth;
+
+        /// <summary>Transformation visits made since the outermost operation started.</summary>
+        public long TransformVisits;
+
+        /// <summary>The value of <see cref="TransformVisits"/> above which the active transformation budget is exceeded.</summary>
+        public long TransformDeadline = long.MaxValue;
+
+        /// <summary>The configured transformation budget that defines <see cref="TransformDeadline"/>.</summary>
+        public long TransformLimit;
+
+        /// <summary>The value of <see cref="TransformVisits"/> when the budget of <see cref="TransformLimit"/> started.</summary>
+        public long TransformBase;
+
+        /// <summary>Structural visits made since the outermost operation started.</summary>
+        public long StructuralVisits;
+
+        /// <summary>The value of <see cref="StructuralVisits"/> above which the active structural budget is exceeded.</summary>
+        public long StructuralDeadline = long.MaxValue;
+
+        /// <summary>The configured structural budget that defines <see cref="StructuralDeadline"/>.</summary>
+        public long StructuralLimit;
+
+        /// <summary>The value of <see cref="StructuralVisits"/> when the budget of <see cref="StructuralLimit"/> started.</summary>
+        public long StructuralBase;
+
+        /// <summary>The active depth limit.</summary>
+        public int MaxDepth;
+
+        /// <summary>The active logical node limit.</summary>
+        public long MaxNodes;
+
+        /// <summary>The instance that owns the innermost running operation (a transformer or a comparer), or <see langword="null"/>.</summary>
+        public object? Owner;
+
+        /// <summary>Opens or joins an operation and returns the state to restore.</summary>
+        /// <param name="limits">The limits of the entering instance.</param>
+        /// <param name="owner">The entering instance.</param>
+        /// <returns>The saved state.</returns>
+        public Scope Enter(ExpressionResourceLimits limits, object? owner)
+        {
+            var scope = new Scope(
+                Owner,
+                OperationDepth,
+                TransformDeadline,
+                TransformLimit,
+                TransformBase,
+                StructuralDeadline,
+                StructuralLimit,
+                StructuralBase,
+                MaxDepth,
+                MaxNodes);
+
+            if (OperationDepth == 0)
+            {
+                TransformVisits = 0;
+                StructuralVisits = 0;
+                TransformBase = 0;
+                StructuralBase = 0;
+                TransformLimit = limits.MaxTransformVisits;
+                StructuralLimit = limits.MaxStructuralVisits;
+                TransformDeadline = limits.MaxTransformVisits;
+                StructuralDeadline = limits.MaxStructuralVisits;
+                MaxDepth = limits.MaxDepth;
+                MaxNodes = limits.MaxNodes;
+            }
+            else
+            {
+                long transformDeadline = SaturatingAdd(TransformVisits, limits.MaxTransformVisits);
+                if (transformDeadline < TransformDeadline)
+                {
+                    TransformDeadline = transformDeadline;
+                    TransformLimit = limits.MaxTransformVisits;
+                    TransformBase = TransformVisits;
+                }
+
+                long structuralDeadline = SaturatingAdd(StructuralVisits, limits.MaxStructuralVisits);
+                if (structuralDeadline < StructuralDeadline)
+                {
+                    StructuralDeadline = structuralDeadline;
+                    StructuralLimit = limits.MaxStructuralVisits;
+                    StructuralBase = StructuralVisits;
+                }
+
+                MaxDepth = Math.Min(MaxDepth, limits.MaxDepth);
+                MaxNodes = Math.Min(MaxNodes, limits.MaxNodes);
+            }
+
+            OperationDepth++;
+            Owner = owner;
+            return scope;
+        }
+
+        /// <summary>Restores the state saved by <see cref="Enter"/>; the outermost exit also clears the counters.</summary>
+        /// <param name="scope">The saved state.</param>
+        public void Exit(in Scope scope)
+        {
+            Owner = scope.Owner;
+            OperationDepth = scope.OperationDepth;
+            TransformDeadline = scope.TransformDeadline;
+            TransformLimit = scope.TransformLimit;
+            TransformBase = scope.TransformBase;
+            StructuralDeadline = scope.StructuralDeadline;
+            StructuralLimit = scope.StructuralLimit;
+            StructuralBase = scope.StructuralBase;
+            MaxDepth = scope.MaxDepth;
+            MaxNodes = scope.MaxNodes;
+            if (scope.IsOutermost)
+            {
+                TransformVisits = 0;
+                StructuralVisits = 0;
+                TransformDeadline = long.MaxValue;
+                StructuralDeadline = long.MaxValue;
+            }
+        }
+    }
+
     /// <summary>The state saved when an operation is opened or joined, restored when it ends.</summary>
     /// <param name="Owner">The previous owner.</param>
     /// <param name="OperationDepth">The nesting level before the operation.</param>
@@ -342,7 +372,7 @@ internal static class ExpressionResourceBudget
     /// <param name="StructuralBase">The previous structural base.</param>
     /// <param name="MaxDepth">The previous depth limit.</param>
     /// <param name="MaxNodes">The previous node limit.</param>
-    private readonly record struct Scope(
+    internal readonly record struct Scope(
         object? Owner,
         int OperationDepth,
         long TransformDeadline,

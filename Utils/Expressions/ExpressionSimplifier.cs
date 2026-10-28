@@ -2530,11 +2530,11 @@ namespace Utils.Mathematics.Expressions
                     argumentKeys));
             }
 
-            var orderedTerms = annotatedTerms
+            // The comparisons consume the structural budget: a refusal raised inside the sort is restored (ETC R1a-Security).
+            var orderedTerms = ExpressionResourceBudget.ToSortedList(annotatedTerms
                 .OrderBy(static term => term, AdditiveGroupingOrderComparer)
                 .ThenBy(static term => term.IsNegative ? 0 : 1)
-                .ThenBy(static term => term.Key)
-                .ToList();
+                .ThenBy(static term => term.Key));
 
             var rebuiltTerms = new List<Expression>();
             var signedTerms = new List<(Expression Term, bool IsNegative)>();
@@ -2797,9 +2797,9 @@ namespace Utils.Mathematics.Expressions
 
             ParameterExpression[][] scopes = CaptureLexicalScopeSnapshot();
 
-            var orderedFactors = factors
-                .OrderBy(factor => ExpressionCanonicalOrder.BuildKeyFromSnapshot(factor, scopes))
-                .ToList();
+            // The key comparisons consume the structural budget: a refusal raised inside the sort is restored (ETC R1a-Security).
+            var orderedFactors = ExpressionResourceBudget.ToSortedList(factors
+                .OrderBy(factor => ExpressionCanonicalOrder.BuildKeyFromSnapshot(factor, scopes)));
 
             return BuildRightAssociative(orderedFactors, Expression.Multiply);
         }
