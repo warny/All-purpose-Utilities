@@ -878,9 +878,10 @@ public abstract class ExpressionTransformer
             return result!;
         }
 
-        // An untraversed node (PrepareDefault) is finalized with an empty child list, exactly as before ETC R1a, so every
-        // subclass observes the same FinalizeExpression calls; CopyExpression's arity contract (C-02) then keeps it.
-        return context.Expression is ConstantExpression || context.IsOpaque
+        // An untraversed node (PrepareDefault) is finalized with an empty child list, exactly as before ETC R1a (its opaque
+        // context materializes Array.Empty), so every subclass observes the same FinalizeExpression calls;
+        // CopyExpression's arity contract (C-02) then keeps it.
+        return context.Expression is ConstantExpression
             ? FinalizeExpression(context.Expression, Array.Empty<Expression>())
             : FinalizeExpression(context.Expression, context.MaterializeExpressionParameters());
     }
