@@ -129,27 +129,27 @@ benchmark corpora only.
 | Negate, NegateChecked, UnaryPlus, Not, OnesComplement, Increment, Decrement, IsTrue, IsFalse | ✅ | ✅ | ⚠️ S ✅; G/D drop `Method` (ETC-04) | ⚠️ drops `Method` | ✅ | ✅ | — | ✅ S3 (`IsOrdinaryUnaryNegate`) | B, F | S5 |
 | Convert, ConvertChecked, TypeAs, Unbox | ✅ | ✅ | ⚠️ G/D drop conversion `Method` (ETC-04) | ⚠️ drops `Method` | ✅ | ✅ | — | ✅ | B, F | — |
 | ArrayLength | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — | ✅ | B | — |
-| Throw (typed), Rethrow | ✅ | ❌ G/D: NRE on `Rethrow` (ETC-13) | ⚠️ S ✅; G/D lose typed `Type` (ETC-04) | ❌ typed throw becomes `void` | ✅ | ✅ | — | ⚠️ exception node treated as a value | B, F | — |
+| Throw (typed), Rethrow | ✅ | ✅ `Rethrow` is a leaf since R1a (ETC-13 fixed) | ⚠️ S ✅; G/D lose typed `Throw`'s `Type` (ETC-04); `Rethrow` kept as is | ⚠️ typed throw becomes `void`; `Rethrow` kept as is (R1a) | ✅ | ✅ | — | ⚠️ exception node treated as a value | B, F | — |
 | Quote | ✅ | ✅ | ✅ | ⛔ quoted lambda not entered | ✅ | ✅ | ⚠️ captured outer parameters | ❌ policy ETC-12 (quoted data rewritten) | B, F | — |
 | Constant | ✅ | — | ✅ | — | ✅ exact numeric model | ✅ | — | ✅ | B | S5 |
 | Parameter | ✅ | — | — | ✅ (free) | ✅ binding-aware | ✅ De Bruijn | ✅ lambda only | ✅ | B | S5 |
 | Default | ⛔ `PrepareDefault` | — | ✅ (returned as is) | — | ⛔ Unequal | ⛔ coarse | — | ✅ | B | — |
 | Call (static, instance receiver) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — | ⚠️ S3 purity assumption | B | S5 |
 | MemberAccess (instance, static) | ⛔ `PrepareDefault` | ❌ receiver never traversed (ETC-10) | ✅ (returned as is) | ❌ receiver not substituted (feeds ETC-11) | ✅ | ✅ | — | ✅ | B, F | — |
-| Invoke (lambda, delegate) | ✅ | ✅ | ✅ | ❌ lambda target not entered (ETC-03) | ⛔ Invocation unsupported (a lambda target compares `Equal` only because it is inlined first) | ⛔ coarse | — | ❌ ETC-11 inlining leaves unbound parameters; S3 evaluation count | B, F | — |
+| Invoke (lambda, delegate) | ✅ | ✅ | ✅ | ❌ lambda target not entered (ETC-03) | ⛔ Invocation unsupported (a lambda target compares `Equal` only because it is inlined first) | ⛔ coarse | — | ⚠️ R1a guard: inlined only when every use is substitutable and the arguments are inert (ETC-11 guarded, capture-avoiding inlining is R2) | B, F | — |
 | Lambda (incl. delegate type, name, tail call) | ✅ | ✅ (body via `TransformCore`) | ⚠️ S ✅; G/D lose metadata (ETC-05) | ❌ not entered (ETC-03) | ✅ alpha-equivalence | ✅ | ✅ parameters | ✅ S4 lexical scope | B, F | S5 |
 | Conditional | ✅ | ✅ | ✅ | ✅ | ⛔ Unequal (ETC-06) | ⛔ coarse (ETC-07) | — | ⚠️ branches rewritten independently | B, F | — |
-| TypeIs, TypeEqual | ⛔ | ❌ `IndexOutOfRangeException` (ETC-09) | ❌ | ⛔ not entered | ❌ throws | ❌ throws | — | ❌ | B, F | — |
-| New (ctor arguments, `Members`, value-type default) | ⛔ | ❌ `ArgumentException` / `ArgumentNullException` (ETC-09) | ❌ loses `Members` (ETC-02) | ⛔ | ❌ throws | ❌ throws | — | ❌ | B, F | — |
-| NewArrayInit | ⛔ | ❌ every element dropped (ETC-08) | ❌ | ⛔ | ⛔ Unequal | ⛔ | — | ❌ silent corruption | B, F | — |
-| NewArrayBounds | ⛔ | ❌ `ArgumentException` (ETC-09) | ❌ | ⛔ | ❌ throws | ❌ throws | — | ❌ | B, F | — |
+| TypeIs, TypeEqual | ⛔ | ⛔ opaque, kept as is (R1a; was ETC-09) | ✅ explicit copy (R1a, C-02) | ⛔ not entered | ⛔ Unequal | ⛔ coarse | — | ✅ (untouched) | B, F, R1a | — |
+| New (ctor arguments, `Members`, value-type default) | ⛔ | ⛔ opaque, kept as is (R1a; was ETC-09) | ✅ explicit copy keeps `Members` (R1a, C-02) | ⛔ | ⛔ Unequal | ⛔ coarse | — | ✅ (untouched) | B, F, R1a | — |
+| NewArrayInit | ⛔ | ⛔ opaque, kept as is (R1a; was ETC-08) | ✅ explicit copy (R1a, C-02) | ⛔ | ⛔ Unequal | ⛔ | — | ✅ (untouched) | B, F, R1a | — |
+| NewArrayBounds | ⛔ | ⛔ opaque, kept as is (R1a; was ETC-09) | ✅ explicit copy (R1a, C-02) | ⛔ | ⛔ Unequal | ⛔ coarse | — | ✅ (untouched) | B, F, R1a | — |
 | MemberInit, MemberAssignment / MemberMemberBinding / MemberListBinding | ⛔ | ⛔ opaque | ✅ (as is) | ⛔ | ⛔ | ⛔ | — | ✅ (untouched) | B, F | — |
 | ListInit, ElementInit (incl. explicit `AddMethod`) | ⛔ | ⛔ opaque | ✅ (as is) | ⛔ | ⛔ | ⛔ | — | ✅ | B, F | — |
 | Index (array, indexer) | ⛔ | ⛔ opaque | ✅ (as is) | ⛔ | ⛔ | ⛔ | — | ✅ | B, F | — |
-| Block (variables, typed, shadowing, DebugInfo, goto/label, runtime variables) | ⛔ | ❌ replaced by an empty `void` block (ETC-08) | ❌ loses variables/type (ETC-02) | ⛔ | ⛔ | ⛔ | ❌ block variables unknown to comparer/S4 | ❌ silent corruption | B, F | — |
+| Block (variables, typed, shadowing, DebugInfo, goto/label, runtime variables) | ⛔ | ⛔ opaque, kept as is (R1a; was ETC-08) | ✅ explicit copy keeps variables and type (R1a, C-02) | ⛔ | ⛔ | ⛔ | ❌ block variables unknown to comparer/S4 | ✅ (untouched) | B, F, R1a | — |
 | Try (catch, catch variable + filter, finally, fault) | ⛔ | ⛔ opaque | ✅ (as is) | ⛔ | ⛔ | ⛔ | ⚠️ catch variable unmodeled | ✅ (untouched) | B, F | — |
 | Switch (incl. `Comparison`) | ⛔ | ⛔ opaque | ✅ (as is) | ⛔ | ⛔ | ⛔ | — | ✅ | B, F | — |
-| Loop (break, continue) | ⛔ | ❌ `IndexOutOfRangeException` (ETC-09) | ❌ loses labels (ETC-02) | ⛔ | ❌ throws | ❌ throws | ❌ labels unmodeled | ❌ | B, F | — |
+| Loop (break, continue) | ⛔ | ⛔ opaque, kept as is (R1a; was ETC-09) | ✅ explicit copy keeps labels (R1a, C-02) | ⛔ | ⛔ Unequal | ⛔ coarse | ❌ labels unmodeled | ✅ (untouched) | B, F, R1a | — |
 | Goto (return, goto), Label | ⛔ | ⛔ opaque | ✅ (as is) | ⛔ | ⛔ | ⛔ | ❌ labels unmodeled | ✅ | B | — |
 | RuntimeVariables | ⛔ | — | ✅ (as is) | ⛔ (correct: cannot replace by a non-parameter) | ⛔ | ⛔ | ❌ references unmodeled | ✅ | B | — |
 | DebugInfo | ⛔ | — | ✅ (as is) | — | ⛔ | ⛔ | — | ✅ | B | — |
@@ -166,18 +166,18 @@ public entry point, or wrong result inside a documented scope; Medium = contract
 | Id | Severity | Location | Minimal reproducer | Actual | Expected | Contracts | Round | Evidence | Status |
 |---|---|---|---|---|---|---|---|---|---|
 | ETC-01 | High (root cause of ETC-08/09/10) | `ExpressionTransformer.PrepareTransform`, `PrepareDefault` | `Simplify(MemberInit(...p*1...))` | 20 node types (Default, MemberAccess, TypeIs, TypeEqual, New, NewArrayInit, NewArrayBounds, MemberInit, ListInit, Index, Block, Try, Switch, Loop, Goto, Label, RuntimeVariables, DebugInfo, Dynamic, Extension) reach `PrepareDefault`: no child prepared, `FinalizeExpression(e, [])` | each family traversed, passed through explicitly, or rejected explicitly | G, S, D | R1–R4 | `ETC01_*`, baseline `Opaque`/`Throws`/`Corrupts` rows | Confirmed |
-| ETC-02 | High | `ExpressionTransformer.CopyExpression` | `CopyExpression(Block([v], …), children)` | Block loses variables and explicit type; Loop loses labels; New loses `Members`; 11 child-bearing node types (Lambda, MemberAccess, MemberInit, ListInit, Index, Try, Switch, Goto, Label, Dynamic, Extension) ignore the supplied children | rebuild preserves every M/D/L role of §1.2, or fails explicitly | G, D, every subclass using `CopyExpression` | R1 (scalar), R2 (Block/Loop), R3 | `ETC02_*` | Confirmed |
+| ETC-02 | High | `ExpressionTransformer.CopyExpression` | `CopyExpression(Block([v], …), children)` | Block loses variables and explicit type; Loop loses labels; New loses `Members`; 11 child-bearing node types (Lambda, MemberAccess, MemberInit, ListInit, Index, Try, Switch, Goto, Label, Dynamic, Extension) ignore the supplied children | rebuild preserves every M/D/L role of §1.2, or fails explicitly | G, D, every subclass using `CopyExpression` | R1 (scalar), R2 (Block/Loop), R3 | `ETC02_*` | Confirmed; explicit copies of Block, Loop, New, NewArray, TypeBinary fixed in R1a (C-02), the 11 ignoring families open |
 | ETC-03 | High | `ExpressionTransformer.ReplaceArgumentsCore` | `ReplaceArguments(Invoke(() => p), [p], [5])` | recurses into Unary, Binary, Invocation, MethodCall, Conditional only; rebuilds unary via `CopyExpression` (typed throw → void) | capture-avoiding substitution of free occurrences in every family (§5.3) | R, S (inlining) | R2 (+R1 for unary fidelity) | `ETC03_*`, baseline `Partial`/`Opaque` | Confirmed |
 | ETC-04 | Medium | `CopyUnaryExpression`, `RebuildUnaryExpression` | `RecursiveTransformer.Transform(Negate(x, FortyTwo))` | G and D drop `Method` (value 42 → -3) and typed `Throw`'s `Type`; S preserves both | policy C-01 | G, D, R | R1 | `ETC04_*`, rows `Negate.CustomMethod`, `Convert.CustomMethod`, `PreIncrementAssign.CustomMethod`, `Throw` | Confirmed |
 | ETC-05 | Medium | `RebuildLambdaExpression` | `Transform(Lambda<CatalogDelegate>(…, "named", true, x))` | G and D rebuild `Func<double,double>`, no name, no tail call; S preserves | policy C-01 | G, D | R1 | `ETC05_*`, row `Lambda.Metadata` | Confirmed |
 | ETC-06 | Medium (by design) | `ExpressionComparer.EqualsCore` | two identical `Condition(…)` | `Unequal` for every family outside Parameter/Constant/Lambda/Unary/Binary/Call/Member | structural equality with scope model, family by family | E | R1–R4 | `ETC06_*`, 32 `Unequal` rows | Confirmed (not a false positive) |
 | ETC-07 | Low (by design) | `ExpressionComparer.Hash`, `HashUnsupported` | two different conditionals | identical hash (`NodeType`, `Type`) | hash extended together with equality | H | R1–R4 | `ETC07_*`, `Hashing_IsNeverInconsistentWithEquality` | Confirmed |
-| ETC-08 | **Critical** | `PrepareDefault` + `ExpressionSimplifier.FinalizeExpression` → `CopyExpression(e, [])` | `Simplify(NewArrayInit(p*1, p*1))` | returns `new double[0]`; any `Block` becomes an empty `void` block (statements, variables, result lost) | traversal or pass-through, never a rebuild from an empty child list | S, D, G | R1a | `ETC08_*`, rows `NewArrayInit`, `Block*` | Confirmed |
-| ETC-09 | High | same path | `Simplify(TypeIs(…))`, `Simplify(New(ctor, p))`, `GetHashCode(TypeIs(…))` | `IndexOutOfRangeException` (TypeIs, TypeEqual, Loop), `ArgumentException` (New with arguments or members, NewArrayBounds), `ArgumentNullException` (value-type `New`); the public comparer throws too, so such trees cannot enter a `HashSet<Expression>` while `Equals(x, x)` is `true` | no exception on valid trees | S, D, G, E, H | R1a | `ETC09_*`, 7 `Throws` rows | Confirmed |
+| ETC-08 | **Critical** | `PrepareDefault` + `ExpressionSimplifier.FinalizeExpression` → `CopyExpression(e, [])` | `Simplify(NewArrayInit(p*1, p*1))` | returns `new double[0]`; any `Block` becomes an empty `void` block (statements, variables, result lost) | traversal or pass-through, never a rebuild from an empty child list | S, D, G | R1a | `ETC08_*`, rows `NewArrayInit`, `Block*` | **Fixed in R1a** (pass-through) |
+| ETC-09 | High | same path | `Simplify(TypeIs(…))`, `Simplify(New(ctor, p))`, `GetHashCode(TypeIs(…))` | `IndexOutOfRangeException` (TypeIs, TypeEqual, Loop), `ArgumentException` (New with arguments or members, NewArrayBounds), `ArgumentNullException` (value-type `New`); the public comparer throws too, so such trees cannot enter a `HashSet<Expression>` while `Equals(x, x)` is `true` | no exception on valid trees | S, D, G, E, H | R1a | `ETC09_*`, 7 `Throws` rows | **Fixed in R1a** (pass-through, hashable) |
 | ETC-10 | Medium | `PrepareTransform` (MemberExpression → `PrepareDefault`) | `Simplify(TimeSpan.FromSeconds(p*1).TotalSeconds)` | same instance; receiver never simplified although the comparer and P15 treat Member as supported | receiver traversed and rebuilt with `Expression.MakeMemberAccess` | G, S, D, R | R1 | `ETC10_*`, row `MemberAccess` | Confirmed (not in the input list) |
-| ETC-11 | High | `ExpressionSimplifier.InvokeExpression` + ETC-03 | `Simplify(x => ((q) => () => q)(x)())` | inlined body keeps `q` unbound; `Compile()` throws `InvalidOperationException`; same with a member-access body | capture-avoiding inlining or no inlining | S, D | R2 (guard in R1a) | `ETC11_*` | Confirmed |
+| ETC-11 | High | `ExpressionSimplifier.InvokeExpression` + ETC-03 | `Simplify(x => ((q) => () => q)(x)())` | inlined body keeps `q` unbound; `Compile()` throws `InvalidOperationException`; same with a member-access body | capture-avoiding inlining or no inlining | S, D | R2 (guard in R1a) | `ETC11_*` | **Guarded in R1a** (no unbound parameter); capture-avoiding inlining open for R2 |
 | ETC-12 | Medium (policy) | `PrepareUnary` for `Quote` | `Simplify(Quote(x => x * 1))` | quoted lambda body rewritten to `x` | policy C-05 | S, D, G | R4 | `ETC12_*`, rows `Quote*` | Confirmed |
-| ETC-13 | Medium | `PrepareUnary` → `PrepareExpression(null)`; `ReplaceArgumentsCore` | `Transform(Rethrow(typeof(double)))` | G and D throw `NullReferenceException`; substitution returns a `void` throw | null operand passed through | G, D, R | R1a | `ETC13_*`, row `Throw.Rethrow` | Confirmed |
+| ETC-13 | Medium | `PrepareUnary` → `PrepareExpression(null)`; `ReplaceArgumentsCore` | `Transform(Rethrow(typeof(double)))` | G and D throw `NullReferenceException`; substitution returns a `void` throw | null operand passed through | G, D, R | R1a | `ETC13_*`, row `Throw.Rethrow` | **Fixed in R1a** |
 | ETC-14 | Medium | `ExpressionCanonicalOrder.Build` (`UnsupportedKey`) | `Compare(Conditional, Default)` | 0 for every unsupported pair | each family gaining equality also gains a canonical key, before additive/multiplicative grouping can merge it | S4 | with each equality extension | `ETC14_*` | Confirmed |
 | ETC-15 | High (within S3) | algebraic rules on Unary/Binary operands; `IsOrdinaryBinaryArithmetic` does not look at operands | `Simplify(++v + ++v)`, `((v = 5) * 0) + v`, `++v + v` | `2 * ++v` (3 → 2), `v` (5 → 0), `v + ++v` (2 → 1) | assignment, increment and throw nodes are opaque operands for symbolic rules (C-06) | S, D | R1 | `ETC15_*` | Confirmed (not in the input list) |
 | ETC-16 | **Critical (security)** | `Utils.Parser` `CompiledGrammar.Parse`, reached by `CSyntaxTokenParser.Parse`, `VBSyntaxTokenParser.Parse` and every `CompileExpression(string, …)` | `new CSyntaxExpressionCompiler().CompileExpression("((((((((((((((((((((x0))))))))))))))))))))")` | stack overflow terminates the process at 20 parenthesis pairs (CSyntax) / 18 (VBSyntax) on a default Windows thread, 2–3 on a 256 KiB thread, 16 on Linux 1 MiB, 150 on Linux 8 MB; about 50 KB of stack per nesting level; no depth limit, no guard | controlled exception for excessive nesting, configurable limit | public parsers of `Utils.Expressions.*`, `Utils.Parser.Expressions` (inherits), possibly every `Utils.Parser` grammar | dedicated `Utils.Parser` stage (S-06) | probe `E-*-parens`, `E-*-nested`; `results/2026-10-27/win-parser-nesting.csv`, `win-vb-nesting.csv`, `*-parser.csv` | Confirmed (out of ETC code scope, not fixed here) |
@@ -192,12 +192,12 @@ Every entry needs an explicit decision before its round changes production behav
 | Id | Behavior | Affected surface | Options | Recommendation | Decision |
 |---|---|---|---|---|---|
 | C-01 | Unary `Method`/`Type` and lambda metadata loss for generic transformers and derived simplifiers (ETC-04/05) | public `ExpressionTransformer` subclasses, derived `ExpressionSimplifier`s | (a) keep historical loss; (b) make the faithful rebuild the base default; (c) faithful for derived simplifiers only | (b): the loss changes execution semantics (custom operators, typed throws) and no test documents it as intended; record as a 2.0.0 behavior change | pending |
-| C-02 | `CopyExpression` (protected static) with a child list that does not match the node | every subclass finalizing with `CopyExpression` | (a) keep silent corruption; (b) return `e` when the list is empty and the family has children; (c) throw `ArgumentException` on arity mismatch | (b) for an empty list (exact pass-through, fixes ETC-08/09 for every subclass), (c) otherwise | pending |
+| C-02 | `CopyExpression` (protected static) with a child list that does not match the node | every subclass finalizing with `CopyExpression` | (a) keep silent corruption; (b) return `e` when the list is empty and the family has children; (c) throw `ArgumentException` on arity mismatch | (b) for an empty list (exact pass-through, fixes ETC-08/09 for every subclass), (c) otherwise | **Adopted in R1a** for New, NewArrayInit, NewArrayBounds, TypeIs, TypeEqual, Block, Loop and rethrow (§9 R1a) |
 | C-03 | Families newly traversed (`Prepare*` added) | subclass rules declared on those node types now receive positional children; `FinalizeExpression` receives non-empty `parameters`; `PrepareExpression` is called on more children (call count/order observable, H-1, H-2) | (a) traverse for every subclass; (b) traverse for the exact simplifier only | (a), announced in the changelog; keep the lambda body asymmetry (H-4) | pending |
 | C-04 | Public comparer: more `Equal` results (ETC-06) | external `Dictionary`/`HashSet<Expression>` users | per family, after reconstruction is fixed | adopt per family with alpha-equivalence; never before ETC-08 is fixed (otherwise corrupted trees compare equal: two different arrays both become `new double[0]`) | pending |
 | C-05 | Quoted expressions (ETC-12) | `Simplify` callers building query providers | (a) keep rewriting; (b) never enter `Quote`; (c) enter only for the exact simplifier with an option | (b): a quoted tree is data; rewriting it is not part of the symbolic contract | pending |
 | C-06 | Side-effecting operands (ETC-15) | `Simplify` results for trees containing assignments | (a) keep S3 purity assumption; (b) treat assignment/increment/throw nodes (and any subtree containing them) as opaque for algebraic rules | (b): cheap local check like the custom-operator guards; generalized purity analysis stays out of scope | pending |
-| C-07 | Exceptions instead of corruption for families not yet supported | `Simplify`, comparer | (a) pass through unchanged; (b) throw `NotSupportedException` | (a) pass-through for the simplifier and comparer (matches the conservative policy), explicit `NotSupportedException` only for substitution into `RuntimeVariables` | pending |
+| C-07 | Exceptions instead of corruption for families not yet supported | `Simplify`, comparer | (a) pass through unchanged; (b) throw `NotSupportedException` | (a) pass-through for the simplifier and comparer (matches the conservative policy), explicit `NotSupportedException` only for substitution into `RuntimeVariables` | **(a) adopted in R1a** for the simplifier and the comparer; the `RuntimeVariables` part belongs to R2 |
 
 ### Subclass compatibility hazards
 
@@ -442,6 +442,114 @@ canonical key (ETC-14) and its guards in the same PR; (4) scope model (R2) befor
 | Inlining guard: do not inline when the lambda body contains a family `ReplaceArgumentsCore` does not enter | `ExpressionSimplifier.InvokeExpression` | `ETC11_*` compile and evaluate to 3 |
 | Docs | this roadmap, `ExpressionComparer` remarks | — |
 
+#### R1a result (2026-10-28)
+
+- Baseline: `master` at `4ebb4b835b85c5e8d1afcdbd4fdbcd941fec5184` (ETC R0 merged, PR #669). Final SHA: the head of the R1a
+  pull request (branch `etc/r1a-corruption-fixes`).
+- Scope kept to R1a: no new traversal (`Prepare*`), no comparer or canonical-order change, no algebraic rule change, no
+  resource budget. ETC-01, ETC-02 (beyond the explicit copies below), ETC-03, ETC-06, ETC-07, ETC-10, ETC-12, ETC-14 and
+  ETC-15 stay open.
+
+**Production methods changed**
+
+| Method | Change |
+|---|---|
+| `ExpressionTransformer.TransformContext` | private sentinel `OpaqueChildren`, `IsOpaque`, `Opaque(e)`; `MaterializeExpressionParameters` never lets the sentinel escape (rules and `FinalizeExpression` keep receiving `Array.Empty`) |
+| `ExpressionTransformer.PrepareDefault` | returns `TransformContext.Opaque(e)`: an untraversed node is marked explicitly instead of being indistinguishable from a childless supported node |
+| `ExpressionTransformer.TransformPrepared` | unchanged dispatch: an untraversed node is still finalized by `FinalizeExpression(e, [])`, so every subclass observes the same calls |
+| `ExpressionTransformer.PrepareUnary` | a rethrow (`Operand == null`) gets the lazy unary context without `PrepareExpression(null)` and without rebuild |
+| `ExpressionTransformer.ReplaceArgumentsCore` | a rethrow is returned unchanged |
+| `ExpressionTransformer.CopyExpression` (+ `KeepsUntraversedNode`, `CopyNewExpression`, `CopyNewArrayExpression`, `CopyTypeBinaryExpression`, `CopyBlockExpression`, `CopyLoopExpression`) | C-02 arity contract for New, NewArrayInit, NewArrayBounds, TypeIs, TypeEqual, Block and Loop; faithful explicit copies (`Members`, block variables and type, loop labels); rethrow kept |
+| `ExpressionSimplifier.InvokeExpression` | inlines only when `InvocationInliningAnalysis` allows it; otherwise returns the prepared invocation without another `TransformCore` |
+| `InvocationInliningAnalysis` (new, internal) | conservative ETC-11 guard, described below |
+
+**C-02 contract (adopted).** For the seven families above, `CopyExpression(e, [])` returns `e` (either the child list of an
+untraversed node or a node with nothing to replace: both answers are the same node), a list of the node's arity rebuilds it
+with its metadata, any other length throws `ArgumentException`. Every other family keeps its historical behavior (no
+universal "empty means opaque" rule). Compatibility: a third-party subclass finalizing with `CopyExpression` now receives the
+original node instead of a corrupted node or an exception (H-6), and an explicit copy of a block, loop or construction keeps
+variables, labels and `Members` (R0 pinned the losses in `ETC02_*`; those three tests now assert preservation).
+
+**C-07 (adopted, option a).** Untraversed families pass through unchanged in the simplifier and the comparer; nothing throws
+`NotSupportedException` in R1a.
+
+**ETC-11 guard.** `InvocationInliningAnalysis` scans the lambda body in evaluation order over exactly the families
+`ReplaceArgumentsCore` enters (parameter, unary, binary, call, invocation, conditional). Inlining is refused when: a parameter
+is mentioned (referenced or redeclared, i.e. shadowed) inside any other node or inside a binary `Conversion`; an extension
+node is present (never reduced); a parameter is an assignment target or a by-reference argument; an argument is anything but a
+constant, a default or a parameter read; a parameter-read argument is used after a node that may write a variable or run user
+code (call, invocation, custom operator, assignment, untraversed node); the body type differs from the invocation type; an
+argument type differs from its parameter type, or a parameter is by-reference; substitution would rebuild a unary node whose
+`Method` or typed-throw `Type` the historical factories drop (ETC-04). A body that reads no parameter is inlined without
+substitution. Refused invocations are returned as prepared. Consequence: an invocation whose argument is a non-trivial
+expression is no longer inlined (its evaluation count and order are preserved instead); capture-avoiding inlining is R2.
+
+**ETC-13.** A typed or `void` rethrow is a leaf for every path: generic transformer, exact and derived simplifiers,
+`ReplaceArguments`, `CopyExpression`. The historical `[null]` child list seen by rules and `FinalizeExpression` is kept
+(`ExpressionTransformerUnaryLazyParametersTests.Rethrow_NullOperand_FinalizeReceivesArrayContainingNull` unchanged).
+
+**Rejected alternatives**
+
+- *Exact-simplifier shortcut returning an opaque node without calling `FinalizeExpression`* (an internal
+  `FinalizeOpaqueExpression` hook overridden for the exact type). It removed one `NodeType` read per untraversed node, which
+  changed the user-code getter reads pinned by `ExpressionSimplifierOpaqueConstantInvariantTests` (S5 P15: 158 → 126 reads,
+  throwing read moved). The pass-through therefore goes through the unchanged `FinalizeExpression` → `CopyExpression` path.
+- *Rethrow as an empty-array context.* It changed the `[null]` child list pinned for subclasses; the lazy unary context keeps it.
+- *Inlining non-trivial arguments when used exactly once.* Proving evaluation order against every preceding effect is R2's
+  substitution work; refused as unsafe for R1a.
+- *Faithful `MakeUnary` rebuild in `ReplaceArgumentsCore`.* That is C-01 (R1b); R1a refuses the substitution instead.
+
+**Matrix cells changed** (`ExpressionTreeCoverageBaselineTests`, columns G | S | D | R | E | H): `TypeIs`, `TypeEqual`, `New`,
+`New.Members`, `NewArrayBounds`, `Loop`: `Throws:*` → `Opaque | Opaque | Opaque | Opaque | Unequal | Consistent`;
+`NewArrayInit`, `Block`, `Block.TypedResult`, `Block.Shadowing`, `Block.DebugInfo`, `Block.GotoLabel`,
+`Block.RuntimeVariables`: `Corrupts` → `Opaque`; `New.ValueTypeDefault`: `Throws:ArgumentNullException` → `Same` in every
+column (`Unequal` in E); `Throw.Rethrow`: `Throws:NullReferenceException | Rebuilt | Throws:NullReferenceException | Corrupts`
+→ `Same | Same | Same | Same`. These families are **passed through, not supported**: their children are still not traversed.
+No other row changed (no change for supported families).
+
+**Derived transformers.** Third-party `ExpressionTransformer` subclasses see the same `PrepareExpression` and
+`FinalizeExpression` calls as before, except that `PrepareExpression` is no longer called with `null` for a rethrow. Their
+rules on untraversed node types still run, and their `FinalizeExpression` result is still used
+(`GenericTransformer_RulesAndFinalizeOverride_StillApplyToUntraversedNodes`). Derived simplifiers keep the C-01 losses
+(ETC-04/05), now documented by `Invoke_BodyWithCustomUnaryOperator_IsKept`.
+
+**Tests.** Updated reproducers: `ETC02_CopyExpression_Block_KeepsVariables`, `ETC02_CopyExpression_Loop_KeepsLabels`,
+`ETC02_CopyExpression_NewWithMembers_KeepsMembers`, `ETC08_ExactSimplifier_NewArrayInit_KeepsEveryElement`,
+`ETC08_ExactSimplifier_Block_KeepsStatementsVariablesAndResult`, `ETC09_ExactSimplifier_DoesNotThrowOnValidTrees`,
+`ETC09_Comparer_HashesValidTree`, `ETC11_InvokeInlining_KeepsInvocationWhenParameterIsNotSubstitutable`,
+`ETC13_Rethrow_NullOperand`; `ExpressionSimplifierFinalizationTests.Simplify_TypeBinaryWithoutRule_ReturnsNodeUnchanged`
+(it pinned ETC-09). New `ExpressionTreeR1aTests` (category `ETC-R1a`, 33 tests). Results: `Utils.sln` Release build without
+error; UtilsTest.Unit 14,231/14,231; UtilsTest.Functional 383/383; UtilsTest.Security 244 passed, 3 inconclusive
+(platform-only tests, unchanged).
+
+**Performance** (Release, `ExpressionSimplifier.Simplify` per operation, median of 6 alternated process triples base / R1a /
+A/A copy of base, 1.5 s warm-up, 1 s measurement; scenarios rerun with 8 triples are marked *):
+
+| Scenario | base ns | R1a ns | R1a vs base | A/A vs base | bytes base → R1a |
+|---|---|---|---|---|---|
+| scalar arithmetic | 7,762 | 7,674 | −1.1 % | +1.6 % | 14,403 → 14,403 |
+| nested unary (20) * | 1,288 | 1,267 | −1.7 % | −0.7 % | 2,401 → 2,401 |
+| binary sum of 10 parameters | 562,100 | 550,814 | −2.0 % | −0.6 % | 1,326,600 → 1,326,600 |
+| method calls | 4,764 | 4,768 | +0.1 % | −0.7 % | 4,817 → 4,817 |
+| conditional | 922 | 912 | −1.0 % | +0.4 % | 1,432 → 1,432 |
+| lambda | 1,866 | 1,832 | −1.8 % | −0.3 % | 4,009 → 4,009 |
+| supported Invoke inlining * | 7,123 | 7,238 | +1.6 % | +0.0 % | 11,659 → 11,707 |
+| repeated additive terms (12) | 6,607 | 6,498 | −1.7 % | −0.6 % | 6,704 → 6,704 |
+| P16 numeric chain (16) | 58,416 | 58,320 | −0.2 % | +1.1 % | 76,145 → 76,145 |
+| P15 opaque grouping (8 + opaque) | 1,822,396 | 1,791,724 | −1.7 % | −1.6 % | 2,796,590 → 2,796,590 |
+| 200-element untraversed array * | 2,286 | 2,134 | −6.7 % | −0.7 % | 4,337 → 4,241 |
+
+No regression above 5 %. A first run showed nested unary at +4.3 % (all six triples above base); it came from an `IsOpaque`
+test added to `TransformPrepared`, which was redundant (the opaque context already materializes `Array.Empty`) and was
+removed. Supported Invoke inlining costs one analysis object (+48 B) and the body scan (+1.6 %). The untraversed array is
+cheaper because `master` rebuilt it (into a corrupted empty array) while R1a keeps it. The base cannot run a `Block` scenario
+at all (ETC-08 turns it into `void` and the enclosing `Add` throws), so the large untraversed tree uses an array only.
+
+**Remaining limitations (R1b/R2).** Untraversed families are not simplified inside (ETC-01, ETC-10); explicit `CopyExpression`
+still ignores children for 11 families (ETC-02); substitution does not enter binders (ETC-03), so inlining stays conservative
+until R2; derived simplifiers still drop unary/lambda metadata (C-01); side-effecting operands (ETC-15, C-06) are untouched;
+no stack guard or budget yet (R1a-Security).
+
 ### R1a-Security — Resource budgets and stack safety (second)
 
 Specified in §12 (ETC Security). File-level scope: new `Utils/Expressions/ExpressionResourceLimits.cs`,
@@ -502,6 +610,7 @@ recursive method listed in §12.3. Tests: §12.7.
 |---|---|---|
 | R0 | 2026-10-27 | Inventory, executable baseline (117 samples × 6 contracts) and reproducers committed; ETC-01 … ETC-07 confirmed; ETC-08 … ETC-15 added; no production change, no benchmark needed. Probes (scratch, not committed): per-family probe harness linking the catalog, depth limits in isolated processes (§7). |
 | R0 complement | 2026-10-27 | `Utils/AGENTS.md` local switch exception. Resource campaign (`tests/ExpressionResourceProbe`, Windows + WSL2 Linux, 6 thread/stack configurations, families A–G, CSyntax and VBSyntax): ETC-16 … ETC-19 added (§7). Experiments, never merged: `TransformCore` visit counter and unit-suite visit histogram (accepted as calibration data); stack guards at five recursive entry points (overhead within noise, controlled failure and state restoration observed: accepted as the R1a-Security design basis, §12). No production change. |
+| R1a | 2026-10-28 | ETC-08, ETC-09 and ETC-13 fixed, ETC-11 guarded (no unbound parameter, argument evaluation preserved); C-02 and C-07 (a) adopted; 15 baseline rows moved from `Throws`/`Corrupts` to `Opaque`/`Same` (pass-through, not support); no supported-family change; no regression above 5 % (§9 R1a result). |
 
 ## 11. Decisions requested from the reviewer
 
