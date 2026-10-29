@@ -104,12 +104,13 @@ public class ExpressionTreeFindingsTests
     /// <summary>
     /// ETC-01: families reaching <c>PrepareDefault</c> are returned as the very same instance by the exact simplifier,
     /// so a simplifiable descendant is never visited. R1 (New, NewArray, TypeBinary), R2 (Block, Try, Switch, Loop,
-    /// Goto, Label), R3 (MemberInit, ListInit, Index) and R4 (Dynamic, Extension) replace this with explicit policies.
+    /// Goto, Label), R3 (MemberInit, ListInit, Index) and R4 (Dynamic, Extension) replace this with explicit policies;
+    /// R1b and R2 are done (see <c>ExpressionTreeR1bTests</c> and <c>ExpressionTreeR2Tests</c>).
     /// </summary>
     [TestMethod]
     public void ETC01_ExactSimplifier_DefaultDispatchedFamilies_AreNotTraversed()
     {
-        string[] passThrough = ["MemberInit", "ListInit", "Index", "Try", "Switch", "Goto", "Label", "Dynamic", "Extension"];
+        string[] passThrough = ["MemberInit", "ListInit", "Index", "Dynamic", "Extension"];
         foreach (string name in passThrough)
         {
             Expression original = ExpressionNodeCatalog.Get(name).Build();
@@ -184,13 +185,14 @@ public class ExpressionTreeFindingsTests
     /// <summary>
     /// ETC-02: for many families <c>CopyExpression</c> ignores the supplied children and returns the original node. ETC R1b
     /// removed <c>MemberAccess</c> from this list: it follows the C-02 arity contract (see
-    /// <see cref="ETC02_CopyExpression_MemberAccess_FollowsArityContract"/>).
+    /// <see cref="ETC02_CopyExpression_MemberAccess_FollowsArityContract"/>); ETC R2 removed <c>Try</c>, <c>Switch</c>,
+    /// <c>Goto</c> and <c>Label</c>, which follow it too (see <c>ExpressionTreeR2Tests</c>).
     /// </summary>
     [TestMethod]
     public void ETC02_CopyExpression_IgnoresReplacementChildren_ForPassThroughFamilies()
     {
         Expression replacement = Expression.Constant(9.5);
-        string[] ignored = ["MemberInit", "ListInit", "Index", "Try", "Switch", "Goto", "Label", "Dynamic", "Extension", "Lambda"];
+        string[] ignored = ["MemberInit", "ListInit", "Index", "Dynamic", "Extension", "Lambda"];
         foreach (string name in ignored)
         {
             Expression original = ExpressionNodeCatalog.Get(name).Build();
@@ -393,20 +395,28 @@ public class ExpressionTreeFindingsTests
 
     /// <summary>
     /// ETC-08 (critical), resolved by ETC R1a: a block was replaced by an empty <see cref="void"/> block; it now keeps its
-    /// statements, variables and result.
+    /// statements, variables and result. R1a kept the block as is; since ETC R2 it is traversed and rebuilt with the same
+    /// variables, statement count and type, and the simplifiers' results evaluate like the original.
     /// </summary>
     [TestMethod]
     public void ETC08_ExactSimplifier_Block_KeepsStatementsVariablesAndResult()
     {
-        Expression block = ExpressionNodeCatalog.Get("Block").Build();
+        var block = (BlockExpression)ExpressionNodeCatalog.Get("Block").Build();
 
         Expression[] results = [new ExpressionSimplifier().Simplify(block), new DerivedSimplifier().Simplify(block), new RecursiveTransformer().Transform(block)];
 
         Assert.AreEqual(typeof(double), block.Type);
         foreach (Expression result in results)
         {
-            Assert.AreSame(block, result);
+            var rebuilt = (BlockExpression)result;
+            Assert.AreEqual(block.Type, rebuilt.Type);
+            CollectionAssert.AreEqual(block.Variables.ToArray(), rebuilt.Variables.ToArray());
+            Assert.AreEqual(block.Expressions.Count, rebuilt.Expressions.Count);
         }
+
+        Func<Expression, double> evaluate = body => Expression.Lambda<Func<double, double>>(body, ExpressionNodeCatalog.Free).Compile()(3.0);
+        Assert.AreEqual(evaluate(block), evaluate(results[0]));
+        Assert.AreEqual(evaluate(block), evaluate(results[1]));
     }
 
     // ------------------------------------------------------------------------------------------
@@ -415,18 +425,20 @@ public class ExpressionTreeFindingsTests
 
     /// <summary>
     /// ETC-09, resolved by ETC R1a: type tests, loops, constructions with arguments and array bounds threw from
-    /// <c>Simplify</c>. A loop (untraversed) and a construction without argument (no child) are returned unchanged; the
-    /// families traversed since ETC R1b are rebuilt with the same node type, type and metadata, without throwing.
+    /// <c>Simplify</c>. A construction without argument (no child) is returned unchanged; the families traversed since ETC
+    /// R1b, and the loop since ETC R2 (it was returned unchanged before), are rebuilt with the same node type, type and
+    /// metadata, without throwing.
     /// </summary>
     [TestMethod]
     public void ETC09_ExactSimplifier_DoesNotThrowOnValidTrees()
     {
-        Expression[] unchanged = [ExpressionNodeCatalog.Get("Loop").Build(), Expression.New(typeof(DateTime))];
+        Expression[] unchanged = [Expression.New(typeof(DateTime))];
         Expression[] traversed =
         [
             Expression.TypeIs(Expression.Convert(P, typeof(object)), typeof(double)),
             Expression.New(typeof(StrongBox<double>).GetConstructor([typeof(double)])!, P),
             Expression.NewArrayBounds(typeof(double), Expression.Constant(2)),
+            ExpressionNodeCatalog.Get("Loop").Build(),
         ];
 
         foreach (Expression tree in unchanged)
@@ -441,7 +453,7 @@ public class ExpressionTreeFindingsTests
             {
                 Assert.AreEqual(tree.NodeType, result.NodeType);
                 Assert.AreEqual(tree.Type, result.Type);
-                Assert.IsNotNull(Expression.Lambda(result, P).Compile(), tree.NodeType.ToString());
+                Assert.IsNotNull(Expression.Lambda(result, P, ExpressionNodeCatalog.Free).Compile(), tree.NodeType.ToString());
             }
         }
     }

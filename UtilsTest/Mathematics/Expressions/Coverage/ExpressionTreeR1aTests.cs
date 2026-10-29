@@ -24,15 +24,22 @@ public class ExpressionTreeR1aTests
 
     /// <summary>
     /// The families the transformer does not traverse, reaching <c>PrepareDefault</c>. ETC R1b removed TypeIs, TypeEqual,
-    /// New, NewArrayInit, NewArrayBounds, MemberAccess and Default, which are traversed since (see <c>ExpressionTreeR1bTests</c>).
+    /// New, NewArrayInit, NewArrayBounds, MemberAccess and Default, which are traversed since (see <c>ExpressionTreeR1bTests</c>);
+    /// ETC R2 removed Block, Loop, Try, Switch, Goto, Label, RuntimeVariables and DebugInfo (see <c>ExpressionTreeR2Tests</c>).
     /// </summary>
     private static readonly HashSet<ExpressionType> UntraversedRoots =
     [
-        ExpressionType.Block, ExpressionType.Loop,
-        ExpressionType.MemberInit, ExpressionType.ListInit, ExpressionType.Index, ExpressionType.Try, ExpressionType.Switch,
-        ExpressionType.Goto, ExpressionType.Label, ExpressionType.RuntimeVariables, ExpressionType.DebugInfo,
+        ExpressionType.MemberInit, ExpressionType.ListInit, ExpressionType.Index,
         ExpressionType.Dynamic, ExpressionType.Extension,
     ];
+
+    /// <summary>
+    /// Builds an untraversed node (an R3 family) holding two simplifiable <c>p * 1</c> leaves: element 0 of an array of two
+    /// leaves, read through <see cref="Expression.ArrayAccess(Expression, Expression[])"/> (an <see cref="IndexExpression"/>).
+    /// </summary>
+    /// <returns>A new untraversed node of type <see cref="double"/>.</returns>
+    private static IndexExpression UntraversedLeafPair()
+        => Expression.ArrayAccess(Expression.NewArrayInit(typeof(double), Leaf(), Leaf()), Expression.Constant(0));
 
     /// <summary>
     /// Simplifies <paramref name="tree"/> with the exact simplifier, a derived simplifier and a generic recursive transformer
@@ -105,8 +112,9 @@ public class ExpressionTreeR1aTests
     }
 
     /// <summary>
-    /// A generic transformer whose <c>FinalizeExpression</c> override replaces every block by a marker constant and
-    /// whose rule replaces every type test by <see langword="true"/>: both must still be honored for untraversed nodes.
+    /// A generic transformer whose <c>FinalizeExpression</c> override replaces every index access (an untraversed R3 family)
+    /// by a marker constant and whose rule replaces every type test by <see langword="true"/>: both must still be honored.
+    /// Until ETC R2 the marker replaced blocks, which are traversed since.
     /// </summary>
     private sealed class OverridingTransformer : ExpressionTransformer
     {
@@ -129,7 +137,7 @@ public class ExpressionTreeR1aTests
         protected override Expression FinalizeExpression(Expression e, Expression[] parameters)
         {
             Finalized.Add((e.NodeType, parameters.Length));
-            return e.NodeType == ExpressionType.Block ? Expression.Constant(-1.0) : CopyExpression(e, parameters);
+            return e.NodeType == ExpressionType.Index ? Expression.Constant(-1.0) : CopyExpression(e, parameters);
         }
     }
 
@@ -312,7 +320,12 @@ public class ExpressionTreeR1aTests
         Assert.AreEqual(4, created.GetLength(1));
     }
 
-    /// <summary>Blocks with statements, declared variables, an explicit result type and side effects survive and still run identically.</summary>
+    /// <summary>
+    /// Blocks with statements, declared variables, an explicit result type and side effects survive and still run identically.
+    /// ETC R2 replaced the R1a pass-through by a traversal: the statements are simplified in place, the variables (same
+    /// instances) and the explicit result type are kept, and the effect still runs once; the empty block, which has no
+    /// child, is still returned as is.
+    /// </summary>
     [TestMethod]
     public void Block_StatementsVariablesTypeAndEffects_AreKept()
     {
@@ -326,14 +339,24 @@ public class ExpressionTreeR1aTests
             Expression.Block(typeof(object), [local], Expression.Assign(local, P), Expression.Convert(local, typeof(object))),
         ];
 
+        AssertPassedThrough(blocks[0]);
+        AssertTraversed(blocks[1]);
+        AssertTraversed(blocks[2]);
         foreach (Expression block in blocks)
         {
-            AssertPassedThrough(block);
+            foreach (Expression result in new[] { new ExpressionSimplifier().Simplify(block), new DerivedSimplifier().Simplify(block), new RecursiveTransformer().Transform(block) })
+            {
+                var rebuilt = (BlockExpression)result;
+                Assert.AreEqual(block.Type, rebuilt.Type);
+                CollectionAssert.AreEqual(((BlockExpression)block).Variables.ToArray(), rebuilt.Variables.ToArray());
+                Assert.AreEqual(((BlockExpression)block).Expressions.Count, rebuilt.Expressions.Count);
+            }
         }
 
         Func<double, double> compiled = Expression.Lambda<Func<double, double>>(new ExpressionSimplifier().Simplify(blocks[2]), P).Compile();
         Assert.AreEqual(4.0, compiled(3.0));
         CollectionAssert.AreEqual(new[] { "effect" }, log.Calls);
+        Assert.AreEqual(3.0, Expression.Lambda<Func<double, object>>(new ExpressionSimplifier().Simplify(blocks[3]), P).Compile()(3.0));
     }
 
     /// <summary>
@@ -385,7 +408,10 @@ public class ExpressionTreeR1aTests
         Assert.IsFalse(Expression.Lambda<Func<double, bool>>(new ExpressionSimplifier().Simplify(tests[1]), P).Compile()(3.0));
     }
 
-    /// <summary>A loop with break and continue labels survives and still runs identically.</summary>
+    /// <summary>
+    /// A loop with break and continue labels survives and still runs identically. ETC R2 traverses the loop body (and the
+    /// enclosing block): the <c>p * 1</c> of the exit test is simplified and the very same label targets are kept.
+    /// </summary>
     [TestMethod]
     public void Loop_WithBreakAndContinue_IsKept()
     {
@@ -401,17 +427,25 @@ public class ExpressionTreeR1aTests
             continueLabel);
         Expression program = Expression.Block([counter], Expression.Assign(counter, Expression.Constant(0.0)), loop);
 
-        AssertPassedThrough(loop);
-        AssertPassedThrough(program);
+        foreach (Expression result in AssertTraversed(loop))
+        {
+            Assert.AreSame(breakLabel, ((LoopExpression)result).BreakLabel);
+            Assert.AreSame(continueLabel, ((LoopExpression)result).ContinueLabel);
+        }
+
+        AssertTraversed(program);
         Assert.AreEqual(3.0, Expression.Lambda<Func<double, double>>(new ExpressionSimplifier().Simplify(program), P).Compile()(3.0));
     }
 
-    /// <summary>Every catalog sample rooted at an untraversed family is returned as the very same instance by both simplifiers.</summary>
+    /// <summary>
+    /// Every catalog sample rooted at an untraversed family is returned as the very same instance by both simplifiers. ETC R2
+    /// moved the 19 control-flow samples out of the untraversed families; the 10 samples of the R3 and R4 families remain.
+    /// </summary>
     [TestMethod]
     public void EveryUntraversedCatalogSample_IsReturnedUnchanged()
     {
         ExpressionNodeSample[] samples = ExpressionNodeCatalog.All.Where(sample => UntraversedRoots.Contains(sample.RootNodeType)).ToArray();
-        Assert.IsTrue(samples.Length > 20, $"The catalog must keep covering the untraversed families ({samples.Length} samples).");
+        Assert.AreEqual(10, samples.Length, "The catalog must keep covering every untraversed family (MemberInit, ListInit, Index, Dynamic, Extension).");
 
         foreach (ExpressionNodeSample sample in samples)
         {
@@ -421,11 +455,14 @@ public class ExpressionTreeR1aTests
         }
     }
 
-    /// <summary>Repeated simplification of an untraversed tree is stable, and simplifying the result again changes nothing.</summary>
+    /// <summary>
+    /// Repeated simplification of an untraversed tree is stable, and simplifying the result again changes nothing. The tree
+    /// was a block until ETC R2 traversed blocks; it is now an indexer access (R3).
+    /// </summary>
     [TestMethod]
     public void UntraversedTree_RepeatedSimplification_IsStable()
     {
-        Expression block = ExpressionNodeCatalog.Get("Block.TypedResult").Build();
+        Expression block = ExpressionNodeCatalog.Get("Index.Indexer").Build();
         var simplifier = new ExpressionSimplifier();
 
         Expression first = simplifier.Simplify(block);
@@ -438,12 +475,12 @@ public class ExpressionTreeR1aTests
 
     /// <summary>
     /// An untraversed node inside a supported one is kept while the supported parts around it are still simplified. ETC R1b
-    /// traverses array initializers, so the untraversed node is now a block (an R2 family).
+    /// traverses array initializers and ETC R2 blocks, so the untraversed node is now an array access (an R3 family).
     /// </summary>
     [TestMethod]
     public void UntraversedNode_InsideSupportedNode_IsKeptAndNeighborsSimplified()
     {
-        BlockExpression block = Expression.Block(Leaf(), Leaf());
+        IndexExpression block = UntraversedLeafPair();
         var original = Expression.Lambda<Func<double, double>>(Expression.Add(Leaf(), block), P);
 
         Expression<Func<double, double>> simplified = Simplify(original);
@@ -451,9 +488,9 @@ public class ExpressionTreeR1aTests
         AssertSameValues(original, simplified);
         var collector = new NodeCollector();
         collector.Visit(simplified);
-        Assert.IsTrue(collector.Nodes.Contains(block), "The block instance must be kept.");
+        Assert.IsTrue(collector.Nodes.Contains(block), "The untraversed instance must be kept.");
         Assert.AreEqual(2, collector.Nodes.OfType<BinaryExpression>().Count(b => b.NodeType == ExpressionType.Multiply),
-            "Only the two p * 1 kept inside the block may remain: the one outside must still be simplified.");
+            "Only the two p * 1 kept inside the untraversed node may remain: the one outside must still be simplified.");
     }
 
     /// <summary>Collects every node of a tree.</summary>
@@ -472,24 +509,29 @@ public class ExpressionTreeR1aTests
 
     /// <summary>
     /// A derived simplifier overriding <c>FinalizeExpression</c> still observes untraversed nodes with an empty child list,
-    /// and, since ETC R1b (C-03), observes an array initializer with its prepared elements.
+    /// and, since ETC R1b (C-03), observes an array initializer with its prepared elements, and since ETC R2 a block with its
+    /// prepared statements (the untraversed example is now an array access).
     /// </summary>
     [TestMethod]
     public void DerivedSimplifier_FinalizeOverride_StillObservesUntraversedNodes()
     {
         var simplifier = new RecordingSimplifier();
+        Expression untraversed = UntraversedLeafPair();
         Expression block = Expression.Block(Leaf());
         Expression array = Expression.NewArrayInit(typeof(double), Leaf());
 
-        Assert.AreSame(block, simplifier.Simplify(block));
-        CollectionAssert.Contains(simplifier.Finalized, (ExpressionType.Block, 0));
+        Assert.AreSame(untraversed, simplifier.Simplify(untraversed));
+        CollectionAssert.Contains(simplifier.Finalized, (ExpressionType.Index, 0));
+        Assert.AreNotSame(block, simplifier.Simplify(block));
+        CollectionAssert.Contains(simplifier.Finalized, (ExpressionType.Block, 1));
         Assert.AreNotSame(array, simplifier.Simplify(array));
         CollectionAssert.Contains(simplifier.Finalized, (ExpressionType.NewArrayInit, 1));
     }
 
     /// <summary>
     /// A generic transformer keeps its full control over untraversed nodes: its rule still matches a type test, and its
-    /// <c>FinalizeExpression</c> override still receives a block (with an empty child list) and its result is used.
+    /// <c>FinalizeExpression</c> override still receives an untraversed index access (with an empty child list) and its
+    /// result is used. Since ETC R2 a block is traversed: the override receives it with its prepared statement.
     /// </summary>
     [TestMethod]
     public void GenericTransformer_RulesAndFinalizeOverride_StillApplyToUntraversedNodes()
@@ -497,11 +539,14 @@ public class ExpressionTreeR1aTests
         var transformer = new OverridingTransformer();
 
         Expression typeTest = transformer.Transform(Expression.TypeIs(Expression.Constant("text"), typeof(int)));
+        Expression untraversed = transformer.Transform(UntraversedLeafPair());
         Expression block = transformer.Transform(Expression.Block(Leaf()));
 
         Assert.IsTrue((bool)((ConstantExpression)typeTest).Value!);
-        Assert.AreEqual(-1.0, ((ConstantExpression)block).Value);
-        CollectionAssert.Contains(transformer.Finalized, (ExpressionType.Block, 0));
+        Assert.AreEqual(-1.0, ((ConstantExpression)untraversed).Value);
+        CollectionAssert.Contains(transformer.Finalized, (ExpressionType.Index, 0));
+        Assert.IsInstanceOfType<BlockExpression>(block);
+        CollectionAssert.Contains(transformer.Finalized, (ExpressionType.Block, 1));
     }
 
     /// <summary>Every untraversed catalog sample can be added to, and found in, a <see cref="HashSet{T}"/> using the public comparer.</summary>
@@ -518,19 +563,24 @@ public class ExpressionTreeR1aTests
     }
 
     /// <summary>
-    /// A large untraversed tree (a block of 2,000 simplifiable statements) is returned unchanged; the same width under an array
-    /// initializer, traversed since ETC R1b, is simplified element by element.
+    /// A large untraversed tree (a list initializer of 2,000 simplifiable elements; a block until ETC R2) is returned
+    /// unchanged; the same width under an array initializer (traversed since ETC R1b) or a block (since ETC R2) is simplified
+    /// element by element.
     /// </summary>
     [TestMethod]
     public void LargeUntraversedTree_IsReturnedUnchanged()
     {
+        Expression list = Expression.ListInit(Expression.New(typeof(List<double>)), Enumerable.Range(0, 2000).Select(_ => Leaf()));
         Expression block = Expression.Block(Enumerable.Range(0, 2000).Select(_ => Leaf()));
         Expression array = Expression.NewArrayInit(typeof(double), Enumerable.Range(0, 2000).Select(_ => Leaf()));
 
-        Assert.AreSame(block, new ExpressionSimplifier().Simplify(block));
+        Assert.AreSame(list, new ExpressionSimplifier().Simplify(list));
         var simplified = (NewArrayExpression)new ExpressionSimplifier().Simplify(array);
         Assert.AreEqual(2000, simplified.Expressions.Count);
         Assert.IsTrue(simplified.Expressions.All(element => ReferenceEquals(element, P)));
+        var simplifiedBlock = (BlockExpression)new ExpressionSimplifier().Simplify(block);
+        Assert.AreEqual(2000, simplifiedBlock.Expressions.Count);
+        Assert.IsTrue(simplifiedBlock.Expressions.All(statement => ReferenceEquals(statement, P)));
     }
 
     // ------------------------------------------------------------------------------------------
@@ -872,7 +922,10 @@ public class ExpressionTreeR1aTests
         }
     }
 
-    /// <summary>A simplified catch body containing a rethrow still rethrows the caught exception; a whole try expression is kept.</summary>
+    /// <summary>
+    /// A simplified catch body containing a rethrow still rethrows the caught exception. A whole try expression was kept as is
+    /// until ETC R2; it is now traversed, and its simplification keeps the handler's test type and still rethrows.
+    /// </summary>
     [TestMethod]
     public void Rethrow_InCatchBody_StillRethrows()
     {
@@ -885,9 +938,14 @@ public class ExpressionTreeR1aTests
         Func<double, double> expected = Expression.Lambda<Func<double, double>>(original, P).Compile();
         Func<double, double> actual = Expression.Lambda<Func<double, double>>(rebuilt, P).Compile();
 
-        Assert.AreSame(original, new ExpressionSimplifier().Simplify(original));
+        var simplifiedTry = (TryExpression)new ExpressionSimplifier().Simplify(original);
+        Func<double, double> traversed = Expression.Lambda<Func<double, double>>(simplifiedTry, P).Compile();
+
+        Assert.AreEqual(typeof(InvalidOperationException), simplifiedTry.Handlers.Single().Test);
         Assert.ThrowsExactly<InvalidOperationException>(() => expected(3.0));
         Assert.ThrowsExactly<InvalidOperationException>(() => actual(3.0));
+        Assert.ThrowsExactly<InvalidOperationException>(() => traversed(3.0));
         Assert.AreEqual(expected(-2.0), actual(-2.0));
+        Assert.AreEqual(expected(-2.0), traversed(-2.0));
     }
 }
