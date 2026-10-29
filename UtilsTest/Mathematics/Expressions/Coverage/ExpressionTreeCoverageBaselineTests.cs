@@ -11,7 +11,9 @@ namespace UtilsTest.Mathematics.Expressions.Coverage;
 /// is the observed behavior of <c>master</c> at <c>b5c05dc3</c>, updated by ETC R1a for the rows of ETC-08, ETC-09 and
 /// ETC-13 (<c>TypeIs</c>, <c>TypeEqual</c>, <c>New*</c>, <c>NewArray*</c>, <c>Block*</c>, <c>Loop</c>, <c>Throw.Rethrow</c>),
 /// and by ETC R1b (rows marked <c>// ETC R1b</c>) for the traversal of member access, type tests, creations and array
-/// creations (ETC-01/ETC-10, C-03) and the faithful unary and lambda reconstruction (ETC-04/ETC-05, C-01).
+/// creations (ETC-01/ETC-10, C-03) and the faithful unary and lambda reconstruction (ETC-04/ETC-05, C-01), and by ETC R1c (rows
+/// marked <c>// ETC R1c</c>) for the structural equality of conditionals, invocations, type tests, defaults, creations and
+/// array creations (ETC-06, C-04).
 /// </summary>
 /// <remarks>
 /// <para>
@@ -94,17 +96,17 @@ public class ExpressionTreeCoverageBaselineTests
         ["Throw"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R1b
         ["Constant"] = "Same | Rebuilt | Rebuilt | Same | Equal | Consistent",
         ["Parameter"] = "Same | Same | Same | Rewrites | Equal | Consistent",
-        ["Default"] = "Same | Same | Same | Same | Unequal | Consistent",
+        ["Default"] = "Same | Same | Same | Same | Equal | Consistent", // ETC R1c
         ["Call"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent",
         ["MemberAccess"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R1b
         ["Invoke"] = "Rewrites | Rewrites | Rewrites | Partial | Equal | Consistent",
         ["Lambda"] = "Rewrites | Rewrites | Rewrites | Opaque | Equal | Consistent",
-        ["Conditional"] = "Rewrites | Rewrites | Rewrites | Rewrites | Unequal | Consistent",
-        ["TypeIs"] = "Rewrites | Rewrites | Rewrites | Rewrites | Unequal | Consistent", // ETC R1b
-        ["TypeEqual"] = "Rewrites | Rewrites | Rewrites | Rewrites | Unequal | Consistent", // ETC R1b
-        ["New"] = "Rewrites | Rewrites | Rewrites | Rewrites | Unequal | Consistent", // ETC R1b
-        ["NewArrayInit"] = "Rewrites | Rewrites | Rewrites | Rewrites | Unequal | Consistent", // ETC R1b
-        ["NewArrayBounds"] = "Rewrites | Rewrites | Rewrites | Rewrites | Unequal | Consistent", // ETC R1b
+        ["Conditional"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R1c
+        ["TypeIs"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R1b, R1c
+        ["TypeEqual"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R1b, R1c
+        ["New"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R1b, R1c
+        ["NewArrayInit"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R1b, R1c
+        ["NewArrayBounds"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R1b, R1c
         ["MemberInit"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
         ["ListInit"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
         ["Index"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
@@ -129,10 +131,10 @@ public class ExpressionTreeCoverageBaselineTests
         ["Throw.Rethrow"] = "Same | Same | Same | Same | Equal | Consistent",
         ["Call.InstanceReceiver"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent",
         ["MemberAccess.Static"] = "Same | Same | Same | Same | Equal | Consistent",
-        ["Invoke.Delegate"] = "Rewrites | Rewrites | Rewrites | Rewrites | Unequal | Consistent",
+        ["Invoke.Delegate"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R1c
         ["Lambda.Metadata"] = "Rewrites | Rewrites | Rewrites | Opaque | Equal | Consistent", // ETC R1b
-        ["New.Members"] = "Rewrites | Rewrites | Rewrites | Rewrites | Unequal | Consistent", // ETC R1b
-        ["New.ValueTypeDefault"] = "Same | Same | Same | Same | Unequal | Consistent",
+        ["New.Members"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R1b, R1c
+        ["New.ValueTypeDefault"] = "Same | Same | Same | Same | Equal | Consistent", // ETC R1c
         ["Block.TypedResult"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
         ["Block.Shadowing"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
         ["Block.DebugInfo"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",

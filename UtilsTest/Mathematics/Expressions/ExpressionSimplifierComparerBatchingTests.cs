@@ -300,24 +300,26 @@ public class ExpressionSimplifierComparerBatchingTests
     }
 
     /// <summary>
-    /// Conservatism for an unsupported node kind: two DISTINCT but structurally identical
-    /// <see cref="ConditionalExpression"/> instances must NOT be conflated - <c>AdditionOfEqualsElements</c>
-    /// must return <see langword="null"/>, exactly like before this stage's change (this comparer's
-    /// structural walk does not understand <see cref="ConditionalExpression"/> at all - see
-    /// <see cref="ExpressionComparer"/>'s own class remarks - so it conservatively reports two distinct
-    /// instances as unequal rather than risk a false positive).
+    /// Conservatism for an unsupported node kind: two DISTINCT but structurally identical instances of a family the
+    /// comparer does not understand (here a block, an R2 family) must NOT be conflated - <c>AdditionOfEqualsElements</c>
+    /// must return <see langword="null"/>. Conditionals were the example before ETC R1c; they are compared structurally
+    /// since (C-04), and two identical pure conditionals are now factored.
     /// </summary>
     [TestMethod]
     public void UnsupportedNodeKind_DistinctInstances_AreNotConflated()
     {
         var simplifier = new ExpressionSimplifier();
         ParameterExpression test = Expression.Parameter(typeof(bool), "test");
-        Expression left = Expression.Multiply(Expression.Constant(2.0), Expression.Condition(test, Expression.Constant(1.0), Expression.Constant(2.0)));
-        Expression right = Expression.Multiply(Expression.Constant(3.0), Expression.Condition(test, Expression.Constant(1.0), Expression.Constant(2.0)));
+        Expression left = Expression.Multiply(Expression.Constant(2.0), Expression.Block(Expression.Condition(test, Expression.Constant(1.0), Expression.Constant(2.0))));
+        Expression right = Expression.Multiply(Expression.Constant(3.0), Expression.Block(Expression.Condition(test, Expression.Constant(1.0), Expression.Constant(2.0))));
 
         Expression? result = InvokeAdditionOfEqualsElements(simplifier, left, right);
 
         Assert.IsNull(result, "Two distinct, structurally-identical unsupported-node instances must not be conflated.");
+
+        Expression conditionalLeft = Expression.Multiply(Expression.Constant(2.0), Expression.Condition(test, Expression.Constant(1.0), Expression.Constant(2.0)));
+        Expression conditionalRight = Expression.Multiply(Expression.Constant(3.0), Expression.Condition(test, Expression.Constant(1.0), Expression.Constant(2.0)));
+        Assert.IsNotNull(InvokeAdditionOfEqualsElements(simplifier, conditionalLeft, conditionalRight), "Two identical pure conditionals are one term since R1c.");
     }
 
     // ------------------------------------------------------------------------------------------

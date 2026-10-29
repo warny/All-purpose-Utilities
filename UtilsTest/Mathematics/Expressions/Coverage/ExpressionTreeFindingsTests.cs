@@ -325,26 +325,40 @@ public class ExpressionTreeFindingsTests
     // ETC-06 / ETC-07: limited structural comparison and coarse unsupported hashing.
     // ------------------------------------------------------------------------------------------
 
-    /// <summary>ETC-06: two independently built, identical conditionals are conservatively unequal; the same instance is equal to itself.</summary>
+    /// <summary>
+    /// ETC-06, resolved for the scalar families by ETC R1c (C-04): two independently built, identical conditionals compared
+    /// unequal; they are now structurally equal. A family that is still unsupported (a block, R2) stays conservatively
+    /// unequal, and the same instance is equal to itself.
+    /// </summary>
     [TestMethod]
-    public void ETC06_Comparer_UnsupportedFamily_IsConservativelyUnequal()
+    public void ETC06_Comparer_ScalarFamilies_AreStructurallyEqual()
     {
         Expression first = ExpressionNodeCatalog.Get("Conditional").Build();
         Expression second = ExpressionNodeCatalog.Get("Conditional").Build();
+        Expression firstBlock = ExpressionNodeCatalog.Get("Block").Build();
+        Expression secondBlock = ExpressionNodeCatalog.Get("Block").Build();
 
-        Assert.IsFalse(ExpressionComparer.Default.Equals(first, second));
-        Assert.IsTrue(ExpressionComparer.Default.Equals(first, first));
+        Assert.IsTrue(ExpressionComparer.Default.Equals(first, second));
+        Assert.IsFalse(ExpressionComparer.Default.Equals(firstBlock, secondBlock));
+        Assert.IsTrue(ExpressionComparer.Default.Equals(firstBlock, firstBlock));
     }
 
-    /// <summary>ETC-07: unsupported nodes hash by node type and result type only, so different conditionals collide.</summary>
+    /// <summary>
+    /// ETC-07, resolved for the scalar families by ETC R1c: unsupported nodes hashed by node type and result type only, so
+    /// different conditionals collided. The hash now includes the children, so these two differ, while a still unsupported
+    /// family keeps the coarse hash.
+    /// </summary>
     [TestMethod]
-    public void ETC07_Comparer_UnsupportedFamily_HashIsCoarse()
+    public void ETC07_Comparer_ScalarFamilies_HashTheirChildren()
     {
         Expression first = Expression.Condition(Expression.GreaterThan(P, Expression.Constant(0.5)), Expression.Constant(1.5), Expression.Constant(2.5));
         Expression second = Expression.Condition(Expression.LessThan(P, Expression.Constant(7.5)), Expression.Constant(3.5), P);
+        Expression firstBlock = Expression.Block(Expression.Constant(1.5));
+        Expression secondBlock = Expression.Block(P);
 
         Assert.IsFalse(ExpressionComparer.Default.Equals(first, second));
-        Assert.AreEqual(ExpressionComparer.Default.GetHashCode(first), ExpressionComparer.Default.GetHashCode(second));
+        Assert.AreNotEqual(ExpressionComparer.Default.GetHashCode(first), ExpressionComparer.Default.GetHashCode(second));
+        Assert.AreEqual(ExpressionComparer.Default.GetHashCode(firstBlock), ExpressionComparer.Default.GetHashCode(secondBlock));
     }
 
     // ------------------------------------------------------------------------------------------

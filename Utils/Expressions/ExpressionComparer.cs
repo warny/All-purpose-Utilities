@@ -401,10 +401,81 @@ public class ExpressionComparer : IEqualityComparer<Expression>
             (MethodCallExpression xm, MethodCallExpression ym) => MethodCallsEqual(xm, ym, context),
             (MemberExpression xme, MemberExpression yme) => MemberEqual(xme, yme, context),
 
+            // ETC R1c (C-04): scalar families without binder. Node type and result type are already equal here.
+            (ConditionalExpression xco, ConditionalExpression yco) => ConditionalsEqual(xco, yco, context),
+            (InvocationExpression xi, InvocationExpression yi) => InvocationsEqual(xi, yi, context),
+            (TypeBinaryExpression xt, TypeBinaryExpression yt) => xt.TypeOperand == yt.TypeOperand && EqualsCore(xt.Expression, yt.Expression, context),
+            (DefaultExpression, DefaultExpression) => true,
+            (NewExpression xn, NewExpression yn) => CreationsEqual(xn, yn, context),
+            (NewArrayExpression xa, NewArrayExpression ya) => SequencesEqual(xa.Expressions, ya.Expressions, context),
+
             // Unsupported node kind: conservatively unequal, even for a shared/reused instance - see this
             // method's remarks on why no ReferenceEquals shortcut is used here.
             _ => false,
         };
+    }
+
+    /// <summary>Compares two <see cref="ConditionalExpression"/> nodes: test, then the two branches, in order (never swapped).</summary>
+    /// <param name="x">The first conditional.</param>
+    /// <param name="y">The second conditional.</param>
+    /// <param name="context">The active parameter binding context.</param>
+    /// <returns><see langword="true"/> if the conditionals are structurally equivalent.</returns>
+    private static bool ConditionalsEqual(ConditionalExpression x, ConditionalExpression y, ParameterBindingContext context)
+        => EqualsCore(x.Test, y.Test, context) && EqualsCore(x.IfTrue, y.IfTrue, context) && EqualsCore(x.IfFalse, y.IfFalse, context);
+
+    /// <summary>Compares two <see cref="InvocationExpression"/> nodes: the invoked expression, then the arguments in order. Nothing is invoked.</summary>
+    /// <param name="x">The first invocation.</param>
+    /// <param name="y">The second invocation.</param>
+    /// <param name="context">The active parameter binding context.</param>
+    /// <returns><see langword="true"/> if the invocations are structurally equivalent.</returns>
+    private static bool InvocationsEqual(InvocationExpression x, InvocationExpression y, ParameterBindingContext context)
+        => x.Arguments.Count == y.Arguments.Count && EqualsCore(x.Expression, y.Expression, context) && SequencesEqual(x.Arguments, y.Arguments, context);
+
+    /// <summary>
+    /// Compares two <see cref="NewExpression"/> nodes: the constructor (both <see langword="null"/> for a value-type default
+    /// creation), the arguments in order, then the <see cref="NewExpression.Members"/> (both absent, or the same members in the
+    /// same order). The constructor is never run.
+    /// </summary>
+    /// <param name="x">The first creation.</param>
+    /// <param name="y">The second creation.</param>
+    /// <param name="context">The active parameter binding context.</param>
+    /// <returns><see langword="true"/> if the creations are structurally equivalent.</returns>
+    private static bool CreationsEqual(NewExpression x, NewExpression y, ParameterBindingContext context)
+    {
+        if (!object.Equals(x.Constructor, y.Constructor) || !MembersEqual(x.Members, y.Members)) return false;
+        return SequencesEqual(x.Arguments, y.Arguments, context);
+    }
+
+    /// <summary>Compares two optional member lists of <see cref="NewExpression.Members"/>: both absent, or the same members in the same order.</summary>
+    /// <param name="x">The first list, or <see langword="null"/>.</param>
+    /// <param name="y">The second list, or <see langword="null"/>.</param>
+    /// <returns><see langword="true"/> if the lists are equal.</returns>
+    private static bool MembersEqual(IReadOnlyList<MemberInfo>? x, IReadOnlyList<MemberInfo>? y)
+    {
+        if (x is null || y is null) return x is null && y is null;
+        if (x.Count != y.Count) return false;
+        for (int i = 0; i < x.Count; i++)
+        {
+            if (!object.Equals(x[i], y[i])) return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>Compares two child lists element by element, in order, through <see cref="EqualsCore"/>.</summary>
+    /// <param name="x">The first list.</param>
+    /// <param name="y">The second list.</param>
+    /// <param name="context">The active parameter binding context.</param>
+    /// <returns><see langword="true"/> if both lists have the same length and pairwise equivalent elements.</returns>
+    private static bool SequencesEqual(IReadOnlyList<Expression> x, IReadOnlyList<Expression> y, ParameterBindingContext context)
+    {
+        if (x.Count != y.Count) return false;
+        for (int i = 0; i < x.Count; i++)
+        {
+            if (!EqualsCore(x[i], y[i], context)) return false;
+        }
+
+        return true;
     }
 
     /// <summary>Compares two <see cref="UnaryExpression"/> nodes: operator method, lifting flags, then the operand.</summary>
@@ -750,8 +821,61 @@ public class ExpressionComparer : IEqualityComparer<Expression>
             BinaryExpression be => HashBinary(be, scopes),
             MethodCallExpression mce => HashMethodCall(mce, scopes),
             MemberExpression me => HashMember(me, scopes),
+            ConditionalExpression ce => HashConditional(ce, scopes),
+            InvocationExpression ie => HashInvocation(ie, scopes),
+            TypeBinaryExpression tbe => HashCode.Combine(tbe.NodeType, tbe.Type, tbe.TypeOperand, Hash(tbe.Expression, scopes)),
+            DefaultExpression de => HashCode.Combine(ExpressionType.Default, de.Type),
+            NewExpression ne => HashNew(ne, scopes),
+            NewArrayExpression nae => HashSequence(HashCode.Combine(nae.NodeType, nae.Type), nae.Expressions, scopes),
             _ => HashUnsupported(e),
         };
+    }
+
+    /// <summary>Hashes a <see cref="ConditionalExpression"/>: result type, then test and branches in order.</summary>
+    /// <param name="ce">The conditional to hash.</param>
+    /// <param name="scopes">The active parameter scope stack.</param>
+    /// <returns>A hash code mirroring <see cref="ConditionalsEqual"/>.</returns>
+    private static int HashConditional(ConditionalExpression ce, ParameterScopeStack scopes)
+        => HashCode.Combine(ExpressionType.Conditional, ce.Type, Hash(ce.Test, scopes), Hash(ce.IfTrue, scopes), Hash(ce.IfFalse, scopes));
+
+    /// <summary>Hashes an <see cref="InvocationExpression"/>: result type, the invoked expression, then the arguments in order.</summary>
+    /// <param name="ie">The invocation to hash.</param>
+    /// <param name="scopes">The active parameter scope stack.</param>
+    /// <returns>A hash code mirroring <see cref="InvocationsEqual"/>.</returns>
+    private static int HashInvocation(InvocationExpression ie, ParameterScopeStack scopes)
+        => HashSequence(HashCode.Combine(ExpressionType.Invoke, ie.Type, Hash(ie.Expression, scopes)), ie.Arguments, scopes);
+
+    /// <summary>Hashes a <see cref="NewExpression"/>: result type, constructor, members in order, then the arguments in order.</summary>
+    /// <param name="ne">The creation to hash.</param>
+    /// <param name="scopes">The active parameter scope stack.</param>
+    /// <returns>A hash code mirroring <see cref="CreationsEqual"/>.</returns>
+    private static int HashNew(NewExpression ne, ParameterScopeStack scopes)
+    {
+        var hc = new HashCode();
+        hc.Add(ExpressionType.New);
+        hc.Add(ne.Type);
+        hc.Add(ne.Constructor);
+        hc.Add(ne.Members?.Count ?? -1);
+        if (ne.Members is not null)
+        {
+            foreach (MemberInfo member in ne.Members) hc.Add(member);
+        }
+
+        return HashSequence(hc.ToHashCode(), ne.Arguments, scopes);
+    }
+
+    /// <summary>Combines <paramref name="seed"/> with the count and the hashes of <paramref name="children"/>, in order.</summary>
+    /// <param name="seed">The hash of the node's own metadata.</param>
+    /// <param name="children">The children, hashed through <see cref="Hash"/>.</param>
+    /// <param name="scopes">The active parameter scope stack.</param>
+    /// <returns>The combined hash code.</returns>
+    private static int HashSequence(int seed, IReadOnlyList<Expression> children, ParameterScopeStack scopes)
+    {
+        var hc = new HashCode();
+        hc.Add(seed);
+        hc.Add(children.Count);
+        foreach (Expression child in children) hc.Add(Hash(child, scopes));
+        return hc.ToHashCode();
     }
 
     /// <summary>Hashes a <see cref="LambdaExpression"/>: metadata, parameter types, then the body under a pushed scope.</summary>
