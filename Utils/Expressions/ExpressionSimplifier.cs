@@ -443,51 +443,22 @@ namespace Utils.Mathematics.Expressions
         }
 
         /// <summary>
-        /// For the exact built-in <see cref="ExpressionSimplifier"/> runtime type, reconstructs a unary node
-        /// via <see cref="Expression.MakeUnary(ExpressionType, Expression, Type, System.Reflection.MethodInfo)"/>, preserving
-        /// <see cref="UnaryExpression.Method"/> and <see cref="Expression.Type"/> (notably a typed
-        /// <see cref="Expression.Throw(Expression, Type)"/>'s declared result type) instead of the
-        /// historical, metadata-dropping per-node-type factories. A derived <see cref="ExpressionSimplifier"/>
-        /// subclass keeps the historical <see cref="ExpressionTransformer"/> behavior unless it explicitly
-        /// overrides this itself, mirroring <see cref="FinalizeExpression"/>'s own exact-runtime-type guard.
-        /// </summary>
-        /// <param name="expression">The original unary expression being rebuilt.</param>
-        /// <param name="operand">The (already prepared) operand.</param>
-        /// <returns>A unary expression preserving the original node's metadata, for the exact built-in type; the historical reconstruction otherwise.</returns>
-        internal override UnaryExpression RebuildUnaryExpression(UnaryExpression expression, Expression operand)
-        {
-            if (GetType() != typeof(ExpressionSimplifier))
-            {
-                return base.RebuildUnaryExpression(expression, operand);
-            }
-
-            return (UnaryExpression)Expression.MakeUnary(expression.NodeType, operand, expression.Type, expression.Method);
-        }
-
-        /// <summary>
-        /// For the exact built-in <see cref="ExpressionSimplifier"/> runtime type, reconstructs a lambda
-        /// preserving its original <see cref="LambdaExpression.Type"/> (delegate type),
-        /// <see cref="LambdaExpression.Name"/>, and <see cref="LambdaExpression.TailCall"/>, at every nesting
-        /// depth (this method runs recursively, once per lambda encountered, on the same simplifier
-        /// instance). A derived <see cref="ExpressionSimplifier"/> subclass keeps the historical,
-        /// metadata-dropping <see cref="ExpressionTransformer"/> reconstruction unless it explicitly
-        /// overrides this itself.
+        /// Reconstructs a lambda preserving its original <see cref="LambdaExpression.Type"/> (delegate type),
+        /// <see cref="LambdaExpression.Name"/>, and <see cref="LambdaExpression.TailCall"/>, at every nesting depth, after
+        /// passing the body through <see cref="FoldNaNOperand"/>.
         /// </summary>
         /// <param name="expression">The original lambda expression being rebuilt.</param>
         /// <param name="body">The (already prepared/transformed) body.</param>
         /// <param name="parameters">The (already prepared) parameters, in declaration order.</param>
-        /// <returns>A lambda expression preserving the original node's metadata, for the exact built-in type; the historical reconstruction otherwise.</returns>
-        /// <remarks>The body, transformed without <see cref="PrepareExpression"/>, goes through <see cref="FoldNaNOperand"/> first (S5 P11b), for every runtime type.</remarks>
+        /// <returns>A lambda expression preserving the original node's metadata.</returns>
+        /// <remarks>
+        /// The body, transformed without <see cref="PrepareExpression"/>, goes through <see cref="FoldNaNOperand"/> first
+        /// (S5 P11b), for every runtime type. Since ETC R1b (C-01) the faithful reconstruction itself is the
+        /// <see cref="ExpressionTransformer"/> default, so a derived simplifier keeps the metadata too (it used to lose
+        /// them, ETC-05); the unary counterpart needs no override any more for the same reason.
+        /// </remarks>
         internal override LambdaExpression RebuildLambdaExpression(LambdaExpression expression, Expression body, ParameterExpression[] parameters)
-        {
-            body = FoldNaNOperand(body);
-            if (GetType() != typeof(ExpressionSimplifier))
-            {
-                return base.RebuildLambdaExpression(expression, body, parameters);
-            }
-
-            return Expression.Lambda(expression.Type, body, expression.Name, expression.TailCall, parameters);
-        }
+            => base.RebuildLambdaExpression(expression, FoldNaNOperand(body), parameters);
 
         #region Structural canonicalization (S4) — ambient lexical scope tracking
 

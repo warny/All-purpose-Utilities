@@ -265,52 +265,55 @@ public class ExpressionTreeFindingsTests
     // ------------------------------------------------------------------------------------------
 
     /// <summary>
-    /// ETC-04: the generic transformer and a derived simplifier drop an explicit unary operator method (changing the
-    /// computed value from 42 to -3), while the exact built-in simplifier preserves it.
+    /// ETC-04, resolved by ETC R1b (C-01): the generic transformer and a derived simplifier dropped an explicit unary operator
+    /// method (changing the computed value from 42 to -3); every transformer now keeps it, like the exact simplifier did.
     /// </summary>
     [TestMethod]
-    public void ETC04_CustomUnaryMethod_DroppedByGenericAndDerived_PreservedByExact()
+    public void ETC04_CustomUnaryMethod_PreservedByEveryTransformer()
     {
         UnaryExpression negate = Expression.Negate(Leaf(), CatalogHelpers.FortyTwoMethod);
 
-        Assert.IsNull(((UnaryExpression)new RecursiveTransformer().Transform(negate)).Method);
+        Assert.AreSame(CatalogHelpers.FortyTwoMethod, ((UnaryExpression)new RecursiveTransformer().Transform(negate)).Method);
         Expression derived = new DerivedSimplifier().Simplify(negate);
         Expression exact = new ExpressionSimplifier().Simplify(negate);
 
         Assert.AreEqual(42.0, Evaluate<double>(negate));
-        Assert.AreEqual(-3.0, Evaluate<double>(derived));
+        Assert.AreEqual(42.0, Evaluate<double>(derived));
         Assert.AreEqual(42.0, Evaluate<double>(exact));
     }
 
-    /// <summary>ETC-04: a typed <c>Throw</c> becomes <see cref="void"/> through the generic transformer and a derived simplifier.</summary>
+    /// <summary>ETC-04, resolved by ETC R1b (C-01): a typed <c>Throw</c> keeps its type through every transformer (it became <see cref="void"/> through the generic transformer and a derived simplifier).</summary>
     [TestMethod]
-    public void ETC04_TypedThrow_TypeDroppedByGenericAndDerived_PreservedByExact()
+    public void ETC04_TypedThrow_TypePreservedByEveryTransformer()
     {
         UnaryExpression typedThrow = Expression.Throw(Expression.Call(CatalogHelpers.MakeExceptionMethod, Leaf()), typeof(double));
 
-        Assert.AreEqual(typeof(void), new RecursiveTransformer().Transform(typedThrow).Type);
-        Assert.AreEqual(typeof(void), new DerivedSimplifier().Simplify(typedThrow).Type);
+        Assert.AreEqual(typeof(double), new RecursiveTransformer().Transform(typedThrow).Type);
+        Assert.AreEqual(typeof(double), new DerivedSimplifier().Simplify(typedThrow).Type);
         Assert.AreEqual(typeof(double), new ExpressionSimplifier().Simplify(typedThrow).Type);
     }
 
-    /// <summary>ETC-05: lambda delegate type, name and tail-call flag are lost by the generic transformer and a derived simplifier, preserved by the exact simplifier.</summary>
+    /// <summary>
+    /// ETC-05, resolved by ETC R1b (C-01): the lambda delegate type, name and tail-call flag, lost by the generic transformer
+    /// and a derived simplifier, are now preserved by every transformer.
+    /// </summary>
     [TestMethod]
-    public void ETC05_LambdaMetadata_DroppedByGenericAndDerived_PreservedByExact()
+    public void ETC05_LambdaMetadata_PreservedByEveryTransformer()
     {
         var lambda = (LambdaExpression)ExpressionNodeCatalog.Get("Lambda.Metadata").Build();
 
-        LambdaExpression[] lossyResults = [(LambdaExpression)new RecursiveTransformer().Transform(lambda), (LambdaExpression)new DerivedSimplifier().Simplify(lambda)];
-        foreach (LambdaExpression lossy in lossyResults)
+        LambdaExpression[] results =
+        [
+            (LambdaExpression)new RecursiveTransformer().Transform(lambda),
+            (LambdaExpression)new DerivedSimplifier().Simplify(lambda),
+            (LambdaExpression)new ExpressionSimplifier().Simplify(lambda),
+        ];
+        foreach (LambdaExpression result in results)
         {
-            Assert.AreEqual(typeof(Func<double, double>), lossy.Type);
-            Assert.IsNull(lossy.Name);
-            Assert.IsFalse(lossy.TailCall);
+            Assert.AreEqual(typeof(CatalogDelegate), result.Type);
+            Assert.AreEqual("named", result.Name);
+            Assert.IsTrue(result.TailCall);
         }
-
-        var exact = (LambdaExpression)new ExpressionSimplifier().Simplify(lambda);
-        Assert.AreEqual(typeof(CatalogDelegate), exact.Type);
-        Assert.AreEqual("named", exact.Name);
-        Assert.IsTrue(exact.TailCall);
     }
 
     // ------------------------------------------------------------------------------------------
