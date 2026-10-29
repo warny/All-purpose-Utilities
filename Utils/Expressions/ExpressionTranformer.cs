@@ -1026,17 +1026,16 @@ public abstract class ExpressionTransformer
     }
 
     /// <summary>
-    /// Rebuilds a <see cref="UnaryExpression"/> from its (already prepared) <paramref name="operand"/>.
-    /// The base implementation reproduces the historical <see cref="CopyUnaryExpression"/> reconstruction
-    /// (including its metadata-dropping quirks) unchanged.
+    /// Rebuilds a <see cref="UnaryExpression"/> from its (already prepared) <paramref name="operand"/>, preserving
+    /// <see cref="UnaryExpression.Method"/> and <see cref="Expression.Type"/> (see <see cref="CopyUnaryExpression"/>).
     /// </summary>
     /// <remarks>
     /// <c>internal virtual</c>, not <c>protected</c>: this is deliberately not a new public/protected
     /// extensibility point for third-party <see cref="ExpressionTransformer"/> subclasses (which live in
     /// other assemblies and therefore cannot see or override an <see langword="internal"/> member) — only
     /// same-assembly code such as <see cref="Utils.Mathematics.Expressions.ExpressionSimplifier"/> can
-    /// override it. See <see cref="Utils.Mathematics.Expressions.ExpressionSimplifier"/>'s override for the
-    /// metadata-faithful reconstruction used by the exact built-in simplifier type.
+    /// override it. Since ETC R1b (compatibility entry C-01) the faithful reconstruction is the default for every
+    /// transformer; before, only the exact built-in simplifier type rebuilt faithfully (ETC-04).
     /// </remarks>
     /// <param name="expression">The original unary expression being rebuilt.</param>
     /// <param name="operand">The (already prepared) operand.</param>
@@ -1246,23 +1245,23 @@ public abstract class ExpressionTransformer
 
     /// <summary>
     /// Rebuilds a <see cref="LambdaExpression"/> from its (already prepared) <paramref name="body"/> and
-    /// <paramref name="parameters"/>. The base implementation reproduces the historical
-    /// type-inferring <see cref="Expression.Lambda(Expression, ParameterExpression[])"/> reconstruction
-    /// unchanged, which does not preserve a custom delegate <see cref="LambdaExpression.Type"/>,
-    /// <see cref="LambdaExpression.TailCall"/>, or <see cref="LambdaExpression.Name"/>.
+    /// <paramref name="parameters"/>, preserving the delegate <see cref="LambdaExpression.Type"/>,
+    /// <see cref="LambdaExpression.Name"/> and <see cref="LambdaExpression.TailCall"/>.
     /// </summary>
     /// <remarks>
     /// <c>internal virtual</c> for the same reason as <see cref="RebuildUnaryExpression"/>: not a new
-    /// extensibility point for third-party subclasses. See
-    /// <see cref="Utils.Mathematics.Expressions.ExpressionSimplifier"/>'s override for the metadata-faithful
-    /// reconstruction used by the exact built-in simplifier type, at every nesting depth.
+    /// extensibility point for third-party subclasses. Since ETC R1b (compatibility entry C-01) this faithful
+    /// reconstruction is the default for every transformer, at every nesting depth; before, the base rebuilt with the
+    /// type-inferring <see cref="Expression.Lambda(Expression, ParameterExpression[])"/> (ETC-05) and only the exact
+    /// built-in simplifier type kept the metadata. A body whose type no longer fits the delegate is rejected by the
+    /// framework factory, instead of silently producing a lambda of another delegate type.
     /// </remarks>
     /// <param name="expression">The original lambda expression being rebuilt.</param>
     /// <param name="body">The (already prepared/transformed) body.</param>
     /// <param name="parameters">The (already prepared) parameters, in declaration order.</param>
-    /// <returns>A lambda expression with the supplied body and parameters.</returns>
+    /// <returns>A lambda expression with the supplied body and parameters and the original metadata.</returns>
     internal virtual LambdaExpression RebuildLambdaExpression(LambdaExpression expression, Expression body, ParameterExpression[] parameters)
-        => Expression.Lambda(body, parameters);
+        => Expression.Lambda(expression.Type, body, expression.Name, expression.TailCall, parameters);
 
     /// <summary>
     /// Prepares a <see cref="MemberExpression"/> (ETC R1b): the receiver of an instance member is prepared and the access
@@ -1890,56 +1889,25 @@ public abstract class ExpressionTransformer
     }
 
     /// <summary>
-    /// Rebuilds a <see cref="UnaryExpression"/> from its (already prepared) <paramref name="operand"/>,
-    /// dispatching on <paramref name="expression"/>'s <see cref="Expression.NodeType"/>.
+    /// Rebuilds a <see cref="UnaryExpression"/> from its (already prepared) <paramref name="operand"/>, preserving
+    /// <see cref="UnaryExpression.Method"/> and <see cref="Expression.Type"/>.
     /// </summary>
     /// <remarks>
-    /// Intentionally mirrors <see cref="CopyExpression"/>'s own <see cref="UnaryExpression"/> branches
-    /// case-for-case, rather than using a single generic
-    /// <see cref="Expression.MakeUnary(ExpressionType, Expression, Type, MethodInfo)"/> call: the
-    /// historical per-node-type factories used here (<see cref="Expression.Negate(Expression)"/>,
-    /// <see cref="Expression.Convert(Expression, Type)"/>, etc.) do not forward
-    /// <see cref="UnaryExpression.Method"/> the way <see cref="CopyBinaryExpression"/> forwards
-    /// <see cref="BinaryExpression.Method"/> via <see cref="Expression.MakeBinary(ExpressionType, Expression, Expression, bool, MethodInfo, LambdaExpression)"/>
-    /// — an explicit method on the original node is silently dropped, and a typed <c>Throw</c>'s declared
-    /// <see cref="Expression.Type"/> is likewise not reproduced (<see cref="Expression.Throw(Expression)"/>,
-    /// not the typed overload). Both are pre-existing, historical quirks of <see cref="CopyExpression"/>;
-    /// this helper exists purely to let <see cref="PrepareUnary"/> skip the params-array
-    /// <see cref="CopyExpression"/> overload's <see cref="Expression"/>[] allocation, not to change what
-    /// gets reconstructed — see the characterization tests in
-    /// <c>ExpressionTransformerUnaryLazyParametersTests</c> that pin this down against
-    /// <see cref="CopyExpression"/> as the behavioral oracle.
+    /// ETC R1b (compatibility entry C-01): uses <see cref="Expression.MakeUnary(ExpressionType, Expression, Type, MethodInfo)"/>,
+    /// as <see cref="CopyBinaryExpression"/> uses <c>MakeBinary</c>. Before R1b, the per-node-type factories
+    /// (<see cref="Expression.Negate(Expression)"/>, <see cref="Expression.Convert(Expression, Type)"/>, …) dropped an
+    /// explicit operator or conversion method, and <see cref="Expression.Throw(Expression)"/> turned a typed throw into a
+    /// <see langword="void"/> one (ETC-04); only the exact built-in simplifier rebuilt faithfully. The faithful rebuild is
+    /// now shared by <see cref="PrepareUnary"/> (through <see cref="RebuildUnaryExpression"/>), <see cref="CopyExpression"/>
+    /// and <see cref="ReplaceArgumentsCore"/>, for every transformer. <c>MakeUnary</c> ignores the type for the arithmetic
+    /// and logical operators, so their static type is computed from the operand exactly as the historical factories did;
+    /// for a lifted operator it lifts the method exactly as the original factory call did.
     /// </remarks>
-    /// <param name="expression">The original unary expression being copied.</param>
+    /// <param name="expression">The original unary expression being copied; never a rethrow (no operand).</param>
     /// <param name="operand">The (already prepared) operand.</param>
-    /// <returns>A unary expression with the same node type and (where reproduced) metadata but the supplied operand.</returns>
+    /// <returns>A unary expression with the same node type, method and type, and the supplied operand.</returns>
     private static UnaryExpression CopyUnaryExpression(UnaryExpression expression, Expression operand)
-    {
-        return expression.NodeType switch
-        {
-            ExpressionType.ArrayLength => Expression.ArrayLength(operand),
-            ExpressionType.Convert => Expression.Convert(operand, expression.Type),
-            ExpressionType.ConvertChecked => Expression.ConvertChecked(operand, expression.Type),
-            ExpressionType.Negate => Expression.Negate(operand),
-            ExpressionType.UnaryPlus => Expression.UnaryPlus(operand),
-            ExpressionType.NegateChecked => Expression.NegateChecked(operand),
-            ExpressionType.Not => Expression.Not(operand),
-            ExpressionType.Quote => Expression.Quote(operand),
-            ExpressionType.TypeAs => Expression.TypeAs(operand, expression.Type),
-            ExpressionType.Decrement => Expression.Decrement(operand),
-            ExpressionType.Increment => Expression.Increment(operand),
-            ExpressionType.Throw => Expression.Throw(operand),
-            ExpressionType.Unbox => Expression.Unbox(operand, expression.Type),
-            ExpressionType.PreIncrementAssign => Expression.PreIncrementAssign(operand),
-            ExpressionType.PreDecrementAssign => Expression.PreDecrementAssign(operand),
-            ExpressionType.PostIncrementAssign => Expression.PostIncrementAssign(operand),
-            ExpressionType.PostDecrementAssign => Expression.PostDecrementAssign(operand),
-            ExpressionType.OnesComplement => Expression.OnesComplement(operand),
-            ExpressionType.IsTrue => Expression.IsTrue(operand),
-            ExpressionType.IsFalse => Expression.IsFalse(operand),
-            _ => throw new NotSupportedException($"Expression type '{expression.NodeType}' is not supported."),
-        };
-    }
+        => (UnaryExpression)Expression.MakeUnary(expression.NodeType, operand, expression.Type, expression.Method);
 
     /// <summary>
     /// Creates a new expression of the same <see cref="ExpressionType"/> as <paramref name="e"/>,
@@ -1954,6 +1922,11 @@ public abstract class ExpressionTransformer
     /// list of the node's arity rebuilds it with its metadata (members, variables, result type, labels), and any other
     /// length throws <see cref="ArgumentException"/>. A rethrow (a <c>Throw</c> without operand) is returned
     /// unchanged. Other families keep their historical behavior.
+    /// <para>
+    /// ETC R1b: every unary node is rebuilt faithfully (operator method and type kept, C-01), and <c>MemberAccess</c>
+    /// follows the arity contract (one child for an instance member, none for a static member). New, NewArray, TypeBinary
+    /// and MemberAccess return the node itself when every supplied child is the instance it already holds.
+    /// </para>
     /// </remarks>
     /// <param name="e">The original expression to copy.</param>
     /// <param name="parameters">The sub-expressions to insert into the copied expression.</param>
@@ -1969,6 +1942,13 @@ public abstract class ExpressionTransformer
         if (e is BinaryExpression binaryExpr && parameters.Length >= 2)
         {
             return CopyBinaryExpression(binaryExpr, parameters[0], parameters[1]);
+        }
+
+        // Faithful unary rebuild (ETC R1b, C-01): keeps the operator method and a typed throw's type. A rethrow given no
+        // operand (an empty list or the [null] list a transformer passes for it) is kept by the Throw case below.
+        if (e is UnaryExpression unaryExpr && parameters.Length >= 1 && parameters[0] is not null)
+        {
+            return CopyUnaryExpression(unaryExpr, parameters[0]);
         }
 
         return e.NodeType switch
