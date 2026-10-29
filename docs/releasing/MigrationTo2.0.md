@@ -164,6 +164,39 @@ changed. The full record (decisions C-01, C-03, C-04, C-06, findings ETC-03 to E
   `Dictionary<Expression, …>`/`HashSet<Expression>`. Structural equality does not make two allocations or two calls
   interchangeable: the simplifier still keeps both.
 
+## Expression engine: binding scopes, control flow and capture-avoiding substitution (ETC R2)
+
+Behavior changes of `ExpressionTransformer`, `ExpressionSimplifier` and `ExpressionComparer`; no public signature changed.
+The full record is in `Utils/TODO-2026-10-27-etc-expression-tree-coverage-roadmap.md` (§5, §9 "R2 result").
+
+- **Newly traversed families (C-03 extended).** `Block`, `Try` (with its `CatchBlock`s), `Switch` (with its `SwitchCase`s),
+  `Loop`, `Goto` and `Label` are traversed and rebuilt with their metadata (variables and their identity, explicit result
+  type, handler test types and variables, filters, finally versus fault, comparison method, case and test order, label
+  targets — never recreated —, jump kinds); `RuntimeVariables` keeps its variables (they must stay parameters) and
+  `DebugInfo` is an explicit leaf. A `PrepareExpression` override is called on block and catch variables (which must stay
+  `ParameterExpression`s, as lambda parameters already had to, otherwise `InvalidCastException`) and on every child, in
+  structural order; rules declared on those node types receive the documented positional children, and
+  `FinalizeExpression` receives them too. Block and catch bodies go through `PrepareExpression`, not the direct lambda-body
+  descent, so a transformer whose `PrepareExpression` is the identity leaves them as they are. `CopyExpression` applies its
+  arity contract to `Try`, `Switch`, `Goto`, `Label`, `RuntimeVariables` and `DebugInfo` (an explicit list of the wrong
+  length throws `ArgumentException`).
+- **Capture-avoiding substitution (ETC-03).** `ReplaceArguments` now replaces free occurrences inside nested lambdas,
+  conversion lambdas, blocks, catch handlers, switches, loops, jumps and labels. A binder redeclaring a replaced parameter
+  hides it; a binder declaration that a replacement would capture is renamed to a fresh parameter (same type, by-reference
+  flag and name). Replacing a runtime variable by anything but another parameter throws `NotSupportedException` (C-07). A
+  quoted expression is still never entered (C-05 pending).
+- **Invocation inlining.** Lambda invocations whose bodies contain nested lambdas, blocks, catch handlers or switches can be
+  inlined when the analysis proves it safe (same argument eligibility as before: constants, defaults and parameter reads);
+  a variable argument read inside a nested closure, after an effect, or bodies with loops, jumps, labels, runtime variables
+  or quotes still keep the invocation.
+- **Structural equality and hashing.** `ExpressionComparer` compares the families above with a lexical binding model:
+  block and catch variables are bound by position (alpha-equivalence), labels by a bijection per lambda body (names never
+  count); debug information is not semantic. Two such trees, always unequal before unless they were the same instance, can
+  now be equal keys of a `Dictionary<Expression, …>`/`HashSet<Expression>`. Structural equality still does not make two
+  blocks, tries, switches or loops interchangeable: the simplifier treats them as observable and keeps every evaluation.
+- **Canonical ordering.** Block and catch variables are bound scopes for the simplifier's canonical ordering, so block-local
+  terms are ordered by binding position (for example `{ u = …; v = …; v + u }` now simplifies its last statement to `u + v`).
+
 <a id="omy-utils-fonts-2"></a>
 ## Utils.Fonts hostile-font parsing hardening
 
