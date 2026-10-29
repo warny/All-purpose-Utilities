@@ -343,11 +343,6 @@ public class ExpressionSimplifierStructuralCanonicalizationTests
         }
     }
 
-    /// <summary>Test-only static method accepting an opaque <see cref="object"/> argument, used to embed a <see cref="HostileConstant"/> as a method-call argument participating in additive grouping.</summary>
-    /// <param name="value">An arbitrary opaque value, ignored.</param>
-    /// <returns>A constant, arbitrary result.</returns>
-    private static double IdentityFromObject(object value) => 1.0;
-
     /// <summary>
     /// Two additive terms embedding the SAME <see cref="HostileConstant"/> instance as a method-call
     /// argument force a hash collision in the grouping equality comparer's internal bucketing (since a safe
@@ -362,11 +357,9 @@ public class ExpressionSimplifierStructuralCanonicalizationTests
         var simplifier = new ExpressionSimplifier();
         var hostile = new HostileConstant();
         ParameterExpression x = Expression.Parameter(typeof(double), "x");
-        MethodInfo identity = typeof(ExpressionSimplifierStructuralCanonicalizationTests).GetMethod(
-            nameof(IdentityFromObject), BindingFlags.NonPublic | BindingFlags.Static)!;
 
-        MethodCallExpression term1 = Expression.Call(identity, Expression.Constant(hostile, typeof(object)));
-        MethodCallExpression term2 = Expression.Call(identity, Expression.Constant(hostile, typeof(object)));
+        Expression term1 = SafeCarrier(Expression.Constant(hostile, typeof(object)));
+        Expression term2 = SafeCarrier(Expression.Constant(hostile, typeof(object)));
 
         // Deliberately NOT Add(term1, term2) directly: that shape also reaches the pre-existing,
         // S4-unrelated AdditionOfEqualsElements factoring rule, which calls the PUBLIC (non-safe)
@@ -468,12 +461,19 @@ public class ExpressionSimplifierStructuralCanonicalizationTests
     /// <see cref="ExpressionComparer.Default"/>, which re-simplifies both sides and could mask a
     /// first-pass canonicalization defect — the exact pitfall identified during the S4 audit).
     /// </summary>
+    /// <remarks>
+    /// Since ETC R1b (C-06) the user methods <see cref="MathVariantA.Compute(double)"/>/<see cref="MathVariantB.Compute(double)"/>
+    /// are not proven free of effects, so a sum of their calls keeps its source order (checked by
+    /// <see cref="ExactMethodCallIdentity_UserMethods_KeepSourceOrder"/>). This scenario uses the allow-listed pure functions
+    /// <see cref="Math.Sin(double)"/> and <see cref="double.Sin(double)"/>, which share their name and signature and differ
+    /// only by their declaring type, exactly like the two user methods.
+    /// </remarks>
     [TestMethod]
     public void ExactMethodCallIdentity_SameNameDifferentDeclaringType_IsDistinguishedAndOrderIsSymmetric()
     {
         var simplifier = new ExpressionSimplifier();
-        MethodInfo computeA = typeof(MathVariantA).GetMethod(nameof(MathVariantA.Compute))!;
-        MethodInfo computeB = typeof(MathVariantB).GetMethod(nameof(MathVariantB.Compute))!;
+        MethodInfo computeA = typeof(Math).GetMethod(nameof(Math.Sin), [typeof(double)])!;
+        MethodInfo computeB = typeof(double).GetMethod(nameof(double.Sin), BindingFlags.Public | BindingFlags.Static, [typeof(double)])!;
 
         ParameterExpression x = Expression.Parameter(typeof(double), "x");
         ParameterExpression y = Expression.Parameter(typeof(double), "y");
@@ -497,6 +497,34 @@ public class ExpressionSimplifierStructuralCanonicalizationTests
         Assert.AreEqual(leftMethodForward, leftMethodBackward, "Regardless of source order, the same method must end up on the Left in both results.");
         Assert.AreEqual(rightMethodForward, rightMethodBackward, "Regardless of source order, the same method must end up on the Right in both results.");
         CollectionAssert.AreEquivalent(new[] { computeA, computeB }, new[] { leftMethodForward, rightMethodForward }, "Both exact methods must survive, never merged or dropped.");
+    }
+
+    /// <summary>
+    /// The user-method counterpart of <see cref="ExactMethodCallIdentity_SameNameDifferentDeclaringType_IsDistinguishedAndOrderIsSymmetric"/>
+    /// (ETC R1b, C-06): the canonical key still distinguishes and orders the two methods deterministically, but the
+    /// simplifier no longer moves the calls, which are not proven free of effects: each result keeps its source order, and
+    /// both calls survive once.
+    /// </summary>
+    [TestMethod]
+    public void ExactMethodCallIdentity_UserMethods_KeepSourceOrder()
+    {
+        var simplifier = new ExpressionSimplifier();
+        MethodInfo computeA = typeof(MathVariantA).GetMethod(nameof(MathVariantA.Compute))!;
+        MethodInfo computeB = typeof(MathVariantB).GetMethod(nameof(MathVariantB.Compute))!;
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+        ParameterExpression y = Expression.Parameter(typeof(double), "y");
+
+        Assert.AreEqual(-Math.Sign(ExpressionCanonicalOrder.Compare(Expression.Call(computeA, x), Expression.Call(computeB, x), [])),
+            Math.Sign(ExpressionCanonicalOrder.Compare(Expression.Call(computeB, x), Expression.Call(computeA, x), [])));
+        Assert.AreNotEqual(0, ExpressionCanonicalOrder.Compare(Expression.Call(computeA, x), Expression.Call(computeB, x), []));
+
+        foreach ((MethodInfo first, MethodInfo second) in new[] { (computeA, computeB), (computeB, computeA) })
+        {
+            var source = Expression.Lambda<Func<double, double, double>>(Expression.Add(Expression.Call(first, x), Expression.Call(second, y)), x, y);
+            var body = (BinaryExpression)((LambdaExpression)simplifier.Simplify(source)).Body;
+            Assert.AreSame(first, ((MethodCallExpression)body.Left).Method);
+            Assert.AreSame(second, ((MethodCallExpression)body.Right).Method);
+        }
     }
 
     // ------------------------------------------------------------------------------------------
@@ -815,16 +843,6 @@ public class ExpressionSimplifierStructuralCanonicalizationTests
     // participate in the deterministic complete ORDER key, not fall back to a tie.
     // ------------------------------------------------------------------------------------------
 
-    /// <summary>Test-only method distinguishing its result by a <see cref="bool"/> constant argument, used to prove <see cref="bool"/> constants order deterministically.</summary>
-    /// <param name="value">The argument.</param>
-    /// <returns>1.0 for <see langword="true"/>, 0.0 for <see langword="false"/>.</returns>
-    private static double FromBool(bool value) => value ? 1.0 : 0.0;
-
-    /// <summary>Test-only method distinguishing its result by a <see cref="char"/> constant argument, used to prove <see cref="char"/> constants order deterministically.</summary>
-    /// <param name="value">The argument.</param>
-    /// <returns>The character's numeric code point.</returns>
-    private static double FromChar(char value) => value;
-
     /// <summary>Test-only enum with two members, used to prove enum constants order deterministically.</summary>
     private enum SampleColor
     {
@@ -835,15 +853,35 @@ public class ExpressionSimplifierStructuralCanonicalizationTests
         Blue,
     }
 
-    /// <summary>Test-only method distinguishing its result by a <see cref="SampleColor"/> constant argument, used to prove enum constants order deterministically.</summary>
-    /// <param name="value">The argument.</param>
-    /// <returns>The member's underlying numeric value.</returns>
-    private static double FromColor(SampleColor value) => (int)value;
+    /// <summary>The allow-listed <see cref="Math.Truncate(double)"/> function used by <see cref="SafeCarrier"/>.</summary>
+    private static readonly MethodInfo TruncateMethod = typeof(Math).GetMethod(nameof(Math.Truncate), [typeof(double)])!;
 
-    /// <summary>Extracts the single constant argument's boxed value from a method-call additive term.</summary>
-    /// <param name="callTerm">A <see cref="MethodCallExpression"/> with exactly one <see cref="ConstantExpression"/> argument.</param>
-    /// <returns>The argument's boxed value.</returns>
-    private static object ConstantArgumentOf(Expression callTerm) => ((ConstantExpression)((MethodCallExpression)callTerm).Arguments[0]).Value!;
+    /// <summary>
+    /// Embeds <paramref name="constant"/> in the inert term <c>Math.Truncate((constant as double?) ?? 1.0)</c> (ETC R1b). These
+    /// scenarios used test-local user methods (<c>FromBool(constant)</c>, <c>IdentityFromObject(constant)</c>, …) as carriers;
+    /// since R1b (C-06) a user method is not proven free of effects, so its terms keep their source order and the canonical
+    /// order these tests observe would never be applied. A constant declared with a value type is declared as
+    /// <see cref="object"/> instead (its runtime type, which the canonical key compares, is unchanged), so the carrier
+    /// does not box at evaluation.
+    /// </summary>
+    /// <param name="constant">The constant to embed.</param>
+    /// <returns>The carrier term, which evaluates to <c>1.0</c>.</returns>
+    private static Expression SafeCarrier(ConstantExpression constant)
+    {
+        ConstantExpression declared = constant.Type.IsValueType ? Expression.Constant(constant.Value, typeof(object)) : constant;
+        return Expression.Call(TruncateMethod, Expression.Coalesce(Expression.TypeAs(declared, typeof(double?)), Expression.Constant(1.0)));
+    }
+
+    /// <summary>Extracts the constant embedded by <see cref="SafeCarrier"/> in an additive term.</summary>
+    /// <param name="carrierTerm">A term built by <see cref="SafeCarrier"/>.</param>
+    /// <returns>The embedded constant.</returns>
+    private static ConstantExpression CarriedConstant(Expression carrierTerm)
+        => (ConstantExpression)((UnaryExpression)((BinaryExpression)((MethodCallExpression)carrierTerm).Arguments[0]).Left).Operand;
+
+    /// <summary>Extracts the boxed value of the constant embedded by <see cref="SafeCarrier"/> in an additive term.</summary>
+    /// <param name="callTerm">A term built by <see cref="SafeCarrier"/>.</param>
+    /// <returns>The constant's boxed value.</returns>
+    private static object ConstantArgumentOf(Expression callTerm) => CarriedConstant(callTerm).Value!;
 
     /// <summary>
     /// Two additive terms differing only by a <see cref="bool"/> constant argument must canonicalize to the
@@ -855,12 +893,11 @@ public class ExpressionSimplifierStructuralCanonicalizationTests
     public void ConstantOrdering_BoolConstants_CanonicalizeDeterministicallyRegardlessOfSourceOrder()
     {
         var simplifier = new ExpressionSimplifier();
-        MethodInfo fromBool = typeof(ExpressionSimplifierStructuralCanonicalizationTests).GetMethod(nameof(FromBool), BindingFlags.NonPublic | BindingFlags.Static)!;
 
         var sourceForward = Expression.Lambda<Func<double>>(
-            Expression.Add(Expression.Call(fromBool, Expression.Constant(false)), Expression.Call(fromBool, Expression.Constant(true))));
+            Expression.Add(SafeCarrier(Expression.Constant(false)), SafeCarrier(Expression.Constant(true))));
         var sourceBackward = Expression.Lambda<Func<double>>(
-            Expression.Add(Expression.Call(fromBool, Expression.Constant(true)), Expression.Call(fromBool, Expression.Constant(false))));
+            Expression.Add(SafeCarrier(Expression.Constant(true)), SafeCarrier(Expression.Constant(false))));
 
         var resultForward = (LambdaExpression)simplifier.Simplify(sourceForward);
         var resultBackward = (LambdaExpression)simplifier.Simplify(sourceBackward);
@@ -878,12 +915,11 @@ public class ExpressionSimplifierStructuralCanonicalizationTests
     public void ConstantOrdering_CharConstants_CanonicalizeDeterministicallyRegardlessOfSourceOrder()
     {
         var simplifier = new ExpressionSimplifier();
-        MethodInfo fromChar = typeof(ExpressionSimplifierStructuralCanonicalizationTests).GetMethod(nameof(FromChar), BindingFlags.NonPublic | BindingFlags.Static)!;
 
         var sourceForward = Expression.Lambda<Func<double>>(
-            Expression.Add(Expression.Call(fromChar, Expression.Constant('a')), Expression.Call(fromChar, Expression.Constant('b'))));
+            Expression.Add(SafeCarrier(Expression.Constant('a')), SafeCarrier(Expression.Constant('b'))));
         var sourceBackward = Expression.Lambda<Func<double>>(
-            Expression.Add(Expression.Call(fromChar, Expression.Constant('b')), Expression.Call(fromChar, Expression.Constant('a'))));
+            Expression.Add(SafeCarrier(Expression.Constant('b')), SafeCarrier(Expression.Constant('a'))));
 
         var resultForward = (LambdaExpression)simplifier.Simplify(sourceForward);
         var resultBackward = (LambdaExpression)simplifier.Simplify(sourceBackward);
@@ -901,12 +937,11 @@ public class ExpressionSimplifierStructuralCanonicalizationTests
     public void ConstantOrdering_EnumConstants_CanonicalizeDeterministicallyRegardlessOfSourceOrder()
     {
         var simplifier = new ExpressionSimplifier();
-        MethodInfo fromColor = typeof(ExpressionSimplifierStructuralCanonicalizationTests).GetMethod(nameof(FromColor), BindingFlags.NonPublic | BindingFlags.Static)!;
 
         var sourceForward = Expression.Lambda<Func<double>>(
-            Expression.Add(Expression.Call(fromColor, Expression.Constant(SampleColor.Red)), Expression.Call(fromColor, Expression.Constant(SampleColor.Blue))));
+            Expression.Add(SafeCarrier(Expression.Constant(SampleColor.Red)), SafeCarrier(Expression.Constant(SampleColor.Blue))));
         var sourceBackward = Expression.Lambda<Func<double>>(
-            Expression.Add(Expression.Call(fromColor, Expression.Constant(SampleColor.Blue)), Expression.Call(fromColor, Expression.Constant(SampleColor.Red))));
+            Expression.Add(SafeCarrier(Expression.Constant(SampleColor.Blue)), SafeCarrier(Expression.Constant(SampleColor.Red))));
 
         var resultForward = (LambdaExpression)simplifier.Simplify(sourceForward);
         var resultBackward = (LambdaExpression)simplifier.Simplify(sourceBackward);
@@ -928,11 +963,6 @@ public class ExpressionSimplifierStructuralCanonicalizationTests
     // the latter).
     // ------------------------------------------------------------------------------------------
 
-    /// <summary>Test-only method accepting an opaque <see cref="object"/> argument, used to embed differently-typed constants declared as <see cref="object"/>.</summary>
-    /// <param name="value">An arbitrary opaque value, ignored beyond ordering.</param>
-    /// <returns>A constant, arbitrary result.</returns>
-    private static double FromObjectConstant(object value) => 1.0;
-
     /// <summary>
     /// Two additive terms whose constant arguments are individually known-safe (<see cref="bool"/> and
     /// <see cref="string"/>) but declared as <see cref="object"/> — so <see cref="ConstantExpression.Type"/>
@@ -943,16 +973,15 @@ public class ExpressionSimplifierStructuralCanonicalizationTests
     public void ConstantOrdering_DifferentSafeRuntimeTypesDeclaredAsObject_CanonicalizeDeterministically()
     {
         var simplifier = new ExpressionSimplifier();
-        MethodInfo fromObject = typeof(ExpressionSimplifierStructuralCanonicalizationTests).GetMethod(nameof(FromObjectConstant), BindingFlags.NonPublic | BindingFlags.Static)!;
 
         var sourceForward = Expression.Lambda<Func<double>>(
             Expression.Add(
-                Expression.Call(fromObject, Expression.Constant(false, typeof(object))),
-                Expression.Call(fromObject, Expression.Constant("x", typeof(object)))));
+                SafeCarrier(Expression.Constant(false, typeof(object))),
+                SafeCarrier(Expression.Constant("x", typeof(object)))));
         var sourceBackward = Expression.Lambda<Func<double>>(
             Expression.Add(
-                Expression.Call(fromObject, Expression.Constant("x", typeof(object))),
-                Expression.Call(fromObject, Expression.Constant(false, typeof(object)))));
+                SafeCarrier(Expression.Constant("x", typeof(object))),
+                SafeCarrier(Expression.Constant(false, typeof(object)))));
 
         var resultForward = (LambdaExpression)simplifier.Simplify(sourceForward);
         var resultBackward = (LambdaExpression)simplifier.Simplify(sourceBackward);
@@ -974,16 +1003,15 @@ public class ExpressionSimplifierStructuralCanonicalizationTests
     public void ConstantOrdering_BoxedNumericConstantsDeclaredAsObject_CanonicalizeDeterministically()
     {
         var simplifier = new ExpressionSimplifier();
-        MethodInfo fromObject = typeof(ExpressionSimplifierStructuralCanonicalizationTests).GetMethod(nameof(FromObjectConstant), BindingFlags.NonPublic | BindingFlags.Static)!;
 
         var sourceForward = Expression.Lambda<Func<double>>(
             Expression.Add(
-                Expression.Call(fromObject, Expression.Constant(1, typeof(object))),
-                Expression.Call(fromObject, Expression.Constant(2, typeof(object)))));
+                SafeCarrier(Expression.Constant(1, typeof(object))),
+                SafeCarrier(Expression.Constant(2, typeof(object)))));
         var sourceBackward = Expression.Lambda<Func<double>>(
             Expression.Add(
-                Expression.Call(fromObject, Expression.Constant(2, typeof(object))),
-                Expression.Call(fromObject, Expression.Constant(1, typeof(object)))));
+                SafeCarrier(Expression.Constant(2, typeof(object))),
+                SafeCarrier(Expression.Constant(1, typeof(object)))));
 
         var resultForward = (LambdaExpression)simplifier.Simplify(sourceForward);
         var resultBackward = (LambdaExpression)simplifier.Simplify(sourceBackward);
@@ -1157,16 +1185,14 @@ public class ExpressionSimplifierStructuralCanonicalizationTests
         ParameterExpression p1 = Expression.Parameter(typeof(double), "p1");
         var probe = new ReentrantScopeProbe(p0, p1);
 
-        MethodInfo identity = typeof(ExpressionSimplifierStructuralCanonicalizationTests).GetMethod(
-            nameof(IdentityFromObject), BindingFlags.NonPublic | BindingFlags.Static)!;
 
         // Add(term1, term2), inside a lambda binding p0/p1 (so [p0, p1] is on the ambient stack while this
         // Add node is processed), reaches the pre-existing AdditionOfEqualsElements factoring rule - see
         // HostileConstantArgument_InAdditiveGrouping_NeverCallsUserEqualsOrGetHashCode's comment for why this
         // exact shape reaches ExpressionComparer.Default.Equals(term1, term2) - which, being the PUBLIC
         // (non-safe) comparer, calls probe.Equals(probe) while that outer scope frame is still open.
-        MethodCallExpression term1 = Expression.Call(identity, Expression.Constant(probe, typeof(object)));
-        MethodCallExpression term2 = Expression.Call(identity, Expression.Constant(probe, typeof(object)));
+        Expression term1 = SafeCarrier(Expression.Constant(probe, typeof(object)));
+        Expression term2 = SafeCarrier(Expression.Constant(probe, typeof(object)));
         var outer = Expression.Lambda<Func<double, double, double>>(Expression.Add(term1, term2), p0, p1);
 
         simplifier.Simplify(outer);
@@ -1179,11 +1205,6 @@ public class ExpressionSimplifierStructuralCanonicalizationTests
         Assert.IsTrue(ReferenceEquals(p1, probe.NestedResult.Left));
         Assert.IsTrue(ReferenceEquals(p0, probe.NestedResult.Right));
     }
-
-    /// <summary>Test-only method accepting an opaque <see cref="object"/> argument, used to embed differently-runtime-typed boxed numeric constants declared as <see cref="object"/>.</summary>
-    /// <param name="value">An arbitrary opaque value, ignored beyond ordering.</param>
-    /// <returns>A constant, arbitrary result.</returns>
-    private static double FromObjectNumericConstant(object value) => 1.0;
 
     /// <summary>
     /// Two boxed numeric constants declared as <see cref="object"/> whose exact mathematical values are EQUAL
@@ -1199,16 +1220,15 @@ public class ExpressionSimplifierStructuralCanonicalizationTests
     public void ConstantOrdering_BoxedNumericConstantsDeclaredAsObjectWithDifferentRuntimeTypes_CanonicalizeDeterministically()
     {
         var simplifier = new ExpressionSimplifier();
-        MethodInfo fromObject = typeof(ExpressionSimplifierStructuralCanonicalizationTests).GetMethod(nameof(FromObjectNumericConstant), BindingFlags.NonPublic | BindingFlags.Static)!;
 
         var sourceForward = Expression.Lambda<Func<double>>(
             Expression.Add(
-                Expression.Call(fromObject, Expression.Constant(1, typeof(object))),
-                Expression.Call(fromObject, Expression.Constant(1.0, typeof(object)))));
+                SafeCarrier(Expression.Constant(1, typeof(object))),
+                SafeCarrier(Expression.Constant(1.0, typeof(object)))));
         var sourceBackward = Expression.Lambda<Func<double>>(
             Expression.Add(
-                Expression.Call(fromObject, Expression.Constant(1.0, typeof(object))),
-                Expression.Call(fromObject, Expression.Constant(1, typeof(object)))));
+                SafeCarrier(Expression.Constant(1.0, typeof(object))),
+                SafeCarrier(Expression.Constant(1, typeof(object)))));
 
         var resultForward = (LambdaExpression)simplifier.Simplify(sourceForward);
         var resultBackward = (LambdaExpression)simplifier.Simplify(sourceBackward);
@@ -1226,7 +1246,7 @@ public class ExpressionSimplifierStructuralCanonicalizationTests
     /// <summary>Returns the <see cref="ConstantExpression.Type"/> (the DECLARED type, as opposed to <see cref="ConstantArgumentOf"/>'s boxed-value RUNTIME type) of a method-call term's sole constant argument.</summary>
     /// <param name="callTerm">The <see cref="MethodCallExpression"/> whose single argument to inspect.</param>
     /// <returns>The argument constant's declared <see cref="Type"/>.</returns>
-    private static Type ConstantDeclaredTypeOf(Expression callTerm) => ((ConstantExpression)((MethodCallExpression)callTerm).Arguments[0]).Type;
+    private static Type ConstantDeclaredTypeOf(Expression callTerm) => CarriedConstant(callTerm).Type;
 
     /// <summary>
     /// Two constants with the EXACT SAME numeric value AND the SAME boxed RUNTIME type, but DIFFERENT
@@ -1244,16 +1264,15 @@ public class ExpressionSimplifierStructuralCanonicalizationTests
     public void ConstantOrdering_EqualNumericValueSameRuntimeTypeDifferentDeclaredTypes_CanonicalizesDeterministically()
     {
         var simplifier = new ExpressionSimplifier();
-        MethodInfo fromObject = typeof(ExpressionSimplifierStructuralCanonicalizationTests).GetMethod(nameof(FromObjectNumericConstant), BindingFlags.NonPublic | BindingFlags.Static)!;
 
         var sourceForward = Expression.Lambda<Func<double>>(
             Expression.Add(
-                Expression.Call(fromObject, Expression.Constant(1.0, typeof(object))),
-                Expression.Call(fromObject, Expression.Constant(1.0, typeof(IConvertible)))));
+                SafeCarrier(Expression.Constant(1.0, typeof(object))),
+                SafeCarrier(Expression.Constant(1.0, typeof(IConvertible)))));
         var sourceBackward = Expression.Lambda<Func<double>>(
             Expression.Add(
-                Expression.Call(fromObject, Expression.Constant(1.0, typeof(IConvertible))),
-                Expression.Call(fromObject, Expression.Constant(1.0, typeof(object)))));
+                SafeCarrier(Expression.Constant(1.0, typeof(IConvertible))),
+                SafeCarrier(Expression.Constant(1.0, typeof(object)))));
 
         var resultForward = (LambdaExpression)simplifier.Simplify(sourceForward);
         var resultBackward = (LambdaExpression)simplifier.Simplify(sourceBackward);
@@ -1346,7 +1365,6 @@ public class ExpressionSimplifierStructuralCanonicalizationTests
     [TestMethod]
     public void ConstantOrdering_SameDeclaredTypeDistinctlyBoxedEqualNumericConstants_PublicComparerStillAgrees()
     {
-        MethodInfo fromObject = typeof(ExpressionSimplifierStructuralCanonicalizationTests).GetMethod(nameof(FromObjectNumericConstant), BindingFlags.NonPublic | BindingFlags.Static)!;
 
         object boxA = 1.0;
         object boxB = 1.0;
@@ -1354,12 +1372,12 @@ public class ExpressionSimplifierStructuralCanonicalizationTests
 
         var sourceForward = Expression.Lambda<Func<double>>(
             Expression.Add(
-                Expression.Call(fromObject, Expression.Constant(boxA, typeof(object))),
-                Expression.Call(fromObject, Expression.Constant(boxB, typeof(object)))));
+                SafeCarrier(Expression.Constant(boxA, typeof(object))),
+                SafeCarrier(Expression.Constant(boxB, typeof(object)))));
         var sourceBackward = Expression.Lambda<Func<double>>(
             Expression.Add(
-                Expression.Call(fromObject, Expression.Constant(boxB, typeof(object))),
-                Expression.Call(fromObject, Expression.Constant(boxA, typeof(object)))));
+                SafeCarrier(Expression.Constant(boxB, typeof(object))),
+                SafeCarrier(Expression.Constant(boxA, typeof(object)))));
 
         Assert.IsTrue(ExpressionComparer.Default.Equals(sourceForward, sourceBackward));
         Assert.AreEqual(ExpressionComparer.Default.GetHashCode(sourceForward), ExpressionComparer.Default.GetHashCode(sourceBackward));

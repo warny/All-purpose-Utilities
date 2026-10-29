@@ -177,26 +177,29 @@ public class ExpressionTransformerReplaceArgumentsTests
     }
 
     // ------------------------------------------------------------------------------------------
-    // G: unsupported node type containing a replaceable parameter — must not be traversed.
+    // G: member access — traversed since ETC R1b; a family without a branch is still left untouched.
     // ------------------------------------------------------------------------------------------
 
     /// <summary>
-    /// <see cref="MemberExpression"/> has no dedicated branch in <c>ReplaceArguments</c>, so it (and
-    /// its child referencing the parameter) must be returned completely untouched. Migrating to an
-    /// <see cref="ExpressionVisitor"/> would silently start rewriting this — that is explicitly out
-    /// of scope for this optimization.
+    /// <see cref="MemberExpression"/> had no dedicated branch in <c>ReplaceArguments</c>, so its receiver was left
+    /// untouched (ETC-10/ETC-03). Since ETC R1b the receiver is substituted and the member kept; a family that still has no
+    /// branch (here a block, an R2 family) is returned completely untouched.
     /// </summary>
     [TestMethod]
-    public void ReplaceArguments_UnsupportedMemberExpression_IsNotTraversed()
+    public void ReplaceArguments_MemberExpression_SubstitutesReceiverAndKeepsMember()
     {
         var transformer = new ExposedTransformer();
         ParameterExpression p = Expression.Parameter(typeof(string), "p");
         MemberExpression member = Expression.Property(p, nameof(string.Length));
+        BlockExpression block = Expression.Block(member);
 
-        Expression result = transformer.ExposeReplaceArguments(member, [p], [Expression.Constant("hello")]);
+        var result = (MemberExpression)transformer.ExposeReplaceArguments(member, [p], [Expression.Constant("hello")]);
+        Expression untouched = transformer.ExposeReplaceArguments(block, [p], [Expression.Constant("hello")]);
 
-        Assert.AreSame(member, result);
-        Assert.AreSame(p, ((MemberExpression)result).Expression);
+        Assert.AreSame(member.Member, result.Member);
+        Assert.AreEqual("hello", ((ConstantExpression)result.Expression!).Value);
+        Assert.AreEqual(5, Expression.Lambda<Func<int>>(result).Compile()());
+        Assert.AreSame(block, untouched);
     }
 
     // ------------------------------------------------------------------------------------------

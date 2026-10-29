@@ -235,7 +235,8 @@ public class ExpressionResourceLimitsTests
 
     /// <summary>
     /// The public comparer and its hash fail with the structural budget, never with <see langword="false"/> or a fallback
-    /// hash; distinct unequal trees and an unsupported family still answer <see langword="false"/>.
+    /// hash; distinct unequal trees and an unsupported family still answer <see langword="false"/>. Conditionals were the
+    /// unsupported example before ETC R1c, which compares them structurally (C-04); a block (an R2 family) is used since.
     /// </summary>
     [TestMethod]
     public void Comparer_RefusalIsDistinctFromInequalityAndUnsupported()
@@ -243,11 +244,11 @@ public class ExpressionResourceLimitsTests
         ExpressionComparer strict = ExpressionComparer.Create(ExpressionResourceLimits.Default with { MaxStructuralVisits = 10 });
         Expression x = CallChain(30);
         Expression y = CallChain(30);
-        Expression conditional1 = Expression.Condition(Expression.Constant(true), P, P);
-        Expression conditional2 = Expression.Condition(Expression.Constant(true), P, P);
+        Expression unsupported1 = Expression.Block(Expression.Condition(Expression.Constant(true), P, P));
+        Expression unsupported2 = Expression.Block(Expression.Condition(Expression.Constant(true), P, P));
 
         Assert.IsFalse(ExpressionComparer.Default.Equals(NegateChain(3), NegateChain(4)));
-        Assert.IsFalse(ExpressionComparer.Default.Equals(conditional1, conditional2));
+        Assert.IsFalse(ExpressionComparer.Default.Equals(unsupported1, unsupported2));
         Assert.IsTrue(ExpressionComparer.Default.Equals(x, y));
         Assert.AreEqual(ExpressionResourceLimitKind.StructuralWork, Assert.ThrowsExactly<ExpressionResourceLimitException>(() => strict.Equals(x, y)).Kind);
         Assert.AreEqual(ExpressionResourceLimitKind.StructuralWork, Assert.ThrowsExactly<ExpressionResourceLimitException>(() => strict.GetHashCode(x)).Kind);

@@ -227,9 +227,11 @@ public class ExpressionResourceStackAndValidationTests
     // ------------------------------------------------------------------------------------------
 
     /// <summary>
-    /// R1b contract: a new family handler written as an ordinary rule (here: traversal of array initializers through
-    /// <c>TransformCore</c>) is counted and stack-guarded by the shared infrastructure with no change to the session
-    /// logic: its visits are budgeted and a hostile nesting ends with a controlled refusal.
+    /// R1b contract: a new family handler is counted and stack-guarded by the shared infrastructure with no change to the
+    /// session logic: its visits are budgeted and a hostile nesting ends with a controlled refusal. R1a-Security modeled the
+    /// handler with a rule re-traversing array initializers through <c>TransformCore</c>; since ETC R1b the engine traverses
+    /// them itself and a rule receives the already prepared elements (C-03), so the model rule would traverse every level
+    /// twice. The test now exercises the real handler through a recursive transformer.
     /// </summary>
     [TestMethod]
     public void FutureTraversalHandler_IsBudgetedAndGuarded()
@@ -293,8 +295,8 @@ public class ExpressionResourceStackAndValidationTests
     }
 
     /// <summary>
-    /// Test-only model of an R1b traversal handler: array initializers are traversed through <c>TransformCore</c> like
-    /// any supported family, with no reference to the resource session.
+    /// A recursive transformer relying on the engine's own traversal of array initializers (ETC R1b), with no reference
+    /// to the resource session.
     /// </summary>
     private sealed class ArrayTraversingTransformer : ExpressionTransformer
     {
@@ -307,13 +309,6 @@ public class ExpressionResourceStackAndValidationTests
 
         /// <inheritdoc/>
         public override Expression Transform(Expression expression) => TransformCore(expression);
-
-        /// <summary>Traverses and rebuilds an array initializer.</summary>
-        /// <param name="array">The array.</param>
-        /// <returns>The rebuilt array.</returns>
-        [ExpressionSignature(ExpressionType.NewArrayInit)]
-        private Expression TraverseArray(NewArrayExpression array)
-            => Expression.NewArrayInit(array.Type.GetElementType()!, array.Expressions.Select(TransformCore));
 
         /// <inheritdoc/>
         protected override Expression PrepareExpression(Expression e) => TransformCore(e);

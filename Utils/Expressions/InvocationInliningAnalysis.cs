@@ -26,7 +26,8 @@ internal enum InvocationInliningKind
 /// <remarks>
 /// <para>
 /// The scan follows the families <see cref="ExpressionTransformer.ReplaceArgumentsCore"/> enters (parameter, unary,
-/// binary, call, invocation, conditional), in evaluation order. Any other node is a substitution barrier: a parameter
+/// binary, call, invocation, conditional and, since ETC R1b, member access, type test, object and array creation), in
+/// evaluation order. Any other node is a substitution barrier: a parameter
 /// referenced inside it (or declared by it, which covers shadowing) blocks inlining, and an extension node, which
 /// cannot be inspected without reducing it, always does.
 /// </para>
@@ -39,8 +40,9 @@ internal enum InvocationInliningKind
 /// capture-avoiding substitution, not this guard.
 /// </para>
 /// <para>
-/// Substitution rebuilds unary nodes through the historical factories, which drop a custom operator method and a
-/// typed throw's type (ETC-04, C-01); a substitution that would rebuild such a node is refused as well.
+/// Since ETC R1b (C-01) substitution rebuilds unary nodes faithfully (operator method and typed throw kept), so a unary
+/// node with metadata no longer blocks inlining; R1a refused it because the historical factories dropped them (ETC-04).
+/// A property read, like a call, and a constructor call may run user code.
 /// </para>
 /// </remarks>
 internal sealed class InvocationInliningAnalysis
@@ -56,9 +58,6 @@ internal sealed class InvocationInliningAnalysis
 
     /// <summary>Whether the substitutable part of the body reads one of <see cref="parameters"/>.</summary>
     private bool referenced;
-
-    /// <summary>Whether substitution would rebuild a unary node whose metadata it cannot reproduce.</summary>
-    private bool lossyRebuildSeen;
 
     /// <summary>Lazily created finder for parameter references inside substitution barriers.</summary>
     private ReferenceFinder? finder;
@@ -112,7 +111,7 @@ internal sealed class InvocationInliningAnalysis
             return InvocationInliningKind.InlineBody;
         }
 
-        return analysis.lossyRebuildSeen ? InvocationInliningKind.Preserve : InvocationInliningKind.Substitute;
+        return InvocationInliningKind.Substitute;
     }
 
     /// <summary>Scans one node of the substitutable part of the body, in evaluation order.</summary>
@@ -132,6 +131,10 @@ internal sealed class InvocationInliningAnalysis
             MethodCallExpression call => ScanCall(call),
             InvocationExpression invocation => ScanInvocation(invocation),
             ConditionalExpression conditional => Scan(conditional.Test) && Scan(conditional.IfTrue) && Scan(conditional.IfFalse),
+            MemberExpression member => ScanMember(member),
+            TypeBinaryExpression typeBinary => Scan(typeBinary.Expression),
+            NewExpression creation => ScanNew(creation),
+            NewArrayExpression array => ScanEach(array.Expressions),
             _ => ScanBarrier(e),
         };
     }
@@ -165,11 +168,6 @@ internal sealed class InvocationInliningAnalysis
         if (assigns && IsOwnParameter(unary.Operand))
         {
             return false;
-        }
-
-        if (unary.Method is not null || (unary.NodeType == ExpressionType.Throw && unary.Type != typeof(void)))
-        {
-            lossyRebuildSeen = true;
         }
 
         if (!Scan(unary.Operand)) return false;
@@ -250,6 +248,56 @@ internal sealed class InvocationInliningAnalysis
         }
 
         effectSeen = true;
+        return true;
+    }
+
+    /// <summary>Scans a member access: the receiver, then the read itself; a property getter may run user code.</summary>
+    /// <param name="member">The node.</param>
+    /// <returns><see langword="false"/> if inlining is unsafe.</returns>
+    private bool ScanMember(MemberExpression member)
+    {
+        if (!Scan(member.Expression)) return false;
+
+        if (member.Member is not FieldInfo)
+        {
+            effectSeen = true;
+        }
+
+        return true;
+    }
+
+    /// <summary>Scans an object creation: arguments in order, then the constructor, which may run user code.</summary>
+    /// <param name="creation">The node.</param>
+    /// <returns><see langword="false"/> if inlining is unsafe.</returns>
+    private bool ScanNew(NewExpression creation)
+    {
+        // Only a constructor-less value-type creation has no constructor, and it has no argument.
+        ParameterInfo[] constructorParameters = creation.Constructor?.GetParameters() ?? [];
+        for (int i = 0; i < creation.Arguments.Count; i++)
+        {
+            Expression argument = creation.Arguments[i];
+            if (constructorParameters[i].ParameterType.IsByRef && IsOwnParameter(argument)) return false;
+            if (!Scan(argument)) return false;
+        }
+
+        if (creation.Constructor is not null)
+        {
+            effectSeen = true;
+        }
+
+        return true;
+    }
+
+    /// <summary>Scans the elements or bounds of an array creation, in order; the allocation itself writes no variable.</summary>
+    /// <param name="children">The elements or bounds.</param>
+    /// <returns><see langword="false"/> if inlining is unsafe.</returns>
+    private bool ScanEach(ReadOnlyCollection<Expression> children)
+    {
+        for (int i = 0; i < children.Count; i++)
+        {
+            if (!Scan(children[i])) return false;
+        }
+
         return true;
     }
 

@@ -604,7 +604,9 @@ public class ExpressionSimplifierIeeeDivisionPowerTests
 
     /// <summary>
     /// On a non-constant dividend the <c>±1</c> identities are unchanged (controls): <c>x / 1 -&gt; x</c> and
-    /// <c>x / -1 -&gt; -x</c>, exact for <see cref="double"/> (signed zeros, infinities and <c>NaN</c> included).
+    /// <c>x / -1 -&gt; -x</c>, exact for <see cref="double"/> (signed zeros, infinities and <c>NaN</c> included). For a
+    /// signed integral dividend, <c>i / -1</c> used to become <c>-i</c>; since ETC R1b (C-06) it is kept, because
+    /// <c>int.MinValue / -1</c> throws <see cref="OverflowException"/> where the negation wraps.
     /// </summary>
     [TestMethod]
     public void Simplify_SymbolicOverPlusOrMinusOne_KeepsIdentities()
@@ -614,7 +616,10 @@ public class ExpressionSimplifierIeeeDivisionPowerTests
         Expression negated = AssertSimplifiesEquivalently(x, Expression.Divide(x, Expression.Constant(-1.0)));
         Assert.AreEqual(ExpressionType.Negate, negated.NodeType);
         ParameterExpression i = Expression.Parameter(typeof(int), "i");
-        Assert.AreEqual(ExpressionType.Negate, Simplify(Expression.Divide(i, Expression.Constant(-1))).NodeType);
+        Expression kept = Simplify(Expression.Divide(i, Expression.Constant(-1)));
+        Assert.AreEqual(ExpressionType.Divide, kept.NodeType);
+        Assert.ThrowsExactly<OverflowException>(() => Expression.Lambda<Func<int, int>>(kept, i).Compile()(int.MinValue));
+        Assert.AreSame(i, Simplify(Expression.Divide(i, Expression.Constant(1))));
     }
 
     /// <summary>

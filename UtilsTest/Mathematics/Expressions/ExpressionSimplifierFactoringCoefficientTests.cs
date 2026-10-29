@@ -250,8 +250,10 @@ public class ExpressionSimplifierFactoringCoefficientTests
     /// <summary>
     /// The folded coefficient keeps the operand type and the unchecked semantics of the ordinary operation:
     /// <see cref="short"/>/<see cref="ushort"/> wrap in their own type (not <see cref="int"/>), <see cref="int"/>,
-    /// <see cref="long"/>, <see cref="uint"/> wrap, <see cref="decimal"/> is exact, and <see cref="float"/> rounds
-    /// in single precision.
+    /// <see cref="long"/>, <see cref="uint"/> wrap, and <see cref="float"/> rounds in single precision. A
+    /// <see cref="decimal"/> pair used to fold exactly; since ETC R1b (C-06) decimal multiplication may overflow, and
+    /// factoring <c>a*x + b*x</c> into <c>(a + b)*x</c> can remove an overflow (<c>5*x - 3*x</c> for a large <c>x</c>),
+    /// so the decimal terms are kept as written.
     /// </summary>
     [TestMethod]
     public void Simplify_FoldedCoefficient_KeepsTypeAndOrdinarySemantics()
@@ -263,7 +265,9 @@ public class ExpressionSimplifierFactoringCoefficientTests
         Assert.AreEqual(int.MaxValue, FoldedCoefficient(int.MinValue, 1, true).Value);
         Assert.AreEqual(unchecked(long.MaxValue + 2), FoldedCoefficient(long.MaxValue, 2L, false).Value);
         Assert.AreEqual(uint.MaxValue, FoldedCoefficient(3u, 4u, true).Value);
-        Assert.AreEqual(3.75m, FoldedCoefficient(1.5m, 2.25m, false).Value);
+        ParameterExpression dx = Expression.Parameter(typeof(decimal), "x");
+        Expression decimalSource = Expression.Add(Expression.Multiply(Expression.Constant(1.5m), dx), Expression.Multiply(Expression.Constant(2.25m), dx));
+        Assert.AreEqual(decimalSource.ToString(), Simplify(decimalSource).ToString());
         Assert.AreEqual(0.1f + 0.2f, FoldedCoefficient(0.1f, 0.2f, false).Value);
         Assert.AreEqual(0.1 + 0.2, FoldedCoefficient(0.1, 0.2, false).Value);
         Assert.AreEqual(1e-323, FoldedCoefficient(double.Epsilon, double.Epsilon, false).Value, "Subnormal coefficients fold exactly.");
@@ -285,7 +289,9 @@ public class ExpressionSimplifierFactoringCoefficientTests
 
     /// <summary>
     /// A decimal coefficient pair whose sum overflows is not folded and does not throw while simplifying: the source
-    /// terms still evaluate for <c>x = 0</c>. The unevaluated coefficient is kept exactly as before P14.
+    /// terms still evaluate for <c>x = 0</c>. Before ETC R1b the terms were factored with the unevaluated coefficient kept;
+    /// since R1b (C-06) decimal products may overflow, so the terms are not factored at all and the result evaluates, and
+    /// throws, exactly like the source.
     /// </summary>
     [TestMethod]
     public void Simplify_DecimalCoefficientOverflow_KeepsUnfoldedCoefficient()
@@ -293,13 +299,14 @@ public class ExpressionSimplifierFactoringCoefficientTests
         ParameterExpression x = Expression.Parameter(typeof(decimal), "x");
         Expression source = Expression.Add(Expression.Multiply(Expression.Constant(decimal.MaxValue), x), Expression.Multiply(Expression.Constant(decimal.MaxValue), x));
         Assert.AreEqual(0m, Expression.Lambda<Func<decimal, decimal>>(source, x).Compile()(0m), "Precondition: the source evaluates for x = 0.");
-        var product = (BinaryExpression)Simplify(source);
-        var coefficient = (BinaryExpression)product.Left;
-        Assert.AreEqual(ExpressionType.Add, coefficient.NodeType);
-        Assert.AreSame(x, product.Right);
+        Expression simplified = Simplify(source);
+        Assert.AreEqual(source.ToString(), simplified.ToString());
+        Func<decimal, decimal> compiled = Expression.Lambda<Func<decimal, decimal>>(simplified, x).Compile();
+        Assert.AreEqual(0m, compiled(0m));
+        Assert.ThrowsExactly<OverflowException>(() => compiled(1m));
 
         Expression difference = Expression.Subtract(Expression.Multiply(Expression.Constant(decimal.MinValue), x), Expression.Multiply(Expression.Constant(decimal.MaxValue), x));
-        Assert.AreEqual(ExpressionType.Subtract, ((BinaryExpression)((BinaryExpression)Simplify(difference)).Left).NodeType);
+        Assert.AreEqual(difference.ToString(), Simplify(difference).ToString());
     }
 
     /// <summary>
@@ -385,8 +392,10 @@ public class ExpressionSimplifierFactoringCoefficientTests
     }
 
     /// <summary>
-    /// A call factor folds its coefficient without running user code while simplifying, and the simplified tree
-    /// calls it once per evaluation instead of once per term.
+    /// A call factor is simplified without running user code. Before ETC R1b the coefficients were folded and the
+    /// simplified tree called the method once per evaluation instead of once per term; since R1b (C-06) the user method is
+    /// not proven free of effects, so its three evaluations are kept: the result calls it three times, like the source,
+    /// and the same factoring of an allow-listed pure function still folds the coefficients.
     /// </summary>
     [TestMethod]
     public void Simplify_CallFactor_FoldsCoefficientWithoutRunningUserCode()
@@ -396,9 +405,12 @@ public class ExpressionSimplifierFactoringCoefficientTests
         _countingIdentityCalls = 0;
         Expression simplified = Simplify(Expression.Add(Expression.Add(Term(2, call), Term(3, call)), Term(4, call)));
         Assert.AreEqual(0, _countingIdentityCalls, "Simplifying must not call user code.");
-        Assert.AreEqual(9.0, (double)((ConstantExpression)((BinaryExpression)simplified).Left).Value!);
         Assert.AreEqual(18.0, Expression.Lambda<Func<double, double>>(simplified, x).Compile()(2.0));
-        Assert.AreEqual(1, _countingIdentityCalls);
+        Assert.AreEqual(3, _countingIdentityCalls, "Every evaluation of the user method is kept.");
+
+        Expression pure = Expression.Call(typeof(Math).GetMethod(nameof(Math.Exp), [typeof(double)])!, x);
+        Expression folded = Simplify(Expression.Add(Expression.Add(Term(2, pure), Term(3, pure)), Term(4, pure)));
+        Assert.AreEqual(9.0, (double)((ConstantExpression)((BinaryExpression)folded).Left).Value!);
     }
 
     /// <summary>Custom additions and custom multiplications of terms are neither factored nor folded (controls).</summary>

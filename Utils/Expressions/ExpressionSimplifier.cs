@@ -18,38 +18,26 @@ namespace Utils.Mathematics.Expressions
     /// <remarks>
     /// <para>
     /// <b>Symbolic-equivalence contract (stage S3).</b> <see cref="ExpressionSimplifier"/> is a
-    /// <em>symbolic algebra</em> simplifier. It is <b>not</b> a strict CLR/IEEE-754 execution-preserving
-    /// optimizer. Reassociation/reordering of addition and multiplication, and identities such as
-    /// <c>x * 0 -&gt; 0</c> or <c>x^0 -&gt; 1</c>, are algebraic identities over the assumed mathematical
-    /// domain; they are not promised to be bit-for-bit identical to the original CLR evaluation for every
-    /// floating-point/decimal input. In particular, <see cref="Simplify(Expression)"/> does not guarantee
-    /// identical rounding, reassociation order, <c>NaN</c> propagation, infinities, signed-zero behavior,
-    /// overflow, or exception timing across a rewrite. Consumers that require exact CLR execution semantics
-    /// must not rely on a simplified expression evaluating identically to the source expression in every
-    /// corner case; they must rely only on symbolic/mathematical equivalence over the identity's domain.
+    /// <em>symbolic algebra</em> simplifier. Reassociation/reordering of addition and multiplication, and identities
+    /// such as <c>x * 0 -&gt; 0</c> or <c>x^0 -&gt; 1</c>, are algebraic identities over the assumed mathematical
+    /// domain; for floating-point values they are not promised to be bit-for-bit identical to the original CLR
+    /// evaluation: rounding, reassociation order, <c>NaN</c> propagation, infinities and signed zeros may differ
+    /// (<c>x * 0 -&gt; 0</c> is <c>0</c> where the source gives <c>NaN</c> for an infinite <c>x</c>). Consumers that
+    /// require bit-exact floating-point results must rely only on symbolic equivalence over the identity's domain.
     /// </para>
     /// <para>
-    /// <b>Purity assumption.</b> Every algebraic rewrite (cancellation, factoring, canonical reordering,
-    /// constant folding, and <see cref="InvokeExpression"/>'s direct beta-substitution) assumes its operand
-    /// sub-expressions are pure/referentially transparent. Evaluation count and order are not guaranteed to
-    /// be preserved for an expression tree with observable side effects (a method call with a side effect,
-    /// a property with an observable getter, etc.): a rewrite may evaluate a sub-expression zero, one, or
-    /// more times relative to the source. This stage deliberately does not add a general side-effect/purity
-    /// analyzer; callers who need side-effecting sub-expressions to run in the original count/order must not
-    /// pass such expressions through this simplifier.
-    /// </para>
-    /// <para>
-    /// <b>Algebraic simplification, not runtime observational equivalence.</b> This class is an algebraic
-    /// simplifier and is not required to preserve the runtime side effects of the expressions it rewrites. For
-    /// example <c>0 * (4 + Function()) -&gt; 0</c> and <c>0 * (4 * Function()) -&gt; 0</c> are both intentional
-    /// (<see cref="MultiplicationWithZeroOrOne(BinaryExpression, ConstantExpression, Expression)"/>): the call to
-    /// <c>Function()</c> disappears from the simplified tree, so its side effects no longer happen and an exception
-    /// it would throw is no longer thrown. The same holds for any rule that discards a sub-expression, such as
-    /// <c>2 * Function() + (-2) * Function() -&gt; 0</c> through factoring. Symbolic equivalence means equality as
-    /// mathematical expressions over the identity's domain, not identical observable behavior when the trees run;
-    /// for floating-point arithmetic the symbolic identities are not necessarily bit-exact either, and may differ for
-    /// <c>NaN</c>, infinities or signed zeros (<c>x * 0 -&gt; 0</c> is <c>0</c> where the source gives <c>NaN</c>
-    /// for an infinite <c>x</c>).
+    /// <b>Observable evaluations (ETC R1b, compatibility entry C-06).</b> Since ETC R1b the rewrites never drop, repeat,
+    /// merge or move an evaluation that is not proven inert by <see cref="ExpressionEffectAnalysis"/>: assignments and
+    /// increments, throws, calls of methods outside an explicit allow-list of total <see cref="Math"/>/<see cref="MathF"/>/
+    /// <see cref="double"/>/<see cref="float"/> functions, property getters, constructors and allocations, custom
+    /// operators, invocations, dynamic and extension nodes, and the operations that may throw (checked arithmetic, integral
+    /// and decimal division, decimal arithmetic, array access, casts). The rules of a node run only when its operands are
+    /// inert (<see cref="AllowsRules"/>), the canonicalization keeps such terms in their source order and occurrences
+    /// (<see cref="SplitPinnedTerms{T}"/>), and the identities whose own operator may throw keep that exception. So
+    /// <c>0 * (4 + Function())</c>, <c>2 * Function() + (-2) * Function()</c> and <c>++v + ++v</c> keep every evaluation
+    /// of the source, and an exception the source can raise is still raised. Before R1b the rewrites assumed pure
+    /// operands and did not preserve evaluation count, order or exceptions. Structural equality is unaffected: two calls
+    /// <c>f(x)</c> still compare equal, they are just not interchangeable.
     /// </para>
     /// <para>
     /// <b>User code during simplification.</b> Three different things must be told apart. (1) The simplifier never
@@ -61,17 +49,15 @@ namespace Utils.Mathematics.Expressions
     /// exception they throw propagates out of <see cref="Simplify(Expression)"/>; the S5 P3 factor cache, the S5 P9
     /// comparison memo and the S5 P15 observed comparison memo (which only reuses a comparer simplification observed
     /// to call no user code) are designed to keep the number and order of those calls exactly as an uncached
-    /// comparison would. Callers must therefore not
-    /// assume that simplification is free of user code when the tree holds custom constants. (3) The simplified tree
-    /// may contain fewer calls than the source (see the previous paragraph), so evaluating it may run less user code.
+    /// comparison would. Callers must therefore not assume that simplification is free of user code when the tree holds
+    /// custom constants. (3) Evaluating the simplified tree runs the same user code as the source, in the same order
+    /// (see the previous paragraph).
     /// </para>
     /// <para>
-    /// The <c>NaN</c> propagation of S5 P11 (<see cref="FoldNaNOperand"/>) is deliberately stricter: it only drops
-    /// an operand that <see cref="IsEliminableFloatingOperand"/> proves free of effects and exceptions. That is a
-    /// restriction chosen for that one transformation, not a promise that the other algebraic rules preserve side
-    /// effects or exceptions.
-    /// </para>
-    /// <para>
+    /// The <c>NaN</c> propagation of S5 P11 (<see cref="FoldNaNOperand"/>) only drops an operand that
+    /// <see cref="IsEliminableFloatingOperand"/> proves free of effects and exceptions, a narrower whitelist than the
+    /// inert evaluations of <see cref="ExpressionEffectAnalysis"/>.
+    /// </para>    /// <para>
     /// <b>Domain-sensitive identities.</b> Rules with a mathematical precondition are valid only on their
     /// common domain. <c>Log(x) + Log(y) -&gt; Log(x*y)</c> (and the <c>Log10</c>/subtraction variants)
     /// assume <c>x</c> and <c>y</c> lie in the supported positive finite real domain; power identities such
@@ -387,8 +373,8 @@ namespace Utils.Mathematics.Expressions
         /// <remarks>
         /// See the "Symbolic-equivalence contract" section of this type's remarks: the result is
         /// symbolically/mathematically equivalent to <paramref name="e"/> over the algebraic identities'
-        /// assumed domain and under the assumption that <paramref name="e"/>'s sub-expressions are pure. It
-        /// is not guaranteed to be a bit-for-bit CLR/IEEE-754-identical evaluator, and it never treats a
+        /// assumed domain; since ETC R1b every evaluation that is not proven inert is kept, with its count, order and
+        /// exceptions. It is not guaranteed to be a bit-for-bit IEEE-754-identical evaluator, and it never treats a
         /// custom operator, lifted nullable arithmetic, or truncating integer division as ordinary algebra.
         /// </remarks>
         public Expression Simplify(Expression e)
@@ -425,7 +411,7 @@ namespace Utils.Mathematics.Expressions
         /// <returns>The transformed expression, or <see langword="null"/> unchanged, for the exact built-in type.</returns>
         /// <remarks>
         /// The null short-circuit is gated to the exact built-in runtime type for the same reason as
-        /// <see cref="RebuildUnaryExpression"/>/<see cref="RebuildLambdaExpression"/>: without it,
+        /// <see cref="ExpressionTransformer.RebuildUnaryExpression"/>/<see cref="RebuildLambdaExpression"/>: without it,
         /// <see cref="ExpressionTransformer.TransformCore(Expression)"/> dereferences a null
         /// <c>context.Expression</c> and throws <see cref="NullReferenceException"/> — historically true for
         /// every runtime type, including a derived subclass, which therefore still observes it unless it
@@ -443,50 +429,103 @@ namespace Utils.Mathematics.Expressions
         }
 
         /// <summary>
-        /// For the exact built-in <see cref="ExpressionSimplifier"/> runtime type, reconstructs a unary node
-        /// via <see cref="Expression.MakeUnary(ExpressionType, Expression, Type, System.Reflection.MethodInfo)"/>, preserving
-        /// <see cref="UnaryExpression.Method"/> and <see cref="Expression.Type"/> (notably a typed
-        /// <see cref="Expression.Throw(Expression, Type)"/>'s declared result type) instead of the
-        /// historical, metadata-dropping per-node-type factories. A derived <see cref="ExpressionSimplifier"/>
-        /// subclass keeps the historical <see cref="ExpressionTransformer"/> behavior unless it explicitly
-        /// overrides this itself, mirroring <see cref="FinalizeExpression"/>'s own exact-runtime-type guard.
-        /// </summary>
-        /// <param name="expression">The original unary expression being rebuilt.</param>
-        /// <param name="operand">The (already prepared) operand.</param>
-        /// <returns>A unary expression preserving the original node's metadata, for the exact built-in type; the historical reconstruction otherwise.</returns>
-        internal override UnaryExpression RebuildUnaryExpression(UnaryExpression expression, Expression operand)
-        {
-            if (GetType() != typeof(ExpressionSimplifier))
-            {
-                return base.RebuildUnaryExpression(expression, operand);
-            }
-
-            return (UnaryExpression)Expression.MakeUnary(expression.NodeType, operand, expression.Type, expression.Method);
-        }
-
-        /// <summary>
-        /// For the exact built-in <see cref="ExpressionSimplifier"/> runtime type, reconstructs a lambda
-        /// preserving its original <see cref="LambdaExpression.Type"/> (delegate type),
-        /// <see cref="LambdaExpression.Name"/>, and <see cref="LambdaExpression.TailCall"/>, at every nesting
-        /// depth (this method runs recursively, once per lambda encountered, on the same simplifier
-        /// instance). A derived <see cref="ExpressionSimplifier"/> subclass keeps the historical,
-        /// metadata-dropping <see cref="ExpressionTransformer"/> reconstruction unless it explicitly
-        /// overrides this itself.
+        /// Reconstructs a lambda preserving its original <see cref="LambdaExpression.Type"/> (delegate type),
+        /// <see cref="LambdaExpression.Name"/>, and <see cref="LambdaExpression.TailCall"/>, at every nesting depth, after
+        /// passing the body through <see cref="FoldNaNOperand"/>.
         /// </summary>
         /// <param name="expression">The original lambda expression being rebuilt.</param>
         /// <param name="body">The (already prepared/transformed) body.</param>
         /// <param name="parameters">The (already prepared) parameters, in declaration order.</param>
-        /// <returns>A lambda expression preserving the original node's metadata, for the exact built-in type; the historical reconstruction otherwise.</returns>
-        /// <remarks>The body, transformed without <see cref="PrepareExpression"/>, goes through <see cref="FoldNaNOperand"/> first (S5 P11b), for every runtime type.</remarks>
+        /// <returns>A lambda expression preserving the original node's metadata.</returns>
+        /// <remarks>
+        /// The body, transformed without <see cref="PrepareExpression"/>, goes through <see cref="FoldNaNOperand"/> first
+        /// (S5 P11b), for every runtime type. Since ETC R1b (C-01) the faithful reconstruction itself is the
+        /// <see cref="ExpressionTransformer"/> default, so a derived simplifier keeps the metadata too (it used to lose
+        /// them, ETC-05); the unary counterpart needs no override any more for the same reason.
+        /// </remarks>
         internal override LambdaExpression RebuildLambdaExpression(LambdaExpression expression, Expression body, ParameterExpression[] parameters)
+            => base.RebuildLambdaExpression(expression, FoldNaNOperand(body), parameters);
+
+        /// <summary>
+        /// Keeps every symbolic rule away from a node whose operands are not inert (ETC R1b, compatibility entry C-06,
+        /// finding ETC-15): the rules may drop (<c>t * 0</c>, <c>t - t</c>), merge (<c>t + t</c>, factoring) or reorder
+        /// operand evaluations, so they run only when <see cref="ExpressionEffectAnalysis.HasInertOperands"/> proves all
+        /// three safe. An invocation keeps its own, stricter inlining analysis (<see cref="InvokeExpression"/>).
+        /// </summary>
+        /// <param name="node">The prepared node.</param>
+        /// <returns><see langword="true"/> if the rules may run.</returns>
+        /// <remarks>
+        /// Applies to every runtime type, derived simplifiers included: it protects the evaluation of the user's tree, not a
+        /// reconstruction detail. The operands are still simplified on their own (their own rules see their own operands),
+        /// so only the rewrites that would cross the observable evaluation are skipped. The gate is coarse on purpose (no
+        /// rule declares which evaluations it drops, merges or moves), so a rewrite that would be safe, such as
+        /// <c>f() + 0 -&gt; f()</c>, is skipped too. The canonicalization of <see cref="FinalizeExpression"/> is finer: it pins
+        /// the terms that are not inert instead (see <see cref="SplitPinnedTerms{T}"/>).
+        /// </remarks>
+        internal override bool AllowsRules(Expression node)
+            => node is InvocationExpression || ExpressionEffectAnalysis.HasInertOperands(node);
+
+        /// <summary>
+        /// Whether the operators of an additive or multiplicative chain of the type of <paramref name="node"/> may be
+        /// reassociated and reordered (ETC R1b, C-06): they must not throw, which excludes <see cref="decimal"/> (overflow).
+        /// The terms themselves are checked one by one by the canonicalization (<see cref="SplitPinnedTerms{T}"/>).
+        /// </summary>
+        /// <param name="node">The prepared ordinary <c>Add</c>/<c>Subtract</c>/<c>Multiply</c> node.</param>
+        /// <returns><see langword="true"/> if canonicalization is allowed.</returns>
+        private static bool CanonicalizesOperator(BinaryExpression node)
+            => ExpressionEffectAnalysis.OperatorEffects(node) == ExpressionEffects.None;
+
+        /// <summary>
+        /// Whether <paramref name="type"/> is a signed integral type, whose division of <c>MinValue</c> by <c>-1</c> throws
+        /// <see cref="OverflowException"/> while the negation of <c>MinValue</c> wraps (ETC R1b, C-06).
+        /// </summary>
+        /// <param name="type">The arithmetic type.</param>
+        /// <returns><see langword="true"/> for <see cref="sbyte"/>, <see cref="short"/>, <see cref="int"/> and <see cref="long"/>.</returns>
+        private static bool IsSignedIntegral(Type type)
+            => type == typeof(int) || type == typeof(long) || type == typeof(short) || type == typeof(sbyte);
+
+        /// <summary>
+        /// Moves out of <paramref name="items"/> the terms (or factors) of a canonicalized chain whose evaluation may not be
+        /// merged, cancelled, dropped or moved (ETC R1b, C-06): every term that is not inert, and, when one of them has an
+        /// observable effect, every term reading mutable state (an observable term may write it). The pinned terms keep their
+        /// source order and occurrences; the inert terms left in <paramref name="items"/> are canonicalized as before and
+        /// placed before them, which is unobservable because an inert evaluation neither throws nor depends on a write.
+        /// </summary>
+        /// <typeparam name="T">The item type: a signed term or a factor.</typeparam>
+        /// <param name="items">The collected items; the pinned ones are removed from it, in place.</param>
+        /// <param name="term">Gets the expression of an item.</param>
+        /// <returns>The pinned items in source order, or <see langword="null"/> when every item is inert (the common case: nothing is allocated).</returns>
+        private static List<T>? SplitPinnedTerms<T>(List<T> items, Func<T, Expression> term)
         {
-            body = FoldNaNOperand(body);
-            if (GetType() != typeof(ExpressionSimplifier))
+            bool observable = false;
+            bool pinnedSeen = false;
+            foreach (T item in items)
             {
-                return base.RebuildLambdaExpression(expression, body, parameters);
+                ExpressionEffects effects = ExpressionEffectAnalysis.Analyze(term(item));
+                observable |= (effects & ExpressionEffects.Observable) != 0;
+                pinnedSeen |= !ExpressionEffectAnalysis.IsInert(effects);
             }
 
-            return Expression.Lambda(expression.Type, body, expression.Name, expression.TailCall, parameters);
+            if (!pinnedSeen) return null;
+
+            var pinned = new List<T>();
+            int kept = 0;
+            for (int index = 0; index < items.Count; index++)
+            {
+                T item = items[index];
+                ExpressionEffects effects = ExpressionEffectAnalysis.Analyze(term(item));
+                if (!ExpressionEffectAnalysis.IsInert(effects) || (observable && (effects & ExpressionEffects.ReadsMutableState) != 0))
+                {
+                    pinned.Add(item);
+                }
+                else
+                {
+                    items[kept++] = item;
+                }
+            }
+
+            items.RemoveRange(kept, items.Count - kept);
+            return pinned;
         }
 
         #region Structural canonicalization (S4) — ambient lexical scope tracking
@@ -586,7 +625,7 @@ namespace Utils.Mathematics.Expressions
         /// this hook is NOT gated to the exact built-in <see cref="ExpressionSimplifier"/> runtime type.
         /// There is no pre-S4 historical behavior at stake here (this hook is new to S4, not a
         /// reconstruction-fidelity concern like <see cref="RebuildLambdaExpression"/>/
-        /// <see cref="RebuildUnaryExpression"/>), and being <see langword="internal"/>, only a same-assembly
+        /// <see cref="ExpressionTransformer.RebuildUnaryExpression"/>), and being <see langword="internal"/>, only a same-assembly
         /// (or <c>InternalsVisibleTo</c>) subclass could ever reach this override at all - gating it further
         /// to the exact type only meant such a subclass's OWN bound parameters were silently misclassified
         /// as free during its own canonicalization (round 6 initially worked around this by skipping
@@ -1003,9 +1042,10 @@ namespace Utils.Mathematics.Expressions
         /// a constant of the node's type instead: <c>5 / -1</c> was left as the unevaluated <c>-(5)</c>, and
         /// <c>int.MinValue / -1</c> (or <c>long.MinValue / -1</c>) became <c>-(MinValue)</c>, which evaluates to
         /// <c>MinValue</c> where the source throws <see cref="OverflowException"/>; the fold throws it while simplifying,
-        /// as a zero divisor does. On a non-constant dividend <c>x / -1 -&gt; -x</c> stays: it is exact in IEEE-754 and
-        /// for decimals, but for <c>x = int.MinValue</c> (or <c>long.MinValue</c>) the negation wraps where the division
-        /// throws, which the "Symbolic-equivalence contract" leaves open (overflow and exceptions are not preserved).
+        /// as a zero divisor does. On a non-constant dividend <c>x / -1 -&gt; -x</c> stays for the floating-point types
+        /// and <see cref="decimal"/>, where it is exact. For a signed integral type it is declined since ETC R1b (C-06): for
+        /// <c>x = MinValue</c> the negation wraps where the division throws <see cref="OverflowException"/>, and a rule must
+        /// not remove an exception the evaluation can raise.
         /// </para>
         /// </remarks>
         [ExpressionSignature(ExpressionType.Divide)]
@@ -1019,7 +1059,7 @@ namespace Utils.Mathematics.Expressions
             else if (left is not ConstantExpression)
             {
                 if (NumericValueEquals(right.Value, 1)) return left;
-                if (NumericValueEquals(right.Value, -1)) return Expression.Negate(left);
+                if (NumericValueEquals(right.Value, -1) && !IsSignedIntegral(e.Type)) return Expression.Negate(left);
             }
             return null;
         }
@@ -1032,12 +1072,14 @@ namespace Utils.Mathematics.Expressions
         /// exactly (S5 P12): <c>0 / -3</c> is <c>-0</c>, <c>0 / 0.0</c> is <c>NaN</c> and <c>0 / inf</c> is <c>0</c>,
         /// whereas this identity returned the dividend (S5 P11 already declined on a non-finite constant). On a
         /// non-constant divisor it is the symbolic identity of the "Symbolic-equivalence contract" (the sign of the
-        /// zero and a <c>NaN</c> for <c>x = 0</c> or <c>x = NaN</c> are not preserved).
+        /// zero and a <c>NaN</c> for <c>x = 0</c> or <c>x = NaN</c> are not preserved). It applies to the floating-point
+        /// types only since ETC R1b (C-06): an integral or <see cref="decimal"/> division by a zero <c>x</c> throws
+        /// <see cref="DivideByZeroException"/>, which the identity would remove.
         /// </remarks>
         [ExpressionSignature(ExpressionType.Divide)]
         public Expression DivideWithZero(BinaryExpression e, [ConstantNumeric(0)] ConstantExpression left, Expression right)
         {
-            if (!IsOrdinaryBinaryArithmetic(e) || right is ConstantExpression) return null;
+            if (!IsOrdinaryBinaryArithmetic(e) || right is ConstantExpression || !Types.FloatingPointNumber.Contains(e.Type) || e.Type == typeof(decimal)) return null;
             if (NumericValueEquals(left.Value, 0)) return left;
             return null;
         }
@@ -2090,10 +2132,14 @@ namespace Utils.Mathematics.Expressions
         /// <summary>
         /// Rewrites <c>left / (-right)</c> as <c>-(left / right)</c>.
         /// </summary>
+        /// <remarks>
+        /// Declined for a signed integral type since ETC R1b (C-06): for <c>left = MinValue</c> and <c>right = 1</c> the source
+        /// divides by <c>-1</c> and throws <see cref="OverflowException"/>, whereas the negated quotient wraps silently.
+        /// </remarks>
         [ExpressionSignature(ExpressionType.Divide)]
         protected Expression DivisionWithNegate(BinaryExpression e, Expression left, [ExpressionSignature(ExpressionType.Negate)] UnaryExpression right)
         {
-            if (!IsOrdinaryBinaryArithmetic(e) || !IsOrdinaryUnaryNegate(right)) return null;
+            if (!IsOrdinaryBinaryArithmetic(e) || !IsOrdinaryUnaryNegate(right) || IsSignedIntegral(e.Type)) return null;
 
             return Expression.Negate(
                 TransformCore(Expression.Divide(left, right.Operand))
@@ -2425,13 +2471,15 @@ namespace Utils.Mathematics.Expressions
             if (e is BinaryExpression binaryExpression)
             {
                 if ((binaryExpression.NodeType == ExpressionType.Add || binaryExpression.NodeType == ExpressionType.Subtract)
-                    && CanCanonicalizeCommutativeBinary(binaryExpression))
+                    && CanCanonicalizeCommutativeBinary(binaryExpression)
+                    && CanonicalizesOperator(binaryExpression))
                 {
                     return CanonicalizeAdditiveExpression(binaryExpression.NodeType, parameters[0], parameters[1]);
                 }
 
                 if (binaryExpression.NodeType == ExpressionType.Multiply
-                    && CanCanonicalizeCommutativeBinary(binaryExpression))
+                    && CanCanonicalizeCommutativeBinary(binaryExpression)
+                    && CanonicalizesOperator(binaryExpression))
                 {
                     return CanonicalizeMultiplicativeExpression(parameters[0], parameters[1]);
                 }
@@ -2443,7 +2491,10 @@ namespace Utils.Mathematics.Expressions
             // the built-in concrete ExpressionSimplifier can safely reuse that private intermediate
             // node because no external override can observe it; a subclass calling
             // base.FinalizeExpression must keep receiving the second, historically-distinct copy.
+            // ETC R1b: the newly traversed families (Member, TypeBinary, New, NewArray, Default) are already rebuilt by their
+            // Prepare* method too, so the exact type reuses that node as well.
             if (e is UnaryExpression or BinaryExpression or MethodCallExpression or ConditionalExpression
+                    or MemberExpression or TypeBinaryExpression or NewExpression or NewArrayExpression or DefaultExpression
                 && GetType() == typeof(ExpressionSimplifier))
             {
                 return e;
@@ -2487,12 +2538,17 @@ namespace Utils.Mathematics.Expressions
             var terms = new List<(Expression Term, bool IsNegative)>();
             CollectAdditiveTerms(terms, left, false);
             CollectAdditiveTerms(terms, right, nodeType == ExpressionType.Subtract);
+
+            // ETC R1b (C-06): a term whose evaluation is observable is never grouped, cancelled or moved past another one.
+            List<(Expression Term, bool IsNegative)>? pinned = SplitPinnedTerms(terms, static term => term.Term);
             terms.RemoveAll(static term => IsOrdinaryZeroConstant(term.Term));
             AggregateAdditiveConstants(terms, left.Type);
 
             if (terms.Count == 0)
             {
-                return Expression.Constant(Convert.ChangeType(0, left.Type), left.Type);
+                return pinned is null
+                    ? Expression.Constant(Convert.ChangeType(0, left.Type), left.Type)
+                    : BuildPinnedAdditiveChain([], pinned, left.Type);
             }
 
             ParameterExpression[][] scopes = CaptureLexicalScopeSnapshot();
@@ -2548,9 +2604,33 @@ namespace Utils.Mathematics.Expressions
                 }
             }
 
+            if (pinned is not null)
+            {
+                return BuildPinnedAdditiveChain(rebuiltTerms, pinned, left.Type);
+            }
+
             if (rebuiltTerms.Count == 0)
             {
                 return Expression.Constant(Convert.ChangeType(0, left.Type), left.Type);
+            }
+
+            return BuildRightAssociative(rebuiltTerms, Expression.Add);
+        }
+
+        /// <summary>
+        /// Builds the canonical additive chain of a sum holding pinned terms (ETC R1b, C-06): the canonicalized inert groups
+        /// first, then every pinned term, once, with its sign and in source order, right-associated as usual. A negative pinned
+        /// term is written <c>0 - term</c>, like a negative group.
+        /// </summary>
+        /// <param name="rebuiltTerms">The canonicalized groups of the inert terms (possibly empty).</param>
+        /// <param name="pinned">The pinned signed terms, in source order (never empty).</param>
+        /// <param name="type">The type of the chain.</param>
+        /// <returns>The chain.</returns>
+        private static Expression BuildPinnedAdditiveChain(List<Expression> rebuiltTerms, List<(Expression Term, bool IsNegative)> pinned, Type type)
+        {
+            foreach ((Expression Term, bool IsNegative) term in pinned)
+            {
+                rebuiltTerms.Add(BuildAdditiveExpression([term], type));
             }
 
             return BuildRightAssociative(rebuiltTerms, Expression.Add);
@@ -2795,11 +2875,15 @@ namespace Utils.Mathematics.Expressions
             CollectMultiplicativeFactors(factors, left);
             CollectMultiplicativeFactors(factors, right);
 
+            // ETC R1b (C-06): a factor whose evaluation is observable keeps its place after the sorted inert factors.
+            List<Expression>? pinned = SplitPinnedTerms(factors, static factor => factor);
+
             ParameterExpression[][] scopes = CaptureLexicalScopeSnapshot();
 
             // The key comparisons consume the structural budget: a refusal raised inside the sort is restored (ETC R1a-Security).
             var orderedFactors = ExpressionResourceBudget.ToSortedList(factors
                 .OrderBy(factor => ExpressionCanonicalOrder.BuildKeyFromSnapshot(factor, scopes)));
+            if (pinned is not null) orderedFactors.AddRange(pinned);
 
             return BuildRightAssociative(orderedFactors, Expression.Multiply);
         }

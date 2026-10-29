@@ -19,10 +19,6 @@ namespace UtilsTest.Mathematics.Expressions;
 [TestClass]
 public class ExpressionSimplifierObservedComparisonMemoTests
 {
-    /// <summary>Returns a constant for an opaque argument, embedding user objects in numeric terms.</summary>
-    /// <param name="value">An opaque value, ignored.</param>
-    /// <returns>Always one.</returns>
-    public static double IdentityFromObject(object value) => 1.0;
 
     /// <summary>Returns the sum of two values for a custom-operator expression.</summary>
     /// <param name="left">The left value.</param>
@@ -34,9 +30,6 @@ public class ExpressionSimplifierObservedComparisonMemoTests
     /// <param name="value">The value.</param>
     /// <returns>The opposite.</returns>
     public static double CustomNegate(double value) => -value;
-
-    /// <summary>The method embedding opaque constants in numeric terms.</summary>
-    private static readonly MethodInfo Identity = typeof(ExpressionSimplifierObservedComparisonMemoTests).GetMethod(nameof(IdentityFromObject))!;
 
     /// <summary>The <see cref="Math.Sin(double)"/> method.</summary>
     private static readonly MethodInfo Sin = typeof(Math).GetMethod(nameof(Math.Sin), [typeof(double)])!;
@@ -100,12 +93,12 @@ public class ExpressionSimplifierObservedComparisonMemoTests
         public override Type Type => typeof(double);
     }
 
-    /// <summary>Builds the term <c>coefficient * IdentityFromObject(value)</c>.</summary>
+    /// <summary>Builds the term <c>coefficient * carrier(value)</c>, with the inert carrier of <see cref="SafeOpaqueTerm"/>.</summary>
     /// <param name="coefficient">The numeric coefficient.</param>
     /// <param name="value">The opaque value.</param>
     /// <returns>The term.</returns>
     private static Expression OpaqueTerm(double coefficient, object value)
-        => Expression.Multiply(Expression.Constant(coefficient), Expression.Call(Identity, Expression.Constant(value, typeof(object))));
+        => Expression.Multiply(Expression.Constant(coefficient), SafeOpaqueTerm.Carrier(value));
 
     /// <summary>
     /// Builds the subtraction chain <c>100*Id(first) - x1*3 - 4*x2 - ...</c> whose opaque first term sorts last (the

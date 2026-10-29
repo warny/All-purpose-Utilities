@@ -92,14 +92,19 @@ public class ExpressionComparerTests
         Assert.IsTrue(ExpressionComparer.Default.Equals(newExpression, newExpression));
     }
 
-    /// <summary>Preservation: two distinct, structurally identical but unsupported nodes remain conservatively unequal (not a regression fix target).</summary>
+    /// <summary>
+    /// Preservation: two distinct, structurally identical but unsupported nodes remain conservatively unequal. Since ETC R1c
+    /// (C-04) creations are compared structurally, so the unsupported example is a block (an R2 family) and two identical
+    /// creations compare equal (structural equality, not interchangeability: the simplifier still never merges them).
+    /// </summary>
     [TestMethod]
     public void Equals_UnsupportedNodeDistinctInstances_ReturnsFalse()
     {
-        NewExpression a = Expression.New(typeof(object));
-        NewExpression b = Expression.New(typeof(object));
+        BlockExpression a = Expression.Block(Expression.Constant(1.0));
+        BlockExpression b = Expression.Block(Expression.Constant(1.0));
 
         Assert.IsFalse(ExpressionComparer.Default.Equals(a, b));
+        Assert.IsTrue(ExpressionComparer.Default.Equals(Expression.New(typeof(object)), Expression.New(typeof(object))));
     }
 
     // ------------------------------------------------------------------------------------------

@@ -300,24 +300,26 @@ public class ExpressionSimplifierComparerBatchingTests
     }
 
     /// <summary>
-    /// Conservatism for an unsupported node kind: two DISTINCT but structurally identical
-    /// <see cref="ConditionalExpression"/> instances must NOT be conflated - <c>AdditionOfEqualsElements</c>
-    /// must return <see langword="null"/>, exactly like before this stage's change (this comparer's
-    /// structural walk does not understand <see cref="ConditionalExpression"/> at all - see
-    /// <see cref="ExpressionComparer"/>'s own class remarks - so it conservatively reports two distinct
-    /// instances as unequal rather than risk a false positive).
+    /// Conservatism for an unsupported node kind: two DISTINCT but structurally identical instances of a family the
+    /// comparer does not understand (here a block, an R2 family) must NOT be conflated - <c>AdditionOfEqualsElements</c>
+    /// must return <see langword="null"/>. Conditionals were the example before ETC R1c; they are compared structurally
+    /// since (C-04), and two identical pure conditionals are now factored.
     /// </summary>
     [TestMethod]
     public void UnsupportedNodeKind_DistinctInstances_AreNotConflated()
     {
         var simplifier = new ExpressionSimplifier();
         ParameterExpression test = Expression.Parameter(typeof(bool), "test");
-        Expression left = Expression.Multiply(Expression.Constant(2.0), Expression.Condition(test, Expression.Constant(1.0), Expression.Constant(2.0)));
-        Expression right = Expression.Multiply(Expression.Constant(3.0), Expression.Condition(test, Expression.Constant(1.0), Expression.Constant(2.0)));
+        Expression left = Expression.Multiply(Expression.Constant(2.0), Expression.Block(Expression.Condition(test, Expression.Constant(1.0), Expression.Constant(2.0))));
+        Expression right = Expression.Multiply(Expression.Constant(3.0), Expression.Block(Expression.Condition(test, Expression.Constant(1.0), Expression.Constant(2.0))));
 
         Expression? result = InvokeAdditionOfEqualsElements(simplifier, left, right);
 
         Assert.IsNull(result, "Two distinct, structurally-identical unsupported-node instances must not be conflated.");
+
+        Expression conditionalLeft = Expression.Multiply(Expression.Constant(2.0), Expression.Condition(test, Expression.Constant(1.0), Expression.Constant(2.0)));
+        Expression conditionalRight = Expression.Multiply(Expression.Constant(3.0), Expression.Condition(test, Expression.Constant(1.0), Expression.Constant(2.0)));
+        Assert.IsNotNull(InvokeAdditionOfEqualsElements(simplifier, conditionalLeft, conditionalRight), "Two identical pure conditionals are one term since R1c.");
     }
 
     // ------------------------------------------------------------------------------------------
@@ -345,11 +347,6 @@ public class ExpressionSimplifierComparerBatchingTests
         public override int GetHashCode() => 0;
     }
 
-    /// <summary>Test-only static method accepting an opaque <see cref="object"/> argument, used to embed a <see cref="HostileConstant"/> as a method-call argument inside a numeric-typed additive term.</summary>
-    /// <param name="value">An arbitrary opaque value, ignored.</param>
-    /// <returns>A constant, arbitrary result.</returns>
-    private static double IdentityFromObject(object value) => 1.0;
-
     /// <summary>
     /// <c>AdditionOfEqualsElements</c> must still use the PUBLIC, non-safe constant policy (never
     /// <see cref="ExpressionComparer.StructuralEqualsRaw(Expression?, Expression?)"/>'s safe-constant
@@ -366,15 +363,13 @@ public class ExpressionSimplifierComparerBatchingTests
         var simplifier = new ExpressionSimplifier();
         var hostileLeft = new HostileConstant();
         var hostileRight = new HostileConstant();
-        MethodInfo identity = typeof(ExpressionSimplifierComparerBatchingTests).GetMethod(
-            nameof(IdentityFromObject), BindingFlags.NonPublic | BindingFlags.Static)!;
 
         // leftleft/rightleft (2 vs 3) and any leftleft/rightright, leftright/rightleft cross-comparisons
         // never reach the hostile constants (NodeType mismatch short-circuits first); only the final
         // leftright-vs-rightright comparison (both MethodCallExpression, same Method) recurses into the
         // hostile constants' own Equals.
-        Expression left = Expression.Multiply(Expression.Constant(2.0), Expression.Call(identity, Expression.Constant(hostileLeft, typeof(object))));
-        Expression right = Expression.Multiply(Expression.Constant(3.0), Expression.Call(identity, Expression.Constant(hostileRight, typeof(object))));
+        Expression left = Expression.Multiply(Expression.Constant(2.0), SafeOpaqueTerm.Carrier(hostileLeft));
+        Expression right = Expression.Multiply(Expression.Constant(3.0), SafeOpaqueTerm.Carrier(hostileRight));
 
         TargetInvocationException thrown = Assert.ThrowsExactly<TargetInvocationException>(
             () => InvokeAdditionOfEqualsElements(simplifier, left, right));
@@ -580,8 +575,6 @@ public class ExpressionSimplifierComparerBatchingTests
         var simplifier = new ExpressionSimplifier();
         ParameterExpression x = Expression.Parameter(typeof(double), "x");
         ParameterExpression y = Expression.Parameter(typeof(double), "y");
-        MethodInfo identity = typeof(ExpressionSimplifierComparerBatchingTests).GetMethod(
-            nameof(IdentityFromObject), BindingFlags.NonPublic | BindingFlags.Static)!;
         var c1 = new CountingConstant();
         var c2 = new CountingConstant();
 
@@ -590,8 +583,8 @@ public class ExpressionSimplifierComparerBatchingTests
         // directly, since the point under test is what happens when THIS shape is simplified more than once,
         // not how it was produced.
         Expression inner = Expression.Add(
-            Expression.Multiply(Expression.Constant(2.0), Expression.Call(identity, Expression.Constant(c1, typeof(object)))),
-            Expression.Multiply(Expression.Constant(3.0), Expression.Call(identity, Expression.Constant(c2, typeof(object)))));
+            Expression.Multiply(Expression.Constant(2.0), SafeOpaqueTerm.Carrier(c1)),
+            Expression.Multiply(Expression.Constant(3.0), SafeOpaqueTerm.Carrier(c2)));
 
         Expression left = Expression.Multiply(inner, x);
         Expression right = Expression.Multiply(Expression.Constant(7.0), y);
@@ -645,8 +638,6 @@ public class ExpressionSimplifierComparerBatchingTests
     public void NonCacheableThenCacheableOperand_FallsBackWithoutSimplifyingEitherFirst_PreservesXBeforeYOrder()
     {
         var simplifier = new ExpressionSimplifier();
-        MethodInfo identity = typeof(ExpressionSimplifierComparerBatchingTests).GetMethod(
-            nameof(IdentityFromObject), BindingFlags.NonPublic | BindingFlags.Static)!;
         var hostileLeft = new HostileConstant();
         var hostileRight = new HostileConstant();
 
@@ -655,8 +646,8 @@ public class ExpressionSimplifierComparerBatchingTests
         // argument comparison invokes hostileLeft.Equals(hostileRight) - see this class's remarks on
         // NestedSimplifyReachingUserCode_InvokedOncePerComparison_NotOncePerCandidate for why.
         Expression x = Expression.Add(
-            Expression.Multiply(Expression.Constant(2.0), Expression.Call(identity, Expression.Constant(hostileLeft, typeof(object)))),
-            Expression.Multiply(Expression.Constant(3.0), Expression.Call(identity, Expression.Constant(hostileRight, typeof(object)))));
+            Expression.Multiply(Expression.Constant(2.0), SafeOpaqueTerm.Carrier(hostileLeft)),
+            Expression.Multiply(Expression.Constant(3.0), SafeOpaqueTerm.Carrier(hostileRight)));
 
         // Cacheable (only native numeric constants reachable) but its OWN simplification unconditionally
         // throws DivideByZeroException - a different exception type from x's, so the type that propagates

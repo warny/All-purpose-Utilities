@@ -272,36 +272,35 @@ public class ExpressionSimplifierReconstructionFidelityTests
     // ------------------------------------------------------------------------------------------
 
     /// <summary>
-    /// Subclass compatibility pin: a derived <see cref="ExpressionSimplifier"/> with no overrides must keep
-    /// dropping a custom unary <see cref="UnaryExpression.Method"/>, exactly like the historical baseline,
-    /// because only the EXACT built-in runtime type opts into metadata-faithful reconstruction.
+    /// Subclass compatibility pin, changed by ETC R1b (compatibility entry C-01, approved for 2.0.0): a derived
+    /// <see cref="ExpressionSimplifier"/> with no overrides used to drop a custom unary <see cref="UnaryExpression.Method"/>,
+    /// because only the exact built-in runtime type rebuilt faithfully; the faithful rebuild is now the default of every
+    /// transformer, so the derived simplifier keeps the method too.
     /// </summary>
     [TestMethod]
-    public void DerivedSimplifier_CustomUnaryMethod_StillDroppedLikeHistoricalBaseline()
+    public void DerivedSimplifier_CustomUnaryMethod_IsPreservedSinceC01()
     {
         UnaryExpression original = Expression.Negate(X(), CustomNegateAMethod);
 
         var simplified = (UnaryExpression)new DerivedSimplifier().Simplify(original);
 
-        Assert.IsNull(simplified.Method);
+        Assert.AreSame(CustomNegateAMethod, simplified.Method);
     }
 
     /// <summary>
-    /// Subclass compatibility pin: a derived <see cref="ExpressionSimplifier"/> with no overrides must keep
-    /// erasing a custom root lambda delegate <see cref="LambdaExpression.Type"/> and
-    /// <see cref="LambdaExpression.TailCall"/> (both collapse to the type-inferred default), exactly like
-    /// the historical baseline.
+    /// Subclass compatibility pin, changed by ETC R1b (C-01): a derived <see cref="ExpressionSimplifier"/> with no overrides
+    /// used to erase a custom root lambda delegate <see cref="LambdaExpression.Type"/> and <see cref="LambdaExpression.TailCall"/>;
+    /// both are now preserved, as by the exact simplifier.
     /// </summary>
     [TestMethod]
-    public void DerivedSimplifier_LambdaTypeAndTailCall_StillErasedLikeHistoricalBaseline()
+    public void DerivedSimplifier_LambdaTypeAndTailCall_ArePreservedSinceC01()
     {
         ParameterExpression x = X();
         LambdaExpression original = Expression.Lambda(typeof(DelegateA), Expression.Add(x, Expression.Constant(0.0)), tailCall: true, [x]);
 
         var simplified = (LambdaExpression)new DerivedSimplifier().Simplify(original);
 
-        Assert.AreNotEqual(typeof(DelegateA), simplified.Type);
-        Assert.AreEqual(typeof(Func<double, double>), simplified.Type);
-        Assert.IsFalse(simplified.TailCall);
+        Assert.AreEqual(typeof(DelegateA), simplified.Type);
+        Assert.IsTrue(simplified.TailCall);
     }
 }

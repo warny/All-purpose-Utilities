@@ -9,7 +9,11 @@ namespace UtilsTest.Mathematics.Expressions.Coverage;
 /// ETC R0: executable baseline of the expression-tree coverage matrix. For every catalog sample, every
 /// <see cref="ExpressionContract"/> is run and its classified outcome is compared with the row recorded here, which
 /// is the observed behavior of <c>master</c> at <c>b5c05dc3</c>, updated by ETC R1a for the rows of ETC-08, ETC-09 and
-/// ETC-13 (<c>TypeIs</c>, <c>TypeEqual</c>, <c>New*</c>, <c>NewArray*</c>, <c>Block*</c>, <c>Loop</c>, <c>Throw.Rethrow</c>).
+/// ETC-13 (<c>TypeIs</c>, <c>TypeEqual</c>, <c>New*</c>, <c>NewArray*</c>, <c>Block*</c>, <c>Loop</c>, <c>Throw.Rethrow</c>),
+/// and by ETC R1b (rows marked <c>// ETC R1b</c>) for the traversal of member access, type tests, creations and array
+/// creations (ETC-01/ETC-10, C-03) and the faithful unary and lambda reconstruction (ETC-04/ETC-05, C-01), and by ETC R1c (rows
+/// marked <c>// ETC R1c</c>) for the structural equality of conditionals, invocations, type tests, defaults, creations and
+/// array creations (ETC-06, C-04).
 /// </summary>
 /// <remarks>
 /// <para>
@@ -89,20 +93,20 @@ public class ExpressionTreeCoverageBaselineTests
         ["Unbox"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent",
         ["ArrayLength"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent",
         ["Quote"] = "Rewrites | Rewrites | Rewrites | Opaque | Equal | Consistent",
-        ["Throw"] = "Corrupts | Rewrites | Corrupts | Corrupts | Equal | Consistent",
+        ["Throw"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R1b
         ["Constant"] = "Same | Rebuilt | Rebuilt | Same | Equal | Consistent",
         ["Parameter"] = "Same | Same | Same | Rewrites | Equal | Consistent",
-        ["Default"] = "Same | Same | Same | Same | Unequal | Consistent",
+        ["Default"] = "Same | Same | Same | Same | Equal | Consistent", // ETC R1c
         ["Call"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent",
-        ["MemberAccess"] = "Opaque | Opaque | Opaque | Opaque | Equal | Consistent",
+        ["MemberAccess"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R1b
         ["Invoke"] = "Rewrites | Rewrites | Rewrites | Partial | Equal | Consistent",
         ["Lambda"] = "Rewrites | Rewrites | Rewrites | Opaque | Equal | Consistent",
-        ["Conditional"] = "Rewrites | Rewrites | Rewrites | Rewrites | Unequal | Consistent",
-        ["TypeIs"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
-        ["TypeEqual"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
-        ["New"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
-        ["NewArrayInit"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
-        ["NewArrayBounds"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
+        ["Conditional"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R1c
+        ["TypeIs"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R1b, R1c
+        ["TypeEqual"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R1b, R1c
+        ["New"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R1b, R1c
+        ["NewArrayInit"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R1b, R1c
+        ["NewArrayBounds"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R1b, R1c
         ["MemberInit"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
         ["ListInit"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
         ["Index"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
@@ -121,16 +125,16 @@ public class ExpressionTreeCoverageBaselineTests
         ["Equal.LiftedToNull"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent",
         ["Coalesce.Conversion"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent",
         ["AddAssign.CustomMethod"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent",
-        ["Negate.CustomMethod"] = "Drops | Rewrites | Corrupts | Drops | Equal | Consistent",
-        ["Convert.CustomMethod"] = "Drops | Rewrites | Corrupts | Drops | Equal | Consistent",
-        ["PreIncrementAssign.CustomMethod"] = "Drops | Rebuilt | Corrupts | Drops | Equal | Consistent",
+        ["Negate.CustomMethod"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R1b
+        ["Convert.CustomMethod"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R1b
+        ["PreIncrementAssign.CustomMethod"] = "Rebuilt | Rebuilt | Rebuilt | Rebuilt | Equal | Consistent", // ETC R1b
         ["Throw.Rethrow"] = "Same | Same | Same | Same | Equal | Consistent",
         ["Call.InstanceReceiver"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent",
         ["MemberAccess.Static"] = "Same | Same | Same | Same | Equal | Consistent",
-        ["Invoke.Delegate"] = "Rewrites | Rewrites | Rewrites | Rewrites | Unequal | Consistent",
-        ["Lambda.Metadata"] = "Corrupts | Rewrites | Corrupts | Opaque | Equal | Consistent",
-        ["New.Members"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
-        ["New.ValueTypeDefault"] = "Same | Same | Same | Same | Unequal | Consistent",
+        ["Invoke.Delegate"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R1c
+        ["Lambda.Metadata"] = "Rewrites | Rewrites | Rewrites | Opaque | Equal | Consistent", // ETC R1b
+        ["New.Members"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R1b, R1c
+        ["New.ValueTypeDefault"] = "Same | Same | Same | Same | Equal | Consistent", // ETC R1c
         ["Block.TypedResult"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
         ["Block.Shadowing"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
         ["Block.DebugInfo"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",

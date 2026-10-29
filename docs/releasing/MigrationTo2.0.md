@@ -132,6 +132,38 @@ existing configuration or output changes. See the "Lexical form selection" secti
 `DONE-2026-08-25(2).md`. Spanish does not use this mechanism — its time-unit fix is a
 `ForcedVariants` addition (see above), not a lexical-form-selector one.
 
+<a id="omy-utils-expression-engine-etc-r1b-r1c"></a>
+## Expression engine: scalar traversal, faithful reconstruction, side-effect safety and structural equality (ETC R1b/R1c)
+
+These are behavior changes of `ExpressionTransformer`, `ExpressionSimplifier` and `ExpressionComparer`; no public signature
+changed. The full record (decisions C-01, C-03, C-04, C-06, findings ETC-03 to ETC-15, measurements) is in
+`Utils/TODO-2026-10-27-etc-expression-tree-coverage-roadmap.md`.
+
+- **Faithful unary and lambda reconstruction (C-01).** Every transformer, every `ExpressionSimplifier` subclass and the
+  protected `CopyExpression`/`ReplaceArguments` helpers now keep a unary operator or conversion `Method`, a typed `Throw`'s
+  type, and a lambda's delegate type, name and tail-call flag. A subclass that relied on the former loss (for example a
+  custom negation silently becoming the predefined one) observes the original operator again.
+- **Newly traversed families (C-03).** Member access (receiver), `TypeIs`/`TypeEqual`, `New` (arguments), `NewArrayInit`/
+  `NewArrayBounds` (elements or bounds) are traversed and rebuilt with their metadata; `Default` is an explicit leaf. A
+  `PrepareExpression` override is called on those children (in `ExpressionVisitor` order), rules declared on those node types
+  receive the prepared children, and `FinalizeExpression` receives a non-empty child list for them. `CopyExpression` applies
+  its arity contract to `MemberAccess` (one child for an instance member, none for a static one).
+- **Scalar substitution.** `ReplaceArguments` enters member receivers, type tests, creation arguments and array elements;
+  invocations of lambdas whose body uses those families can be inlined. Binders (nested lambdas, blocks, catch, switch) are
+  unchanged until R2.
+- **Side-effect safety (C-06).** The simplifier no longer drops, merges, repeats or reorders an operand that is not proven
+  inert: assignments and increments, throws, user methods (only an explicit allow-list of total `Math`/`MathF`/`double`/
+  `float` functions is inert), property getters, constructors and allocations, custom operators, invocations, checked
+  arithmetic, integer and decimal division, decimal arithmetic (overflow), array access, casts and unknown or extension
+  nodes. For example `f(x) + f(x)` keeps both calls, `(v = 5) * 0` keeps the assignment, the decimal sum `2m*x + 3m*x` is no
+  longer factored, and a sum keeps such terms in source order after its regrouped inert terms. Results that used to
+  rely on those rewrites are now less reduced but evaluate exactly like the source.
+- **Structural equality (C-04).** `ExpressionComparer` compares and hashes conditionals, invocations, type tests, defaults,
+  creations (constructor, arguments, members) and array creations structurally, with the usual parameter binding; such
+  trees, which were always unequal unless they were the same instance, can now be equal keys of a
+  `Dictionary<Expression, …>`/`HashSet<Expression>`. Structural equality does not make two allocations or two calls
+  interchangeable: the simplifier still keeps both.
+
 <a id="omy-utils-fonts-2"></a>
 ## Utils.Fonts hostile-font parsing hardening
 

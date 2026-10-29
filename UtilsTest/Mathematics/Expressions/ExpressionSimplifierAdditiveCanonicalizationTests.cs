@@ -545,11 +545,25 @@ public class ExpressionSimplifierAdditiveCanonicalizationTests
     // 3. Types and semantic boundaries
     // ------------------------------------------------------------------------------------------
 
-    /// <summary><see cref="float"/> and <see cref="decimal"/> chains: rebuilt zeros are the result type's own zero (bits 0, scale 0) and opposite terms cancel.</summary>
+    /// <summary>
+    /// <see cref="float"/> chains: rebuilt zeros are the result type's own zero (bits 0) and opposite terms cancel. A
+    /// <see cref="decimal"/> chain used to be canonicalized the same way; since ETC R1b (C-06) decimal addition and subtraction
+    /// may throw (overflow), so the chain is neither reassociated nor cancelled: <c>(a - b) + b</c> keeps the subtraction
+    /// that may overflow, and still computes the source value.
+    /// </summary>
     [TestMethod]
     public void FloatAndDecimalChains_UseTheirOwnZero()
     {
-        foreach ((Type type, string zero) in new[] { (typeof(float), "c:Single=00000000"), (typeof(decimal), "c:Decimal=0,0,0,0") })
+        ParameterExpression da = Expression.Parameter(typeof(decimal), "a");
+        ParameterExpression db = Expression.Parameter(typeof(decimal), "b");
+        Expression decimalSource = Expression.Add(Expression.Subtract(da, db), db);
+        Expression decimalResult = Simplify(decimalSource);
+        Assert.AreEqual(0, ZeroCount(decimalResult));
+        Assert.AreEqual(Dump(decimalSource), Dump(decimalResult));
+        Assert.AreEqual(5m, Evaluate(decimalResult, [da, db], 5m, 3m));
+        Assert.IsInstanceOfType<OverflowException>(Assert.ThrowsExactly<System.Reflection.TargetInvocationException>(() => Evaluate(decimalResult, [da, db], decimal.MinValue, 1m)).InnerException);
+
+        foreach ((Type type, string zero) in new[] { (typeof(float), "c:Single=00000000") })
         {
             ParameterExpression a = Expression.Parameter(type, "a");
             ParameterExpression b = Expression.Parameter(type, "b");
@@ -702,8 +716,9 @@ public class ExpressionSimplifierAdditiveCanonicalizationTests
     }
 
     /// <summary>
-    /// A nested custom subtraction stays one atomic term with its method: two structurally identical custom
-    /// nodes of opposite sign cancel as wholes, while a lone one is kept intact.
+    /// A nested custom subtraction stays one atomic term with its method, and a lone one is kept intact. Two structurally
+    /// identical custom nodes of opposite sign used to cancel as wholes; since ETC R1b (C-06) a custom operator is user code
+    /// whose evaluations may not be dropped, so both are kept, once each, and the result still computes the source value.
     /// </summary>
     [TestMethod]
     public void NestedCustomOperators_StayAtomic()
@@ -713,7 +728,9 @@ public class ExpressionSimplifierAdditiveCanonicalizationTests
         ParameterExpression z = Expression.Parameter(typeof(double), "z");
 
         Expression cancelled = Expression.Add(Expression.Subtract(x, Expression.Subtract(y, z, CustomSubtractMethod)), Expression.Subtract(y, z, CustomSubtractMethod));
-        Assert.AreSame(x, Simplify(cancelled));
+        Expression notCancelled = Simplify(cancelled);
+        Assert.AreEqual(2, Nodes(notCancelled).OfType<BinaryExpression>().Count(node => node.Method == CustomSubtractMethod), notCancelled.ToString());
+        Assert.AreEqual(Evaluate(cancelled, [x, y, z], 1.0, 2.0, 3.0), Evaluate(notCancelled, [x, y, z], 1.0, 2.0, 3.0));
 
         Expression kept = Expression.Subtract(Expression.Subtract(x, Expression.Subtract(y, z, CustomSubtractMethod)), z);
         Expression result = Simplify(kept);

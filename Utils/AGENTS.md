@@ -63,3 +63,7 @@ equality, hash, canonical-key or other recursive handler must:
 7. **Test deep and shared inputs**: a deep nesting of the new family on a 256 KiB worker thread (controlled `Stack`
    refusal), a shared DAG, and budget refusals just above the limit.
 8. **Benchmark the handler** against `master` (paired runs with an A/A control).
+9. **Respect the effect permissions** (ETC R1b, C-06): a simplifier rule or canonicalization step that drops, repeats,
+   merges or moves an evaluation must only do so on operands `ExpressionEffectAnalysis` proves inert (the shared rule gate
+   `AllowsRules` covers the operands of a node; a rule that removes the exception of its own operator must check it itself).
+   Structural equality alone never makes two evaluations interchangeable.
