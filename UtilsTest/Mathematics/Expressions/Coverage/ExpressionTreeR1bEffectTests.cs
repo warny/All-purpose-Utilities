@@ -217,6 +217,28 @@ public class ExpressionTreeR1bEffectTests
         AssertPreserved(Expression.Multiply(outOfRange, Expression.Constant(0.0)), i);
     }
 
+    /// <summary>
+    /// A division's own exception is not removed by an identity on the node itself: <c>0 / i</c> (integral or decimal) keeps
+    /// the division by zero, <c>i / -1</c> and <c>i / -j</c> keep the overflow of <c>MinValue / -1</c>; the floating-point
+    /// identities (<c>0 / x -&gt; 0</c>, <c>x / -1 -&gt; -x</c>), which cannot throw, still apply.
+    /// </summary>
+    [TestMethod]
+    public void DivisionIdentities_KeepTheirOwnExceptions()
+    {
+        ParameterExpression i = Expression.Variable(typeof(int), "i");
+        ParameterExpression m = Expression.Variable(typeof(decimal), "m");
+        Expression minValue = Expression.Add(Expression.Constant(int.MinValue), i);
+
+        Assert.AreEqual("throws DivideByZeroException | ", Run(new ExpressionSimplifier().Simplify(Expression.Divide(Expression.Constant(0), i)), i));
+        Assert.AreEqual("throws DivideByZeroException | ", Run(new ExpressionSimplifier().Simplify(Expression.Divide(Expression.Constant(0m), m)), m));
+        Assert.AreEqual("throws OverflowException | ", Run(new ExpressionSimplifier().Simplify(Expression.Divide(minValue, Expression.Constant(-1))), i));
+        Assert.AreEqual("throws OverflowException | ", Run(new ExpressionSimplifier().Simplify(Expression.Divide(minValue, Expression.Negate(Expression.Add(i, Expression.Constant(1))))), i));
+
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+        Assert.AreEqual(ExpressionType.Constant, new ExpressionSimplifier().Simplify(Expression.Divide(Expression.Constant(0.0), x)).NodeType);
+        Assert.AreEqual(ExpressionType.Negate, new ExpressionSimplifier().Simplify(Expression.Divide(x, Expression.Constant(-1.0))).NodeType);
+    }
+
     /// <summary>Innocent expressions are still simplified: neutral elements, cancellation, merging and constant folding.</summary>
     [TestMethod]
     public void InnocentExpressions_AreStillSimplified()

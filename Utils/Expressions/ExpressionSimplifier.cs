@@ -490,6 +490,15 @@ namespace Utils.Mathematics.Expressions
             => ExpressionEffectAnalysis.OperatorEffects(node) == ExpressionEffects.None;
 
         /// <summary>
+        /// Whether <paramref name="type"/> is a signed integral type, whose division of <c>MinValue</c> by <c>-1</c> throws
+        /// <see cref="OverflowException"/> while the negation of <c>MinValue</c> wraps (ETC R1b, C-06).
+        /// </summary>
+        /// <param name="type">The arithmetic type.</param>
+        /// <returns><see langword="true"/> for <see cref="sbyte"/>, <see cref="short"/>, <see cref="int"/> and <see cref="long"/>.</returns>
+        private static bool IsSignedIntegral(Type type)
+            => type == typeof(int) || type == typeof(long) || type == typeof(short) || type == typeof(sbyte);
+
+        /// <summary>
         /// Moves out of <paramref name="items"/> the terms (or factors) of a canonicalized chain whose evaluation may not be
         /// merged, cancelled, dropped or moved (ETC R1b, C-06): every term that is not inert, and, when one of them has an
         /// observable effect, every term reading mutable state (an observable term may write it). The pinned terms keep their
@@ -1047,9 +1056,10 @@ namespace Utils.Mathematics.Expressions
         /// a constant of the node's type instead: <c>5 / -1</c> was left as the unevaluated <c>-(5)</c>, and
         /// <c>int.MinValue / -1</c> (or <c>long.MinValue / -1</c>) became <c>-(MinValue)</c>, which evaluates to
         /// <c>MinValue</c> where the source throws <see cref="OverflowException"/>; the fold throws it while simplifying,
-        /// as a zero divisor does. On a non-constant dividend <c>x / -1 -&gt; -x</c> stays: it is exact in IEEE-754 and
-        /// for decimals, but for <c>x = int.MinValue</c> (or <c>long.MinValue</c>) the negation wraps where the division
-        /// throws, which the "Symbolic-equivalence contract" leaves open (overflow and exceptions are not preserved).
+        /// as a zero divisor does. On a non-constant dividend <c>x / -1 -&gt; -x</c> stays for the floating-point types
+        /// and <see cref="decimal"/>, where it is exact. For a signed integral type it is declined since ETC R1b (C-06): for
+        /// <c>x = MinValue</c> the negation wraps where the division throws <see cref="OverflowException"/>, and a rule must
+        /// not remove an exception the evaluation can raise.
         /// </para>
         /// </remarks>
         [ExpressionSignature(ExpressionType.Divide)]
@@ -1063,7 +1073,7 @@ namespace Utils.Mathematics.Expressions
             else if (left is not ConstantExpression)
             {
                 if (NumericValueEquals(right.Value, 1)) return left;
-                if (NumericValueEquals(right.Value, -1)) return Expression.Negate(left);
+                if (NumericValueEquals(right.Value, -1) && !IsSignedIntegral(e.Type)) return Expression.Negate(left);
             }
             return null;
         }
@@ -1076,12 +1086,14 @@ namespace Utils.Mathematics.Expressions
         /// exactly (S5 P12): <c>0 / -3</c> is <c>-0</c>, <c>0 / 0.0</c> is <c>NaN</c> and <c>0 / inf</c> is <c>0</c>,
         /// whereas this identity returned the dividend (S5 P11 already declined on a non-finite constant). On a
         /// non-constant divisor it is the symbolic identity of the "Symbolic-equivalence contract" (the sign of the
-        /// zero and a <c>NaN</c> for <c>x = 0</c> or <c>x = NaN</c> are not preserved).
+        /// zero and a <c>NaN</c> for <c>x = 0</c> or <c>x = NaN</c> are not preserved). It applies to the floating-point
+        /// types only since ETC R1b (C-06): an integral or <see cref="decimal"/> division by a zero <c>x</c> throws
+        /// <see cref="DivideByZeroException"/>, which the identity would remove.
         /// </remarks>
         [ExpressionSignature(ExpressionType.Divide)]
         public Expression DivideWithZero(BinaryExpression e, [ConstantNumeric(0)] ConstantExpression left, Expression right)
         {
-            if (!IsOrdinaryBinaryArithmetic(e) || right is ConstantExpression) return null;
+            if (!IsOrdinaryBinaryArithmetic(e) || right is ConstantExpression || !Types.FloatingPointNumber.Contains(e.Type) || e.Type == typeof(decimal)) return null;
             if (NumericValueEquals(left.Value, 0)) return left;
             return null;
         }
@@ -2134,10 +2146,14 @@ namespace Utils.Mathematics.Expressions
         /// <summary>
         /// Rewrites <c>left / (-right)</c> as <c>-(left / right)</c>.
         /// </summary>
+        /// <remarks>
+        /// Declined for a signed integral type since ETC R1b (C-06): for <c>left = MinValue</c> and <c>right = 1</c> the source
+        /// divides by <c>-1</c> and throws <see cref="OverflowException"/>, whereas the negated quotient wraps silently.
+        /// </remarks>
         [ExpressionSignature(ExpressionType.Divide)]
         protected Expression DivisionWithNegate(BinaryExpression e, Expression left, [ExpressionSignature(ExpressionType.Negate)] UnaryExpression right)
         {
-            if (!IsOrdinaryBinaryArithmetic(e) || !IsOrdinaryUnaryNegate(right)) return null;
+            if (!IsOrdinaryBinaryArithmetic(e) || !IsOrdinaryUnaryNegate(right) || IsSignedIntegral(e.Type)) return null;
 
             return Expression.Negate(
                 TransformCore(Expression.Divide(left, right.Operand))
