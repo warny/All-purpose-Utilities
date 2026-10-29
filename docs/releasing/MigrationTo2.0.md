@@ -196,6 +196,13 @@ The full record is in `Utils/TODO-2026-10-27-etc-expression-tree-coverage-roadma
   blocks, tries, switches or loops interchangeable: the simplifier treats them as observable and keeps every evaluation.
 - **Canonical ordering.** Block and catch variables are bound scopes for the simplifier's canonical ordering, so block-local
   terms are ordered by binding position (for example `{ u = …; v = …; v + u }` now simplifies its last statement to `u + v`).
+- **Validation of shared DAGs.** The input validation of every expression operation no longer unfolds a shared subtree
+  once per use when the node limit is above 65,536: a heavily shared DAG (for example `e = e + e` repeated 40 times) used
+  to make a call with `ExpressionResourceLimits.Unlimited` or a very high `MaxNodes` run practically forever; it is now
+  decided in linear time (and not validated at all under `Unlimited`, which cannot refuse anything). The default limits,
+  the counted quantities (logical occurrences, depth) and the refusal kinds are unchanged; the observed value of such a
+  refusal is now the exact (saturated) count, and when a large input exceeds both limits the reported kind may be `Depth`
+  where it was `Nodes`.
 
 <a id="omy-utils-fonts-2"></a>
 ## Utils.Fonts hostile-font parsing hardening

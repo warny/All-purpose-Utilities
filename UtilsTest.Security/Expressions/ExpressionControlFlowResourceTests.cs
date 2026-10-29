@@ -263,6 +263,13 @@ public class ExpressionControlFlowResourceTests
         var transformer = new RecursiveTransformer(tight);
         Assert.AreEqual(ExpressionResourceLimitKind.StructuralWork, Assert.ThrowsExactly<ExpressionResourceLimitException>(
             () => ExpressionResourceBudget.Run(tight, transformer, null, null, dag, d => transformer.Replace(d, P, Expression.Constant(1.0)))).Kind);
+
+        // Without shape limits the shared DAG is validated in linear time (it used to be unfolded), so the public
+        // substitution reaches its walk, which the structural budget refuses.
+        Assert.AreEqual(ExpressionResourceLimitKind.StructuralWork, Assert.ThrowsExactly<ExpressionResourceLimitException>(
+            () => new RecursiveTransformer(NoLimits with { MaxStructuralVisits = 100_000 }).Replace(dag, P, Expression.Constant(1.0))).Kind);
+        Assert.AreEqual(ExpressionResourceLimitKind.StructuralWork, Assert.ThrowsExactly<ExpressionResourceLimitException>(
+            () => new RecursiveTransformer(ExpressionResourceLimits.Default with { MaxNodes = long.MaxValue, MaxStructuralVisits = 100_000 }).Replace(dag, P, Expression.Constant(1.0))).Kind);
     }
 
     /// <summary>A transformer whose rule on blocks compares the block with the public comparer (a re-entrant public call).</summary>

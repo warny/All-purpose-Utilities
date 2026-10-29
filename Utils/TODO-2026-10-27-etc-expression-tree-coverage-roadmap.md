@@ -602,6 +602,63 @@ child edges bounded by the same cap, cycles of custom graphs treated as leaves) 
 distinct items, otherwise the lower bound of the decision walk. Measured cost: about 3 ns per node for call chains, 4 ns
 for binary trees.
 
+**Shared DAG validation (ETC R2 follow-up, 2026-10-29).** The walk above is O(min(logical items, node limit)): bounded by
+the default limit (50,000), but exponential for a shared DAG once the node limit exceeds its occurrence count — in
+particular under `ExpressionResourceLimits.Unlimited`, where `e = e + e` repeated 40 times (41 distinct nodes, 2^41 - 1
+occurrences) never finished. `Validate` now keeps the historical walk alone for node limits up to 65,536 (every default
+validation, same cost and refusals), returns at once when both limits are at their maximum (nothing can be refused; the
+stack guards of the following walks still apply), and otherwise decides in bounded stages: an unfolded walk of 4,096
+occurrences (small inputs), `Measure` capped at 256 distinct items (heavily shared DAGs, decided without unfolding), the
+same unfolded walk resumed where it paused (it pauses between two items instead of throwing, so nothing is walked twice)
+up to 4,194,304 occurrences (large trees at the cost of a plain walk, no memoization overhead), then the uncapped
+`Measure` (distinct items or child edges above the node limit refuse at once). The capped `Measure` stops at its edge
+budget without an exception and without enumerating the rest of a wide child list. Total cost O(4,194,304 + distinct
+items + child edges), iterative, identity-memoized, no reference kept after the call. `Measure` now skips a second
+schedule of an item being expanded, so each item's child edges are examined once. Refusals keep their kinds; the observed
+value of a measured refusal is exact (saturated at `long.MaxValue`); when both limits are exceeded, a measured decision
+reports the depth first. Tests: `ExpressionSharedDagValidationTests` (Security, 10) and
+`ExpressionShapeValidationCorpusTests` (Unit: every R0–R2 catalog sample and a 16-level doubling DAG over it agree on both
+paths).
+
+Measurements (Release, same harness as §9 R2, 3 rounds, A/A control; "before" is the PR head `f176a3a6`). Shapes of the
+doubling DAG `e[n+1] = e[n] + e[n]` (measured, never unfolded): 20 levels — 21 distinct nodes, depth 21, 2,097,151
+occurrences; 40 levels — 41, 41, 2,199,023,255,551; 60 levels — 61, 61, 2,305,843,009,213,693,951; 70 levels — 71, 71,
+saturated at `long.MaxValue`. `val-*` call `Validate` directly: default limits for the historical families and
+`val-tree15` (32,767 nodes), `MaxNodes` 1,000,000 for `val-wide100k` (100,000 distinct constants) and `val-tree17`
+(262,143 nodes), `MaxNodes` `long.MaxValue - 1` for `val-dagpartial` (60 levels, one shared level in three) and
+`val-dagexp22` (22-level doubling DAG, 8,388,607 occurrences; larger ones cannot be measured "before").
+
+| Scenario | before ns | A/A | after ns | after/before | bytes before→after |
+|---|---|---|---|---|---|
+| scalar | 601 | -1.2% | 593 | -1.3% | 832→832 |
+| unary | 491 | -1.0% | 485 | -1.2% | 576→576 |
+| binary | 14259 | +1.5% | 14287 | +0.2% | 18356→18356 |
+| lambda | 3855 | -2.4% | 3737 | -3.1% | 6937→6937 |
+| leftsum20 | 4905875 | -0.2% | 5040825 | +2.8% | 9667359→9667357 |
+| p15opaque8 | 21170300 | -1.1% | 20804200 | -1.7% | 18165726→18165726 |
+| p16chain12 | 13037650 | +0.2% | 12925450 | -0.9% | 17247996→17247996 |
+| cmp-pos | 3074514 | +0.2% | 3045914 | -0.9% | 4123405→4123405 |
+| hash | 3816483 | +0.4% | 3817683 | +0.0% | 5358408→5358408 |
+| val-dagpartial | 33256100 | +4.1% | 30546 | -99.9% | 136→21728 |
+| val-dagexp22 | 36312400 | +4.0% | 22160 | -99.9% | 136→7424 |
+| val-scalar | 59 | +0.0% | 62 | +5.1% | 96→96 |
+| val-unary | 62 | +1.6% | 61 | -1.6% | 96→96 |
+| val-binary | 98 | +0.0% | 99 | +1.0% | 96→96 |
+| val-lambda | 112 | +0.0% | 113 | +0.9% | 96→96 |
+| val-leftsum20 | 243 | -4.1% | 241 | -0.8% | 96→96 |
+| val-p15opaque8 | 377 | +0.5% | 376 | -0.3% | 96→96 |
+| val-p16chain12 | 315 | +0.6% | 316 | +0.3% | 96→96 |
+| val-tree15 | 148005 | +6.4% | 155444 | +5.0% | 96→96 |
+| val-wide100k | 1518121 | +0.1% | 1594931 | +5.1% | 4193693→4201179 |
+| val-tree17 | 1519793 | -3.9% | 1560493 | +2.7% | 99→33394 |
+
+The engine scenarios (simplify, comparer, hash) and the direct default validations stay within the noise (-3.1 % to
++2.8 %, A/A up to ±6 % on sub-microsecond timings; `val-scalar` +5.1 % is 3 ns on 59 ns); the default path is the historical loop, unchanged. The engine and DAG rows come from the campaign run just before the historical loop was put back inline (a change that only removes work from the default path); the `val-*` rows of the default and large-tree paths were measured on the final code. Shared DAGs under
+a high limit are decided about a thousand times faster (33–36 ms to 22–31 µs) and no longer grow with the occurrence
+count; `Unlimited` performs no validation at all. Large trees without sharing under a high limit cost +3 to +5 % (the
+4,096-occurrence pause and the capped probe, about 60–75 µs, then the resumed walk); the allocations of those scenarios
+come from the probe (`val-tree17`: 33 KB) and, for `val-wide100k`, from the work stack growth that already existed.
+
 **Counter and guard placement**
 
 | Path | Budget | Stack check |
@@ -969,9 +1026,9 @@ R2 families are unknown to `ExpressionEffectAnalysis`, hence observable as a who
 cancelled or reordered by the rules (tested with traces: equal blocks, `try/finally * 0`, `X - X` on switches and loops,
 jumps, allocations and calls inside blocks).
 
-**Pre-existing limit found (not changed).** With `ExpressionResourceLimits.Unlimited`, the shape validator still unfolds a
-shared DAG logically (2^n nodes) before any walk; the R2 security test runs the DAG substitution inside a joined operation
-instead. It belongs to R1a-Security, not to R2.
+**Pre-existing limit found, then fixed in the same PR.** With `ExpressionResourceLimits.Unlimited` (or any node limit above
+a DAG's occurrence count), the shape validator unfolded a shared DAG logically (2^n occurrences) before any walk. Fixed by
+the follow-up commit "validate shared expression DAGs in linear time" (see R1a-Security, "Shared DAG validation").
 
 **Tests.** `ExpressionTreeR2Tests` (16, checkpoint A), `ExpressionTreeR2BindingTests` (24, B),
 `ExpressionTreeR2SubstitutionTests` (21, C), `ExpressionTreeR2EffectTests` (9, D), `ExpressionControlFlowResourceTests`
@@ -1064,7 +1121,7 @@ levels): blocks are not memoized (P9/P16 ineligible by design, §6), and the cos
 | R1a-Security | 2026-10-28 | Resource limits, per-thread budget session, iterative validator, stack guards on every engine walk, nested-call and re-entrancy policy, Stack translation; ETC-19 fixed and ETC-17 bounded for the ETC engine; rule invocation no longer re-wraps resource failures (stack overflow found and fixed); measured overhead documented (§9 R1a-Security result). |
 | R1b | 2026-10-29 | Member, TypeBinary, New, NewArray traversed and Default an explicit leaf (C-03); faithful unary and lambda reconstruction for every transformer (C-01, ETC-04/05 fixed); scalar substitution; ETC-10 fixed; ETC-15 resolved for the simplifier with the strict C-06 boundary (effect analysis, rule gate, canonicalization pinning, division identities); S5 scenarios reclassified with an inert carrier; performance in §9 R1b/R1c measurements. |
 | R1c | 2026-10-29 | Structural equality, hashing and canonical keys of Conditional, Invoke, TypeIs, TypeEqual, Default, New and NewArray (C-04, ETC-06/07/14 resolved for these families); structural equality kept apart from algebraic interchangeability; resource tests for every new walker. |
-| R2 | 2026-10-29 | Block, Try, Switch, Loop, Goto, Label traversed and faithfully rebuilt, RuntimeVariables and DebugInfo explicit (C-03); binder frames and label bijection in equality, hashing and canonical keys (C-04); capture-avoiding substitution with alpha-renaming, RuntimeVariables C-07, Quote untouched (C-05 pending); binder-aware inlining analysis; S4 block/catch scopes; R2 families observable for the rules (ETC-15 kept); resource tests for every new walk; ETC-01/02/03 advanced, ETC-06/07/14 extended; performance in §9 R2 measurements. |
+| R2 | 2026-10-29 | Block, Try, Switch, Loop, Goto, Label traversed and faithfully rebuilt, RuntimeVariables and DebugInfo explicit (C-03); binder frames and label bijection in equality, hashing and canonical keys (C-04); capture-avoiding substitution with alpha-renaming, RuntimeVariables C-07, Quote untouched (C-05 pending); binder-aware inlining analysis; S4 block/catch scopes; R2 families observable for the rules (ETC-15 kept); resource tests for every new walk; ETC-01/02/03 advanced, ETC-06/07/14 extended; performance in §9 R2 measurements. Follow-up in the same PR: shared DAGs validated in linear time (pre-existing exponential validation under high node limits, §9 R1a-Security "Shared DAG validation"). |
 
 ## 11. Decisions requested from the reviewer
 
