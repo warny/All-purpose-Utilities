@@ -615,9 +615,13 @@ public class ExpressionTreeR1aTests
         }
     }
 
-    /// <summary>A parameter used in a constructor argument (an untraversed node) keeps the invocation, which still compiles.</summary>
+    /// <summary>
+    /// A parameter used in a constructor argument read through a field: R1a kept the invocation (member access and creation
+    /// were untraversed); since ETC R1b substitution enters both families, so the inert argument is substituted and the
+    /// invocation inlined, and the result still computes the same values.
+    /// </summary>
     [TestMethod]
-    public void Invoke_ParameterInConstructorArgument_IsKept()
+    public void Invoke_ParameterInConstructorArgument_IsInlinedSinceR1b()
     {
         ParameterExpression q = Expression.Parameter(typeof(double), "q");
         Expression body = Expression.Field(Expression.New(typeof(StrongBox<double>).GetConstructor([typeof(double)])!, q), nameof(StrongBox<double>.Value));
@@ -626,7 +630,7 @@ public class ExpressionTreeR1aTests
         Expression<Func<double, double>> simplified = Simplify(original);
 
         AssertSameValues(original, simplified);
-        Assert.AreEqual(1, CountLambdaInvocations(simplified));
+        Assert.AreEqual(0, CountLambdaInvocations(simplified));
     }
 
     /// <summary>An inner lambda redeclaring the invoked parameter (shadowing) keeps the invocation and the original binding.</summary>
@@ -776,20 +780,25 @@ public class ExpressionTreeR1aTests
     }
 
     /// <summary>
-    /// A custom unary operator in the body keeps the invocation, since substitution would drop its method (ETC-04). Only
-    /// the exact simplifier is checked: a derived simplifier already drops the method while preparing the body (C-01).
+    /// A custom unary operator in the body: R1a kept the invocation, since substitution dropped the method (ETC-04). Since
+    /// ETC R1b (C-01) substitution rebuilds the operator faithfully, so the exact and a derived simplifier inline the
+    /// invocation and keep the operator method.
     /// </summary>
     [TestMethod]
-    public void Invoke_BodyWithCustomUnaryOperator_IsKept()
+    public void Invoke_BodyWithCustomUnaryOperator_IsInlinedWithItsMethod()
     {
         ParameterExpression q = Expression.Parameter(typeof(double), "q");
         var original = Expression.Lambda<Func<double, double>>(
             Expression.Invoke(Expression.Lambda(Expression.Negate(q, CatalogHelpers.FortyTwoMethod), q), P), P);
 
-        Expression<Func<double, double>> simplified = Simplify(original);
+        foreach (ExpressionSimplifier simplifier in new[] { new ExpressionSimplifier(), new DerivedSimplifier() })
+        {
+            Expression<Func<double, double>> simplified = Simplify(original, simplifier);
 
-        AssertSameValues(original, simplified);
-        Assert.AreEqual(1, CountLambdaInvocations(simplified));
+            AssertSameValues(original, simplified);
+            Assert.AreEqual(0, CountLambdaInvocations(simplified));
+            Assert.AreSame(CatalogHelpers.FortyTwoMethod, ((UnaryExpression)simplified.Body).Method);
+        }
     }
 
     /// <summary>The ETC-11 reproducers compile and compute the same values through a derived simplifier too.</summary>

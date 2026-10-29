@@ -240,15 +240,20 @@ public class ExpressionTreeFindingsTests
         Assert.AreSame(nested, invocation.Expression);
     }
 
-    /// <summary>ETC-03 / ETC-04: substitution rebuilds unary nodes through the historical factories, so a typed <c>Throw</c> becomes <see cref="void"/>.</summary>
+    /// <summary>
+    /// ETC-03 / ETC-04, resolved for unary nodes by ETC R1b (C-01): substitution used the historical factories, so a typed
+    /// <c>Throw</c> became <see cref="void"/>; it now keeps its type and its substituted operand.
+    /// </summary>
     [TestMethod]
-    public void ETC03_Substitution_TypedThrow_BecomesVoid()
+    public void ETC03_Substitution_TypedThrow_KeepsItsType()
     {
         UnaryExpression typedThrow = Expression.Throw(Expression.Call(CatalogHelpers.MakeExceptionMethod, P), typeof(double));
 
-        Expression result = new ExposedTransformer().Replace(typedThrow, P, Expression.Constant(5.0));
+        var result = (UnaryExpression)new ExposedTransformer().Replace(typedThrow, P, Expression.Constant(5.0));
 
-        Assert.AreEqual(typeof(void), result.Type);
+        Assert.AreEqual(typeof(double), result.Type);
+        Assert.AreEqual(ExpressionType.Throw, result.NodeType);
+        Assert.IsInstanceOfType<ConstantExpression>(((MethodCallExpression)result.Operand).Arguments[0]);
     }
 
     /// <summary>ETC-03: substitution ignores block variables and every other non-scalar family; R2 defines the binding model first.</summary>
@@ -470,8 +475,9 @@ public class ExpressionTreeFindingsTests
 
     /// <summary>
     /// ETC-11 (high), guarded by ETC R1a: inlining an invoked lambda left its parameter unbound when the body held the
-    /// parameter in a nested lambda or a member access. Such an invocation is now kept, so the result compiles and
-    /// computes the same value; capture-avoiding inlining is R2.
+    /// parameter in a nested lambda or a member access. An invocation whose parameter sits in a nested lambda is still
+    /// kept (capture-avoiding inlining is R2); since ETC R1b, substitution enters member accesses, so the member-access body
+    /// is inlined with its parameter replaced. Both results compile and compute the same value.
     /// </summary>
     [TestMethod]
     public void ETC11_InvokeInlining_KeepsInvocationWhenParameterIsNotSubstitutable()
@@ -491,7 +497,8 @@ public class ExpressionTreeFindingsTests
         Assert.AreEqual(3.0, simplifiedMember.Compile()(3.0));
         var keptInvocation = (InvocationExpression)((InvocationExpression)simplifiedNested.Body).Expression;
         Assert.AreSame(q, ((LambdaExpression)keptInvocation.Expression).Parameters[0]);
-        Assert.IsInstanceOfType<InvocationExpression>(simplifiedMember.Body);
+        var inlined = (MemberExpression)simplifiedMember.Body;
+        Assert.AreSame(P, ((MethodCallExpression)inlined.Expression!).Arguments[0]);
     }
 
     /// <summary>ETC-12 (policy): the simplifier rewrites the contents of a quoted lambda, which is data for its consumer.</summary>

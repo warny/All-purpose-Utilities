@@ -1831,8 +1831,38 @@ public abstract class ExpressionTransformer
                     ReplaceArgumentsCore(ce.IfTrue, oldParameters, newParameters),
                     ReplaceArgumentsCore(ce.IfFalse, oldParameters, newParameters),
                     ce.Type);
+
+            // ETC R1b: scalar families without binder. Each rebuild keeps the node's metadata (member, constructor and
+            // members, element type and rank, type operand) and returns the node itself when no child changed.
+            case MemberExpression { Expression: not null } me:
+                return CopyMemberExpression(me, ReplaceArgumentsCore(me.Expression, oldParameters, newParameters));
+
+            case TypeBinaryExpression tbe:
+                return CopyTypeBinaryExpression(tbe, [ReplaceArgumentsCore(tbe.Expression, oldParameters, newParameters)]);
+
+            case NewExpression { Arguments.Count: > 0 } ne:
+                return CopyNewExpression(ne, ReplaceEachArgument(ne.Arguments, oldParameters, newParameters));
+
+            case NewArrayExpression { Expressions.Count: > 0 } nae:
+                return CopyNewArrayExpression(nae, ReplaceEachArgument(nae.Expressions, oldParameters, newParameters));
         }
         return e;
+    }
+
+    /// <summary>Applies <see cref="ReplaceArgumentsCore"/> to each child of <paramref name="children"/>, in order.</summary>
+    /// <param name="children">The non-empty children to substitute.</param>
+    /// <param name="oldParameters">See <see cref="ReplaceArgumentsCore"/>.</param>
+    /// <param name="newParameters">See <see cref="ReplaceArgumentsCore"/>.</param>
+    /// <returns>The substituted children.</returns>
+    private Expression[] ReplaceEachArgument(ReadOnlyCollection<Expression> children, IReadOnlyList<ParameterExpression>? oldParameters, IReadOnlyList<Expression>? newParameters)
+    {
+        var replaced = new Expression[children.Count];
+        for (int i = 0; i < replaced.Length; i++)
+        {
+            replaced[i] = ReplaceArgumentsCore(children[i], oldParameters, newParameters);
+        }
+
+        return replaced;
     }
 
     /// <summary>
