@@ -381,7 +381,10 @@ public class ExpressionSimplifierNumericChainGrowthTests
         Assert.AreEqual(sharedForm, Simplified(Chain(copies, Expression.Subtract)));
     }
 
-    /// <summary>The P16 chain over every ordinary numeric type (the unsigned ones keep <c>0 - t</c>).</summary>
+    /// <summary>
+    /// The P16 chain over every ordinary numeric type (the unsigned ones keep <c>0 - t</c>). Since ETC R1b (C-06) a decimal
+    /// chain is not reassociated (decimal arithmetic may throw on overflow), so it keeps its source shape.
+    /// </summary>
     /// <param name="typeName">The numeric type.</param>
     /// <param name="expected">The simplified tree.</param>
     [TestMethod]
@@ -389,13 +392,14 @@ public class ExpressionSimplifierNumericChainGrowthTests
     [DataRow("Int64", "((0 - (3 * x1)) + ((0 - (4 * x2)) + ((0 - (5 * x3)) + ((0 - (6 * x4)) + (100 * x0)))))")]
     [DataRow("UInt32", "((0 - (3 * x1)) + ((0 - (4 * x2)) + ((0 - (5 * x3)) + ((0 - (6 * x4)) + (100 * x0)))))")]
     [DataRow("Single", "((0 - (3 * x1)) + ((0 - (4 * x2)) + ((0 - (5 * x3)) + ((0 - (6 * x4)) + (100 * x0)))))")]
-    [DataRow("Decimal", "((0 - (3 * x1)) + ((0 - (4 * x2)) + ((0 - (5 * x3)) + ((0 - (6 * x4)) + (100 * x0)))))")]
+    [DataRow("Decimal", "(((((100 * x0) - (3 * x1)) - (4 * x2)) - (5 * x3)) - (6 * x4))")]
     public void TypedChains_SimplifiedForm(string typeName, string expected)
         => Assert.AreEqual(expected, Simplified(TailSortedChain(5, Type.GetType("System." + typeName)!)));
 
     /// <summary>
     /// Negated additions over non-finite, signed-zero and extreme constants: the comparison and the rewritten difference
-    /// keep their IEEE-754 and decimal behavior (including a decimal overflow raised while simplifying).
+    /// keep their IEEE-754 behavior. The decimal shape used to be rewritten (the rules reassociated additions that may
+    /// overflow); since ETC R1b (C-06) its decimal operands are not inert, so it is returned with its source structure.
     /// </summary>
     /// <param name="shape">The shape.</param>
     /// <param name="expected">The simplified tree, or the innermost exception type.</param>
@@ -403,7 +407,7 @@ public class ExpressionSimplifierNumericChainGrowthTests
     [DataRow("nan", "0")]
     [DataRow("infinity", "((0 - (3 * z)) + ((100 * x) + ((0 - (Infinity * y)) - (Infinity * y))))")]
     [DataRow("negativeZero", "((0 - (3 * z)) + (100 * x))")]
-    [DataRow("decimalMax", "(((-79228162514264337593543950335 + ((0 - (-7.25 * y)) + (79228162514264337593543950335 * (1 + x)))) - 79228162514264337593543950335) - x)")]
+    [DataRow("decimalMax", "(-(79228162514264337593543950335 + x) + (((79228162514264337593543950335 + (79228162514264337593543950335 * x)) - (-7.25 * y)) - 79228162514264337593543950335))")]
     public void SpecialConstants_SimplifiedForm(string shape, string expected)
     {
         Expression source;
@@ -432,7 +436,10 @@ public class ExpressionSimplifierNumericChainGrowthTests
         Assert.AreEqual(expected, exception is null ? actual : exception.GetType().Name);
     }
 
-    /// <summary>The P16 chain with a custom multiplication operator on every term: each term keeps its method.</summary>
+    /// <summary>
+    /// The P16 chain with a custom multiplication operator on every term: each term keeps its method. Since ETC R1b (C-06)
+    /// a custom operator is user code, so the terms are no longer sorted: they keep their source order.
+    /// </summary>
     [TestMethod]
     public void CustomOperatorChain_SimplifiedForm()
     {
@@ -443,7 +450,7 @@ public class ExpressionSimplifierNumericChainGrowthTests
 
         Expression result = new ExpressionSimplifier().Simplify(source);
 
-        Assert.AreEqual("((0 - (3 * x1)) + ((0 - (4 * x2)) + ((0 - (5 * x3)) + ((0 - (6 * x4)) + ((0 - (7 * x5)) + (100 * x0))))))", result.ToString());
+        Assert.AreEqual("((100 * x0) + ((0 - (3 * x1)) + ((0 - (4 * x2)) + ((0 - (5 * x3)) + ((0 - (6 * x4)) + (0 - (7 * x5)))))))", result.ToString());
         Assert.AreEqual(6, CountCustomMultiplications(result));
     }
 
@@ -498,7 +505,7 @@ public class ExpressionSimplifierNumericChainGrowthTests
     private static Expression OpaqueNegatedAddition(object negated, object[] values)
     {
         static Expression Opaque(double coefficient, object value)
-            => Expression.Multiply(Expression.Constant(coefficient), Expression.Call(Identity, Expression.Constant(value, typeof(object))));
+            => Expression.Multiply(Expression.Constant(coefficient), SafeOpaqueTerm.Carrier(value));
         Expression chain = Chain(values.Select((value, i) => Opaque(i == 0 ? 100 : i + 2, value)), Expression.Subtract);
         return Expression.Add(Expression.Negate(Opaque(3, negated)), chain);
     }
@@ -520,9 +527,9 @@ public class ExpressionSimplifierNumericChainGrowthTests
     /// <param name="expectedDigest">The digest of the call log and the simplified tree.</param>
     /// <param name="expectedCalls">The number of calls.</param>
     [TestMethod]
-    [DataRow(3, false, "94778D216B7B405B", 23)]
-    [DataRow(5, false, "0922847EBFA055EF", 563)]
-    [DataRow(5, true, "A0638EF39975B48D", 563)]
+    [DataRow(3, false, "7CA167CBDAAE6DE0", 23)]
+    [DataRow(5, false, "7F5D265CD4120525", 563)]
+    [DataRow(5, true, "EE3FFAF773BA5DEA", 563)]
     public void OpaqueNegatedAddition_UserCallsAndForm(int n, bool sameValue, string expectedDigest, int expectedCalls)
     {
         var log = new List<string>();
@@ -574,7 +581,7 @@ public class ExpressionSimplifierNumericChainGrowthTests
         string result = Simplified(OpaqueNegatedAddition(negated, LoggingConstants(5, log)));
 
         Assert.AreEqual(563, log.Count);
-        Assert.AreEqual("E9CFA986DD1FFC3A", Digest(string.Join(";", log) + "|" + string.Join(";", inner) + "|" + result));
+        Assert.AreEqual("42C1BCB906E80466", Digest(string.Join(";", log) + "|" + string.Join(";", inner) + "|" + result));
     }
 
     /// <summary>The P9 strict keys of rebuilt P16 chains: equal for the same structure, distinct otherwise.</summary>
@@ -616,7 +623,9 @@ public class ExpressionSimplifierNumericChainGrowthTests
     /// <summary>
     /// Chains whose head is not inert arithmetic keep the second preparation, hence their comparer work, exactly: an
     /// opaque constant (never compared), its known-safe control, a call, and the decimal chain (its arithmetic can throw on
-    /// overflow). The opaque chain still costs exactly its known-safe control (S5 P15). Measured on the baseline.
+    /// overflow). The opaque chain still costs exactly its known-safe control (S5 P15). Measured on the baseline. Since ETC
+    /// R1b (C-06) the decimal chain is no longer rewritten at all (its operands may throw), so it makes only the comparer
+    /// work of preparing its leaves, far below the former 17,718.
     /// </summary>
     /// <param name="head">The head term.</param>
     /// <param name="expected">The number of comparer simplifications.</param>
@@ -624,7 +633,7 @@ public class ExpressionSimplifierNumericChainGrowthTests
     [DataRow("opaque", 17_718)]
     [DataRow("knownSafe", 17_718)]
     [DataRow("call", 17_718)]
-    [DataRow("decimal", 17_718)]
+    [DataRow("decimal", 8)]
     public void NonInertChains_KeepTheirComparerWork(string head, int expected)
     {
         var log = new List<string>();
@@ -639,8 +648,8 @@ public class ExpressionSimplifierNumericChainGrowthTests
             Expression[] terms = Terms(xs);
             Expression value = head switch
             {
-                "opaque" => Expression.Call(Identity, Expression.Constant(new LoggingConstant("h", log), typeof(object))),
-                "knownSafe" => Expression.Call(Identity, Expression.Constant("safe", typeof(object))),
+                "opaque" => SafeOpaqueTerm.Carrier(new LoggingConstant("h", log)),
+                "knownSafe" => SafeOpaqueTerm.Carrier("safe"),
                 _ => Expression.Call(typeof(Math).GetMethod(nameof(Math.Sin), [typeof(double)])!, xs[0]),
             };
             terms[0] = Expression.Multiply(Expression.Constant(100.0), value);

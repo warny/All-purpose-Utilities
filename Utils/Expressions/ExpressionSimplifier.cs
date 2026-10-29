@@ -460,6 +460,79 @@ namespace Utils.Mathematics.Expressions
         internal override LambdaExpression RebuildLambdaExpression(LambdaExpression expression, Expression body, ParameterExpression[] parameters)
             => base.RebuildLambdaExpression(expression, FoldNaNOperand(body), parameters);
 
+        /// <summary>
+        /// Keeps every symbolic rule away from a node whose operands are not inert (ETC R1b, compatibility entry C-06,
+        /// finding ETC-15): the rules may drop (<c>t * 0</c>, <c>t - t</c>), merge (<c>t + t</c>, factoring) or reorder
+        /// operand evaluations, so they run only when <see cref="ExpressionEffectAnalysis.HasInertOperands"/> proves all
+        /// three safe. An invocation keeps its own, stricter inlining analysis (<see cref="InvokeExpression"/>).
+        /// </summary>
+        /// <param name="node">The prepared node.</param>
+        /// <returns><see langword="true"/> if the rules may run.</returns>
+        /// <remarks>
+        /// Applies to every runtime type, derived simplifiers included: it protects the evaluation of the user's tree, not a
+        /// reconstruction detail. The operands are still simplified on their own (their own rules see their own operands),
+        /// so only the rewrites that would cross the observable evaluation are skipped. The gate is coarse on purpose (no
+        /// rule declares which evaluations it drops, merges or moves), so a rewrite that would be safe, such as
+        /// <c>f() + 0 -&gt; f()</c>, is skipped too. The canonicalization of <see cref="FinalizeExpression"/> is finer: it pins
+        /// the terms that are not inert instead (see <see cref="SplitPinnedTerms{T}"/>).
+        /// </remarks>
+        internal override bool AllowsRules(Expression node)
+            => node is InvocationExpression || ExpressionEffectAnalysis.HasInertOperands(node);
+
+        /// <summary>
+        /// Whether the operators of an additive or multiplicative chain of the type of <paramref name="node"/> may be
+        /// reassociated and reordered (ETC R1b, C-06): they must not throw, which excludes <see cref="decimal"/> (overflow).
+        /// The terms themselves are checked one by one by the canonicalization (<see cref="SplitPinnedTerms{T}"/>).
+        /// </summary>
+        /// <param name="node">The prepared ordinary <c>Add</c>/<c>Subtract</c>/<c>Multiply</c> node.</param>
+        /// <returns><see langword="true"/> if canonicalization is allowed.</returns>
+        private static bool CanonicalizesOperator(BinaryExpression node)
+            => ExpressionEffectAnalysis.OperatorEffects(node) == ExpressionEffects.None;
+
+        /// <summary>
+        /// Moves out of <paramref name="items"/> the terms (or factors) of a canonicalized chain whose evaluation may not be
+        /// merged, cancelled, dropped or moved (ETC R1b, C-06): every term that is not inert, and, when one of them has an
+        /// observable effect, every term reading mutable state (an observable term may write it). The pinned terms keep their
+        /// source order and occurrences; the inert terms left in <paramref name="items"/> are canonicalized as before and
+        /// placed before them, which is unobservable because an inert evaluation neither throws nor depends on a write.
+        /// </summary>
+        /// <typeparam name="T">The item type: a signed term or a factor.</typeparam>
+        /// <param name="items">The collected items; the pinned ones are removed from it, in place.</param>
+        /// <param name="term">Gets the expression of an item.</param>
+        /// <returns>The pinned items in source order, or <see langword="null"/> when every item is inert (the common case: nothing is allocated).</returns>
+        private static List<T>? SplitPinnedTerms<T>(List<T> items, Func<T, Expression> term)
+        {
+            bool observable = false;
+            bool pinnedSeen = false;
+            foreach (T item in items)
+            {
+                ExpressionEffects effects = ExpressionEffectAnalysis.Analyze(term(item));
+                observable |= (effects & ExpressionEffects.Observable) != 0;
+                pinnedSeen |= !ExpressionEffectAnalysis.IsInert(effects);
+            }
+
+            if (!pinnedSeen) return null;
+
+            var pinned = new List<T>();
+            int kept = 0;
+            for (int index = 0; index < items.Count; index++)
+            {
+                T item = items[index];
+                ExpressionEffects effects = ExpressionEffectAnalysis.Analyze(term(item));
+                if (!ExpressionEffectAnalysis.IsInert(effects) || (observable && (effects & ExpressionEffects.ReadsMutableState) != 0))
+                {
+                    pinned.Add(item);
+                }
+                else
+                {
+                    items[kept++] = item;
+                }
+            }
+
+            items.RemoveRange(kept, items.Count - kept);
+            return pinned;
+        }
+
         #region Structural canonicalization (S4) — ambient lexical scope tracking
 
         /// <summary>
@@ -2396,13 +2469,15 @@ namespace Utils.Mathematics.Expressions
             if (e is BinaryExpression binaryExpression)
             {
                 if ((binaryExpression.NodeType == ExpressionType.Add || binaryExpression.NodeType == ExpressionType.Subtract)
-                    && CanCanonicalizeCommutativeBinary(binaryExpression))
+                    && CanCanonicalizeCommutativeBinary(binaryExpression)
+                    && CanonicalizesOperator(binaryExpression))
                 {
                     return CanonicalizeAdditiveExpression(binaryExpression.NodeType, parameters[0], parameters[1]);
                 }
 
                 if (binaryExpression.NodeType == ExpressionType.Multiply
-                    && CanCanonicalizeCommutativeBinary(binaryExpression))
+                    && CanCanonicalizeCommutativeBinary(binaryExpression)
+                    && CanonicalizesOperator(binaryExpression))
                 {
                     return CanonicalizeMultiplicativeExpression(parameters[0], parameters[1]);
                 }
@@ -2461,12 +2536,17 @@ namespace Utils.Mathematics.Expressions
             var terms = new List<(Expression Term, bool IsNegative)>();
             CollectAdditiveTerms(terms, left, false);
             CollectAdditiveTerms(terms, right, nodeType == ExpressionType.Subtract);
+
+            // ETC R1b (C-06): a term whose evaluation is observable is never grouped, cancelled or moved past another one.
+            List<(Expression Term, bool IsNegative)>? pinned = SplitPinnedTerms(terms, static term => term.Term);
             terms.RemoveAll(static term => IsOrdinaryZeroConstant(term.Term));
             AggregateAdditiveConstants(terms, left.Type);
 
             if (terms.Count == 0)
             {
-                return Expression.Constant(Convert.ChangeType(0, left.Type), left.Type);
+                return pinned is null
+                    ? Expression.Constant(Convert.ChangeType(0, left.Type), left.Type)
+                    : BuildPinnedAdditiveChain([], pinned, left.Type);
             }
 
             ParameterExpression[][] scopes = CaptureLexicalScopeSnapshot();
@@ -2522,9 +2602,33 @@ namespace Utils.Mathematics.Expressions
                 }
             }
 
+            if (pinned is not null)
+            {
+                return BuildPinnedAdditiveChain(rebuiltTerms, pinned, left.Type);
+            }
+
             if (rebuiltTerms.Count == 0)
             {
                 return Expression.Constant(Convert.ChangeType(0, left.Type), left.Type);
+            }
+
+            return BuildRightAssociative(rebuiltTerms, Expression.Add);
+        }
+
+        /// <summary>
+        /// Builds the canonical additive chain of a sum holding pinned terms (ETC R1b, C-06): the canonicalized inert groups
+        /// first, then every pinned term, once, with its sign and in source order, right-associated as usual. A negative pinned
+        /// term is written <c>0 - term</c>, like a negative group.
+        /// </summary>
+        /// <param name="rebuiltTerms">The canonicalized groups of the inert terms (possibly empty).</param>
+        /// <param name="pinned">The pinned signed terms, in source order (never empty).</param>
+        /// <param name="type">The type of the chain.</param>
+        /// <returns>The chain.</returns>
+        private static Expression BuildPinnedAdditiveChain(List<Expression> rebuiltTerms, List<(Expression Term, bool IsNegative)> pinned, Type type)
+        {
+            foreach ((Expression Term, bool IsNegative) term in pinned)
+            {
+                rebuiltTerms.Add(BuildAdditiveExpression([term], type));
             }
 
             return BuildRightAssociative(rebuiltTerms, Expression.Add);
@@ -2769,11 +2873,15 @@ namespace Utils.Mathematics.Expressions
             CollectMultiplicativeFactors(factors, left);
             CollectMultiplicativeFactors(factors, right);
 
+            // ETC R1b (C-06): a factor whose evaluation is observable keeps its place after the sorted inert factors.
+            List<Expression>? pinned = SplitPinnedTerms(factors, static factor => factor);
+
             ParameterExpression[][] scopes = CaptureLexicalScopeSnapshot();
 
             // The key comparisons consume the structural budget: a refusal raised inside the sort is restored (ETC R1a-Security).
             var orderedFactors = ExpressionResourceBudget.ToSortedList(factors
                 .OrderBy(factor => ExpressionCanonicalOrder.BuildKeyFromSnapshot(factor, scopes)));
+            if (pinned is not null) orderedFactors.AddRange(pinned);
 
             return BuildRightAssociative(orderedFactors, Expression.Multiply);
         }

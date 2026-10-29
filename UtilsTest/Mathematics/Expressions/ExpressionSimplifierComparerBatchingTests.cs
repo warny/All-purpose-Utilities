@@ -373,8 +373,8 @@ public class ExpressionSimplifierComparerBatchingTests
         // never reach the hostile constants (NodeType mismatch short-circuits first); only the final
         // leftright-vs-rightright comparison (both MethodCallExpression, same Method) recurses into the
         // hostile constants' own Equals.
-        Expression left = Expression.Multiply(Expression.Constant(2.0), Expression.Call(identity, Expression.Constant(hostileLeft, typeof(object))));
-        Expression right = Expression.Multiply(Expression.Constant(3.0), Expression.Call(identity, Expression.Constant(hostileRight, typeof(object))));
+        Expression left = Expression.Multiply(Expression.Constant(2.0), SafeOpaqueTerm.Carrier(hostileLeft));
+        Expression right = Expression.Multiply(Expression.Constant(3.0), SafeOpaqueTerm.Carrier(hostileRight));
 
         TargetInvocationException thrown = Assert.ThrowsExactly<TargetInvocationException>(
             () => InvokeAdditionOfEqualsElements(simplifier, left, right));
@@ -590,8 +590,8 @@ public class ExpressionSimplifierComparerBatchingTests
         // directly, since the point under test is what happens when THIS shape is simplified more than once,
         // not how it was produced.
         Expression inner = Expression.Add(
-            Expression.Multiply(Expression.Constant(2.0), Expression.Call(identity, Expression.Constant(c1, typeof(object)))),
-            Expression.Multiply(Expression.Constant(3.0), Expression.Call(identity, Expression.Constant(c2, typeof(object)))));
+            Expression.Multiply(Expression.Constant(2.0), SafeOpaqueTerm.Carrier(c1)),
+            Expression.Multiply(Expression.Constant(3.0), SafeOpaqueTerm.Carrier(c2)));
 
         Expression left = Expression.Multiply(inner, x);
         Expression right = Expression.Multiply(Expression.Constant(7.0), y);
@@ -655,8 +655,8 @@ public class ExpressionSimplifierComparerBatchingTests
         // argument comparison invokes hostileLeft.Equals(hostileRight) - see this class's remarks on
         // NestedSimplifyReachingUserCode_InvokedOncePerComparison_NotOncePerCandidate for why.
         Expression x = Expression.Add(
-            Expression.Multiply(Expression.Constant(2.0), Expression.Call(identity, Expression.Constant(hostileLeft, typeof(object)))),
-            Expression.Multiply(Expression.Constant(3.0), Expression.Call(identity, Expression.Constant(hostileRight, typeof(object)))));
+            Expression.Multiply(Expression.Constant(2.0), SafeOpaqueTerm.Carrier(hostileLeft)),
+            Expression.Multiply(Expression.Constant(3.0), SafeOpaqueTerm.Carrier(hostileRight)));
 
         // Cacheable (only native numeric constants reachable) but its OWN simplification unconditionally
         // throws DivideByZeroException - a different exception type from x's, so the type that propagates

@@ -238,19 +238,24 @@ public class ExpressionSimplifierAdditiveConstantAggregationTests
     }
 
     /// <summary>
-    /// Decimal constants sum exactly, and a sum that overflows leaves the terms unchanged instead of throwing while
-    /// simplifying: <c>(decimal.MaxValue + a) + 1m</c> evaluates for a negative <c>a</c>.
+    /// Decimal constants separated by a parameter used to be summed (<c>(a + 1.5m) + 2.25m -&gt; 3.75m + a</c>), and a sum
+    /// that overflowed left the terms unchanged instead of throwing while simplifying. Since ETC R1b (C-06) decimal addition
+    /// may throw, and regrouping its constants can remove an overflow (<c>(a + MaxValue) - 1m</c> overflows for
+    /// <c>a = 1</c>, <c>a + (MaxValue - 1m)</c> does not), so decimal chains are never reassociated: every chain keeps its
+    /// constants, evaluates like the source, and still throws where the source throws.
     /// </summary>
     [TestMethod]
     public void Simplify_DecimalConstants_SumOrDeclineOnOverflow()
     {
         Expression K(decimal value) => Expression.Constant(value);
-        var sum = (BinaryExpression)SimplifyAndCompare<decimal>(a => Expression.Add(Expression.Add(a, K(1.5m)), K(2.25m)), 1m, -1.1m);
-        Assert.AreEqual(3.75m, (decimal)((ConstantExpression)sum.Left).Value!);
+        Expression sum = SimplifyAndCompare<decimal>(a => Expression.Add(Expression.Add(a, K(1.5m)), K(2.25m)), 1m, -1.1m);
+        Assert.AreEqual(2, CountConstants(sum), $"The decimal constants must not be regrouped: {sum}");
         Expression overflow = SimplifyAndCompare<decimal>(a => Expression.Add(Expression.Add(K(decimal.MaxValue), a), K(1m)), -10m, -1m);
         Assert.AreEqual(2, CountConstants(overflow), $"The overflowing sum must not be folded: {overflow}");
-        var nearMax = (BinaryExpression)SimplifyAndCompare<decimal>(a => Expression.Add(Expression.Add(a, K(decimal.MaxValue)), K(-1m)), -10m, 0m);
-        Assert.AreEqual(decimal.MaxValue - 1m, (decimal)((ConstantExpression)nearMax.Left).Value!);
+        ParameterExpression p = Expression.Parameter(typeof(decimal), "a");
+        Expression nearMax = Simplify(Expression.Add(Expression.Add(p, K(decimal.MaxValue)), K(-1m)));
+        Assert.AreEqual(2, CountConstants(nearMax), $"Regrouping would hide the overflow of a + MaxValue: {nearMax}");
+        Assert.ThrowsExactly<OverflowException>(() => Expression.Lambda<Func<decimal, decimal>>(nearMax, p).Compile()(1m));
     }
 
     /// <summary>
@@ -321,18 +326,20 @@ public class ExpressionSimplifierAdditiveConstantAggregationTests
     }
 
     /// <summary>
-    /// Decimal chains whose constants cancel through the limits fold when the running sum stays representable
-    /// (<c>((a + MaxValue) - MaxValue) + MaxValue -&gt; MaxValue + a</c>) and decline without throwing when the total
-    /// overflows (<c>(a + MinValue) - 1</c>), evaluating like the source wherever the source evaluates (review of #666).
+    /// Decimal chains whose constants cancel through the limits used to fold when the running sum stayed representable
+    /// (<c>((a + MaxValue) - MaxValue) + MaxValue -&gt; MaxValue + a</c>); since ETC R1b (C-06) a decimal chain is not
+    /// reassociated (its additions may throw), so the three constants are kept. A chain whose total overflows
+    /// (<c>(a + MinValue) - 1</c>) is still simplified without throwing, and both evaluate like the source wherever the
+    /// source evaluates (review of #666).
     /// </summary>
     [TestMethod]
     public void Simplify_DecimalConstantsNearTheLimits_FoldOrDeclineWithoutThrowing()
     {
         Expression K(decimal value) => Expression.Constant(value);
-        var folded = (BinaryExpression)SimplifyAndCompare<decimal>(
+        Expression folded = SimplifyAndCompare<decimal>(
             a => Expression.Add(Expression.Subtract(Expression.Add(a, K(decimal.MaxValue)), K(decimal.MaxValue)), K(decimal.MaxValue)),
             -decimal.MaxValue, -1m, 0m);
-        Assert.AreEqual(decimal.MaxValue, (decimal)((ConstantExpression)folded.Left).Value!);
+        Assert.AreEqual(3, CountConstants(folded), $"The decimal chain must not be reassociated: {folded}");
 
         Expression declined = SimplifyAndCompare<decimal>(a => Expression.Subtract(Expression.Add(a, K(decimal.MinValue)), K(1m)), 1m, 10m, decimal.MaxValue);
         Assert.IsTrue(ContainsConstant(declined, decimal.MinValue) && ContainsConstant(declined, 1m), $"The overflowing total must not be folded: {declined}");
@@ -451,7 +458,9 @@ public class ExpressionSimplifierAdditiveConstantAggregationTests
     /// The aggregation never invokes a <see cref="MethodCallExpression"/> of the tree, in a sum and in a factored
     /// coefficient, whether or not structural comparisons reach the <see cref="object.Equals(object?)"/> of a custom
     /// constant in its arguments (the S3 remarks allow the latter; here they make none); the call runs once per
-    /// evaluation (review of #666).
+    /// evaluation (review of #666). Since ETC R1b (C-06) the call is a pinned term: the constants around it are still
+    /// summed in the sum, but the factored form <c>(call + 2)*x + 3*x</c>, whose terms contain the call, is no longer
+    /// factored; it keeps the call once and evaluates like the source.
     /// </summary>
     [TestMethod]
     public void Simplify_Aggregation_NeverInvokesTreeCalls()
@@ -464,9 +473,11 @@ public class ExpressionSimplifierAdditiveConstantAggregationTests
         Expression factored = Simplify(Expression.Add(Expression.Multiply(Expression.Add(call, C(2)), x), Expression.Multiply(C(3), x)));
         Assert.AreEqual(0, _countingIdentityCalls, "No call of the tree may run while simplifying.");
         Assert.AreEqual(11.0, (double)((ConstantExpression)((BinaryExpression)sum).Left).Value!);
-        Assert.AreEqual("(5 + CountingCall(value(UtilsTest.Mathematics.Expressions.ExpressionSimplifierAdditiveConstantAggregationTests+CountingConstant)))", ((BinaryExpression)factored).Left.ToString());
+        Assert.AreEqual(1, factored.ToString().Split("CountingCall(").Length - 1, factored.ToString());
         Assert.AreEqual(12.0, Expression.Lambda<Func<double>>(sum).Compile()());
         Assert.AreEqual(1, _countingIdentityCalls);
+        Assert.AreEqual(18.0, Expression.Lambda<Func<double, double>>(factored, x).Compile()(3.0));
+        Assert.AreEqual(2, _countingIdentityCalls);
         // custom.EqualsCalls is deliberately not constrained: structural comparisons may call it (S3 remarks).
     }
 

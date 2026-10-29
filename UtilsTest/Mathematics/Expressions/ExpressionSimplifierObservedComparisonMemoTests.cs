@@ -105,7 +105,7 @@ public class ExpressionSimplifierObservedComparisonMemoTests
     /// <param name="value">The opaque value.</param>
     /// <returns>The term.</returns>
     private static Expression OpaqueTerm(double coefficient, object value)
-        => Expression.Multiply(Expression.Constant(coefficient), Expression.Call(Identity, Expression.Constant(value, typeof(object))));
+        => Expression.Multiply(Expression.Constant(coefficient), SafeOpaqueTerm.Carrier(value));
 
     /// <summary>
     /// Builds the subtraction chain <c>100*Id(first) - x1*3 - 4*x2 - ...</c> whose opaque first term sorts last (the

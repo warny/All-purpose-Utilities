@@ -543,26 +543,30 @@ public class ExpressionTreeFindingsTests
     }
 
     /// <summary>
-    /// ETC-15 (high): assignment and increment nodes are inside the "scalar" unary/binary families, and the simplifier
-    /// treats them as pure symbolic operands: it merges, cancels and drops them and reorders their evaluation.
+    /// ETC-15 (high), resolved by ETC R1b for the assignment and increment reproducers (C-06): the simplifier merged
+    /// (<c>++v + ++v</c> gave 2 instead of 3), dropped (<c>(v = 5) * 0 + v</c> gave 0 instead of 5) and reordered
+    /// (<c>++v + v</c> gave 1 instead of 2) side-effecting operands. Such operands are no longer rewritten, by the exact or a
+    /// derived simplifier: every result computes the source value. The full matrix lives in <c>ExpressionTreeR1bEffectTests</c>.
     /// </summary>
     [TestMethod]
-    public void ETC15_ExactSimplifier_RewritesSideEffectingAssignments()
+    public void ETC15_Simplifier_PreservesSideEffectingAssignments()
     {
         ParameterExpression v = Expression.Variable(typeof(double), "v");
         double Run(Expression body)
             => Expression.Lambda<Func<double>>(Expression.Block([v], Expression.Assign(v, Expression.Constant(0.0)), body)).Compile()();
-        var simplifier = new ExpressionSimplifier();
 
         Expression twice = Expression.Add(Expression.PreIncrementAssign(v), Expression.PreIncrementAssign(v));
         Expression dropped = Expression.Add(Expression.Multiply(Expression.Assign(v, Expression.Constant(5.0)), Expression.Constant(0.0)), v);
         Expression reordered = Expression.Add(Expression.PreIncrementAssign(v), v);
 
         Assert.AreEqual(3.0, Run(twice));
-        Assert.AreEqual(2.0, Run(simplifier.Simplify(twice)));
         Assert.AreEqual(5.0, Run(dropped));
-        Assert.AreEqual(0.0, Run(simplifier.Simplify(dropped)));
         Assert.AreEqual(2.0, Run(reordered));
-        Assert.AreEqual(1.0, Run(simplifier.Simplify(reordered)));
+        foreach (ExpressionSimplifier simplifier in new[] { new ExpressionSimplifier(), new DerivedSimplifier() })
+        {
+            Assert.AreEqual(3.0, Run(simplifier.Simplify(twice)));
+            Assert.AreEqual(5.0, Run(simplifier.Simplify(dropped)));
+            Assert.AreEqual(2.0, Run(simplifier.Simplify(reordered)));
+        }
     }
 }

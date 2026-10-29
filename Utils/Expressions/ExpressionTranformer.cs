@@ -1244,6 +1244,20 @@ public abstract class ExpressionTransformer
     internal virtual void OnExitLambdaScope(LambdaExpression original, ParameterExpression[] parameters) { }
 
     /// <summary>
+    /// Decides whether the rules may run on a prepared node (ETC R1b). Asked at most once per node, and only when a rule's
+    /// signature and first parameter match it; when it returns <see langword="false"/>, no rule runs and the node goes to
+    /// <see cref="FinalizeExpression"/>. The base implementation allows every rule.
+    /// </summary>
+    /// <remarks>
+    /// <c>internal virtual</c> like the other reconstruction hooks (H-7): not an extensibility point for third-party
+    /// subclasses. <see cref="Utils.Mathematics.Expressions.ExpressionSimplifier"/> overrides it to keep its symbolic rules
+    /// away from operands whose evaluation is observable (C-06).
+    /// </remarks>
+    /// <param name="node">The prepared node.</param>
+    /// <returns><see langword="true"/> if the rules may run.</returns>
+    internal virtual bool AllowsRules(Expression node) => true;
+
+    /// <summary>
     /// Rebuilds a <see cref="LambdaExpression"/> from its (already prepared) <paramref name="body"/> and
     /// <paramref name="parameters"/>, preserving the delegate <see cref="LambdaExpression.Type"/>,
     /// <see cref="LambdaExpression.Name"/> and <see cref="LambdaExpression.TailCall"/>.
@@ -1370,6 +1384,7 @@ public abstract class ExpressionTransformer
     {
         Expression e = context.Expression;
         object[]? materializedInvocationArguments = null;
+        bool rulesAllowed = false;
 
         foreach (TransformRule rule in _transformPlan.GetCandidates(e.NodeType))
         {
@@ -1389,6 +1404,13 @@ public abstract class ExpressionTransformer
                 : materializedInvocationArguments[0];
             if (!rule.Parameters[0].ParameterType.IsInstanceOfType(firstArgument))
                 continue;
+
+            // Asked once, only when a rule could actually run (ETC R1b): a refusal skips every rule of the node.
+            if (!rulesAllowed)
+            {
+                if (!AllowsRules(e)) break;
+                rulesAllowed = true;
+            }
 
             if (!TryInvokeTransformMethod(rule, context, ref materializedInvocationArguments, out object? invokeResult))
                 continue;

@@ -299,7 +299,7 @@ public class ExpressionSimplifierComparisonMemoTests
         Assert.IsFalse(ExpressionSimplifier.IsComparisonMemoEligible(Expression.Property(Expression.Constant("text"), nameof(string.Length))));
         Assert.IsFalse(ExpressionSimplifier.IsComparisonMemoEligible(Expression.Convert(x, typeof(float))));
         Assert.IsFalse(ExpressionSimplifier.IsComparisonMemoEligible(Expression.AddChecked(Expression.Parameter(typeof(int), "i"), Expression.Constant(1))));
-        Assert.IsFalse(ExpressionSimplifier.IsComparisonMemoEligible(Expression.Call(identity, Expression.Constant(new CountingConstant(), typeof(object)))));
+        Assert.IsFalse(ExpressionSimplifier.IsComparisonMemoEligible(SafeOpaqueTerm.Carrier(new CountingConstant())));
         Assert.IsFalse(ExpressionSimplifier.IsComparisonMemoEligible(Expression.Constant(1.0, typeof(object))));
         Assert.IsFalse(ExpressionSimplifier.IsComparisonMemoEligible(Expression.Lambda(Expression.Add(x, x), x)));
         Assert.IsTrue(ExpressionSimplifier.IsComparisonMemoEligible(Expression.Negate(Expression.Power(x, Expression.Constant(2.0)))));
@@ -401,8 +401,8 @@ public class ExpressionSimplifierComparisonMemoTests
         ParameterExpression i = Expression.Parameter(typeof(int), "i");
         MethodInfo identity = typeof(ExpressionSimplifierComparisonMemoTests).GetMethod(nameof(IdentityFromObject))!;
         Expression hostile = Expression.Add(
-            Expression.Multiply(Expression.Constant(2.0), Expression.Call(identity, Expression.Constant(new HostileConstant(), typeof(object)))),
-            Expression.Multiply(Expression.Constant(3.0), Expression.Call(identity, Expression.Constant(new HostileConstant(), typeof(object)))));
+            Expression.Multiply(Expression.Constant(2.0), SafeOpaqueTerm.Carrier(new HostileConstant())),
+            Expression.Multiply(Expression.Constant(3.0), SafeOpaqueTerm.Carrier(new HostileConstant())));
         Expression dividesByZero = Expression.Convert(Expression.Divide(i, Expression.Constant(0)), typeof(double));
 
         using (ExpressionSimplifier.BeginActivatedComparisonMemoSessionForTesting())
@@ -428,8 +428,8 @@ public class ExpressionSimplifierComparisonMemoTests
         var c1 = new CountingConstant();
         ParameterExpression[] parameters = Parameters(12);
         Expression[] terms = AlternatingTerms(parameters);
-        terms[0] = Expression.Multiply(Expression.Constant(2.0), Expression.Call(identity, Expression.Constant(c0, typeof(object))));
-        terms[1] = Expression.Multiply(Expression.Constant(3.0), Expression.Call(identity, Expression.Constant(c1, typeof(object))));
+        terms[0] = Expression.Multiply(Expression.Constant(2.0), SafeOpaqueTerm.Carrier(c0));
+        terms[1] = Expression.Multiply(Expression.Constant(3.0), SafeOpaqueTerm.Carrier(c1));
 
         new ExpressionSimplifier().Simplify(LeftChain(terms, Expression.Subtract));
 
@@ -445,8 +445,8 @@ public class ExpressionSimplifierComparisonMemoTests
         MethodInfo identity = typeof(ExpressionSimplifierComparisonMemoTests).GetMethod(nameof(IdentityFromObject))!;
         ParameterExpression[] parameters = Parameters(12);
         Expression[] terms = AlternatingTerms(parameters);
-        terms[0] = Expression.Multiply(Expression.Constant(2.0), Expression.Call(identity, Expression.Constant(new HostileConstant(), typeof(object))));
-        terms[1] = Expression.Multiply(Expression.Constant(3.0), Expression.Call(identity, Expression.Constant(new HostileConstant(), typeof(object))));
+        terms[0] = Expression.Multiply(Expression.Constant(2.0), SafeOpaqueTerm.Carrier(new HostileConstant()));
+        terms[1] = Expression.Multiply(Expression.Constant(3.0), SafeOpaqueTerm.Carrier(new HostileConstant()));
 
         AssertThrowsRuleException<HostileConstantException>(() => new ExpressionSimplifier().Simplify(LeftChain(terms, Expression.Subtract)));
         AssertNoMemoState();
@@ -526,8 +526,8 @@ public class ExpressionSimplifierComparisonMemoTests
             observedMemo = ExpressionSimplifier.HasComparisonMemo;
         });
         Expression independent = Expression.Add(
-            Expression.Multiply(Expression.Constant(2.0), Expression.Call(identity, Expression.Constant(spy, typeof(object)))),
-            Expression.Multiply(Expression.Constant(3.0), Expression.Call(identity, Expression.Constant(new CountingConstant(), typeof(object)))));
+            Expression.Multiply(Expression.Constant(2.0), SafeOpaqueTerm.Carrier(spy)),
+            Expression.Multiply(Expression.Constant(3.0), SafeOpaqueTerm.Carrier(new CountingConstant())));
 
         using (ExpressionSimplifier.BeginActivatedComparisonMemoSessionForTesting())
         {

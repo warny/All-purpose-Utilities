@@ -14,6 +14,14 @@ namespace UtilsTest.Mathematics.Expressions;
 /// <see cref="object.Equals(object?)"/> is called, which exception propagates, what re-entrant calls observe, and the
 /// simplified trees. Every expected value was measured on the pre-P15 baseline (<c>ac702499</c>) and these tests pass
 /// unchanged on it: P15 must remove internal work only.
+/// <para>
+/// ETC R1b (C-06): the opaque constants are now carried by the inert term of <see cref="SafeOpaqueTerm"/> instead of the
+/// user method <see cref="IdentityFromObject"/>, which the simplifier no longer merges, cancels or reorders. Every user-call
+/// count and call sequence is unchanged; the expected trees and form digests, whose text includes the carrier, were
+/// re-measured on <c>master</c> (<c>b071bd0a</c>) with the new carrier and are identical on this branch. The extension-node
+/// scenarios (an extension node is unknown code, never rewritten since R1b) assert the new read counts, bounded by their
+/// former baseline values.
+/// </para>
 /// </summary>
 [TestClass]
 public class ExpressionSimplifierOpaqueConstantInvariantTests
@@ -82,7 +90,7 @@ public class ExpressionSimplifierOpaqueConstantInvariantTests
     /// <param name="value">The opaque value.</param>
     /// <returns>The term.</returns>
     private static Expression OpaqueTerm(double coefficient, object value)
-        => Expression.Multiply(Expression.Constant(coefficient), Expression.Call(Identity, Expression.Constant(value, typeof(object))));
+        => Expression.Multiply(Expression.Constant(coefficient), SafeOpaqueTerm.Carrier(value));
 
     /// <summary>Folds <paramref name="items"/> into a left-associated chain.</summary>
     /// <param name="items">The chain items.</param>
@@ -176,7 +184,7 @@ public class ExpressionSimplifierOpaqueConstantInvariantTests
 
         Assert.AreEqual("d0~d1 d0~d1 d0~d1 d1~d2 d1~d2 d1~d2 d1~d2 d1~d2 d1~d2", string.Join(" ", log));
         Assert.AreEqual(
-            "((2 * IdentityFromObject(value(UtilsTest.Mathematics.Expressions.ExpressionSimplifierOpaqueConstantInvariantTests+LoggingConstant))) + ((0 - (3 * IdentityFromObject(value(UtilsTest.Mathematics.Expressions.ExpressionSimplifierOpaqueConstantInvariantTests+LoggingConstant)))) + ((0 - (4 * IdentityFromObject(value(UtilsTest.Mathematics.Expressions.ExpressionSimplifierOpaqueConstantInvariantTests+LoggingConstant)))) + (0 - (5 * IdentityFromObject(value(UtilsTest.Mathematics.Expressions.ExpressionSimplifierOpaqueConstantInvariantTests+LoggingConstant)))))))",
+            "((2 * Truncate(((value(UtilsTest.Mathematics.Expressions.ExpressionSimplifierOpaqueConstantInvariantTests+LoggingConstant) As Nullable`1) ?? 1))) + ((0 - (3 * Truncate(((value(UtilsTest.Mathematics.Expressions.ExpressionSimplifierOpaqueConstantInvariantTests+LoggingConstant) As Nullable`1) ?? 1)))) + ((0 - (4 * Truncate(((value(UtilsTest.Mathematics.Expressions.ExpressionSimplifierOpaqueConstantInvariantTests+LoggingConstant) As Nullable`1) ?? 1)))) + (0 - (5 * Truncate(((value(UtilsTest.Mathematics.Expressions.ExpressionSimplifierOpaqueConstantInvariantTests+LoggingConstant) As Nullable`1) ?? 1)))))))",
             result.ToString());
     }
 
@@ -487,33 +495,47 @@ public class ExpressionSimplifierOpaqueConstantInvariantTests
         return chain;
     }
 
-    /// <summary>Every read of an extension node's virtual getters is made exactly as on the baseline.</summary>
+    /// <summary>
+    /// Every read of an extension node's virtual getters is pinned. Before ETC R1b the extension term was compared,
+    /// grouped and reordered like an ordinary term, which read the getters <paramref name="baselineReads"/> times (the
+    /// pre-P15 baseline); since R1b (C-06) an extension node is unknown code that is never rewritten, so only the reads made
+    /// to rebuild and finalize the term remain: the count no longer grows with the chain and never exceeds the former one.
+    /// </summary>
     /// <param name="n">The number of terms.</param>
     /// <param name="sortedLast">Whether the extension term sorts last.</param>
-    /// <param name="expectedReads">The baseline number of getter reads.</param>
-    /// <param name="expectedDigest">The baseline digest of the read log.</param>
+    /// <param name="expectedReads">The number of getter reads.</param>
+    /// <param name="expectedDigest">The digest of the read log.</param>
+    /// <param name="baselineReads">The number of reads before ETC R1b, an upper bound.</param>
     [TestMethod]
-    [DataRow(4, false, 158, 13199457548972759387UL)]
-    [DataRow(4, true, 494, 12116947977114951067UL)]
-    [DataRow(6, true, 12346, 2552214165946043347UL)]
-    [DataRow(8, true, 308598, 15106243316600799019UL)]
-    public void ExtensionNodeGetters_AreReadAsOnTheBaseline(int n, bool sortedLast, int expectedReads, ulong expectedDigest)
+    [DataRow(4, false, 6, 10464847950183532971UL, 158)]
+    [DataRow(4, true, 6, 10464847950183532971UL, 494)]
+    [DataRow(6, true, 6, 10464847950183532971UL, 12346)]
+    [DataRow(8, true, 6, 10464847950183532971UL, 308598)]
+    public void ExtensionNodeGetters_AreReadAsOnTheBaseline(int n, bool sortedLast, int expectedReads, ulong expectedDigest, int baselineReads)
     {
         var log = new List<string>();
         Simplify(ExtensionChain(n, sortedLast, new LoggingExtension("e", log), null, log));
 
-        Assert.AreEqual(expectedReads, log.Count);
+        Assert.IsTrue(log.Count <= baselineReads, $"{log.Count} reads, more than the {baselineReads} of the baseline.");
+        Assert.AreEqual(expectedReads, log.Count, string.Join(" ", log));
         Assert.AreEqual(expectedDigest, Digest(log));
     }
 
-    /// <summary>A <see cref="Expression.NodeType"/> getter throwing on its k-th read throws on exactly the same read.</summary>
+    /// <summary>
+    /// A <see cref="Expression.NodeType"/> getter throwing on its k-th read throws on exactly that read, and the exception
+    /// propagates unchanged. Since ETC R1b the extension term is no longer compared (see
+    /// <see cref="ExtensionNodeGetters_AreReadAsOnTheBaseline"/>), so the throwing reads are chosen among the reads that
+    /// remain (the former rows threw on reads 12 and 30, which no longer happen). The first <see cref="Expression.NodeType"/>
+    /// read is made by the factory that builds the chain, before the log is cleared, so the reads made by the
+    /// simplification are the second and later ones.
+    /// </summary>
     /// <param name="n">The number of terms.</param>
     /// <param name="throwAt">The throwing read.</param>
-    /// <param name="expectedReads">The baseline number of logged reads when it throws.</param>
+    /// <param name="expectedReads">The number of logged reads when it throws.</param>
     [TestMethod]
-    [DataRow(4, 12, 14)]
-    [DataRow(6, 30, 39)]
-    [DataRow(8, 30, 39)]
+    [DataRow(4, 2, 1)]
+    [DataRow(6, 4, 3)]
+    [DataRow(8, 5, 5)]
     public void ThrowingExtensionGetter_ThrowsOnTheSameRead(int n, int throwAt, int expectedReads)
     {
         var log = new List<string>();
@@ -528,7 +550,9 @@ public class ExpressionSimplifierOpaqueConstantInvariantTests
 
     /// <summary>
     /// A re-entrant extension getter (it calls the public comparer), one extension instance shared by two terms, and
-    /// two structurally similar but distinct instances, keep their baseline reads.
+    /// two structurally similar but distinct instances, keep their reads pinned. Since ETC R1b the extension terms are never
+    /// compared, grouped or reordered, so the counts are those of the rebuild and finalization only, bounded by the former
+    /// baseline values (12346, 9143, 12364, 12364).
     /// </summary>
     [TestMethod]
     public void ReentrantSharedAndTwinExtensions_KeepBaselineReads()
@@ -552,13 +576,18 @@ public class ExpressionSimplifierOpaqueConstantInvariantTests
         Simplify(ExtensionChain(6, true, new LoggingExtension("t0", log), new LoggingExtension("t1", log), log));
         int twinReads = log.Count;
 
-        Assert.AreEqual(12346, reentrantReads);
-        Assert.AreEqual(9143, inner);
-        Assert.AreEqual(12364, sharedReads);
-        Assert.AreEqual(12364, twinReads);
+        Assert.AreEqual(6, reentrantReads, "reentrant");
+        Assert.AreEqual(5, inner, "inner");
+        Assert.AreEqual(12, sharedReads, "shared");
+        Assert.AreEqual(12, twinReads, "twin");
     }
 
-    /// <summary>A custom operator and an unsupported node next to an opaque term keep their baseline trees.</summary>
+    /// <summary>
+    /// A custom operator and an unsupported node next to an opaque term keep their baseline trees. Since ETC R1b (C-06) the
+    /// custom operator is user code: it and every term reading a parameter keep their source order, and only the inert
+    /// opaque term (constants only) is moved before them. The conditional chain has no such term and keeps the baseline
+    /// tree (re-measured on <c>master</c> with the carrier of <see cref="SafeOpaqueTerm"/>).
+    /// </summary>
     [TestMethod]
     public void CustomOperatorAndUnsupportedNode_KeepBaselineTrees()
     {
@@ -571,7 +600,7 @@ public class ExpressionSimplifierOpaqueConstantInvariantTests
         terms[1] = Expression.Condition(Expression.GreaterThan(xs[1], Expression.Constant(0.0)), xs[1], Expression.Constant(2.0));
         Expression conditional = Simplify(LeftChain(terms, Expression.Subtract));
 
-        Assert.AreEqual("((2 * x0) + ((0 - (4 * x2)) + ((0 - (5 * x3)) + ((0 - (6 * x4)) + ((0 - (100 * IdentityFromObject(value(System.Object)))) + (0 - (3 * x1)))))))", custom.ToString());
-        Assert.AreEqual("((2 * x0) + ((0 - (4 * x2)) + ((0 - (5 * x3)) + ((0 - (6 * x4)) + ((0 - (100 * IdentityFromObject(value(System.Object)))) + (0 - IIF((x1 > 0), x1, 2)))))))", conditional.ToString());
+        Assert.AreEqual("((0 - (100 * Truncate(((value(System.Object) As Nullable`1) ?? 1)))) + ((2 * x0) + ((0 - (3 * x1)) + ((0 - (4 * x2)) + ((0 - (5 * x3)) + (0 - (6 * x4)))))))", custom.ToString());
+        Assert.AreEqual("((2 * x0) + ((0 - (4 * x2)) + ((0 - (5 * x3)) + ((0 - (6 * x4)) + ((0 - (100 * Truncate(((value(System.Object) As Nullable`1) ?? 1)))) + (0 - IIF((x1 > 0), x1, 2)))))))", conditional.ToString());
     }
 }
