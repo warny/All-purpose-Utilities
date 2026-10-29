@@ -347,11 +347,6 @@ public class ExpressionSimplifierComparerBatchingTests
         public override int GetHashCode() => 0;
     }
 
-    /// <summary>Test-only static method accepting an opaque <see cref="object"/> argument, used to embed a <see cref="HostileConstant"/> as a method-call argument inside a numeric-typed additive term.</summary>
-    /// <param name="value">An arbitrary opaque value, ignored.</param>
-    /// <returns>A constant, arbitrary result.</returns>
-    private static double IdentityFromObject(object value) => 1.0;
-
     /// <summary>
     /// <c>AdditionOfEqualsElements</c> must still use the PUBLIC, non-safe constant policy (never
     /// <see cref="ExpressionComparer.StructuralEqualsRaw(Expression?, Expression?)"/>'s safe-constant
@@ -368,8 +363,6 @@ public class ExpressionSimplifierComparerBatchingTests
         var simplifier = new ExpressionSimplifier();
         var hostileLeft = new HostileConstant();
         var hostileRight = new HostileConstant();
-        MethodInfo identity = typeof(ExpressionSimplifierComparerBatchingTests).GetMethod(
-            nameof(IdentityFromObject), BindingFlags.NonPublic | BindingFlags.Static)!;
 
         // leftleft/rightleft (2 vs 3) and any leftleft/rightright, leftright/rightleft cross-comparisons
         // never reach the hostile constants (NodeType mismatch short-circuits first); only the final
@@ -582,8 +575,6 @@ public class ExpressionSimplifierComparerBatchingTests
         var simplifier = new ExpressionSimplifier();
         ParameterExpression x = Expression.Parameter(typeof(double), "x");
         ParameterExpression y = Expression.Parameter(typeof(double), "y");
-        MethodInfo identity = typeof(ExpressionSimplifierComparerBatchingTests).GetMethod(
-            nameof(IdentityFromObject), BindingFlags.NonPublic | BindingFlags.Static)!;
         var c1 = new CountingConstant();
         var c2 = new CountingConstant();
 
@@ -647,8 +638,6 @@ public class ExpressionSimplifierComparerBatchingTests
     public void NonCacheableThenCacheableOperand_FallsBackWithoutSimplifyingEitherFirst_PreservesXBeforeYOrder()
     {
         var simplifier = new ExpressionSimplifier();
-        MethodInfo identity = typeof(ExpressionSimplifierComparerBatchingTests).GetMethod(
-            nameof(IdentityFromObject), BindingFlags.NonPublic | BindingFlags.Static)!;
         var hostileLeft = new HostileConstant();
         var hostileRight = new HostileConstant();
 

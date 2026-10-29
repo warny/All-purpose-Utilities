@@ -66,9 +66,10 @@ internal enum ExpressionEffects
 /// <b>Analysis.</b> The classification dispatches on the runtime class of each node and never reads a property of an
 /// unknown or extension node (whose getters are user code): such a node is <see cref="ExpressionEffects.Observable"/>.
 /// No node is evaluated, no getter, constructor or method is invoked, and a quoted expression or a lambda body is not
-/// part of the evaluation of its parent (a lambda allocates a delegate; its body runs only when it is invoked). Inside an
-/// expression operation the result of each node is cached by reference for the whole operation chain, and each node
-/// analyzed for the first time counts one structural visit (ETC R1a-Security), so a shared subtree is analyzed once.
+/// part of the evaluation of its parent (a lambda allocates a delegate; its body runs only when it is invoked). Each node
+/// analysis counts one structural visit (ETC R1a-Security). Inside an expression operation, once more than
+/// <see cref="CacheThreshold"/> nodes were analyzed, results are cached by node reference for the rest of the operation
+/// chain, so a large or shared tree is analyzed in linear time while a small one allocates no table.
 /// </para>
 /// </remarks>
 internal static class ExpressionEffectAnalysis
@@ -167,18 +168,35 @@ internal static class ExpressionEffectAnalysis
         if (expression is null or ConstantExpression or DefaultExpression) return ExpressionEffects.None;
         if (expression is ParameterExpression) return ExpressionEffects.ReadsMutableState;
 
+        // A large operand is usually already in the table (its own node was analyzed when it was transformed): look it up
+        // before trying the shallow path, which would walk its first levels for nothing.
         ExpressionResourceBudget.Session? session = ExpressionResourceBudget.ActiveSession;
-        Dictionary<Expression, ExpressionEffects>? cache = session is null
-            ? null
-            : session.EffectCache ??= new Dictionary<Expression, ExpressionEffects>(ReferenceEqualityComparer.Instance);
+        Dictionary<Expression, ExpressionEffects>? cache = session?.EffectCache;
         if (cache is not null && cache.TryGetValue(expression, out ExpressionEffects cached)) return cached;
+        if (TryAnalyzeShallow(expression, ShallowDepth, out ExpressionEffects shallow)) return shallow;
 
-        // One structural visit per newly analyzed node, stack check included (ETC R1a-Security).
+        // The table is created lazily, once the operation has analyzed more than CacheThreshold nodes (counted before the
+        // children, so a deep or shared tree switches to the table early and stays linear): a small tree allocates nothing.
+        if (cache is null && session is not null && ++session.EffectAnalyses > CacheThreshold)
+        {
+            cache = session.EffectCache = new Dictionary<Expression, ExpressionEffects>(ReferenceEqualityComparer.Instance);
+        }
+
+        // One structural visit per analyzed node, stack check included (ETC R1a-Security).
         ExpressionResourceBudget.ConsumeStructuralVisit();
         ExpressionEffects effects = AnalyzeNode(expression);
-        if (cache is not null) cache[expression] = effects;
+
+        // The table may have been created while the children were analyzed: store into it if it exists now.
+        Dictionary<Expression, ExpressionEffects>? store = cache ?? session?.EffectCache;
+        if (store is not null) store[expression] = effects;
         return effects;
     }
+
+    /// <summary>
+    /// The number of node analyses an operation makes without the cache table: below it, re-analyzing a node costs less
+    /// than allocating and filling the table; beyond it, every node analyzed from then on is stored and never analyzed again.
+    /// </summary>
+    private const int CacheThreshold = 32;
 
     /// <summary>
     /// Returns the effects of the operator of <paramref name="binary"/> alone, without its operands: what reassociating or
@@ -228,8 +246,13 @@ internal static class ExpressionEffectAnalysis
     /// <param name="unary">The node.</param>
     /// <returns>Its effects, operand included (except for a quoted expression, which is data).</returns>
     private static ExpressionEffects AnalyzeUnary(UnaryExpression unary)
-    {
-        ExpressionEffects own = unary.NodeType switch
+        => unary.NodeType == ExpressionType.Quote ? ExpressionEffects.None : UnaryOwnEffects(unary) | Analyze(unary.Operand);
+
+    /// <summary>Classifies the operator of a unary node alone, without its operand.</summary>
+    /// <param name="unary">The node.</param>
+    /// <returns>The effects of the operator.</returns>
+    private static ExpressionEffects UnaryOwnEffects(UnaryExpression unary)
+        => unary.NodeType switch
         {
             ExpressionType.Quote => ExpressionEffects.None,
             ExpressionType.Throw or ExpressionType.PreIncrementAssign or ExpressionType.PreDecrementAssign
@@ -241,8 +264,58 @@ internal static class ExpressionEffectAnalysis
             _ => unary.Method is null || ExpressionSimplifier.IsOrdinaryUnaryNegate(unary) ? ExpressionEffects.None : ExpressionEffects.Observable,
         };
 
-        return unary.NodeType == ExpressionType.Quote ? own : own | Analyze(unary.Operand);
+    /// <summary>
+    /// Classifies a small subtree directly, without the cache, the budget or a stack check: constants, defaults, parameters,
+    /// and unary, binary and static-call nodes whose subtree is at most <paramref name="depth"/> levels deep. Most operands
+    /// the rule gate and the canonicalization inspect (<c>c * x</c>, <c>x + 1</c>, <c>Math.Sin(x)</c>) are that small, and
+    /// computing them is cheaper than a table lookup; the work of one call is bounded by the depth.
+    /// </summary>
+    /// <param name="expression">The subtree, or <see langword="null"/>.</param>
+    /// <param name="depth">The number of non-leaf levels still allowed.</param>
+    /// <param name="effects">The effects, when the method returns <see langword="true"/>.</param>
+    /// <returns><see langword="false"/> when the subtree is deeper or holds another family (the caller takes the cached path).</returns>
+    private static bool TryAnalyzeShallow(Expression? expression, int depth, out ExpressionEffects effects)
+    {
+        switch (expression)
+        {
+            case null or ConstantExpression or DefaultExpression:
+                effects = ExpressionEffects.None;
+                return true;
+            case ParameterExpression:
+                effects = ExpressionEffects.ReadsMutableState;
+                return true;
+        }
+
+        effects = ExpressionEffects.None;
+        if (depth == 0) return false;
+        switch (expression)
+        {
+            case BinaryExpression binary when TryAnalyzeShallow(binary.Left, depth - 1, out ExpressionEffects left)
+                && TryAnalyzeShallow(binary.Right, depth - 1, out ExpressionEffects right):
+                effects = OperatorEffects(binary) | left | right;
+                return true;
+            case UnaryExpression { NodeType: ExpressionType.Quote }:
+                return true;
+            case UnaryExpression unary when TryAnalyzeShallow(unary.Operand, depth - 1, out ExpressionEffects operand):
+                effects = UnaryOwnEffects(unary) | operand;
+                return true;
+            case MethodCallExpression { Object: null } call:
+                ExpressionEffects arguments = ExpressionEffects.None;
+                for (int i = 0; i < call.Arguments.Count; i++)
+                {
+                    if (!TryAnalyzeShallow(call.Arguments[i], depth - 1, out ExpressionEffects argument)) return false;
+                    arguments |= argument;
+                }
+
+                effects = MethodEffects(call.Method) | arguments;
+                return true;
+            default:
+                return false;
+        }
     }
+
+    /// <summary>The depth of the subtrees <see cref="TryAnalyzeShallow"/> classifies without the cache.</summary>
+    private const int ShallowDepth = 3;
 
     /// <summary>
     /// Classifies a <see cref="ExpressionType.Convert"/> node: numeric, enumeration and nullable-wrapping conversions are
@@ -341,7 +414,18 @@ internal static class ExpressionEffectAnalysis
     /// </summary>
     /// <param name="method">The called method.</param>
     /// <returns>The effects of the call itself.</returns>
-    internal static ExpressionEffects MethodEffects(MethodInfo method)
+    internal static ExpressionEffects MethodEffects(MethodInfo method) => MethodEffectsCache.GetOrAdd(method, ClassifyMethod);
+
+    /// <summary>
+    /// The classification of every method met so far, computed once per method (reflection on the parameters allocates).
+    /// A method's classification depends on its metadata only, so it never changes.
+    /// </summary>
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<MethodInfo, ExpressionEffects> MethodEffectsCache = new();
+
+    /// <summary>Computes the classification returned by <see cref="MethodEffects"/>.</summary>
+    /// <param name="method">The called method.</param>
+    /// <returns>The effects of the call itself.</returns>
+    private static ExpressionEffects ClassifyMethod(MethodInfo method)
     {
         Type? declaringType = method.DeclaringType;
         if (!method.IsStatic

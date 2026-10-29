@@ -37,9 +37,6 @@ public class ExpressionSimplifierOpaqueConstantInvariantTests
     /// <returns>The product.</returns>
     public static double CustomMultiply(double left, double right) => left * right;
 
-    /// <summary>The method embedding opaque constants in numeric terms.</summary>
-    private static readonly MethodInfo Identity = typeof(ExpressionSimplifierOpaqueConstantInvariantTests).GetMethod(nameof(IdentityFromObject))!;
-
     /// <summary>Marker exception thrown by a <see cref="LoggingConstant"/>.</summary>
     private sealed class LoggingConstantException : Exception
     {
@@ -85,7 +82,7 @@ public class ExpressionSimplifierOpaqueConstantInvariantTests
         public override int GetHashCode() => 17;
     }
 
-    /// <summary>Builds the term <c>coefficient * IdentityFromObject(value)</c>.</summary>
+    /// <summary>Builds the term <c>coefficient * carrier(value)</c>, with the inert carrier of <see cref="SafeOpaqueTerm"/>.</summary>
     /// <param name="coefficient">The numeric coefficient.</param>
     /// <param name="value">The opaque value.</param>
     /// <returns>The term.</returns>
@@ -104,7 +101,7 @@ public class ExpressionSimplifierOpaqueConstantInvariantTests
     }
 
     /// <summary>
-    /// Builds a chain whose every term is <c>c_i * IdentityFromObject(constant_i)</c>, with coefficients 2, 3, ...;
+    /// Builds a chain whose every term is <c>c_i * carrier(constant_i)</c>, with coefficients 2, 3, ...;
     /// when <paramref name="firstSortsLast"/> is set, the first term's coefficient is 100, so the canonical order puts
     /// it last and every right sub-chain of the canonical form contains it.
     /// </summary>

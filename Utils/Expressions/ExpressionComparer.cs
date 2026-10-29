@@ -599,12 +599,8 @@ public class ExpressionComparer : IEqualityComparer<Expression>
     /// type <see cref="_expressionSimplifier"/> ever is - preserves <see cref="LambdaExpression.TailCall"/>
     /// and <see cref="LambdaExpression.Type"/> for every lambda it rebuilds, at every nesting depth, not
     /// only at the root: both checks here are therefore live, useful comparisons for a NESTED lambda too, not
-    /// merely defense in depth. A derived <see cref="ExpressionSimplifier"/> subclass that does not override
-    /// <c>RebuildLambdaExpression</c> still erases both at every depth below the root, exactly like the
-    /// historical <c>ExpressionTransformer.PrepareLambda</c> behavior; the root level stays protected for
-    /// such a subclass too, via <see cref="Equals(Expression?, Expression?)"/> comparing the original,
-    /// not-yet-simplified lambdas before this method ever runs - but this comparer always simplifies through
-    /// <see cref="_expressionSimplifier"/> (the exact built-in type), so that fallback is not exercised here.
+    /// merely defense in depth. Since ETC R1b (C-01) every transformer, a derived simplifier included, keeps both
+    /// at every depth; before, a derived simplifier erased them below the root.
     /// </remarks>
     private static bool LambdasEqual(LambdaExpression x, LambdaExpression y, ParameterBindingContext context)
     {

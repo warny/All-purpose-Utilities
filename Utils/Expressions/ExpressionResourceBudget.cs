@@ -286,6 +286,13 @@ internal static class ExpressionResourceBudget
         /// </summary>
         public System.Collections.Generic.Dictionary<Expression, ExpressionEffects>? EffectCache;
 
+        /// <summary>
+        /// The number of nodes <see cref="ExpressionEffectAnalysis"/> analyzed in the running operation chain before
+        /// <see cref="EffectCache"/> exists: small trees are analyzed without allocating the table, which is created once the
+        /// count passes a threshold. Reset by the outermost exit.
+        /// </summary>
+        public int EffectAnalyses;
+
         /// <summary>Opens or joins an operation and returns the state to restore.</summary>
         /// <param name="limits">The limits of the entering instance.</param>
         /// <param name="owner">The entering instance.</param>
@@ -361,6 +368,7 @@ internal static class ExpressionResourceBudget
             if (scope.IsOutermost)
             {
                 EffectCache = null;
+                EffectAnalyses = 0;
                 TransformVisits = 0;
                 StructuralVisits = 0;
                 TransformDeadline = long.MaxValue;

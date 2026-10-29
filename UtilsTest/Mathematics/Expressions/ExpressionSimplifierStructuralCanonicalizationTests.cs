@@ -343,11 +343,6 @@ public class ExpressionSimplifierStructuralCanonicalizationTests
         }
     }
 
-    /// <summary>Test-only static method accepting an opaque <see cref="object"/> argument, used to embed a <see cref="HostileConstant"/> as a method-call argument participating in additive grouping.</summary>
-    /// <param name="value">An arbitrary opaque value, ignored.</param>
-    /// <returns>A constant, arbitrary result.</returns>
-    private static double IdentityFromObject(object value) => 1.0;
-
     /// <summary>
     /// Two additive terms embedding the SAME <see cref="HostileConstant"/> instance as a method-call
     /// argument force a hash collision in the grouping equality comparer's internal bucketing (since a safe
@@ -848,16 +843,6 @@ public class ExpressionSimplifierStructuralCanonicalizationTests
     // participate in the deterministic complete ORDER key, not fall back to a tie.
     // ------------------------------------------------------------------------------------------
 
-    /// <summary>Test-only method distinguishing its result by a <see cref="bool"/> constant argument, used to prove <see cref="bool"/> constants order deterministically.</summary>
-    /// <param name="value">The argument.</param>
-    /// <returns>1.0 for <see langword="true"/>, 0.0 for <see langword="false"/>.</returns>
-    private static double FromBool(bool value) => value ? 1.0 : 0.0;
-
-    /// <summary>Test-only method distinguishing its result by a <see cref="char"/> constant argument, used to prove <see cref="char"/> constants order deterministically.</summary>
-    /// <param name="value">The argument.</param>
-    /// <returns>The character's numeric code point.</returns>
-    private static double FromChar(char value) => value;
-
     /// <summary>Test-only enum with two members, used to prove enum constants order deterministically.</summary>
     private enum SampleColor
     {
@@ -867,11 +852,6 @@ public class ExpressionSimplifierStructuralCanonicalizationTests
         /// <summary>The second member.</summary>
         Blue,
     }
-
-    /// <summary>Test-only method distinguishing its result by a <see cref="SampleColor"/> constant argument, used to prove enum constants order deterministically.</summary>
-    /// <param name="value">The argument.</param>
-    /// <returns>The member's underlying numeric value.</returns>
-    private static double FromColor(SampleColor value) => (int)value;
 
     /// <summary>The allow-listed <see cref="Math.Truncate(double)"/> function used by <see cref="SafeCarrier"/>.</summary>
     private static readonly MethodInfo TruncateMethod = typeof(Math).GetMethod(nameof(Math.Truncate), [typeof(double)])!;
@@ -982,11 +962,6 @@ public class ExpressionSimplifierStructuralCanonicalizationTests
     // referenced/boxed safe values, not just distinguish unequal ones (round 2's tests only proved
     // the latter).
     // ------------------------------------------------------------------------------------------
-
-    /// <summary>Test-only method accepting an opaque <see cref="object"/> argument, used to embed differently-typed constants declared as <see cref="object"/>.</summary>
-    /// <param name="value">An arbitrary opaque value, ignored beyond ordering.</param>
-    /// <returns>A constant, arbitrary result.</returns>
-    private static double FromObjectConstant(object value) => 1.0;
 
     /// <summary>
     /// Two additive terms whose constant arguments are individually known-safe (<see cref="bool"/> and
@@ -1230,11 +1205,6 @@ public class ExpressionSimplifierStructuralCanonicalizationTests
         Assert.IsTrue(ReferenceEquals(p1, probe.NestedResult.Left));
         Assert.IsTrue(ReferenceEquals(p0, probe.NestedResult.Right));
     }
-
-    /// <summary>Test-only method accepting an opaque <see cref="object"/> argument, used to embed differently-runtime-typed boxed numeric constants declared as <see cref="object"/>.</summary>
-    /// <param name="value">An arbitrary opaque value, ignored beyond ordering.</param>
-    /// <returns>A constant, arbitrary result.</returns>
-    private static double FromObjectNumericConstant(object value) => 1.0;
 
     /// <summary>
     /// Two boxed numeric constants declared as <see cref="object"/> whose exact mathematical values are EQUAL

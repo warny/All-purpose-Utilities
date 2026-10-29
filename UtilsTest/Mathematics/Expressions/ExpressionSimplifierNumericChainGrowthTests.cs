@@ -28,16 +28,8 @@ public class ExpressionSimplifierNumericChainGrowthTests
     /// <returns>The product.</returns>
     public static double CustomMultiply(double left, double right) => left * right;
 
-    /// <summary>Returns a constant for an opaque argument, embedding user objects in numeric terms.</summary>
-    /// <param name="value">An opaque value, ignored.</param>
-    /// <returns>Always one.</returns>
-    public static double IdentityFromObject(object value) => 1.0;
-
     /// <summary>The custom multiplication operator.</summary>
     private static readonly MethodInfo CustomMultiplyMethod = typeof(ExpressionSimplifierNumericChainGrowthTests).GetMethod(nameof(CustomMultiply))!;
-
-    /// <summary>The method embedding opaque constants in numeric terms.</summary>
-    private static readonly MethodInfo Identity = typeof(ExpressionSimplifierNumericChainGrowthTests).GetMethod(nameof(IdentityFromObject))!;
 
     /// <summary>Marker exception thrown by a <see cref="LoggingConstant"/>.</summary>
     private sealed class LoggingConstantException : Exception

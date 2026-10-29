@@ -18,38 +18,26 @@ namespace Utils.Mathematics.Expressions
     /// <remarks>
     /// <para>
     /// <b>Symbolic-equivalence contract (stage S3).</b> <see cref="ExpressionSimplifier"/> is a
-    /// <em>symbolic algebra</em> simplifier. It is <b>not</b> a strict CLR/IEEE-754 execution-preserving
-    /// optimizer. Reassociation/reordering of addition and multiplication, and identities such as
-    /// <c>x * 0 -&gt; 0</c> or <c>x^0 -&gt; 1</c>, are algebraic identities over the assumed mathematical
-    /// domain; they are not promised to be bit-for-bit identical to the original CLR evaluation for every
-    /// floating-point/decimal input. In particular, <see cref="Simplify(Expression)"/> does not guarantee
-    /// identical rounding, reassociation order, <c>NaN</c> propagation, infinities, signed-zero behavior,
-    /// overflow, or exception timing across a rewrite. Consumers that require exact CLR execution semantics
-    /// must not rely on a simplified expression evaluating identically to the source expression in every
-    /// corner case; they must rely only on symbolic/mathematical equivalence over the identity's domain.
+    /// <em>symbolic algebra</em> simplifier. Reassociation/reordering of addition and multiplication, and identities
+    /// such as <c>x * 0 -&gt; 0</c> or <c>x^0 -&gt; 1</c>, are algebraic identities over the assumed mathematical
+    /// domain; for floating-point values they are not promised to be bit-for-bit identical to the original CLR
+    /// evaluation: rounding, reassociation order, <c>NaN</c> propagation, infinities and signed zeros may differ
+    /// (<c>x * 0 -&gt; 0</c> is <c>0</c> where the source gives <c>NaN</c> for an infinite <c>x</c>). Consumers that
+    /// require bit-exact floating-point results must rely only on symbolic equivalence over the identity's domain.
     /// </para>
     /// <para>
-    /// <b>Purity assumption.</b> Every algebraic rewrite (cancellation, factoring, canonical reordering,
-    /// constant folding, and <see cref="InvokeExpression"/>'s direct beta-substitution) assumes its operand
-    /// sub-expressions are pure/referentially transparent. Evaluation count and order are not guaranteed to
-    /// be preserved for an expression tree with observable side effects (a method call with a side effect,
-    /// a property with an observable getter, etc.): a rewrite may evaluate a sub-expression zero, one, or
-    /// more times relative to the source. This stage deliberately does not add a general side-effect/purity
-    /// analyzer; callers who need side-effecting sub-expressions to run in the original count/order must not
-    /// pass such expressions through this simplifier.
-    /// </para>
-    /// <para>
-    /// <b>Algebraic simplification, not runtime observational equivalence.</b> This class is an algebraic
-    /// simplifier and is not required to preserve the runtime side effects of the expressions it rewrites. For
-    /// example <c>0 * (4 + Function()) -&gt; 0</c> and <c>0 * (4 * Function()) -&gt; 0</c> are both intentional
-    /// (<see cref="MultiplicationWithZeroOrOne(BinaryExpression, ConstantExpression, Expression)"/>): the call to
-    /// <c>Function()</c> disappears from the simplified tree, so its side effects no longer happen and an exception
-    /// it would throw is no longer thrown. The same holds for any rule that discards a sub-expression, such as
-    /// <c>2 * Function() + (-2) * Function() -&gt; 0</c> through factoring. Symbolic equivalence means equality as
-    /// mathematical expressions over the identity's domain, not identical observable behavior when the trees run;
-    /// for floating-point arithmetic the symbolic identities are not necessarily bit-exact either, and may differ for
-    /// <c>NaN</c>, infinities or signed zeros (<c>x * 0 -&gt; 0</c> is <c>0</c> where the source gives <c>NaN</c>
-    /// for an infinite <c>x</c>).
+    /// <b>Observable evaluations (ETC R1b, compatibility entry C-06).</b> Since ETC R1b the rewrites never drop, repeat,
+    /// merge or move an evaluation that is not proven inert by <see cref="ExpressionEffectAnalysis"/>: assignments and
+    /// increments, throws, calls of methods outside an explicit allow-list of total <see cref="Math"/>/<see cref="MathF"/>/
+    /// <see cref="double"/>/<see cref="float"/> functions, property getters, constructors and allocations, custom
+    /// operators, invocations, dynamic and extension nodes, and the operations that may throw (checked arithmetic, integral
+    /// and decimal division, decimal arithmetic, array access, casts). The rules of a node run only when its operands are
+    /// inert (<see cref="AllowsRules"/>), the canonicalization keeps such terms in their source order and occurrences
+    /// (<see cref="SplitPinnedTerms{T}"/>), and the identities whose own operator may throw keep that exception. So
+    /// <c>0 * (4 + Function())</c>, <c>2 * Function() + (-2) * Function()</c> and <c>++v + ++v</c> keep every evaluation
+    /// of the source, and an exception the source can raise is still raised. Before R1b the rewrites assumed pure
+    /// operands and did not preserve evaluation count, order or exceptions. Structural equality is unaffected: two calls
+    /// <c>f(x)</c> still compare equal, they are just not interchangeable.
     /// </para>
     /// <para>
     /// <b>User code during simplification.</b> Three different things must be told apart. (1) The simplifier never
@@ -61,17 +49,15 @@ namespace Utils.Mathematics.Expressions
     /// exception they throw propagates out of <see cref="Simplify(Expression)"/>; the S5 P3 factor cache, the S5 P9
     /// comparison memo and the S5 P15 observed comparison memo (which only reuses a comparer simplification observed
     /// to call no user code) are designed to keep the number and order of those calls exactly as an uncached
-    /// comparison would. Callers must therefore not
-    /// assume that simplification is free of user code when the tree holds custom constants. (3) The simplified tree
-    /// may contain fewer calls than the source (see the previous paragraph), so evaluating it may run less user code.
+    /// comparison would. Callers must therefore not assume that simplification is free of user code when the tree holds
+    /// custom constants. (3) Evaluating the simplified tree runs the same user code as the source, in the same order
+    /// (see the previous paragraph).
     /// </para>
     /// <para>
-    /// The <c>NaN</c> propagation of S5 P11 (<see cref="FoldNaNOperand"/>) is deliberately stricter: it only drops
-    /// an operand that <see cref="IsEliminableFloatingOperand"/> proves free of effects and exceptions. That is a
-    /// restriction chosen for that one transformation, not a promise that the other algebraic rules preserve side
-    /// effects or exceptions.
-    /// </para>
-    /// <para>
+    /// The <c>NaN</c> propagation of S5 P11 (<see cref="FoldNaNOperand"/>) only drops an operand that
+    /// <see cref="IsEliminableFloatingOperand"/> proves free of effects and exceptions, a narrower whitelist than the
+    /// inert evaluations of <see cref="ExpressionEffectAnalysis"/>.
+    /// </para>    /// <para>
     /// <b>Domain-sensitive identities.</b> Rules with a mathematical precondition are valid only on their
     /// common domain. <c>Log(x) + Log(y) -&gt; Log(x*y)</c> (and the <c>Log10</c>/subtraction variants)
     /// assume <c>x</c> and <c>y</c> lie in the supported positive finite real domain; power identities such
@@ -387,8 +373,8 @@ namespace Utils.Mathematics.Expressions
         /// <remarks>
         /// See the "Symbolic-equivalence contract" section of this type's remarks: the result is
         /// symbolically/mathematically equivalent to <paramref name="e"/> over the algebraic identities'
-        /// assumed domain and under the assumption that <paramref name="e"/>'s sub-expressions are pure. It
-        /// is not guaranteed to be a bit-for-bit CLR/IEEE-754-identical evaluator, and it never treats a
+        /// assumed domain; since ETC R1b every evaluation that is not proven inert is kept, with its count, order and
+        /// exceptions. It is not guaranteed to be a bit-for-bit IEEE-754-identical evaluator, and it never treats a
         /// custom operator, lifted nullable arithmetic, or truncating integer division as ordinary algebra.
         /// </remarks>
         public Expression Simplify(Expression e)
