@@ -104,12 +104,13 @@ public class ExpressionTreeFindingsTests
     /// <summary>
     /// ETC-01: families reaching <c>PrepareDefault</c> are returned as the very same instance by the exact simplifier,
     /// so a simplifiable descendant is never visited. R1 (New, NewArray, TypeBinary), R2 (Block, Try, Switch, Loop,
-    /// Goto, Label), R3 (MemberInit, ListInit, Index) and R4 (Dynamic, Extension) replace this with explicit policies.
+    /// Goto, Label), R3 (MemberInit, ListInit, Index) and R4 (Dynamic, Extension) replace this with explicit policies;
+    /// R1b and R2 are done (see <c>ExpressionTreeR1bTests</c> and <c>ExpressionTreeR2Tests</c>).
     /// </summary>
     [TestMethod]
     public void ETC01_ExactSimplifier_DefaultDispatchedFamilies_AreNotTraversed()
     {
-        string[] passThrough = ["MemberInit", "ListInit", "Index", "Try", "Switch", "Goto", "Label", "Dynamic", "Extension"];
+        string[] passThrough = ["MemberInit", "ListInit", "Index", "Dynamic", "Extension"];
         foreach (string name in passThrough)
         {
             Expression original = ExpressionNodeCatalog.Get(name).Build();
@@ -184,13 +185,14 @@ public class ExpressionTreeFindingsTests
     /// <summary>
     /// ETC-02: for many families <c>CopyExpression</c> ignores the supplied children and returns the original node. ETC R1b
     /// removed <c>MemberAccess</c> from this list: it follows the C-02 arity contract (see
-    /// <see cref="ETC02_CopyExpression_MemberAccess_FollowsArityContract"/>).
+    /// <see cref="ETC02_CopyExpression_MemberAccess_FollowsArityContract"/>); ETC R2 removed <c>Try</c>, <c>Switch</c>,
+    /// <c>Goto</c> and <c>Label</c>, which follow it too (see <c>ExpressionTreeR2Tests</c>).
     /// </summary>
     [TestMethod]
     public void ETC02_CopyExpression_IgnoresReplacementChildren_ForPassThroughFamilies()
     {
         Expression replacement = Expression.Constant(9.5);
-        string[] ignored = ["MemberInit", "ListInit", "Index", "Try", "Switch", "Goto", "Label", "Dynamic", "Extension", "Lambda"];
+        string[] ignored = ["MemberInit", "ListInit", "Index", "Dynamic", "Extension", "Lambda"];
         foreach (string name in ignored)
         {
             Expression original = ExpressionNodeCatalog.Get(name).Build();
@@ -226,18 +228,21 @@ public class ExpressionTreeFindingsTests
     // ------------------------------------------------------------------------------------------
 
     /// <summary>
-    /// ETC-03: substitution does not descend into a nested lambda, so a free occurrence of the replaced parameter
-    /// captured by the lambda survives. R2 substitutes free occurrences through binders that do not shadow it.
+    /// ETC-03, resolved by ETC R2: substitution did not descend into a nested lambda, so a free occurrence of the replaced
+    /// parameter captured by the lambda survived. It now substitutes free occurrences through binders that do not shadow it
+    /// (the shadowing and capture cases are in <c>ExpressionTreeR2SubstitutionTests</c>).
     /// </summary>
     [TestMethod]
-    public void ETC03_Substitution_DoesNotDescendIntoNestedLambda()
+    public void ETC03_Substitution_DescendsIntoNestedLambda()
     {
         Expression<Func<double>> nested = Expression.Lambda<Func<double>>(P);
 
         Expression result = new ExposedTransformer().Replace(Expression.Invoke(nested), P, Expression.Constant(5.0));
 
         var invocation = (InvocationExpression)result;
-        Assert.AreSame(nested, invocation.Expression);
+        var lambda = (LambdaExpression)invocation.Expression;
+        Assert.AreEqual(nested.Type, lambda.Type);
+        Assert.AreEqual(5.0, ((ConstantExpression)lambda.Body).Value);
     }
 
     /// <summary>
@@ -256,13 +261,19 @@ public class ExpressionTreeFindingsTests
         Assert.IsInstanceOfType<ConstantExpression>(((MethodCallExpression)result.Operand).Arguments[0]);
     }
 
-    /// <summary>ETC-03: substitution ignores block variables and every other non-scalar family; R2 defines the binding model first.</summary>
+    /// <summary>
+    /// ETC-03, resolved by ETC R2: substitution ignored blocks and every other non-scalar family; it now enters a block (its
+    /// variables hide a redeclared parameter) and keeps its result type.
+    /// </summary>
     [TestMethod]
-    public void ETC03_Substitution_LeavesBlockUntouched()
+    public void ETC03_Substitution_EntersBlock()
     {
         BlockExpression block = Expression.Block(Expression.Add(P, Expression.Constant(0.5)));
 
-        Assert.AreSame(block, new ExposedTransformer().Replace(block, P, Expression.Constant(5.0)));
+        var result = (BlockExpression)new ExposedTransformer().Replace(block, P, Expression.Constant(5.0));
+
+        Assert.AreEqual(block.Type, result.Type);
+        Assert.AreEqual(5.5, Expression.Lambda<Func<double>>(result).Compile()());
     }
 
     // ------------------------------------------------------------------------------------------
@@ -327,7 +338,7 @@ public class ExpressionTreeFindingsTests
 
     /// <summary>
     /// ETC-06, resolved for the scalar families by ETC R1c (C-04): two independently built, identical conditionals compared
-    /// unequal; they are now structurally equal. A family that is still unsupported (a block, R2) stays conservatively
+    /// unequal; they are now structurally equal. A family that is still unsupported (an index access, R3; a block until ETC R2) stays conservatively
     /// unequal, and the same instance is equal to itself.
     /// </summary>
     [TestMethod]
@@ -335,8 +346,8 @@ public class ExpressionTreeFindingsTests
     {
         Expression first = ExpressionNodeCatalog.Get("Conditional").Build();
         Expression second = ExpressionNodeCatalog.Get("Conditional").Build();
-        Expression firstBlock = ExpressionNodeCatalog.Get("Block").Build();
-        Expression secondBlock = ExpressionNodeCatalog.Get("Block").Build();
+        Expression firstBlock = ExpressionNodeCatalog.Get("Index").Build();
+        Expression secondBlock = ExpressionNodeCatalog.Get("Index").Build();
 
         Assert.IsTrue(ExpressionComparer.Default.Equals(first, second));
         Assert.IsFalse(ExpressionComparer.Default.Equals(firstBlock, secondBlock));
@@ -346,15 +357,15 @@ public class ExpressionTreeFindingsTests
     /// <summary>
     /// ETC-07, resolved for the scalar families by ETC R1c: unsupported nodes hashed by node type and result type only, so
     /// different conditionals collided. The hash now includes the children, so these two differ, while a still unsupported
-    /// family keeps the coarse hash.
+    /// family (an index access, R3; a block until ETC R2) keeps the coarse hash.
     /// </summary>
     [TestMethod]
     public void ETC07_Comparer_ScalarFamilies_HashTheirChildren()
     {
         Expression first = Expression.Condition(Expression.GreaterThan(P, Expression.Constant(0.5)), Expression.Constant(1.5), Expression.Constant(2.5));
         Expression second = Expression.Condition(Expression.LessThan(P, Expression.Constant(7.5)), Expression.Constant(3.5), P);
-        Expression firstBlock = Expression.Block(Expression.Constant(1.5));
-        Expression secondBlock = Expression.Block(P);
+        Expression firstBlock = Expression.ArrayAccess(Expression.NewArrayInit(typeof(double), Expression.Constant(1.5)), Expression.Constant(0));
+        Expression secondBlock = Expression.ArrayAccess(Expression.NewArrayInit(typeof(double), P), Expression.Constant(0));
 
         Assert.IsFalse(ExpressionComparer.Default.Equals(first, second));
         Assert.AreNotEqual(ExpressionComparer.Default.GetHashCode(first), ExpressionComparer.Default.GetHashCode(second));
@@ -393,20 +404,28 @@ public class ExpressionTreeFindingsTests
 
     /// <summary>
     /// ETC-08 (critical), resolved by ETC R1a: a block was replaced by an empty <see cref="void"/> block; it now keeps its
-    /// statements, variables and result.
+    /// statements, variables and result. R1a kept the block as is; since ETC R2 it is traversed and rebuilt with the same
+    /// variables, statement count and type, and the simplifiers' results evaluate like the original.
     /// </summary>
     [TestMethod]
     public void ETC08_ExactSimplifier_Block_KeepsStatementsVariablesAndResult()
     {
-        Expression block = ExpressionNodeCatalog.Get("Block").Build();
+        var block = (BlockExpression)ExpressionNodeCatalog.Get("Block").Build();
 
         Expression[] results = [new ExpressionSimplifier().Simplify(block), new DerivedSimplifier().Simplify(block), new RecursiveTransformer().Transform(block)];
 
         Assert.AreEqual(typeof(double), block.Type);
         foreach (Expression result in results)
         {
-            Assert.AreSame(block, result);
+            var rebuilt = (BlockExpression)result;
+            Assert.AreEqual(block.Type, rebuilt.Type);
+            CollectionAssert.AreEqual(block.Variables.ToArray(), rebuilt.Variables.ToArray());
+            Assert.AreEqual(block.Expressions.Count, rebuilt.Expressions.Count);
         }
+
+        Func<Expression, double> evaluate = body => Expression.Lambda<Func<double, double>>(body, ExpressionNodeCatalog.Free).Compile()(3.0);
+        Assert.AreEqual(evaluate(block), evaluate(results[0]));
+        Assert.AreEqual(evaluate(block), evaluate(results[1]));
     }
 
     // ------------------------------------------------------------------------------------------
@@ -415,18 +434,20 @@ public class ExpressionTreeFindingsTests
 
     /// <summary>
     /// ETC-09, resolved by ETC R1a: type tests, loops, constructions with arguments and array bounds threw from
-    /// <c>Simplify</c>. A loop (untraversed) and a construction without argument (no child) are returned unchanged; the
-    /// families traversed since ETC R1b are rebuilt with the same node type, type and metadata, without throwing.
+    /// <c>Simplify</c>. A construction without argument (no child) is returned unchanged; the families traversed since ETC
+    /// R1b, and the loop since ETC R2 (it was returned unchanged before), are rebuilt with the same node type, type and
+    /// metadata, without throwing.
     /// </summary>
     [TestMethod]
     public void ETC09_ExactSimplifier_DoesNotThrowOnValidTrees()
     {
-        Expression[] unchanged = [ExpressionNodeCatalog.Get("Loop").Build(), Expression.New(typeof(DateTime))];
+        Expression[] unchanged = [Expression.New(typeof(DateTime))];
         Expression[] traversed =
         [
             Expression.TypeIs(Expression.Convert(P, typeof(object)), typeof(double)),
             Expression.New(typeof(StrongBox<double>).GetConstructor([typeof(double)])!, P),
             Expression.NewArrayBounds(typeof(double), Expression.Constant(2)),
+            ExpressionNodeCatalog.Get("Loop").Build(),
         ];
 
         foreach (Expression tree in unchanged)
@@ -441,7 +462,7 @@ public class ExpressionTreeFindingsTests
             {
                 Assert.AreEqual(tree.NodeType, result.NodeType);
                 Assert.AreEqual(tree.Type, result.Type);
-                Assert.IsNotNull(Expression.Lambda(result, P).Compile(), tree.NodeType.ToString());
+                Assert.IsNotNull(Expression.Lambda(result, P, ExpressionNodeCatalog.Free).Compile(), tree.NodeType.ToString());
             }
         }
     }
@@ -545,15 +566,15 @@ public class ExpressionTreeFindingsTests
     /// <summary>
     /// ETC-14, resolved for the scalar families by ETC R1c: the unsupported-node canonical-order key tied every unsupported
     /// term; conditionals and defaults now have their own keys, which order them antisymmetrically, while two still
-    /// unsupported families (a block and a loop, R2) keep tying, conservatively.
+    /// unsupported families (an index access and a member initializer, R3; a block and a loop until ETC R2) keep tying, conservatively.
     /// </summary>
     [TestMethod]
     public void ETC14_CanonicalOrder_KeysTheScalarFamilies()
     {
         Expression first = ExpressionNodeCatalog.Get("Conditional").Build();
         Expression second = Expression.Default(typeof(double));
-        Expression block = ExpressionNodeCatalog.Get("Block").Build();
-        Expression loop = ExpressionNodeCatalog.Get("Loop").Build();
+        Expression block = ExpressionNodeCatalog.Get("Index").Build();
+        Expression loop = ExpressionNodeCatalog.Get("MemberInit").Build();
 
         int forward = ExpressionCanonicalOrder.Compare(first, second, []);
         Assert.AreNotEqual(0, forward);

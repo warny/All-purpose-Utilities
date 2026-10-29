@@ -21,12 +21,12 @@ namespace Utils.Mathematics.Expressions;
 /// numeric constants. See <c>Utils/TODO-2026-09-12-expression-simplifier-roadmap.md</c>, stage S1, for the
 /// audit this hardening addresses and for remaining known limitations.
 ///
-/// Only the node kinds already recognized before this hardening participate in structural equality:
-/// <see cref="LambdaExpression"/>, <see cref="ConstantExpression"/>, <see cref="ParameterExpression"/>,
-/// <see cref="UnaryExpression"/>, <see cref="BinaryExpression"/>, <see cref="MethodCallExpression"/> and
-/// <see cref="MemberExpression"/>. Two distinct instances of any other node kind (for example
-/// <see cref="NewExpression"/> or <see cref="ConditionalExpression"/>) are conservatively treated as
-/// unequal; broadening node coverage is left to a future S1 follow-up.
+/// Structural equality covers lambdas, constants, parameters, unary, binary, method-call and member nodes (S1), the
+/// scalar families of ETC R1c (conditionals, invocations, type tests, defaults, creations, array creations) and the binding
+/// and control-flow families of ETC R2 (blocks, try expressions with their handlers, switches with their cases, loops,
+/// jumps, labels, runtime variables and debug information). ETC R2 generalizes parameter binding to binder frames (lambda,
+/// block, catch) and adds a label-target bijection per lambda body. Two distinct instances of any other node kind (member
+/// and list initializers, index, dynamic and extension nodes) are conservatively treated as unequal.
 /// </remarks>
 public class ExpressionComparer : IEqualityComparer<Expression>
 {
@@ -409,11 +409,140 @@ public class ExpressionComparer : IEqualityComparer<Expression>
             (NewExpression xn, NewExpression yn) => CreationsEqual(xn, yn, context),
             (NewArrayExpression xa, NewArrayExpression ya) => SequencesEqual(xa.Expressions, ya.Expressions, context),
 
+            // ETC R2: binding and control-flow families, under the lexical scope model (binder frames for block and catch
+            // variables, a label bijection per lambda body).
+            (BlockExpression xbl, BlockExpression ybl) => BlocksEqual(xbl, ybl, context),
+            (TryExpression xtr, TryExpression ytr) => TriesEqual(xtr, ytr, context),
+            (SwitchExpression xsw, SwitchExpression ysw) => SwitchesEqual(xsw, ysw, context),
+            (LoopExpression xlo, LoopExpression ylo) => context.LabelsCorrespond(xlo.BreakLabel, ylo.BreakLabel)
+                && context.LabelsCorrespond(xlo.ContinueLabel, ylo.ContinueLabel)
+                && EqualsCore(xlo.Body, ylo.Body, context),
+            (GotoExpression xg, GotoExpression yg) => xg.Kind == yg.Kind && context.LabelsCorrespond(xg.Target, yg.Target) && EqualsCore(xg.Value, yg.Value, context),
+            (LabelExpression xla, LabelExpression yla) => context.LabelsCorrespond(xla.Target, yla.Target) && EqualsCore(xla.DefaultValue, yla.DefaultValue, context),
+            (RuntimeVariablesExpression xr, RuntimeVariablesExpression yr) => RuntimeVariablesEqual(xr, yr, context),
+
+            // Debug information is non-semantic metadata, like a parameter or lambda name: any two DebugInfo nodes are equal.
+            (DebugInfoExpression, DebugInfoExpression) => true,
+
             // Unsupported node kind: conservatively unequal, even for a shared/reused instance - see this
             // method's remarks on why no ReferenceEquals shortcut is used here.
             _ => false,
         };
     }
+
+    /// <summary>
+    /// Compares two <see cref="BlockExpression"/> nodes (ETC R2): compatible variable declarations (count, types,
+    /// <see cref="ParameterExpression.IsByRef"/>), then the statements in order under a pushed block frame. The result types
+    /// are already equal.
+    /// </summary>
+    /// <param name="x">The first block.</param>
+    /// <param name="y">The second block.</param>
+    /// <param name="context">The active binding context.</param>
+    /// <returns><see langword="true"/> if the blocks are alpha-equivalent.</returns>
+    private static bool BlocksEqual(BlockExpression x, BlockExpression y, ParameterBindingContext context)
+    {
+        if (x.Expressions.Count != y.Expressions.Count || !DeclarationsCompatible(x.Variables, y.Variables)) return false;
+
+        context.PushScope(BinderKind.Block, x.Variables, y.Variables);
+        try
+        {
+            return SequencesEqual(x.Expressions, y.Expressions, context);
+        }
+        finally
+        {
+            context.PopScope();
+        }
+    }
+
+    /// <summary>
+    /// Compares two <see cref="TryExpression"/> nodes (ETC R2): the protected body, then the handlers in order (test type,
+    /// variable, then filter and body under the catch frame, which binds neither siblings nor the body), then the finally and
+    /// the fault. A finally never matches a fault.
+    /// </summary>
+    /// <param name="x">The first try expression.</param>
+    /// <param name="y">The second try expression.</param>
+    /// <param name="context">The active binding context.</param>
+    /// <returns><see langword="true"/> if the try expressions are alpha-equivalent.</returns>
+    private static bool TriesEqual(TryExpression x, TryExpression y, ParameterBindingContext context)
+    {
+        if (x.Handlers.Count != y.Handlers.Count || !EqualsCore(x.Body, y.Body, context)) return false;
+
+        for (int i = 0; i < x.Handlers.Count; i++)
+        {
+            if (!HandlersEqual(x.Handlers[i], y.Handlers[i], context)) return false;
+        }
+
+        return EqualsCore(x.Finally, y.Finally, context) && EqualsCore(x.Fault, y.Fault, context);
+    }
+
+    /// <summary>
+    /// Compares two <see cref="CatchBlock"/>s of <see cref="TriesEqual"/>: same test type, both without variable or with
+    /// compatible variables, then the filter and the body under a catch frame binding the two variables. A handler is not an
+    /// expression node, so its comparison is counted as one structural visit explicitly.
+    /// </summary>
+    /// <param name="x">The first handler.</param>
+    /// <param name="y">The second handler.</param>
+    /// <param name="context">The active binding context.</param>
+    /// <returns><see langword="true"/> if the handlers are alpha-equivalent.</returns>
+    private static bool HandlersEqual(CatchBlock x, CatchBlock y, ParameterBindingContext context)
+    {
+        ExpressionResourceBudget.ConsumeStructuralVisit();
+        if (x.Test != y.Test) return false;
+        if (x.Variable is null || y.Variable is null)
+        {
+            return x.Variable is null && y.Variable is null && EqualsCore(x.Filter, y.Filter, context) && EqualsCore(x.Body, y.Body, context);
+        }
+
+        if (x.Variable.Type != y.Variable.Type || x.Variable.IsByRef != y.Variable.IsByRef) return false;
+
+        context.PushScope(BinderKind.Catch, x.Variable, y.Variable);
+        try
+        {
+            return EqualsCore(x.Filter, y.Filter, context) && EqualsCore(x.Body, y.Body, context);
+        }
+        finally
+        {
+            context.PopScope();
+        }
+    }
+
+    /// <summary>
+    /// Compares two <see cref="SwitchExpression"/> nodes (ETC R2): the comparison method (possibly <see langword="null"/>),
+    /// the switch value, the cases in order (test values in order, then body; a case is counted as one structural visit),
+    /// then the default body. Cases are never reordered and the comparison method is never run.
+    /// </summary>
+    /// <param name="x">The first switch.</param>
+    /// <param name="y">The second switch.</param>
+    /// <param name="context">The active binding context.</param>
+    /// <returns><see langword="true"/> if the switches are structurally equivalent.</returns>
+    private static bool SwitchesEqual(SwitchExpression x, SwitchExpression y, ParameterBindingContext context)
+    {
+        if (!object.Equals(x.Comparison, y.Comparison) || x.Cases.Count != y.Cases.Count || !EqualsCore(x.SwitchValue, y.SwitchValue, context))
+        {
+            return false;
+        }
+
+        for (int i = 0; i < x.Cases.Count; i++)
+        {
+            ExpressionResourceBudget.ConsumeStructuralVisit();
+            SwitchCase xCase = x.Cases[i];
+            SwitchCase yCase = y.Cases[i];
+            if (!SequencesEqual(xCase.TestValues, yCase.TestValues, context) || !EqualsCore(xCase.Body, yCase.Body, context)) return false;
+        }
+
+        return EqualsCore(x.DefaultBody, y.DefaultBody, context);
+    }
+
+    /// <summary>
+    /// Compares two <see cref="RuntimeVariablesExpression"/> nodes (ETC R2): the variables are references, resolved in order
+    /// through the active binding context (bound by position, free by identity); they declare nothing.
+    /// </summary>
+    /// <param name="x">The first node.</param>
+    /// <param name="y">The second node.</param>
+    /// <param name="context">The active binding context.</param>
+    /// <returns><see langword="true"/> if both nodes reference corresponding variables in the same order.</returns>
+    private static bool RuntimeVariablesEqual(RuntimeVariablesExpression x, RuntimeVariablesExpression y, ParameterBindingContext context)
+        => SequencesEqual(x.Variables, y.Variables, context);
 
     /// <summary>Compares two <see cref="ConditionalExpression"/> nodes: test, then the two branches, in order (never swapped).</summary>
     /// <param name="x">The first conditional.</param>
@@ -559,11 +688,14 @@ public class ExpressionComparer : IEqualityComparer<Expression>
             return false;
         }
 
+        // A failed positional attempt must not leave label correspondences behind for the swapped attempt (ETC R2).
+        int labelMark = context.LabelMark;
         if (EqualsCore(x.Left, y.Left, context) && EqualsCore(x.Right, y.Right, context) && EqualsCore(x.Conversion, y.Conversion, context))
         {
             return true;
         }
 
+        context.RollbackLabels(labelMark);
         return IsCommutative(x)
             && IsCommutative(y)
             && EqualsCore(x.Left, y.Right, context)
@@ -608,21 +740,19 @@ public class ExpressionComparer : IEqualityComparer<Expression>
 
         var xParameters = x.Parameters;
         var yParameters = y.Parameters;
-        if (xParameters.Count != yParameters.Count) return false;
+        if (!DeclarationsCompatible(xParameters, yParameters)) return false;
 
-        for (int i = 0; i < xParameters.Count; i++)
-        {
-            if (xParameters[i].Type != yParameters[i].Type) return false;
-        }
-
-        context.PushScope(xParameters, yParameters);
+        // ETC R2: a lambda body has its own label scope, so label correspondences never leak between lambda bodies.
+        context.PushScope(BinderKind.Lambda, xParameters, yParameters);
+        (int Scope, int Mark) labels = context.EnterLabelScope();
         try
         {
             return EqualsCore(x.Body, y.Body, context);
         }
         finally
         {
-            context.PopScope(xParameters.Count);
+            context.ExitLabelScope(labels);
+            context.PopScope();
         }
     }
 
@@ -823,8 +953,127 @@ public class ExpressionComparer : IEqualityComparer<Expression>
             DefaultExpression de => HashCode.Combine(ExpressionType.Default, de.Type),
             NewExpression ne => HashNew(ne, scopes),
             NewArrayExpression nae => HashSequence(HashCode.Combine(nae.NodeType, nae.Type), nae.Expressions, scopes),
+
+            // ETC R2: binding and control-flow families, hashed in the same structural order as EqualsCore compares them.
+            BlockExpression block => HashBlock(block, scopes),
+            TryExpression @try => HashTry(@try, scopes),
+            SwitchExpression @switch => HashSwitch(@switch, scopes),
+            LoopExpression loop => HashCode.Combine(ExpressionType.Loop, loop.Type, HashLabel(loop.BreakLabel, scopes), HashLabel(loop.ContinueLabel, scopes), Hash(loop.Body, scopes)),
+            GotoExpression @goto => HashCode.Combine(ExpressionType.Goto, @goto.Type, @goto.Kind, HashLabel(@goto.Target, scopes), Hash(@goto.Value, scopes)),
+            LabelExpression label => HashCode.Combine(ExpressionType.Label, label.Type, HashLabel(label.Target, scopes), Hash(label.DefaultValue, scopes)),
+            RuntimeVariablesExpression runtimeVariables => HashSequence(HashCode.Combine(ExpressionType.RuntimeVariables, runtimeVariables.Type), runtimeVariables.Variables, scopes),
+            DebugInfoExpression => HashCode.Combine(ExpressionType.DebugInfo, typeof(void)),
             _ => HashUnsupported(e),
         };
+    }
+
+    /// <summary>Hashes a label target (ETC R2) by its first-occurrence index in the current label scope and its type; never by name.</summary>
+    /// <param name="target">The target, or <see langword="null"/> for an absent loop label.</param>
+    /// <param name="scopes">The active scope stack, which owns the label indices.</param>
+    /// <returns>A hash code mirroring <see cref="ParameterBindingContext.LabelsCorrespond"/>.</returns>
+    private static int HashLabel(LabelTarget? target, ParameterScopeStack scopes)
+        => target is null ? -1 : HashCode.Combine(scopes.LabelIndex(target), target.Type);
+
+    /// <summary>Hashes a <see cref="BlockExpression"/> (ETC R2): result type, declaration types and flags, then the statements under a pushed block frame.</summary>
+    /// <param name="block">The block to hash.</param>
+    /// <param name="scopes">The active scope stack.</param>
+    /// <returns>A hash code mirroring <see cref="BlocksEqual"/>.</returns>
+    private static int HashBlock(BlockExpression block, ParameterScopeStack scopes)
+    {
+        var hc = new HashCode();
+        hc.Add(ExpressionType.Block);
+        hc.Add(block.Type);
+        AddDeclarations(ref hc, block.Variables);
+        scopes.Push(BinderKind.Block, block.Variables);
+        try
+        {
+            hc.Add(HashSequence(block.Expressions.Count, block.Expressions, scopes));
+        }
+        finally
+        {
+            scopes.Pop();
+        }
+
+        return hc.ToHashCode();
+    }
+
+    /// <summary>Hashes a <see cref="TryExpression"/> (ETC R2): result type, body, each handler (test type, variable, filter and body under a catch frame), finally, fault.</summary>
+    /// <param name="node">The try expression to hash.</param>
+    /// <param name="scopes">The active scope stack.</param>
+    /// <returns>A hash code mirroring <see cref="TriesEqual"/>.</returns>
+    private static int HashTry(TryExpression node, ParameterScopeStack scopes)
+    {
+        var hc = new HashCode();
+        hc.Add(ExpressionType.Try);
+        hc.Add(node.Type);
+        hc.Add(Hash(node.Body, scopes));
+        hc.Add(node.Handlers.Count);
+        foreach (CatchBlock handler in node.Handlers)
+        {
+            ExpressionResourceBudget.ConsumeStructuralVisit();
+            hc.Add(handler.Test);
+            if (handler.Variable is null)
+            {
+                hc.Add(false);
+                hc.Add(Hash(handler.Filter, scopes));
+                hc.Add(Hash(handler.Body, scopes));
+                continue;
+            }
+
+            hc.Add(true);
+            hc.Add(handler.Variable.Type);
+            hc.Add(handler.Variable.IsByRef);
+            scopes.Push(BinderKind.Catch, [handler.Variable]);
+            try
+            {
+                hc.Add(Hash(handler.Filter, scopes));
+                hc.Add(Hash(handler.Body, scopes));
+            }
+            finally
+            {
+                scopes.Pop();
+            }
+        }
+
+        hc.Add(Hash(node.Finally, scopes));
+        hc.Add(Hash(node.Fault, scopes));
+        return hc.ToHashCode();
+    }
+
+    /// <summary>Hashes a <see cref="SwitchExpression"/> (ETC R2): result type, comparison method, switch value, cases in order (test values, body), default body.</summary>
+    /// <param name="node">The switch to hash.</param>
+    /// <param name="scopes">The active scope stack.</param>
+    /// <returns>A hash code mirroring <see cref="SwitchesEqual"/>.</returns>
+    private static int HashSwitch(SwitchExpression node, ParameterScopeStack scopes)
+    {
+        var hc = new HashCode();
+        hc.Add(ExpressionType.Switch);
+        hc.Add(node.Type);
+        hc.Add(node.Comparison);
+        hc.Add(Hash(node.SwitchValue, scopes));
+        hc.Add(node.Cases.Count);
+        foreach (SwitchCase @case in node.Cases)
+        {
+            ExpressionResourceBudget.ConsumeStructuralVisit();
+            hc.Add(HashSequence(0, @case.TestValues, scopes));
+            hc.Add(Hash(@case.Body, scopes));
+        }
+
+        hc.Add(Hash(node.DefaultBody, scopes));
+        return hc.ToHashCode();
+    }
+
+    /// <summary>Adds the declaration metadata a binder comparison checks (count, then each type and <see cref="ParameterExpression.IsByRef"/>); names never count.</summary>
+    /// <param name="hc">The hash being built.</param>
+    /// <param name="declarations">The declarations.</param>
+    private static void AddDeclarations(ref HashCode hc, IReadOnlyList<ParameterExpression> declarations)
+    {
+        hc.Add(declarations.Count);
+        foreach (ParameterExpression declaration in declarations)
+        {
+            hc.Add(declaration.Type);
+            hc.Add(declaration.IsByRef);
+        }
     }
 
     /// <summary>Hashes a <see cref="ConditionalExpression"/>: result type, then test and branches in order.</summary>
@@ -884,12 +1133,20 @@ public class ExpressionComparer : IEqualityComparer<Expression>
         hc.Add(ExpressionType.Lambda);
         hc.Add(le.Type);
         hc.Add(le.TailCall);
-        hc.Add(le.Parameters.Count);
-        foreach (var p in le.Parameters) hc.Add(p.Type);
+        AddDeclarations(ref hc, le.Parameters);
 
-        scopes.Push(le.Parameters);
-        hc.Add(Hash(le.Body, scopes));
-        scopes.Pop();
+        // ETC R2: the body has its own label scope, as in LambdasEqual.
+        scopes.Push(BinderKind.Lambda, le.Parameters);
+        var labels = scopes.EnterLabelScope();
+        try
+        {
+            hc.Add(Hash(le.Body, scopes));
+        }
+        finally
+        {
+            scopes.ExitLabelScope(labels);
+            scopes.Pop();
+        }
 
         return hc.ToHashCode();
     }
@@ -902,10 +1159,11 @@ public class ExpressionComparer : IEqualityComparer<Expression>
     {
         var hc = new HashCode();
         hc.Add(ExpressionType.Parameter);
-        if (scopes.TryLocate(pe, out int depth, out int position))
+        if (scopes.TryLocate(pe, out int depth, out int position, out BinderKind kind))
         {
             hc.Add(depth);
             hc.Add(position);
+            hc.Add(kind);
         }
         else
         {
@@ -998,9 +1256,16 @@ public class ExpressionComparer : IEqualityComparer<Expression>
         hc.Add(be.IsLifted);
         hc.Add(be.IsLiftedToNull);
 
+        bool commutative = IsCommutative(be);
+        var labelMark = scopes.LabelMark;
         int leftHash = Hash(be.Left, scopes);
+
+        // Both operands of a commutative node number their labels from the same point (ETC R2), so the order-independent
+        // combination below stays consistent with the swapped match of BinaryEqual; the indices are forgotten afterwards.
+        if (commutative) scopes.RollbackLabels(labelMark);
         int rightHash = Hash(be.Right, scopes);
-        if (IsCommutative(be))
+        if (commutative) scopes.RollbackLabels(labelMark);
+        if (commutative)
         {
             // Order-independent combination: BinaryEqual accepts a swapped-operand match for an ordinary
             // Add/Multiply node, so two such nodes it considers equal (e.g. Add(a, b) and Add(b, a) for two
@@ -1064,7 +1329,20 @@ public class ExpressionComparer : IEqualityComparer<Expression>
     /// </summary>
     private sealed class ParameterBindingContext
     {
-        private readonly List<(ParameterExpression Left, ParameterExpression Right)> _bindings = [];
+        /// <summary>The binding pairs of the open binder frames, innermost last; created by the first binder (ETC R2: lazily, so a comparison without binder allocates no list).</summary>
+        private List<(ParameterExpression Left, ParameterExpression Right)>? _bindings;
+
+        /// <summary>The open binder frames (ETC R2), innermost last: their kind and the index of their first binding in <see cref="_bindings"/>; created by the first binder, so a comparison without binder allocates nothing more than before R2.</summary>
+        private List<(BinderKind Kind, int Start)>? _frames;
+
+        /// <summary>The label correspondences (ETC R2), created on the first label met, so a comparison without label allocates nothing for them.</summary>
+        private LabelMaps? _labels;
+
+        /// <summary>The identifier of the current label scope (0 outside any lambda; a fresh one per lambda body).</summary>
+        private int _labelScope;
+
+        /// <summary>The last label scope identifier handed out.</summary>
+        private int _lastLabelScope;
 
         /// <summary>
         /// When <see langword="true"/>, a non-numeric <see cref="ConstantExpression"/> compared through
@@ -1083,22 +1361,162 @@ public class ExpressionComparer : IEqualityComparer<Expression>
             SafeConstantsOnly = safeConstantsOnly;
         }
 
-        /// <summary>Pushes one binding pair per positionally-corresponding parameter when entering a lambda's body.</summary>
-        /// <param name="leftParameters">The left lambda's parameters, in declaration order.</param>
-        /// <param name="rightParameters">The right lambda's parameters, in declaration order; must have the same count as <paramref name="leftParameters"/>.</param>
-        public void PushScope(IReadOnlyList<ParameterExpression> leftParameters, IReadOnlyList<ParameterExpression> rightParameters)
+        /// <summary>
+        /// Opens a binder frame of <paramref name="kind"/>, pushing one binding pair per positionally-corresponding declaration
+        /// (lambda parameters, block variables, a catch variable). Callers check first that both declaration lists have the
+        /// same count, types and <see cref="ParameterExpression.IsByRef"/> flags (<see cref="DeclarationsCompatible"/>), and close
+        /// the frame with <see cref="PopScope"/> in a <see langword="finally"/> block.
+        /// </summary>
+        /// <param name="kind">The binder kind.</param>
+        /// <param name="leftParameters">The left binder's declarations, in declaration order.</param>
+        /// <param name="rightParameters">The right binder's declarations, in declaration order; must have the same count as <paramref name="leftParameters"/>.</param>
+        public void PushScope(BinderKind kind, IReadOnlyList<ParameterExpression> leftParameters, IReadOnlyList<ParameterExpression> rightParameters)
         {
+            List<(ParameterExpression Left, ParameterExpression Right)> bindings = _bindings ??= [];
+            (_frames ??= []).Add((kind, bindings.Count));
             for (int i = 0; i < leftParameters.Count; i++)
             {
-                _bindings.Add((leftParameters[i], rightParameters[i]));
+                bindings.Add((leftParameters[i], rightParameters[i]));
             }
         }
 
-        /// <summary>Removes the most recently pushed <paramref name="count"/> bindings when leaving a lambda's body.</summary>
-        /// <param name="count">The number of bindings to remove; must match the count passed to the corresponding <see cref="PushScope"/> call.</param>
-        public void PopScope(int count)
+        /// <summary>Opens a binder frame declaring a single pair (a catch variable).</summary>
+        /// <param name="kind">The binder kind.</param>
+        /// <param name="left">The left declaration.</param>
+        /// <param name="right">The right declaration.</param>
+        public void PushScope(BinderKind kind, ParameterExpression left, ParameterExpression right)
         {
-            _bindings.RemoveRange(_bindings.Count - count, count);
+            List<(ParameterExpression Left, ParameterExpression Right)> bindings = _bindings ??= [];
+            (_frames ??= []).Add((kind, bindings.Count));
+            bindings.Add((left, right));
+        }
+
+        /// <summary>Closes the innermost binder frame, removing exactly the bindings it pushed.</summary>
+        public void PopScope()
+        {
+            List<(BinderKind Kind, int Start)> frames = _frames!;
+            int start = frames[^1].Start;
+            frames.RemoveAt(frames.Count - 1);
+            _bindings!.RemoveRange(start, _bindings.Count - start);
+        }
+
+        /// <summary>
+        /// Opens a fresh label scope for a lambda body (ETC R2): label correspondences established outside are not visible
+        /// inside, and those established inside are dropped by <see cref="ExitLabelScope"/>, so they never leak between
+        /// independent lambda bodies.
+        /// </summary>
+        /// <returns>The state to pass to <see cref="ExitLabelScope"/>.</returns>
+        public (int Scope, int Mark) EnterLabelScope()
+        {
+            (int Scope, int Mark) saved = (_labelScope, LabelMark);
+            _labelScope = ++_lastLabelScope;
+            return saved;
+        }
+
+        /// <summary>Closes the label scope opened by <see cref="EnterLabelScope"/>, undoing every correspondence it added.</summary>
+        /// <param name="saved">The value <see cref="EnterLabelScope"/> returned.</param>
+        public void ExitLabelScope((int Scope, int Mark) saved)
+        {
+            RollbackLabels(saved.Mark);
+            _labelScope = saved.Scope;
+        }
+
+        /// <summary>Gets a mark of the label correspondences recorded so far, for <see cref="RollbackLabels"/>.</summary>
+        public int LabelMark => _labels?.Undo.Count ?? 0;
+
+        /// <summary>
+        /// Undoes every label correspondence recorded after <paramref name="mark"/>: used when a comparison attempt fails and
+        /// another one is tried (the commutative fallback of <see cref="BinaryEqual"/>), so the failed attempt leaves nothing.
+        /// </summary>
+        /// <param name="mark">A value of <see cref="LabelMark"/>.</param>
+        public void RollbackLabels(int mark)
+        {
+            if (_labels is not { } labels) return;
+
+            List<(bool Left, LabelTarget Key, (LabelTarget Other, int Scope)? Previous)> undo = labels.Undo;
+            for (int i = undo.Count - 1; i >= mark; i--)
+            {
+                (bool left, LabelTarget key, (LabelTarget Other, int Scope)? previous) = undo[i];
+                Dictionary<LabelTarget, (LabelTarget Other, int Scope)> map = left ? labels.Left : labels.Right;
+                if (previous is { } entry) map[key] = entry;
+                else map.Remove(key);
+            }
+
+            undo.RemoveRange(mark, undo.Count - mark);
+        }
+
+        /// <summary>
+        /// Decides whether label target <paramref name="x"/> (left tree) corresponds to <paramref name="y"/> (right tree) in the
+        /// current label scope (ETC R2): both absent; or same <see cref="LabelTarget.Type"/> and either both already mapped to
+        /// each other, or neither mapped yet (the pair is then recorded, at its first occurrence, whether a definition or a
+        /// jump). Names never count; the mapping stays a bijection.
+        /// </summary>
+        /// <param name="x">The left target, or <see langword="null"/>.</param>
+        /// <param name="y">The right target, or <see langword="null"/>.</param>
+        /// <returns><see langword="true"/> if the targets correspond.</returns>
+        public bool LabelsCorrespond(LabelTarget? x, LabelTarget? y)
+        {
+            if (x is null || y is null) return x is null && y is null;
+            if (x.Type != y.Type) return false;
+
+            LabelMaps labels = _labels ??= new LabelMaps();
+            bool leftMapped = TryGetLabel(labels.Left, x, out LabelTarget? leftOther);
+            bool rightMapped = TryGetLabel(labels.Right, y, out LabelTarget? rightOther);
+            if (leftMapped || rightMapped)
+            {
+                return leftMapped && rightMapped && ReferenceEquals(leftOther, y) && ReferenceEquals(rightOther, x);
+            }
+
+            RecordLabel(true, labels, labels.Left, x, y);
+            RecordLabel(false, labels, labels.Right, y, x);
+            return true;
+        }
+
+        /// <summary>Looks up a correspondence established in the current label scope.</summary>
+        /// <param name="map">The side's map.</param>
+        /// <param name="key">The target.</param>
+        /// <param name="other">The corresponding target, when found.</param>
+        /// <returns><see langword="true"/> if <paramref name="key"/> is mapped in the current label scope.</returns>
+        private bool TryGetLabel(Dictionary<LabelTarget, (LabelTarget Other, int Scope)> map, LabelTarget key, out LabelTarget? other)
+        {
+            if (map.TryGetValue(key, out (LabelTarget Other, int Scope) entry) && entry.Scope == _labelScope)
+            {
+                other = entry.Other;
+                return true;
+            }
+
+            other = null;
+            return false;
+        }
+
+        /// <summary>Records one side of a correspondence, logging the entry it replaces so it can be undone.</summary>
+        /// <param name="left">Whether <paramref name="map"/> is the left side's map.</param>
+        /// <param name="labels">The label maps, whose undo log records the write.</param>
+        /// <param name="map">The side's map.</param>
+        /// <param name="key">The target.</param>
+        /// <param name="other">The corresponding target.</param>
+        private void RecordLabel(bool left, LabelMaps labels, Dictionary<LabelTarget, (LabelTarget Other, int Scope)> map, LabelTarget key, LabelTarget other)
+        {
+            (LabelTarget Other, int Scope)? previous = map.TryGetValue(key, out (LabelTarget Other, int Scope) existing) ? existing : null;
+            labels.Undo.Add((left, key, previous));
+            map[key] = (other, _labelScope);
+        }
+
+        /// <summary>
+        /// The label correspondences of one comparison (ETC R2): each left target maps to the right target it corresponds to
+        /// and the label scope that established the correspondence, mirrored on the right so the mapping stays a bijection, with
+        /// an undo log (side, key, replaced entry) for scope exits and failed commutative attempts.
+        /// </summary>
+        private sealed class LabelMaps
+        {
+            /// <summary>The correspondences of the left tree's targets.</summary>
+            public readonly Dictionary<LabelTarget, (LabelTarget Other, int Scope)> Left = new(ReferenceEqualityComparer.Instance);
+
+            /// <summary>The correspondences of the right tree's targets.</summary>
+            public readonly Dictionary<LabelTarget, (LabelTarget Other, int Scope)> Right = new(ReferenceEqualityComparer.Instance);
+
+            /// <summary>The undo log of the writes to <see cref="Left"/> and <see cref="Right"/>.</summary>
+            public readonly List<(bool Left, LabelTarget Key, (LabelTarget Other, int Scope)? Previous)> Undo = [];
         }
 
         /// <summary>
@@ -1114,12 +1532,15 @@ public class ExpressionComparer : IEqualityComparer<Expression>
         /// </returns>
         public bool AreEquivalent(ParameterExpression x, ParameterExpression y)
         {
+            List<(ParameterExpression Left, ParameterExpression Right)>? bindings = _bindings;
+            if (bindings is null) return ReferenceEquals(x, y);
+
             int leftIndex = -1;
             int rightIndex = -1;
-            for (int i = _bindings.Count - 1; i >= 0; i--)
+            for (int i = bindings.Count - 1; i >= 0; i--)
             {
-                if (leftIndex < 0 && ReferenceEquals(_bindings[i].Left, x)) leftIndex = i;
-                if (rightIndex < 0 && ReferenceEquals(_bindings[i].Right, y)) rightIndex = i;
+                if (leftIndex < 0 && ReferenceEquals(bindings[i].Left, x)) leftIndex = i;
+                if (rightIndex < 0 && ReferenceEquals(bindings[i].Right, y)) rightIndex = i;
                 if (leftIndex >= 0 && rightIndex >= 0) break;
             }
 
@@ -1136,7 +1557,17 @@ public class ExpressionComparer : IEqualityComparer<Expression>
     /// </summary>
     private sealed class ParameterScopeStack
     {
-        private readonly List<IReadOnlyList<ParameterExpression>> _scopes = [];
+        /// <summary>The open binder scopes, innermost last; created by the first binder (ETC R2: lazily, so hashing a tree without binder allocates no list).</summary>
+        private List<(BinderKind Kind, IReadOnlyList<ParameterExpression> Parameters)>? _scopes;
+
+        /// <summary>The first-occurrence index of each label target seen in the current label scope (ETC R2), lazily created.</summary>
+        private Dictionary<LabelTarget, int>? _labels;
+
+        /// <summary>Undo log of <see cref="_labels"/> insertions, so a label scope or a commutative operand can be rolled back.</summary>
+        private List<LabelTarget>? _labelUndo;
+
+        /// <summary>The index the next new label target receives in the current label scope.</summary>
+        private int _nextLabel;
 
         /// <summary>Mirrors <see cref="ParameterBindingContext.SafeConstantsOnly"/> for the hashing side; see its remarks.</summary>
         public bool SafeConstantsOnly { get; }
@@ -1148,29 +1579,33 @@ public class ExpressionComparer : IEqualityComparer<Expression>
             SafeConstantsOnly = safeConstantsOnly;
         }
 
-        /// <summary>Pushes a lambda's parameter list when descending into its body.</summary>
-        /// <param name="parameters">The lambda's parameters, in declaration order.</param>
-        public void Push(IReadOnlyList<ParameterExpression> parameters) => _scopes.Add(parameters);
+        /// <summary>Pushes a binder's declarations when descending into its scope.</summary>
+        /// <param name="kind">The binder kind.</param>
+        /// <param name="parameters">The binder's declarations, in declaration order.</param>
+        public void Push(BinderKind kind, IReadOnlyList<ParameterExpression> parameters) => (_scopes ??= []).Add((kind, parameters));
 
-        /// <summary>Pops the innermost lambda's parameter list when leaving its body.</summary>
-        public void Pop() => _scopes.RemoveAt(_scopes.Count - 1);
+        /// <summary>Pops the innermost binder's declarations when leaving its scope.</summary>
+        public void Pop() => _scopes!.RemoveAt(_scopes.Count - 1);
 
         /// <summary>Locates <paramref name="parameter"/> among the currently active scopes, innermost first.</summary>
         /// <param name="parameter">The parameter reference to locate.</param>
         /// <param name="relativeDepth">The number of enclosing scopes between the innermost scope and the one declaring <paramref name="parameter"/> (0 = innermost), when found.</param>
         /// <param name="position">The parameter's declaration position within its scope, when found.</param>
+        /// <param name="kind">The kind of the declaring binder, when found.</param>
         /// <returns><see langword="true"/> if <paramref name="parameter"/> is bound in an active scope; <see langword="false"/> if it is a free parameter.</returns>
-        public bool TryLocate(ParameterExpression parameter, out int relativeDepth, out int position)
+        public bool TryLocate(ParameterExpression parameter, out int relativeDepth, out int position, out BinderKind kind)
         {
-            for (int i = _scopes.Count - 1; i >= 0; i--)
+            List<(BinderKind Kind, IReadOnlyList<ParameterExpression> Parameters)>? scopes = _scopes;
+            for (int i = (scopes?.Count ?? 0) - 1; i >= 0; i--)
             {
-                var scope = _scopes[i];
+                var scope = scopes![i].Parameters;
                 for (int j = 0; j < scope.Count; j++)
                 {
                     if (ReferenceEquals(scope[j], parameter))
                     {
-                        relativeDepth = _scopes.Count - 1 - i;
+                        relativeDepth = scopes.Count - 1 - i;
                         position = j;
+                        kind = scopes[i].Kind;
                         return true;
                     }
                 }
@@ -1178,8 +1613,93 @@ public class ExpressionComparer : IEqualityComparer<Expression>
 
             relativeDepth = -1;
             position = -1;
+            kind = default;
             return false;
         }
+
+        /// <summary>
+        /// Gets the first-occurrence index of <paramref name="target"/> in the current label scope, assigning the next one at
+        /// its first occurrence (ETC R2). Names never count.
+        /// </summary>
+        /// <param name="target">The label target.</param>
+        /// <returns>Its index.</returns>
+        public int LabelIndex(LabelTarget target)
+        {
+            _labels ??= new Dictionary<LabelTarget, int>(ReferenceEqualityComparer.Instance);
+            if (_labels.TryGetValue(target, out int index)) return index;
+
+            (_labelUndo ??= []).Add(target);
+            _labels.Add(target, _nextLabel);
+            return _nextLabel++;
+        }
+
+        /// <summary>Gets a mark of the label indices assigned so far, for <see cref="RollbackLabels"/>.</summary>
+        public (int Undo, int Next) LabelMark => (_labelUndo?.Count ?? 0, _nextLabel);
+
+        /// <summary>Forgets every label index assigned after <paramref name="mark"/>.</summary>
+        /// <param name="mark">A value of <see cref="LabelMark"/>.</param>
+        public void RollbackLabels((int Undo, int Next) mark)
+        {
+            if (_labelUndo is { } undo)
+            {
+                for (int i = undo.Count - 1; i >= mark.Undo; i--) _labels!.Remove(undo[i]);
+                undo.RemoveRange(mark.Undo, undo.Count - mark.Undo);
+            }
+
+            _nextLabel = mark.Next;
+        }
+
+        /// <summary>Opens a fresh label scope for a lambda body: outer indices are hidden and inner ones dropped on exit.</summary>
+        /// <returns>The state to pass to <see cref="ExitLabelScope"/>.</returns>
+        public (Dictionary<LabelTarget, int>? Labels, List<LabelTarget>? Undo, int Next) EnterLabelScope()
+        {
+            (Dictionary<LabelTarget, int>? Labels, List<LabelTarget>? Undo, int Next) saved = (_labels, _labelUndo, _nextLabel);
+            _labels = null;
+            _labelUndo = null;
+            _nextLabel = 0;
+            return saved;
+        }
+
+        /// <summary>Restores the label scope saved by <see cref="EnterLabelScope"/>.</summary>
+        /// <param name="saved">The value <see cref="EnterLabelScope"/> returned.</param>
+        public void ExitLabelScope((Dictionary<LabelTarget, int>? Labels, List<LabelTarget>? Undo, int Next) saved)
+            => (_labels, _labelUndo, _nextLabel) = saved;
+    }
+
+    /// <summary>
+    /// The kind of a binder frame of the lexical scope model (ETC R2): a lambda (including the conversion lambda of a binary
+    /// node, which is an ordinary lambda in its own child slot), a block or a catch handler. Frames are opened in pairs on both
+    /// sides of a comparison, so a binding position never matches across kinds; the kind also enters the hash of a bound
+    /// parameter.
+    /// </summary>
+    private enum BinderKind
+    {
+        /// <summary>A lambda's parameters, in scope in its body.</summary>
+        Lambda,
+
+        /// <summary>A block's variables, in scope in all its statements.</summary>
+        Block,
+
+        /// <summary>A catch handler's variable, in scope in its filter and body only.</summary>
+        Catch,
+    }
+
+    /// <summary>
+    /// Whether two declaration lists can be bound positionally (ETC R2): same count, and pairwise the same
+    /// <see cref="Expression.Type"/> and <see cref="ParameterExpression.IsByRef"/>. Names never count.
+    /// </summary>
+    /// <param name="x">The left declarations.</param>
+    /// <param name="y">The right declarations.</param>
+    /// <returns><see langword="true"/> if the declarations are compatible.</returns>
+    private static bool DeclarationsCompatible(IReadOnlyList<ParameterExpression> x, IReadOnlyList<ParameterExpression> y)
+    {
+        if (x.Count != y.Count) return false;
+        for (int i = 0; i < x.Count; i++)
+        {
+            if (x[i].Type != y[i].Type || x[i].IsByRef != y[i].IsByRef) return false;
+        }
+
+        return true;
     }
 
     /// <summary>

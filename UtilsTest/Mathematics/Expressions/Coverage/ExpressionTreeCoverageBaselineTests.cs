@@ -13,7 +13,10 @@ namespace UtilsTest.Mathematics.Expressions.Coverage;
 /// and by ETC R1b (rows marked <c>// ETC R1b</c>) for the traversal of member access, type tests, creations and array
 /// creations (ETC-01/ETC-10, C-03) and the faithful unary and lambda reconstruction (ETC-04/ETC-05, C-01), and by ETC R1c (rows
 /// marked <c>// ETC R1c</c>) for the structural equality of conditionals, invocations, type tests, defaults, creations and
-/// array creations (ETC-06, C-04).
+/// array creations (ETC-06, C-04), and by ETC R2 (rows marked <c>// ETC R2</c>) for the traversal, equality and
+/// capture-avoiding substitution of the binding and control-flow families (ETC-01/02/03/06/07, C-03, C-04, C-07). The
+/// <c>Throws:NotSupportedException</c> substitution outcome of <c>RuntimeVariables</c> is the C-07 contract (a runtime
+/// variable cannot be replaced by the constant the probe substitutes), not a defect.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -99,8 +102,8 @@ public class ExpressionTreeCoverageBaselineTests
         ["Default"] = "Same | Same | Same | Same | Equal | Consistent", // ETC R1c
         ["Call"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent",
         ["MemberAccess"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R1b
-        ["Invoke"] = "Rewrites | Rewrites | Rewrites | Partial | Equal | Consistent",
-        ["Lambda"] = "Rewrites | Rewrites | Rewrites | Opaque | Equal | Consistent",
+        ["Invoke"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R2
+        ["Lambda"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R2
         ["Conditional"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R1c
         ["TypeIs"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R1b, R1c
         ["TypeEqual"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R1b, R1c
@@ -110,14 +113,14 @@ public class ExpressionTreeCoverageBaselineTests
         ["MemberInit"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
         ["ListInit"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
         ["Index"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
-        ["Block"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
-        ["Try"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
-        ["Switch"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
-        ["Loop"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
-        ["Goto"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
-        ["Label"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
-        ["RuntimeVariables"] = "Same | Same | Same | Opaque | Unequal | Consistent",
-        ["DebugInfo"] = "Same | Same | Same | Same | Unequal | Consistent",
+        ["Block"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R2
+        ["Try"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R2
+        ["Switch"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R2
+        ["Loop"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R2
+        ["Goto"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R2
+        ["Label"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R2
+        ["RuntimeVariables"] = "Same | Same | Same | Throws:NotSupportedException | Equal | Consistent", // ETC R2
+        ["DebugInfo"] = "Same | Same | Same | Same | Equal | Consistent", // ETC R2
         ["Dynamic"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
         ["Extension"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
         ["Add.CustomMethod"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent",
@@ -132,20 +135,20 @@ public class ExpressionTreeCoverageBaselineTests
         ["Call.InstanceReceiver"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent",
         ["MemberAccess.Static"] = "Same | Same | Same | Same | Equal | Consistent",
         ["Invoke.Delegate"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R1c
-        ["Lambda.Metadata"] = "Rewrites | Rewrites | Rewrites | Opaque | Equal | Consistent", // ETC R1b
+        ["Lambda.Metadata"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R1b, R2
         ["New.Members"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R1b, R1c
         ["New.ValueTypeDefault"] = "Same | Same | Same | Same | Equal | Consistent", // ETC R1c
-        ["Block.TypedResult"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
-        ["Block.Shadowing"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
-        ["Block.DebugInfo"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
-        ["Block.GotoLabel"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
-        ["Block.RuntimeVariables"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
-        ["Try.CatchVariableFilter"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
-        ["Try.Finally"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
-        ["Try.Fault"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
-        ["Try.CatchFinally"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
-        ["Switch.ComparisonMethod"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
-        ["Goto.Goto"] = "Same | Same | Same | Same | Unequal | Consistent",
+        ["Block.TypedResult"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R2
+        ["Block.Shadowing"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R2
+        ["Block.DebugInfo"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R2
+        ["Block.GotoLabel"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R2
+        ["Block.RuntimeVariables"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R2
+        ["Try.CatchVariableFilter"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R2
+        ["Try.Finally"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R2
+        ["Try.Fault"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R2
+        ["Try.CatchFinally"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R2
+        ["Switch.ComparisonMethod"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R2
+        ["Goto.Goto"] = "Same | Same | Same | Same | Equal | Consistent", // ETC R2
         ["MemberInit.MemberMemberBinding"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
         ["MemberInit.MemberListBinding"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
         ["ListInit.ExplicitAddMethod"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",

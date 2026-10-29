@@ -24,7 +24,10 @@ namespace Utils.Mathematics.Expressions;
 /// identity, not the coarser additive-grouping projection <see cref="ExpressionSimplifier"/> intentionally
 /// keeps separate (see its "Additive grouping" region) — a <c>Power(MethodCall, exponent)</c> term's
 /// complete key still distinguishes the exponent and the exact method, even though the grouping key
-/// deliberately ignores the exponent to cluster same-argument trigonometric calls together.
+/// deliberately ignores the exponent to cluster same-argument trigonometric calls together. ETC R1c added the scalar
+/// families (conditional, invocation, type test, default, creation, array creation) and ETC R2 the binding and control-flow
+/// families (<see cref="StructureKey"/>): block and catch variables are pushed as scope frames like lambda parameters, and
+/// label targets are keyed by their first-occurrence index in the current lambda body (never by name or identity).
 /// </para>
 /// <para>
 /// <b>Bound parameters.</b> A <see cref="ParameterExpression"/> bound by a <see cref="LambdaExpression"/>
@@ -120,8 +123,32 @@ internal static class ExpressionCanonicalOrder
     /// <summary>Fixed rank for <see cref="NewArrayKey"/> (ETC R1c).</summary>
     private const int RankNewArray = 12;
 
+    /// <summary>Fixed rank for a <see cref="BlockExpression"/>'s <see cref="StructureKey"/> (ETC R2).</summary>
+    private const int RankBlock = 13;
+
+    /// <summary>Fixed rank for a <see cref="TryExpression"/>'s <see cref="StructureKey"/> (ETC R2).</summary>
+    private const int RankTry = 14;
+
+    /// <summary>Fixed rank for a <see cref="SwitchExpression"/>'s <see cref="StructureKey"/> (ETC R2).</summary>
+    private const int RankSwitch = 15;
+
+    /// <summary>Fixed rank for a <see cref="LoopExpression"/>'s <see cref="StructureKey"/> (ETC R2).</summary>
+    private const int RankLoop = 16;
+
+    /// <summary>Fixed rank for a <see cref="GotoExpression"/>'s <see cref="StructureKey"/> (ETC R2).</summary>
+    private const int RankGoto = 17;
+
+    /// <summary>Fixed rank for a <see cref="LabelExpression"/>'s <see cref="StructureKey"/> (ETC R2).</summary>
+    private const int RankLabel = 18;
+
+    /// <summary>Fixed rank for a <see cref="RuntimeVariablesExpression"/>'s <see cref="StructureKey"/> (ETC R2).</summary>
+    private const int RankRuntimeVariables = 19;
+
+    /// <summary>Fixed rank for a <see cref="DebugInfoExpression"/>'s <see cref="StructureKey"/> (ETC R2): debug information is non-semantic, so every such key ties.</summary>
+    private const int RankDebugInfo = 20;
+
     /// <summary>Fixed rank for <see cref="UnsupportedKey"/>: sorts after every real supported node kind.</summary>
-    private const int RankUnsupported = 13;
+    private const int RankUnsupported = 21;
 
     /// <summary>
     /// Builds the complete structural canonical-order key for <paramref name="expression"/>. The generic,
@@ -250,6 +277,8 @@ internal static class ExpressionCanonicalOrder
         var keys = new KeyNode[expressions.Count];
         for (int i = 0; i < expressions.Count; i++)
         {
+            // Each element numbers its labels from zero (ETC R2): the keys of sibling terms never depend on each other.
+            scopes.Labels = null;
             keys[i] = Build(expressions[i], ref scopes);
         }
 
@@ -283,8 +312,181 @@ internal static class ExpressionCanonicalOrder
             DefaultExpression de => new DefaultKey(de.Type),
             NewExpression ne => new NewKey(ne.Type, ne.Constructor, ne.Members, BuildChildren(ne.Arguments, ref scopes)),
             NewArrayExpression nae => new NewArrayKey(nae.NodeType, nae.Type, BuildChildren(nae.Expressions, ref scopes)),
+            BlockExpression block => BuildBlock(block, ref scopes),
+            TryExpression @try => BuildTry(@try, ref scopes),
+            SwitchExpression @switch => BuildSwitch(@switch, ref scopes),
+            LoopExpression loop => new StructureKey(
+                RankLoop,
+                loop.Type,
+                [.. LabelMetadata(loop.BreakLabel, ref scopes), .. LabelMetadata(loop.ContinueLabel, ref scopes)],
+                [LabelType(loop.BreakLabel), LabelType(loop.ContinueLabel)],
+                null,
+                [Build(loop.Body, ref scopes)]),
+            GotoExpression @goto => new StructureKey(
+                RankGoto,
+                @goto.Type,
+                [(int)@goto.Kind, .. LabelMetadata(@goto.Target, ref scopes)],
+                [@goto.Target.Type],
+                null,
+                [Build(@goto.Value, ref scopes)]),
+            LabelExpression label => new StructureKey(
+                RankLabel,
+                label.Type,
+                LabelMetadata(label.Target, ref scopes),
+                [label.Target.Type],
+                null,
+                [Build(label.DefaultValue, ref scopes)]),
+            RuntimeVariablesExpression runtimeVariables => new StructureKey(RankRuntimeVariables, runtimeVariables.Type, [], [], null, BuildChildren(runtimeVariables.Variables, ref scopes)),
+            DebugInfoExpression => new StructureKey(RankDebugInfo, typeof(void), [], [], null, []),
             _ => UnsupportedKey.Instance,
         };
+    }
+
+    /// <summary>
+    /// Gets the normalized identity of a label target (ETC R2): presence, then its first-occurrence index in the current label
+    /// scope of <paramref name="scopes"/> (assigned at first sight, a definition or a jump). Names never count; the type is
+    /// keyed separately by the caller.
+    /// </summary>
+    /// <param name="target">The target, or <see langword="null"/> for an absent loop label.</param>
+    /// <param name="scopes">The active scope-lookup state, which owns the label indices.</param>
+    /// <returns><c>[0, 0]</c> for an absent target, <c>[1, index]</c> otherwise.</returns>
+    private static int[] LabelMetadata(LabelTarget? target, ref ScopeState scopes)
+    {
+        if (target is null) return [0, 0];
+
+        Dictionary<LabelTarget, int> labels = scopes.Labels ??= new Dictionary<LabelTarget, int>(ReferenceEqualityComparer.Instance);
+        if (!labels.TryGetValue(target, out int index))
+        {
+            index = labels.Count;
+            labels.Add(target, index);
+        }
+
+        return [1, index];
+    }
+
+    /// <summary>Gets the type of an optional label target, or <see langword="null"/> when it is absent.</summary>
+    /// <param name="target">The target, or <see langword="null"/>.</param>
+    /// <returns>The target's type, or <see langword="null"/>.</returns>
+    private static Type? LabelType(LabelTarget? target) => target?.Type;
+
+    /// <summary>
+    /// Builds the key of a <see cref="BlockExpression"/> (ETC R2): declaration count, types and <see cref="ParameterExpression.IsByRef"/>
+    /// flags, then the statement keys in order under a pushed scope frame, so a block-local variable is keyed by its binding
+    /// position, never by name or identity.
+    /// </summary>
+    /// <param name="block">The block to key.</param>
+    /// <param name="scopes">The active scope-lookup state.</param>
+    /// <returns>The resulting key.</returns>
+    private static KeyNode BuildBlock(BlockExpression block, ref ScopeState scopes)
+    {
+        ParameterExpression[] variables = block.Variables.ToArray();
+        (int[] flags, Type?[] types) = DeclarationMetadata(variables);
+        List<ParameterExpression[]> nested = scopes.NestedScopes ??= new List<ParameterExpression[]>(2);
+        nested.Add(variables);
+        KeyNode[] statements;
+        try
+        {
+            statements = BuildChildren(block.Expressions, ref scopes);
+        }
+        finally
+        {
+            nested.RemoveAt(nested.Count - 1);
+        }
+
+        return new StructureKey(RankBlock, block.Type, flags, types, null, statements);
+    }
+
+    /// <summary>Gets the declaration metadata of a binder: the count and each <see cref="ParameterExpression.IsByRef"/> flag, and each type.</summary>
+    /// <param name="declarations">The declarations.</param>
+    /// <returns>The flags (count first) and the types.</returns>
+    private static (int[] Flags, Type?[] Types) DeclarationMetadata(ParameterExpression[] declarations)
+    {
+        var flags = new int[declarations.Length + 1];
+        var types = new Type?[declarations.Length];
+        flags[0] = declarations.Length;
+        for (int i = 0; i < declarations.Length; i++)
+        {
+            flags[i + 1] = declarations[i].IsByRef ? 1 : 0;
+            types[i] = declarations[i].Type;
+        }
+
+        return (flags, types);
+    }
+
+    /// <summary>
+    /// Builds the key of a <see cref="TryExpression"/> (ETC R2): the body key, then one key per handler (test type, variable
+    /// presence and type, filter and body keys under a scope frame for the variable), then the finally and fault keys.
+    /// </summary>
+    /// <param name="node">The try expression to key.</param>
+    /// <param name="scopes">The active scope-lookup state.</param>
+    /// <returns>The resulting key.</returns>
+    private static KeyNode BuildTry(TryExpression node, ref ScopeState scopes)
+    {
+        var children = new KeyNode[node.Handlers.Count + 3];
+        children[0] = Build(node.Body, ref scopes);
+        for (int i = 0; i < node.Handlers.Count; i++)
+        {
+            children[i + 1] = BuildHandler(node.Handlers[i], ref scopes);
+        }
+
+        children[^2] = Build(node.Finally, ref scopes);
+        children[^1] = Build(node.Fault, ref scopes);
+        return new StructureKey(RankTry, node.Type, [node.Handlers.Count], [], null, children);
+    }
+
+    /// <summary>
+    /// Builds the key of one <see cref="CatchBlock"/> (ETC R2). A handler is not an expression node, so its key building is
+    /// counted as one structural visit explicitly; its variable, if any, is in scope in the filter and the body only.
+    /// </summary>
+    /// <param name="handler">The handler.</param>
+    /// <param name="scopes">The active scope-lookup state.</param>
+    /// <returns>The handler's key (ranked as a try expression's part).</returns>
+    private static KeyNode BuildHandler(CatchBlock handler, ref ScopeState scopes)
+    {
+        ExpressionResourceBudget.ConsumeStructuralVisit();
+        if (handler.Variable is null)
+        {
+            return new StructureKey(RankTry, typeof(void), [0, 0], [handler.Test, null], null, [Build(handler.Filter, ref scopes), Build(handler.Body, ref scopes)]);
+        }
+
+        List<ParameterExpression[]> nested = scopes.NestedScopes ??= new List<ParameterExpression[]>(2);
+        nested.Add([handler.Variable]);
+        try
+        {
+            return new StructureKey(
+                RankTry,
+                typeof(void),
+                [1, handler.Variable.IsByRef ? 1 : 0],
+                [handler.Test, handler.Variable.Type],
+                null,
+                [Build(handler.Filter, ref scopes), Build(handler.Body, ref scopes)]);
+        }
+        finally
+        {
+            nested.RemoveAt(nested.Count - 1);
+        }
+    }
+
+    /// <summary>
+    /// Builds the key of a <see cref="SwitchExpression"/> (ETC R2): comparison method, switch value key, then one key per case
+    /// (test value keys in order, then body key; cases are never reordered), then the default body key.
+    /// </summary>
+    /// <param name="node">The switch to key.</param>
+    /// <param name="scopes">The active scope-lookup state.</param>
+    /// <returns>The resulting key.</returns>
+    private static KeyNode BuildSwitch(SwitchExpression node, ref ScopeState scopes)
+    {
+        var children = new KeyNode[node.Cases.Count + 2];
+        children[0] = Build(node.SwitchValue, ref scopes);
+        for (int i = 0; i < node.Cases.Count; i++)
+        {
+            ExpressionResourceBudget.ConsumeStructuralVisit();
+            SwitchCase @case = node.Cases[i];
+            children[i + 1] = new StructureKey(RankSwitch, typeof(void), [@case.TestValues.Count], [], null, [.. BuildChildren(@case.TestValues, ref scopes), Build(@case.Body, ref scopes)]);
+        }
+
+        children[^1] = Build(node.DefaultBody, ref scopes);
+        return new StructureKey(RankSwitch, node.Type, [node.Cases.Count], [], node.Comparison, children);
     }
 
     /// <summary>Builds the key of an <see cref="InvocationExpression"/>: the invoked expression's key, then each argument's key in order (ETC R1c).</summary>
@@ -301,7 +503,7 @@ internal static class ExpressionCanonicalOrder
     /// <param name="children">The children.</param>
     /// <param name="scopes">The active scope-lookup state.</param>
     /// <returns>One key per child, in order.</returns>
-    private static KeyNode[] BuildChildren(System.Collections.ObjectModel.ReadOnlyCollection<Expression> children, ref ScopeState scopes)
+    private static KeyNode[] BuildChildren(IReadOnlyList<Expression> children, ref ScopeState scopes)
     {
         if (children.Count == 0) return Array.Empty<KeyNode>();
 
@@ -395,12 +597,20 @@ internal static class ExpressionCanonicalOrder
         /// </summary>
         public List<ParameterExpression[]>? NestedScopes;
 
+        /// <summary>
+        /// The first-occurrence indices of the label targets met in the current label scope (ETC R2), lazily created on the first
+        /// label. A lambda body opens a fresh label scope (<c>BuildLambda</c>), and each element of a batch starts a new one
+        /// (<c>BuildKeysCore</c>), so label identities are normalized per term and never leak between independent bodies.
+        /// </summary>
+        public Dictionary<LabelTarget, int>? Labels;
+
         /// <summary>Initializes a new <see cref="ScopeState"/> with no nested scopes pushed yet, always defensively copying <paramref name="enclosingScopes"/> - the generic, not-necessarily-trusted entry point (see this type's remarks).</summary>
         /// <param name="enclosingScopes">The ambient lexical scopes enclosing the term being keyed; always copied once into a fresh array.</param>
         public ScopeState(IReadOnlyList<ParameterExpression[]> enclosingScopes)
         {
             EnclosingScopes = CopySnapshot(enclosingScopes);
             NestedScopes = null;
+            Labels = null;
         }
 
         /// <summary>
@@ -414,6 +624,7 @@ internal static class ExpressionCanonicalOrder
         {
             EnclosingScopes = enclosingScopes;
             NestedScopes = null;
+            Labels = null;
         }
 
         /// <summary>Defensively copies an arbitrary <see cref="IReadOnlyList{T}"/> of scopes into a fresh array, restoring the pre-P4 snapshot guarantee for a caller that did not supply the exact production array type.</summary>
@@ -555,6 +766,10 @@ internal static class ExpressionCanonicalOrder
 
         List<ParameterExpression[]> nested = scopes.NestedScopes ??= new List<ParameterExpression[]>(2);
         nested.Add(parameters);
+
+        // ETC R2: the body has its own label scope.
+        Dictionary<LabelTarget, int>? outerLabels = scopes.Labels;
+        scopes.Labels = null;
         KeyNode body;
         try
         {
@@ -562,6 +777,7 @@ internal static class ExpressionCanonicalOrder
         }
         finally
         {
+            scopes.Labels = outerLabels;
             nested.RemoveAt(nested.Count - 1);
         }
 
@@ -1618,6 +1834,67 @@ internal static class ExpressionCanonicalOrder
             int c = ((int)_nodeType).CompareTo((int)o._nodeType);
             if (c != 0) return c;
             c = CompareType(_type, o._type);
+            return c != 0 ? c : CompareKeys(_children, o._children);
+        }
+    }
+
+    /// <summary>
+    /// Key of the binding and control-flow families (ETC R2) and of their non-expression parts (catch handlers, switch cases):
+    /// a fixed family rank, the result type, integer metadata (counts, flags, jump kind, normalized label indices), type
+    /// metadata (declared variable types, handler test types, label types), an optional method (a switch comparison), then the
+    /// child keys in semantic order. Compared field by field in that order; never hash-, name- or identity-based.
+    /// </summary>
+    private sealed class StructureKey : KeyNode
+    {
+        private readonly int _rank;
+        private readonly Type _type;
+        private readonly int[] _metadata;
+        private readonly Type?[] _types;
+        private readonly MethodInfo? _method;
+        private readonly KeyNode[] _children;
+
+        /// <summary>Initializes a new <see cref="StructureKey"/>.</summary>
+        /// <param name="rank">The family rank (one of the R2 rank constants); a family always builds its metadata with the same layout.</param>
+        /// <param name="type">The result type.</param>
+        /// <param name="metadata">The integer metadata, in a family-specific fixed layout.</param>
+        /// <param name="types">The type metadata, in a family-specific fixed layout; <see langword="null"/> marks an absent type.</param>
+        /// <param name="method">The method metadata, or <see langword="null"/>.</param>
+        /// <param name="children">The child keys, in semantic order.</param>
+        public StructureKey(int rank, Type type, int[] metadata, Type?[] types, MethodInfo? method, KeyNode[] children)
+        {
+            _rank = rank;
+            _type = type;
+            _metadata = metadata;
+            _types = types;
+            _method = method;
+            _children = children;
+        }
+
+        /// <inheritdoc/>
+        protected override int Rank => _rank;
+
+        /// <inheritdoc/>
+        protected override int CompareSameRank(KeyNode other)
+        {
+            var o = (StructureKey)other;
+            int c = CompareType(_type, o._type);
+            if (c != 0) return c;
+
+            c = _metadata.Length.CompareTo(o._metadata.Length);
+            for (int i = 0; c == 0 && i < _metadata.Length; i++)
+            {
+                c = _metadata[i].CompareTo(o._metadata[i]);
+            }
+
+            if (c != 0) return c;
+            c = _types.Length.CompareTo(o._types.Length);
+            for (int i = 0; c == 0 && i < _types.Length; i++)
+            {
+                c = CompareType(_types[i], o._types[i]);
+            }
+
+            if (c != 0) return c;
+            c = CompareMethod(_method, o._method);
             return c != 0 ? c : CompareKeys(_children, o._children);
         }
     }

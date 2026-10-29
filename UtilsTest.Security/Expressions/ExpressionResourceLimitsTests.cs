@@ -236,7 +236,8 @@ public class ExpressionResourceLimitsTests
     /// <summary>
     /// The public comparer and its hash fail with the structural budget, never with <see langword="false"/> or a fallback
     /// hash; distinct unequal trees and an unsupported family still answer <see langword="false"/>. Conditionals were the
-    /// unsupported example before ETC R1c, which compares them structurally (C-04); a block (an R2 family) is used since.
+    /// unsupported example before ETC R1c, which compares them structurally (C-04); a block was used until ETC R2 compared blocks too,
+    /// and an index access (an R3 family) is used since.
     /// </summary>
     [TestMethod]
     public void Comparer_RefusalIsDistinctFromInequalityAndUnsupported()
@@ -244,8 +245,8 @@ public class ExpressionResourceLimitsTests
         ExpressionComparer strict = ExpressionComparer.Create(ExpressionResourceLimits.Default with { MaxStructuralVisits = 10 });
         Expression x = CallChain(30);
         Expression y = CallChain(30);
-        Expression unsupported1 = Expression.Block(Expression.Condition(Expression.Constant(true), P, P));
-        Expression unsupported2 = Expression.Block(Expression.Condition(Expression.Constant(true), P, P));
+        Expression unsupported1 = Expression.ArrayAccess(Expression.NewArrayInit(P.Type, Expression.Condition(Expression.Constant(true), P, P)), Expression.Constant(0));
+        Expression unsupported2 = Expression.ArrayAccess(Expression.NewArrayInit(P.Type, Expression.Condition(Expression.Constant(true), P, P)), Expression.Constant(0));
 
         Assert.IsFalse(ExpressionComparer.Default.Equals(NegateChain(3), NegateChain(4)));
         Assert.IsFalse(ExpressionComparer.Default.Equals(unsupported1, unsupported2));

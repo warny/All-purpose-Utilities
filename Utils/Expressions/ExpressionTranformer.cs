@@ -1,7 +1,8 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Collections.ObjectModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -966,6 +967,13 @@ public abstract class ExpressionTransformer
     /// <see cref="FinalizeExpression"/>, and the node is rebuilt faithfully. The cases are type patterns over sealed or
     /// unrelated framework classes, so their order does not matter; every other family still reaches
     /// <see cref="PrepareDefault"/> and stays opaque.
+    /// <para>
+    /// ETC R2 (C-03 extended): <see cref="BlockExpression"/>, <see cref="TryExpression"/>, <see cref="SwitchExpression"/>,
+    /// <see cref="LoopExpression"/>, <see cref="GotoExpression"/> and <see cref="LabelExpression"/> are traversed too, and
+    /// <see cref="RuntimeVariablesExpression"/> and <see cref="DebugInfoExpression"/> have explicit policies. Their
+    /// positional child layout (what the rules and <see cref="FinalizeExpression"/> receive, and what
+    /// <see cref="CopyExpression"/> accepts) is documented on each <c>Prepare*</c> method.
+    /// </para>
     /// </remarks>
     private TransformContext PrepareTransform(Expression e) => e switch
     {
@@ -982,6 +990,14 @@ public abstract class ExpressionTransformer
         NewExpression ne => PrepareNew(ne),
         NewArrayExpression nae => PrepareNewArray(nae),
         DefaultExpression de => PrepareDefaultValue(de),
+        BlockExpression block => PrepareBlock(block),
+        TryExpression @try => PrepareTry(@try),
+        SwitchExpression @switch => PrepareSwitch(@switch),
+        LoopExpression loop => PrepareLoop(loop),
+        GotoExpression @goto => PrepareGoto(@goto),
+        LabelExpression label => PrepareLabel(label),
+        RuntimeVariablesExpression runtimeVariables => PrepareRuntimeVariables(runtimeVariables),
+        DebugInfoExpression debugInfo => PrepareDebugInfo(debugInfo),
         _ => PrepareDefault(e),
     };
 
@@ -1170,22 +1186,12 @@ public abstract class ExpressionTransformer
     /// <returns>The resulting <see cref="TransformContext"/>.</returns>
     private TransformContext PrepareLambda(LambdaExpression le)
     {
-        // Indexed loop instead of Select(...).ToArray(): parameters must all be prepared, in
-        // order, before TransformCore(le.Body) runs below (a subclass may rely on that ordering).
-        // The array is declared and allocated as ParameterExpression[], not Expression[], so its
-        // runtime type stays ParameterExpression[] even though it is stored through the
-        // Expression[]-typed TransformContext.expressionParameters field — code elsewhere (and the
-        // Expression.Lambda call just below) still depends on that runtime type. The explicit cast
-        // is preserved so a PrepareExpression override returning the wrong type still throws
-        // InvalidCastException immediately, before the body is ever transformed.
-        int parameterCount = le.Parameters.Count;
-        ParameterExpression[] expressionParameters = parameterCount == 0
-            ? Array.Empty<ParameterExpression>()
-            : new ParameterExpression[parameterCount];
-        for (int i = 0; i < parameterCount; i++)
-        {
-            expressionParameters[i] = (ParameterExpression)PrepareExpression(le.Parameters[i]);
-        }
+        // Parameters must all be prepared, in order, before TransformCore(le.Body) runs below (a subclass may rely on
+        // that ordering). The array's runtime type stays ParameterExpression[] even though it is stored through the
+        // Expression[]-typed TransformContext.expressionParameters field — code elsewhere (and the Expression.Lambda
+        // call just below) still depends on that runtime type. A PrepareExpression override returning the wrong type
+        // still throws InvalidCastException immediately, before the body is ever transformed (see PrepareVariables).
+        ParameterExpression[] expressionParameters = PrepareVariables(le.Parameters);
 
         // OnEnterLambdaScope/OnExitLambdaScope bracket the body traversal so a same-assembly
         // subclass can track the currently-open lexical parameter scope for the single, synchronous
@@ -1242,6 +1248,50 @@ public abstract class ExpressionTransformer
     /// <param name="original">The lambda expression whose body was just prepared.</param>
     /// <param name="parameters">The same parameters passed to the paired <see cref="OnEnterLambdaScope"/> call.</param>
     internal virtual void OnExitLambdaScope(LambdaExpression original, ParameterExpression[] parameters) { }
+
+    /// <summary>
+    /// Called immediately before the statements of <paramref name="original"/> are prepared, once its (already prepared)
+    /// <paramref name="variables"/> are known (ETC R2). Paired with <see cref="OnExitBlockScope"/>, always called even if
+    /// preparing a statement throws. Called for every block, including a block without variable.
+    /// </summary>
+    /// <remarks>
+    /// <c>internal virtual</c> like <see cref="OnEnterLambdaScope"/> (H-7): not an extensibility point for third-party
+    /// subclasses. <see cref="Utils.Mathematics.Expressions.ExpressionSimplifier"/> overrides it so its S4 canonical ordering
+    /// treats block variables as bound. The base implementation is a no-op.
+    /// </remarks>
+    /// <param name="original">The block whose statements are about to be prepared.</param>
+    /// <param name="variables">The block's (already prepared) variables, in declaration order.</param>
+    internal virtual void OnEnterBlockScope(BlockExpression original, ParameterExpression[] variables) { }
+
+    /// <summary>
+    /// Paired with <see cref="OnEnterBlockScope"/>: called once the statements of <paramref name="original"/> have been
+    /// prepared (successfully or not). The base implementation is a no-op.
+    /// </summary>
+    /// <param name="original">The block whose statements were just prepared.</param>
+    /// <param name="variables">The same variables passed to the paired <see cref="OnEnterBlockScope"/> call.</param>
+    internal virtual void OnExitBlockScope(BlockExpression original, ParameterExpression[] variables) { }
+
+    /// <summary>
+    /// Called immediately before the filter and body of <paramref name="original"/> are prepared, once its (already
+    /// prepared) <paramref name="variable"/> is known (ETC R2). Paired with <see cref="OnExitCatchScope"/>, always called
+    /// even if preparing the filter or the body throws. Called for every handler, including one without variable.
+    /// </summary>
+    /// <remarks>
+    /// <c>internal virtual</c> like <see cref="OnEnterLambdaScope"/> (H-7). The catch variable is in scope in the filter and
+    /// the body only, never in the protected body, a sibling handler, the finally or the fault. The base implementation
+    /// is a no-op.
+    /// </remarks>
+    /// <param name="original">The handler whose filter and body are about to be prepared.</param>
+    /// <param name="variable">The handler's (already prepared) variable, or <see langword="null"/> when it declares none.</param>
+    internal virtual void OnEnterCatchScope(CatchBlock original, ParameterExpression? variable) { }
+
+    /// <summary>
+    /// Paired with <see cref="OnEnterCatchScope"/>: called once the filter and body of <paramref name="original"/> have
+    /// been prepared (successfully or not). The base implementation is a no-op.
+    /// </summary>
+    /// <param name="original">The handler whose filter and body were just prepared.</param>
+    /// <param name="variable">The same variable passed to the paired <see cref="OnEnterCatchScope"/> call.</param>
+    internal virtual void OnExitCatchScope(CatchBlock original, ParameterExpression? variable) { }
 
     /// <summary>
     /// Decides whether the rules may run on a prepared node (ETC R1b). Asked at most once per node, and only when a rule's
@@ -1360,8 +1410,221 @@ public abstract class ExpressionTransformer
     }
 
     /// <summary>
+    /// Prepares the variables declared by a binder (lambda parameters, block variables) or listed by a
+    /// <see cref="RuntimeVariablesExpression"/>, strictly in order, through <see cref="PrepareExpression"/>. Every result must
+    /// still be a <see cref="ParameterExpression"/>: a variable position never becomes an arbitrary expression.
+    /// </summary>
+    /// <param name="variables">The variables to prepare.</param>
+    /// <returns>The prepared variables (a <see cref="ParameterExpression"/>[] at run time), or an empty array.</returns>
+    /// <exception cref="InvalidCastException">
+    /// <see cref="PrepareExpression"/> returned something else than a <see cref="ParameterExpression"/> for a variable; thrown
+    /// before anything in the variables' scope is prepared, exactly as for lambda parameters before ETC R2.
+    /// </exception>
+    private ParameterExpression[] PrepareVariables(ReadOnlyCollection<ParameterExpression> variables)
+    {
+        int count = variables.Count;
+        if (count == 0) return Array.Empty<ParameterExpression>();
+
+        var prepared = new ParameterExpression[count];
+        for (int i = 0; i < count; i++)
+        {
+            prepared[i] = (ParameterExpression)PrepareExpression(variables[i]);
+        }
+
+        return prepared;
+    }
+
+    /// <summary>
+    /// Prepares a <see cref="BlockExpression"/> (ETC R2): the variables are prepared first (see <see cref="PrepareVariables"/>),
+    /// then the statements in order through <see cref="PrepareExpression"/>, between <see cref="OnEnterBlockScope"/> and
+    /// <see cref="OnExitBlockScope"/>. The block is rebuilt with its variables (same instances unless
+    /// <see cref="PrepareExpression"/> replaced one) and its explicit <see cref="Expression.Type"/>.
+    /// </summary>
+    /// <param name="block">The block to prepare.</param>
+    /// <returns>The resulting <see cref="TransformContext"/>, with the statements as children (variables are declarations, not children).</returns>
+    /// <remarks>
+    /// The statements go through <see cref="PrepareExpression"/>, not <see cref="TransformCore"/>: the direct lambda-body
+    /// descent of <see cref="PrepareLambda"/> (H-4) is deliberately not extended to block bodies, so a transformer whose
+    /// <see cref="PrepareExpression"/> is the identity leaves the statements as they are.
+    /// </remarks>
+    private TransformContext PrepareBlock(BlockExpression block)
+    {
+        ParameterExpression[] variables = PrepareVariables(block.Variables);
+        Expression[] statements;
+        OnEnterBlockScope(block, variables);
+        try
+        {
+            statements = PrepareChildren(block.Expressions);
+        }
+        finally
+        {
+            OnExitBlockScope(block, variables);
+        }
+
+        return new TransformContext(RebuildBlockExpression(block, variables, statements), statements);
+    }
+
+    /// <summary>
+    /// Prepares a <see cref="TryExpression"/> (ETC R2) in structural order: the protected body, then each handler (its
+    /// variable, then its filter and body between <see cref="OnEnterCatchScope"/> and <see cref="OnExitCatchScope"/>), then
+    /// the finally, then the fault. Nothing is executed; a finally is never turned into a fault or the reverse.
+    /// </summary>
+    /// <param name="node">The try expression to prepare.</param>
+    /// <returns>
+    /// The resulting <see cref="TransformContext"/>. Its children follow the layout of <see cref="TryChildCount"/>: the body,
+    /// then for each handler its filter (only when it has one) and its body, then the finally (when present), then the fault
+    /// (when present). Catch variables and test types are metadata of the handlers, not children.
+    /// </returns>
+    private TransformContext PrepareTry(TryExpression node)
+    {
+        var children = new Expression[TryChildCount(node)];
+        int next = 0;
+        Expression body = children[next++] = PrepareExpression(node.Body);
+
+        ReadOnlyCollection<CatchBlock> originalHandlers = node.Handlers;
+        CatchBlock[] handlers = originalHandlers.Count == 0 ? Array.Empty<CatchBlock>() : new CatchBlock[originalHandlers.Count];
+        for (int i = 0; i < handlers.Length; i++)
+        {
+            handlers[i] = PrepareCatchBlock(originalHandlers[i], children, ref next);
+        }
+
+        Expression? @finally = node.Finally is null ? null : children[next++] = PrepareExpression(node.Finally);
+        Expression? fault = node.Fault is null ? null : children[next++] = PrepareExpression(node.Fault);
+
+        return new TransformContext(RebuildTryExpression(node, body, handlers, @finally, fault), children);
+    }
+
+    /// <summary>
+    /// Prepares one <see cref="CatchBlock"/> of <see cref="PrepareTry"/>: its variable (if any) must stay a
+    /// <see cref="ParameterExpression"/>, then its filter and body are prepared inside the catch scope. Structural work is
+    /// counted for the handler itself (ETC R2), since <see cref="CatchBlock"/> is not an expression node.
+    /// </summary>
+    /// <param name="handler">The handler.</param>
+    /// <param name="children">The positional child list of the enclosing try expression, filled in place.</param>
+    /// <param name="next">The next free position of <paramref name="children"/>, advanced in place.</param>
+    /// <returns>The handler, rebuilt only when its variable, filter or body changed.</returns>
+    /// <exception cref="InvalidCastException"><see cref="PrepareExpression"/> returned something else than a <see cref="ParameterExpression"/> for the variable.</exception>
+    private CatchBlock PrepareCatchBlock(CatchBlock handler, Expression[] children, ref int next)
+    {
+        ExpressionResourceBudget.ConsumeStructuralVisit();
+        ParameterExpression? variable = handler.Variable is null ? null : (ParameterExpression)PrepareExpression(handler.Variable);
+        Expression? filter;
+        Expression body;
+        OnEnterCatchScope(handler, variable);
+        try
+        {
+            filter = handler.Filter is null ? null : children[next++] = PrepareExpression(handler.Filter);
+            body = children[next++] = PrepareExpression(handler.Body);
+        }
+        finally
+        {
+            OnExitCatchScope(handler, variable);
+        }
+
+        return handler.Update(variable, filter, body);
+    }
+
+    /// <summary>
+    /// Prepares a <see cref="SwitchExpression"/> (ETC R2) in structural order: the switch value, then for each case its test
+    /// values in order and its body, then the default body. Cases and test values are neither sorted nor deduplicated,
+    /// and the comparison method is kept and never run.
+    /// </summary>
+    /// <param name="node">The switch to prepare.</param>
+    /// <returns>
+    /// The resulting <see cref="TransformContext"/>. Its children follow the layout of <see cref="SwitchChildCount"/>: the
+    /// switch value, then for each case its test values and its body, then the default body (when present).
+    /// </returns>
+    private TransformContext PrepareSwitch(SwitchExpression node)
+    {
+        var children = new Expression[SwitchChildCount(node)];
+        int next = 0;
+        Expression switchValue = children[next++] = PrepareExpression(node.SwitchValue);
+
+        ReadOnlyCollection<SwitchCase> originalCases = node.Cases;
+        SwitchCase[] cases = originalCases.Count == 0 ? Array.Empty<SwitchCase>() : new SwitchCase[originalCases.Count];
+        for (int i = 0; i < cases.Length; i++)
+        {
+            // SwitchCase is not an expression node: its traversal is counted explicitly (ETC R2).
+            ExpressionResourceBudget.ConsumeStructuralVisit();
+            SwitchCase original = originalCases[i];
+            Expression[] testValues = PrepareChildren(original.TestValues);
+            testValues.CopyTo(children, next);
+            next += testValues.Length;
+            Expression body = children[next++] = PrepareExpression(original.Body);
+            cases[i] = original.Update(testValues, body);
+        }
+
+        Expression? defaultBody = node.DefaultBody is null ? null : children[next++] = PrepareExpression(node.DefaultBody);
+
+        return new TransformContext(RebuildSwitchExpression(node, switchValue, cases, defaultBody), children);
+    }
+
+    /// <summary>
+    /// Prepares a <see cref="LoopExpression"/> (ETC R2): the body is prepared and the loop rebuilt with the very same
+    /// <see cref="LoopExpression.BreakLabel"/> and <see cref="LoopExpression.ContinueLabel"/> instances.
+    /// </summary>
+    /// <param name="node">The loop to prepare.</param>
+    /// <returns>The resulting <see cref="TransformContext"/>, with the body as its single child.</returns>
+    private TransformContext PrepareLoop(LoopExpression node)
+    {
+        Expression[] children = [PrepareExpression(node.Body)];
+        return new TransformContext(CopyLoopExpression(node, children), children);
+    }
+
+    /// <summary>
+    /// Prepares a <see cref="GotoExpression"/> (ETC R2): its value, if any, is prepared and the jump rebuilt with the same
+    /// kind, the same <see cref="GotoExpression.Target"/> instance and the same type.
+    /// </summary>
+    /// <param name="node">The jump to prepare.</param>
+    /// <returns>The resulting <see cref="TransformContext"/>: the value as single child, or no child.</returns>
+    private TransformContext PrepareGoto(GotoExpression node)
+    {
+        if (node.Value is null) return new TransformContext(node, Array.Empty<Expression>());
+
+        Expression[] children = [PrepareExpression(node.Value)];
+        return new TransformContext(CopyGotoExpression(node, children), children);
+    }
+
+    /// <summary>
+    /// Prepares a <see cref="LabelExpression"/> (ETC R2): its default value, if any, is prepared and the label rebuilt with
+    /// the same <see cref="LabelExpression.Target"/> instance.
+    /// </summary>
+    /// <param name="node">The label to prepare.</param>
+    /// <returns>The resulting <see cref="TransformContext"/>: the default value as single child, or no child.</returns>
+    private TransformContext PrepareLabel(LabelExpression node)
+    {
+        if (node.DefaultValue is null) return new TransformContext(node, Array.Empty<Expression>());
+
+        Expression[] children = [PrepareExpression(node.DefaultValue)];
+        return new TransformContext(CopyLabelExpression(node, children), children);
+    }
+
+    /// <summary>
+    /// Prepares a <see cref="RuntimeVariablesExpression"/> (ETC R2): its variables are references, not declarations; each
+    /// goes through <see cref="PrepareVariables"/> and must stay a <see cref="ParameterExpression"/>, in the same order. No
+    /// scope is opened.
+    /// </summary>
+    /// <param name="node">The runtime-variables node to prepare.</param>
+    /// <returns>The resulting <see cref="TransformContext"/>, with the variables as children.</returns>
+    /// <exception cref="InvalidCastException"><see cref="PrepareExpression"/> returned something else than a <see cref="ParameterExpression"/> for a variable.</exception>
+    private TransformContext PrepareRuntimeVariables(RuntimeVariablesExpression node)
+    {
+        ParameterExpression[] variables = PrepareVariables(node.Variables);
+        return new TransformContext(CopyRuntimeVariablesExpression(node, variables), variables);
+    }
+
+    /// <summary>
+    /// Prepares a <see cref="DebugInfoExpression"/> (ETC R2): an explicit leaf, returned unchanged with its document and
+    /// source positions; the source document is never read.
+    /// </summary>
+    /// <param name="node">The debug information node.</param>
+    /// <returns>The resulting leaf <see cref="TransformContext"/> (not opaque).</returns>
+    private TransformContext PrepareDebugInfo(DebugInfoExpression node)
+        => new(node, Array.Empty<Expression>());
+
+    /// <summary>
     /// Prepares any expression node not handled by a more specific <c>Prepare*</c> method (e.g.
-    /// <see cref="MemberInitExpression"/>, <see cref="BlockExpression"/>): no sub-expression preparation is
+    /// <see cref="MemberInitExpression"/>, <see cref="IndexExpression"/>): no sub-expression preparation is
     /// attempted, and the node is passed through unchanged.
     /// </summary>
     /// <param name="e">The expression to prepare.</param>
@@ -1772,14 +2035,45 @@ public abstract class ExpressionTransformer
     /// </param>
     /// <returns>A copy of <paramref name="e"/> where specified parameters are replaced.</returns>
     internal Expression ReplaceArgumentsCore(Expression e, IReadOnlyList<ParameterExpression>? oldParameters, IReadOnlyList<Expression>? newParameters)
+        => Substitute(e, oldParameters, newParameters, null);
+
+    /// <summary>
+    /// The recursive walk of <see cref="ReplaceArgumentsCore"/>: capture-avoiding substitution of the free occurrences of
+    /// <paramref name="oldParameters"/> (ETC R2, roadmap §5.3).
+    /// </summary>
+    /// <param name="e">The expression in which parameter references are replaced.</param>
+    /// <param name="oldParameters">See <see cref="ReplaceArgumentsCore"/>.</param>
+    /// <param name="newParameters">See <see cref="ReplaceArgumentsCore"/>.</param>
+    /// <param name="scope">
+    /// The binder state of the enclosing scopes (shadowed declarations and alpha-renamed declarations), or
+    /// <see langword="null"/> while no binder has been entered; created by the first binder.
+    /// </param>
+    /// <returns>A copy of <paramref name="e"/> where the free occurrences of the specified parameters are replaced.</returns>
+    /// <remarks>
+    /// <para>
+    /// Binders (a lambda, the conversion lambda of a binary node, a block, a catch handler) are entered: a declaration of a
+    /// replaced parameter hides it in its scope, and a declaration that a replacement would capture (it occurs free in a
+    /// replacement inserted in its scope) is alpha-renamed to a fresh parameter (same type, <see cref="ParameterExpression.IsByRef"/>
+    /// and name) together with the references it binds, through the binder state, never through a recursive call of the
+    /// public substitution. Control-flow nodes are rebuilt with the very same label targets. A runtime variable may only be
+    /// replaced by another parameter (C-07). A quoted expression is never entered (C-05 pending).
+    /// </para>
+    /// <para>
+    /// Every node walked counts one structural visit, stack check included (ETC R1a-Security); so do the catch handlers and
+    /// switch cases, which are not expression nodes. Counting does not read either list, so the historical lazy access to
+    /// <paramref name="oldParameters"/>/<paramref name="newParameters"/> is unchanged for the families walked before R2.
+    /// </para>
+    /// </remarks>
+    private Expression Substitute(Expression e, IReadOnlyList<ParameterExpression>? oldParameters, IReadOnlyList<Expression>? newParameters, SubstitutionScope? scope)
     {
-        // One structural visit per node walked (ETC R1a-Security), stack check included. Counting does not read
-        // either list, so the historical lazy access to oldParameters/newParameters is unchanged.
         ExpressionResourceBudget.ConsumeStructuralVisit();
         switch (e)
         {
             case ParameterExpression pe:
                 {
+                    // An enclosing binder that declares pe hides it (or renamed it): its occurrence is bound there.
+                    if (scope is not null && scope.TryResolve(pe, out ParameterExpression? bound)) return bound;
+
                     // Array.IndexOf is used directly whenever oldParameters actually is (or is a null
                     // reference of static type) ParameterExpression[] -- i.e. whenever this call
                     // originates from the protected array-based overload -- so that overload keeps its
@@ -1804,18 +2098,26 @@ public abstract class ExpressionTransformer
                 // A rethrow has nothing to substitute; rebuilding it would lose a typed rethrow's Type (ETC-13).
                 return e;
 
+            case UnaryExpression { NodeType: ExpressionType.Quote }:
+                // A quoted expression is data (C-05 pending): it is never entered, so it is never silently rewritten.
+                return e;
+
             case UnaryExpression ue:
-                return CopyExpression(ue, ReplaceArgumentsCore(ue.Operand, oldParameters, newParameters));
+                return CopyExpression(ue, Substitute(ue.Operand, oldParameters, newParameters, scope));
 
             case BinaryExpression be:
                 {
-                    var left = ReplaceArgumentsCore(be.Left, oldParameters, newParameters);
-                    var right = ReplaceArgumentsCore(be.Right, oldParameters, newParameters);
-                    return CopyExpression(be, left, right);
+                    var left = Substitute(be.Left, oldParameters, newParameters, scope);
+                    var right = Substitute(be.Right, oldParameters, newParameters, scope);
+                    if (be.Conversion is null) return CopyExpression(be, left, right);
+
+                    // ETC R2: the conversion lambda binds its own parameter; its free occurrences are substituted too.
+                    var conversion = (LambdaExpression)Substitute(be.Conversion, oldParameters, newParameters, scope);
+                    return Expression.MakeBinary(be.NodeType, left, right, be.IsLiftedToNull, be.Method, conversion);
                 }
             case InvocationExpression ie:
                 {
-                    Expression invokedExpression = ReplaceArgumentsCore(ie.Expression, oldParameters, newParameters);
+                    Expression invokedExpression = Substitute(ie.Expression, oldParameters, newParameters, scope);
 
                     int argumentCount = ie.Arguments.Count;
                     Expression[] arguments = argumentCount == 0
@@ -1823,7 +2125,7 @@ public abstract class ExpressionTransformer
                         : new Expression[argumentCount];
                     for (int i = 0; i < argumentCount; i++)
                     {
-                        arguments[i] = ReplaceArgumentsCore(ie.Arguments[i], oldParameters, newParameters);
+                        arguments[i] = Substitute(ie.Arguments[i], oldParameters, newParameters, scope);
                     }
 
                     return Expression.Invoke(invokedExpression, arguments);
@@ -1832,7 +2134,7 @@ public abstract class ExpressionTransformer
                 {
                     Expression? replacedObject = mce.Object is null
                         ? null
-                        : ReplaceArgumentsCore(mce.Object, oldParameters, newParameters);
+                        : Substitute(mce.Object, oldParameters, newParameters, scope);
 
                     int argumentCount = mce.Arguments.Count;
                     Expression[] arguments = argumentCount == 0
@@ -1840,7 +2142,7 @@ public abstract class ExpressionTransformer
                         : new Expression[argumentCount];
                     for (int i = 0; i < argumentCount; i++)
                     {
-                        arguments[i] = ReplaceArgumentsCore(mce.Arguments[i], oldParameters, newParameters);
+                        arguments[i] = Substitute(mce.Arguments[i], oldParameters, newParameters, scope);
                     }
 
                     return replacedObject is null
@@ -1849,42 +2151,494 @@ public abstract class ExpressionTransformer
                 }
             case ConditionalExpression ce:
                 return Expression.Condition(
-                    ReplaceArgumentsCore(ce.Test, oldParameters, newParameters),
-                    ReplaceArgumentsCore(ce.IfTrue, oldParameters, newParameters),
-                    ReplaceArgumentsCore(ce.IfFalse, oldParameters, newParameters),
+                    Substitute(ce.Test, oldParameters, newParameters, scope),
+                    Substitute(ce.IfTrue, oldParameters, newParameters, scope),
+                    Substitute(ce.IfFalse, oldParameters, newParameters, scope),
                     ce.Type);
 
             // ETC R1b: scalar families without binder. Each rebuild keeps the node's metadata (member, constructor and
             // members, element type and rank, type operand) and returns the node itself when no child changed.
             case MemberExpression { Expression: not null } me:
-                return CopyMemberExpression(me, ReplaceArgumentsCore(me.Expression, oldParameters, newParameters));
+                return CopyMemberExpression(me, Substitute(me.Expression, oldParameters, newParameters, scope));
 
             case TypeBinaryExpression tbe:
-                return CopyTypeBinaryExpression(tbe, [ReplaceArgumentsCore(tbe.Expression, oldParameters, newParameters)]);
+                return CopyTypeBinaryExpression(tbe, [Substitute(tbe.Expression, oldParameters, newParameters, scope)]);
 
             case NewExpression { Arguments.Count: > 0 } ne:
-                return CopyNewExpression(ne, ReplaceEachArgument(ne.Arguments, oldParameters, newParameters));
+                return CopyNewExpression(ne, SubstituteEach(ne.Arguments, oldParameters, newParameters, scope));
 
             case NewArrayExpression { Expressions.Count: > 0 } nae:
-                return CopyNewArrayExpression(nae, ReplaceEachArgument(nae.Expressions, oldParameters, newParameters));
+                return CopyNewArrayExpression(nae, SubstituteEach(nae.Expressions, oldParameters, newParameters, scope));
+
+            // ETC R2: binders and control flow.
+            case LambdaExpression le:
+                return SubstituteLambda(le, oldParameters, newParameters, scope);
+
+            case BlockExpression block:
+                return SubstituteBlock(block, oldParameters, newParameters, scope);
+
+            case TryExpression @try:
+                return SubstituteTry(@try, oldParameters, newParameters, scope);
+
+            case SwitchExpression @switch:
+                return SubstituteSwitch(@switch, oldParameters, newParameters, scope);
+
+            case LoopExpression loop:
+                return CopyLoopExpression(loop, [Substitute(loop.Body, oldParameters, newParameters, scope)]);
+
+            case GotoExpression { Value: not null } @goto:
+                return CopyGotoExpression(@goto, [Substitute(@goto.Value, oldParameters, newParameters, scope)]);
+
+            case LabelExpression { DefaultValue: not null } label:
+                return CopyLabelExpression(label, [Substitute(label.DefaultValue, oldParameters, newParameters, scope)]);
+
+            case RuntimeVariablesExpression runtimeVariables:
+                return SubstituteRuntimeVariables(runtimeVariables, oldParameters, newParameters, scope);
         }
         return e;
     }
 
-    /// <summary>Applies <see cref="ReplaceArgumentsCore"/> to each child of <paramref name="children"/>, in order.</summary>
+    /// <summary>Applies <see cref="Substitute"/> to each child of <paramref name="children"/>, in order.</summary>
     /// <param name="children">The non-empty children to substitute.</param>
     /// <param name="oldParameters">See <see cref="ReplaceArgumentsCore"/>.</param>
     /// <param name="newParameters">See <see cref="ReplaceArgumentsCore"/>.</param>
+    /// <param name="scope">See <see cref="Substitute"/>.</param>
     /// <returns>The substituted children.</returns>
-    private Expression[] ReplaceEachArgument(ReadOnlyCollection<Expression> children, IReadOnlyList<ParameterExpression>? oldParameters, IReadOnlyList<Expression>? newParameters)
+    private Expression[] SubstituteEach(IReadOnlyList<Expression> children, IReadOnlyList<ParameterExpression>? oldParameters, IReadOnlyList<Expression>? newParameters, SubstitutionScope? scope)
     {
         var replaced = new Expression[children.Count];
         for (int i = 0; i < replaced.Length; i++)
         {
-            replaced[i] = ReplaceArgumentsCore(children[i], oldParameters, newParameters);
+            replaced[i] = Substitute(children[i], oldParameters, newParameters, scope);
         }
 
         return replaced;
+    }
+
+    /// <summary>Substitutes inside a lambda (ETC R2): its parameters are declarations in scope in its body.</summary>
+    /// <param name="lambda">The lambda.</param>
+    /// <param name="oldParameters">See <see cref="ReplaceArgumentsCore"/>.</param>
+    /// <param name="newParameters">See <see cref="ReplaceArgumentsCore"/>.</param>
+    /// <param name="scope">See <see cref="Substitute"/>.</param>
+    /// <returns>The lambda itself when nothing changed; otherwise a lambda with the same delegate type, name and tail-call flag.</returns>
+    private Expression SubstituteLambda(LambdaExpression lambda, IReadOnlyList<ParameterExpression>? oldParameters, IReadOnlyList<Expression>? newParameters, SubstitutionScope? scope)
+    {
+        scope ??= new SubstitutionScope();
+        int mark = scope.Mark;
+        try
+        {
+            ParameterExpression[]? declarations = scope.EnterBinder(lambda.Parameters, [lambda.Body], oldParameters, newParameters);
+            Expression body = Substitute(lambda.Body, oldParameters, newParameters, scope);
+            if (declarations is null && ReferenceEquals(body, lambda.Body)) return lambda;
+
+            return Expression.Lambda(lambda.Type, body, lambda.Name, lambda.TailCall, declarations ?? (IEnumerable<ParameterExpression>)lambda.Parameters);
+        }
+        finally
+        {
+            scope.Restore(mark);
+        }
+    }
+
+    /// <summary>Substitutes inside a block (ETC R2): its variables are declarations in scope in all its statements.</summary>
+    /// <param name="block">The block.</param>
+    /// <param name="oldParameters">See <see cref="ReplaceArgumentsCore"/>.</param>
+    /// <param name="newParameters">See <see cref="ReplaceArgumentsCore"/>.</param>
+    /// <param name="scope">See <see cref="Substitute"/>.</param>
+    /// <returns>The block itself when nothing changed; otherwise a block with the same result type.</returns>
+    private Expression SubstituteBlock(BlockExpression block, IReadOnlyList<ParameterExpression>? oldParameters, IReadOnlyList<Expression>? newParameters, SubstitutionScope? scope)
+    {
+        scope ??= new SubstitutionScope();
+        int mark = scope.Mark;
+        try
+        {
+            ParameterExpression[]? declarations = scope.EnterBinder(block.Variables, block.Expressions, oldParameters, newParameters);
+            Expression[] statements = SubstituteEach(block.Expressions, oldParameters, newParameters, scope);
+            return RebuildBlockExpression(block, declarations ?? [.. block.Variables], statements);
+        }
+        finally
+        {
+            scope.Restore(mark);
+        }
+    }
+
+    /// <summary>
+    /// Substitutes inside a try expression (ETC R2): the protected body, each handler (whose variable is a declaration in
+    /// scope in its filter and body only), the finally and the fault; a finally stays a finally and a fault a fault.
+    /// </summary>
+    /// <param name="node">The try expression.</param>
+    /// <param name="oldParameters">See <see cref="ReplaceArgumentsCore"/>.</param>
+    /// <param name="newParameters">See <see cref="ReplaceArgumentsCore"/>.</param>
+    /// <param name="scope">See <see cref="Substitute"/>.</param>
+    /// <returns>The try expression itself when nothing changed; otherwise a rebuilt one with the same type.</returns>
+    private Expression SubstituteTry(TryExpression node, IReadOnlyList<ParameterExpression>? oldParameters, IReadOnlyList<Expression>? newParameters, SubstitutionScope? scope)
+    {
+        Expression body = Substitute(node.Body, oldParameters, newParameters, scope);
+        var handlers = new CatchBlock[node.Handlers.Count];
+        for (int i = 0; i < handlers.Length; i++)
+        {
+            handlers[i] = SubstituteCatchBlock(node.Handlers[i], oldParameters, newParameters, ref scope);
+        }
+
+        Expression? @finally = node.Finally is null ? null : Substitute(node.Finally, oldParameters, newParameters, scope);
+        Expression? fault = node.Fault is null ? null : Substitute(node.Fault, oldParameters, newParameters, scope);
+        return RebuildTryExpression(node, body, handlers, @finally, fault);
+    }
+
+    /// <summary>Substitutes inside one catch handler (ETC R2), counted as one structural visit: its variable is in scope in its filter and body.</summary>
+    /// <param name="handler">The handler.</param>
+    /// <param name="oldParameters">See <see cref="ReplaceArgumentsCore"/>.</param>
+    /// <param name="newParameters">See <see cref="ReplaceArgumentsCore"/>.</param>
+    /// <param name="scope">See <see cref="Substitute"/>; created when the handler declares a variable and none exists yet.</param>
+    /// <returns>The handler itself when nothing changed; otherwise a handler with the same test type.</returns>
+    private CatchBlock SubstituteCatchBlock(CatchBlock handler, IReadOnlyList<ParameterExpression>? oldParameters, IReadOnlyList<Expression>? newParameters, ref SubstitutionScope? scope)
+    {
+        ExpressionResourceBudget.ConsumeStructuralVisit();
+        if (handler.Variable is null)
+        {
+            Expression? filter = handler.Filter is null ? null : Substitute(handler.Filter, oldParameters, newParameters, scope);
+            return handler.Update(null, filter, Substitute(handler.Body, oldParameters, newParameters, scope));
+        }
+
+        scope ??= new SubstitutionScope();
+        int mark = scope.Mark;
+        try
+        {
+            ParameterExpression[]? declarations = scope.EnterBinder([handler.Variable], [handler.Filter, handler.Body], oldParameters, newParameters);
+            Expression? filter = handler.Filter is null ? null : Substitute(handler.Filter, oldParameters, newParameters, scope);
+            Expression body = Substitute(handler.Body, oldParameters, newParameters, scope);
+            return handler.Update(declarations?[0] ?? handler.Variable, filter, body);
+        }
+        finally
+        {
+            scope.Restore(mark);
+        }
+    }
+
+    /// <summary>Substitutes inside a switch (ETC R2): the value, each case's test values and body (each case counted as one structural visit), and the default body.</summary>
+    /// <param name="node">The switch.</param>
+    /// <param name="oldParameters">See <see cref="ReplaceArgumentsCore"/>.</param>
+    /// <param name="newParameters">See <see cref="ReplaceArgumentsCore"/>.</param>
+    /// <param name="scope">See <see cref="Substitute"/>.</param>
+    /// <returns>The switch itself when nothing changed; otherwise a switch with the same type and comparison method.</returns>
+    private Expression SubstituteSwitch(SwitchExpression node, IReadOnlyList<ParameterExpression>? oldParameters, IReadOnlyList<Expression>? newParameters, SubstitutionScope? scope)
+    {
+        Expression switchValue = Substitute(node.SwitchValue, oldParameters, newParameters, scope);
+        var cases = new SwitchCase[node.Cases.Count];
+        for (int i = 0; i < cases.Length; i++)
+        {
+            ExpressionResourceBudget.ConsumeStructuralVisit();
+            SwitchCase @case = node.Cases[i];
+            cases[i] = @case.Update(SubstituteEach(@case.TestValues, oldParameters, newParameters, scope), Substitute(@case.Body, oldParameters, newParameters, scope));
+        }
+
+        Expression? defaultBody = node.DefaultBody is null ? null : Substitute(node.DefaultBody, oldParameters, newParameters, scope);
+        return RebuildSwitchExpression(node, switchValue, cases, defaultBody);
+    }
+
+    /// <summary>
+    /// Substitutes the variables of a <see cref="RuntimeVariablesExpression"/> (ETC R2, C-07): a variable is a reference that
+    /// must stay a parameter, so a replacement by another parameter is applied and any other replacement is refused.
+    /// </summary>
+    /// <param name="node">The runtime-variables node.</param>
+    /// <param name="oldParameters">See <see cref="ReplaceArgumentsCore"/>.</param>
+    /// <param name="newParameters">See <see cref="ReplaceArgumentsCore"/>.</param>
+    /// <param name="scope">See <see cref="Substitute"/>.</param>
+    /// <returns>The node itself when no variable changed; otherwise a node over the replacing parameters.</returns>
+    /// <exception cref="NotSupportedException">A variable would be replaced by an expression that is not a <see cref="ParameterExpression"/>.</exception>
+    private Expression SubstituteRuntimeVariables(RuntimeVariablesExpression node, IReadOnlyList<ParameterExpression>? oldParameters, IReadOnlyList<Expression>? newParameters, SubstitutionScope? scope)
+    {
+        Expression[] replaced = SubstituteEach(node.Variables, oldParameters, newParameters, scope);
+        for (int i = 0; i < replaced.Length; i++)
+        {
+            if (replaced[i] is not ParameterExpression)
+            {
+                throw new NotSupportedException(
+                    $"The runtime variable '{node.Variables[i].Name}' can only be replaced by another ParameterExpression, not by a '{replaced[i].NodeType}' expression (C-07).");
+            }
+        }
+
+        return CopyRuntimeVariablesExpression(node, replaced);
+    }
+
+    /// <summary>
+    /// Binder state of one capture-avoiding substitution (ETC R2): the declarations of the enclosing binders that hide a
+    /// replaced parameter (mapped to themselves) or were alpha-renamed (mapped to their fresh parameter), innermost last, and
+    /// the cached free variables of the replacements. Local to one substitution walk, never shared.
+    /// </summary>
+    private sealed class SubstitutionScope
+    {
+        /// <summary>The binding entries of the enclosing binders, innermost last: a declaration and the parameter its occurrences become.</summary>
+        private readonly List<(ParameterExpression Declaration, ParameterExpression Binding)> _entries = [];
+
+        /// <summary>The free variables of each replacement, computed on first need; <see langword="null"/> entries are not computed yet.</summary>
+        private FreeVariables?[]? _replacementVariables;
+
+        /// <summary>Gets the current depth of the entry stack, for <see cref="Restore"/>.</summary>
+        public int Mark => _entries.Count;
+
+        /// <summary>Removes the entries pushed after <paramref name="mark"/> (leaving a binder).</summary>
+        /// <param name="mark">A value of <see cref="Mark"/>.</param>
+        public void Restore(int mark) => _entries.RemoveRange(mark, _entries.Count - mark);
+
+        /// <summary>Resolves a reference against the enclosing binders, innermost first.</summary>
+        /// <param name="parameter">The reference.</param>
+        /// <param name="binding">The parameter the reference becomes (itself when merely hidden), when an enclosing binder declares it.</param>
+        /// <returns><see langword="true"/> if an enclosing binder declares <paramref name="parameter"/>.</returns>
+        public bool TryResolve(ParameterExpression parameter, [NotNullWhen(true)] out ParameterExpression? binding)
+        {
+            for (int i = _entries.Count - 1; i >= 0; i--)
+            {
+                if (ReferenceEquals(_entries[i].Declaration, parameter))
+                {
+                    binding = _entries[i].Binding;
+                    return true;
+                }
+            }
+
+            binding = null;
+            return false;
+        }
+
+        /// <summary>
+        /// Enters a binder: each declaration that is a replaced parameter, or that an enclosing binder already maps, hides it
+        /// in the binder's scope; each declaration a replacement inserted in that scope would capture is alpha-renamed to a
+        /// fresh parameter (same type, <see cref="ParameterExpression.IsByRef"/> flag and name).
+        /// </summary>
+        /// <param name="declarations">The binder's declarations, in order.</param>
+        /// <param name="scopeBodies">The expressions in the declarations' scope (absent ones are <see langword="null"/>).</param>
+        /// <param name="oldParameters">The replaced parameters (may be <see langword="null"/>: nothing to hide or insert).</param>
+        /// <param name="newParameters">The replacements (may be <see langword="null"/>: nothing to insert).</param>
+        /// <returns>The declarations to rebuild the binder with when one was renamed; otherwise <see langword="null"/>.</returns>
+        public ParameterExpression[]? EnterBinder(IReadOnlyList<ParameterExpression> declarations, IReadOnlyList<Expression?> scopeBodies, IReadOnlyList<ParameterExpression>? oldParameters, IReadOnlyList<Expression>? newParameters)
+        {
+            for (int k = 0; k < declarations.Count; k++)
+            {
+                ParameterExpression declaration = declarations[k];
+                if ((oldParameters is not null && IndexOfParameter(oldParameters, declaration) >= 0) || TryResolve(declaration, out _))
+                {
+                    _entries.Add((declaration, declaration));
+                }
+            }
+
+            if (oldParameters is null || newParameters is null) return null;
+
+            ParameterExpression[]? renamed = null;
+            for (int k = 0; k < declarations.Count; k++)
+            {
+                ParameterExpression declaration = declarations[k];
+                if (!WouldCapture(declaration, scopeBodies, oldParameters, newParameters)) continue;
+
+                ParameterExpression fresh = declaration.IsByRef
+                    ? Expression.Parameter(declaration.Type.MakeByRefType(), declaration.Name)
+                    : Expression.Parameter(declaration.Type, declaration.Name);
+                _entries.Add((declaration, fresh));
+                renamed ??= [.. declarations];
+                renamed[k] = fresh;
+            }
+
+            return renamed;
+        }
+
+        /// <summary>
+        /// Whether a replacement that occurs free in <paramref name="declaration"/>'s scope mentions <paramref name="declaration"/>
+        /// (or cannot be inspected): inserting it there would capture the reference.
+        /// </summary>
+        /// <param name="declaration">The binder declaration.</param>
+        /// <param name="scopeBodies">The expressions in its scope.</param>
+        /// <param name="oldParameters">The replaced parameters.</param>
+        /// <param name="newParameters">The replacements.</param>
+        /// <returns><see langword="true"/> if the declaration must be renamed.</returns>
+        private bool WouldCapture(ParameterExpression declaration, IReadOnlyList<Expression?> scopeBodies, IReadOnlyList<ParameterExpression> oldParameters, IReadOnlyList<Expression> newParameters)
+        {
+            int count = Math.Min(oldParameters.Count, newParameters.Count);
+            _replacementVariables ??= new FreeVariables?[count];
+            for (int i = 0; i < count; i++)
+            {
+                ParameterExpression replaced = oldParameters[i];
+
+                // Only the first occurrence of a duplicated parameter is ever used, and a hidden parameter inserts nothing here.
+                if (IndexOfParameter(oldParameters, replaced) != i || TryResolve(replaced, out _)) continue;
+
+                FreeVariables variables = _replacementVariables[i] ??= FreeVariables.Of(newParameters[i]);
+                if (!variables.Mentions(declaration)) continue;
+
+                for (int b = 0; b < scopeBodies.Count; b++)
+                {
+                    if (scopeBodies[b] is { } body && FreeVariables.OccursFree(replaced, body)) return true;
+                }
+            }
+
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// The free parameters of an expression (ETC R2), found by a read-only, binder-aware walk that never rebuilds or reduces a
+    /// node; an extension node, whose children are unknown, makes the set "opaque" (it may mention anything).
+    /// </summary>
+    private sealed class FreeVariables : ExpressionVisitor
+    {
+        /// <summary>The free parameters found.</summary>
+        private readonly HashSet<ParameterExpression> _free = new(ReferenceEqualityComparer.Instance);
+
+        /// <summary>The declarations of the binders currently entered, with their nesting count.</summary>
+        private readonly Dictionary<ParameterExpression, int> _declared = new(ReferenceEqualityComparer.Instance);
+
+        /// <summary>The single parameter looked for by <see cref="OccursFree"/>, or <see langword="null"/> when collecting every free parameter.</summary>
+        private readonly ParameterExpression? _target;
+
+        /// <summary>Whether an extension node was met.</summary>
+        private bool _opaque;
+
+        /// <summary>Whether <see cref="_target"/> was found free (stops the walk).</summary>
+        private bool _found;
+
+        /// <summary>Initializes a walk.</summary>
+        /// <param name="target">The parameter looked for, or <see langword="null"/> to collect every free parameter.</param>
+        private FreeVariables(ParameterExpression? target) => _target = target;
+
+        /// <summary>Collects the free parameters of <paramref name="expression"/>.</summary>
+        /// <param name="expression">The expression.</param>
+        /// <returns>The free variables.</returns>
+        public static FreeVariables Of(Expression expression)
+        {
+            var walk = new FreeVariables(null);
+            walk.Visit(expression);
+            return walk;
+        }
+
+        /// <summary>
+        /// Whether <paramref name="parameter"/> occurs free in <paramref name="expression"/> outside any quoted expression (which
+        /// the substitution never enters), or whether <paramref name="expression"/> holds an extension node (unknown children).
+        /// </summary>
+        /// <param name="parameter">The parameter.</param>
+        /// <param name="expression">The expression.</param>
+        /// <returns><see langword="true"/> if a free occurrence may exist.</returns>
+        public static bool OccursFree(ParameterExpression parameter, Expression expression)
+        {
+            var walk = new FreeVariables(parameter);
+            walk.Visit(expression);
+            return walk._found || walk._opaque;
+        }
+
+        /// <summary>Whether these free variables mention <paramref name="parameter"/>, or are opaque.</summary>
+        /// <param name="parameter">The parameter.</param>
+        /// <returns><see langword="true"/> if <paramref name="parameter"/> may occur free.</returns>
+        public bool Mentions(ParameterExpression parameter) => _opaque || _free.Contains(parameter);
+
+        /// <inheritdoc/>
+        /// <remarks>Counts one structural visit per node and checks the stack before recursing (ETC R1a-Security).</remarks>
+        public override Expression? Visit(Expression? node)
+        {
+            if (_found) return node;
+            ExpressionResourceBudget.ConsumeStructuralVisit();
+            return base.Visit(node);
+        }
+
+        /// <inheritdoc/>
+        protected override Expression VisitParameter(ParameterExpression node)
+        {
+            if (_declared.ContainsKey(node)) return node;
+            if (_target is null) _free.Add(node);
+            else if (ReferenceEquals(node, _target)) _found = true;
+
+            return node;
+        }
+
+        /// <inheritdoc/>
+        protected override Expression VisitLambda<T>(Expression<T> node)
+        {
+            Declare(node.Parameters);
+            try
+            {
+                Visit(node.Body);
+            }
+            finally
+            {
+                Undeclare(node.Parameters);
+            }
+
+            return node;
+        }
+
+        /// <inheritdoc/>
+        protected override Expression VisitBlock(BlockExpression node)
+        {
+            Declare(node.Variables);
+            try
+            {
+                foreach (Expression statement in node.Expressions) Visit(statement);
+            }
+            finally
+            {
+                Undeclare(node.Variables);
+            }
+
+            return node;
+        }
+
+        /// <inheritdoc/>
+        protected override CatchBlock VisitCatchBlock(CatchBlock node)
+        {
+            ExpressionResourceBudget.ConsumeStructuralVisit();
+            if (node.Variable is null)
+            {
+                Visit(node.Filter);
+                Visit(node.Body);
+                return node;
+            }
+
+            ParameterExpression[] variable = [node.Variable];
+            Declare(variable);
+            try
+            {
+                Visit(node.Filter);
+                Visit(node.Body);
+            }
+            finally
+            {
+                Undeclare(variable);
+            }
+
+            return node;
+        }
+
+        /// <inheritdoc/>
+        protected override Expression VisitUnary(UnaryExpression node)
+        {
+            // The substitution never enters a quoted expression, so an occurrence there is never replaced: it cannot be captured.
+            if (_target is not null && node.NodeType == ExpressionType.Quote) return node;
+            return base.VisitUnary(node);
+        }
+
+        /// <inheritdoc/>
+        protected override Expression VisitExtension(Expression node)
+        {
+            _opaque = true;
+            return node;
+        }
+
+        /// <summary>Marks declarations as bound while their binder's scope is walked.</summary>
+        /// <param name="declarations">The declarations.</param>
+        private void Declare(IReadOnlyList<ParameterExpression> declarations)
+        {
+            foreach (ParameterExpression declaration in declarations)
+            {
+                _declared[declaration] = _declared.TryGetValue(declaration, out int count) ? count + 1 : 1;
+            }
+        }
+
+        /// <summary>Unmarks declarations when their binder's scope has been walked.</summary>
+        /// <param name="declarations">The declarations.</param>
+        private void Undeclare(IReadOnlyList<ParameterExpression> declarations)
+        {
+            foreach (ParameterExpression declaration in declarations)
+            {
+                int count = _declared[declaration];
+                if (count == 1) _declared.Remove(declaration);
+                else _declared[declaration] = count - 1;
+            }
+        }
     }
 
     /// <summary>
@@ -1979,6 +2733,16 @@ public abstract class ExpressionTransformer
     /// follows the arity contract (one child for an instance member, none for a static member). New, NewArray, TypeBinary
     /// and MemberAccess return the node itself when every supplied child is the instance it already holds.
     /// </para>
+    /// <para>
+    /// ETC R2: <c>Try</c>, <c>Switch</c>, <c>Goto</c>, <c>Label</c>, <c>RuntimeVariables</c> and <c>DebugInfo</c> follow the
+    /// same arity contract, with the positional layouts their <c>Prepare*</c> methods produce: a try expression's body, then
+    /// each handler's filter (when present) and body, then its finally and fault (when present); a switch's value, then each
+    /// case's test values and body, then its default body (when present); a jump's value and a label's default value when
+    /// present; the runtime variables, which must stay <see cref="ParameterExpression"/>s; no child for debug information. The
+    /// metadata that is not an expression (handler test types and variables, case structure, comparison method, label
+    /// targets, jump kinds, result types) is taken from <paramref name="e"/>, never from the list, and label targets are
+    /// never recreated. <c>Loop</c> and these families return the node itself when no child changed.
+    /// </para>
     /// </remarks>
     /// <param name="e">The original expression to copy.</param>
     /// <param name="parameters">The sub-expressions to insert into the copied expression.</param>
@@ -2052,21 +2816,21 @@ public abstract class ExpressionTransformer
             ExpressionType.TypeIs or ExpressionType.TypeEqual => CopyTypeBinaryExpression((TypeBinaryExpression)e, parameters),
             ExpressionType.Assign => Expression.Assign(parameters[0], parameters[1]),
             ExpressionType.Block => CopyBlockExpression((BlockExpression)e, parameters),
-            ExpressionType.DebugInfo => e,
+            ExpressionType.DebugInfo => CopyLeafExpression(e, parameters),
             ExpressionType.Decrement => Expression.Decrement(parameters[0]),
             ExpressionType.Dynamic => e,
             ExpressionType.Default => e,
             ExpressionType.Extension => e,
-            ExpressionType.Goto => e,
+            ExpressionType.Goto => CopyGotoExpression((GotoExpression)e, parameters),
             ExpressionType.Increment => Expression.Increment(parameters[0]),
             ExpressionType.Index => e,
-            ExpressionType.Label => e,
-            ExpressionType.RuntimeVariables => e,
+            ExpressionType.Label => CopyLabelExpression((LabelExpression)e, parameters),
+            ExpressionType.RuntimeVariables => CopyRuntimeVariablesExpression((RuntimeVariablesExpression)e, parameters),
             ExpressionType.Loop => CopyLoopExpression((LoopExpression)e, parameters),
-            ExpressionType.Switch => e,
+            ExpressionType.Switch => CopySwitchExpression((SwitchExpression)e, parameters),
             ExpressionType.Throw when e is UnaryExpression { Operand: null } && (parameters.Length == 0 || parameters is [null]) => e,
             ExpressionType.Throw => Expression.Throw(parameters[0]),
-            ExpressionType.Try => e,
+            ExpressionType.Try => CopyTryExpression((TryExpression)e, parameters),
             ExpressionType.Unbox => Expression.Unbox(parameters[0], ((UnaryExpression)e).Type),
             ExpressionType.AddAssign => Expression.AddAssign(parameters[0], parameters[1]),
             ExpressionType.AndAssign => Expression.AndAssign(parameters[0], parameters[1]),
@@ -2231,15 +2995,272 @@ public abstract class ExpressionTransformer
         return Expression.Block(original.Type, original.Variables, statements);
     }
 
+    /// <summary>
+    /// Rebuilds a <see cref="BlockExpression"/> from its (already prepared) variables and statements (ETC R2), with its
+    /// explicit <see cref="Expression.Type"/>; the block itself is returned when nothing changed.
+    /// </summary>
+    /// <param name="original">The block being rebuilt.</param>
+    /// <param name="variables">The variables, of the same count as <paramref name="original"/>'s.</param>
+    /// <param name="statements">The statements, of the same count as <paramref name="original"/>'s.</param>
+    /// <returns>The rebuilt block, or <paramref name="original"/>.</returns>
+    private static BlockExpression RebuildBlockExpression(BlockExpression original, ParameterExpression[] variables, Expression[] statements)
+    {
+        if (VariablesUnchanged(original.Variables, variables) && ChildrenUnchanged(original.Expressions, statements)) return original;
+
+        return Expression.Block(original.Type, variables, statements);
+    }
+
     /// <summary>Rebuilds a <see cref="LoopExpression"/> from its body, preserving its break and continue labels.</summary>
     /// <param name="original">The node being copied.</param>
     /// <param name="children">The single body.</param>
-    /// <returns>The rebuilt node, or <paramref name="original"/> (see <see cref="KeepsUntraversedNode"/>).</returns>
+    /// <returns>The rebuilt node, or <paramref name="original"/> (see <see cref="KeepsUntraversedNode"/>; also when the body is the same instance, ETC R2).</returns>
     private static Expression CopyLoopExpression(LoopExpression original, Expression[] children)
     {
-        if (KeepsUntraversedNode(original, children, 1)) return original;
+        if (KeepsUntraversedNode(original, children, 1) || ReferenceEquals(children[0], original.Body)) return original;
 
         return Expression.Loop(children[0], original.BreakLabel, original.ContinueLabel);
+    }
+
+    /// <summary>
+    /// Arity contract of <see cref="CopyExpression"/> for a supported node without child (ETC R2,
+    /// <see cref="DebugInfoExpression"/>): an empty list keeps it, any other list is rejected.
+    /// </summary>
+    /// <param name="original">The leaf.</param>
+    /// <param name="children">The supplied children.</param>
+    /// <returns><paramref name="original"/>.</returns>
+    /// <exception cref="ArgumentException"><paramref name="children"/> is not empty.</exception>
+    private static Expression CopyLeafExpression(Expression original, Expression[] children)
+    {
+        KeepsUntraversedNode(original, children, 0);
+        return original;
+    }
+
+    /// <summary>
+    /// Rebuilds a <see cref="GotoExpression"/> from its value (ETC R2): one child when the jump carries a value, none
+    /// otherwise; the kind, the <see cref="GotoExpression.Target"/> instance and the type are kept.
+    /// </summary>
+    /// <param name="original">The jump being copied.</param>
+    /// <param name="children">The value, or no child.</param>
+    /// <returns>The rebuilt jump, or <paramref name="original"/> (see <see cref="KeepsUntraversedNode"/>; also when the value is the same instance).</returns>
+    private static Expression CopyGotoExpression(GotoExpression original, Expression[] children)
+    {
+        if (KeepsUntraversedNode(original, children, original.Value is null ? 0 : 1) || ReferenceEquals(children[0], original.Value)) return original;
+
+        return Expression.MakeGoto(original.Kind, original.Target, children[0], original.Type);
+    }
+
+    /// <summary>
+    /// Rebuilds a <see cref="LabelExpression"/> from its default value (ETC R2): one child when the label has a default
+    /// value, none otherwise; the <see cref="LabelExpression.Target"/> instance is kept.
+    /// </summary>
+    /// <param name="original">The label being copied.</param>
+    /// <param name="children">The default value, or no child.</param>
+    /// <returns>The rebuilt label, or <paramref name="original"/> (see <see cref="KeepsUntraversedNode"/>; also when the default value is the same instance).</returns>
+    private static Expression CopyLabelExpression(LabelExpression original, Expression[] children)
+    {
+        if (KeepsUntraversedNode(original, children, original.DefaultValue is null ? 0 : 1) || ReferenceEquals(children[0], original.DefaultValue)) return original;
+
+        return Expression.Label(original.Target, children[0]);
+    }
+
+    /// <summary>
+    /// Rebuilds a <see cref="RuntimeVariablesExpression"/> from its variables (ETC R2). Each child must be a
+    /// <see cref="ParameterExpression"/>: a runtime variable is a reference to a variable and can never become another kind
+    /// of expression (C-07).
+    /// </summary>
+    /// <param name="original">The node being copied.</param>
+    /// <param name="children">The variables, in order.</param>
+    /// <returns>The rebuilt node, or <paramref name="original"/> (see <see cref="KeepsUntraversedNode"/>; also when every variable is the same instance).</returns>
+    /// <exception cref="ArgumentException">The list length does not match, or a child is not a <see cref="ParameterExpression"/>.</exception>
+    private static Expression CopyRuntimeVariablesExpression(RuntimeVariablesExpression original, Expression[] children)
+    {
+        if (KeepsUntraversedNode(original, children, original.Variables.Count)) return original;
+
+        var variables = new ParameterExpression[children.Length];
+        bool unchanged = true;
+        for (int i = 0; i < children.Length; i++)
+        {
+            variables[i] = children[i] as ParameterExpression
+                ?? throw new ArgumentException($"A runtime variable must stay a ParameterExpression; position {i} received '{children[i]?.NodeType}'.", nameof(children));
+            unchanged &= ReferenceEquals(variables[i], original.Variables[i]);
+        }
+
+        return unchanged ? original : Expression.RuntimeVariables(variables);
+    }
+
+    /// <summary>Counts the positional children of a <see cref="TryExpression"/> (ETC R2).</summary>
+    /// <param name="node">The try expression.</param>
+    /// <returns>
+    /// One for the body, then for each handler one for its filter (only when it has one) and one for its body, then one for
+    /// the finally and one for the fault when they are present.
+    /// </returns>
+    private static int TryChildCount(TryExpression node)
+    {
+        int count = 1;
+        foreach (CatchBlock handler in node.Handlers)
+        {
+            count += handler.Filter is null ? 1 : 2;
+        }
+
+        if (node.Finally is not null) count++;
+        if (node.Fault is not null) count++;
+        return count;
+    }
+
+    /// <summary>
+    /// Rebuilds a <see cref="TryExpression"/> from its positional children (ETC R2), laid out as described by
+    /// <see cref="TryChildCount"/>. The handlers keep their test type and variable (metadata of the original handlers, never
+    /// read from the list), and a finally or a fault stays what it was.
+    /// </summary>
+    /// <param name="original">The try expression being copied.</param>
+    /// <param name="children">The positional children.</param>
+    /// <returns>The rebuilt node, or <paramref name="original"/> (see <see cref="KeepsUntraversedNode"/>; also when no child changed).</returns>
+    private static Expression CopyTryExpression(TryExpression original, Expression[] children)
+    {
+        if (KeepsUntraversedNode(original, children, TryChildCount(original))) return original;
+
+        int next = 0;
+        Expression body = children[next++];
+        ReadOnlyCollection<CatchBlock> originalHandlers = original.Handlers;
+        var handlers = new CatchBlock[originalHandlers.Count];
+        for (int i = 0; i < handlers.Length; i++)
+        {
+            CatchBlock handler = originalHandlers[i];
+            Expression? filter = handler.Filter is null ? null : children[next++];
+            handlers[i] = handler.Update(handler.Variable, filter, children[next++]);
+        }
+
+        Expression? @finally = original.Finally is null ? null : children[next++];
+        Expression? fault = original.Fault is null ? null : children[next];
+        return RebuildTryExpression(original, body, handlers, @finally, fault);
+    }
+
+    /// <summary>
+    /// Rebuilds a <see cref="TryExpression"/> from its (already prepared) parts (ETC R2) with <see cref="Expression.MakeTry"/>
+    /// and the original <see cref="Expression.Type"/>; the node itself is returned when every part is the same instance.
+    /// </summary>
+    /// <param name="original">The try expression being rebuilt.</param>
+    /// <param name="body">The protected body.</param>
+    /// <param name="handlers">The handlers, of the same count and order as <paramref name="original"/>'s.</param>
+    /// <param name="finally">The finally, <see langword="null"/> exactly when <paramref name="original"/> has none.</param>
+    /// <param name="fault">The fault, <see langword="null"/> exactly when <paramref name="original"/> has none.</param>
+    /// <returns>The rebuilt node, or <paramref name="original"/>.</returns>
+    private static TryExpression RebuildTryExpression(TryExpression original, Expression body, CatchBlock[] handlers, Expression? @finally, Expression? fault)
+    {
+        if (ReferenceEquals(body, original.Body)
+            && ReferenceEquals(@finally, original.Finally)
+            && ReferenceEquals(fault, original.Fault)
+            && HandlersUnchanged(original.Handlers, handlers))
+        {
+            return original;
+        }
+
+        return Expression.MakeTry(original.Type, body, @finally, fault, handlers);
+    }
+
+    /// <summary>Whether every handler of <paramref name="handlers"/> is the instance <paramref name="original"/> holds at the same position.</summary>
+    /// <param name="original">The original handlers.</param>
+    /// <param name="handlers">The handlers, of the same count.</param>
+    /// <returns><see langword="true"/> if no handler changed.</returns>
+    private static bool HandlersUnchanged(ReadOnlyCollection<CatchBlock> original, CatchBlock[] handlers)
+    {
+        for (int i = 0; i < handlers.Length; i++)
+        {
+            if (!ReferenceEquals(original[i], handlers[i])) return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>Counts the positional children of a <see cref="SwitchExpression"/> (ETC R2).</summary>
+    /// <param name="node">The switch.</param>
+    /// <returns>One for the switch value, then for each case its test values and one for its body, then one for the default body when present.</returns>
+    private static int SwitchChildCount(SwitchExpression node)
+    {
+        int count = 1;
+        foreach (SwitchCase @case in node.Cases)
+        {
+            count += @case.TestValues.Count + 1;
+        }
+
+        if (node.DefaultBody is not null) count++;
+        return count;
+    }
+
+    /// <summary>
+    /// Rebuilds a <see cref="SwitchExpression"/> from its positional children (ETC R2), laid out as described by
+    /// <see cref="SwitchChildCount"/>; cases keep their order, the comparison method and the type are kept.
+    /// </summary>
+    /// <param name="original">The switch being copied.</param>
+    /// <param name="children">The positional children.</param>
+    /// <returns>The rebuilt node, or <paramref name="original"/> (see <see cref="KeepsUntraversedNode"/>; also when no child changed).</returns>
+    private static Expression CopySwitchExpression(SwitchExpression original, Expression[] children)
+    {
+        if (KeepsUntraversedNode(original, children, SwitchChildCount(original))) return original;
+
+        int next = 0;
+        Expression switchValue = children[next++];
+        ReadOnlyCollection<SwitchCase> originalCases = original.Cases;
+        var cases = new SwitchCase[originalCases.Count];
+        for (int i = 0; i < cases.Length; i++)
+        {
+            SwitchCase @case = originalCases[i];
+            var testValues = new Expression[@case.TestValues.Count];
+            Array.Copy(children, next, testValues, 0, testValues.Length);
+            next += testValues.Length;
+            cases[i] = @case.Update(testValues, children[next++]);
+        }
+
+        Expression? defaultBody = original.DefaultBody is null ? null : children[next];
+        return RebuildSwitchExpression(original, switchValue, cases, defaultBody);
+    }
+
+    /// <summary>
+    /// Rebuilds a <see cref="SwitchExpression"/> from its (already prepared) parts (ETC R2), keeping its type and its
+    /// <see cref="SwitchExpression.Comparison"/> (possibly <see langword="null"/>); the node itself is returned when every part
+    /// is the same instance.
+    /// </summary>
+    /// <param name="original">The switch being rebuilt.</param>
+    /// <param name="switchValue">The switch value.</param>
+    /// <param name="cases">The cases, of the same count and order as <paramref name="original"/>'s.</param>
+    /// <param name="defaultBody">The default body, <see langword="null"/> exactly when <paramref name="original"/> has none.</param>
+    /// <returns>The rebuilt node, or <paramref name="original"/>.</returns>
+    private static SwitchExpression RebuildSwitchExpression(SwitchExpression original, Expression switchValue, SwitchCase[] cases, Expression? defaultBody)
+    {
+        if (ReferenceEquals(switchValue, original.SwitchValue) && ReferenceEquals(defaultBody, original.DefaultBody) && CasesUnchanged(original.Cases, cases))
+        {
+            return original;
+        }
+
+        return Expression.Switch(original.Type, switchValue, defaultBody, original.Comparison, cases);
+    }
+
+    /// <summary>Whether every case of <paramref name="cases"/> is the instance <paramref name="original"/> holds at the same position.</summary>
+    /// <param name="original">The original cases.</param>
+    /// <param name="cases">The cases, of the same count.</param>
+    /// <returns><see langword="true"/> if no case changed.</returns>
+    private static bool CasesUnchanged(ReadOnlyCollection<SwitchCase> original, SwitchCase[] cases)
+    {
+        for (int i = 0; i < cases.Length; i++)
+        {
+            if (!ReferenceEquals(original[i], cases[i])) return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>Whether every variable of <paramref name="variables"/> is the instance <paramref name="original"/> holds at the same position.</summary>
+    /// <param name="original">The original variables.</param>
+    /// <param name="variables">The variables, of the same count.</param>
+    /// <returns><see langword="true"/> if no variable changed.</returns>
+    private static bool VariablesUnchanged(ReadOnlyCollection<ParameterExpression> original, ParameterExpression[] variables)
+    {
+        for (int i = 0; i < variables.Length; i++)
+        {
+            if (!ReferenceEquals(original[i], variables[i])) return false;
+        }
+
+        return true;
     }
 
     /// <summary>
