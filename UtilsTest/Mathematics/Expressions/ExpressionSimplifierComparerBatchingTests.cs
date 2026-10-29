@@ -301,7 +301,7 @@ public class ExpressionSimplifierComparerBatchingTests
 
     /// <summary>
     /// Conservatism for an unsupported node kind: two DISTINCT but structurally identical instances of a family the
-    /// comparer does not understand (here a block, an R2 family) must NOT be conflated - <c>AdditionOfEqualsElements</c>
+    /// comparer does not understand (here an index access, an R3 family; a block until ETC R2) must NOT be conflated - <c>AdditionOfEqualsElements</c>
     /// must return <see langword="null"/>. Conditionals were the example before ETC R1c; they are compared structurally
     /// since (C-04), and two identical pure conditionals are now factored.
     /// </summary>
@@ -310,8 +310,8 @@ public class ExpressionSimplifierComparerBatchingTests
     {
         var simplifier = new ExpressionSimplifier();
         ParameterExpression test = Expression.Parameter(typeof(bool), "test");
-        Expression left = Expression.Multiply(Expression.Constant(2.0), Expression.Block(Expression.Condition(test, Expression.Constant(1.0), Expression.Constant(2.0))));
-        Expression right = Expression.Multiply(Expression.Constant(3.0), Expression.Block(Expression.Condition(test, Expression.Constant(1.0), Expression.Constant(2.0))));
+        Expression left = Expression.Multiply(Expression.Constant(2.0), Expression.ArrayAccess(Expression.NewArrayInit(typeof(double), Expression.Condition(test, Expression.Constant(1.0), Expression.Constant(2.0))), Expression.Constant(0)));
+        Expression right = Expression.Multiply(Expression.Constant(3.0), Expression.ArrayAccess(Expression.NewArrayInit(typeof(double), Expression.Condition(test, Expression.Constant(1.0), Expression.Constant(2.0))), Expression.Constant(0)));
 
         Expression? result = InvokeAdditionOfEqualsElements(simplifier, left, right);
 

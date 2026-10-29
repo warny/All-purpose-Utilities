@@ -329,7 +329,7 @@ public class ExpressionTreeFindingsTests
 
     /// <summary>
     /// ETC-06, resolved for the scalar families by ETC R1c (C-04): two independently built, identical conditionals compared
-    /// unequal; they are now structurally equal. A family that is still unsupported (a block, R2) stays conservatively
+    /// unequal; they are now structurally equal. A family that is still unsupported (an index access, R3; a block until ETC R2) stays conservatively
     /// unequal, and the same instance is equal to itself.
     /// </summary>
     [TestMethod]
@@ -337,8 +337,8 @@ public class ExpressionTreeFindingsTests
     {
         Expression first = ExpressionNodeCatalog.Get("Conditional").Build();
         Expression second = ExpressionNodeCatalog.Get("Conditional").Build();
-        Expression firstBlock = ExpressionNodeCatalog.Get("Block").Build();
-        Expression secondBlock = ExpressionNodeCatalog.Get("Block").Build();
+        Expression firstBlock = ExpressionNodeCatalog.Get("Index").Build();
+        Expression secondBlock = ExpressionNodeCatalog.Get("Index").Build();
 
         Assert.IsTrue(ExpressionComparer.Default.Equals(first, second));
         Assert.IsFalse(ExpressionComparer.Default.Equals(firstBlock, secondBlock));
@@ -348,15 +348,15 @@ public class ExpressionTreeFindingsTests
     /// <summary>
     /// ETC-07, resolved for the scalar families by ETC R1c: unsupported nodes hashed by node type and result type only, so
     /// different conditionals collided. The hash now includes the children, so these two differ, while a still unsupported
-    /// family keeps the coarse hash.
+    /// family (an index access, R3; a block until ETC R2) keeps the coarse hash.
     /// </summary>
     [TestMethod]
     public void ETC07_Comparer_ScalarFamilies_HashTheirChildren()
     {
         Expression first = Expression.Condition(Expression.GreaterThan(P, Expression.Constant(0.5)), Expression.Constant(1.5), Expression.Constant(2.5));
         Expression second = Expression.Condition(Expression.LessThan(P, Expression.Constant(7.5)), Expression.Constant(3.5), P);
-        Expression firstBlock = Expression.Block(Expression.Constant(1.5));
-        Expression secondBlock = Expression.Block(P);
+        Expression firstBlock = Expression.ArrayAccess(Expression.NewArrayInit(typeof(double), Expression.Constant(1.5)), Expression.Constant(0));
+        Expression secondBlock = Expression.ArrayAccess(Expression.NewArrayInit(typeof(double), P), Expression.Constant(0));
 
         Assert.IsFalse(ExpressionComparer.Default.Equals(first, second));
         Assert.AreNotEqual(ExpressionComparer.Default.GetHashCode(first), ExpressionComparer.Default.GetHashCode(second));
@@ -557,15 +557,15 @@ public class ExpressionTreeFindingsTests
     /// <summary>
     /// ETC-14, resolved for the scalar families by ETC R1c: the unsupported-node canonical-order key tied every unsupported
     /// term; conditionals and defaults now have their own keys, which order them antisymmetrically, while two still
-    /// unsupported families (a block and a loop, R2) keep tying, conservatively.
+    /// unsupported families (an index access and a member initializer, R3; a block and a loop until ETC R2) keep tying, conservatively.
     /// </summary>
     [TestMethod]
     public void ETC14_CanonicalOrder_KeysTheScalarFamilies()
     {
         Expression first = ExpressionNodeCatalog.Get("Conditional").Build();
         Expression second = Expression.Default(typeof(double));
-        Expression block = ExpressionNodeCatalog.Get("Block").Build();
-        Expression loop = ExpressionNodeCatalog.Get("Loop").Build();
+        Expression block = ExpressionNodeCatalog.Get("Index").Build();
+        Expression loop = ExpressionNodeCatalog.Get("MemberInit").Build();
 
         int forward = ExpressionCanonicalOrder.Compare(first, second, []);
         Assert.AreNotEqual(0, forward);
