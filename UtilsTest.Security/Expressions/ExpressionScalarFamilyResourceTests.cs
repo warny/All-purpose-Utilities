@@ -78,11 +78,17 @@ public class ExpressionScalarFamilyResourceTests
         foreach ((string family, Func<Expression, Expression> wrap) in Families)
         {
             Expression deep = Chain(HostileDepth, wrap);
+            Expression deep2 = Chain(HostileDepth, wrap);
             (string Name, Action Run)[] paths =
             [
                 ("simplify", () => new ExpressionSimplifier(NoLimits).Simplify(deep)),
                 ("generic transform", () => new RecursiveTransformer(NoLimits).Transform(deep)),
                 ("substitution", () => new RecursiveTransformer(NoLimits).Replace(deep, P, Expression.Constant(1.0))),
+                ("comparer equals", () => ExpressionComparer.Create(NoLimits).Equals(deep, deep2)),
+                ("comparer hash", () => ExpressionComparer.Create(NoLimits).GetHashCode(deep)),
+                ("raw equality", () => RunUnlimited(() => ExpressionComparer.StructuralEqualsRaw(deep, deep2))),
+                ("raw hash", () => RunUnlimited(() => ExpressionComparer.StructuralHashRaw(deep))),
+                ("canonical key", () => RunUnlimited(() => ExpressionCanonicalOrder.BuildKey(deep, []))),
                 ("effect analysis", () => RunUnlimited(() => ExpressionEffectAnalysis.Analyze(deep))),
             ];
 
@@ -143,6 +149,40 @@ public class ExpressionScalarFamilyResourceTests
         ExpressionResourceLimitException budget = Assert.ThrowsExactly<ExpressionResourceLimitException>(() =>
             ExpressionResourceBudget.Run(ExpressionResourceLimits.Default with { MaxStructuralVisits = 20 }, null, null, null, dag, static e => ExpressionEffectAnalysis.Analyze(e)));
         Assert.AreEqual(ExpressionResourceLimitKind.StructuralWork, budget.Kind);
+    }
+
+    /// <summary>
+    /// Structural equality, hashing and keys of every new family (ETC R1c) consume the structural budget: equal trees compare
+    /// equal and hash equally, and an exhausted budget is an exception, never <see langword="false"/>, a hash or a key.
+    /// </summary>
+    [TestMethod]
+    public void StructuralWalks_OfEveryNewFamily_AreBudgeted()
+    {
+        foreach ((string family, Func<Expression, Expression> wrap) in Families)
+        {
+            Expression a = Chain(40, wrap);
+            Expression b = Chain(40, wrap);
+            Assert.IsTrue((bool)RunUnlimited(() => ExpressionComparer.StructuralEqualsRaw(a, b)), family);
+            Assert.AreEqual(RunUnlimited(() => ExpressionComparer.StructuralHashRaw(a)), RunUnlimited(() => ExpressionComparer.StructuralHashRaw(b)), family);
+            Assert.AreEqual(0, (int)RunUnlimited(() => ExpressionCanonicalOrder.Compare(a, b, [])), family);
+
+            var tight = ExpressionResourceLimits.Default with { MaxStructuralVisits = 20 };
+            (string Name, Func<object> Walk)[] walks =
+            [
+                ("raw equality", () => ExpressionComparer.StructuralEqualsRaw(a, b)),
+                ("raw hash", () => ExpressionComparer.StructuralHashRaw(a)),
+                ("canonical key", () => ExpressionCanonicalOrder.BuildKey(a, [])),
+            ];
+            foreach ((string name, Func<object> walk) in walks)
+            {
+                ExpressionResourceLimitException refusal = Assert.ThrowsExactly<ExpressionResourceLimitException>(
+                    () => ExpressionResourceBudget.Run(tight, null, null, null, walk, static w => w()), family + " / " + name);
+                Assert.AreEqual(ExpressionResourceLimitKind.StructuralWork, refusal.Kind, family + " / " + name);
+            }
+
+            Assert.ThrowsExactly<ExpressionResourceLimitException>(() => ExpressionComparer.Create(tight).Equals(a, b), family);
+            Assert.ThrowsExactly<ExpressionResourceLimitException>(() => ExpressionComparer.Create(tight).GetHashCode(a), family);
+        }
     }
 
     /// <summary>
