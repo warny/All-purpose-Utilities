@@ -24,7 +24,10 @@ namespace Utils.Mathematics.Expressions;
 /// identity, not the coarser additive-grouping projection <see cref="ExpressionSimplifier"/> intentionally
 /// keeps separate (see its "Additive grouping" region) — a <c>Power(MethodCall, exponent)</c> term's
 /// complete key still distinguishes the exponent and the exact method, even though the grouping key
-/// deliberately ignores the exponent to cluster same-argument trigonometric calls together.
+/// deliberately ignores the exponent to cluster same-argument trigonometric calls together. ETC R1c added the scalar
+/// families (conditional, invocation, type test, default, creation, array creation) and ETC R2 the binding and control-flow
+/// families (<see cref="StructureKey"/>): block and catch variables are pushed as scope frames like lambda parameters, and
+/// label targets are keyed by their first-occurrence index in the current lambda body (never by name or identity).
 /// </para>
 /// <para>
 /// <b>Bound parameters.</b> A <see cref="ParameterExpression"/> bound by a <see cref="LambdaExpression"/>

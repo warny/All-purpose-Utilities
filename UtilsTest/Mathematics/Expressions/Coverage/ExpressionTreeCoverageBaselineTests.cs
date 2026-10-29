@@ -13,7 +13,10 @@ namespace UtilsTest.Mathematics.Expressions.Coverage;
 /// and by ETC R1b (rows marked <c>// ETC R1b</c>) for the traversal of member access, type tests, creations and array
 /// creations (ETC-01/ETC-10, C-03) and the faithful unary and lambda reconstruction (ETC-04/ETC-05, C-01), and by ETC R1c (rows
 /// marked <c>// ETC R1c</c>) for the structural equality of conditionals, invocations, type tests, defaults, creations and
-/// array creations (ETC-06, C-04).
+/// array creations (ETC-06, C-04), and by ETC R2 (rows marked <c>// ETC R2</c>) for the traversal, equality and
+/// capture-avoiding substitution of the binding and control-flow families (ETC-01/02/03/06/07, C-03, C-04, C-07). The
+/// <c>Throws:NotSupportedException</c> substitution outcome of <c>RuntimeVariables</c> is the C-07 contract (a runtime
+/// variable cannot be replaced by the constant the probe substitutes), not a defect.
 /// </summary>
 /// <remarks>
 /// <para>

@@ -21,12 +21,12 @@ namespace Utils.Mathematics.Expressions;
 /// numeric constants. See <c>Utils/TODO-2026-09-12-expression-simplifier-roadmap.md</c>, stage S1, for the
 /// audit this hardening addresses and for remaining known limitations.
 ///
-/// Only the node kinds already recognized before this hardening participate in structural equality:
-/// <see cref="LambdaExpression"/>, <see cref="ConstantExpression"/>, <see cref="ParameterExpression"/>,
-/// <see cref="UnaryExpression"/>, <see cref="BinaryExpression"/>, <see cref="MethodCallExpression"/> and
-/// <see cref="MemberExpression"/>. Two distinct instances of any other node kind (for example
-/// <see cref="NewExpression"/> or <see cref="ConditionalExpression"/>) are conservatively treated as
-/// unequal; broadening node coverage is left to a future S1 follow-up.
+/// Structural equality covers lambdas, constants, parameters, unary, binary, method-call and member nodes (S1), the
+/// scalar families of ETC R1c (conditionals, invocations, type tests, defaults, creations, array creations) and the binding
+/// and control-flow families of ETC R2 (blocks, try expressions with their handlers, switches with their cases, loops,
+/// jumps, labels, runtime variables and debug information). ETC R2 generalizes parameter binding to binder frames (lambda,
+/// block, catch) and adds a label-target bijection per lambda body. Two distinct instances of any other node kind (member
+/// and list initializers, index, dynamic and extension nodes) are conservatively treated as unequal.
 /// </remarks>
 public class ExpressionComparer : IEqualityComparer<Expression>
 {
@@ -1329,22 +1329,14 @@ public class ExpressionComparer : IEqualityComparer<Expression>
     /// </summary>
     private sealed class ParameterBindingContext
     {
-        private readonly List<(ParameterExpression Left, ParameterExpression Right)> _bindings = [];
+        /// <summary>The binding pairs of the open binder frames, innermost last; created by the first binder (ETC R2: lazily, so a comparison without binder allocates no list).</summary>
+        private List<(ParameterExpression Left, ParameterExpression Right)>? _bindings;
 
-        /// <summary>The open binder frames (ETC R2), innermost last: their kind and the index of their first binding in <see cref="_bindings"/>.</summary>
-        private readonly List<(BinderKind Kind, int Start)> _frames = [];
+        /// <summary>The open binder frames (ETC R2), innermost last: their kind and the index of their first binding in <see cref="_bindings"/>; created by the first binder, so a comparison without binder allocates nothing more than before R2.</summary>
+        private List<(BinderKind Kind, int Start)>? _frames;
 
-        /// <summary>
-        /// The label correspondences of the left tree (ETC R2), lazily created on the first label: each left target maps to the
-        /// right target it corresponds to and the label scope that established the correspondence.
-        /// </summary>
-        private Dictionary<LabelTarget, (LabelTarget Other, int Scope)>? _leftLabels;
-
-        /// <summary>The label correspondences of the right tree, mirroring <see cref="_leftLabels"/> so the mapping stays a bijection.</summary>
-        private Dictionary<LabelTarget, (LabelTarget Other, int Scope)>? _rightLabels;
-
-        /// <summary>Undo log of <see cref="_leftLabels"/>/<see cref="_rightLabels"/> writes: the side, the key and the entry it replaced, if any.</summary>
-        private List<(bool Left, LabelTarget Key, (LabelTarget Other, int Scope)? Previous)>? _labelUndo;
+        /// <summary>The label correspondences (ETC R2), created on the first label met, so a comparison without label allocates nothing for them.</summary>
+        private LabelMaps? _labels;
 
         /// <summary>The identifier of the current label scope (0 outside any lambda; a fresh one per lambda body).</summary>
         private int _labelScope;
@@ -1380,10 +1372,11 @@ public class ExpressionComparer : IEqualityComparer<Expression>
         /// <param name="rightParameters">The right binder's declarations, in declaration order; must have the same count as <paramref name="leftParameters"/>.</param>
         public void PushScope(BinderKind kind, IReadOnlyList<ParameterExpression> leftParameters, IReadOnlyList<ParameterExpression> rightParameters)
         {
-            _frames.Add((kind, _bindings.Count));
+            List<(ParameterExpression Left, ParameterExpression Right)> bindings = _bindings ??= [];
+            (_frames ??= []).Add((kind, bindings.Count));
             for (int i = 0; i < leftParameters.Count; i++)
             {
-                _bindings.Add((leftParameters[i], rightParameters[i]));
+                bindings.Add((leftParameters[i], rightParameters[i]));
             }
         }
 
@@ -1393,16 +1386,18 @@ public class ExpressionComparer : IEqualityComparer<Expression>
         /// <param name="right">The right declaration.</param>
         public void PushScope(BinderKind kind, ParameterExpression left, ParameterExpression right)
         {
-            _frames.Add((kind, _bindings.Count));
-            _bindings.Add((left, right));
+            List<(ParameterExpression Left, ParameterExpression Right)> bindings = _bindings ??= [];
+            (_frames ??= []).Add((kind, bindings.Count));
+            bindings.Add((left, right));
         }
 
         /// <summary>Closes the innermost binder frame, removing exactly the bindings it pushed.</summary>
         public void PopScope()
         {
-            int start = _frames[^1].Start;
-            _frames.RemoveAt(_frames.Count - 1);
-            _bindings.RemoveRange(start, _bindings.Count - start);
+            List<(BinderKind Kind, int Start)> frames = _frames!;
+            int start = frames[^1].Start;
+            frames.RemoveAt(frames.Count - 1);
+            _bindings!.RemoveRange(start, _bindings.Count - start);
         }
 
         /// <summary>
@@ -1427,7 +1422,7 @@ public class ExpressionComparer : IEqualityComparer<Expression>
         }
 
         /// <summary>Gets a mark of the label correspondences recorded so far, for <see cref="RollbackLabels"/>.</summary>
-        public int LabelMark => _labelUndo?.Count ?? 0;
+        public int LabelMark => _labels?.Undo.Count ?? 0;
 
         /// <summary>
         /// Undoes every label correspondence recorded after <paramref name="mark"/>: used when a comparison attempt fails and
@@ -1436,13 +1431,13 @@ public class ExpressionComparer : IEqualityComparer<Expression>
         /// <param name="mark">A value of <see cref="LabelMark"/>.</param>
         public void RollbackLabels(int mark)
         {
-            List<(bool Left, LabelTarget Key, (LabelTarget Other, int Scope)? Previous)>? undo = _labelUndo;
-            if (undo is null) return;
+            if (_labels is not { } labels) return;
 
+            List<(bool Left, LabelTarget Key, (LabelTarget Other, int Scope)? Previous)> undo = labels.Undo;
             for (int i = undo.Count - 1; i >= mark; i--)
             {
                 (bool left, LabelTarget key, (LabelTarget Other, int Scope)? previous) = undo[i];
-                Dictionary<LabelTarget, (LabelTarget Other, int Scope)> map = left ? _leftLabels! : _rightLabels!;
+                Dictionary<LabelTarget, (LabelTarget Other, int Scope)> map = left ? labels.Left : labels.Right;
                 if (previous is { } entry) map[key] = entry;
                 else map.Remove(key);
             }
@@ -1464,29 +1459,27 @@ public class ExpressionComparer : IEqualityComparer<Expression>
             if (x is null || y is null) return x is null && y is null;
             if (x.Type != y.Type) return false;
 
-            bool leftMapped = TryGetLabel(_leftLabels, x, out LabelTarget? leftOther);
-            bool rightMapped = TryGetLabel(_rightLabels, y, out LabelTarget? rightOther);
+            LabelMaps labels = _labels ??= new LabelMaps();
+            bool leftMapped = TryGetLabel(labels.Left, x, out LabelTarget? leftOther);
+            bool rightMapped = TryGetLabel(labels.Right, y, out LabelTarget? rightOther);
             if (leftMapped || rightMapped)
             {
                 return leftMapped && rightMapped && ReferenceEquals(leftOther, y) && ReferenceEquals(rightOther, x);
             }
 
-            _leftLabels ??= new Dictionary<LabelTarget, (LabelTarget Other, int Scope)>(ReferenceEqualityComparer.Instance);
-            _rightLabels ??= new Dictionary<LabelTarget, (LabelTarget Other, int Scope)>(ReferenceEqualityComparer.Instance);
-            _labelUndo ??= [];
-            RecordLabel(true, _leftLabels, x, y);
-            RecordLabel(false, _rightLabels, y, x);
+            RecordLabel(true, labels, labels.Left, x, y);
+            RecordLabel(false, labels, labels.Right, y, x);
             return true;
         }
 
         /// <summary>Looks up a correspondence established in the current label scope.</summary>
-        /// <param name="map">The side's map, or <see langword="null"/>.</param>
+        /// <param name="map">The side's map.</param>
         /// <param name="key">The target.</param>
         /// <param name="other">The corresponding target, when found.</param>
         /// <returns><see langword="true"/> if <paramref name="key"/> is mapped in the current label scope.</returns>
-        private bool TryGetLabel(Dictionary<LabelTarget, (LabelTarget Other, int Scope)>? map, LabelTarget key, out LabelTarget? other)
+        private bool TryGetLabel(Dictionary<LabelTarget, (LabelTarget Other, int Scope)> map, LabelTarget key, out LabelTarget? other)
         {
-            if (map is not null && map.TryGetValue(key, out (LabelTarget Other, int Scope) entry) && entry.Scope == _labelScope)
+            if (map.TryGetValue(key, out (LabelTarget Other, int Scope) entry) && entry.Scope == _labelScope)
             {
                 other = entry.Other;
                 return true;
@@ -1498,14 +1491,32 @@ public class ExpressionComparer : IEqualityComparer<Expression>
 
         /// <summary>Records one side of a correspondence, logging the entry it replaces so it can be undone.</summary>
         /// <param name="left">Whether <paramref name="map"/> is the left side's map.</param>
+        /// <param name="labels">The label maps, whose undo log records the write.</param>
         /// <param name="map">The side's map.</param>
         /// <param name="key">The target.</param>
         /// <param name="other">The corresponding target.</param>
-        private void RecordLabel(bool left, Dictionary<LabelTarget, (LabelTarget Other, int Scope)> map, LabelTarget key, LabelTarget other)
+        private void RecordLabel(bool left, LabelMaps labels, Dictionary<LabelTarget, (LabelTarget Other, int Scope)> map, LabelTarget key, LabelTarget other)
         {
             (LabelTarget Other, int Scope)? previous = map.TryGetValue(key, out (LabelTarget Other, int Scope) existing) ? existing : null;
-            _labelUndo!.Add((left, key, previous));
+            labels.Undo.Add((left, key, previous));
             map[key] = (other, _labelScope);
+        }
+
+        /// <summary>
+        /// The label correspondences of one comparison (ETC R2): each left target maps to the right target it corresponds to
+        /// and the label scope that established the correspondence, mirrored on the right so the mapping stays a bijection, with
+        /// an undo log (side, key, replaced entry) for scope exits and failed commutative attempts.
+        /// </summary>
+        private sealed class LabelMaps
+        {
+            /// <summary>The correspondences of the left tree's targets.</summary>
+            public readonly Dictionary<LabelTarget, (LabelTarget Other, int Scope)> Left = new(ReferenceEqualityComparer.Instance);
+
+            /// <summary>The correspondences of the right tree's targets.</summary>
+            public readonly Dictionary<LabelTarget, (LabelTarget Other, int Scope)> Right = new(ReferenceEqualityComparer.Instance);
+
+            /// <summary>The undo log of the writes to <see cref="Left"/> and <see cref="Right"/>.</summary>
+            public readonly List<(bool Left, LabelTarget Key, (LabelTarget Other, int Scope)? Previous)> Undo = [];
         }
 
         /// <summary>
@@ -1521,12 +1532,15 @@ public class ExpressionComparer : IEqualityComparer<Expression>
         /// </returns>
         public bool AreEquivalent(ParameterExpression x, ParameterExpression y)
         {
+            List<(ParameterExpression Left, ParameterExpression Right)>? bindings = _bindings;
+            if (bindings is null) return ReferenceEquals(x, y);
+
             int leftIndex = -1;
             int rightIndex = -1;
-            for (int i = _bindings.Count - 1; i >= 0; i--)
+            for (int i = bindings.Count - 1; i >= 0; i--)
             {
-                if (leftIndex < 0 && ReferenceEquals(_bindings[i].Left, x)) leftIndex = i;
-                if (rightIndex < 0 && ReferenceEquals(_bindings[i].Right, y)) rightIndex = i;
+                if (leftIndex < 0 && ReferenceEquals(bindings[i].Left, x)) leftIndex = i;
+                if (rightIndex < 0 && ReferenceEquals(bindings[i].Right, y)) rightIndex = i;
                 if (leftIndex >= 0 && rightIndex >= 0) break;
             }
 
@@ -1543,7 +1557,8 @@ public class ExpressionComparer : IEqualityComparer<Expression>
     /// </summary>
     private sealed class ParameterScopeStack
     {
-        private readonly List<(BinderKind Kind, IReadOnlyList<ParameterExpression> Parameters)> _scopes = [];
+        /// <summary>The open binder scopes, innermost last; created by the first binder (ETC R2: lazily, so hashing a tree without binder allocates no list).</summary>
+        private List<(BinderKind Kind, IReadOnlyList<ParameterExpression> Parameters)>? _scopes;
 
         /// <summary>The first-occurrence index of each label target seen in the current label scope (ETC R2), lazily created.</summary>
         private Dictionary<LabelTarget, int>? _labels;
@@ -1567,10 +1582,10 @@ public class ExpressionComparer : IEqualityComparer<Expression>
         /// <summary>Pushes a binder's declarations when descending into its scope.</summary>
         /// <param name="kind">The binder kind.</param>
         /// <param name="parameters">The binder's declarations, in declaration order.</param>
-        public void Push(BinderKind kind, IReadOnlyList<ParameterExpression> parameters) => _scopes.Add((kind, parameters));
+        public void Push(BinderKind kind, IReadOnlyList<ParameterExpression> parameters) => (_scopes ??= []).Add((kind, parameters));
 
         /// <summary>Pops the innermost binder's declarations when leaving its scope.</summary>
-        public void Pop() => _scopes.RemoveAt(_scopes.Count - 1);
+        public void Pop() => _scopes!.RemoveAt(_scopes.Count - 1);
 
         /// <summary>Locates <paramref name="parameter"/> among the currently active scopes, innermost first.</summary>
         /// <param name="parameter">The parameter reference to locate.</param>
@@ -1580,16 +1595,17 @@ public class ExpressionComparer : IEqualityComparer<Expression>
         /// <returns><see langword="true"/> if <paramref name="parameter"/> is bound in an active scope; <see langword="false"/> if it is a free parameter.</returns>
         public bool TryLocate(ParameterExpression parameter, out int relativeDepth, out int position, out BinderKind kind)
         {
-            for (int i = _scopes.Count - 1; i >= 0; i--)
+            List<(BinderKind Kind, IReadOnlyList<ParameterExpression> Parameters)>? scopes = _scopes;
+            for (int i = (scopes?.Count ?? 0) - 1; i >= 0; i--)
             {
-                var scope = _scopes[i].Parameters;
+                var scope = scopes![i].Parameters;
                 for (int j = 0; j < scope.Count; j++)
                 {
                     if (ReferenceEquals(scope[j], parameter))
                     {
-                        relativeDepth = _scopes.Count - 1 - i;
+                        relativeDepth = scopes.Count - 1 - i;
                         position = j;
-                        kind = _scopes[i].Kind;
+                        kind = scopes[i].Kind;
                         return true;
                     }
                 }

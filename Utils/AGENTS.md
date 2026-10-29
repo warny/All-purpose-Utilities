@@ -67,3 +67,9 @@ equality, hash, canonical-key or other recursive handler must:
    merges or moves an evaluation must only do so on operands `ExpressionEffectAnalysis` proves inert (the shared rule gate
    `AllowsRules` covers the operands of a node; a rule that removes the exception of its own operator must check it itself).
    Structural equality alone never makes two evaluations interchangeable.
+10. **Respect the lexical scope model** (ETC R2): a walk that enters a binder (lambda, conversion lambda, block, catch
+    handler) opens its frame before the scope and closes it in `finally` (comparer frames, hash scopes, key scopes,
+    `OnEnter*Scope`/`OnExit*Scope`, substitution scope); label targets are compared by bijection and keyed by
+    first-occurrence index per lambda body, never by name, and are never recreated by a rebuild; a substitution replaces
+    free occurrences only and renames a capturing declaration instead of inserting under it. `CatchBlock` and
+    `SwitchCase` are not expression nodes: count their walk explicitly (`ConsumeStructuralVisit`).

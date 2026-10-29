@@ -611,7 +611,7 @@ namespace Utils.Mathematics.Expressions
         [ThreadStatic]
         private static List<ParameterExpression[]>? _lexicalScopeStack;
 
-        /// <summary>Gets the number of lambda scopes open on this thread's ambient lexical scope stack (diagnostics and tests).</summary>
+        /// <summary>Gets the number of lexical scopes (lambda, and since ETC R2 block and catch) open on this thread's ambient lexical scope stack (diagnostics and tests).</summary>
         internal static int LexicalScopeDepth => _lexicalScopeStack?.Count ?? 0;
 
         /// <summary>Gets the nesting level of structural-metric lifetimes on this thread (diagnostics and tests).</summary>
@@ -640,6 +640,45 @@ namespace Utils.Mathematics.Expressions
         /// <inheritdoc/>
         /// <remarks>See <see cref="OnEnterLambdaScope"/>'s remarks: unconditional as of S4 review round 7, for the same reason.</remarks>
         internal override void OnExitLambdaScope(LambdaExpression original, ParameterExpression[] parameters)
+        {
+            List<ParameterExpression[]> stack = LexicalScopeStack;
+            stack.RemoveAt(stack.Count - 1);
+        }
+
+        /// <inheritdoc/>
+        /// <remarks>
+        /// ETC R2 (roadmap §5.4): block variables are bound for the S4 canonical ordering too, so two alpha-equivalent blocks
+        /// canonicalize their block-local terms identically (by binding position, not by instance). Unconditional, like
+        /// <see cref="OnEnterLambdaScope"/>; a frame is pushed for every block, even without variable, so a block-local
+        /// term is never considered outside any scope (the P15 shared-form reuse of <c>EqualsKeepingSimplifiedForms</c>
+        /// stays reserved to terms outside every scope).
+        /// </remarks>
+        internal override void OnEnterBlockScope(BlockExpression original, ParameterExpression[] variables)
+        {
+            LexicalScopeStack.Add(variables);
+        }
+
+        /// <inheritdoc/>
+        /// <remarks>See <see cref="OnEnterBlockScope"/>.</remarks>
+        internal override void OnExitBlockScope(BlockExpression original, ParameterExpression[] variables)
+        {
+            List<ParameterExpression[]> stack = LexicalScopeStack;
+            stack.RemoveAt(stack.Count - 1);
+        }
+
+        /// <inheritdoc/>
+        /// <remarks>
+        /// ETC R2 (roadmap §5.4): a catch variable is bound for the S4 canonical ordering in the handler's filter and body. A
+        /// frame (empty for a handler without variable) is pushed for every handler, see <see cref="OnEnterBlockScope"/>.
+        /// </remarks>
+        internal override void OnEnterCatchScope(CatchBlock original, ParameterExpression? variable)
+        {
+            LexicalScopeStack.Add(variable is null ? [] : [variable]);
+        }
+
+        /// <inheritdoc/>
+        /// <remarks>See <see cref="OnEnterCatchScope"/>.</remarks>
+        internal override void OnExitCatchScope(CatchBlock original, ParameterExpression? variable)
         {
             List<ParameterExpression[]> stack = LexicalScopeStack;
             stack.RemoveAt(stack.Count - 1);
