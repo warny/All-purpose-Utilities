@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -958,6 +959,14 @@ public abstract class ExpressionTransformer
     /// sub-expressions via <see cref="PrepareExpression"/>, rebuilds the node where applicable, and
     /// assembles the expression parameter array later used by <see cref="TryTransform"/>.
     /// </summary>
+    /// <remarks>
+    /// ETC R1b (compatibility entry C-03): <see cref="MemberExpression"/>, <see cref="TypeBinaryExpression"/>,
+    /// <see cref="NewExpression"/>, <see cref="NewArrayExpression"/> and <see cref="DefaultExpression"/> are traversed for
+    /// every transformer: their children are prepared in <see cref="ExpressionVisitor"/> order, passed to the rules and to
+    /// <see cref="FinalizeExpression"/>, and the node is rebuilt faithfully. The cases are type patterns over sealed or
+    /// unrelated framework classes, so their order does not matter; every other family still reaches
+    /// <see cref="PrepareDefault"/> and stays opaque.
+    /// </remarks>
     private TransformContext PrepareTransform(Expression e) => e switch
     {
         ConstantExpression cc => PrepareConstant(cc),
@@ -968,6 +977,11 @@ public abstract class ExpressionTransformer
         ParameterExpression pe => PrepareParameter(pe),
         InvocationExpression ie => PrepareInvocation(ie),
         LambdaExpression le => PrepareLambda(le),
+        MemberExpression me => PrepareMember(me),
+        TypeBinaryExpression tbe => PrepareTypeBinary(tbe),
+        NewExpression ne => PrepareNew(ne),
+        NewArrayExpression nae => PrepareNewArray(nae),
+        DefaultExpression de => PrepareDefaultValue(de),
         _ => PrepareDefault(e),
     };
 
@@ -1251,8 +1265,90 @@ public abstract class ExpressionTransformer
         => Expression.Lambda(body, parameters);
 
     /// <summary>
+    /// Prepares a <see cref="MemberExpression"/> (ETC R1b): the receiver of an instance member is prepared and the access
+    /// rebuilt on it with the same <see cref="MemberExpression.Member"/>; a static member has no child. The getter is never
+    /// invoked.
+    /// </summary>
+    /// <param name="me">The member access to prepare.</param>
+    /// <returns>The resulting <see cref="TransformContext"/>: one child for an instance member, none for a static member.</returns>
+    private TransformContext PrepareMember(MemberExpression me)
+    {
+        if (me.Expression is null)
+        {
+            return new TransformContext(me, Array.Empty<Expression>());
+        }
+
+        Expression receiver = PrepareExpression(me.Expression);
+        return new TransformContext(CopyMemberExpression(me, receiver), [receiver]);
+    }
+
+    /// <summary>
+    /// Prepares a <see cref="TypeBinaryExpression"/> (<c>TypeIs</c>, <c>TypeEqual</c>, ETC R1b): the tested expression is
+    /// prepared and the test rebuilt with the same node type and <see cref="TypeBinaryExpression.TypeOperand"/>.
+    /// </summary>
+    /// <param name="tbe">The type test to prepare.</param>
+    /// <returns>The resulting <see cref="TransformContext"/>, with the tested expression as its single child.</returns>
+    private TransformContext PrepareTypeBinary(TypeBinaryExpression tbe)
+    {
+        Expression[] children = [PrepareExpression(tbe.Expression)];
+        return new TransformContext(CopyTypeBinaryExpression(tbe, children), children);
+    }
+
+    /// <summary>
+    /// Prepares a <see cref="NewExpression"/> (ETC R1b): the constructor arguments are prepared in order and the creation
+    /// rebuilt with the same constructor and <see cref="NewExpression.Members"/>. A creation without argument (including a
+    /// constructor-less value-type default) has no child and is kept as is. The constructor is never run.
+    /// </summary>
+    /// <param name="ne">The creation to prepare.</param>
+    /// <returns>The resulting <see cref="TransformContext"/>, with the arguments as children.</returns>
+    private TransformContext PrepareNew(NewExpression ne)
+    {
+        Expression[] arguments = PrepareChildren(ne.Arguments);
+        return new TransformContext(CopyNewExpression(ne, arguments), arguments);
+    }
+
+    /// <summary>
+    /// Prepares a <see cref="NewArrayExpression"/> (ETC R1b): the elements (<c>NewArrayInit</c>) or bounds
+    /// (<c>NewArrayBounds</c>) are prepared in evaluation order and the array creation rebuilt with the same element type,
+    /// rank and node type.
+    /// </summary>
+    /// <param name="nae">The array creation to prepare.</param>
+    /// <returns>The resulting <see cref="TransformContext"/>, with the elements or bounds as children.</returns>
+    private TransformContext PrepareNewArray(NewArrayExpression nae)
+    {
+        Expression[] children = PrepareChildren(nae.Expressions);
+        return new TransformContext(CopyNewArrayExpression(nae, children), children);
+    }
+
+    /// <summary>
+    /// Prepares a <see cref="DefaultExpression"/> (ETC R1b): an explicit leaf with no child, returned unchanged (same
+    /// instance, same <see cref="Expression.Type"/>). Unlike <see cref="PrepareDefault"/>, the context is not opaque.
+    /// </summary>
+    /// <param name="de">The default value to prepare.</param>
+    /// <returns>The resulting leaf <see cref="TransformContext"/>.</returns>
+    private TransformContext PrepareDefaultValue(DefaultExpression de)
+        => new(de, Array.Empty<Expression>());
+
+    /// <summary>Prepares each expression of <paramref name="children"/> through <see cref="PrepareExpression"/>, strictly in order.</summary>
+    /// <param name="children">The children to prepare.</param>
+    /// <returns>The prepared children, or <see cref="Array.Empty{T}"/> when there is none.</returns>
+    private Expression[] PrepareChildren(ReadOnlyCollection<Expression> children)
+    {
+        int count = children.Count;
+        if (count == 0) return Array.Empty<Expression>();
+
+        var prepared = new Expression[count];
+        for (int i = 0; i < count; i++)
+        {
+            prepared[i] = PrepareExpression(children[i]);
+        }
+
+        return prepared;
+    }
+
+    /// <summary>
     /// Prepares any expression node not handled by a more specific <c>Prepare*</c> method (e.g.
-    /// <see cref="MemberExpression"/>, <see cref="NewExpression"/>): no sub-expression preparation is
+    /// <see cref="MemberInitExpression"/>, <see cref="BlockExpression"/>): no sub-expression preparation is
     /// attempted, and the node is passed through unchanged.
     /// </summary>
     /// <param name="e">The expression to prepare.</param>
@@ -1900,7 +1996,7 @@ public abstract class ExpressionTransformer
             ExpressionType.LessThan => Expression.LessThan(parameters[0], parameters[1]),
             ExpressionType.LessThanOrEqual => Expression.LessThanOrEqual(parameters[0], parameters[1]),
             ExpressionType.ListInit => e,
-            ExpressionType.MemberAccess => e,
+            ExpressionType.MemberAccess => CopyMemberAccess((MemberExpression)e, parameters),
             ExpressionType.MemberInit => e,
             ExpressionType.Modulo => Expression.Modulo(parameters[0], parameters[1]),
             ExpressionType.Multiply => Expression.Multiply(parameters[0], parameters[1]),
@@ -2012,7 +2108,7 @@ public abstract class ExpressionTransformer
     /// <returns>The rebuilt node, or <paramref name="original"/> (see <see cref="KeepsUntraversedNode"/>).</returns>
     private static Expression CopyNewExpression(NewExpression original, Expression[] arguments)
     {
-        if (KeepsUntraversedNode(original, arguments, original.Arguments.Count)) return original;
+        if (KeepsUntraversedNode(original, arguments, original.Arguments.Count) || ChildrenUnchanged(original.Arguments, arguments)) return original;
 
         // Only a value-type default construction has no constructor, and it has no argument, so it was kept above.
         ConstructorInfo constructor = original.Constructor!;
@@ -2024,10 +2120,10 @@ public abstract class ExpressionTransformer
     /// <summary>Rebuilds a <see cref="NewArrayExpression"/> (initializer or bounds) from its elements or bounds.</summary>
     /// <param name="original">The node being copied.</param>
     /// <param name="children">The elements (<see cref="ExpressionType.NewArrayInit"/>) or bounds (<see cref="ExpressionType.NewArrayBounds"/>).</param>
-    /// <returns>The rebuilt node, or <paramref name="original"/> (see <see cref="KeepsUntraversedNode"/>).</returns>
+    /// <returns>The rebuilt node, or <paramref name="original"/> (see <see cref="KeepsUntraversedNode"/> and <see cref="ChildrenUnchanged"/>).</returns>
     private static Expression CopyNewArrayExpression(NewArrayExpression original, Expression[] children)
     {
-        if (KeepsUntraversedNode(original, children, original.Expressions.Count)) return original;
+        if (KeepsUntraversedNode(original, children, original.Expressions.Count) || ChildrenUnchanged(original.Expressions, children)) return original;
 
         Type elementType = original.Type.GetElementType()!;
         return original.NodeType == ExpressionType.NewArrayInit
@@ -2038,14 +2134,58 @@ public abstract class ExpressionTransformer
     /// <summary>Rebuilds a <see cref="TypeBinaryExpression"/> (<c>TypeIs</c> or <c>TypeEqual</c>) from its operand.</summary>
     /// <param name="original">The node being copied.</param>
     /// <param name="children">The single operand.</param>
-    /// <returns>The rebuilt node, or <paramref name="original"/> (see <see cref="KeepsUntraversedNode"/>).</returns>
+    /// <returns>The rebuilt node, or <paramref name="original"/> (see <see cref="KeepsUntraversedNode"/>; also when the operand is the same instance).</returns>
     private static Expression CopyTypeBinaryExpression(TypeBinaryExpression original, Expression[] children)
     {
-        if (KeepsUntraversedNode(original, children, 1)) return original;
+        if (KeepsUntraversedNode(original, children, 1) || ReferenceEquals(children[0], original.Expression)) return original;
 
         return original.NodeType == ExpressionType.TypeIs
             ? Expression.TypeIs(children[0], original.TypeOperand)
             : Expression.TypeEqual(children[0], original.TypeOperand);
+    }
+
+    /// <summary>
+    /// Rebuilds a <see cref="MemberExpression"/> on a new receiver (ETC R1b), with the same <see cref="MemberExpression.Member"/>;
+    /// the same instance is returned when the receiver is unchanged. The getter is not invoked.
+    /// </summary>
+    /// <param name="original">The instance member access being copied.</param>
+    /// <param name="receiver">The receiver.</param>
+    /// <returns>The rebuilt member access, or <paramref name="original"/> when <paramref name="receiver"/> is its own receiver.</returns>
+    private static MemberExpression CopyMemberExpression(MemberExpression original, Expression receiver)
+        => ReferenceEquals(receiver, original.Expression) ? original : Expression.MakeMemberAccess(receiver, original.Member);
+
+    /// <summary>
+    /// Arity contract of <see cref="CopyExpression"/> for a <see cref="MemberExpression"/> (ETC R1b, extending C-02): an
+    /// instance member has one child (its receiver), a static member none. An empty list keeps the node; a list of the
+    /// node's arity rebuilds it on the supplied receiver; any other length is rejected.
+    /// </summary>
+    /// <param name="original">The member access being copied.</param>
+    /// <param name="children">The supplied children.</param>
+    /// <returns>The rebuilt node, or <paramref name="original"/>.</returns>
+    private static Expression CopyMemberAccess(MemberExpression original, Expression[] children)
+    {
+        int arity = original.Expression is null ? 0 : 1;
+        if (KeepsUntraversedNode(original, children, arity)) return original;
+
+        return CopyMemberExpression(original, children[0]);
+    }
+
+    /// <summary>
+    /// Whether every supplied child is the very instance <paramref name="original"/> already holds at the same position,
+    /// in which case a rebuild would only reproduce the node (the framework's <c>Update</c> methods return the same
+    /// instance in that case too). Called only once the lengths are known to match.
+    /// </summary>
+    /// <param name="original">The node's own children.</param>
+    /// <param name="children">The supplied children, of the same length.</param>
+    /// <returns><see langword="true"/> if no child changed.</returns>
+    private static bool ChildrenUnchanged(ReadOnlyCollection<Expression> original, Expression[] children)
+    {
+        for (int i = 0; i < children.Length; i++)
+        {
+            if (!ReferenceEquals(original[i], children[i])) return false;
+        }
+
+        return true;
     }
 
     /// <summary>Rebuilds a <see cref="BlockExpression"/> from its statements, preserving its variables and result type.</summary>

@@ -2443,7 +2443,10 @@ namespace Utils.Mathematics.Expressions
             // the built-in concrete ExpressionSimplifier can safely reuse that private intermediate
             // node because no external override can observe it; a subclass calling
             // base.FinalizeExpression must keep receiving the second, historically-distinct copy.
+            // ETC R1b: the newly traversed families (Member, TypeBinary, New, NewArray, Default) are already rebuilt by their
+            // Prepare* method too, so the exact type reuses that node as well.
             if (e is UnaryExpression or BinaryExpression or MethodCallExpression or ConditionalExpression
+                    or MemberExpression or TypeBinaryExpression or NewExpression or NewArrayExpression or DefaultExpression
                 && GetType() == typeof(ExpressionSimplifier))
             {
                 return e;

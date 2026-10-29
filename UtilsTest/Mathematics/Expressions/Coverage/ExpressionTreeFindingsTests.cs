@@ -181,17 +181,44 @@ public class ExpressionTreeFindingsTests
         CollectionAssert.AreEqual(creation.Members.ToArray(), copy.Members!.ToArray());
     }
 
-    /// <summary>ETC-02: for many families <c>CopyExpression</c> ignores the supplied children and returns the original node.</summary>
+    /// <summary>
+    /// ETC-02: for many families <c>CopyExpression</c> ignores the supplied children and returns the original node. ETC R1b
+    /// removed <c>MemberAccess</c> from this list: it follows the C-02 arity contract (see
+    /// <see cref="ETC02_CopyExpression_MemberAccess_FollowsArityContract"/>).
+    /// </summary>
     [TestMethod]
     public void ETC02_CopyExpression_IgnoresReplacementChildren_ForPassThroughFamilies()
     {
         Expression replacement = Expression.Constant(9.5);
-        string[] ignored = ["MemberAccess", "MemberInit", "ListInit", "Index", "Try", "Switch", "Goto", "Label", "Dynamic", "Extension", "Lambda"];
+        string[] ignored = ["MemberInit", "ListInit", "Index", "Try", "Switch", "Goto", "Label", "Dynamic", "Extension", "Lambda"];
         foreach (string name in ignored)
         {
             Expression original = ExpressionNodeCatalog.Get(name).Build();
             Assert.AreSame(original, ExposedTransformer.Copy(original, replacement, replacement, replacement), name);
         }
+    }
+
+    /// <summary>
+    /// ETC-02, resolved for <c>MemberAccess</c> by ETC R1b (C-02 extended): an empty list keeps the node, the receiver of an
+    /// instance member is replaced with the member kept, a static member has no child, and a wrong arity is rejected.
+    /// </summary>
+    [TestMethod]
+    public void ETC02_CopyExpression_MemberAccess_FollowsArityContract()
+    {
+        ParameterExpression box = Expression.Parameter(typeof(StrongBox<double>), "box");
+        MemberExpression instance = Expression.Field(box, nameof(StrongBox<double>.Value));
+        MemberExpression staticMember = Expression.Field(null, typeof(double).GetField(nameof(double.Epsilon))!);
+        Expression replacement = Expression.New(typeof(StrongBox<double>).GetConstructor([typeof(double)])!, Expression.Constant(4.5));
+
+        Assert.AreSame(instance, ExposedTransformer.Copy(instance));
+        Assert.AreSame(staticMember, ExposedTransformer.Copy(staticMember));
+        var copy = (MemberExpression)ExposedTransformer.Copy(instance, replacement);
+        Assert.AreSame(instance.Member, copy.Member);
+        Assert.AreSame(replacement, copy.Expression);
+        Assert.AreEqual(4.5, Expression.Lambda<Func<double>>(copy).Compile()());
+        Assert.AreSame(instance, ExposedTransformer.Copy(instance, box));
+        Assert.ThrowsExactly<ArgumentException>(() => ExposedTransformer.Copy(instance, box, box));
+        Assert.ThrowsExactly<ArgumentException>(() => ExposedTransformer.Copy(staticMember, box));
     }
 
     // ------------------------------------------------------------------------------------------
@@ -317,9 +344,9 @@ public class ExpressionTreeFindingsTests
     // ------------------------------------------------------------------------------------------
 
     /// <summary>
-    /// ETC-08 (critical), resolved by ETC R1a: <c>Simplify(new[] { p * 1, p * 1 })</c> returned an empty array; the array
-    /// initializer is now passed through unchanged (its elements are traversed by R1b), by the exact simplifier, a
-    /// derived simplifier and a generic transformer finalizing with <c>CopyExpression</c>.
+    /// ETC-08 (critical), resolved by ETC R1a and completed by ETC R1b: <c>Simplify(new[] { p * 1, p * 1 })</c> returned an
+    /// empty array; R1a passed the initializer through unchanged, and R1b traverses its elements, so every transformer keeps
+    /// both elements, in order, and the simplifiers turn each into <c>p</c>.
     /// </summary>
     [TestMethod]
     public void ETC08_ExactSimplifier_NewArrayInit_KeepsEveryElement()
@@ -332,8 +359,14 @@ public class ExpressionTreeFindingsTests
         CollectionAssert.AreEqual(expected, Evaluate<double[]>(array));
         foreach (Expression result in results)
         {
-            Assert.AreSame(array, result);
+            Assert.AreEqual(2, ((NewArrayExpression)result).Expressions.Count);
         }
+
+        CollectionAssert.AreEqual(expected, Evaluate<double[]>(results[0]));
+        CollectionAssert.AreEqual(expected, Evaluate<double[]>(results[1]));
+        Assert.IsTrue(((NewArrayExpression)results[0]).Expressions.All(element => ReferenceEquals(element, P)));
+        double[] rewritten = [6.0, 6.0];
+        CollectionAssert.AreEqual(rewritten, Evaluate<double[]>(results[2]), "The generic transformer reached the elements (1.0 became 2.0).");
     }
 
     /// <summary>
@@ -360,24 +393,34 @@ public class ExpressionTreeFindingsTests
 
     /// <summary>
     /// ETC-09, resolved by ETC R1a: type tests, loops, constructions with arguments and array bounds threw from
-    /// <c>Simplify</c>; they are now returned unchanged by the exact and a derived simplifier.
+    /// <c>Simplify</c>. A loop (untraversed) and a construction without argument (no child) are returned unchanged; the
+    /// families traversed since ETC R1b are rebuilt with the same node type, type and metadata, without throwing.
     /// </summary>
     [TestMethod]
     public void ETC09_ExactSimplifier_DoesNotThrowOnValidTrees()
     {
-        Expression[] trees =
+        Expression[] unchanged = [ExpressionNodeCatalog.Get("Loop").Build(), Expression.New(typeof(DateTime))];
+        Expression[] traversed =
         [
             Expression.TypeIs(Expression.Convert(P, typeof(object)), typeof(double)),
-            ExpressionNodeCatalog.Get("Loop").Build(),
             Expression.New(typeof(StrongBox<double>).GetConstructor([typeof(double)])!, P),
-            Expression.New(typeof(DateTime)),
             Expression.NewArrayBounds(typeof(double), Expression.Constant(2)),
         ];
 
-        foreach (Expression tree in trees)
+        foreach (Expression tree in unchanged)
         {
             Assert.AreSame(tree, new ExpressionSimplifier().Simplify(tree), tree.NodeType.ToString());
             Assert.AreSame(tree, new DerivedSimplifier().Simplify(tree), tree.NodeType.ToString());
+        }
+
+        foreach (Expression tree in traversed)
+        {
+            foreach (Expression result in new[] { new ExpressionSimplifier().Simplify(tree), new DerivedSimplifier().Simplify(tree) })
+            {
+                Assert.AreEqual(tree.NodeType, result.NodeType);
+                Assert.AreEqual(tree.Type, result.Type);
+                Assert.IsNotNull(Expression.Lambda(result, P).Compile(), tree.NodeType.ToString());
+            }
         }
     }
 
@@ -401,14 +444,25 @@ public class ExpressionTreeFindingsTests
     // ETC-10 to ETC-15: additional findings of the R0 audit.
     // ------------------------------------------------------------------------------------------
 
-    /// <summary>ETC-10: a member access receiver is never traversed, although the comparer treats member access as a supported family.</summary>
+    /// <summary>
+    /// ETC-10, resolved by ETC R1b: a member access receiver was never traversed, although the comparer treats member access
+    /// as a supported family. The receiver is now simplified (and rewritten by a recursive generic transformer), the member
+    /// is kept, and the getter is not invoked by the transformation.
+    /// </summary>
     [TestMethod]
-    public void ETC10_MemberAccessReceiver_IsNotTraversed()
+    public void ETC10_MemberAccessReceiver_IsTraversed()
     {
-        Expression member = ExpressionNodeCatalog.Get("MemberAccess").Build();
+        var member = (MemberExpression)ExpressionNodeCatalog.Get("MemberAccess").Build();
 
-        Assert.AreSame(member, new ExpressionSimplifier().Simplify(member));
-        Assert.AreSame(member, new RecursiveTransformer().Transform(member));
+        var simplified = (MemberExpression)new ExpressionSimplifier().Simplify(member);
+        var rewritten = (MemberExpression)new RecursiveTransformer().Transform(member);
+
+        Assert.AreSame(member.Member, simplified.Member);
+        Assert.AreSame(member.Member, rewritten.Member);
+        Assert.AreNotSame(member.Expression, simplified.Expression);
+        double Run(Expression body) => Expression.Lambda<Func<double, double>>(body, ExpressionNodeCatalog.Free).Compile()(3.0);
+        Assert.AreEqual(Run(member), Run(simplified));
+        Assert.AreNotSame(member, rewritten);
     }
 
     /// <summary>

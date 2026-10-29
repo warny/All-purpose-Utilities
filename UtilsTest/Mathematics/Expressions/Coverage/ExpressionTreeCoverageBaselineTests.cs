@@ -9,7 +9,9 @@ namespace UtilsTest.Mathematics.Expressions.Coverage;
 /// ETC R0: executable baseline of the expression-tree coverage matrix. For every catalog sample, every
 /// <see cref="ExpressionContract"/> is run and its classified outcome is compared with the row recorded here, which
 /// is the observed behavior of <c>master</c> at <c>b5c05dc3</c>, updated by ETC R1a for the rows of ETC-08, ETC-09 and
-/// ETC-13 (<c>TypeIs</c>, <c>TypeEqual</c>, <c>New*</c>, <c>NewArray*</c>, <c>Block*</c>, <c>Loop</c>, <c>Throw.Rethrow</c>).
+/// ETC-13 (<c>TypeIs</c>, <c>TypeEqual</c>, <c>New*</c>, <c>NewArray*</c>, <c>Block*</c>, <c>Loop</c>, <c>Throw.Rethrow</c>),
+/// and by ETC R1b (rows marked <c>// ETC R1b</c>) for the traversal of member access, type tests, creations and array
+/// creations (ETC-01/ETC-10, C-03) and the faithful unary and lambda reconstruction (ETC-04/ETC-05, C-01).
 /// </summary>
 /// <remarks>
 /// <para>
@@ -94,15 +96,15 @@ public class ExpressionTreeCoverageBaselineTests
         ["Parameter"] = "Same | Same | Same | Rewrites | Equal | Consistent",
         ["Default"] = "Same | Same | Same | Same | Unequal | Consistent",
         ["Call"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent",
-        ["MemberAccess"] = "Opaque | Opaque | Opaque | Opaque | Equal | Consistent",
+        ["MemberAccess"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R1b
         ["Invoke"] = "Rewrites | Rewrites | Rewrites | Partial | Equal | Consistent",
         ["Lambda"] = "Rewrites | Rewrites | Rewrites | Opaque | Equal | Consistent",
         ["Conditional"] = "Rewrites | Rewrites | Rewrites | Rewrites | Unequal | Consistent",
-        ["TypeIs"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
-        ["TypeEqual"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
-        ["New"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
-        ["NewArrayInit"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
-        ["NewArrayBounds"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
+        ["TypeIs"] = "Rewrites | Rewrites | Rewrites | Rewrites | Unequal | Consistent", // ETC R1b
+        ["TypeEqual"] = "Rewrites | Rewrites | Rewrites | Rewrites | Unequal | Consistent", // ETC R1b
+        ["New"] = "Rewrites | Rewrites | Rewrites | Rewrites | Unequal | Consistent", // ETC R1b
+        ["NewArrayInit"] = "Rewrites | Rewrites | Rewrites | Rewrites | Unequal | Consistent", // ETC R1b
+        ["NewArrayBounds"] = "Rewrites | Rewrites | Rewrites | Rewrites | Unequal | Consistent", // ETC R1b
         ["MemberInit"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
         ["ListInit"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
         ["Index"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
