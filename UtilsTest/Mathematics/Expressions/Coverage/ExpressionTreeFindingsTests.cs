@@ -543,17 +543,23 @@ public class ExpressionTreeFindingsTests
     }
 
     /// <summary>
-    /// ETC-14: the unsupported-node canonical-order key ties every unsupported term, so equality support added by a
-    /// later round must come with canonical keys, or equal terms reached in different orders will not converge.
+    /// ETC-14, resolved for the scalar families by ETC R1c: the unsupported-node canonical-order key tied every unsupported
+    /// term; conditionals and defaults now have their own keys, which order them antisymmetrically, while two still
+    /// unsupported families (a block and a loop, R2) keep tying, conservatively.
     /// </summary>
     [TestMethod]
-    public void ETC14_CanonicalOrder_TiesEveryUnsupportedNode()
+    public void ETC14_CanonicalOrder_KeysTheScalarFamilies()
     {
         Expression first = ExpressionNodeCatalog.Get("Conditional").Build();
         Expression second = Expression.Default(typeof(double));
+        Expression block = ExpressionNodeCatalog.Get("Block").Build();
+        Expression loop = ExpressionNodeCatalog.Get("Loop").Build();
 
-        Assert.AreEqual(0, ExpressionCanonicalOrder.Compare(first, second, []));
-        Assert.AreEqual(0, ExpressionCanonicalOrder.Compare(second, first, []));
+        int forward = ExpressionCanonicalOrder.Compare(first, second, []);
+        Assert.AreNotEqual(0, forward);
+        Assert.AreEqual(-Math.Sign(forward), Math.Sign(ExpressionCanonicalOrder.Compare(second, first, [])));
+        Assert.AreEqual(0, ExpressionCanonicalOrder.Compare(block, loop, []));
+        Assert.AreEqual(0, ExpressionCanonicalOrder.Compare(loop, block, []));
     }
 
     /// <summary>

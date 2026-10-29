@@ -102,8 +102,26 @@ internal static class ExpressionCanonicalOrder
     /// <summary>Fixed rank for <see cref="LambdaKey"/>.</summary>
     private const int RankLambda = 6;
 
+    /// <summary>Fixed rank for <see cref="ConditionalKey"/> (ETC R1c).</summary>
+    private const int RankConditional = 7;
+
+    /// <summary>Fixed rank for <see cref="InvocationKey"/> (ETC R1c).</summary>
+    private const int RankInvocation = 8;
+
+    /// <summary>Fixed rank for <see cref="TypeBinaryKey"/> (ETC R1c).</summary>
+    private const int RankTypeBinary = 9;
+
+    /// <summary>Fixed rank for <see cref="DefaultKey"/> (ETC R1c).</summary>
+    private const int RankDefault = 10;
+
+    /// <summary>Fixed rank for <see cref="NewKey"/> (ETC R1c).</summary>
+    private const int RankNew = 11;
+
+    /// <summary>Fixed rank for <see cref="NewArrayKey"/> (ETC R1c).</summary>
+    private const int RankNewArray = 12;
+
     /// <summary>Fixed rank for <see cref="UnsupportedKey"/>: sorts after every real supported node kind.</summary>
-    private const int RankUnsupported = 7;
+    private const int RankUnsupported = 13;
 
     /// <summary>
     /// Builds the complete structural canonical-order key for <paramref name="expression"/>. The generic,
@@ -259,8 +277,41 @@ internal static class ExpressionCanonicalOrder
             MethodCallExpression mce => BuildMethodCall(mce, ref scopes),
             MemberExpression me => BuildMember(me, ref scopes),
             LambdaExpression le => BuildLambda(le, ref scopes),
+            ConditionalExpression ce => new ConditionalKey(ce.Type, Build(ce.Test, ref scopes), Build(ce.IfTrue, ref scopes), Build(ce.IfFalse, ref scopes)),
+            InvocationExpression ie => BuildInvocation(ie, ref scopes),
+            TypeBinaryExpression tbe => new TypeBinaryKey(tbe.NodeType, tbe.TypeOperand, Build(tbe.Expression, ref scopes)),
+            DefaultExpression de => new DefaultKey(de.Type),
+            NewExpression ne => new NewKey(ne.Type, ne.Constructor, ne.Members, BuildChildren(ne.Arguments, ref scopes)),
+            NewArrayExpression nae => new NewArrayKey(nae.NodeType, nae.Type, BuildChildren(nae.Expressions, ref scopes)),
             _ => UnsupportedKey.Instance,
         };
+    }
+
+    /// <summary>Builds the key of an <see cref="InvocationExpression"/>: the invoked expression's key, then each argument's key in order (ETC R1c).</summary>
+    /// <param name="ie">The invocation to key.</param>
+    /// <param name="scopes">The active scope-lookup state.</param>
+    /// <returns>The resulting <see cref="InvocationKey"/>.</returns>
+    private static KeyNode BuildInvocation(InvocationExpression ie, ref ScopeState scopes)
+    {
+        KeyNode target = Build(ie.Expression, ref scopes);
+        return new InvocationKey(ie.Type, target, BuildChildren(ie.Arguments, ref scopes));
+    }
+
+    /// <summary>Builds the keys of a child list, in order, through <see cref="Build"/>.</summary>
+    /// <param name="children">The children.</param>
+    /// <param name="scopes">The active scope-lookup state.</param>
+    /// <returns>One key per child, in order.</returns>
+    private static KeyNode[] BuildChildren(System.Collections.ObjectModel.ReadOnlyCollection<Expression> children, ref ScopeState scopes)
+    {
+        if (children.Count == 0) return Array.Empty<KeyNode>();
+
+        var keys = new KeyNode[children.Count];
+        for (int i = 0; i < keys.Length; i++)
+        {
+            keys[i] = Build(children[i], ref scopes);
+        }
+
+        return keys;
     }
 
     /// <summary>
@@ -1332,6 +1383,242 @@ internal static class ExpressionCanonicalOrder
                 if (c != 0) return c;
             }
             return _body.CompareTo(o._body);
+        }
+    }
+
+    /// <summary>
+    /// Deterministically compares two optional constructors of <see cref="NewExpression"/> (ETC R1c): an absent constructor
+    /// (value-type default creation) first, then declaring type, parameter count and parameter types, then the shared
+    /// metadata tie-break. Never hash- or identity-based beyond the same-instance short-circuit.
+    /// </summary>
+    /// <param name="a">The first constructor, or <see langword="null"/>.</param>
+    /// <param name="b">The second constructor, or <see langword="null"/>.</param>
+    /// <returns>A negative value if <paramref name="a"/> sorts first, zero if tied, positive otherwise.</returns>
+    internal static int CompareConstructor(ConstructorInfo? a, ConstructorInfo? b)
+    {
+        if (a == b) return 0;
+        if (a is null || b is null) return a is null ? -1 : 1;
+
+        int c = CompareType(a.DeclaringType, b.DeclaringType);
+        if (c != 0) return c;
+        ParameterInfo[] aParameters = a.GetParameters();
+        ParameterInfo[] bParameters = b.GetParameters();
+        c = aParameters.Length.CompareTo(bParameters.Length);
+        if (c != 0) return c;
+        for (int i = 0; i < aParameters.Length; i++)
+        {
+            c = CompareType(aParameters[i].ParameterType, bParameters[i].ParameterType);
+            if (c != 0) return c;
+        }
+
+        return CompareFinalMemberTiebreak(a, b);
+    }
+
+    /// <summary>Lexicographically compares two key lists, shorter list first on a common prefix (ETC R1c).</summary>
+    /// <param name="a">The first list.</param>
+    /// <param name="b">The second list.</param>
+    /// <returns>A negative value if <paramref name="a"/> sorts first, zero if tied, positive otherwise.</returns>
+    private static int CompareKeys(KeyNode[] a, KeyNode[] b) => EnumerableComparer<KeyNode>.Default.Compare(a, b);
+
+    /// <summary>Key for a <see cref="ConditionalExpression"/> (ETC R1c): result type, then the test and branch keys, in order.</summary>
+    private sealed class ConditionalKey : KeyNode
+    {
+        private readonly Type _type;
+        private readonly KeyNode _test;
+        private readonly KeyNode _ifTrue;
+        private readonly KeyNode _ifFalse;
+
+        /// <summary>Initializes a new <see cref="ConditionalKey"/>.</summary>
+        /// <param name="type">The result type.</param>
+        /// <param name="test">The test's key.</param>
+        /// <param name="ifTrue">The true branch's key.</param>
+        /// <param name="ifFalse">The false branch's key.</param>
+        public ConditionalKey(Type type, KeyNode test, KeyNode ifTrue, KeyNode ifFalse)
+        {
+            _type = type;
+            _test = test;
+            _ifTrue = ifTrue;
+            _ifFalse = ifFalse;
+        }
+
+        /// <inheritdoc/>
+        protected override int Rank => RankConditional;
+
+        /// <inheritdoc/>
+        protected override int CompareSameRank(KeyNode other)
+        {
+            var o = (ConditionalKey)other;
+            int c = CompareType(_type, o._type);
+            if (c != 0) return c;
+            c = _test.CompareTo(o._test);
+            if (c != 0) return c;
+            c = _ifTrue.CompareTo(o._ifTrue);
+            return c != 0 ? c : _ifFalse.CompareTo(o._ifFalse);
+        }
+    }
+
+    /// <summary>Key for an <see cref="InvocationExpression"/> (ETC R1c): result type, the invoked expression's key, then the argument keys in order.</summary>
+    private sealed class InvocationKey : KeyNode
+    {
+        private readonly Type _type;
+        private readonly KeyNode _target;
+        private readonly KeyNode[] _arguments;
+
+        /// <summary>Initializes a new <see cref="InvocationKey"/>.</summary>
+        /// <param name="type">The result type.</param>
+        /// <param name="target">The invoked expression's key.</param>
+        /// <param name="arguments">The argument keys, in order.</param>
+        public InvocationKey(Type type, KeyNode target, KeyNode[] arguments)
+        {
+            _type = type;
+            _target = target;
+            _arguments = arguments;
+        }
+
+        /// <inheritdoc/>
+        protected override int Rank => RankInvocation;
+
+        /// <inheritdoc/>
+        protected override int CompareSameRank(KeyNode other)
+        {
+            var o = (InvocationKey)other;
+            int c = CompareType(_type, o._type);
+            if (c != 0) return c;
+            c = _target.CompareTo(o._target);
+            return c != 0 ? c : CompareKeys(_arguments, o._arguments);
+        }
+    }
+
+    /// <summary>Key for a <see cref="TypeBinaryExpression"/> (ETC R1c): node type (<c>TypeIs</c>/<c>TypeEqual</c>), type operand, then the tested expression's key.</summary>
+    private sealed class TypeBinaryKey : KeyNode
+    {
+        private readonly ExpressionType _nodeType;
+        private readonly Type _typeOperand;
+        private readonly KeyNode _operand;
+
+        /// <summary>Initializes a new <see cref="TypeBinaryKey"/>.</summary>
+        /// <param name="nodeType">The node type.</param>
+        /// <param name="typeOperand">The tested type.</param>
+        /// <param name="operand">The tested expression's key.</param>
+        public TypeBinaryKey(ExpressionType nodeType, Type typeOperand, KeyNode operand)
+        {
+            _nodeType = nodeType;
+            _typeOperand = typeOperand;
+            _operand = operand;
+        }
+
+        /// <inheritdoc/>
+        protected override int Rank => RankTypeBinary;
+
+        /// <inheritdoc/>
+        protected override int CompareSameRank(KeyNode other)
+        {
+            var o = (TypeBinaryKey)other;
+            int c = ((int)_nodeType).CompareTo((int)o._nodeType);
+            if (c != 0) return c;
+            c = CompareType(_typeOperand, o._typeOperand);
+            return c != 0 ? c : _operand.CompareTo(o._operand);
+        }
+    }
+
+    /// <summary>Key for a <see cref="DefaultExpression"/> (ETC R1c): its type.</summary>
+    private sealed class DefaultKey : KeyNode
+    {
+        private readonly Type _type;
+
+        /// <summary>Initializes a new <see cref="DefaultKey"/>.</summary>
+        /// <param name="type">The default value's type.</param>
+        public DefaultKey(Type type) => _type = type;
+
+        /// <inheritdoc/>
+        protected override int Rank => RankDefault;
+
+        /// <inheritdoc/>
+        protected override int CompareSameRank(KeyNode other) => CompareType(_type, ((DefaultKey)other)._type);
+    }
+
+    /// <summary>Key for a <see cref="NewExpression"/> (ETC R1c): created type, constructor, members in order, then the argument keys in order.</summary>
+    private sealed class NewKey : KeyNode
+    {
+        private readonly Type _type;
+        private readonly ConstructorInfo? _constructor;
+        private readonly IReadOnlyList<MemberInfo>? _members;
+        private readonly KeyNode[] _arguments;
+
+        /// <summary>Initializes a new <see cref="NewKey"/>.</summary>
+        /// <param name="type">The created type.</param>
+        /// <param name="constructor">The constructor, or <see langword="null"/> for a value-type default creation.</param>
+        /// <param name="members">The members associated with the arguments, or <see langword="null"/>.</param>
+        /// <param name="arguments">The argument keys, in order.</param>
+        public NewKey(Type type, ConstructorInfo? constructor, IReadOnlyList<MemberInfo>? members, KeyNode[] arguments)
+        {
+            _type = type;
+            _constructor = constructor;
+            _members = members;
+            _arguments = arguments;
+        }
+
+        /// <inheritdoc/>
+        protected override int Rank => RankNew;
+
+        /// <inheritdoc/>
+        protected override int CompareSameRank(KeyNode other)
+        {
+            var o = (NewKey)other;
+            int c = CompareType(_type, o._type);
+            if (c != 0) return c;
+            c = CompareConstructor(_constructor, o._constructor);
+            if (c != 0) return c;
+            c = CompareMemberLists(_members, o._members);
+            return c != 0 ? c : CompareKeys(_arguments, o._arguments);
+        }
+
+        /// <summary>Compares two optional member lists: absent first, then by count, then member by member.</summary>
+        /// <param name="a">The first list, or <see langword="null"/>.</param>
+        /// <param name="b">The second list, or <see langword="null"/>.</param>
+        /// <returns>A negative value if <paramref name="a"/> sorts first, zero if tied, positive otherwise.</returns>
+        private static int CompareMemberLists(IReadOnlyList<MemberInfo>? a, IReadOnlyList<MemberInfo>? b)
+        {
+            if (a is null || b is null) return a is null ? (b is null ? 0 : -1) : 1;
+            int c = a.Count.CompareTo(b.Count);
+            for (int i = 0; c == 0 && i < a.Count; i++)
+            {
+                c = CompareMember(a[i], b[i]);
+            }
+
+            return c;
+        }
+    }
+
+    /// <summary>Key for a <see cref="NewArrayExpression"/> (ETC R1c): node type (<c>NewArrayInit</c>/<c>NewArrayBounds</c>), array type, then the element or bound keys in order.</summary>
+    private sealed class NewArrayKey : KeyNode
+    {
+        private readonly ExpressionType _nodeType;
+        private readonly Type _type;
+        private readonly KeyNode[] _children;
+
+        /// <summary>Initializes a new <see cref="NewArrayKey"/>.</summary>
+        /// <param name="nodeType">The node type.</param>
+        /// <param name="type">The array type.</param>
+        /// <param name="children">The element or bound keys, in order.</param>
+        public NewArrayKey(ExpressionType nodeType, Type type, KeyNode[] children)
+        {
+            _nodeType = nodeType;
+            _type = type;
+            _children = children;
+        }
+
+        /// <inheritdoc/>
+        protected override int Rank => RankNewArray;
+
+        /// <inheritdoc/>
+        protected override int CompareSameRank(KeyNode other)
+        {
+            var o = (NewArrayKey)other;
+            int c = ((int)_nodeType).CompareTo((int)o._nodeType);
+            if (c != 0) return c;
+            c = CompareType(_type, o._type);
+            return c != 0 ? c : CompareKeys(_children, o._children);
         }
     }
 }
