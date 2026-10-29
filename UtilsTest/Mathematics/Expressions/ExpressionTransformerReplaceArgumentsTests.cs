@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -183,7 +185,7 @@ public class ExpressionTransformerReplaceArgumentsTests
     /// <summary>
     /// <see cref="MemberExpression"/> had no dedicated branch in <c>ReplaceArguments</c>, so its receiver was left
     /// untouched (ETC-10/ETC-03). Since ETC R1b the receiver is substituted and the member kept; a family that still has no
-    /// branch (here a block, an R2 family) is returned completely untouched.
+    /// branch (here a list initializer, an R3 family; a block until ETC R2) is returned completely untouched.
     /// </summary>
     [TestMethod]
     public void ReplaceArguments_MemberExpression_SubstitutesReceiverAndKeepsMember()
@@ -191,7 +193,7 @@ public class ExpressionTransformerReplaceArgumentsTests
         var transformer = new ExposedTransformer();
         ParameterExpression p = Expression.Parameter(typeof(string), "p");
         MemberExpression member = Expression.Property(p, nameof(string.Length));
-        BlockExpression block = Expression.Block(member);
+        ListInitExpression block = Expression.ListInit(Expression.New(typeof(List<int>)), member);
 
         var result = (MemberExpression)transformer.ExposeReplaceArguments(member, [p], [Expression.Constant("hello")]);
         Expression untouched = transformer.ExposeReplaceArguments(block, [p], [Expression.Constant("hello")]);
@@ -203,25 +205,29 @@ public class ExpressionTransformerReplaceArgumentsTests
     }
 
     // ------------------------------------------------------------------------------------------
-    // H: nested LambdaExpression — not traversed either.
+    // H: nested LambdaExpression — free occurrences substituted since ETC R2.
     // ------------------------------------------------------------------------------------------
 
     /// <summary>
-    /// <see cref="LambdaExpression"/> has no dedicated branch, so a lambda whose body references the
-    /// outer parameter as a free variable is returned completely untouched — no lexical-scope-aware
-    /// substitution is attempted by this member.
+    /// <see cref="LambdaExpression"/> had no dedicated branch, so a lambda whose body references the outer parameter as a
+    /// free variable was returned completely untouched (ETC-03). Since ETC R2 the substitution is lexical-scope-aware: the
+    /// free occurrence is replaced, the lambda's own parameter and its delegate type are kept.
     /// </summary>
     [TestMethod]
-    public void ReplaceArguments_NestedLambda_IsNotTraversed()
+    public void ReplaceArguments_NestedLambda_SubstitutesFreeOccurrences()
     {
         var transformer = new ExposedTransformer();
         ParameterExpression p = Expression.Parameter(typeof(double), "p");
         ParameterExpression q = Expression.Parameter(typeof(double), "q");
         LambdaExpression lambda = Expression.Lambda(Expression.Add(p, q), q);
 
-        Expression result = transformer.ExposeReplaceArguments(lambda, [p], [Expression.Constant(5.0)]);
+        var result = (LambdaExpression)transformer.ExposeReplaceArguments(lambda, [p], [Expression.Constant(5.0)]);
 
-        Assert.AreSame(lambda, result);
+        Assert.AreEqual(lambda.Type, result.Type);
+        Assert.AreSame(q, result.Parameters.Single());
+        var body = (BinaryExpression)result.Body;
+        Assert.AreEqual(5.0, ((ConstantExpression)body.Left).Value);
+        Assert.AreSame(q, body.Right);
     }
 
     // ------------------------------------------------------------------------------------------

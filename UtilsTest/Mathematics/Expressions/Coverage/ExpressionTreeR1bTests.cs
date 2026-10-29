@@ -580,7 +580,7 @@ public class ExpressionTreeR1bTests
         Assert.AreEqual(5, Expression.Lambda<Func<double[,]>>(array).Compile()().GetLength(0));
 
         BlockExpression block = Expression.Block(Expression.Field(Expression.New(typeof(StrongBox<double>).GetConstructor([typeof(double)])!, P), nameof(StrongBox<double>.Value)));
-        Assert.AreSame(block, transformer.Replace(block, P, five), "Binders and blocks stay for R2.");
+        Assert.AreEqual(5.0, Expression.Lambda<Func<double>>(transformer.Replace(block, P, five)).Compile()(), "Blocks are entered since ETC R2.");
     }
 
     // ------------------------------------------------------------------------------------------

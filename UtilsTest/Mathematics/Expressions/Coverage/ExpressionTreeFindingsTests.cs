@@ -228,18 +228,21 @@ public class ExpressionTreeFindingsTests
     // ------------------------------------------------------------------------------------------
 
     /// <summary>
-    /// ETC-03: substitution does not descend into a nested lambda, so a free occurrence of the replaced parameter
-    /// captured by the lambda survives. R2 substitutes free occurrences through binders that do not shadow it.
+    /// ETC-03, resolved by ETC R2: substitution did not descend into a nested lambda, so a free occurrence of the replaced
+    /// parameter captured by the lambda survived. It now substitutes free occurrences through binders that do not shadow it
+    /// (the shadowing and capture cases are in <c>ExpressionTreeR2SubstitutionTests</c>).
     /// </summary>
     [TestMethod]
-    public void ETC03_Substitution_DoesNotDescendIntoNestedLambda()
+    public void ETC03_Substitution_DescendsIntoNestedLambda()
     {
         Expression<Func<double>> nested = Expression.Lambda<Func<double>>(P);
 
         Expression result = new ExposedTransformer().Replace(Expression.Invoke(nested), P, Expression.Constant(5.0));
 
         var invocation = (InvocationExpression)result;
-        Assert.AreSame(nested, invocation.Expression);
+        var lambda = (LambdaExpression)invocation.Expression;
+        Assert.AreEqual(nested.Type, lambda.Type);
+        Assert.AreEqual(5.0, ((ConstantExpression)lambda.Body).Value);
     }
 
     /// <summary>
@@ -258,13 +261,19 @@ public class ExpressionTreeFindingsTests
         Assert.IsInstanceOfType<ConstantExpression>(((MethodCallExpression)result.Operand).Arguments[0]);
     }
 
-    /// <summary>ETC-03: substitution ignores block variables and every other non-scalar family; R2 defines the binding model first.</summary>
+    /// <summary>
+    /// ETC-03, resolved by ETC R2: substitution ignored blocks and every other non-scalar family; it now enters a block (its
+    /// variables hide a redeclared parameter) and keeps its result type.
+    /// </summary>
     [TestMethod]
-    public void ETC03_Substitution_LeavesBlockUntouched()
+    public void ETC03_Substitution_EntersBlock()
     {
         BlockExpression block = Expression.Block(Expression.Add(P, Expression.Constant(0.5)));
 
-        Assert.AreSame(block, new ExposedTransformer().Replace(block, P, Expression.Constant(5.0)));
+        var result = (BlockExpression)new ExposedTransformer().Replace(block, P, Expression.Constant(5.0));
+
+        Assert.AreEqual(block.Type, result.Type);
+        Assert.AreEqual(5.5, Expression.Lambda<Func<double>>(result).Compile()());
     }
 
     // ------------------------------------------------------------------------------------------

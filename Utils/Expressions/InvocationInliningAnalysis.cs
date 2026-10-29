@@ -44,6 +44,18 @@ internal enum InvocationInliningKind
 /// node with metadata no longer blocks inlining; R1a refused it because the historical factories dropped them (ETC-04).
 /// A property read, like a call, and a constructor call may run user code.
 /// </para>
+/// <para>
+/// ETC R2: the substitution is capture-avoiding and enters nested lambdas, blocks, catch handlers and switches, so these
+/// are scanned too, in a conservative evaluation order: a nested binder that redeclares an analysed parameter hides it in
+/// its scope; a read of a parameter whose argument is a variable is refused inside a nested lambda (the closure would read
+/// the variable later instead of the value copied at the invocation); a switch comparison method counts as user code after
+/// each test value; a write to a variable declared inside the body (a local) is not an effect on an argument variable,
+/// which is free in the invoked lambda (a capturing local is renamed by the substitution). The eligibility of the arguments is unchanged (constants, defaults and parameter reads only): an
+/// argument with observable effects keeps the invocation even though the substitution could now reach its uses. Loops,
+/// jumps and labels stay barriers (a label target defined in an inlined body could be defined twice when the same lambda is
+/// inlined at two places, and targets are never cloned), and so do runtime variables (the inlined variable could be
+/// written through the box) and quoted expressions (never entered, C-05).
+/// </para>
 /// </remarks>
 internal sealed class InvocationInliningAnalysis
 {
@@ -61,6 +73,22 @@ internal sealed class InvocationInliningAnalysis
 
     /// <summary>Lazily created finder for parameter references inside substitution barriers.</summary>
     private ReferenceFinder? finder;
+
+    /// <summary>
+    /// For each analysed parameter, how many enclosing nested binders (lambda, block, catch) redeclare it (ETC R2); a
+    /// reference inside such a binder is bound there, not to the analysed parameter. Lazily created.
+    /// </summary>
+    private int[]? hidden;
+
+    /// <summary>The number of nested lambdas enclosing the node being scanned (ETC R2).</summary>
+    private int lambdaDepth;
+
+    /// <summary>
+    /// The variables declared by the nested binders enclosing the node being scanned, with their nesting count (ETC R2). A
+    /// write to such a local cannot change an argument variable: the argument is free in the invoked lambda, and the
+    /// substitution renames a local that would capture it. Lazily created.
+    /// </summary>
+    private Dictionary<ParameterExpression, int>? locals;
 
     /// <summary>Initializes an analysis of one invocation.</summary>
     /// <param name="parameters">The parameters of the invoked lambda.</param>
@@ -126,6 +154,8 @@ internal sealed class InvocationInliningAnalysis
             null => true,
             ParameterExpression parameter => ScanReference(parameter),
             ConstantExpression or DefaultExpression => true,
+            // A quoted expression is never entered by the substitution (C-05 pending): a reference inside it would stay unbound.
+            UnaryExpression { NodeType: ExpressionType.Quote } => ScanBarrier(e),
             UnaryExpression unary => ScanUnary(unary),
             BinaryExpression binary => ScanBinary(binary),
             MethodCallExpression call => ScanCall(call),
@@ -135,8 +165,131 @@ internal sealed class InvocationInliningAnalysis
             TypeBinaryExpression typeBinary => Scan(typeBinary.Expression),
             NewExpression creation => ScanNew(creation),
             NewArrayExpression array => ScanEach(array.Expressions),
+
+            // ETC R2: binders traversed by the capture-avoiding substitution. Control-flow destinations (loop, goto,
+            // label), runtime variables and quoted expressions stay substitution barriers (see the type's remarks).
+            LambdaExpression lambda => ScanNestedLambda(lambda),
+            BlockExpression block => ScanBlock(block),
+            TryExpression @try => ScanTry(@try),
+            SwitchExpression @switch => ScanSwitch(@switch),
+            DebugInfoExpression => true,
             _ => ScanBarrier(e),
         };
+    }
+
+    /// <summary>
+    /// Scans a nested lambda (ETC R2). Its parameters hide the analysed parameters they redeclare. Its body runs later, when
+    /// the delegate is invoked, so a read of an analysed parameter whose argument is a variable is refused there: the inlined
+    /// closure would read the variable when invoked instead of the value copied at the invocation.
+    /// </summary>
+    /// <param name="lambda">The node.</param>
+    /// <returns><see langword="false"/> if inlining is unsafe.</returns>
+    private bool ScanNestedLambda(LambdaExpression lambda)
+    {
+        Hide(lambda.Parameters, 1);
+        lambdaDepth++;
+        try
+        {
+            return Scan(lambda.Body);
+        }
+        finally
+        {
+            lambdaDepth--;
+            Hide(lambda.Parameters, -1);
+        }
+    }
+
+    /// <summary>Scans a block (ETC R2): its variables hide the analysed parameters they redeclare; statements in order.</summary>
+    /// <param name="block">The node.</param>
+    /// <returns><see langword="false"/> if inlining is unsafe.</returns>
+    private bool ScanBlock(BlockExpression block)
+    {
+        Hide(block.Variables, 1);
+        try
+        {
+            return ScanEach(block.Expressions);
+        }
+        finally
+        {
+            Hide(block.Variables, -1);
+        }
+    }
+
+    /// <summary>
+    /// Scans a try expression (ETC R2) in a conservative evaluation order: the protected body, then each handler (its
+    /// variable hides a redeclared parameter in its filter and body), then the finally and the fault. A handler, a finally or
+    /// a fault may run after any part of the body, and the scan order puts every effect of the body before them.
+    /// </summary>
+    /// <param name="node">The node.</param>
+    /// <returns><see langword="false"/> if inlining is unsafe.</returns>
+    private bool ScanTry(TryExpression node)
+    {
+        if (!Scan(node.Body)) return false;
+
+        foreach (CatchBlock handler in node.Handlers)
+        {
+            ExpressionResourceBudget.ConsumeStructuralVisit();
+            ParameterExpression[] variable = handler.Variable is null ? [] : [handler.Variable];
+            Hide(variable, 1);
+            try
+            {
+                if (!Scan(handler.Filter) || !Scan(handler.Body)) return false;
+            }
+            finally
+            {
+                Hide(variable, -1);
+            }
+        }
+
+        return Scan(node.Finally) && Scan(node.Fault);
+    }
+
+    /// <summary>
+    /// Scans a switch (ETC R2): the value, then every test value in order (a comparison method, which may run user code, is
+    /// called after each test), then every case body and the default body.
+    /// </summary>
+    /// <param name="node">The node.</param>
+    /// <returns><see langword="false"/> if inlining is unsafe.</returns>
+    private bool ScanSwitch(SwitchExpression node)
+    {
+        if (!Scan(node.SwitchValue)) return false;
+
+        foreach (SwitchCase @case in node.Cases)
+        {
+            ExpressionResourceBudget.ConsumeStructuralVisit();
+            foreach (Expression test in @case.TestValues)
+            {
+                if (!Scan(test)) return false;
+                if (node.Comparison is not null) effectSeen = true;
+            }
+        }
+
+        foreach (SwitchCase @case in node.Cases)
+        {
+            if (!Scan(@case.Body)) return false;
+        }
+
+        return Scan(node.DefaultBody);
+    }
+
+    /// <summary>Records (or forgets) the declarations of a nested binder as locals, hiding the analysed parameters they redeclare.</summary>
+    /// <param name="declarations">The binder's declarations.</param>
+    /// <param name="delta"><c>1</c> when entering the binder's scope, <c>-1</c> when leaving it.</param>
+    private void Hide(IReadOnlyList<ParameterExpression> declarations, int delta)
+    {
+        foreach (ParameterExpression declaration in declarations)
+        {
+            locals ??= new Dictionary<ParameterExpression, int>(ReferenceEqualityComparer.Instance);
+            int count = (locals.TryGetValue(declaration, out int current) ? current : 0) + delta;
+            if (count == 0) locals.Remove(declaration);
+            else locals[declaration] = count;
+
+            int index = RawIndexOf(declaration);
+            if (index < 0) continue;
+
+            hidden ??= new int[parameters.Count];
+            hidden[index] += delta;
+        }
     }
 
     /// <summary>Records a read of a parameter.</summary>
@@ -148,6 +301,8 @@ internal sealed class InvocationInliningAnalysis
         if (index < 0) return true;
 
         referenced = true;
+        if (arguments[index] is ParameterExpression && lambdaDepth > 0) return false;
+
         return !(effectSeen && arguments[index] is ParameterExpression);
     }
 
@@ -172,7 +327,7 @@ internal sealed class InvocationInliningAnalysis
 
         if (!Scan(unary.Operand)) return false;
 
-        if (assigns || unary.Method is not null || unary.NodeType == ExpressionType.Throw)
+        if ((assigns && !IsLocal(unary.Operand)) || unary.Method is not null || unary.NodeType == ExpressionType.Throw)
         {
             effectSeen = true;
         }
@@ -199,7 +354,7 @@ internal sealed class InvocationInliningAnalysis
 
         if (!Scan(binary.Left) || !Scan(binary.Right)) return false;
 
-        if (assigns || binary.Method is not null || binary.Conversion is not null)
+        if ((assigns && !IsLocal(binary.Left)) || binary.Method is not null || binary.Conversion is not null)
         {
             effectSeen = true;
         }
@@ -324,15 +479,29 @@ internal sealed class InvocationInliningAnalysis
         return finder.Find(e);
     }
 
+    /// <summary>Tests whether <paramref name="e"/> is a variable declared by a nested binder enclosing the scanned node (ETC R2).</summary>
+    /// <param name="e">An assignment target.</param>
+    /// <returns><see langword="true"/> for a local of the inlined body.</returns>
+    private bool IsLocal(Expression e) => e is ParameterExpression variable && locals is not null && locals.ContainsKey(variable);
+
     /// <summary>Tests whether <paramref name="e"/> is one of the invoked lambda's parameters.</summary>
     /// <param name="e">The expression.</param>
     /// <returns><see langword="true"/> if it is.</returns>
     private bool IsOwnParameter(Expression e) => e is ParameterExpression parameter && IndexOf(parameter) >= 0;
 
-    /// <summary>Finds the position of <paramref name="parameter"/> among the lambda's parameters, by reference.</summary>
+    /// <summary>Finds the position of <paramref name="parameter"/> among the lambda's parameters, by reference; a parameter hidden by a nested binder is not found (ETC R2).</summary>
     /// <param name="parameter">The parameter.</param>
     /// <returns>Its index, or -1.</returns>
     private int IndexOf(ParameterExpression parameter)
+    {
+        int index = RawIndexOf(parameter);
+        return index >= 0 && hidden is not null && hidden[index] > 0 ? -1 : index;
+    }
+
+    /// <summary>Finds the position of <paramref name="parameter"/> among the lambda's parameters, by reference, ignoring hiding.</summary>
+    /// <param name="parameter">The parameter.</param>
+    /// <returns>Its index, or -1.</returns>
+    private int RawIndexOf(ParameterExpression parameter)
     {
         for (int i = 0; i < parameters.Count; i++)
         {
