@@ -207,6 +207,45 @@ trees, which were always unequal unless they were the same instance, can now be 
 <code>Dictionary&lt;Expression, …&gt;</code>/<code>HashSet&lt;Expression&gt;</code>. Structural equality does not make two allocations or two calls
 interchangeable: the simplifier still keeps both.</li>
 </ul>
+<h2 id="expression-engine-binding-scopes-control-flow-and-capture-avoiding-substitution-etc-r2">Expression engine: binding scopes, control flow and capture-avoiding substitution (ETC R2)</h2>
+<p>Behavior changes of <code>ExpressionTransformer</code>, <code>ExpressionSimplifier</code> and <code>ExpressionComparer</code>; no public signature changed.
+The full record is in <code>Utils/TODO-2026-10-27-etc-expression-tree-coverage-roadmap.md</code> (§5, §9 &quot;R2 result&quot;).</p>
+<ul>
+<li><strong>Newly traversed families (C-03 extended).</strong> <code>Block</code>, <code>Try</code> (with its <code>CatchBlock</code>s), <code>Switch</code> (with its <code>SwitchCase</code>s),
+<code>Loop</code>, <code>Goto</code> and <code>Label</code> are traversed and rebuilt with their metadata (variables and their identity, explicit result
+type, handler test types and variables, filters, finally versus fault, comparison method, case and test order, label
+targets — never recreated —, jump kinds); <code>RuntimeVariables</code> keeps its variables (they must stay parameters) and
+<code>DebugInfo</code> is an explicit leaf. A <code>PrepareExpression</code> override is called on block and catch variables (which must stay
+<code>ParameterExpression</code>s, as lambda parameters already had to, otherwise <code>InvalidCastException</code>) and on every child, in
+structural order; rules declared on those node types receive the documented positional children, and
+<code>FinalizeExpression</code> receives them too. Block and catch bodies go through <code>PrepareExpression</code>, not the direct lambda-body
+descent, so a transformer whose <code>PrepareExpression</code> is the identity leaves them as they are. <code>CopyExpression</code> applies its
+arity contract to <code>Try</code>, <code>Switch</code>, <code>Goto</code>, <code>Label</code>, <code>RuntimeVariables</code> and <code>DebugInfo</code> (an explicit list of the wrong
+length throws <code>ArgumentException</code>).</li>
+<li><strong>Capture-avoiding substitution (ETC-03).</strong> <code>ReplaceArguments</code> now replaces free occurrences inside nested lambdas,
+conversion lambdas, blocks, catch handlers, switches, loops, jumps and labels. A binder redeclaring a replaced parameter
+hides it; a binder declaration that a replacement would capture is renamed to a fresh parameter (same type, by-reference
+flag and name). Replacing a runtime variable by anything but another parameter throws <code>NotSupportedException</code> (C-07). A
+quoted expression is still never entered (C-05 pending).</li>
+<li><strong>Invocation inlining.</strong> Lambda invocations whose bodies contain nested lambdas, blocks, catch handlers or switches can be
+inlined when the analysis proves it safe (same argument eligibility as before: constants, defaults and parameter reads);
+a variable argument read inside a nested closure, after an effect, or bodies with loops, jumps, labels, runtime variables
+or quotes still keep the invocation.</li>
+<li><strong>Structural equality and hashing.</strong> <code>ExpressionComparer</code> compares the families above with a lexical binding model:
+block and catch variables are bound by position (alpha-equivalence), labels by a bijection per lambda body (names never
+count); debug information is not semantic. Two such trees, always unequal before unless they were the same instance, can
+now be equal keys of a <code>Dictionary&lt;Expression, …&gt;</code>/<code>HashSet&lt;Expression&gt;</code>. Structural equality still does not make two
+blocks, tries, switches or loops interchangeable: the simplifier treats them as observable and keeps every evaluation.</li>
+<li><strong>Canonical ordering.</strong> Block and catch variables are bound scopes for the simplifier's canonical ordering, so block-local
+terms are ordered by binding position (for example <code>{ u = …; v = …; v + u }</code> now simplifies its last statement to <code>u + v</code>).</li>
+<li><strong>Validation of shared DAGs.</strong> The input validation of every expression operation no longer unfolds a shared subtree
+once per use when the node limit is above 65,536: a heavily shared DAG (for example <code>e = e + e</code> repeated 40 times) used
+to make a call with <code>ExpressionResourceLimits.Unlimited</code> or a very high <code>MaxNodes</code> run practically forever; it is now
+decided in linear time (and not validated at all under <code>Unlimited</code>, which cannot refuse anything). The default limits,
+the counted quantities (logical occurrences, depth) and the refusal kinds are unchanged; the observed value of such a
+refusal is now the exact (saturated) count, and when a large input exceeds both limits the reported kind may be <code>Depth</code>
+where it was <code>Nodes</code>.</li>
+</ul>
 <p><a id="omy-utils-fonts-2"></a></p>
 <h2 id="utilsfonts-hostile-font-parsing-hardening">Utils.Fonts hostile-font parsing hardening</h2>
 <p><code>TrueTypeFont.ParseFont</code>/<code>ParseFontAsync</code> now accept an optional <code>TrueTypeFontParsingOptions</code>

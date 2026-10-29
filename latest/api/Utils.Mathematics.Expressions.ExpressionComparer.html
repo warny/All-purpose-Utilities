@@ -254,12 +254,12 @@ equality and hashing are implemented structurally, with explicit, scope-aware pa
 lambda alpha-equivalence and an exact (not floating-point-approximate) numeric model for cross-type
 numeric constants. See <code>Utils/TODO-2026-09-12-expression-simplifier-roadmap.md</code>, stage S1, for the
 audit this hardening addresses and for remaining known limitations.</p>
-<p>Only the node kinds already recognized before this hardening participate in structural equality:
-<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.lambdaexpression">LambdaExpression</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.constantexpression">ConstantExpression</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.parameterexpression">ParameterExpression</a>,
-<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.unaryexpression">UnaryExpression</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.binaryexpression">BinaryExpression</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.methodcallexpression">MethodCallExpression</a> and
-<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.memberexpression">MemberExpression</a>. Two distinct instances of any other node kind (for example
-<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.newexpression">NewExpression</a> or <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.conditionalexpression">ConditionalExpression</a>) are conservatively treated as
-unequal; broadening node coverage is left to a future S1 follow-up.</p>
+<p>Structural equality covers lambdas, constants, parameters, unary, binary, method-call and member nodes (S1), the
+scalar families of ETC R1c (conditionals, invocations, type tests, defaults, creations, array creations) and the binding
+and control-flow families of ETC R2 (blocks, try expressions with their handlers, switches with their cases, loops,
+jumps, labels, runtime variables and debug information). ETC R2 generalizes parameter binding to binder frames (lambda,
+block, catch) and adds a label-target bijection per lambda body. Two distinct instances of any other node kind (member
+and list initializers, index, dynamic and extension nodes) are conservatively treated as unequal.</p>
 </div>
 
 
@@ -462,7 +462,7 @@ evidence that <code class="paramref">x</code> satisfies the limits. <a class="xr
 
   <h3 id="Utils_Mathematics_Expressions_ExpressionComparer_GetHashCode_System_Linq_Expressions_Expression_" data-uid="Utils.Mathematics.Expressions.ExpressionComparer.GetHashCode(System.Linq.Expressions.Expression)">
   GetHashCode(Expression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionComparer.cs/#L790"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionComparer.cs/#L920"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns a hash code for the specified <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a> by simplifying it and computing a

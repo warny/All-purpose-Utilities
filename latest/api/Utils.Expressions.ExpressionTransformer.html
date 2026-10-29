@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Expressions_ExpressionTransformer" data-uid="Utils.Expressions.ExpressionTransformer" class="text-break">
-Class ExpressionTransformer  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L18"><i class="bi bi-code-slash"></i></a>
+Class ExpressionTransformer  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L19"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -257,7 +257,7 @@ Subclasses may override the transformation logic for specific expression signatu
 
   <h3 id="Utils_Expressions_ExpressionTransformer__ctor" data-uid="Utils.Expressions.ExpressionTransformer.#ctor">
   ExpressionTransformer()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L345"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L346"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Expressions.ExpressionTransformer.html">ExpressionTransformer</a> class.
@@ -287,7 +287,7 @@ During construction, it retrieves (or, on first use of the concrete type, builds
 
   <h3 id="Utils_Expressions_ExpressionTransformer__ctor_Utils_Expressions_ExpressionResourceLimits_" data-uid="Utils.Expressions.ExpressionTransformer.#ctor(Utils.Expressions.ExpressionResourceLimits)">
   ExpressionTransformer(ExpressionResourceLimits)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L356"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L357"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Utils.Expressions.ExpressionTransformer.html">ExpressionTransformer</a> class with explicit resource limits,
@@ -331,7 +331,7 @@ applied to every operation this instance starts (see <a class="xref" href="Utils
 
   <h3 id="Utils_Expressions_ExpressionTransformer_ResourceLimits" data-uid="Utils.Expressions.ExpressionTransformer.ResourceLimits">
   ResourceLimits
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L375"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L376"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the resource limits of this instance (ETC R1a-Security). They apply when this instance starts an operation:
@@ -376,7 +376,7 @@ limits.</p>
 
   <h3 id="Utils_Expressions_ExpressionTransformer_CopyExpression_System_Linq_Expressions_Expression_System_Linq_Expressions_Expression___" data-uid="Utils.Expressions.ExpressionTransformer.CopyExpression(System.Linq.Expressions.Expression,System.Linq.Expressions.Expression[])">
   CopyExpression(Expression, params Expression[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L1989"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L2753"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Creates a new expression of the same <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expressiontype">ExpressionType</a> as <code class="paramref">e</code>,
@@ -426,6 +426,16 @@ ETC R1b: every unary node is rebuilt faithfully (operator method and type kept, 
 follows the arity contract (one child for an instance member, none for a static member). New, NewArray, TypeBinary
 and MemberAccess return the node itself when every supplied child is the instance it already holds.
 </p>
+<p>
+ETC R2: <code>Try</code>, <code>Switch</code>, <code>Goto</code>, <code>Label</code>, <code>RuntimeVariables</code> and <code>DebugInfo</code> follow the
+same arity contract, with the positional layouts their <code>Prepare*</code> methods produce: a try expression's body, then
+each handler's filter (when present) and body, then its finally and fault (when present); a switch's value, then each
+case's test values and body, then its default body (when present); a jump's value and a label's default value when
+present; the runtime variables, which must stay <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.parameterexpression">ParameterExpression</a>s; no child for debug information. The
+metadata that is not an expression (handler test types and variables, case structure, comparison method, label
+targets, jump kinds, result types) is taken from <code class="paramref">e</code>, never from the list, and label targets are
+never recreated. <code>Loop</code> and these families return the node itself when no child changed.
+</p>
 </div>
 
 
@@ -435,7 +445,7 @@ and MemberAccess return the node itself when every supplied child is the instanc
 
   <h3 id="Utils_Expressions_ExpressionTransformer_FinalizeExpression_System_Linq_Expressions_Expression_System_Linq_Expressions_Expression___" data-uid="Utils.Expressions.ExpressionTransformer.FinalizeExpression(System.Linq.Expressions.Expression,System.Linq.Expressions.Expression[])">
   FinalizeExpression(Expression, Expression[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L1718"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L1981"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Called if no custom transformation method (annotated with <a class="xref" href="Utils.Expressions.ExpressionSignatureAttribute.html">ExpressionSignatureAttribute</a>)
@@ -484,7 +494,7 @@ is found. Allows final post-processing. The default implementation throws an exc
 
   <h3 id="Utils_Expressions_ExpressionTransformer_PrepareExpression_System_Linq_Expressions_Expression_" data-uid="Utils.Expressions.ExpressionTransformer.PrepareExpression(System.Linq.Expressions.Expression)">
   PrepareExpression(Expression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L657"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L658"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Prepares an expression for transformation. Subclasses can override this to apply
@@ -525,7 +535,7 @@ The default implementation returns the expression unchanged.</p>
 
   <h3 id="Utils_Expressions_ExpressionTransformer_ReplaceArguments_System_Linq_Expressions_Expression_System_Linq_Expressions_ParameterExpression___System_Linq_Expressions_Expression___" data-uid="Utils.Expressions.ExpressionTransformer.ReplaceArguments(System.Linq.Expressions.Expression,System.Linq.Expressions.ParameterExpression[],System.Linq.Expressions.Expression[])">
   ReplaceArguments(Expression, ParameterExpression[], Expression[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L1736"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L1999"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Replaces all occurrences of <code class="paramref">oldParameters</code> within <code class="paramref">e</code>
@@ -581,7 +591,7 @@ validates <code class="paramref">e</code> first (ETC R1a-Security); the substitu
 
   <h3 id="Utils_Expressions_ExpressionTransformer_Transform_System_Linq_Expressions_Expression_" data-uid="Utils.Expressions.ExpressionTransformer.Transform(System.Linq.Expressions.Expression)">
   Transform(Expression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L867"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L868"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Public entry point for this transformer. Concrete transformers implement this to perform any
@@ -622,7 +632,7 @@ to run the actual recursive rule-matching engine.</p>
 
   <h3 id="Utils_Expressions_ExpressionTransformer_TransformCore_System_Linq_Expressions_Expression_" data-uid="Utils.Expressions.ExpressionTransformer.TransformCore(System.Linq.Expressions.Expression)">
   TransformCore(Expression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L889"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L890"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Applies transformation rules to a given expression, returning a (potentially) modified expression.
@@ -681,7 +691,7 @@ recursing; each node processed is counted once, by <span class="xref">Utils.Expr
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L18" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L19" class="edit-link">Edit this page</a>
         </div>
 
 
