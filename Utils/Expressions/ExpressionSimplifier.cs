@@ -411,7 +411,7 @@ namespace Utils.Mathematics.Expressions
         /// <returns>The transformed expression, or <see langword="null"/> unchanged, for the exact built-in type.</returns>
         /// <remarks>
         /// The null short-circuit is gated to the exact built-in runtime type for the same reason as
-        /// <see cref="RebuildUnaryExpression"/>/<see cref="RebuildLambdaExpression"/>: without it,
+        /// <see cref="ExpressionTransformer.RebuildUnaryExpression"/>/<see cref="RebuildLambdaExpression"/>: without it,
         /// <see cref="ExpressionTransformer.TransformCore(Expression)"/> dereferences a null
         /// <c>context.Expression</c> and throws <see cref="NullReferenceException"/> — historically true for
         /// every runtime type, including a derived subclass, which therefore still observes it unless it
@@ -625,7 +625,7 @@ namespace Utils.Mathematics.Expressions
         /// this hook is NOT gated to the exact built-in <see cref="ExpressionSimplifier"/> runtime type.
         /// There is no pre-S4 historical behavior at stake here (this hook is new to S4, not a
         /// reconstruction-fidelity concern like <see cref="RebuildLambdaExpression"/>/
-        /// <see cref="RebuildUnaryExpression"/>), and being <see langword="internal"/>, only a same-assembly
+        /// <see cref="ExpressionTransformer.RebuildUnaryExpression"/>), and being <see langword="internal"/>, only a same-assembly
         /// (or <c>InternalsVisibleTo</c>) subclass could ever reach this override at all - gating it further
         /// to the exact type only meant such a subclass's OWN bound parameters were silently misclassified
         /// as free during its own canonicalization (round 6 initially worked around this by skipping

@@ -841,33 +841,35 @@ parameters are treated as mutable next to an observable term; per-rule effect de
 | Stack guards on new recursion | comparer, hash, canonical key | isolated-process depth test (Functional) |
 | `New`/`NewArray` are never merged as equal terms by algebra (allocation identity) | simplifier grouping | dedicated tests |
 
-#### R1b/R1c measurements (2026-10-29, Release, one process per scenario, 3 rounds, A/A control within ±4 %)
+#### R1b/R1c measurements (2026-10-29, Release, one process per scenario, 3 rounds, A/A control)
 
-| Scenario | master ns | A/A | R1b ns | R1b/master | R1c ns | R1c/master | R1c/R1b | bytes master→R1b→R1c | transform visits master→R1b→R1c | structural visits master→R1b→R1c |
-|---|---|---|---|---|---|---|---|---|---|---|
-| scalar | 528 | +2.5% | 564 | +6.8% | 569 | +7.8% | +0.9% | 832→832→832 | 6→6→6 | 0→0→0 |
-| unary | 403 | +1.7% | 497 | +23.3% | 497 | +23.3% | +0.0% | 576→792→792 | 5→5→5 | 0→1→1 |
-| binary | 13419 | +1.6% | 14185 | +5.7% | 14137 | +5.4% | -0.3% | 18580→19044→19044 | 33→33→33 | 91→97→97 |
-| lambda | 3399 | -0.3% | 3627 | +6.7% | 3600 | +5.9% | -0.7% | 7049→7265→7265 | 21→21→21 | 16→17→17 |
-| invoke | 1072 | -0.2% | 1132 | +5.6% | 1120 | +4.5% | -1.1% | 1448→1448→1448 | 11→11→11 | 2→2→2 |
-| new | 90 | -2.2% | 726 | +706.7% | 722 | +702.2% | -0.6% | 0→960→960 | 1→7→7 | 0→0→0 |
-| newarray | 140 | -4.3% | 1869 | +1235.0% | 1822 | +1201.4% | -2.5% | 0→2640→2640 | 1→15→15 | 0→5→5 |
-| member | 1769 | -1.0% | 1565 | -11.5% | 1605 | -9.3% | +2.6% | 2952→2208→2208 | 9→12→12 | 18→4→4 |
-| typebinary | 77 | -2.6% | 480 | +523.4% | 469 | +509.1% | -2.3% | 0→568→568 | 1→5→5 | 0→0→0 |
-| conditional | 1016 | +2.7% | 1115 | +9.7% | 1123 | +10.5% | +0.7% | 1440→1440→1440 | 13→13→13 | 0→0→0 |
-| leftsum20 | 4533860 | +0.4% | 6189150 | +36.5% | 6108300 | +34.7% | -1.3% | 9895385→10346813→10346817 | 11463→11463→11463 | 46413→52226→52226 |
-| rightsum20 | 4521900 | -0.4% | 6184475 | +36.8% | 6169625 | +36.4% | -0.2% | 9895384→10346813→10346814 | 11463→11463→11463 | 46413→52226→52226 |
-| balanced64 | 22362100 | -1.0% | 27524400 | +23.1% | 27480800 | +22.9% | -0.2% | 27017566→27959574→27959574 | 19215→19215→19215 | 211087→227455→227455 |
-| p16chain12 | 11770950 | +0.8% | 15772250 | +34.0% | 15969900 | +35.7% | +1.3% | 17384676→18326803→18326743 | 34516→34516→34516 | 59217→68475→68475 |
-| p15opaque8 | 18783500 | +0.1% | 24458800 | +30.2% | 24606500 | +31.0% | +0.6% | 18296992→19581394→19581394 | 48021→48021→48021 | 120902→133248→133248 |
-| p9family16 | 6030250 | -0.9% | 7275500 | +20.7% | 7368100 | +22.2% | +1.3% | 8189236→8404909→8404870 | 9172→9172→9172 | 47847→51308→51308 |
-| unsafecalls8 | 1051289 | +0.0% | 14156 | -98.7% | 14194 | -98.6% | +0.3% | 1088030→15392→15392 | 2082→39→39 | 6765→37→37 |
-| dag10 | 1168372 | +0.4% | 1278775 | +9.4% | 1300831 | +11.3% | +1.7% | 1138196→1240437→1240437 | 7164→7164→7164 | 2557→3579→3579 |
-| cmp-pos | 2855862 | -0.1% | 3674300 | +28.7% | 3650100 | +27.8% | -0.7% | 4156741→4372418→4372418 | 7972→7972→7972 | 14465→16669→16669 |
-| cmp-neg | 3247443 | -2.4% | 4104720 | +26.4% | 4054760 | +24.9% | -1.2% | 4489602→4705271→4705274 | 8310→8310→8310 | 16124→18589→18589 |
-| hash | 3599033 | +0.0% | 4558500 | +26.7% | 4670160 | +29.8% | +2.4% | 5399940→5615603→5615603 | 11092→11092→11092 | 17650→20358→20358 |
+Harness: one process per (variant, scenario), warmup >= 10 ops and 1.5 s, 25 calibrated batches, variant order rotated per round; transform and structural visits read inside an outer operation. Final branch (`c01b6577`) against `master` `b071bd0a`:
 
-The table above is the first campaign (`master` b071bd0a, `R1b` 4a362335, `R1c` 43407a4c). New, NewArray and TypeBinary now do real work (traversal, C-03), so their absolute cost is semantic. The +20–37 % on sums, P15/P16 and comparer scenarios, with identical transform visits, came from the effect analysis; controlled experiments attributed ~16 % to the rule gate and ~3 % to pinning. After the lazy table, the shallow fast path and the per-method cache (final commit): leftsum20 +23 %, p16chain12 +13 %, cmp-pos +8 %, scalar +7 %, unary +15 % (no extra allocation). **Open:** these remain above the 5 % threshold; next step is a cheaper identity table and a single session read per gate (not done for lack of time).
+| Scenario | master ns | A/A | final ns | final/master | bytes master→final | transform visits | structural visits master→final |
+|---|---|---|---|---|---|---|---|
+| scalar | 558 | -2.3% | 594 | +6.5% | 832→832 | 6→6 | 0→0 |
+| unary | 413 | +1.0% | 468 | +13.3% | 576→576 | 5→5 | 0→0 |
+| binary | 13746 | +0.6% | 14407 | +4.8% | 18580→18580 | 33→33 | 91→91 |
+| lambda | 3476 | +2.2% | 3724 | +7.1% | 7049→7049 | 21→21 | 16→16 |
+| invoke | 1099 | -1.0% | 1182 | +7.6% | 1448→1448 | 11→11 | 2→2 |
+| new | 91 | +0.0% | 770 | +746.2% | 0→960 | 1→7 | 0→0 |
+| newarray | 140 | -5.0% | 1901 | +1257.9% | 0→2424 | 1→15 | 0→4 |
+| member | 1817 | +2.5% | 1789 | -1.5% | 2952→1744 | 9→12 | 18→12 |
+| typebinary | 76 | +0.0% | 490 | +544.7% | 0→568 | 1→5 | 0→0 |
+| conditional | 1058 | -0.5% | 1147 | +8.4% | 1440→1440 | 13→13 | 0→0 |
+| leftsum20 | 4693460 | +0.7% | 5083700 | +8.3% | 9895385→9895386 | 11463→11463 | 46413→48925 |
+| rightsum20 | 4610760 | +3.7% | 5149450 | +11.7% | 9895384→9895387 | 11463→11463 | 46413→48925 |
+| balanced64 | 23032800 | -0.4% | 24592400 | +6.8% | 27017566→27017447 | 19215→19215 | 211087→221003 |
+| p16chain12 | 12143500 | +2.9% | 12857900 | +5.9% | 17384676→17384735 | 34516→34516 | 59217→60080 |
+| p15opaque8 | 19385200 | +1.1% | 21143000 | +9.1% | 18296992→18297012 | 48021→48021 | 120902→130180 |
+| p9family16 | 6261525 | +0.3% | 6544675 | +4.5% | 8189236→8189236 | 9172→9172 | 47847→48935 |
+| unsafecalls8 | 1064126 | +0.7% | 17431 | -98.4% | 1088030→13120 | 2082→39 | 6765→15 |
+| dag10 | 1195429 | +0.6% | 1272700 | +6.5% | 1138197→1138198 | 7164→7164 | 2557→2557 |
+| cmp-pos | 2969800 | +0.8% | 3141200 | +5.8% | 4156758→4156758 | 7972→7972 | 14465→14647 |
+| cmp-neg | 3272243 | +0.1% | 3441850 | +5.2% | 4489602→4489594 | 8310→8310 | 16124→16382 |
+| hash | 3700083 | +1.2% | 3962340 | +7.1% | 5399940→5399940 | 11092→11092 | 17650→17781 |
+
+Attribution. Transform visits are identical on every pre-existing family. **Semantic changes:** New, NewArray and TypeBinary now do real work (traversal, C-03; their former cost was a pass-through), member access is cheaper (the receiver is simplified first), and `unsafecalls8` is 98 % cheaper because user-call terms are no longer factored or compared (C-06). **Engine cost:** the remaining +5 to +12 % on sums, P15/P16 and comparer scenarios, and +7 to +13 % (40–60 ns) on very small trees, is the C-06 rule gate (controlled experiments: about 16 points before optimization were the gate, 3 the pinning, R1c adds nothing measurable). Investigation history: a first implementation with an always-on per-operation table cost +20 to +37 %; instrumentation showed 0 table hits on a 20-term sum (the gate inspects operands freshly built by the previous rewrite) and ~200 KB of table growth per simplification. The final design (shallow path, bounded pass of 512 analyses without table, table fallback only for large trees and shared DAGs, per-method classification cache, identity map) brought allocations back to master and the large scenarios from +23 %/+13 % to +8 %/+6 %. The residual cost is accepted as the price of the safety gate (the gates were not weakened to gain speed); a per-rule effect declaration (R2+) would let most rules skip the analysis.
 
 #### R1c result (2026-10-29)
 
