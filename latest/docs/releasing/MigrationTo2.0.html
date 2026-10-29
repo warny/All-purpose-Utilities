@@ -176,6 +176,37 @@ existing configuration or output changes. See the &quot;Lexical form selection&q
 <code>Utils.NumberToString/README.md</code> and <code>Utils.NumberToString/DONE-2026-08-25(1).md</code>/
 <code>DONE-2026-08-25(2).md</code>. Spanish does not use this mechanism — its time-unit fix is a
 <code>ForcedVariants</code> addition (see above), not a lexical-form-selector one.</p>
+<p><a id="omy-utils-expression-engine-etc-r1b-r1c"></a></p>
+<h2 id="expression-engine-scalar-traversal-faithful-reconstruction-side-effect-safety-and-structural-equality-etc-r1br1c">Expression engine: scalar traversal, faithful reconstruction, side-effect safety and structural equality (ETC R1b/R1c)</h2>
+<p>These are behavior changes of <code>ExpressionTransformer</code>, <code>ExpressionSimplifier</code> and <code>ExpressionComparer</code>; no public signature
+changed. The full record (decisions C-01, C-03, C-04, C-06, findings ETC-03 to ETC-15, measurements) is in
+<code>Utils/TODO-2026-10-27-etc-expression-tree-coverage-roadmap.md</code>.</p>
+<ul>
+<li><strong>Faithful unary and lambda reconstruction (C-01).</strong> Every transformer, every <code>ExpressionSimplifier</code> subclass and the
+protected <code>CopyExpression</code>/<code>ReplaceArguments</code> helpers now keep a unary operator or conversion <code>Method</code>, a typed <code>Throw</code>'s
+type, and a lambda's delegate type, name and tail-call flag. A subclass that relied on the former loss (for example a
+custom negation silently becoming the predefined one) observes the original operator again.</li>
+<li><strong>Newly traversed families (C-03).</strong> Member access (receiver), <code>TypeIs</code>/<code>TypeEqual</code>, <code>New</code> (arguments), <code>NewArrayInit</code>/
+<code>NewArrayBounds</code> (elements or bounds) are traversed and rebuilt with their metadata; <code>Default</code> is an explicit leaf. A
+<code>PrepareExpression</code> override is called on those children (in <code>ExpressionVisitor</code> order), rules declared on those node types
+receive the prepared children, and <code>FinalizeExpression</code> receives a non-empty child list for them. <code>CopyExpression</code> applies
+its arity contract to <code>MemberAccess</code> (one child for an instance member, none for a static one).</li>
+<li><strong>Scalar substitution.</strong> <code>ReplaceArguments</code> enters member receivers, type tests, creation arguments and array elements;
+invocations of lambdas whose body uses those families can be inlined. Binders (nested lambdas, blocks, catch, switch) are
+unchanged until R2.</li>
+<li><strong>Side-effect safety (C-06).</strong> The simplifier no longer drops, merges, repeats or reorders an operand that is not proven
+inert: assignments and increments, throws, user methods (only an explicit allow-list of total <code>Math</code>/<code>MathF</code>/<code>double</code>/
+<code>float</code> functions is inert), property getters, constructors and allocations, custom operators, invocations, checked
+arithmetic, integer and decimal division, decimal arithmetic (overflow), array access, casts and unknown or extension
+nodes. For example <code>f(x) + f(x)</code> keeps both calls, <code>(v = 5) * 0</code> keeps the assignment, the decimal sum <code>2m*x + 3m*x</code> is no
+longer factored, and a sum keeps such terms in source order after its regrouped inert terms. Results that used to
+rely on those rewrites are now less reduced but evaluate exactly like the source.</li>
+<li><strong>Structural equality (C-04).</strong> <code>ExpressionComparer</code> compares and hashes conditionals, invocations, type tests, defaults,
+creations (constructor, arguments, members) and array creations structurally, with the usual parameter binding; such
+trees, which were always unequal unless they were the same instance, can now be equal keys of a
+<code>Dictionary&lt;Expression, …&gt;</code>/<code>HashSet&lt;Expression&gt;</code>. Structural equality does not make two allocations or two calls
+interchangeable: the simplifier still keeps both.</li>
+</ul>
 <p><a id="omy-utils-fonts-2"></a></p>
 <h2 id="utilsfonts-hostile-font-parsing-hardening">Utils.Fonts hostile-font parsing hardening</h2>
 <p><code>TrueTypeFont.ParseFont</code>/<code>ParseFontAsync</code> now accept an optional <code>TrueTypeFontParsingOptions</code>
