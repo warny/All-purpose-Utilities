@@ -129,8 +129,9 @@ public class ExpressionScalarFamilyResourceTests
     }
 
     /// <summary>
-    /// The effect analysis counts one structural visit per newly analyzed node, analyzes a shared DAG once, and refuses an
-    /// exhausted budget with an exception rather than a classification.
+    /// The effect analysis counts one structural visit per node analysis; a small shared DAG is walked by the bounded pass
+    /// (121 analyses for 61 distinct nodes), and an exponential DAG falls back to the table after the bounded pass, so its
+    /// analysis stays linear in the distinct nodes; an exhausted budget is an exception rather than a classification.
     /// </summary>
     [TestMethod]
     public void EffectAnalysis_IsBudgetedAndAnalyzesSharedNodesOnce()
@@ -144,8 +145,18 @@ public class ExpressionScalarFamilyResourceTests
             return ExpressionResourceBudget.StructuralVisits;
         });
 
-        // The DAG has 1 + 60 distinct non-leaf nodes (the add, then a member access and a creation per level).
-        Assert.AreEqual(61L, visits);
+        // The add, then a member access and a creation per level, each copy of the shared chain walked once.
+        Assert.AreEqual(121L, visits);
+
+        Expression exponential = Chain(40, static e => Expression.Add(BoxLevel(e), BoxLevel(e)));
+        long exponentialVisits = (long)RunUnlimited(() =>
+        {
+            ExpressionEffectAnalysis.Analyze(exponential);
+            return ExpressionResourceBudget.StructuralVisits;
+        });
+
+        // 2^40 logical nodes, 200 distinct ones: at most the bounded pass (512) plus one analysis per distinct node.
+        Assert.IsTrue(exponentialVisits <= 512 + 200, exponentialVisits.ToString());
         ExpressionResourceLimitException budget = Assert.ThrowsExactly<ExpressionResourceLimitException>(() =>
             ExpressionResourceBudget.Run(ExpressionResourceLimits.Default with { MaxStructuralVisits = 20 }, null, null, null, dag, static e => ExpressionEffectAnalysis.Analyze(e)));
         Assert.AreEqual(ExpressionResourceLimitKind.StructuralWork, budget.Kind);

@@ -67,9 +67,9 @@ internal enum ExpressionEffects
 /// unknown or extension node (whose getters are user code): such a node is <see cref="ExpressionEffects.Observable"/>.
 /// No node is evaluated, no getter, constructor or method is invoked, and a quoted expression or a lambda body is not
 /// part of the evaluation of its parent (a lambda allocates a delegate; its body runs only when it is invoked). Each node
-/// analysis counts one structural visit (ETC R1a-Security). Inside an expression operation, once more than
-/// <see cref="CacheThreshold"/> nodes were analyzed, results are cached by node reference for the rest of the operation
-/// chain, so a large or shared tree is analyzed in linear time while a small one allocates no table.
+/// analysis counts one structural visit (ETC R1a-Security). A subtree is first analyzed by a bounded pass without any
+/// table; past <see cref="BoundedNodes"/> nodes (a large tree or a shared DAG) it is analyzed with a per-operation table
+/// that stores every node, so the work stays linear while small analyses allocate nothing.
 /// </para>
 /// </remarks>
 internal static class ExpressionEffectAnalysis
@@ -133,7 +133,7 @@ internal static class ExpressionEffectAnalysis
     /// </summary>
     /// <param name="node">The (prepared) node whose operands a rule may rewrite.</param>
     /// <returns><see langword="true"/> when the operands of <paramref name="node"/> are inert.</returns>
-    internal static bool HasInertOperands(Expression node) => IsInert(ChildEffects(node));
+    internal static bool HasInertOperands(Expression node) => IsInert(ChildEffects(node, ExpressionResourceBudget.ActiveSession));
 
     /// <summary>
     /// Returns the union of the effects of the direct children of <paramref name="node"/> that are evaluated with it (the
@@ -142,11 +142,17 @@ internal static class ExpressionEffectAnalysis
     /// </summary>
     /// <param name="node">The node.</param>
     /// <returns>The union of the effects of its evaluated children.</returns>
-    internal static ExpressionEffects ChildEffects(Expression node) => node switch
+    internal static ExpressionEffects ChildEffects(Expression node) => ChildEffects(node, ExpressionResourceBudget.ActiveSession);
+
+    /// <summary>Same as <see cref="ChildEffects(Expression)"/>, with the session of the running operation already read.</summary>
+    /// <param name="node">The node.</param>
+    /// <param name="session">The active session, or <see langword="null"/> outside an operation.</param>
+    /// <returns>The union of the effects of its evaluated children.</returns>
+    private static ExpressionEffects ChildEffects(Expression node, ExpressionResourceBudget.Session? session) => node switch
     {
         UnaryExpression { NodeType: ExpressionType.Quote } => ExpressionEffects.None,
-        UnaryExpression unary => Analyze(unary.Operand),
-        BinaryExpression binary => Analyze(binary.Left) | Analyze(binary.Right) | Analyze(binary.Conversion),
+        UnaryExpression unary => Analyze(unary.Operand, session),
+        BinaryExpression binary => Analyze(binary.Left, session) | Analyze(binary.Right, session) | Analyze(binary.Conversion, session),
         MethodCallExpression call => Analyze(call.Object) | AnalyzeEach(call.Arguments),
         ConditionalExpression conditional => Analyze(conditional.Test) | Analyze(conditional.IfTrue) | Analyze(conditional.IfFalse),
         InvocationExpression invocation => Analyze(invocation.Expression) | AnalyzeEach(invocation.Arguments),
@@ -163,41 +169,106 @@ internal static class ExpressionEffectAnalysis
     /// <exception cref="ExpressionResourceLimitException">The structural budget of the running operation is exhausted.</exception>
     internal static ExpressionEffects Analyze(Expression? expression)
     {
-        // Leaves are classified without touching the cache or the budget. A parameter or variable is a mutable location: an
-        // assignment, an increment or a closure invoked by user code can write it.
+        if (expression is null or ConstantExpression or DefaultExpression) return ExpressionEffects.None;
+        if (expression is ParameterExpression) return ExpressionEffects.ReadsMutableState;
+        return Analyze(expression, ExpressionResourceBudget.ActiveSession);
+    }
+
+    /// <summary>Same as <see cref="Analyze(Expression?)"/>, with the session of the running operation already read.</summary>
+    /// <param name="expression">The expression, or <see langword="null"/>.</param>
+    /// <param name="session">The active session, or <see langword="null"/> outside an operation.</param>
+    /// <returns>Its effects.</returns>
+    /// <remarks>
+    /// Three strategies, cheapest first: (1) a leaf, a node already in the operation's table, or a small subtree
+    /// (<see cref="TryAnalyzeShallow"/>) is answered directly; (2) otherwise a bounded pass analyzes the subtree
+    /// recursively without any table, up to <see cref="BoundedNodes"/> nodes — the operands the rule gate inspects are
+    /// mostly fresh nodes built by the previous rewrite, so a table would only grow without being hit; (3) a larger subtree
+    /// (or a shared DAG, which the bounded pass would revisit) is analyzed once more with the table, which stores every node
+    /// so the work stays linear. Every node analysis counts one structural visit and checks the stack.
+    /// </remarks>
+    private static ExpressionEffects Analyze(Expression? expression, ExpressionResourceBudget.Session? session)
+    {
         if (expression is null or ConstantExpression or DefaultExpression) return ExpressionEffects.None;
         if (expression is ParameterExpression) return ExpressionEffects.ReadsMutableState;
 
-        // A large operand is usually already in the table (its own node was analyzed when it was transformed): look it up
-        // before trying the shallow path, which would walk its first levels for nothing.
-        ExpressionResourceBudget.Session? session = ExpressionResourceBudget.ActiveSession;
-        Dictionary<Expression, ExpressionEffects>? cache = session?.EffectCache;
-        if (cache is not null && cache.TryGetValue(expression, out ExpressionEffects cached)) return cached;
+        ExpressionEffectTable? table = session?.EffectCache;
+        if (table is not null && table.TryGetValue(expression, out ExpressionEffects cached)) return cached;
         if (TryAnalyzeShallow(expression, ShallowDepth, out ExpressionEffects shallow)) return shallow;
-
-        // The table is created lazily, once the operation has analyzed more than CacheThreshold nodes (counted before the
-        // children, so a deep or shared tree switches to the table early and stays linear): a small tree allocates nothing.
-        if (cache is null && session is not null && ++session.EffectAnalyses > CacheThreshold)
+        if (session is null)
         {
-            cache = session.EffectCache = new Dictionary<Expression, ExpressionEffects>(ReferenceEqualityComparer.Instance);
+            // Outside an operation (tests, diagnostics): plain recursion, still stack-guarded.
+            ExpressionResourceBudget.ConsumeStructuralVisit();
+            return AnalyzeNode(expression);
         }
 
-        // One structural visit per analyzed node, stack check included (ETC R1a-Security).
+        switch (session.EffectMode)
+        {
+            case EffectModeBounded:
+                // Inside a bounded pass: count the node, or report that the pass ran out of nodes.
+                if (session.EffectBudget == 0) return Exhausted;
+                session.EffectBudget--;
+                ExpressionResourceBudget.ConsumeStructuralVisit();
+                return AnalyzeNode(expression);
+
+            case EffectModeTable:
+                return AnalyzeIntoTable(expression, session);
+        }
+
+        // Top-level entry: try a bounded pass first, then the table if the subtree is too large.
+        session.EffectMode = EffectModeBounded;
+        session.EffectBudget = BoundedNodes;
+        ExpressionEffects effects;
+        try
+        {
+            effects = Analyze(expression, session);
+        }
+        finally
+        {
+            session.EffectMode = EffectModeNone;
+        }
+
+        if ((effects & Exhausted) == 0) return effects;
+
+        session.EffectMode = EffectModeTable;
+        try
+        {
+            return AnalyzeIntoTable(expression, session);
+        }
+        finally
+        {
+            session.EffectMode = EffectModeNone;
+        }
+    }
+
+    /// <summary>Analyzes <paramref name="expression"/> through the operation's table, storing every analyzed node.</summary>
+    /// <param name="expression">A non-leaf node absent from the table.</param>
+    /// <param name="session">The active session, in table mode.</param>
+    /// <returns>Its effects.</returns>
+    private static ExpressionEffects AnalyzeIntoTable(Expression expression, ExpressionResourceBudget.Session session)
+    {
+        ExpressionEffectTable table = session.EffectCache ??= new ExpressionEffectTable();
+        if (table.TryGetValue(expression, out ExpressionEffects cached)) return cached;
+
         ExpressionResourceBudget.ConsumeStructuralVisit();
         ExpressionEffects effects = AnalyzeNode(expression);
-
-        // The table may have been created while the children were analyzed: store into it if it exists now.
-        Dictionary<Expression, ExpressionEffects>? store = cache ?? session?.EffectCache;
-        if (store is not null) store[expression] = effects;
+        table.Set(expression, effects);
         return effects;
     }
 
-    /// <summary>
-    /// The number of node analyses an operation makes without the cache table: below it, re-analyzing a node costs less
-    /// than allocating and filling the table; beyond it, every node analyzed from then on is stored and never analyzed again.
-    /// </summary>
-    private const int CacheThreshold = 32;
+    /// <summary>The number of nodes a bounded pass analyzes without a table before it gives way to the table.</summary>
+    private const int BoundedNodes = 512;
 
+    /// <summary>Internal marker of a bounded pass that ran out of nodes; never returned to a caller of <see cref="Analyze(Expression?)"/>.</summary>
+    private const ExpressionEffects Exhausted = (ExpressionEffects)0x100;
+
+    /// <summary>No analysis is running on the session.</summary>
+    internal const int EffectModeNone = 0;
+
+    /// <summary>A bounded pass (no table) is running on the session.</summary>
+    internal const int EffectModeBounded = 1;
+
+    /// <summary>A table pass is running on the session.</summary>
+    internal const int EffectModeTable = 2;
     /// <summary>
     /// Returns the effects of the operator of <paramref name="binary"/> alone, without its operands: what reassociating or
     /// reordering a chain of such operators could change.

@@ -284,14 +284,13 @@ internal static class ExpressionResourceBudget
         /// node reference (ETC R1b). Expression nodes are immutable, so an entry stays valid for the whole chain; the
         /// outermost exit drops the table.
         /// </summary>
-        public System.Collections.Generic.Dictionary<Expression, ExpressionEffects>? EffectCache;
+        public ExpressionEffectTable? EffectCache;
 
-        /// <summary>
-        /// The number of nodes <see cref="ExpressionEffectAnalysis"/> analyzed in the running operation chain before
-        /// <see cref="EffectCache"/> exists: small trees are analyzed without allocating the table, which is created once the
-        /// count passes a threshold. Reset by the outermost exit.
-        /// </summary>
-        public int EffectAnalyses;
+        /// <summary>The running effect-analysis strategy (<c>ExpressionEffectAnalysis.EffectMode*</c>); restored by the analysis itself.</summary>
+        public int EffectMode;
+
+        /// <summary>The nodes left to the running bounded effect-analysis pass.</summary>
+        public int EffectBudget;
 
         /// <summary>Opens or joins an operation and returns the state to restore.</summary>
         /// <param name="limits">The limits of the entering instance.</param>
@@ -368,7 +367,7 @@ internal static class ExpressionResourceBudget
             if (scope.IsOutermost)
             {
                 EffectCache = null;
-                EffectAnalyses = 0;
+                EffectMode = 0;
                 TransformVisits = 0;
                 StructuralVisits = 0;
                 TransformDeadline = long.MaxValue;
