@@ -14,7 +14,8 @@ namespace UtilsTest.Mathematics.Expressions.Coverage;
 /// creations (ETC-01/ETC-10, C-03) and the faithful unary and lambda reconstruction (ETC-04/ETC-05, C-01), and by ETC R1c (rows
 /// marked <c>// ETC R1c</c>) for the structural equality of conditionals, invocations, type tests, defaults, creations and
 /// array creations (ETC-06, C-04), and by ETC R2 (rows marked <c>// ETC R2</c>) for the traversal, equality and
-/// capture-avoiding substitution of the binding and control-flow families (ETC-01/02/03/06/07, C-03, C-04, C-07). The
+/// capture-avoiding substitution of the binding and control-flow families (ETC-01/02/03/06/07, C-03, C-04, C-07), and by ETC R3 (rows
+/// marked <c>// ETC R3</c>) for the traversal, capture-avoiding substitution and structural equality of the initializer and index families (ETC-01/02/03/06/07, C-03, C-04). The
 /// <c>Throws:NotSupportedException</c> substitution outcome of <c>RuntimeVariables</c> is the C-07 contract (a runtime
 /// variable cannot be replaced by the constant the probe substitutes), not a defect.
 /// </summary>
@@ -110,9 +111,9 @@ public class ExpressionTreeCoverageBaselineTests
         ["New"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R1b, R1c
         ["NewArrayInit"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R1b, R1c
         ["NewArrayBounds"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R1b, R1c
-        ["MemberInit"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
-        ["ListInit"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
-        ["Index"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
+        ["MemberInit"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R3
+        ["ListInit"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R3
+        ["Index"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R3
         ["Block"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R2
         ["Try"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R2
         ["Switch"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R2
@@ -149,10 +150,10 @@ public class ExpressionTreeCoverageBaselineTests
         ["Try.CatchFinally"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R2
         ["Switch.ComparisonMethod"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R2
         ["Goto.Goto"] = "Same | Same | Same | Same | Equal | Consistent", // ETC R2
-        ["MemberInit.MemberMemberBinding"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
-        ["MemberInit.MemberListBinding"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
-        ["ListInit.ExplicitAddMethod"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
-        ["Index.Indexer"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
+        ["MemberInit.MemberMemberBinding"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R3
+        ["MemberInit.MemberListBinding"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R3
+        ["ListInit.ExplicitAddMethod"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R3
+        ["Index.Indexer"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R3
         ["Extension.Irreducible"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
         ["Quote.CapturedOuterParameter"] = "Rewrites | Rewrites | Rewrites | Opaque | Equal | Consistent",
     };

@@ -105,12 +105,12 @@ public class ExpressionTreeFindingsTests
     /// ETC-01: families reaching <c>PrepareDefault</c> are returned as the very same instance by the exact simplifier,
     /// so a simplifiable descendant is never visited. R1 (New, NewArray, TypeBinary), R2 (Block, Try, Switch, Loop,
     /// Goto, Label), R3 (MemberInit, ListInit, Index) and R4 (Dynamic, Extension) replace this with explicit policies;
-    /// R1b and R2 are done (see <c>ExpressionTreeR1bTests</c> and <c>ExpressionTreeR2Tests</c>).
+    /// R1b, R2 and R3 are done (see <c>ExpressionTreeR1bTests</c>, <c>ExpressionTreeR2Tests</c> and <c>ExpressionTreeR3Tests</c>).
     /// </summary>
     [TestMethod]
     public void ETC01_ExactSimplifier_DefaultDispatchedFamilies_AreNotTraversed()
     {
-        string[] passThrough = ["MemberInit", "ListInit", "Index", "Dynamic", "Extension"];
+        string[] passThrough = ["Dynamic", "Extension"];
         foreach (string name in passThrough)
         {
             Expression original = ExpressionNodeCatalog.Get(name).Build();
@@ -186,13 +186,14 @@ public class ExpressionTreeFindingsTests
     /// ETC-02: for many families <c>CopyExpression</c> ignores the supplied children and returns the original node. ETC R1b
     /// removed <c>MemberAccess</c> from this list: it follows the C-02 arity contract (see
     /// <see cref="ETC02_CopyExpression_MemberAccess_FollowsArityContract"/>); ETC R2 removed <c>Try</c>, <c>Switch</c>,
-    /// <c>Goto</c> and <c>Label</c>, which follow it too (see <c>ExpressionTreeR2Tests</c>).
+    /// <c>Goto</c> and <c>Label</c>, which follow it too (see <c>ExpressionTreeR2Tests</c>); ETC R3 removed <c>MemberInit</c>,
+    /// <c>ListInit</c> and <c>Index</c> (see <c>ExpressionTreeR3Tests</c>).
     /// </summary>
     [TestMethod]
     public void ETC02_CopyExpression_IgnoresReplacementChildren_ForPassThroughFamilies()
     {
         Expression replacement = Expression.Constant(9.5);
-        string[] ignored = ["MemberInit", "ListInit", "Index", "Dynamic", "Extension", "Lambda"];
+        string[] ignored = ["Dynamic", "Extension", "Lambda"];
         foreach (string name in ignored)
         {
             Expression original = ExpressionNodeCatalog.Get(name).Build();
@@ -338,38 +339,42 @@ public class ExpressionTreeFindingsTests
 
     /// <summary>
     /// ETC-06, resolved for the scalar families by ETC R1c (C-04): two independently built, identical conditionals compared
-    /// unequal; they are now structurally equal. A family that is still unsupported (an index access, R3; a block until ETC R2) stays conservatively
-    /// unequal, and the same instance is equal to itself.
+    /// unequal; they are now structurally equal. A family that is still unsupported (an extension node, R4; a block until ETC
+    /// R2, an index access until ETC R3) stays conservatively unequal, and the same instance is equal to itself.
     /// </summary>
     [TestMethod]
     public void ETC06_Comparer_ScalarFamilies_AreStructurallyEqual()
     {
         Expression first = ExpressionNodeCatalog.Get("Conditional").Build();
         Expression second = ExpressionNodeCatalog.Get("Conditional").Build();
-        Expression firstBlock = ExpressionNodeCatalog.Get("Index").Build();
-        Expression secondBlock = ExpressionNodeCatalog.Get("Index").Build();
+        Expression firstBlock = ExpressionNodeCatalog.Get("Extension").Build();
+        Expression secondBlock = ExpressionNodeCatalog.Get("Extension").Build();
 
         Assert.IsTrue(ExpressionComparer.Default.Equals(first, second));
         Assert.IsFalse(ExpressionComparer.Default.Equals(firstBlock, secondBlock));
         Assert.IsTrue(ExpressionComparer.Default.Equals(firstBlock, firstBlock));
+        Assert.IsTrue(ExpressionComparer.Default.Equals(ExpressionNodeCatalog.Get("Index").Build(), ExpressionNodeCatalog.Get("Index").Build()), "Index accesses are compared structurally since ETC R3.");
     }
 
     /// <summary>
     /// ETC-07, resolved for the scalar families by ETC R1c: unsupported nodes hashed by node type and result type only, so
     /// different conditionals collided. The hash now includes the children, so these two differ, while a still unsupported
-    /// family (an index access, R3; a block until ETC R2) keeps the coarse hash.
+    /// family (an extension node, R4; a block until ETC R2, an index access until ETC R3) keeps the coarse hash.
     /// </summary>
     [TestMethod]
     public void ETC07_Comparer_ScalarFamilies_HashTheirChildren()
     {
         Expression first = Expression.Condition(Expression.GreaterThan(P, Expression.Constant(0.5)), Expression.Constant(1.5), Expression.Constant(2.5));
         Expression second = Expression.Condition(Expression.LessThan(P, Expression.Constant(7.5)), Expression.Constant(3.5), P);
-        Expression firstBlock = Expression.ArrayAccess(Expression.NewArrayInit(typeof(double), Expression.Constant(1.5)), Expression.Constant(0));
-        Expression secondBlock = Expression.ArrayAccess(Expression.NewArrayInit(typeof(double), P), Expression.Constant(0));
+        Expression firstBlock = new ReducibleCatalogExtension(Expression.Constant(1.5));
+        Expression secondBlock = new ReducibleCatalogExtension(P);
+        Expression firstIndex = Expression.ArrayAccess(Expression.NewArrayInit(typeof(double), Expression.Constant(1.5)), Expression.Constant(0));
+        Expression secondIndex = Expression.ArrayAccess(Expression.NewArrayInit(typeof(double), P), Expression.Constant(0));
 
         Assert.IsFalse(ExpressionComparer.Default.Equals(first, second));
         Assert.AreNotEqual(ExpressionComparer.Default.GetHashCode(first), ExpressionComparer.Default.GetHashCode(second));
         Assert.AreEqual(ExpressionComparer.Default.GetHashCode(firstBlock), ExpressionComparer.Default.GetHashCode(secondBlock));
+        Assert.AreNotEqual(ExpressionComparer.Default.GetHashCode(firstIndex), ExpressionComparer.Default.GetHashCode(secondIndex), "Index accesses hash their children since ETC R3.");
     }
 
     // ------------------------------------------------------------------------------------------
@@ -566,21 +571,23 @@ public class ExpressionTreeFindingsTests
     /// <summary>
     /// ETC-14, resolved for the scalar families by ETC R1c: the unsupported-node canonical-order key tied every unsupported
     /// term; conditionals and defaults now have their own keys, which order them antisymmetrically, while two still
-    /// unsupported families (an index access and a member initializer, R3; a block and a loop until ETC R2) keep tying, conservatively.
+    /// unsupported families (a dynamic operation and an extension node, R4; a block and a loop until ETC R2, an index access and
+    /// a member initializer until ETC R3) keep tying, conservatively.
     /// </summary>
     [TestMethod]
     public void ETC14_CanonicalOrder_KeysTheScalarFamilies()
     {
         Expression first = ExpressionNodeCatalog.Get("Conditional").Build();
         Expression second = Expression.Default(typeof(double));
-        Expression block = ExpressionNodeCatalog.Get("Index").Build();
-        Expression loop = ExpressionNodeCatalog.Get("MemberInit").Build();
+        Expression block = ExpressionNodeCatalog.Get("Dynamic").Build();
+        Expression loop = ExpressionNodeCatalog.Get("Extension").Build();
 
         int forward = ExpressionCanonicalOrder.Compare(first, second, []);
         Assert.AreNotEqual(0, forward);
         Assert.AreEqual(-Math.Sign(forward), Math.Sign(ExpressionCanonicalOrder.Compare(second, first, [])));
         Assert.AreEqual(0, ExpressionCanonicalOrder.Compare(block, loop, []));
         Assert.AreEqual(0, ExpressionCanonicalOrder.Compare(loop, block, []));
+        Assert.AreNotEqual(0, ExpressionCanonicalOrder.Compare(ExpressionNodeCatalog.Get("Index").Build(), ExpressionNodeCatalog.Get("MemberInit").Build(), []), "Keyed since ETC R3.");
     }
 
     /// <summary>

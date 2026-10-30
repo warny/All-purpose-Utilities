@@ -94,17 +94,21 @@ public class ExpressionComparerTests
 
     /// <summary>
     /// Preservation: two distinct, structurally identical but unsupported nodes remain conservatively unequal. Since ETC R1c
-    /// (C-04) creations are compared structurally, and since ETC R2 blocks too, so the unsupported example is an index access (an R3 family) and two identical
-    /// creations compare equal (structural equality, not interchangeability: the simplifier still never merges them).
+    /// (C-04) creations are compared structurally, since ETC R2 blocks and since ETC R3 index accesses too, so the unsupported
+    /// example is an extension node (an R4 family) and two identical creations or index accesses compare equal (structural
+    /// equality, not interchangeability: the simplifier still never merges them).
     /// </summary>
     [TestMethod]
     public void Equals_UnsupportedNodeDistinctInstances_ReturnsFalse()
     {
-        IndexExpression a = Expression.ArrayAccess(Expression.NewArrayInit(typeof(double), Expression.Constant(1.0)), Expression.Constant(0));
-        IndexExpression b = Expression.ArrayAccess(Expression.NewArrayInit(typeof(double), Expression.Constant(1.0)), Expression.Constant(0));
+        Expression a = new Coverage.ReducibleCatalogExtension(Expression.Constant(1.0));
+        Expression b = new Coverage.ReducibleCatalogExtension(Expression.Constant(1.0));
 
         Assert.IsFalse(ExpressionComparer.Default.Equals(a, b));
         Assert.IsTrue(ExpressionComparer.Default.Equals(Expression.New(typeof(object)), Expression.New(typeof(object))));
+        Assert.IsTrue(ExpressionComparer.Default.Equals(
+            Expression.ArrayAccess(Expression.NewArrayInit(typeof(double), Expression.Constant(1.0)), Expression.Constant(0)),
+            Expression.ArrayAccess(Expression.NewArrayInit(typeof(double), Expression.Constant(1.0)), Expression.Constant(0))));
     }
 
     // ------------------------------------------------------------------------------------------

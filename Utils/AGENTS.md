@@ -73,3 +73,10 @@ equality, hash, canonical-key or other recursive handler must:
     first-occurrence index per lambda body, never by name, and are never recreated by a rebuild; a substitution replaces
     free occurrences only and renames a capturing declaration instead of inserting under it. `CatchBlock` and
     `SwitchCase` are not expression nodes: count their walk explicitly (`ConsumeStructuralVisit`).
+11. **Count the initializer containers** (ETC R3): `MemberBinding` (`MemberAssignment`, `MemberMemberBinding`,
+    `MemberListBinding`) and `ElementInit` are not expression nodes either, and member bindings nest without any expression
+    node in between. Every walk counts one structural visit per binding and per initializer. An engine-internal read-only
+    `ExpressionVisitor` must not let the framework recurse through bindings (it builds a delegate per level, outside the stack
+    guard's margin): override `VisitMemberInit`, `VisitListInit`, `VisitMemberBinding` and `VisitElementInit` with
+    `ReadOnlyBindingWalk`, otherwise a deep `MemberMemberBinding` chain overflows the stack. Never rediscover an `Add` method
+    from argument types: rebuild with the original `ElementInit.AddMethod`.

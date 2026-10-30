@@ -237,7 +237,7 @@ public class ExpressionResourceLimitsTests
     /// The public comparer and its hash fail with the structural budget, never with <see langword="false"/> or a fallback
     /// hash; distinct unequal trees and an unsupported family still answer <see langword="false"/>. Conditionals were the
     /// unsupported example before ETC R1c, which compares them structurally (C-04); a block was used until ETC R2 compared blocks too,
-    /// and an index access (an R3 family) is used since.
+    /// an index access until ETC R3 compared index accesses too, and an extension node (an R4 family) is used since.
     /// </summary>
     [TestMethod]
     public void Comparer_RefusalIsDistinctFromInequalityAndUnsupported()
@@ -245,14 +245,24 @@ public class ExpressionResourceLimitsTests
         ExpressionComparer strict = ExpressionComparer.Create(ExpressionResourceLimits.Default with { MaxStructuralVisits = 10 });
         Expression x = CallChain(30);
         Expression y = CallChain(30);
-        Expression unsupported1 = Expression.ArrayAccess(Expression.NewArrayInit(P.Type, Expression.Condition(Expression.Constant(true), P, P)), Expression.Constant(0));
-        Expression unsupported2 = Expression.ArrayAccess(Expression.NewArrayInit(P.Type, Expression.Condition(Expression.Constant(true), P, P)), Expression.Constant(0));
+        Expression unsupported1 = Expression.Negate(new OpaqueLeaf());
+        Expression unsupported2 = Expression.Negate(new OpaqueLeaf());
 
         Assert.IsFalse(ExpressionComparer.Default.Equals(NegateChain(3), NegateChain(4)));
         Assert.IsFalse(ExpressionComparer.Default.Equals(unsupported1, unsupported2));
         Assert.IsTrue(ExpressionComparer.Default.Equals(x, y));
         Assert.AreEqual(ExpressionResourceLimitKind.StructuralWork, Assert.ThrowsExactly<ExpressionResourceLimitException>(() => strict.Equals(x, y)).Kind);
         Assert.AreEqual(ExpressionResourceLimitKind.StructuralWork, Assert.ThrowsExactly<ExpressionResourceLimitException>(() => strict.GetHashCode(x)).Kind);
+    }
+
+    /// <summary>An irreducible extension node of type <see cref="double"/>: a family the comparer does not support (ETC R4).</summary>
+    private sealed class OpaqueLeaf : Expression
+    {
+        /// <inheritdoc/>
+        public override ExpressionType NodeType => ExpressionType.Extension;
+
+        /// <inheritdoc/>
+        public override Type Type => typeof(double);
     }
 
     /// <summary>
