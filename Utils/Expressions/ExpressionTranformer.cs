@@ -974,6 +974,14 @@ public abstract class ExpressionTransformer
     /// positional child layout (what the rules and <see cref="FinalizeExpression"/> receive, and what
     /// <see cref="CopyExpression"/> accepts) is documented on each <c>Prepare*</c> method.
     /// </para>
+    /// <para>
+    /// ETC R3 (C-03 extended): <see cref="MemberInitExpression"/>, <see cref="ListInitExpression"/> and
+    /// <see cref="IndexExpression"/> are traversed too, with their bindings and initializers (<see cref="MemberAssignment"/>,
+    /// <see cref="MemberMemberBinding"/>, <see cref="MemberListBinding"/>, <see cref="ElementInit"/>). Their positional child
+    /// layout flattens the bindings and initializers in declaration order (see <see cref="PrepareMemberInit"/>,
+    /// <see cref="PrepareListInit"/> and <see cref="PrepareIndex"/>). Only <see cref="DynamicExpression"/> and extension nodes
+    /// still reach <see cref="PrepareDefault"/>.
+    /// </para>
     /// </remarks>
     private TransformContext PrepareTransform(Expression e) => e switch
     {
@@ -998,6 +1006,9 @@ public abstract class ExpressionTransformer
         LabelExpression label => PrepareLabel(label),
         RuntimeVariablesExpression runtimeVariables => PrepareRuntimeVariables(runtimeVariables),
         DebugInfoExpression debugInfo => PrepareDebugInfo(debugInfo),
+        MemberInitExpression memberInit => PrepareMemberInit(memberInit),
+        ListInitExpression listInit => PrepareListInit(listInit),
+        IndexExpression index => PrepareIndex(index),
         _ => PrepareDefault(e),
     };
 
@@ -1623,9 +1634,148 @@ public abstract class ExpressionTransformer
         => new(node, Array.Empty<Expression>());
 
     /// <summary>
-    /// Prepares any expression node not handled by a more specific <c>Prepare*</c> method (e.g.
-    /// <see cref="MemberInitExpression"/>, <see cref="IndexExpression"/>): no sub-expression preparation is
-    /// attempted, and the node is passed through unchanged.
+    /// Prepares a <see cref="MemberInitExpression"/> (ETC R3) in structural order: the <see cref="MemberInitExpression.NewExpression"/>,
+    /// then each binding in declaration order (see <see cref="PrepareBinding"/>). No constructor, setter, getter or <c>Add</c>
+    /// method is run; bindings are neither reordered, merged nor dropped.
+    /// </summary>
+    /// <param name="node">The member initialization to prepare.</param>
+    /// <returns>
+    /// The resulting <see cref="TransformContext"/>. Its children follow the layout of <see cref="MemberInitChildCount"/>: the
+    /// creation first, then for each binding in order its flattened expressions — the assigned value of a
+    /// <see cref="MemberAssignment"/>, the flattened expressions of the nested bindings of a <see cref="MemberMemberBinding"/>,
+    /// the arguments of each <see cref="ElementInit"/> of a <see cref="MemberListBinding"/>. Members, binding kinds and
+    /// <c>Add</c> methods are metadata, never children.
+    /// </returns>
+    /// <exception cref="InvalidCastException"><see cref="PrepareExpression"/> returned something else than a <see cref="NewExpression"/> for the creation.</exception>
+    private TransformContext PrepareMemberInit(MemberInitExpression node)
+    {
+        var children = new Expression[MemberInitChildCount(node)];
+        int next = 0;
+
+        // The creation position of a member initialization only accepts a NewExpression, like a variable position only
+        // accepts a parameter (PrepareVariables): a PrepareExpression override cannot turn it into another node.
+        var newExpression = (NewExpression)PrepareExpression(node.NewExpression);
+        children[next++] = newExpression;
+        MemberBinding[] bindings = PrepareBindings(node.Bindings, children, ref next);
+
+        return new TransformContext(RebuildMemberInitExpression(node, newExpression, bindings), children);
+    }
+
+    /// <summary>
+    /// Prepares a <see cref="ListInitExpression"/> (ETC R3) in structural order: the <see cref="ListInitExpression.NewExpression"/>,
+    /// then each <see cref="ElementInit"/> in order, each one's arguments in order. Every initializer keeps its exact
+    /// <see cref="ElementInit.AddMethod"/>; no <c>Add</c> method is rediscovered from the argument types, and none is run.
+    /// </summary>
+    /// <param name="node">The list initialization to prepare.</param>
+    /// <returns>
+    /// The resulting <see cref="TransformContext"/>. Its children follow the layout of <see cref="ListInitChildCount"/>: the
+    /// creation first, then the arguments of each initializer, in order.
+    /// </returns>
+    /// <exception cref="InvalidCastException"><see cref="PrepareExpression"/> returned something else than a <see cref="NewExpression"/> for the creation.</exception>
+    private TransformContext PrepareListInit(ListInitExpression node)
+    {
+        var children = new Expression[ListInitChildCount(node)];
+        int next = 0;
+        var newExpression = (NewExpression)PrepareExpression(node.NewExpression);
+        children[next++] = newExpression;
+        ElementInit[] initializers = PrepareElementInits(node.Initializers, children, ref next);
+
+        return new TransformContext(RebuildListInitExpression(node, newExpression, initializers), children);
+    }
+
+    /// <summary>
+    /// Prepares an <see cref="IndexExpression"/> (ETC R3): the receiver (when present), then the index arguments in order.
+    /// The access is rebuilt with the same <see cref="IndexExpression.Indexer"/> (or as an array access when it has none), so
+    /// its type, its arity and its writability as an assignment target are kept. No accessor is called.
+    /// </summary>
+    /// <param name="node">The index access to prepare.</param>
+    /// <returns>The resulting <see cref="TransformContext"/>: the receiver (when present) followed by the arguments.</returns>
+    private TransformContext PrepareIndex(IndexExpression node)
+    {
+        Expression? receiver = node.Object is null ? null : PrepareExpression(node.Object);
+        Expression[] arguments = PrepareChildren(node.Arguments);
+        Expression[] children = receiver is null ? arguments : [receiver, .. arguments];
+
+        return new TransformContext(RebuildIndexExpression(node, receiver, arguments), children);
+    }
+
+    /// <summary>Prepares the bindings of a member initialization or of a <see cref="MemberMemberBinding"/>, in declaration order (ETC R3).</summary>
+    /// <param name="bindings">The bindings.</param>
+    /// <param name="children">The positional child list of the enclosing initialization, filled in place.</param>
+    /// <param name="next">The next free position of <paramref name="children"/>, advanced in place.</param>
+    /// <returns>The prepared bindings, each one the original instance when nothing in it changed.</returns>
+    private MemberBinding[] PrepareBindings(ReadOnlyCollection<MemberBinding> bindings, Expression[] children, ref int next)
+    {
+        int count = bindings.Count;
+        if (count == 0) return Array.Empty<MemberBinding>();
+
+        var prepared = new MemberBinding[count];
+        for (int i = 0; i < count; i++)
+        {
+            prepared[i] = PrepareBinding(bindings[i], children, ref next);
+        }
+
+        return prepared;
+    }
+
+    /// <summary>
+    /// Prepares one <see cref="MemberBinding"/> (ETC R3). A binding is not an expression node, so its traversal is counted
+    /// as one structural visit explicitly (stack check included): a deep nesting of <see cref="MemberMemberBinding"/>s is
+    /// bounded like any other recursion of the engine.
+    /// </summary>
+    /// <param name="binding">The binding.</param>
+    /// <param name="children">The positional child list of the enclosing initialization, filled in place.</param>
+    /// <param name="next">The next free position of <paramref name="children"/>, advanced in place.</param>
+    /// <returns>The binding, rebuilt with its member (and binding kind) only when one of its expressions changed.</returns>
+    /// <exception cref="NotSupportedException"><paramref name="binding"/> is not one of the three framework binding classes.</exception>
+    private MemberBinding PrepareBinding(MemberBinding binding, Expression[] children, ref int next)
+    {
+        ExpressionResourceBudget.ConsumeStructuralVisit();
+        switch (binding)
+        {
+            case MemberAssignment assignment:
+                return RebuildMemberAssignment(assignment, children[next++] = PrepareExpression(assignment.Expression));
+
+            case MemberMemberBinding memberBinding:
+                return RebuildMemberMemberBinding(memberBinding, PrepareBindings(memberBinding.Bindings, children, ref next));
+
+            case MemberListBinding listBinding:
+                return RebuildMemberListBinding(listBinding, PrepareElementInits(listBinding.Initializers, children, ref next));
+
+            default:
+                throw UnsupportedBinding(binding);
+        }
+    }
+
+    /// <summary>Prepares the initializers of a list initialization or of a <see cref="MemberListBinding"/>, in order (ETC R3).</summary>
+    /// <param name="initializers">The initializers.</param>
+    /// <param name="children">The positional child list of the enclosing initialization, filled in place.</param>
+    /// <param name="next">The next free position of <paramref name="children"/>, advanced in place.</param>
+    /// <returns>The prepared initializers, each one with its original <see cref="ElementInit.AddMethod"/>.</returns>
+    private ElementInit[] PrepareElementInits(ReadOnlyCollection<ElementInit> initializers, Expression[] children, ref int next)
+    {
+        int count = initializers.Count;
+        if (count == 0) return Array.Empty<ElementInit>();
+
+        var prepared = new ElementInit[count];
+        for (int i = 0; i < count; i++)
+        {
+            // ElementInit is not an expression node: its traversal is counted explicitly (ETC R3).
+            ExpressionResourceBudget.ConsumeStructuralVisit();
+            ElementInit initializer = initializers[i];
+            Expression[] arguments = PrepareChildren(initializer.Arguments);
+            arguments.CopyTo(children, next);
+            next += arguments.Length;
+            prepared[i] = RebuildElementInit(initializer, arguments);
+        }
+
+        return prepared;
+    }
+
+    /// <summary>
+    /// Prepares any expression node not handled by a more specific <c>Prepare*</c> method (since ETC R3, only
+    /// <see cref="DynamicExpression"/> and extension nodes): no sub-expression preparation is attempted, and the node is
+    /// passed through unchanged.
     /// </summary>
     /// <param name="e">The expression to prepare.</param>
     /// <returns>An opaque <see cref="TransformContext"/> (see <see cref="TransformContext.IsOpaque"/>).</returns>
@@ -2743,6 +2893,15 @@ public abstract class ExpressionTransformer
     /// targets, jump kinds, result types) is taken from <paramref name="e"/>, never from the list, and label targets are
     /// never recreated. <c>Loop</c> and these families return the node itself when no child changed.
     /// </para>
+    /// <para>
+    /// ETC R3: <c>MemberInit</c>, <c>ListInit</c> and <c>Index</c> follow the same arity contract, with the positional layouts
+    /// of <see cref="PrepareMemberInit"/>, <see cref="PrepareListInit"/> and <see cref="PrepareIndex"/>: the creation (which must
+    /// stay a <see cref="NewExpression"/> of the same type), then the flattened expressions of the bindings or initializers in
+    /// declaration order; the receiver (when present), then the index arguments. Members, binding kinds, <c>Add</c> methods and
+    /// the indexer are taken from <paramref name="e"/>, never from the list, and never rediscovered; a binding is never
+    /// dropped, an <c>Add</c> method never replaced, and a result whose type differs from <paramref name="e"/>'s is rejected
+    /// with <see cref="ArgumentException"/>. These families return the node itself when no child changed.
+    /// </para>
     /// </remarks>
     /// <param name="e">The original expression to copy.</param>
     /// <param name="parameters">The sub-expressions to insert into the copied expression.</param>
@@ -2791,9 +2950,9 @@ public abstract class ExpressionTransformer
             ExpressionType.LeftShift => Expression.LeftShift(parameters[0], parameters[1]),
             ExpressionType.LessThan => Expression.LessThan(parameters[0], parameters[1]),
             ExpressionType.LessThanOrEqual => Expression.LessThanOrEqual(parameters[0], parameters[1]),
-            ExpressionType.ListInit => e,
+            ExpressionType.ListInit => CopyListInitExpression((ListInitExpression)e, parameters),
             ExpressionType.MemberAccess => CopyMemberAccess((MemberExpression)e, parameters),
-            ExpressionType.MemberInit => e,
+            ExpressionType.MemberInit => CopyMemberInitExpression((MemberInitExpression)e, parameters),
             ExpressionType.Modulo => Expression.Modulo(parameters[0], parameters[1]),
             ExpressionType.Multiply => Expression.Multiply(parameters[0], parameters[1]),
             ExpressionType.MultiplyChecked => Expression.MultiplyChecked(parameters[0], parameters[1]),
@@ -2823,7 +2982,7 @@ public abstract class ExpressionTransformer
             ExpressionType.Extension => e,
             ExpressionType.Goto => CopyGotoExpression((GotoExpression)e, parameters),
             ExpressionType.Increment => Expression.Increment(parameters[0]),
-            ExpressionType.Index => e,
+            ExpressionType.Index => CopyIndexExpression((IndexExpression)e, parameters),
             ExpressionType.Label => CopyLabelExpression((LabelExpression)e, parameters),
             ExpressionType.RuntimeVariables => CopyRuntimeVariablesExpression((RuntimeVariablesExpression)e, parameters),
             ExpressionType.Loop => CopyLoopExpression((LoopExpression)e, parameters),
@@ -3244,6 +3403,309 @@ public abstract class ExpressionTransformer
         for (int i = 0; i < cases.Length; i++)
         {
             if (!ReferenceEquals(original[i], cases[i])) return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>Counts the positional children of a <see cref="MemberInitExpression"/> (ETC R3).</summary>
+    /// <param name="node">The member initialization.</param>
+    /// <returns>One for the creation, then the flattened expressions of the bindings (see <see cref="BindingsChildCount"/>).</returns>
+    private static int MemberInitChildCount(MemberInitExpression node) => 1 + BindingsChildCount(node.Bindings);
+
+    /// <summary>Counts the positional children of a <see cref="ListInitExpression"/> (ETC R3).</summary>
+    /// <param name="node">The list initialization.</param>
+    /// <returns>One for the creation, then the arguments of every initializer.</returns>
+    private static int ListInitChildCount(ListInitExpression node) => 1 + ElementInitsChildCount(node.Initializers);
+
+    /// <summary>Counts the flattened expressions of a list of bindings (ETC R3), in declaration order.</summary>
+    /// <param name="bindings">The bindings.</param>
+    /// <returns>
+    /// One per <see cref="MemberAssignment"/>, the count of the nested bindings of a <see cref="MemberMemberBinding"/>, the
+    /// arguments of every initializer of a <see cref="MemberListBinding"/>.
+    /// </returns>
+    /// <exception cref="NotSupportedException">A binding is not one of the three framework binding classes.</exception>
+    private static int BindingsChildCount(ReadOnlyCollection<MemberBinding> bindings)
+    {
+        // Nested member bindings recurse without going through a budgeted dispatcher: check the stack here.
+        ExpressionResourceBudget.EnsureStack();
+        int count = 0;
+        foreach (MemberBinding binding in bindings)
+        {
+            count += binding switch
+            {
+                MemberAssignment => 1,
+                MemberMemberBinding memberBinding => BindingsChildCount(memberBinding.Bindings),
+                MemberListBinding listBinding => ElementInitsChildCount(listBinding.Initializers),
+                _ => throw UnsupportedBinding(binding),
+            };
+        }
+
+        return count;
+    }
+
+    /// <summary>Counts the arguments of a list of initializers (ETC R3).</summary>
+    /// <param name="initializers">The initializers.</param>
+    /// <returns>The total number of arguments.</returns>
+    private static int ElementInitsChildCount(ReadOnlyCollection<ElementInit> initializers)
+    {
+        int count = 0;
+        foreach (ElementInit initializer in initializers)
+        {
+            count += initializer.Arguments.Count;
+        }
+
+        return count;
+    }
+
+    /// <summary>Creates the exception reported for a <see cref="MemberBinding"/> subclass that is none of the three framework classes.</summary>
+    /// <param name="binding">The binding.</param>
+    /// <returns>The exception to throw.</returns>
+    private static NotSupportedException UnsupportedBinding(MemberBinding binding)
+        => new($"The member binding class '{binding.GetType()}' ({binding.BindingType}) is not supported: only MemberAssignment, MemberMemberBinding and MemberListBinding can be traversed.");
+
+    /// <summary>
+    /// Rebuilds a <see cref="MemberInitExpression"/> from its (already prepared) creation and bindings (ETC R3) with
+    /// <see cref="Expression.MemberInit(NewExpression, IEnumerable{MemberBinding})"/>; the node itself is returned when nothing changed.
+    /// </summary>
+    /// <param name="original">The member initialization being rebuilt.</param>
+    /// <param name="newExpression">The creation.</param>
+    /// <param name="bindings">The bindings, of the same count, order and members as <paramref name="original"/>'s.</param>
+    /// <returns>The rebuilt node, or <paramref name="original"/>.</returns>
+    /// <exception cref="ArgumentException"><paramref name="newExpression"/> creates another type than <paramref name="original"/>.</exception>
+    private static MemberInitExpression RebuildMemberInitExpression(MemberInitExpression original, NewExpression newExpression, MemberBinding[] bindings)
+    {
+        if (ReferenceEquals(newExpression, original.NewExpression) && BindingsUnchanged(original.Bindings, bindings)) return original;
+
+        EnsureSameCreatedType(original, original.NewExpression, newExpression);
+        return Expression.MemberInit(newExpression, bindings);
+    }
+
+    /// <summary>
+    /// Rebuilds a <see cref="ListInitExpression"/> from its (already prepared) creation and initializers (ETC R3) with the
+    /// <see cref="ElementInit"/> overload of <see cref="Expression.ListInit(NewExpression, IEnumerable{ElementInit})"/>, so every
+    /// initializer keeps its exact <see cref="ElementInit.AddMethod"/> (no method is rediscovered from the argument types);
+    /// the node itself is returned when nothing changed.
+    /// </summary>
+    /// <param name="original">The list initialization being rebuilt.</param>
+    /// <param name="newExpression">The creation.</param>
+    /// <param name="initializers">The initializers, of the same count, order and <c>Add</c> methods as <paramref name="original"/>'s.</param>
+    /// <returns>The rebuilt node, or <paramref name="original"/>.</returns>
+    /// <exception cref="ArgumentException"><paramref name="newExpression"/> creates another type than <paramref name="original"/>.</exception>
+    private static ListInitExpression RebuildListInitExpression(ListInitExpression original, NewExpression newExpression, ElementInit[] initializers)
+    {
+        if (ReferenceEquals(newExpression, original.NewExpression) && ElementInitsUnchanged(original.Initializers, initializers)) return original;
+
+        EnsureSameCreatedType(original, original.NewExpression, newExpression);
+        return Expression.ListInit(newExpression, initializers);
+    }
+
+    /// <summary>
+    /// Rejects a creation that no longer builds the type of the initialization it belongs to (ETC R3, C-02): the members
+    /// and <c>Add</c> methods of the bindings and initializers belong to that type.
+    /// </summary>
+    /// <param name="node">The initialization being rebuilt.</param>
+    /// <param name="original">Its original creation.</param>
+    /// <param name="replacement">The creation supplied for the rebuild.</param>
+    /// <exception cref="ArgumentException"><paramref name="replacement"/> creates another type than <paramref name="original"/>.</exception>
+    private static void EnsureSameCreatedType(Expression node, NewExpression original, NewExpression replacement)
+    {
+        if (replacement.Type != original.Type)
+        {
+            throw new ArgumentException(
+                $"A '{node.NodeType}' expression creates a '{original.Type}', but the supplied creation builds a '{replacement.Type}'.",
+                nameof(replacement));
+        }
+    }
+
+    /// <summary>Rebuilds a <see cref="MemberAssignment"/> with the same member (ETC R3); the binding itself is returned when the value is unchanged.</summary>
+    /// <param name="original">The binding being rebuilt.</param>
+    /// <param name="value">The assigned value; the framework factory rejects a value whose type cannot be assigned to the member.</param>
+    /// <returns>The rebuilt binding, or <paramref name="original"/>.</returns>
+    private static MemberAssignment RebuildMemberAssignment(MemberAssignment original, Expression value)
+        => ReferenceEquals(value, original.Expression) ? original : Expression.Bind(original.Member, value);
+
+    /// <summary>Rebuilds a <see cref="MemberMemberBinding"/> with the same member (ETC R3); the binding itself is returned when no nested binding changed.</summary>
+    /// <param name="original">The binding being rebuilt.</param>
+    /// <param name="bindings">The nested bindings, of the same count and order.</param>
+    /// <returns>The rebuilt binding, or <paramref name="original"/>.</returns>
+    private static MemberMemberBinding RebuildMemberMemberBinding(MemberMemberBinding original, MemberBinding[] bindings)
+        => BindingsUnchanged(original.Bindings, bindings) ? original : Expression.MemberBind(original.Member, bindings);
+
+    /// <summary>Rebuilds a <see cref="MemberListBinding"/> with the same member (ETC R3); the binding itself is returned when no initializer changed.</summary>
+    /// <param name="original">The binding being rebuilt.</param>
+    /// <param name="initializers">The initializers, of the same count, order and <c>Add</c> methods.</param>
+    /// <returns>The rebuilt binding, or <paramref name="original"/>.</returns>
+    private static MemberListBinding RebuildMemberListBinding(MemberListBinding original, ElementInit[] initializers)
+        => ElementInitsUnchanged(original.Initializers, initializers) ? original : Expression.ListBind(original.Member, initializers);
+
+    /// <summary>Rebuilds an <see cref="ElementInit"/> with its exact <see cref="ElementInit.AddMethod"/> (ETC R3); the initializer itself is returned when no argument changed.</summary>
+    /// <param name="original">The initializer being rebuilt.</param>
+    /// <param name="arguments">The arguments, of the same count.</param>
+    /// <returns>The rebuilt initializer, or <paramref name="original"/>.</returns>
+    private static ElementInit RebuildElementInit(ElementInit original, Expression[] arguments)
+        => ChildrenUnchanged(original.Arguments, arguments) ? original : Expression.ElementInit(original.AddMethod, arguments);
+
+    /// <summary>
+    /// Rebuilds an <see cref="IndexExpression"/> on a (prepared) receiver and arguments (ETC R3): through the same
+    /// <see cref="IndexExpression.Indexer"/>, or as an array access when it has none. The node itself is returned when nothing
+    /// changed. The result is writable exactly when the original was (same indexer, or an array element).
+    /// </summary>
+    /// <param name="original">The index access being rebuilt.</param>
+    /// <param name="receiver">The receiver, <see langword="null"/> exactly when <paramref name="original"/> has none.</param>
+    /// <param name="arguments">The index arguments, of the same count.</param>
+    /// <returns>The rebuilt node, or <paramref name="original"/>.</returns>
+    /// <exception cref="ArgumentException">The rebuilt access has another type than <paramref name="original"/> (an array receiver of another element type).</exception>
+    private static IndexExpression RebuildIndexExpression(IndexExpression original, Expression? receiver, Expression[] arguments)
+    {
+        if (ReferenceEquals(receiver, original.Object) && ChildrenUnchanged(original.Arguments, arguments)) return original;
+
+        IndexExpression rebuilt = original.Indexer is null
+            ? Expression.ArrayAccess(receiver!, arguments)
+            : Expression.Property(receiver, original.Indexer, arguments);
+        if (rebuilt.Type != original.Type)
+        {
+            throw new ArgumentException(
+                $"An 'Index' expression of type '{original.Type}' would be rebuilt with type '{rebuilt.Type}'.",
+                nameof(receiver));
+        }
+
+        return rebuilt;
+    }
+
+    /// <summary>
+    /// Rebuilds a <see cref="MemberInitExpression"/> from its positional children (ETC R3), laid out as described by
+    /// <see cref="MemberInitChildCount"/>.
+    /// </summary>
+    /// <param name="original">The member initialization being copied.</param>
+    /// <param name="children">The positional children.</param>
+    /// <returns>The rebuilt node, or <paramref name="original"/> (see <see cref="KeepsUntraversedNode"/>; also when no child changed).</returns>
+    /// <exception cref="ArgumentException">The list length does not match, or the first child is not a <see cref="NewExpression"/> of the same type.</exception>
+    private static Expression CopyMemberInitExpression(MemberInitExpression original, Expression[] children)
+    {
+        if (KeepsUntraversedNode(original, children, MemberInitChildCount(original))) return original;
+
+        NewExpression newExpression = CreationChild(original, children);
+        int next = 1;
+        MemberBinding[] bindings = CopyBindings(original.Bindings, children, ref next);
+        return RebuildMemberInitExpression(original, newExpression, bindings);
+    }
+
+    /// <summary>
+    /// Rebuilds a <see cref="ListInitExpression"/> from its positional children (ETC R3), laid out as described by
+    /// <see cref="ListInitChildCount"/>; every initializer keeps its <c>Add</c> method.
+    /// </summary>
+    /// <param name="original">The list initialization being copied.</param>
+    /// <param name="children">The positional children.</param>
+    /// <returns>The rebuilt node, or <paramref name="original"/> (see <see cref="KeepsUntraversedNode"/>; also when no child changed).</returns>
+    /// <exception cref="ArgumentException">The list length does not match, or the first child is not a <see cref="NewExpression"/> of the same type.</exception>
+    private static Expression CopyListInitExpression(ListInitExpression original, Expression[] children)
+    {
+        if (KeepsUntraversedNode(original, children, ListInitChildCount(original))) return original;
+
+        NewExpression newExpression = CreationChild(original, children);
+        int next = 1;
+        ElementInit[] initializers = CopyElementInits(original.Initializers, children, ref next);
+        return RebuildListInitExpression(original, newExpression, initializers);
+    }
+
+    /// <summary>
+    /// Rebuilds an <see cref="IndexExpression"/> from its positional children (ETC R3): the receiver when the access has one,
+    /// then the index arguments.
+    /// </summary>
+    /// <param name="original">The index access being copied.</param>
+    /// <param name="children">The positional children.</param>
+    /// <returns>The rebuilt node, or <paramref name="original"/> (see <see cref="KeepsUntraversedNode"/>; also when no child changed).</returns>
+    /// <exception cref="ArgumentException">The list length does not match, or the rebuilt access would change type.</exception>
+    private static Expression CopyIndexExpression(IndexExpression original, Expression[] children)
+    {
+        int offset = original.Object is null ? 0 : 1;
+        if (KeepsUntraversedNode(original, children, offset + original.Arguments.Count)) return original;
+
+        Expression? receiver = original.Object is null ? null : children[0];
+        var arguments = new Expression[original.Arguments.Count];
+        Array.Copy(children, offset, arguments, 0, arguments.Length);
+        return RebuildIndexExpression(original, receiver, arguments);
+    }
+
+    /// <summary>Reads the creation of an initialization from the first positional child (ETC R3).</summary>
+    /// <param name="original">The initialization being copied.</param>
+    /// <param name="children">The positional children, of the expected length.</param>
+    /// <returns>The creation.</returns>
+    /// <exception cref="ArgumentException">The first child is not a <see cref="NewExpression"/>.</exception>
+    private static NewExpression CreationChild(Expression original, Expression[] children)
+        => children[0] as NewExpression
+            ?? throw new ArgumentException(
+                $"The first sub-expression of a '{original.NodeType}' expression must be a NewExpression, not '{children[0]?.NodeType.ToString() ?? "null"}'.",
+                nameof(children));
+
+    /// <summary>Rebuilds bindings from the positional children of an initialization (ETC R3), in declaration order.</summary>
+    /// <param name="bindings">The original bindings, whose members and kinds are kept.</param>
+    /// <param name="children">The positional children.</param>
+    /// <param name="next">The next position to read, advanced in place.</param>
+    /// <returns>The rebuilt bindings.</returns>
+    private static MemberBinding[] CopyBindings(ReadOnlyCollection<MemberBinding> bindings, Expression[] children, ref int next)
+    {
+        // Nested member bindings recurse outside any budgeted dispatcher (CopyExpression is static): check the stack here.
+        ExpressionResourceBudget.EnsureStack();
+        var copied = new MemberBinding[bindings.Count];
+        for (int i = 0; i < copied.Length; i++)
+        {
+            copied[i] = bindings[i] switch
+            {
+                MemberAssignment assignment => RebuildMemberAssignment(assignment, children[next++]),
+                MemberMemberBinding memberBinding => RebuildMemberMemberBinding(memberBinding, CopyBindings(memberBinding.Bindings, children, ref next)),
+                MemberListBinding listBinding => RebuildMemberListBinding(listBinding, CopyElementInits(listBinding.Initializers, children, ref next)),
+                _ => throw UnsupportedBinding(bindings[i]),
+            };
+        }
+
+        return copied;
+    }
+
+    /// <summary>Rebuilds initializers from the positional children of an initialization (ETC R3), keeping each <c>Add</c> method.</summary>
+    /// <param name="initializers">The original initializers.</param>
+    /// <param name="children">The positional children.</param>
+    /// <param name="next">The next position to read, advanced in place.</param>
+    /// <returns>The rebuilt initializers.</returns>
+    private static ElementInit[] CopyElementInits(ReadOnlyCollection<ElementInit> initializers, Expression[] children, ref int next)
+    {
+        var copied = new ElementInit[initializers.Count];
+        for (int i = 0; i < copied.Length; i++)
+        {
+            ElementInit initializer = initializers[i];
+            var arguments = new Expression[initializer.Arguments.Count];
+            Array.Copy(children, next, arguments, 0, arguments.Length);
+            next += arguments.Length;
+            copied[i] = RebuildElementInit(initializer, arguments);
+        }
+
+        return copied;
+    }
+
+    /// <summary>Whether every binding of <paramref name="bindings"/> is the instance <paramref name="original"/> holds at the same position.</summary>
+    /// <param name="original">The original bindings.</param>
+    /// <param name="bindings">The bindings, of the same count.</param>
+    /// <returns><see langword="true"/> if no binding changed.</returns>
+    private static bool BindingsUnchanged(ReadOnlyCollection<MemberBinding> original, MemberBinding[] bindings)
+    {
+        for (int i = 0; i < bindings.Length; i++)
+        {
+            if (!ReferenceEquals(original[i], bindings[i])) return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>Whether every initializer of <paramref name="initializers"/> is the instance <paramref name="original"/> holds at the same position.</summary>
+    /// <param name="original">The original initializers.</param>
+    /// <param name="initializers">The initializers, of the same count.</param>
+    /// <returns><see langword="true"/> if no initializer changed.</returns>
+    private static bool ElementInitsUnchanged(ReadOnlyCollection<ElementInit> original, ElementInit[] initializers)
+    {
+        for (int i = 0; i < initializers.Length; i++)
+        {
+            if (!ReferenceEquals(original[i], initializers[i])) return false;
         }
 
         return true;

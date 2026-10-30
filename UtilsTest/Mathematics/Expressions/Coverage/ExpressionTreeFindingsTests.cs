@@ -105,12 +105,12 @@ public class ExpressionTreeFindingsTests
     /// ETC-01: families reaching <c>PrepareDefault</c> are returned as the very same instance by the exact simplifier,
     /// so a simplifiable descendant is never visited. R1 (New, NewArray, TypeBinary), R2 (Block, Try, Switch, Loop,
     /// Goto, Label), R3 (MemberInit, ListInit, Index) and R4 (Dynamic, Extension) replace this with explicit policies;
-    /// R1b and R2 are done (see <c>ExpressionTreeR1bTests</c> and <c>ExpressionTreeR2Tests</c>).
+    /// R1b, R2 and R3 are done (see <c>ExpressionTreeR1bTests</c>, <c>ExpressionTreeR2Tests</c> and <c>ExpressionTreeR3Tests</c>).
     /// </summary>
     [TestMethod]
     public void ETC01_ExactSimplifier_DefaultDispatchedFamilies_AreNotTraversed()
     {
-        string[] passThrough = ["MemberInit", "ListInit", "Index", "Dynamic", "Extension"];
+        string[] passThrough = ["Dynamic", "Extension"];
         foreach (string name in passThrough)
         {
             Expression original = ExpressionNodeCatalog.Get(name).Build();
@@ -186,13 +186,14 @@ public class ExpressionTreeFindingsTests
     /// ETC-02: for many families <c>CopyExpression</c> ignores the supplied children and returns the original node. ETC R1b
     /// removed <c>MemberAccess</c> from this list: it follows the C-02 arity contract (see
     /// <see cref="ETC02_CopyExpression_MemberAccess_FollowsArityContract"/>); ETC R2 removed <c>Try</c>, <c>Switch</c>,
-    /// <c>Goto</c> and <c>Label</c>, which follow it too (see <c>ExpressionTreeR2Tests</c>).
+    /// <c>Goto</c> and <c>Label</c>, which follow it too (see <c>ExpressionTreeR2Tests</c>); ETC R3 removed <c>MemberInit</c>,
+    /// <c>ListInit</c> and <c>Index</c> (see <c>ExpressionTreeR3Tests</c>).
     /// </summary>
     [TestMethod]
     public void ETC02_CopyExpression_IgnoresReplacementChildren_ForPassThroughFamilies()
     {
         Expression replacement = Expression.Constant(9.5);
-        string[] ignored = ["MemberInit", "ListInit", "Index", "Dynamic", "Extension", "Lambda"];
+        string[] ignored = ["Dynamic", "Extension", "Lambda"];
         foreach (string name in ignored)
         {
             Expression original = ExpressionNodeCatalog.Get(name).Build();
