@@ -2841,6 +2841,36 @@ public abstract class ExpressionTransformer
             return node;
         }
 
+        /// <inheritdoc/>
+        protected override Expression VisitMemberInit(MemberInitExpression node)
+        {
+            Visit(node.NewExpression);
+            ReadOnlyBindingWalk.VisitBindings(this, node.Bindings);
+            return node;
+        }
+
+        /// <inheritdoc/>
+        protected override Expression VisitListInit(ListInitExpression node)
+        {
+            Visit(node.NewExpression);
+            ReadOnlyBindingWalk.VisitInitializers(this, node.Initializers);
+            return node;
+        }
+
+        /// <inheritdoc/>
+        protected override MemberBinding VisitMemberBinding(MemberBinding node)
+        {
+            ReadOnlyBindingWalk.VisitBinding(this, node);
+            return node;
+        }
+
+        /// <inheritdoc/>
+        protected override ElementInit VisitElementInit(ElementInit node)
+        {
+            ReadOnlyBindingWalk.VisitInitializer(this, node);
+            return node;
+        }
+
         /// <summary>Marks declarations as bound while their binder's scope is walked.</summary>
         /// <param name="declarations">The declarations.</param>
         private void Declare(IReadOnlyList<ParameterExpression> declarations)

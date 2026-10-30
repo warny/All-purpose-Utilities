@@ -653,5 +653,35 @@ internal sealed class InvocationInliningAnalysis
             found = true;
             return node;
         }
+
+        /// <inheritdoc/>
+        protected override Expression VisitMemberInit(MemberInitExpression node)
+        {
+            Visit(node.NewExpression);
+            ReadOnlyBindingWalk.VisitBindings(this, node.Bindings);
+            return node;
+        }
+
+        /// <inheritdoc/>
+        protected override Expression VisitListInit(ListInitExpression node)
+        {
+            Visit(node.NewExpression);
+            ReadOnlyBindingWalk.VisitInitializers(this, node.Initializers);
+            return node;
+        }
+
+        /// <inheritdoc/>
+        protected override MemberBinding VisitMemberBinding(MemberBinding node)
+        {
+            ReadOnlyBindingWalk.VisitBinding(this, node);
+            return node;
+        }
+
+        /// <inheritdoc/>
+        protected override ElementInit VisitElementInit(ElementInit node)
+        {
+            ReadOnlyBindingWalk.VisitInitializer(this, node);
+            return node;
+        }
     }
 }

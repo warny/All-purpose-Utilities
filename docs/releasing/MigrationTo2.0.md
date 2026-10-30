@@ -204,6 +204,37 @@ The full record is in `Utils/TODO-2026-10-27-etc-expression-tree-coverage-roadma
   refusal is now the exact (saturated) count, and when a large input exceeds both limits the reported kind may be `Depth`
   where it was `Nodes`.
 
+## Expression engine: initializers and index accesses (ETC R3)
+
+Behavior changes of `ExpressionTransformer`, `ExpressionSimplifier` and `ExpressionComparer`; no public signature changed.
+The full record is in `Utils/TODO-2026-10-27-etc-expression-tree-coverage-roadmap.md` (§9 "R3 result").
+
+- **Newly traversed families (C-03 extended).** `MemberInit` (with its `MemberAssignment`, `MemberMemberBinding` and
+  `MemberListBinding` bindings), `ListInit` (with its `ElementInit`s) and `Index` (array element or indexer) are traversed
+  and rebuilt with their metadata: constructor, members, binding kinds, binding and initializer order, the exact `Add`
+  method of every initializer (never rediscovered from the argument types), the indexer, the type, and the writability of
+  an index access used as an assignment target. A `PrepareExpression` override is called on the creation (which must stay a
+  `NewExpression`, otherwise `InvalidCastException`), on every binding value and initializer argument, and on the receiver
+  and arguments of an index access, in structural order. Rules declared on those node types and `FinalizeExpression`
+  receive the flattened positional children: the creation, then the expressions of the bindings in declaration order (a
+  nested member binding contributes its own bindings' expressions, a list binding its initializers' arguments); the
+  creation, then the initializers' arguments; the receiver (when present), then the index arguments. A transformer whose
+  `PrepareExpression` is the identity leaves these children as they are. `CopyExpression` applies its arity contract to the
+  three families: a list of the wrong length, a first child that is not a `NewExpression` of the same type, a value that
+  does not fit its member, an argument that does not fit its `Add` method, or an index access that would change type throws
+  `ArgumentException`. No constructor, setter, getter, `Add` method or indexer accessor is ever run by the engine.
+- **Substitution.** `ReplaceArguments` replaces free occurrences inside binding values, nested bindings, `Add` arguments, and
+  the receiver and arguments of index accesses, with the capture-avoiding rules of R2 (these families declare nothing).
+- **Invocation inlining.** Lambda invocations whose bodies contain initializations or index accesses can be inlined when the
+  analysis proves it safe (same argument eligibility as before). Every setter, getter, `Add` call and indexer accessor
+  counts as user code, so a variable argument read after one of them keeps the invocation.
+- **Structural equality, hashing and canonical keys.** `ExpressionComparer` compares and hashes the three families
+  structurally (creation, bindings in order with their kind and member, initializers in order with their `Add` method,
+  indexer, receiver, arguments), with the usual parameter binding; two such trees, always unequal before unless they were
+  the same instance, can now be equal keys of a `Dictionary<Expression, …>`/`HashSet<Expression>`. Structural equality does
+  not make two initializations or two indexer reads interchangeable: the simplifier treats them as observable and keeps
+  every construction, assignment, `Add` call and access, in order.
+
 <a id="omy-utils-fonts-2"></a>
 ## Utils.Fonts hostile-font parsing hardening
 
