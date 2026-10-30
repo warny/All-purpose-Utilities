@@ -56,6 +56,12 @@ internal enum InvocationInliningKind
 /// inlined at two places, and targets are never cloned), and so do runtime variables (the inlined variable could be
 /// written through the box) and quoted expressions (never entered, C-05).
 /// </para>
+/// <para>
+/// ETC R3: member and list initializations and index accesses are scanned in evaluation order (creation, then bindings and
+/// initializers in declaration order; receiver, then index arguments). Every setter, getter, <c>Add</c> call and indexer
+/// accessor counts as user code, so a variable argument read after one of them keeps the invocation; an array element
+/// access writes no variable. The eligibility of the arguments is unchanged.
+/// </para>
 /// </remarks>
 internal sealed class InvocationInliningAnalysis
 {
@@ -173,8 +179,86 @@ internal sealed class InvocationInliningAnalysis
             TryExpression @try => ScanTry(@try),
             SwitchExpression @switch => ScanSwitch(@switch),
             DebugInfoExpression => true,
+
+            // ETC R3: initializations and index accesses, entered by the substitution. Every setter, getter, Add method and
+            // indexer accessor counts as user code; an array element access writes no variable.
+            MemberInitExpression memberInit => Scan(memberInit.NewExpression) && ScanBindings(memberInit.Bindings),
+            ListInitExpression listInit => Scan(listInit.NewExpression) && ScanElementInits(listInit.Initializers),
+            IndexExpression index => ScanIndex(index),
             _ => ScanBarrier(e),
         };
+    }
+
+    /// <summary>
+    /// Scans the bindings of an initialization in declaration order (ETC R3), each counted as one structural visit: a member
+    /// assignment evaluates its value, then assigns (a setter may run user code); a nested member binding reads the member
+    /// (a getter may run user code) before its own bindings; a list binding reads the member, then calls <c>Add</c> for each
+    /// initializer after its arguments.
+    /// </summary>
+    /// <param name="bindings">The bindings.</param>
+    /// <returns><see langword="false"/> if inlining is unsafe.</returns>
+    private bool ScanBindings(ReadOnlyCollection<MemberBinding> bindings)
+    {
+        foreach (MemberBinding binding in bindings)
+        {
+            ExpressionResourceBudget.ConsumeStructuralVisit();
+            switch (binding)
+            {
+                case MemberAssignment assignment:
+                    if (!Scan(assignment.Expression)) return false;
+                    effectSeen = true;
+                    break;
+
+                case MemberMemberBinding memberBinding:
+                    effectSeen = true;
+                    if (!ScanBindings(memberBinding.Bindings)) return false;
+                    break;
+
+                case MemberListBinding listBinding:
+                    effectSeen = true;
+                    if (!ScanElementInits(listBinding.Initializers)) return false;
+                    break;
+
+                default:
+                    // A binding class the substitution cannot traverse: never inlined.
+                    return false;
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>Scans initializers in order (ETC R3), each counted as one structural visit: the arguments, then the <c>Add</c> call, which may run user code.</summary>
+    /// <param name="initializers">The initializers.</param>
+    /// <returns><see langword="false"/> if inlining is unsafe.</returns>
+    private bool ScanElementInits(ReadOnlyCollection<ElementInit> initializers)
+    {
+        foreach (ElementInit initializer in initializers)
+        {
+            ExpressionResourceBudget.ConsumeStructuralVisit();
+            if (!ScanEach(initializer.Arguments)) return false;
+            effectSeen = true;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Scans an index access (ETC R3): the receiver, then the arguments in order, then the access itself; an indexer accessor
+    /// may run user code, an array element access does not (it may throw, which an inert argument cannot observe).
+    /// </summary>
+    /// <param name="index">The node.</param>
+    /// <returns><see langword="false"/> if inlining is unsafe.</returns>
+    private bool ScanIndex(IndexExpression index)
+    {
+        if (!Scan(index.Object) || !ScanEach(index.Arguments)) return false;
+
+        if (index.Indexer is not null)
+        {
+            effectSeen = true;
+        }
+
+        return true;
     }
 
     /// <summary>

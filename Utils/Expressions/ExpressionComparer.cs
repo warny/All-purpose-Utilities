@@ -424,6 +424,12 @@ public class ExpressionComparer : IEqualityComparer<Expression>
             // Debug information is non-semantic metadata, like a parameter or lambda name: any two DebugInfo nodes are equal.
             (DebugInfoExpression, DebugInfoExpression) => true,
 
+            // ETC R3: initializations and index accesses. Bindings and initializers are compared in declaration order (never
+            // sorted), with their members, binding kinds and Add methods; nothing is executed.
+            (MemberInitExpression xmi, MemberInitExpression ymi) => EqualsCore(xmi.NewExpression, ymi.NewExpression, context) && BindingsEqual(xmi.Bindings, ymi.Bindings, context),
+            (ListInitExpression xli, ListInitExpression yli) => EqualsCore(xli.NewExpression, yli.NewExpression, context) && ElementInitsEqual(xli.Initializers, yli.Initializers, context),
+            (IndexExpression xix, IndexExpression yix) => object.Equals(xix.Indexer, yix.Indexer) && EqualsCore(xix.Object, yix.Object, context) && SequencesEqual(xix.Arguments, yix.Arguments, context),
+
             // Unsupported node kind: conservatively unequal, even for a shared/reused instance - see this
             // method's remarks on why no ReferenceEquals shortcut is used here.
             _ => false,
@@ -531,6 +537,59 @@ public class ExpressionComparer : IEqualityComparer<Expression>
         }
 
         return EqualsCore(x.DefaultBody, y.DefaultBody, context);
+    }
+
+    /// <summary>
+    /// Compares two binding lists of a member initialization or of a <see cref="MemberMemberBinding"/> (ETC R3), position by
+    /// position: same count, then for each pair the same binding kind and member, and equivalent contents (the assigned value,
+    /// the nested bindings, or the initializers). A binding is not an expression node, so each pair is counted as one
+    /// structural visit explicitly. A binding of an unknown class is never equal.
+    /// </summary>
+    /// <param name="x">The first bindings.</param>
+    /// <param name="y">The second bindings.</param>
+    /// <param name="context">The active binding context.</param>
+    /// <returns><see langword="true"/> if the binding lists are structurally equivalent.</returns>
+    private static bool BindingsEqual(IReadOnlyList<MemberBinding> x, IReadOnlyList<MemberBinding> y, ParameterBindingContext context)
+    {
+        if (x.Count != y.Count) return false;
+        for (int i = 0; i < x.Count; i++)
+        {
+            ExpressionResourceBudget.ConsumeStructuralVisit();
+            MemberBinding xb = x[i];
+            MemberBinding yb = y[i];
+            if (xb.BindingType != yb.BindingType || !object.Equals(xb.Member, yb.Member)) return false;
+
+            bool equal = (xb, yb) switch
+            {
+                (MemberAssignment xa, MemberAssignment ya) => EqualsCore(xa.Expression, ya.Expression, context),
+                (MemberMemberBinding xm, MemberMemberBinding ym) => BindingsEqual(xm.Bindings, ym.Bindings, context),
+                (MemberListBinding xl, MemberListBinding yl) => ElementInitsEqual(xl.Initializers, yl.Initializers, context),
+                _ => false,
+            };
+            if (!equal) return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Compares two initializer lists (ETC R3), position by position: same count, then for each pair the same
+    /// <see cref="ElementInit.AddMethod"/> and equivalent arguments in order. Each pair is counted as one structural visit.
+    /// </summary>
+    /// <param name="x">The first initializers.</param>
+    /// <param name="y">The second initializers.</param>
+    /// <param name="context">The active binding context.</param>
+    /// <returns><see langword="true"/> if the initializer lists are structurally equivalent.</returns>
+    private static bool ElementInitsEqual(IReadOnlyList<ElementInit> x, IReadOnlyList<ElementInit> y, ParameterBindingContext context)
+    {
+        if (x.Count != y.Count) return false;
+        for (int i = 0; i < x.Count; i++)
+        {
+            ExpressionResourceBudget.ConsumeStructuralVisit();
+            if (!object.Equals(x[i].AddMethod, y[i].AddMethod) || !SequencesEqual(x[i].Arguments, y[i].Arguments, context)) return false;
+        }
+
+        return true;
     }
 
     /// <summary>
@@ -963,8 +1022,62 @@ public class ExpressionComparer : IEqualityComparer<Expression>
             LabelExpression label => HashCode.Combine(ExpressionType.Label, label.Type, HashLabel(label.Target, scopes), Hash(label.DefaultValue, scopes)),
             RuntimeVariablesExpression runtimeVariables => HashSequence(HashCode.Combine(ExpressionType.RuntimeVariables, runtimeVariables.Type), runtimeVariables.Variables, scopes),
             DebugInfoExpression => HashCode.Combine(ExpressionType.DebugInfo, typeof(void)),
+
+            // ETC R3: initializations and index accesses, hashed in the same structural order as EqualsCore compares them.
+            MemberInitExpression memberInit => HashCode.Combine(ExpressionType.MemberInit, memberInit.Type, Hash(memberInit.NewExpression, scopes), HashBindings(memberInit.Bindings, scopes)),
+            ListInitExpression listInit => HashCode.Combine(ExpressionType.ListInit, listInit.Type, Hash(listInit.NewExpression, scopes), HashElementInits(listInit.Initializers, scopes)),
+            IndexExpression index => HashSequence(HashCode.Combine(ExpressionType.Index, index.Type, index.Indexer, Hash(index.Object, scopes)), index.Arguments, scopes),
             _ => HashUnsupported(e),
         };
+    }
+
+    /// <summary>
+    /// Hashes the bindings of a member initialization or of a <see cref="MemberMemberBinding"/> (ETC R3): the count, then for
+    /// each binding in order its kind, its member and the hash of its contents, each binding counted as one structural visit.
+    /// </summary>
+    /// <param name="bindings">The bindings.</param>
+    /// <param name="scopes">The active scope stack.</param>
+    /// <returns>A hash code mirroring <see cref="BindingsEqual"/>.</returns>
+    private static int HashBindings(IReadOnlyList<MemberBinding> bindings, ParameterScopeStack scopes)
+    {
+        var hc = new HashCode();
+        hc.Add(bindings.Count);
+        foreach (MemberBinding binding in bindings)
+        {
+            ExpressionResourceBudget.ConsumeStructuralVisit();
+            hc.Add(binding.BindingType);
+            hc.Add(binding.Member);
+            hc.Add(binding switch
+            {
+                MemberAssignment assignment => Hash(assignment.Expression, scopes),
+                MemberMemberBinding memberBinding => HashBindings(memberBinding.Bindings, scopes),
+                MemberListBinding listBinding => HashElementInits(listBinding.Initializers, scopes),
+                _ => 0,
+            });
+        }
+
+        return hc.ToHashCode();
+    }
+
+    /// <summary>
+    /// Hashes initializers (ETC R3): the count, then for each initializer in order its <see cref="ElementInit.AddMethod"/> and
+    /// its arguments, each initializer counted as one structural visit.
+    /// </summary>
+    /// <param name="initializers">The initializers.</param>
+    /// <param name="scopes">The active scope stack.</param>
+    /// <returns>A hash code mirroring <see cref="ElementInitsEqual"/>.</returns>
+    private static int HashElementInits(IReadOnlyList<ElementInit> initializers, ParameterScopeStack scopes)
+    {
+        var hc = new HashCode();
+        hc.Add(initializers.Count);
+        foreach (ElementInit initializer in initializers)
+        {
+            ExpressionResourceBudget.ConsumeStructuralVisit();
+            hc.Add(initializer.AddMethod);
+            hc.Add(HashSequence(0, initializer.Arguments, scopes));
+        }
+
+        return hc.ToHashCode();
     }
 
     /// <summary>Hashes a label target (ETC R2) by its first-occurrence index in the current label scope and its type; never by name.</summary>

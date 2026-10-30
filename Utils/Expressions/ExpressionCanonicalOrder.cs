@@ -27,7 +27,11 @@ namespace Utils.Mathematics.Expressions;
 /// deliberately ignores the exponent to cluster same-argument trigonometric calls together. ETC R1c added the scalar
 /// families (conditional, invocation, type test, default, creation, array creation) and ETC R2 the binding and control-flow
 /// families (<see cref="StructureKey"/>): block and catch variables are pushed as scope frames like lambda parameters, and
-/// label targets are keyed by their first-occurrence index in the current lambda body (never by name or identity).
+/// label targets are keyed by their first-occurrence index in the current lambda body (never by name or identity). ETC R3
+/// added the member and list initializations and the index accesses: bindings and initializers are keyed in declaration
+/// order with their binding kinds, members and <c>Add</c> methods, and an index access with its indexer. These keys only
+/// order terms; they never make two initializations interchangeable for the simplifier, whose rules and canonicalizations
+/// keep every observable operand in place (ETC R1b, C-06).
 /// </para>
 /// <para>
 /// <b>Bound parameters.</b> A <see cref="ParameterExpression"/> bound by a <see cref="LambdaExpression"/>
@@ -147,8 +151,17 @@ internal static class ExpressionCanonicalOrder
     /// <summary>Fixed rank for a <see cref="DebugInfoExpression"/>'s <see cref="StructureKey"/> (ETC R2): debug information is non-semantic, so every such key ties.</summary>
     private const int RankDebugInfo = 20;
 
+    /// <summary>Fixed rank for a <see cref="MemberInitExpression"/>'s <see cref="StructureKey"/> and its bindings' keys (ETC R3).</summary>
+    private const int RankMemberInit = 21;
+
+    /// <summary>Fixed rank for a <see cref="ListInitExpression"/>'s <see cref="StructureKey"/> and every <see cref="ElementInit"/>'s key (ETC R3).</summary>
+    private const int RankListInit = 22;
+
+    /// <summary>Fixed rank for an <see cref="IndexExpression"/>'s <see cref="StructureKey"/> (ETC R3).</summary>
+    private const int RankIndex = 23;
+
     /// <summary>Fixed rank for <see cref="UnsupportedKey"/>: sorts after every real supported node kind.</summary>
-    private const int RankUnsupported = 21;
+    private const int RankUnsupported = 24;
 
     /// <summary>
     /// Builds the complete structural canonical-order key for <paramref name="expression"/>. The generic,
@@ -338,8 +351,87 @@ internal static class ExpressionCanonicalOrder
                 [Build(label.DefaultValue, ref scopes)]),
             RuntimeVariablesExpression runtimeVariables => new StructureKey(RankRuntimeVariables, runtimeVariables.Type, [], [], null, BuildChildren(runtimeVariables.Variables, ref scopes)),
             DebugInfoExpression => new StructureKey(RankDebugInfo, typeof(void), [], [], null, []),
+
+            // ETC R3: initializations and index accesses, keyed with the same distinctions as ExpressionComparer.
+            MemberInitExpression memberInit => new StructureKey(
+                RankMemberInit,
+                memberInit.Type,
+                [memberInit.Bindings.Count],
+                [],
+                null,
+                [Build(memberInit.NewExpression, ref scopes), .. BuildBindings(memberInit.Bindings, ref scopes)]),
+            ListInitExpression listInit => new StructureKey(
+                RankListInit,
+                listInit.Type,
+                [listInit.Initializers.Count],
+                [],
+                null,
+                [Build(listInit.NewExpression, ref scopes), .. BuildElementInits(listInit.Initializers, ref scopes)]),
+            IndexExpression index => new StructureKey(
+                RankIndex,
+                index.Type,
+                [index.Object is null ? 0 : 1, index.Arguments.Count],
+                [],
+                null,
+                [Build(index.Object, ref scopes), .. BuildChildren(index.Arguments, ref scopes)],
+                index.Indexer),
             _ => UnsupportedKey.Instance,
         };
+    }
+
+    /// <summary>
+    /// Builds the keys of the bindings of a member initialization or of a <see cref="MemberMemberBinding"/> (ETC R3), in
+    /// declaration order (never sorted). Each key holds the binding kind, the member and the keys of the contents (the
+    /// assigned value, the nested bindings or the initializers). A binding is not an expression node, so each one is counted
+    /// as one structural visit explicitly; a binding of an unknown class gets the conservative unsupported key.
+    /// </summary>
+    /// <param name="bindings">The bindings.</param>
+    /// <param name="scopes">The active scope-lookup state.</param>
+    /// <returns>One key per binding, in order.</returns>
+    private static KeyNode[] BuildBindings(IReadOnlyList<MemberBinding> bindings, ref ScopeState scopes)
+    {
+        if (bindings.Count == 0) return Array.Empty<KeyNode>();
+
+        var keys = new KeyNode[bindings.Count];
+        for (int i = 0; i < keys.Length; i++)
+        {
+            ExpressionResourceBudget.ConsumeStructuralVisit();
+            MemberBinding binding = bindings[i];
+            KeyNode[]? children = binding switch
+            {
+                MemberAssignment assignment => [Build(assignment.Expression, ref scopes)],
+                MemberMemberBinding memberBinding => BuildBindings(memberBinding.Bindings, ref scopes),
+                MemberListBinding listBinding => BuildElementInits(listBinding.Initializers, ref scopes),
+                _ => null,
+            };
+            keys[i] = children is null
+                ? UnsupportedKey.Instance
+                : new StructureKey(RankMemberInit, typeof(void), [(int)binding.BindingType, children.Length], [], null, children, binding.Member);
+        }
+
+        return keys;
+    }
+
+    /// <summary>
+    /// Builds the keys of a list of initializers (ETC R3), in order: each key holds the <see cref="ElementInit.AddMethod"/> and
+    /// the keys of the arguments in order; each initializer is counted as one structural visit.
+    /// </summary>
+    /// <param name="initializers">The initializers.</param>
+    /// <param name="scopes">The active scope-lookup state.</param>
+    /// <returns>One key per initializer, in order.</returns>
+    private static KeyNode[] BuildElementInits(IReadOnlyList<ElementInit> initializers, ref ScopeState scopes)
+    {
+        if (initializers.Count == 0) return Array.Empty<KeyNode>();
+
+        var keys = new KeyNode[initializers.Count];
+        for (int i = 0; i < keys.Length; i++)
+        {
+            ExpressionResourceBudget.ConsumeStructuralVisit();
+            ElementInit initializer = initializers[i];
+            keys[i] = new StructureKey(RankListInit, typeof(void), [initializer.Arguments.Count], [], initializer.AddMethod, BuildChildren(initializer.Arguments, ref scopes));
+        }
+
+        return keys;
     }
 
     /// <summary>
@@ -1839,10 +1931,12 @@ internal static class ExpressionCanonicalOrder
     }
 
     /// <summary>
-    /// Key of the binding and control-flow families (ETC R2) and of their non-expression parts (catch handlers, switch cases):
-    /// a fixed family rank, the result type, integer metadata (counts, flags, jump kind, normalized label indices), type
-    /// metadata (declared variable types, handler test types, label types), an optional method (a switch comparison), then the
-    /// child keys in semantic order. Compared field by field in that order; never hash-, name- or identity-based.
+    /// Key of the binding and control-flow families (ETC R2) and of their non-expression parts (catch handlers, switch cases),
+    /// and of the initializer and index families (ETC R3) and their parts (bindings, initializers): a fixed family rank, the
+    /// result type, integer metadata (counts, flags, jump kind, normalized label indices, binding kinds), type metadata
+    /// (declared variable types, handler test types, label types), an optional method (a switch comparison, an <c>Add</c>
+    /// method), an optional member (a bound member, an indexer), then the child keys in semantic order. Compared field by
+    /// field in that order; never hash-, name- or identity-based.
     /// </summary>
     private sealed class StructureKey : KeyNode
     {
@@ -1852,15 +1946,17 @@ internal static class ExpressionCanonicalOrder
         private readonly Type?[] _types;
         private readonly MethodInfo? _method;
         private readonly KeyNode[] _children;
+        private readonly MemberInfo? _member;
 
         /// <summary>Initializes a new <see cref="StructureKey"/>.</summary>
-        /// <param name="rank">The family rank (one of the R2 rank constants); a family always builds its metadata with the same layout.</param>
+        /// <param name="rank">The family rank (one of the R2 or R3 rank constants); a family always builds its metadata with the same layout.</param>
         /// <param name="type">The result type.</param>
         /// <param name="metadata">The integer metadata, in a family-specific fixed layout.</param>
         /// <param name="types">The type metadata, in a family-specific fixed layout; <see langword="null"/> marks an absent type.</param>
         /// <param name="method">The method metadata, or <see langword="null"/>.</param>
         /// <param name="children">The child keys, in semantic order.</param>
-        public StructureKey(int rank, Type type, int[] metadata, Type?[] types, MethodInfo? method, KeyNode[] children)
+        /// <param name="member">The member metadata (ETC R3: a bound member or an indexer), or <see langword="null"/>.</param>
+        public StructureKey(int rank, Type type, int[] metadata, Type?[] types, MethodInfo? method, KeyNode[] children, MemberInfo? member = null)
         {
             _rank = rank;
             _type = type;
@@ -1868,6 +1964,7 @@ internal static class ExpressionCanonicalOrder
             _types = types;
             _method = method;
             _children = children;
+            _member = member;
         }
 
         /// <inheritdoc/>
@@ -1895,6 +1992,10 @@ internal static class ExpressionCanonicalOrder
 
             if (c != 0) return c;
             c = CompareMethod(_method, o._method);
+            if (c != 0) return c;
+            c = _member is null || o._member is null
+                ? (_member is null ? (o._member is null ? 0 : -1) : 1)
+                : CompareMember(_member, o._member);
             return c != 0 ? c : CompareKeys(_children, o._children);
         }
     }

@@ -2206,7 +2206,10 @@ public abstract class ExpressionTransformer
     /// replacement inserted in its scope) is alpha-renamed to a fresh parameter (same type, <see cref="ParameterExpression.IsByRef"/>
     /// and name) together with the references it binds, through the binder state, never through a recursive call of the
     /// public substitution. Control-flow nodes are rebuilt with the very same label targets. A runtime variable may only be
-    /// replaced by another parameter (C-07). A quoted expression is never entered (C-05 pending).
+    /// replaced by another parameter (C-07). A quoted expression is never entered (C-05 pending). Since ETC R3, member and
+    /// list initializations and index accesses are entered too: they declare nothing, and they are rebuilt with their
+    /// constructor, members, binding kinds, exact <c>Add</c> methods and indexer (an index access that is an assignment target
+    /// stays one; a replacement that cannot be assigned to is rejected by the framework factory of the enclosing assignment).
     /// </para>
     /// <para>
     /// Every node walked counts one structural visit, stack check included (ETC R1a-Security); so do the catch handlers and
@@ -2344,8 +2347,78 @@ public abstract class ExpressionTransformer
 
             case RuntimeVariablesExpression runtimeVariables:
                 return SubstituteRuntimeVariables(runtimeVariables, oldParameters, newParameters, scope);
+
+            // ETC R3: initializers and index accesses, rebuilt with their members, binding kinds, Add methods and indexer.
+            case MemberInitExpression memberInit:
+                return RebuildMemberInitExpression(
+                    memberInit,
+                    (NewExpression)Substitute(memberInit.NewExpression, oldParameters, newParameters, scope),
+                    SubstituteBindings(memberInit.Bindings, oldParameters, newParameters, scope));
+
+            case ListInitExpression listInit:
+                return RebuildListInitExpression(
+                    listInit,
+                    (NewExpression)Substitute(listInit.NewExpression, oldParameters, newParameters, scope),
+                    SubstituteElementInits(listInit.Initializers, oldParameters, newParameters, scope));
+
+            case IndexExpression index:
+                {
+                    Expression? receiver = index.Object is null ? null : Substitute(index.Object, oldParameters, newParameters, scope);
+                    return RebuildIndexExpression(index, receiver, SubstituteEach(index.Arguments, oldParameters, newParameters, scope));
+                }
         }
         return e;
+    }
+
+    /// <summary>
+    /// Substitutes inside the bindings of a member initialization or of a <see cref="MemberMemberBinding"/> (ETC R3), in
+    /// declaration order, each binding counted as one structural visit. Bindings declare nothing, so the enclosing scope is
+    /// used unchanged.
+    /// </summary>
+    /// <param name="bindings">The bindings.</param>
+    /// <param name="oldParameters">See <see cref="ReplaceArgumentsCore"/>.</param>
+    /// <param name="newParameters">See <see cref="ReplaceArgumentsCore"/>.</param>
+    /// <param name="scope">See <see cref="Substitute"/>.</param>
+    /// <returns>The bindings, each one the original instance when nothing in it changed.</returns>
+    /// <exception cref="NotSupportedException">A binding is not one of the three framework binding classes.</exception>
+    private MemberBinding[] SubstituteBindings(ReadOnlyCollection<MemberBinding> bindings, IReadOnlyList<ParameterExpression>? oldParameters, IReadOnlyList<Expression>? newParameters, SubstitutionScope? scope)
+    {
+        var replaced = new MemberBinding[bindings.Count];
+        for (int i = 0; i < replaced.Length; i++)
+        {
+            ExpressionResourceBudget.ConsumeStructuralVisit();
+            replaced[i] = bindings[i] switch
+            {
+                MemberAssignment assignment => RebuildMemberAssignment(assignment, Substitute(assignment.Expression, oldParameters, newParameters, scope)),
+                MemberMemberBinding memberBinding => RebuildMemberMemberBinding(memberBinding, SubstituteBindings(memberBinding.Bindings, oldParameters, newParameters, scope)),
+                MemberListBinding listBinding => RebuildMemberListBinding(listBinding, SubstituteElementInits(listBinding.Initializers, oldParameters, newParameters, scope)),
+                _ => throw UnsupportedBinding(bindings[i]),
+            };
+        }
+
+        return replaced;
+    }
+
+    /// <summary>
+    /// Substitutes inside the arguments of a list of initializers (ETC R3), each initializer counted as one structural visit;
+    /// every initializer keeps its <see cref="ElementInit.AddMethod"/>.
+    /// </summary>
+    /// <param name="initializers">The initializers.</param>
+    /// <param name="oldParameters">See <see cref="ReplaceArgumentsCore"/>.</param>
+    /// <param name="newParameters">See <see cref="ReplaceArgumentsCore"/>.</param>
+    /// <param name="scope">See <see cref="Substitute"/>.</param>
+    /// <returns>The initializers, each one the original instance when no argument changed.</returns>
+    private ElementInit[] SubstituteElementInits(ReadOnlyCollection<ElementInit> initializers, IReadOnlyList<ParameterExpression>? oldParameters, IReadOnlyList<Expression>? newParameters, SubstitutionScope? scope)
+    {
+        var replaced = new ElementInit[initializers.Count];
+        for (int i = 0; i < replaced.Length; i++)
+        {
+            ExpressionResourceBudget.ConsumeStructuralVisit();
+            ElementInit initializer = initializers[i];
+            replaced[i] = RebuildElementInit(initializer, SubstituteEach(initializer.Arguments, oldParameters, newParameters, scope));
+        }
+
+        return replaced;
     }
 
     /// <summary>Applies <see cref="Substitute"/> to each child of <paramref name="children"/>, in order.</summary>
