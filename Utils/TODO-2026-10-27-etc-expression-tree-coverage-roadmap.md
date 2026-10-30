@@ -1159,9 +1159,14 @@ stack overflow (confirmed by removing either guard: the test host crashes). A fi
 `VisitElementInit` to count a structural visit was not enough: the full Security suite still crashed intermittently inside
 `ExpressionVisitor.VisitMemberMemberBinding`, which builds a delegate to a virtual method at every level (native runtime
 code that can need more stack than the `EnsureSufficientExecutionStack` margin), while the test passed in isolation. Both
-visitors now walk bindings and initializers through `ReadOnlyBindingWalk` (plain loops, one structural visit per binding
-and per initializer, expressions visited through the visitor's own `Visit`, nothing rebuilt); the Security suite then
-passed three consecutive full runs. `Utils/AGENTS.md` gained the corresponding checklist item. The measurements below were
+visitors now walk bindings and initializers through `ReadOnlyBindingWalk` (one structural visit per binding and per
+initializer, expressions visited through the visitor's own `Visit`, nothing rebuilt); the Security suite then passed three
+consecutive full runs. The walk is not iterative: nested member bindings still recurse, one plain managed call per level
+without any delegate, and every level checks the stack through `ConsumeStructuralVisit` before descending. `CopyExpression`
+likewise recurses through nested member bindings (`BindingsChildCount`, `CopyBindings`) behind `EnsureStack` without
+consuming the structural budget, so a derived transformer calling it directly is covered by its own Security test
+(`DirectFinalizerOnNestedMemberBindings_IsStackGuarded`: faithful copy at depth 200, controlled refusal at depth 100,000 on
+a 256 KiB thread inside and outside an operation). `Utils/AGENTS.md` gained the corresponding checklist item. The measurements below were
 taken before this last change, which only affects the walks of R3 nodes inside these two visitors.
 
 **Tests.** `ExpressionTreeR3Tests` (19, checkpoint A), `ExpressionTreeR3SubstitutionTests` (5) and
@@ -1175,7 +1180,7 @@ re-entrant comparison; exceptions inside bindings; no user code; no retained ref
 R1a pass-through pins, ETC-01/02/06/07/14 findings tests and the "unsupported family" examples of the comparer, batching,
 substitution and Security tests retargeted to the remaining R4 families (dynamic operations and extension nodes), each with
 the new R3 contract asserted next to it; 7 coverage rows (`// ETC R3`: traversal, substitution and equality columns).
-
+
 #### R3 measurements (2026-10-30, Release, one process per scenario, 3 rounds, A/A control)
 
 Same harness as R2 (one process per variant and scenario, warmup >= 10 ops and 1.5 s, 25 calibrated batches, variant order
@@ -1188,7 +1193,8 @@ twelve terms c_i * x factored, stands for the S5 P3 factoring rules). R3 scenari
 target (idx-assign), the public comparer on equal and different 16-binding initializations (mi-eq-pos, mi-eq-neg),
 their hash (mi-hash) and canonical key (mi-key), the inlining of a lambda whose body is a list initialization over its
 bound parameter (subst-bound), a shared DAG of six list initializations (li-dag6) and an initialization with counted
-setters (mi-usercode). R3 at checkpoint C against master  717a8dc:
+setters (mi-usercode). R3 at checkpoint C against master `0717a8dc`:
+
 | Scenario | master ns | A/A | R3 ns | R3/master | bytes master→R3 | transform visits master→R3 | structural visits master→R3 | rebuilt nodes master→R3 | input depth | user calls master→R3 |
 |---|---|---|---|---|---|---|---|---|---|---|
 | scalar | 587 | +0.5% | 580 | -1.2% | 832→832 | 6→6 | 0→0 | 0→0 | 3 | 0→0 |
@@ -1245,6 +1251,13 @@ trees; mi-key builds 82 keys where master built a single unsupported key; subst-
 transform visits instead of 5, 13 rebuilt nodes); li-dag6 unfolds its shared initializations (444 transform visits for 6
 levels): initializations are not memoized (P9/P16 ineligible by design, §6), and the cost stays bounded by the visit budgets.
 No scenario runs user code (mi-usercode: 0 calls).
+
+Post-review campaign (2026-10-30, same harness, 3 rounds, variant order rotated): the measured build (r3-pre, before
+`ReadOnlyBindingWalk`) against the final code (r3-post) and master, on the 17 R3 scenarios and six historical controls
+(scalar, lambda, invoke, hash, cmp-pos, p16chain12). r3-post against r3-pre stays within -4.4 % to +4.0 % (subst-bound,
+the only scenario whose capture check walks R3 bindings, -4.4 %), with identical transform, structural, rebuilt-node and
+user-call counts on every scenario; the historical controls stay within -2.0 % to +3.5 % of master (hash -0.7 %, so the
+earlier +4.8 % was noise). The fix therefore changes neither the work nor the cost of the measured scenarios.
 ### R4 — Special and extensible nodes
 
 | Family | Policy proposal | Tests |

@@ -424,6 +424,63 @@ public class ExpressionInitializerResourceTests
         Assert.IsInstanceOfType<MemberExpression>(new ComparingTransformer(ExpressionResourceLimits.Default).Transform(tree));
     }
 
+    /// <summary>A derived transformer exposing the protected finalizer <c>CopyExpression</c> to direct calls.</summary>
+    private sealed class DirectFinalizer : ExpressionTransformer
+    {
+        /// <summary>Calls <c>CopyExpression</c> directly, outside any transformation.</summary>
+        /// <param name="e">The node to rebuild.</param>
+        /// <param name="children">Its positional children.</param>
+        /// <returns>The rebuilt node.</returns>
+        public static Expression Copy(Expression e, Expression[] children) => CopyExpression(e, children);
+
+        /// <inheritdoc/>
+        public override Expression Transform(Expression expression) => TransformCore(expression);
+
+        /// <inheritdoc/>
+        protected override Expression PrepareExpression(Expression e) => TransformCore(e);
+
+        /// <inheritdoc/>
+        protected override Expression FinalizeExpression(Expression e, Expression[] parameters) => CopyExpression(e, parameters);
+    }
+
+    /// <summary>
+    /// A derived transformer calling the finalizer <c>CopyExpression</c> directly on a member initialization whose bindings
+    /// nest without any expression node in between (no preparation walk has counted them): a moderate nesting is rebuilt
+    /// faithfully; a hostile nesting on a 256 KiB thread ends with a controlled refusal, never a stack overflow, both outside
+    /// any operation (the raw <see cref="InsufficientExecutionStackException"/>) and inside one (a Stack refusal).
+    /// </summary>
+    [TestMethod]
+    public void DirectFinalizerOnNestedMemberBindings_IsStackGuarded()
+    {
+        static MemberInitExpression Init(int depth, Expression value)
+        {
+            MemberInfo next = typeof(Node).GetProperty(nameof(Node.Next))!;
+            MemberBinding binding = Expression.Bind(typeof(Node).GetField(nameof(Node.Value))!, value);
+            for (int i = 0; i < depth; i++) binding = Expression.MemberBind(next, binding);
+            return Expression.MemberInit(Expression.New(typeof(Node)), binding);
+        }
+
+        MemberInitExpression moderate = Init(200, P);
+        Expression copied = DirectFinalizer.Copy(moderate, [moderate.NewExpression, Expression.Constant(1.0)]);
+        Assert.AreNotSame(moderate, copied);
+        Assert.IsTrue(ExpressionComparer.Default.Equals(Init(200, Expression.Constant(1.0)), copied));
+
+        MemberInitExpression hostile = Init(HostileDepth, P);
+        Expression[] children = [hostile.NewExpression, Expression.Constant(1.0)];
+        for (int run = 0; run < 3; run++)
+        {
+            RunOnThread(() =>
+            {
+                Assert.ThrowsExactly<InsufficientExecutionStackException>(() => DirectFinalizer.Copy(hostile, children));
+                ExpressionResourceLimitException refusal = Assert.ThrowsExactly<ExpressionResourceLimitException>(
+                    () => RunUnlimited(() => DirectFinalizer.Copy(hostile, children)));
+                Assert.AreEqual(ExpressionResourceLimitKind.Stack, refusal.Kind);
+                Assert.AreEqual(0, ExpressionResourceBudget.OperationDepth);
+                Assert.IsTrue(ExpressionComparer.Default.Equals(CallChain(10), CallChain(10)));
+            }, SmallStack, Timeout);
+        }
+    }
+
     /// <summary>A simplifier whose <c>PrepareExpression</c> fails on a marker constant.</summary>
     private sealed class FailingSimplifier : ExpressionSimplifier
     {

@@ -9,9 +9,15 @@ namespace Utils.Expressions;
 /// not an expression node, and nested member bindings nest without any expression node in between, so the framework visitor
 /// would recurse through them without stack check or budget, building a delegate to a virtual method at every level (native
 /// runtime code that may need more stack than the guard keeps). This walk counts one structural visit per binding and per
-/// initializer (stack check included), recurses through plain loops, visits every expression through the visitor's own
+/// initializer (stack check included), visits every expression through the visitor's own
 /// <see cref="ExpressionVisitor.Visit(Expression?)"/>, and never rebuilds anything.
 /// </summary>
+/// <remarks>
+/// The walk is not iterative: nested member bindings still recurse (<see cref="VisitBinding"/> calls
+/// <see cref="VisitBindings"/> for a <see cref="MemberMemberBinding"/>), one plain managed call per level, without any delegate.
+/// Every level enters <see cref="VisitBinding"/>, whose <see cref="ExpressionResourceBudget.ConsumeStructuralVisit"/> checks the
+/// stack before descending, so a hostile nesting ends with a controlled refusal instead of a stack overflow.
+/// </remarks>
 internal static class ReadOnlyBindingWalk
 {
     /// <summary>Visits bindings in declaration order.</summary>
