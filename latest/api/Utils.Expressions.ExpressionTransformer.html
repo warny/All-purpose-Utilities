@@ -376,7 +376,7 @@ limits.</p>
 
   <h3 id="Utils_Expressions_ExpressionTransformer_CopyExpression_System_Linq_Expressions_Expression_System_Linq_Expressions_Expression___" data-uid="Utils.Expressions.ExpressionTransformer.CopyExpression(System.Linq.Expressions.Expression,System.Linq.Expressions.Expression[])">
   CopyExpression(Expression, params Expression[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L2753"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L3015"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Creates a new expression of the same <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expressiontype">ExpressionType</a> as <code class="paramref">e</code>,
@@ -436,6 +436,15 @@ metadata that is not an expression (handler test types and variables, case struc
 targets, jump kinds, result types) is taken from <code class="paramref">e</code>, never from the list, and label targets are
 never recreated. <code>Loop</code> and these families return the node itself when no child changed.
 </p>
+<p>
+ETC R3: <code>MemberInit</code>, <code>ListInit</code> and <code>Index</code> follow the same arity contract, with the positional layouts
+of <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.memberinitexpression">PrepareMemberInit(MemberInitExpression)</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.listinitexpression">PrepareListInit(ListInitExpression)</a> and <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.indexexpression">PrepareIndex(IndexExpression)</a>: the creation (which must
+stay a <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.newexpression">NewExpression</a> of the same type), then the flattened expressions of the bindings or initializers in
+declaration order; the receiver (when present), then the index arguments. Members, binding kinds, <code>Add</code> methods and
+the indexer are taken from <code class="paramref">e</code>, never from the list, and never rediscovered; a binding is never
+dropped, an <code>Add</code> method never replaced, and a result whose type differs from <code class="paramref">e</code>'s is rejected
+with <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentexception">ArgumentException</a>. These families return the node itself when no child changed.
+</p>
 </div>
 
 
@@ -445,7 +454,7 @@ never recreated. <code>Loop</code> and these families return the node itself whe
 
   <h3 id="Utils_Expressions_ExpressionTransformer_FinalizeExpression_System_Linq_Expressions_Expression_System_Linq_Expressions_Expression___" data-uid="Utils.Expressions.ExpressionTransformer.FinalizeExpression(System.Linq.Expressions.Expression,System.Linq.Expressions.Expression[])">
   FinalizeExpression(Expression, Expression[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L1981"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L2131"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Called if no custom transformation method (annotated with <a class="xref" href="Utils.Expressions.ExpressionSignatureAttribute.html">ExpressionSignatureAttribute</a>)
@@ -535,7 +544,7 @@ The default implementation returns the expression unchanged.</p>
 
   <h3 id="Utils_Expressions_ExpressionTransformer_ReplaceArguments_System_Linq_Expressions_Expression_System_Linq_Expressions_ParameterExpression___System_Linq_Expressions_Expression___" data-uid="Utils.Expressions.ExpressionTransformer.ReplaceArguments(System.Linq.Expressions.Expression,System.Linq.Expressions.ParameterExpression[],System.Linq.Expressions.Expression[])">
   ReplaceArguments(Expression, ParameterExpression[], Expression[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L1999"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTranformer.cs/#L2149"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Replaces all occurrences of <code class="paramref">oldParameters</code> within <code class="paramref">e</code>

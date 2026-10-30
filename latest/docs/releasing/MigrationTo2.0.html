@@ -246,6 +246,36 @@ the counted quantities (logical occurrences, depth) and the refusal kinds are un
 refusal is now the exact (saturated) count, and when a large input exceeds both limits the reported kind may be <code>Depth</code>
 where it was <code>Nodes</code>.</li>
 </ul>
+<h2 id="expression-engine-initializers-and-index-accesses-etc-r3">Expression engine: initializers and index accesses (ETC R3)</h2>
+<p>Behavior changes of <code>ExpressionTransformer</code>, <code>ExpressionSimplifier</code> and <code>ExpressionComparer</code>; no public signature changed.
+The full record is in <code>Utils/TODO-2026-10-27-etc-expression-tree-coverage-roadmap.md</code> (§9 &quot;R3 result&quot;).</p>
+<ul>
+<li><strong>Newly traversed families (C-03 extended).</strong> <code>MemberInit</code> (with its <code>MemberAssignment</code>, <code>MemberMemberBinding</code> and
+<code>MemberListBinding</code> bindings), <code>ListInit</code> (with its <code>ElementInit</code>s) and <code>Index</code> (array element or indexer) are traversed
+and rebuilt with their metadata: constructor, members, binding kinds, binding and initializer order, the exact <code>Add</code>
+method of every initializer (never rediscovered from the argument types), the indexer, the type, and the writability of
+an index access used as an assignment target. A <code>PrepareExpression</code> override is called on the creation (which must stay a
+<code>NewExpression</code>, otherwise <code>InvalidCastException</code>), on every binding value and initializer argument, and on the receiver
+and arguments of an index access, in structural order. Rules declared on those node types and <code>FinalizeExpression</code>
+receive the flattened positional children: the creation, then the expressions of the bindings in declaration order (a
+nested member binding contributes its own bindings' expressions, a list binding its initializers' arguments); the
+creation, then the initializers' arguments; the receiver (when present), then the index arguments. A transformer whose
+<code>PrepareExpression</code> is the identity leaves these children as they are. <code>CopyExpression</code> applies its arity contract to the
+three families: a list of the wrong length, a first child that is not a <code>NewExpression</code> of the same type, a value that
+does not fit its member, an argument that does not fit its <code>Add</code> method, or an index access that would change type throws
+<code>ArgumentException</code>. No constructor, setter, getter, <code>Add</code> method or indexer accessor is ever run by the engine.</li>
+<li><strong>Substitution.</strong> <code>ReplaceArguments</code> replaces free occurrences inside binding values, nested bindings, <code>Add</code> arguments, and
+the receiver and arguments of index accesses, with the capture-avoiding rules of R2 (these families declare nothing).</li>
+<li><strong>Invocation inlining.</strong> Lambda invocations whose bodies contain initializations or index accesses can be inlined when the
+analysis proves it safe (same argument eligibility as before). Every setter, getter, <code>Add</code> call and indexer accessor
+counts as user code, so a variable argument read after one of them keeps the invocation.</li>
+<li><strong>Structural equality, hashing and canonical keys.</strong> <code>ExpressionComparer</code> compares and hashes the three families
+structurally (creation, bindings in order with their kind and member, initializers in order with their <code>Add</code> method,
+indexer, receiver, arguments), with the usual parameter binding; two such trees, always unequal before unless they were
+the same instance, can now be equal keys of a <code>Dictionary&lt;Expression, …&gt;</code>/<code>HashSet&lt;Expression&gt;</code>. Structural equality does
+not make two initializations or two indexer reads interchangeable: the simplifier treats them as observable and keeps
+every construction, assignment, <code>Add</code> call and access, in order.</li>
+</ul>
 <p><a id="omy-utils-fonts-2"></a></p>
 <h2 id="utilsfonts-hostile-font-parsing-hardening">Utils.Fonts hostile-font parsing hardening</h2>
 <p><code>TrueTypeFont.ParseFont</code>/<code>ParseFontAsync</code> now accept an optional <code>TrueTypeFontParsingOptions</code>
