@@ -404,6 +404,37 @@ namespace Utils.Mathematics.Expressions
         }
 
         /// <summary>
+        /// Gets whether quoted expressions (<see cref="ExpressionType.Quote"/>, the expression-tree arguments of query providers)
+        /// are simplified (ETC R4, compatibility entry C-05). Defaults to <see langword="false"/>.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// <b>Disabled (default).</b> A quote is a strict boundary: neither the quoted lambda nor any of its descendants is
+        /// rewritten, no rule (built-in, or declared by a derived simplifier on <see cref="ExpressionType.Quote"/>) runs on the
+        /// quote, and <see cref="FinalizeExpression"/> does not receive it; the very same <see cref="UnaryExpression"/> instance is
+        /// kept, wherever it appears (root, call argument, conditional branch, nested quote). Quoted code is data: it is never
+        /// analysed as an executable value. Structural comparison and hashing of quotes are unchanged.
+        /// </para>
+        /// <para>
+        /// <b>Enabled.</b> The quoted lambda is simplified like any other lambda: the node stays a quote of the same type, the
+        /// lambda keeps its delegate type, name, tail-call flag, parameters, labels and captured variables, under the same
+        /// scope model, effect rules (ETC-15) and resource limits as the rest of the tree. The quoted syntax may change, which is
+        /// the purpose of the option.
+        /// </para>
+        /// <para>
+        /// The option never changes substitution: inlining an invocation never substitutes through a quote, enabled or not.
+        /// It is set at construction (<c>new ExpressionSimplifier { SimplifyQuotedExpressions = true }</c>) and cannot change
+        /// afterwards, so every call on an instance, including nested, re-entrant and concurrent calls, applies the same policy;
+        /// use two instances for two policies. The comparer (<see cref="ExpressionComparer"/>) simplifies with the default.
+        /// Before ETC R4 every simplifier rewrote quoted lambdas.
+        /// </para>
+        /// </remarks>
+        public bool SimplifyQuotedExpressions { get; init; }
+
+        /// <summary>Quotes are boundaries unless <see cref="SimplifyQuotedExpressions"/> is set (ETC R4, C-05), for every runtime type, derived simplifiers included.</summary>
+        internal override bool TreatsQuotesAsBoundaries => !SimplifyQuotedExpressions;
+
+        /// <summary>
         /// Prepares an expression for transformation by calling <see cref="ExpressionTransformer.TransformCore(Expression)"/>
         /// Subclasses can override for custom logic, but here it simply re-applies <see cref="ExpressionTransformer.TransformCore(Expression)"/>
         /// </summary>

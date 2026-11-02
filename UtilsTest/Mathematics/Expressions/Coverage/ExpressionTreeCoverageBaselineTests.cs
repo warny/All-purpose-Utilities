@@ -96,7 +96,7 @@ public class ExpressionTreeCoverageBaselineTests
         ["TypeAs"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent",
         ["Unbox"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent",
         ["ArrayLength"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent",
-        ["Quote"] = "Rewrites | Rewrites | Rewrites | Opaque | Equal | Consistent",
+        ["Quote"] = "Rewrites | Opaque | Opaque | Opaque | Equal | Consistent", // ETC R4 (C-05: simplifier boundary)
         ["Throw"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R1b
         ["Constant"] = "Same | Rebuilt | Rebuilt | Same | Equal | Consistent",
         ["Parameter"] = "Same | Same | Same | Rewrites | Equal | Consistent",
@@ -155,7 +155,7 @@ public class ExpressionTreeCoverageBaselineTests
         ["ListInit.ExplicitAddMethod"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R3
         ["Index.Indexer"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R3
         ["Extension.Irreducible"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
-        ["Quote.CapturedOuterParameter"] = "Rewrites | Rewrites | Rewrites | Opaque | Equal | Consistent",
+        ["Quote.CapturedOuterParameter"] = "Rewrites | Opaque | Opaque | Opaque | Equal | Consistent", // ETC R4 (C-05: simplifier boundary)
     };
 
     /// <summary>Every catalog sample has a recorded baseline row, and every recorded row belongs to a sample.</summary>

@@ -195,22 +195,21 @@ public class ExpressionTreeFindingsTests
     /// <see cref="ETC02_CopyExpression_MemberAccess_FollowsArityContract"/>); ETC R2 removed <c>Try</c>, <c>Switch</c>,
     /// <c>Goto</c> and <c>Label</c>, which follow it too (see <c>ExpressionTreeR2Tests</c>); ETC R3 removed <c>MemberInit</c>,
     /// <c>ListInit</c> and <c>Index</c> (see <c>ExpressionTreeR3Tests</c>); ETC R4 removed <c>Dynamic</c> (see
-    /// <c>ExpressionTreeR4DynamicTests</c>) and extension nodes, whose children the engine cannot know: an empty list keeps
-    /// them, any other list is refused (see <c>ExpressionTreeR4ExtensionTests</c>).
+    /// <c>ExpressionTreeR4DynamicTests</c>), extension nodes, whose children the engine cannot know: an empty list keeps
+    /// them, any other list is refused (see <c>ExpressionTreeR4ExtensionTests</c>), and <c>Lambda</c>, whose children are its
+    /// parameter declarations (see <c>ExpressionTreeR4LambdaCopyTests</c>). ETC-02 is resolved: no family ignores the supplied
+    /// children any more; every list that does not match the node is refused.
     /// </summary>
     [TestMethod]
     public void ETC02_CopyExpression_IgnoresReplacementChildren_ForPassThroughFamilies()
     {
         Expression replacement = Expression.Constant(9.5);
-        Assert.ThrowsExactly<ArgumentException>(() => ExposedTransformer.Copy(ExpressionNodeCatalog.Get("Dynamic").Build(), replacement, replacement, replacement));
-        Expression extension = ExpressionNodeCatalog.Get("Extension").Build();
-        Assert.AreSame(extension, ExposedTransformer.Copy(extension));
-        Assert.ThrowsExactly<ArgumentException>(() => ExposedTransformer.Copy(extension, replacement, replacement, replacement));
-        string[] ignored = ["Lambda"];
-        foreach (string name in ignored)
+        string[] refused = ["Dynamic", "Extension", "Lambda"];
+        foreach (string name in refused)
         {
             Expression original = ExpressionNodeCatalog.Get(name).Build();
-            Assert.AreSame(original, ExposedTransformer.Copy(original, replacement, replacement, replacement), name);
+            Assert.AreSame(original, ExposedTransformer.Copy(original), name);
+            Assert.ThrowsExactly<ArgumentException>(() => ExposedTransformer.Copy(original, replacement, replacement, replacement), name);
         }
     }
 
@@ -556,15 +555,21 @@ public class ExpressionTreeFindingsTests
         Assert.AreSame(P, ((MethodCallExpression)inlined.Expression!).Arguments[0]);
     }
 
-    /// <summary>ETC-12 (policy): the simplifier rewrites the contents of a quoted lambda, which is data for its consumer.</summary>
+    /// <summary>
+    /// ETC-12 (policy), resolved by ETC R4 (C-05): the simplifier rewrote the contents of a quoted lambda, which is data for its
+    /// consumer. A quote is now a strict boundary by default (same instance returned); the historical rewrite is available on
+    /// opt-in through <see cref="ExpressionSimplifier.SimplifyQuotedExpressions"/> (see <c>ExpressionTreeR4QuoteTests</c>).
+    /// </summary>
     [TestMethod]
     public void ETC12_ExactSimplifier_RewritesQuotedLambda()
     {
         ParameterExpression x = Expression.Parameter(typeof(double), "x");
         UnaryExpression quote = Expression.Quote(Expression.Lambda<Func<double, double>>(Expression.Multiply(x, Expression.Constant(1.0)), x));
 
-        var simplified = (UnaryExpression)new ExpressionSimplifier().Simplify(quote);
+        Assert.AreSame(quote, new ExpressionSimplifier().Simplify(quote));
+        Assert.AreSame(quote, new DerivedSimplifier().Simplify(quote));
 
+        var simplified = (UnaryExpression)new ExpressionSimplifier { SimplifyQuotedExpressions = true }.Simplify(quote);
         Assert.AreSame(x, ((LambdaExpression)simplified.Operand).Body);
     }
 
