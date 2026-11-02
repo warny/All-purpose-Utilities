@@ -1261,31 +1261,30 @@ public class ExpressionTransformerTests
     }
 
     /// <summary>
-    /// The dispatch-plan buckets only cover the real <see cref="ExpressionType"/> values known at build
-    /// time (<see cref="Enum.GetValues{TEnum}"/>); a node whose <c>NodeType</c> falls outside all of them
-    /// (see <see cref="OutOfRangeNodeTypeExpression"/>) must still be offered every rule as candidates —
-    /// both a rule declared for that exact out-of-range value and a wildcard rule — exactly as the
-    /// pre-indexing linear scan evaluated every rule's <c>Match</c> against every node regardless of its
-    /// <c>NodeType</c>. Reuses <see cref="OutOfRangeExpressionTypeRuleTransformer"/> (whose rule is
-    /// declared for the exact same out-of-range value used here) and <see cref="WildcardRuleTransformer"/>.
+    /// A custom <see cref="Expression"/> subclass (here one whose <c>NodeType</c> returns a value outside the real
+    /// <see cref="ExpressionType"/> values, see <see cref="OutOfRangeNodeTypeExpression"/>) used to be offered every rule as a
+    /// candidate, which read its virtual <c>NodeType</c>. Since ETC R4 an extension node is strictly opaque: it is recognized
+    /// by type tests and never reaches rule dispatch, so neither a rule declared for its out-of-range value nor a wildcard rule
+    /// runs on it (the transformer's <c>FinalizeExpression</c> still receives it). The plan's fallback to the unfiltered rule
+    /// list for an unknown node type is kept for framework nodes. Reuses <see cref="OutOfRangeExpressionTypeRuleTransformer"/>
+    /// and <see cref="WildcardRuleTransformer"/>.
     /// </summary>
     [TestMethod]
-    public void Transform_ExpressionWithOutOfRangeNodeType_StillDispatchesMatchingAndWildcardRules()
+    public void Transform_ExpressionWithOutOfRangeNodeType_NeverReachesRuleDispatch()
     {
         var customNode = new OutOfRangeNodeTypeExpression();
 
         var specificTransformer = new OutOfRangeExpressionTypeRuleTransformer();
         specificTransformer.ExposeTransform(customNode);
-        Assert.IsTrue(specificTransformer.RuleWasInvoked,
-            "A rule declared for the exact out-of-range ExpressionType a custom Expression subclass's " +
-            "NodeType returns must still be invoked for it: no bucket was ever pre-populated for that " +
-            "value, so the dispatcher must fall back to the complete, unfiltered rule list.");
+        Assert.IsFalse(specificTransformer.RuleWasInvoked,
+            "Since ETC R4 no rule runs on an extension node: rule dispatch would read its virtual NodeType.");
 
+        // This transformer does not override FinalizeExpression: the node no rule handled reaches the base finalizer, which
+        // throws exactly as it does for any node without a matching rule.
         var wildcardTransformer = new WildcardRuleTransformer();
-        wildcardTransformer.ExposeTransform(customNode);
-        CollectionAssert.Contains(wildcardTransformer.MatchedNodeTypes, customNode.NodeType,
-            "A wildcard rule must remain a candidate for a node type outside the real ExpressionType enum " +
-            "values too, not just for the ~80 pre-populated buckets.");
+        Assert.ThrowsExactly<Exception>(() => wildcardTransformer.ExposeTransform(customNode));
+        Assert.AreEqual(0, wildcardTransformer.MatchedNodeTypes.Count,
+            "Since ETC R4 not even a wildcard rule runs on an extension node.");
     }
 
     // ------------------------------------------------------------------------------------------

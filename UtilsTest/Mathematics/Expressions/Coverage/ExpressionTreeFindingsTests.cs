@@ -195,14 +195,18 @@ public class ExpressionTreeFindingsTests
     /// <see cref="ETC02_CopyExpression_MemberAccess_FollowsArityContract"/>); ETC R2 removed <c>Try</c>, <c>Switch</c>,
     /// <c>Goto</c> and <c>Label</c>, which follow it too (see <c>ExpressionTreeR2Tests</c>); ETC R3 removed <c>MemberInit</c>,
     /// <c>ListInit</c> and <c>Index</c> (see <c>ExpressionTreeR3Tests</c>); ETC R4 removed <c>Dynamic</c> (see
-    /// <c>ExpressionTreeR4DynamicTests</c>).
+    /// <c>ExpressionTreeR4DynamicTests</c>) and extension nodes, whose children the engine cannot know: an empty list keeps
+    /// them, any other list is refused (see <c>ExpressionTreeR4ExtensionTests</c>).
     /// </summary>
     [TestMethod]
     public void ETC02_CopyExpression_IgnoresReplacementChildren_ForPassThroughFamilies()
     {
         Expression replacement = Expression.Constant(9.5);
         Assert.ThrowsExactly<ArgumentException>(() => ExposedTransformer.Copy(ExpressionNodeCatalog.Get("Dynamic").Build(), replacement, replacement, replacement));
-        string[] ignored = ["Extension", "Lambda"];
+        Expression extension = ExpressionNodeCatalog.Get("Extension").Build();
+        Assert.AreSame(extension, ExposedTransformer.Copy(extension));
+        Assert.ThrowsExactly<ArgumentException>(() => ExposedTransformer.Copy(extension, replacement, replacement, replacement));
+        string[] ignored = ["Lambda"];
         foreach (string name in ignored)
         {
             Expression original = ExpressionNodeCatalog.Get(name).Build();
@@ -367,8 +371,9 @@ public class ExpressionTreeFindingsTests
 
     /// <summary>
     /// ETC-07, resolved for the scalar families by ETC R1c: unsupported nodes hashed by node type and result type only, so
-    /// different conditionals collided. The hash now includes the children, so these two differ, while a still unsupported
-    /// family (an extension node, R4; a block until ETC R2, an index access until ETC R3) keeps the coarse hash.
+    /// different conditionals collided. The hash now includes the children, so these two differ. An extension node (opaque by
+    /// design) kept the coarse hash, which read its virtual node type and type, until ETC R4; it is now hashed by identity
+    /// (mirroring its identity-only equality), so two distinct instances no longer collide by construction.
     /// </summary>
     [TestMethod]
     public void ETC07_Comparer_ScalarFamilies_HashTheirChildren()
@@ -382,7 +387,8 @@ public class ExpressionTreeFindingsTests
 
         Assert.IsFalse(ExpressionComparer.Default.Equals(first, second));
         Assert.AreNotEqual(ExpressionComparer.Default.GetHashCode(first), ExpressionComparer.Default.GetHashCode(second));
-        Assert.AreEqual(ExpressionComparer.Default.GetHashCode(firstBlock), ExpressionComparer.Default.GetHashCode(secondBlock));
+        Assert.AreEqual(ExpressionComparer.Default.GetHashCode(firstBlock), ExpressionComparer.Default.GetHashCode(firstBlock));
+        Assert.IsFalse(ExpressionComparer.Default.Equals(firstBlock, secondBlock));
         Assert.AreNotEqual(ExpressionComparer.Default.GetHashCode(firstIndex), ExpressionComparer.Default.GetHashCode(secondIndex), "Index accesses hash their children since ETC R3.");
     }
 

@@ -968,6 +968,9 @@ namespace Utils.Mathematics.Expressions
         {
             // Recursive helper: guard the execution stack (ETC R1a-Security).
             ExpressionResourceBudget.EnsureStack();
+
+            // ETC R4: the class is tested first, so an extension node is rejected before its virtual Type is read.
+            if (expression is not (ConstantExpression or ParameterExpression or BinaryExpression or UnaryExpression)) return false;
             if (expression.Type != typeof(double) && expression.Type != typeof(float)) return false;
             return expression switch
             {
@@ -2513,7 +2516,7 @@ namespace Utils.Mathematics.Expressions
                     && CanCanonicalizeCommutativeBinary(binaryExpression)
                     && CanonicalizesOperator(binaryExpression))
                 {
-                    return CanonicalizeAdditiveExpression(binaryExpression.NodeType, parameters[0], parameters[1]);
+                    return CanonicalizeAdditiveExpression(binaryExpression.NodeType, parameters[0], parameters[1], binaryExpression.Type);
                 }
 
                 if (binaryExpression.NodeType == ExpressionType.Multiply
@@ -2554,6 +2557,11 @@ namespace Utils.Mathematics.Expressions
         /// <param name="nodeType">The additive node type that produced this operation.</param>
         /// <param name="left">Left expression branch.</param>
         /// <param name="right">Right expression branch.</param>
+        /// <param name="type">
+        /// The result type of the ordinary additive node (the type of both operands). Passed by the caller rather than read from
+        /// an operand, which may be an opaque extension node whose virtual <see cref="Expression.Type"/> the engine never reads
+        /// (ETC R4).
+        /// </param>
         /// <returns>A deterministic additive expression tree preserving semantics.</returns>
         /// <remarks>
         /// <para>
@@ -2577,7 +2585,7 @@ namespace Utils.Mathematics.Expressions
         /// on a 12-term chain: 59,049 user <see cref="object.Equals(object?)"/> calls instead of 3).
         /// </para>
         /// </remarks>
-        private Expression CanonicalizeAdditiveExpression(ExpressionType nodeType, Expression left, Expression right)
+        private Expression CanonicalizeAdditiveExpression(ExpressionType nodeType, Expression left, Expression right, Type type)
         {
             var terms = new List<(Expression Term, bool IsNegative)>();
             CollectAdditiveTerms(terms, left, false);
@@ -2586,13 +2594,13 @@ namespace Utils.Mathematics.Expressions
             // ETC R1b (C-06): a term whose evaluation is observable is never grouped, cancelled or moved past another one.
             List<(Expression Term, bool IsNegative)>? pinned = SplitPinnedTerms(terms, static term => term.Term);
             terms.RemoveAll(static term => IsOrdinaryZeroConstant(term.Term));
-            AggregateAdditiveConstants(terms, left.Type);
+            AggregateAdditiveConstants(terms, type);
 
             if (terms.Count == 0)
             {
                 return pinned is null
-                    ? Expression.Constant(Convert.ChangeType(0, left.Type), left.Type)
-                    : BuildPinnedAdditiveChain([], pinned, left.Type);
+                    ? Expression.Constant(Convert.ChangeType(0, type), type)
+                    : BuildPinnedAdditiveChain([], pinned, type);
             }
 
             ParameterExpression[][] scopes = CaptureLexicalScopeSnapshot();
@@ -2644,18 +2652,18 @@ namespace Utils.Mathematics.Expressions
                 CollectUncancelledTerms(termGroup, signedTerms);
                 if (signedTerms.Count > 0)
                 {
-                    rebuiltTerms.Add(BuildAdditiveExpression(signedTerms, left.Type));
+                    rebuiltTerms.Add(BuildAdditiveExpression(signedTerms, type));
                 }
             }
 
             if (pinned is not null)
             {
-                return BuildPinnedAdditiveChain(rebuiltTerms, pinned, left.Type);
+                return BuildPinnedAdditiveChain(rebuiltTerms, pinned, type);
             }
 
             if (rebuiltTerms.Count == 0)
             {
-                return Expression.Constant(Convert.ChangeType(0, left.Type), left.Type);
+                return Expression.Constant(Convert.ChangeType(0, type), type);
             }
 
             return BuildRightAssociative(rebuiltTerms, Expression.Add);

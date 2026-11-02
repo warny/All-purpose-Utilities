@@ -117,6 +117,12 @@ internal sealed class InvocationInliningAnalysis
     /// <returns>The allowed inlining.</returns>
     public static InvocationInliningKind Analyze(LambdaExpression lambda, InvocationExpression invocation)
     {
+        // ETC R4: an extension body cannot be inspected (not even its virtual Type): the invocation is kept.
+        if (ExpressionOpacity.IsOpaque(lambda.Body))
+        {
+            return InvocationInliningKind.Preserve;
+        }
+
         // A body whose type differs from the invocation's (a void delegate, a covariant return) would change the
         // static type seen by the enclosing node.
         if (lambda.Body.Type != invocation.Type)
@@ -134,7 +140,8 @@ internal sealed class InvocationInliningAnalysis
         for (int i = 0; i < parameters.Count; i++)
         {
             Expression argument = arguments[i];
-            if (parameters[i].IsByRef || argument.Type != parameters[i].Type || argument is not (ConstantExpression or DefaultExpression or ParameterExpression))
+            // The class test comes first, so an extension argument is refused before its virtual Type is read (ETC R4).
+            if (argument is not (ConstantExpression or DefaultExpression or ParameterExpression) || parameters[i].IsByRef || argument.Type != parameters[i].Type)
             {
                 return InvocationInliningKind.Preserve;
             }
@@ -668,6 +675,14 @@ internal sealed class InvocationInliningAnalysis
         {
             if (found) return node;
             ExpressionResourceBudget.ConsumeStructuralVisit();
+
+            // ETC R4: an extension node is recognized before the framework visitor calls its overridable Accept.
+            if (node is not null && ExpressionOpacity.IsOpaque(node))
+            {
+                found = true;
+                return node;
+            }
+
             return base.Visit(node);
         }
 

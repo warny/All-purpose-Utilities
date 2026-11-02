@@ -175,15 +175,43 @@ internal sealed class R4HostileExtension : Expression
     /// <summary>Gets the total number of counted calls.</summary>
     public int TotalCalls => Calls.Values.Sum();
 
-    /// <summary>Clears the counters.</summary>
-    public void ResetCalls() => Calls.Clear();
+    /// <summary>
+    /// Gets the number of calls the engine itself made: any call to a member other than the <c>NodeType</c> and <c>Type</c>
+    /// getters, and a getter read whose immediate caller is engine code (the <c>Utils</c> assembly). A getter read whose
+    /// immediate caller is a framework factory (<c>System.Linq.Expressions</c>) validating a supported parent it rebuilds is
+    /// counted in <see cref="FrameworkReads"/> instead.
+    /// </summary>
+    public int EngineCalls { get; private set; }
 
-    /// <summary>Counts a call to <paramref name="member"/> and throws when armed.</summary>
+    /// <summary>Gets the getter reads made by framework factories.</summary>
+    public int FrameworkReads { get; private set; }
+
+    /// <summary>Clears the counters.</summary>
+    public void ResetCalls()
+    {
+        Calls.Clear();
+        EngineCalls = 0;
+        FrameworkReads = 0;
+    }
+
+    /// <summary>Counts a call to <paramref name="member"/> and throws when armed and the call comes from the engine.</summary>
     /// <param name="member">The member name.</param>
-    private void Hit(string member)
+    /// <param name="getter">Whether <paramref name="member"/> is the <c>NodeType</c> or <c>Type</c> getter.</param>
+    private void Hit(string member, bool getter = false)
     {
         Calls[member] = Calls.TryGetValue(member, out int count) ? count + 1 : 1;
-        if (Armed) throw new InvalidOperationException($"The engine called {member} on an opaque extension node.");
+        if (!Armed) return;
+
+        // Frame 0 is Hit, frame 1 the counted member, frame 2 its caller (tests run without JIT optimization).
+        Assembly? caller = new System.Diagnostics.StackFrame(2, false).GetMethod()?.DeclaringType?.Assembly;
+        if (getter && caller == typeof(Expression).Assembly)
+        {
+            FrameworkReads++;
+            return;
+        }
+
+        EngineCalls++;
+        throw new InvalidOperationException($"{member} was called on an opaque extension node by {caller?.GetName().Name ?? "unknown code"}.");
     }
 
     /// <inheritdoc/>
@@ -191,7 +219,7 @@ internal sealed class R4HostileExtension : Expression
     {
         get
         {
-            Hit(nameof(NodeType));
+            Hit(nameof(NodeType), getter: true);
             return ExpressionType.Extension;
         }
     }
@@ -201,7 +229,7 @@ internal sealed class R4HostileExtension : Expression
     {
         get
         {
-            Hit(nameof(Type));
+            Hit(nameof(Type), getter: true);
             return typeof(double);
         }
     }

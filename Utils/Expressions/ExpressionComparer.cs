@@ -319,7 +319,7 @@ public class ExpressionComparer : IEqualityComparer<Expression>
                 metrics.NodeCount,
                 metrics.ArithmeticNodeCount,
                 metrics.ArithmeticDepth,
-                expression.NodeType,
+                ExpressionOpacity.IsOpaque(expression) ? ExpressionType.Extension : expression.NodeType,
                 _currentComparisonOrigin,
                 _cumulativeNodeBudget));
             return ExpressionSimplifier.SimplifyForComparisonInSession(_expressionSimplifier, expression);
@@ -349,7 +349,7 @@ public class ExpressionComparer : IEqualityComparer<Expression>
     internal static bool StructuralEqualsAfterSimplification(Expression? simplifiedX, Expression? simplifiedY)
         => ExpressionResourceBudget.RunInternal(
             (X: simplifiedX, Y: simplifiedY),
-            static state => EqualsCore(state.X, state.Y, new ParameterBindingContext()));
+            static state => EqualsRoot(state.X, state.Y, new ParameterBindingContext()));
 
     /// <summary>
     /// Recursively compares two already-simplified expressions for structural equivalence, resolving
@@ -379,6 +379,9 @@ public class ExpressionComparer : IEqualityComparer<Expression>
         // included (ETC R1a-Security). A family added to this switch is protected without further change.
         ExpressionResourceBudget.ConsumeStructuralVisit();
         if (x is null || y is null) return ReferenceEquals(x, y);
+
+        // ETC R4: an extension node is recognized by type tests before any virtual member (NodeType, Type) is read.
+        if (ExpressionOpacity.IsOpaque(x) || ExpressionOpacity.IsOpaque(y)) return OpaqueEqual(x, y, context);
         if (x.NodeType != y.NodeType) return false;
 
         if (x is ParameterExpression xp && y is ParameterExpression yp)
@@ -439,6 +442,36 @@ public class ExpressionComparer : IEqualityComparer<Expression>
             _ => false,
         };
     }
+
+    /// <summary>
+    /// Entry point of one structural comparison: <see cref="EqualsCore"/> on the roots, then the check that no opaque node was
+    /// matched under an identity assumption a later label correspondence broke (see <see cref="OpaqueEqual"/>).
+    /// </summary>
+    /// <param name="x">The first (already simplified) expression.</param>
+    /// <param name="y">The second (already simplified) expression.</param>
+    /// <param name="context">A fresh binding context.</param>
+    /// <returns><see langword="true"/> if the two expressions are structurally equivalent.</returns>
+    private static bool EqualsRoot(Expression? x, Expression? y, ParameterBindingContext context)
+        => EqualsCore(x, y, context) && !context.OpaqueIdentityBroken;
+
+    /// <summary>
+    /// Compares two nodes of which at least one is opaque (an extension node, ETC R4), without reading any of their members:
+    /// they are equal only when they are the same instance and every open binder frame and every label correspondence pairs a
+    /// declaration or a target with itself. The node may reference any enclosing declaration or label, so the same instance
+    /// under binders that bind different declarations (or swap them) does not mean the same thing; free references keep their
+    /// identity, as for parameters. The node's own <see cref="object.Equals(object?)"/> is never called, and two distinct
+    /// instances are never equal, whatever they contain.
+    /// </summary>
+    /// <param name="x">The first node.</param>
+    /// <param name="y">The second node.</param>
+    /// <param name="context">The active binding context.</param>
+    /// <returns><see langword="true"/> for the same instance under an identity binding context.</returns>
+    /// <remarks>
+    /// A label correspondence recorded later in the same comparison could still pair two different targets the node may jump
+    /// to; the context then marks the identity assumption as broken and <see cref="EqualsRoot"/> reports the trees unequal.
+    /// </remarks>
+    private static bool OpaqueEqual(Expression x, Expression y, ParameterBindingContext context)
+        => ReferenceEquals(x, y) && context.AssumeIdentityForOpaque();
 
     /// <summary>
     /// Compares two <see cref="DynamicExpression"/> nodes (ETC R4): the same binder instance (by reference: a binder's own
@@ -966,7 +999,7 @@ public class ExpressionComparer : IEqualityComparer<Expression>
     internal static bool StructuralEqualsRaw(Expression? x, Expression? y)
         => ExpressionResourceBudget.RunInternal(
             (X: x, Y: y),
-            static state => EqualsCore(state.X, state.Y, new ParameterBindingContext(safeConstantsOnly: true)));
+            static state => EqualsRoot(state.X, state.Y, new ParameterBindingContext(safeConstantsOnly: true)));
 
     /// <summary>
     /// Structurally hashes an expression exactly like <see cref="GetHashCode(Expression)"/>, EXCEPT that
@@ -1453,10 +1486,15 @@ public class ExpressionComparer : IEqualityComparer<Expression>
         return hc.ToHashCode();
     }
 
-    /// <summary>Computes a coarse, conservative hash for an unsupported node kind: collisions between distinct unequal nodes are acceptable, but this must never disagree with <see cref="EqualsCore"/>'s "false" for that node kind.</summary>
-    /// <param name="e">The unsupported expression to hash.</param>
-    /// <returns>A hash code based only on <see cref="Expression.NodeType"/> and <see cref="Expression.Type"/>.</returns>
-    private static int HashUnsupported(Expression e) => HashCode.Combine(e.NodeType, e.Type);
+    /// <summary>
+    /// Hashes an opaque node (an extension node, the only node the dispatch of <see cref="Hash"/> does not recognize since ETC
+    /// R4) by reference identity, mirroring <see cref="OpaqueEqual"/>: equal opaque nodes are the same instance, so they hash
+    /// alike. No member of the node is read: neither <see cref="Expression.NodeType"/> and <see cref="Expression.Type"/> (which
+    /// the coarse hash of R0–R3 read) nor its own <see cref="object.GetHashCode"/>.
+    /// </summary>
+    /// <param name="e">The opaque expression to hash.</param>
+    /// <returns>A hash code derived from the identity of <paramref name="e"/>.</returns>
+    private static int HashUnsupported(Expression e) => HashCode.Combine(ExpressionType.Extension, RuntimeHelpers.GetHashCode(e));
 
     /// <summary>
     /// A per-<see cref="Equals(Expression?, Expression?)"/>-call, mutable stack of paired
@@ -1477,6 +1515,40 @@ public class ExpressionComparer : IEqualityComparer<Expression>
 
         /// <summary>The identifier of the current label scope (0 outside any lambda; a fresh one per lambda body).</summary>
         private int _labelScope;
+
+        /// <summary>Whether an opaque node was matched by identity (ETC R4): from then on, every new label correspondence must be an identity.</summary>
+        private bool _opaqueIdentityAssumed;
+
+        /// <summary>Gets whether a label correspondence recorded after an opaque match paired two different targets (ETC R4).</summary>
+        public bool OpaqueIdentityBroken { get; private set; }
+
+        /// <summary>
+        /// Decides whether the same opaque instance means the same thing on both sides (ETC R4): every open binder frame pairs
+        /// each declaration with itself, and every recorded label correspondence pairs a target with itself. On success, later
+        /// label correspondences are watched (<see cref="OpaqueIdentityBroken"/>).
+        /// </summary>
+        /// <returns><see langword="true"/> when the context is an identity.</returns>
+        public bool AssumeIdentityForOpaque()
+        {
+            if (_bindings is { } bindings)
+            {
+                foreach ((ParameterExpression left, ParameterExpression right) in bindings)
+                {
+                    if (!ReferenceEquals(left, right)) return false;
+                }
+            }
+
+            if (_labels is { } labels)
+            {
+                foreach (KeyValuePair<LabelTarget, (LabelTarget Other, int Scope)> entry in labels.Left)
+                {
+                    if (!ReferenceEquals(entry.Key, entry.Value.Other)) return false;
+                }
+            }
+
+            _opaqueIdentityAssumed = true;
+            return true;
+        }
 
         /// <summary>The last label scope identifier handed out.</summary>
         private int _lastLabelScope;
@@ -1634,6 +1706,7 @@ public class ExpressionComparer : IEqualityComparer<Expression>
         /// <param name="other">The corresponding target.</param>
         private void RecordLabel(bool left, LabelMaps labels, Dictionary<LabelTarget, (LabelTarget Other, int Scope)> map, LabelTarget key, LabelTarget other)
         {
+            if (_opaqueIdentityAssumed && !ReferenceEquals(key, other)) OpaqueIdentityBroken = true;
             (LabelTarget Other, int Scope)? previous = map.TryGetValue(key, out (LabelTarget Other, int Scope) existing) ? existing : null;
             labels.Undo.Add((left, key, previous));
             map[key] = (other, _labelScope);

@@ -497,6 +497,8 @@ public class ExpressionSimplifierOpaqueConstantInvariantTests
     /// grouped and reordered like an ordinary term, which read the getters <paramref name="baselineReads"/> times (the
     /// pre-P15 baseline); since R1b (C-06) an extension node is unknown code that is never rewritten, so only the reads made
     /// to rebuild and finalize the term remain: the count no longer grows with the chain and never exceeds the former one.
+    /// Since ETC R4 the engine itself never reads them (extension nodes are recognized by type tests): the four remaining
+    /// reads (two <c>NodeType</c>, two <c>Type</c>) are made by the framework factories that rebuild the supported parents.
     /// </summary>
     /// <param name="n">The number of terms.</param>
     /// <param name="sortedLast">Whether the extension term sorts last.</param>
@@ -504,10 +506,10 @@ public class ExpressionSimplifierOpaqueConstantInvariantTests
     /// <param name="expectedDigest">The digest of the read log.</param>
     /// <param name="baselineReads">The number of reads before ETC R1b, an upper bound.</param>
     [TestMethod]
-    [DataRow(4, false, 6, 10464847950183532971UL, 158)]
-    [DataRow(4, true, 6, 10464847950183532971UL, 494)]
-    [DataRow(6, true, 6, 10464847950183532971UL, 12346)]
-    [DataRow(8, true, 6, 10464847950183532971UL, 308598)]
+    [DataRow(4, false, 4, 8234325340765722775UL, 158)]
+    [DataRow(4, true, 4, 8234325340765722775UL, 494)]
+    [DataRow(6, true, 4, 8234325340765722775UL, 12346)]
+    [DataRow(8, true, 4, 8234325340765722775UL, 308598)]
     public void ExtensionNodeGetters_AreReadAsOnTheBaseline(int n, bool sortedLast, int expectedReads, ulong expectedDigest, int baselineReads)
     {
         var log = new List<string>();
@@ -522,7 +524,8 @@ public class ExpressionSimplifierOpaqueConstantInvariantTests
     /// A <see cref="Expression.NodeType"/> getter throwing on its k-th read throws on exactly that read, and the exception
     /// propagates unchanged. Since ETC R1b the extension term is no longer compared (see
     /// <see cref="ExtensionNodeGetters_AreReadAsOnTheBaseline"/>), so the throwing reads are chosen among the reads that
-    /// remain (the former rows threw on reads 12 and 30, which no longer happen). The first <see cref="Expression.NodeType"/>
+    /// remain (the former rows threw on reads 12 and 30, which no longer happen; since ETC R4 only the framework factories read
+    /// the getters, so the former reads 4 and 5 no longer happen either). The first <see cref="Expression.NodeType"/>
     /// read is made by the factory that builds the chain, before the log is cleared, so the reads made by the
     /// simplification are the second and later ones.
     /// </summary>
@@ -531,8 +534,8 @@ public class ExpressionSimplifierOpaqueConstantInvariantTests
     /// <param name="expectedReads">The number of logged reads when it throws.</param>
     [TestMethod]
     [DataRow(4, 2, 1)]
-    [DataRow(6, 4, 3)]
-    [DataRow(8, 5, 5)]
+    [DataRow(6, 3, 3)]
+    [DataRow(8, 3, 3)]
     public void ThrowingExtensionGetter_ThrowsOnTheSameRead(int n, int throwAt, int expectedReads)
     {
         var log = new List<string>();
@@ -549,7 +552,8 @@ public class ExpressionSimplifierOpaqueConstantInvariantTests
     /// A re-entrant extension getter (it calls the public comparer), one extension instance shared by two terms, and
     /// two structurally similar but distinct instances, keep their reads pinned. Since ETC R1b the extension terms are never
     /// compared, grouped or reordered, so the counts are those of the rebuild and finalization only, bounded by the former
-    /// baseline values (12346, 9143, 12364, 12364).
+    /// baseline values (12346, 9143, 12364, 12364). Since ETC R4 the engine itself reads none of them: the remaining reads
+    /// (R1b–R3: 6, 5, 12, 12) are those of the framework factories rebuilding the supported parents.
     /// </summary>
     [TestMethod]
     public void ReentrantSharedAndTwinExtensions_KeepBaselineReads()
@@ -573,10 +577,10 @@ public class ExpressionSimplifierOpaqueConstantInvariantTests
         Simplify(ExtensionChain(6, true, new LoggingExtension("t0", log), new LoggingExtension("t1", log), log));
         int twinReads = log.Count;
 
-        Assert.AreEqual(6, reentrantReads, "reentrant");
-        Assert.AreEqual(5, inner, "inner");
-        Assert.AreEqual(12, sharedReads, "shared");
-        Assert.AreEqual(12, twinReads, "twin");
+        Assert.AreEqual(4, reentrantReads, "reentrant");
+        Assert.AreEqual(3, inner, "inner");
+        Assert.AreEqual(8, sharedReads, "shared");
+        Assert.AreEqual(8, twinReads, "twin");
     }
 
     /// <summary>

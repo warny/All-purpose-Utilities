@@ -939,7 +939,11 @@ public abstract class ExpressionTransformer
     private Expression TransformPrepared(TransformContext context)
     {
         ExpressionResourceBudget.ConsumeTransformVisit();
-        if (TryTransform(context, out Expression? result))
+
+        // ETC R4: an extension node (the only opaque context) never reaches rule dispatch, which reads the node's virtual
+        // NodeType to select candidates and match signatures: no rule, not even one declared on ExpressionType.Extension, runs
+        // on it. FinalizeExpression still receives it, with an empty child list, as before.
+        if (!context.IsOpaque && TryTransform(context, out Expression? result))
         {
             // Preserves the pre-refactor behavior where a matching rule returning null (allowed for the
             // single-parameter and Expression[]-shaped overloads, see TryInvokeTransformMethod) made
@@ -2607,7 +2611,7 @@ public abstract class ExpressionTransformer
             if (replaced[i] is not ParameterExpression)
             {
                 throw new NotSupportedException(
-                    $"The runtime variable '{node.Variables[i].Name}' can only be replaced by another ParameterExpression, not by a '{replaced[i].NodeType}' expression (C-07).");
+                    $"The runtime variable '{node.Variables[i].Name}' can only be replaced by another ParameterExpression, not by a '{ExpressionOpacity.Describe(replaced[i])}' expression (C-07).");
             }
         }
 
@@ -2786,6 +2790,14 @@ public abstract class ExpressionTransformer
         {
             if (_found) return node;
             ExpressionResourceBudget.ConsumeStructuralVisit();
+
+            // ETC R4: an extension node is recognized before the framework visitor calls its overridable Accept.
+            if (node is not null && ExpressionOpacity.IsOpaque(node))
+            {
+                _opaque = true;
+                return node;
+            }
+
             return base.Visit(node);
         }
 
@@ -3063,6 +3075,12 @@ public abstract class ExpressionTransformer
         if (e is UnaryExpression unaryExpr && parameters.Length >= 1 && parameters[0] is not null)
         {
             return CopyUnaryExpression(unaryExpr, parameters[0]);
+        }
+
+        // ETC R4: an extension node is recognized by type tests before its virtual NodeType is read.
+        if (ExpressionOpacity.IsOpaque(e))
+        {
+            return CopyOpaqueExpression(e, parameters);
         }
 
         return e.NodeType switch
@@ -3379,7 +3397,7 @@ public abstract class ExpressionTransformer
         for (int i = 0; i < children.Length; i++)
         {
             variables[i] = children[i] as ParameterExpression
-                ?? throw new ArgumentException($"A runtime variable must stay a ParameterExpression; position {i} received '{children[i]?.NodeType}'.", nameof(children));
+                ?? throw new ArgumentException($"A runtime variable must stay a ParameterExpression; position {i} received '{ExpressionOpacity.Describe(children[i])}'.", nameof(children));
             unchanged &= ReferenceEquals(variables[i], original.Variables[i]);
         }
 
@@ -3768,6 +3786,24 @@ public abstract class ExpressionTransformer
     }
 
     /// <summary>
+    /// The C-02 contract of an extension node (ETC R4): its children are unknown to the engine (reading them would call
+    /// <c>VisitChildren</c> or <c>Reduce</c>, user code), so an empty list keeps the node and any other list is refused, without
+    /// reading any member of the node.
+    /// </summary>
+    /// <param name="original">The extension node.</param>
+    /// <param name="children">The supplied children.</param>
+    /// <returns><paramref name="original"/>.</returns>
+    /// <exception cref="ArgumentException"><paramref name="children"/> is not empty.</exception>
+    private static Expression CopyOpaqueExpression(Expression original, Expression[] children)
+    {
+        if (children.Length == 0) return original;
+
+        throw new ArgumentException(
+            $"An {ExpressionOpacity.Describe(original)} expression has no child the engine can replace, but {children.Length} were supplied.",
+            nameof(children));
+    }
+
+    /// <summary>
     /// Rebuilds a <see cref="DynamicExpression"/> on <paramref name="arguments"/> (ETC R4) through
     /// <see cref="DynamicExpression.Update"/>: the same <see cref="DynamicExpression.Binder"/> instance and the exact
     /// <see cref="DynamicExpression.DelegateType"/> are kept (the framework factory validates each argument against the
@@ -3804,7 +3840,7 @@ public abstract class ExpressionTransformer
     private static NewExpression CreationChild(Expression original, Expression[] children)
         => children[0] as NewExpression
             ?? throw new ArgumentException(
-                $"The first sub-expression of a '{original.NodeType}' expression must be a NewExpression, not '{children[0]?.NodeType.ToString() ?? "null"}'.",
+                $"The first sub-expression of a '{original.NodeType}' expression must be a NewExpression, not '{ExpressionOpacity.Describe(children[0])}'.",
                 nameof(children));
 
     /// <summary>Rebuilds bindings from the positional children of an initialization (ETC R3), in declaration order.</summary>
@@ -3908,9 +3944,10 @@ public abstract class ExpressionTransformer
             return false;
 
         // If the parameter has its own known-safe ExpressionSignatureAttribute, ensure it matches
-        // using the cached instance.
+        // using the cached instance. ETC R4: an extension node never satisfies a node-type constraint, so its virtual
+        // NodeType (read by Match) is never consulted.
         if (parameter.Signature is not null)
-            return parameter.Signature.Match(e);
+            return !ExpressionOpacity.IsOpaque(e) && parameter.Signature.Match(e);
 
         // A custom/third-party attribute type: re-fetch (and therefore re-construct) a fresh instance
         // on every check, exactly like the pre-indexing implementation always did, since such an
@@ -3920,7 +3957,7 @@ public abstract class ExpressionTransformer
             ExpressionSignatureAttribute? signature = parameter.UncachedSignatureParameter
                 .GetCustomAttributes<ExpressionSignatureAttribute>()
                 .FirstOrDefault();
-            return signature is null || signature.Match(e);
+            return signature is null || (!ExpressionOpacity.IsOpaque(e) && signature.Match(e));
         }
 
         // No signature attribute at all.
