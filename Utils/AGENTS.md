@@ -80,3 +80,9 @@ equality, hash, canonical-key or other recursive handler must:
     guard's margin): override `VisitMemberInit`, `VisitListInit`, `VisitMemberBinding` and `VisitElementInit` with
     `ReadOnlyBindingWalk`, otherwise a deep `MemberMemberBinding` chain overflows the stack. Never rediscover an `Add` method
     from argument types: rebuild with the original `ElementInit.AddMethod`.
+12. **Never inspect an extension node** (ETC R4): recognize it with `ExpressionOpacity.IsOpaque` (type tests only) *before*
+    reading `NodeType` or `Type` of a node that may be one, and never call its `CanReduce`, `Reduce`, `VisitChildren`,
+    `Accept`, `Equals`, `GetHashCode` or `ToString`. An engine-internal `ExpressionVisitor` checks `IsOpaque` in its `Visit`
+    override before `base.Visit` (which calls the overridable `Accept`). Compare and hash opaque nodes by identity only.
+    Never invoke a `CallSiteBinder`: a dynamic operation's binder is metadata, compared by reference. `ExpressionTreeR4Fixtures`
+    (`R4HostileExtension`, `R4CountingBinder`) detect any such call.

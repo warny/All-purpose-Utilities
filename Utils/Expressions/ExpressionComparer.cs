@@ -380,10 +380,8 @@ public class ExpressionComparer : IEqualityComparer<Expression>
         ExpressionResourceBudget.ConsumeStructuralVisit();
         if (x is null || y is null) return ReferenceEquals(x, y);
 
-        // ETC R4: an extension node is recognized by type tests before any virtual member (NodeType, Type) is read.
-        if (ExpressionOpacity.IsOpaque(x) || ExpressionOpacity.IsOpaque(y)) return OpaqueEqual(x, y, context);
-        if (x.NodeType != y.NodeType) return false;
-
+        // Two parameters or two constants share their node type by class (the hottest pairs, decided first, as before ETC R4
+        // they were right after the node-type test).
         if (x is ParameterExpression xp && y is ParameterExpression yp)
         {
             return context.AreEquivalent(xp, yp);
@@ -393,6 +391,10 @@ public class ExpressionComparer : IEqualityComparer<Expression>
         {
             return ConstantsEqual(xc, yc, context.SafeConstantsOnly);
         }
+
+        // ETC R4: an extension node is recognized by type tests before any virtual member (NodeType, Type) is read.
+        if (ExpressionOpacity.IsOpaque(x) || ExpressionOpacity.IsOpaque(y)) return OpaqueEqual(x, y, context);
+        if (x.NodeType != y.NodeType) return false;
 
         if (x.Type != y.Type) return false;
 

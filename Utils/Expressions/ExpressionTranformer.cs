@@ -120,7 +120,17 @@ public abstract class ExpressionTransformer
             ParameterType = parameterType;
             Signature = signature;
             UncachedSignatureParameter = uncachedSignatureParameter;
+            ExcludesOpaqueNodes = parameterType != typeof(Expression)
+                && parameterType.Assembly == typeof(Expression).Assembly
+                && typeof(Expression).IsAssignableFrom(parameterType);
         }
+
+        /// <summary>
+        /// Whether this parameter's type is a framework node class (<see cref="ConstantExpression"/>,
+        /// <see cref="BinaryExpression"/>, …): an argument assignable to it is never an extension node (ETC R4), so the opacity
+        /// test of <see cref="CheckParameter"/> can be skipped on the hot rule-matching path. Computed once.
+        /// </summary>
+        public bool ExcludesOpaqueNodes { get; }
     }
 
     /// <summary>
@@ -3126,6 +3136,18 @@ public abstract class ExpressionTransformer
             return CopyUnaryExpression(unaryExpr, parameters[0]);
         }
 
+        // Constants (recreated by every simplifier finalization) and parameters are the hottest families here: they take
+        // their historical branch without the opacity test below.
+        if (e is ConstantExpression constant)
+        {
+            return Expression.Constant(constant.Value, constant.Type);
+        }
+
+        if (e is ParameterExpression)
+        {
+            return e;
+        }
+
         // ETC R4: an extension node is recognized by type tests before its virtual NodeType is read.
         if (ExpressionOpacity.IsOpaque(e))
         {
@@ -4094,9 +4116,10 @@ public abstract class ExpressionTransformer
 
         // If the parameter has its own known-safe ExpressionSignatureAttribute, ensure it matches
         // using the cached instance. ETC R4: an extension node never satisfies a node-type constraint, so its virtual
-        // NodeType (read by Match) is never consulted.
+        // NodeType (read by Match) is never consulted. A parameter typed with a framework node class already excluded it
+        // above, so the hot rule parameters (ConstantExpression, BinaryExpression...) skip the opacity test.
         if (parameter.Signature is not null)
-            return !ExpressionOpacity.IsOpaque(e) && parameter.Signature.Match(e);
+            return (parameter.ExcludesOpaqueNodes || !ExpressionOpacity.IsOpaque(e)) && parameter.Signature.Match(e);
 
         // A custom/third-party attribute type: re-fetch (and therefore re-construct) a fresh instance
         // on every check, exactly like the pre-indexing implementation always did, since such an
