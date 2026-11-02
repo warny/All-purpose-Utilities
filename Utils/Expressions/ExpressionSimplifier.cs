@@ -2532,12 +2532,13 @@ namespace Utils.Mathematics.Expressions
             // base.FinalizeExpression must keep receiving the second, historically-distinct copy.
             // ETC R1b: the newly traversed families (Member, TypeBinary, New, NewArray, Default) are already rebuilt by their
             // Prepare* method too, so the exact type reuses that node as well, and so do the ETC R2 families (Block, Try,
-            // Switch, Loop, Goto, Label, RuntimeVariables, DebugInfo) and the ETC R3 families (MemberInit, ListInit, Index).
+            // Switch, Loop, Goto, Label, RuntimeVariables, DebugInfo), the ETC R3 families (MemberInit, ListInit, Index) and
+            // the ETC R4 dynamic operations.
             if (e is UnaryExpression or BinaryExpression or MethodCallExpression or ConditionalExpression
                     or MemberExpression or TypeBinaryExpression or NewExpression or NewArrayExpression or DefaultExpression
                     or BlockExpression or TryExpression or SwitchExpression or LoopExpression or GotoExpression
                     or LabelExpression or RuntimeVariablesExpression or DebugInfoExpression
-                    or MemberInitExpression or ListInitExpression or IndexExpression
+                    or MemberInitExpression or ListInitExpression or IndexExpression or DynamicExpression
                 && GetType() == typeof(ExpressionSimplifier))
             {
                 return e;

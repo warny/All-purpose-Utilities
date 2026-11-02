@@ -160,6 +160,9 @@ internal static class ExpressionEffectAnalysis
         TypeBinaryExpression typeBinary => Analyze(typeBinary.Expression),
         NewExpression creation => AnalyzeEach(creation.Arguments),
         NewArrayExpression array => AnalyzeEach(array.Expressions),
+
+        // ETC R4: the arguments of a dynamic operation are evaluated with it (the operation itself stays observable).
+        DynamicExpression dynamic => AnalyzeEach(dynamic.Arguments),
         _ => ExpressionEffects.None,
     };
 

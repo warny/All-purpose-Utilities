@@ -106,16 +106,23 @@ public class ExpressionTreeFindingsTests
     /// so a simplifiable descendant is never visited. R1 (New, NewArray, TypeBinary), R2 (Block, Try, Switch, Loop,
     /// Goto, Label), R3 (MemberInit, ListInit, Index) and R4 (Dynamic, Extension) replace this with explicit policies;
     /// R1b, R2 and R3 are done (see <c>ExpressionTreeR1bTests</c>, <c>ExpressionTreeR2Tests</c> and <c>ExpressionTreeR3Tests</c>).
+    /// ETC R4 traverses the arguments of a dynamic operation (see <c>ExpressionTreeR4DynamicTests</c>); an extension node stays
+    /// opaque by design.
     /// </summary>
     [TestMethod]
     public void ETC01_ExactSimplifier_DefaultDispatchedFamilies_AreNotTraversed()
     {
-        string[] passThrough = ["Dynamic", "Extension"];
+        string[] passThrough = ["Extension"];
         foreach (string name in passThrough)
         {
             Expression original = ExpressionNodeCatalog.Get(name).Build();
             Assert.AreSame(original, new ExpressionSimplifier().Simplify(original), name);
         }
+
+        var dynamic = (DynamicExpression)ExpressionNodeCatalog.Get("Dynamic").Build();
+        var simplified = (DynamicExpression)new ExpressionSimplifier().Simplify(dynamic);
+        Assert.AreNotSame(dynamic, simplified, "Dynamic arguments are traversed since ETC R4.");
+        Assert.AreSame(dynamic.Binder, simplified.Binder);
     }
 
     /// <summary>
@@ -187,13 +194,15 @@ public class ExpressionTreeFindingsTests
     /// removed <c>MemberAccess</c> from this list: it follows the C-02 arity contract (see
     /// <see cref="ETC02_CopyExpression_MemberAccess_FollowsArityContract"/>); ETC R2 removed <c>Try</c>, <c>Switch</c>,
     /// <c>Goto</c> and <c>Label</c>, which follow it too (see <c>ExpressionTreeR2Tests</c>); ETC R3 removed <c>MemberInit</c>,
-    /// <c>ListInit</c> and <c>Index</c> (see <c>ExpressionTreeR3Tests</c>).
+    /// <c>ListInit</c> and <c>Index</c> (see <c>ExpressionTreeR3Tests</c>); ETC R4 removed <c>Dynamic</c> (see
+    /// <c>ExpressionTreeR4DynamicTests</c>).
     /// </summary>
     [TestMethod]
     public void ETC02_CopyExpression_IgnoresReplacementChildren_ForPassThroughFamilies()
     {
         Expression replacement = Expression.Constant(9.5);
-        string[] ignored = ["Dynamic", "Extension", "Lambda"];
+        Assert.ThrowsExactly<ArgumentException>(() => ExposedTransformer.Copy(ExpressionNodeCatalog.Get("Dynamic").Build(), replacement, replacement, replacement));
+        string[] ignored = ["Extension", "Lambda"];
         foreach (string name in ignored)
         {
             Expression original = ExpressionNodeCatalog.Get(name).Build();
@@ -571,15 +580,15 @@ public class ExpressionTreeFindingsTests
     /// <summary>
     /// ETC-14, resolved for the scalar families by ETC R1c: the unsupported-node canonical-order key tied every unsupported
     /// term; conditionals and defaults now have their own keys, which order them antisymmetrically, while two still
-    /// unsupported families (a dynamic operation and an extension node, R4; a block and a loop until ETC R2, an index access and
-    /// a member initializer until ETC R3) keep tying, conservatively.
+    /// unsupported nodes (two extension nodes, R4; a block and a loop until ETC R2, an index access and a member initializer
+    /// until ETC R3, a dynamic operation until ETC R4) keep tying, conservatively.
     /// </summary>
     [TestMethod]
     public void ETC14_CanonicalOrder_KeysTheScalarFamilies()
     {
         Expression first = ExpressionNodeCatalog.Get("Conditional").Build();
         Expression second = Expression.Default(typeof(double));
-        Expression block = ExpressionNodeCatalog.Get("Dynamic").Build();
+        Expression block = ExpressionNodeCatalog.Get("Extension.Irreducible").Build();
         Expression loop = ExpressionNodeCatalog.Get("Extension").Build();
 
         int forward = ExpressionCanonicalOrder.Compare(first, second, []);
@@ -588,6 +597,7 @@ public class ExpressionTreeFindingsTests
         Assert.AreEqual(0, ExpressionCanonicalOrder.Compare(block, loop, []));
         Assert.AreEqual(0, ExpressionCanonicalOrder.Compare(loop, block, []));
         Assert.AreNotEqual(0, ExpressionCanonicalOrder.Compare(ExpressionNodeCatalog.Get("Index").Build(), ExpressionNodeCatalog.Get("MemberInit").Build(), []), "Keyed since ETC R3.");
+        Assert.AreNotEqual(0, ExpressionCanonicalOrder.Compare(ExpressionNodeCatalog.Get("Dynamic").Build(), loop, []), "Keyed since ETC R4.");
     }
 
     /// <summary>

@@ -122,7 +122,7 @@ public class ExpressionTreeCoverageBaselineTests
         ["Label"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent", // ETC R2
         ["RuntimeVariables"] = "Same | Same | Same | Throws:NotSupportedException | Equal | Consistent", // ETC R2
         ["DebugInfo"] = "Same | Same | Same | Same | Equal | Consistent", // ETC R2
-        ["Dynamic"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
+        ["Dynamic"] = "Rewrites | Rewrites | Rewrites | Rewrites | Unequal | Consistent", // ETC R4 (Unequal: each build creates its own binder instance)
         ["Extension"] = "Opaque | Opaque | Opaque | Opaque | Unequal | Consistent",
         ["Add.CustomMethod"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent",
         ["Add.Lifted"] = "Rewrites | Rewrites | Rewrites | Rewrites | Equal | Consistent",

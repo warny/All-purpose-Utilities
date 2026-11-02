@@ -26,11 +26,12 @@ public class ExpressionTreeR1aTests
     /// The families the transformer does not traverse, reaching <c>PrepareDefault</c>. ETC R1b removed TypeIs, TypeEqual,
     /// New, NewArrayInit, NewArrayBounds, MemberAccess and Default, which are traversed since (see <c>ExpressionTreeR1bTests</c>);
     /// ETC R2 removed Block, Loop, Try, Switch, Goto, Label, RuntimeVariables and DebugInfo (see <c>ExpressionTreeR2Tests</c>);
-    /// ETC R3 removed MemberInit, ListInit and Index (see <c>ExpressionTreeR3Tests</c>).
+    /// ETC R3 removed MemberInit, ListInit and Index (see <c>ExpressionTreeR3Tests</c>); ETC R4 removed Dynamic (see
+    /// <c>ExpressionTreeR4DynamicTests</c>). Extension nodes stay opaque by design.
     /// </summary>
     private static readonly HashSet<ExpressionType> UntraversedRoots =
     [
-        ExpressionType.Dynamic, ExpressionType.Extension,
+        ExpressionType.Extension,
     ];
 
     /// <summary>
@@ -439,14 +440,14 @@ public class ExpressionTreeR1aTests
 
     /// <summary>
     /// Every catalog sample rooted at an untraversed family is returned as the very same instance by both simplifiers. ETC R2
-    /// moved the 19 control-flow samples out of the untraversed families and ETC R3 the 7 initializer and index samples; the
-    /// 3 samples of the R4 families remain.
+    /// moved the 19 control-flow samples out of the untraversed families, ETC R3 the 7 initializer and index samples and ETC
+    /// R4 the dynamic sample; the 2 extension samples remain.
     /// </summary>
     [TestMethod]
     public void EveryUntraversedCatalogSample_IsReturnedUnchanged()
     {
         ExpressionNodeSample[] samples = ExpressionNodeCatalog.All.Where(sample => UntraversedRoots.Contains(sample.RootNodeType)).ToArray();
-        Assert.AreEqual(3, samples.Length, "The catalog must keep covering every untraversed family (Dynamic, Extension).");
+        Assert.AreEqual(2, samples.Length, "The catalog must keep covering every untraversed family (Extension).");
 
         foreach (ExpressionNodeSample sample in samples)
         {
@@ -570,19 +571,24 @@ public class ExpressionTreeR1aTests
     }
 
     /// <summary>
-    /// A large untraversed tree (a dynamic operation over 2,000 simplifiable arguments; a block until ETC R2, a list
-    /// initializer until ETC R3) is returned unchanged; the same width under an array initializer (traversed since ETC R1b), a
-    /// block (since ETC R2) or a list initializer (since ETC R3) is simplified element by element.
+    /// A large untraversed tree (an extension node over a sum of 2,000 simplifiable terms; a block until ETC R2, a list
+    /// initializer until ETC R3, a dynamic operation until ETC R4) is returned unchanged; the same width under an array
+    /// initializer (traversed since ETC R1b), a block (since ETC R2), a list initializer (since ETC R3) or a dynamic operation
+    /// (since ETC R4) is simplified element by element.
     /// </summary>
     [TestMethod]
     public void LargeUntraversedTree_IsReturnedUnchanged()
     {
+        Expression extension = new ReducibleCatalogExtension(Enumerable.Range(0, 2000).Select(_ => Leaf()).Aggregate(Expression.Add));
         Expression dynamic = Expression.Dynamic(new CatalogBinder(), typeof(object), Enumerable.Range(0, 2000).Select(_ => Leaf()));
         Expression list = Expression.ListInit(Expression.New(typeof(List<double>)), Enumerable.Range(0, 2000).Select(_ => Leaf()));
         Expression block = Expression.Block(Enumerable.Range(0, 2000).Select(_ => Leaf()));
         Expression array = Expression.NewArrayInit(typeof(double), Enumerable.Range(0, 2000).Select(_ => Leaf()));
 
-        Assert.AreSame(dynamic, new ExpressionSimplifier().Simplify(dynamic));
+        Assert.AreSame(extension, new ExpressionSimplifier().Simplify(extension));
+        var simplifiedDynamic = (DynamicExpression)new ExpressionSimplifier().Simplify(dynamic);
+        Assert.AreEqual(2000, simplifiedDynamic.Arguments.Count);
+        Assert.IsTrue(simplifiedDynamic.Arguments.All(argument => ReferenceEquals(argument, P)));
         var simplifiedList = (ListInitExpression)new ExpressionSimplifier().Simplify(list);
         Assert.AreEqual(2000, simplifiedList.Initializers.Count);
         Assert.IsTrue(simplifiedList.Initializers.All(initializer => ReferenceEquals(initializer.Arguments[0], P)));

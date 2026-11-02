@@ -430,11 +430,29 @@ public class ExpressionComparer : IEqualityComparer<Expression>
             (ListInitExpression xli, ListInitExpression yli) => EqualsCore(xli.NewExpression, yli.NewExpression, context) && ElementInitsEqual(xli.Initializers, yli.Initializers, context),
             (IndexExpression xix, IndexExpression yix) => object.Equals(xix.Indexer, yix.Indexer) && EqualsCore(xix.Object, yix.Object, context) && SequencesEqual(xix.Arguments, yix.Arguments, context),
 
+            // ETC R4: dynamic operations. The binder is compared by identity only (never through its own Equals, never
+            // invoked), the exact delegate type is compared, then the arguments in order. Result types are already equal.
+            (DynamicExpression xd, DynamicExpression yd) => DynamicsEqual(xd, yd, context),
+
             // Unsupported node kind: conservatively unequal, even for a shared/reused instance - see this
             // method's remarks on why no ReferenceEquals shortcut is used here.
             _ => false,
         };
     }
+
+    /// <summary>
+    /// Compares two <see cref="DynamicExpression"/> nodes (ETC R4): the same binder instance (by reference: a binder's own
+    /// <see cref="object.Equals(object?)"/> is never called, and two binder instances are never assumed to bind alike), the
+    /// same delegate type, then the arguments in order under the active binding context. The result types are already equal.
+    /// </summary>
+    /// <param name="x">The first dynamic operation.</param>
+    /// <param name="y">The second dynamic operation.</param>
+    /// <param name="context">The active binding context.</param>
+    /// <returns><see langword="true"/> if both operations are structurally equal.</returns>
+    private static bool DynamicsEqual(DynamicExpression x, DynamicExpression y, ParameterBindingContext context)
+        => ReferenceEquals(x.Binder, y.Binder)
+            && x.DelegateType == y.DelegateType
+            && SequencesEqual(x.Arguments, y.Arguments, context);
 
     /// <summary>
     /// Compares two <see cref="BlockExpression"/> nodes (ETC R2): compatible variable declarations (count, types,
@@ -1027,6 +1045,12 @@ public class ExpressionComparer : IEqualityComparer<Expression>
             MemberInitExpression memberInit => HashCode.Combine(ExpressionType.MemberInit, memberInit.Type, Hash(memberInit.NewExpression, scopes), HashBindings(memberInit.Bindings, scopes)),
             ListInitExpression listInit => HashCode.Combine(ExpressionType.ListInit, listInit.Type, Hash(listInit.NewExpression, scopes), HashElementInits(listInit.Initializers, scopes)),
             IndexExpression index => HashSequence(HashCode.Combine(ExpressionType.Index, index.Type, index.Indexer, Hash(index.Object, scopes)), index.Arguments, scopes),
+
+            // ETC R4: the binder by identity (RuntimeHelpers.GetHashCode, never the binder's own GetHashCode), mirroring DynamicsEqual.
+            DynamicExpression dynamic => HashSequence(
+                HashCode.Combine(ExpressionType.Dynamic, dynamic.Type, dynamic.DelegateType, RuntimeHelpers.GetHashCode(dynamic.Binder)),
+                dynamic.Arguments,
+                scopes),
             _ => HashUnsupported(e),
         };
     }

@@ -185,8 +185,9 @@ public class ExpressionTransformerReplaceArgumentsTests
     /// <summary>
     /// <see cref="MemberExpression"/> had no dedicated branch in <c>ReplaceArguments</c>, so its receiver was left
     /// untouched (ETC-10/ETC-03). Since ETC R1b the receiver is substituted and the member kept; a family that still has no
-    /// branch (here a dynamic operation, an R4 family; a block until ETC R2, a list initializer until ETC R3) is returned
-    /// completely untouched, while a list initializer is substituted since ETC R3.
+    /// branch (here an extension node, opaque by design; a block until ETC R2, a list initializer until ETC R3, a dynamic
+    /// operation until ETC R4) is returned completely untouched, while a list initializer is substituted since ETC R3 and the
+    /// arguments of a dynamic operation since ETC R4 (same binder and delegate type).
     /// </summary>
     [TestMethod]
     public void ReplaceArguments_MemberExpression_SubstitutesReceiverAndKeepsMember()
@@ -194,17 +195,22 @@ public class ExpressionTransformerReplaceArgumentsTests
         var transformer = new ExposedTransformer();
         ParameterExpression p = Expression.Parameter(typeof(string), "p");
         MemberExpression member = Expression.Property(p, nameof(string.Length));
-        Expression dynamic = Expression.Dynamic(new Coverage.CatalogBinder(), typeof(object), member);
+        var dynamic = (DynamicExpression)Expression.Dynamic(new Coverage.CatalogBinder(), typeof(object), member);
+        Expression extension = new Coverage.ReducibleCatalogExtension(Expression.Convert(member, typeof(double)));
         ListInitExpression list = Expression.ListInit(Expression.New(typeof(List<int>)), member);
 
         var result = (MemberExpression)transformer.ExposeReplaceArguments(member, [p], [Expression.Constant("hello")]);
-        Expression untouched = transformer.ExposeReplaceArguments(dynamic, [p], [Expression.Constant("hello")]);
+        Expression untouched = transformer.ExposeReplaceArguments(extension, [p], [Expression.Constant("hello")]);
+        var substitutedDynamic = (DynamicExpression)transformer.ExposeReplaceArguments(dynamic, [p], [Expression.Constant("hello")]);
         var substituted = (ListInitExpression)transformer.ExposeReplaceArguments(list, [p], [Expression.Constant("hello")]);
 
         Assert.AreSame(member.Member, result.Member);
         Assert.AreEqual("hello", ((ConstantExpression)result.Expression!).Value);
         Assert.AreEqual(5, Expression.Lambda<Func<int>>(result).Compile()());
-        Assert.AreSame(dynamic, untouched);
+        Assert.AreSame(extension, untouched);
+        Assert.AreSame(dynamic.Binder, substitutedDynamic.Binder);
+        Assert.AreEqual(dynamic.DelegateType, substitutedDynamic.DelegateType);
+        Assert.AreEqual("hello", ((ConstantExpression)((MemberExpression)substitutedDynamic.Arguments[0]).Expression!).Value);
         Assert.AreSame(list.Initializers[0].AddMethod, substituted.Initializers[0].AddMethod);
         CollectionAssert.AreEqual(new[] { 5 }, Expression.Lambda<Func<List<int>>>(substituted).Compile()());
     }

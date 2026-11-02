@@ -979,8 +979,13 @@ public abstract class ExpressionTransformer
     /// <see cref="IndexExpression"/> are traversed too, with their bindings and initializers (<see cref="MemberAssignment"/>,
     /// <see cref="MemberMemberBinding"/>, <see cref="MemberListBinding"/>, <see cref="ElementInit"/>). Their positional child
     /// layout flattens the bindings and initializers in declaration order (see <see cref="PrepareMemberInit"/>,
-    /// <see cref="PrepareListInit"/> and <see cref="PrepareIndex"/>). Only <see cref="DynamicExpression"/> and extension nodes
-    /// still reach <see cref="PrepareDefault"/>.
+    /// <see cref="PrepareListInit"/> and <see cref="PrepareIndex"/>).
+    /// </para>
+    /// <para>
+    /// ETC R4 (C-03 extended): <see cref="DynamicExpression"/> is traversed too (<see cref="PrepareDynamic"/>: its arguments, in
+    /// order; the binder and the delegate type are metadata). Only nodes of a class outside the framework expression object
+    /// model (extension nodes, see <see cref="ExpressionOpacity"/>) still reach <see cref="PrepareDefault"/>; every case is a
+    /// type pattern, so such a node is recognized without reading any of its members.
     /// </para>
     /// </remarks>
     private TransformContext PrepareTransform(Expression e) => e switch
@@ -1009,6 +1014,7 @@ public abstract class ExpressionTransformer
         MemberInitExpression memberInit => PrepareMemberInit(memberInit),
         ListInitExpression listInit => PrepareListInit(listInit),
         IndexExpression index => PrepareIndex(index),
+        DynamicExpression dynamic => PrepareDynamic(dynamic),
         _ => PrepareDefault(e),
     };
 
@@ -1773,9 +1779,27 @@ public abstract class ExpressionTransformer
     }
 
     /// <summary>
-    /// Prepares any expression node not handled by a more specific <c>Prepare*</c> method (since ETC R3, only
-    /// <see cref="DynamicExpression"/> and extension nodes): no sub-expression preparation is attempted, and the node is
-    /// passed through unchanged.
+    /// Prepares a <see cref="DynamicExpression"/> (ETC R4): its arguments are prepared in order and the node is rebuilt
+    /// through <see cref="DynamicExpression.Update"/>, which keeps the very same <see cref="DynamicExpression.Binder"/> instance
+    /// and the exact <see cref="DynamicExpression.DelegateType"/> (hence the result type), and returns the node itself when no
+    /// argument changed. The binder is metadata, never a child: it is never invoked, no call site is created and no dynamic
+    /// binding is performed.
+    /// </summary>
+    /// <param name="node">The dynamic operation to prepare.</param>
+    /// <returns>
+    /// The resulting <see cref="TransformContext"/>. Its children are the arguments, in order (the call site, first parameter of
+    /// the delegate type, is not an expression and has no position).
+    /// </returns>
+    private TransformContext PrepareDynamic(DynamicExpression node)
+    {
+        Expression[] arguments = PrepareChildren(node.Arguments);
+        return new TransformContext(RebuildDynamicExpression(node, arguments), arguments);
+    }
+
+    /// <summary>
+    /// Prepares any expression node not handled by a more specific <c>Prepare*</c> method (since ETC R4, only a node of a class
+    /// outside the framework expression object model: an extension node, see <see cref="ExpressionOpacity"/>): no
+    /// sub-expression preparation is attempted, none of its members is read, and the node is passed through unchanged.
     /// </summary>
     /// <param name="e">The expression to prepare.</param>
     /// <returns>An opaque <see cref="TransformContext"/> (see <see cref="TransformContext.IsOpaque"/>).</returns>
@@ -2210,6 +2234,9 @@ public abstract class ExpressionTransformer
     /// list initializations and index accesses are entered too: they declare nothing, and they are rebuilt with their
     /// constructor, members, binding kinds, exact <c>Add</c> methods and indexer (an index access that is an assignment target
     /// stays one; a replacement that cannot be assigned to is rejected by the framework factory of the enclosing assignment).
+    /// Since ETC R4, the arguments of a dynamic operation are entered too (it declares nothing; the binder is metadata, kept
+    /// and never invoked). Entering a dynamic operation only substitutes its arguments: it never makes an invocation containing
+    /// one eligible for inlining (that is <see cref="InvocationInliningAnalysis"/>'s decision).
     /// </para>
     /// <para>
     /// Every node walked counts one structural visit, stack check included (ETC R1a-Security); so do the catch handlers and
@@ -2366,6 +2393,10 @@ public abstract class ExpressionTransformer
                     Expression? receiver = index.Object is null ? null : Substitute(index.Object, oldParameters, newParameters, scope);
                     return RebuildIndexExpression(index, receiver, SubstituteEach(index.Arguments, oldParameters, newParameters, scope));
                 }
+
+            // ETC R4: the arguments of a dynamic operation, in order. It declares nothing; the binder is metadata.
+            case DynamicExpression dynamic:
+                return RebuildDynamicExpression(dynamic, SubstituteEach(dynamic.Arguments, oldParameters, newParameters, scope));
         }
         return e;
     }
@@ -3005,6 +3036,11 @@ public abstract class ExpressionTransformer
     /// dropped, an <c>Add</c> method never replaced, and a result whose type differs from <paramref name="e"/>'s is rejected
     /// with <see cref="ArgumentException"/>. These families return the node itself when no child changed.
     /// </para>
+    /// <para>
+    /// ETC R4: <c>Dynamic</c> follows the same arity contract with the layout of <see cref="PrepareDynamic"/> (the arguments, in
+    /// order): the binder instance and the exact delegate type are taken from <paramref name="e"/>, never replaced or inferred,
+    /// and the node itself is returned when no argument changed.
+    /// </para>
     /// </remarks>
     /// <param name="e">The original expression to copy.</param>
     /// <param name="parameters">The sub-expressions to insert into the copied expression.</param>
@@ -3080,7 +3116,7 @@ public abstract class ExpressionTransformer
             ExpressionType.Block => CopyBlockExpression((BlockExpression)e, parameters),
             ExpressionType.DebugInfo => CopyLeafExpression(e, parameters),
             ExpressionType.Decrement => Expression.Decrement(parameters[0]),
-            ExpressionType.Dynamic => e,
+            ExpressionType.Dynamic => CopyDynamicExpression((DynamicExpression)e, parameters),
             ExpressionType.Default => e,
             ExpressionType.Extension => e,
             ExpressionType.Goto => CopyGotoExpression((GotoExpression)e, parameters),
@@ -3729,6 +3765,35 @@ public abstract class ExpressionTransformer
         var arguments = new Expression[original.Arguments.Count];
         Array.Copy(children, offset, arguments, 0, arguments.Length);
         return RebuildIndexExpression(original, receiver, arguments);
+    }
+
+    /// <summary>
+    /// Rebuilds a <see cref="DynamicExpression"/> on <paramref name="arguments"/> (ETC R4) through
+    /// <see cref="DynamicExpression.Update"/>: the same <see cref="DynamicExpression.Binder"/> instance and the exact
+    /// <see cref="DynamicExpression.DelegateType"/> are kept (the framework factory validates each argument against the
+    /// delegate's parameter types), and the node itself is returned when every argument is the instance it already holds.
+    /// The binder is never invoked and no call site is created.
+    /// </summary>
+    /// <param name="original">The dynamic operation being rebuilt.</param>
+    /// <param name="arguments">Its (prepared or substituted) arguments, one per argument of <paramref name="original"/>.</param>
+    /// <returns>The rebuilt node, or <paramref name="original"/> when no argument changed.</returns>
+    /// <exception cref="ArgumentException">An argument does not fit the delegate type (raised by the framework factory).</exception>
+    private static DynamicExpression RebuildDynamicExpression(DynamicExpression original, Expression[] arguments)
+        => original.Update(arguments);
+
+    /// <summary>
+    /// Rebuilds a <see cref="DynamicExpression"/> from its positional children (ETC R4, C-02): the arguments, in order. The
+    /// binder and the delegate type are taken from <paramref name="original"/>, never inferred from the arguments.
+    /// </summary>
+    /// <param name="original">The dynamic operation being copied.</param>
+    /// <param name="children">The positional children.</param>
+    /// <returns>The rebuilt node, or <paramref name="original"/> (see <see cref="KeepsUntraversedNode"/>; also when no child changed).</returns>
+    /// <exception cref="ArgumentException">The list length does not match, or an argument does not fit the delegate type.</exception>
+    private static Expression CopyDynamicExpression(DynamicExpression original, Expression[] children)
+    {
+        if (KeepsUntraversedNode(original, children, original.Arguments.Count)) return original;
+
+        return RebuildDynamicExpression(original, children);
     }
 
     /// <summary>Reads the creation of an initialization from the first positional child (ETC R3).</summary>
