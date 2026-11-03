@@ -2,6 +2,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 
 namespace Utils.Expressions;
 
@@ -67,6 +68,13 @@ internal enum InvocationInliningKind
 /// binder and the rule it binds); its evaluation order is fully determined by the node, so the analysis is complete. The
 /// binder is never invoked. An extension node is never inspected: it cannot be substituted into, so it always keeps the
 /// invocation, and none of its members is read.
+/// </para>
+/// <para>
+/// ETC closure audit (AUD-01): a parameter of a value type is a copy of its argument, so a write through it (a field or an
+/// indexer assigned or incremented, a field passed by reference, a mutating instance method, property or indexer accessor of a
+/// non-<see langword="readonly"/> structure) changes the copy only. The substitution would redirect that write to the argument
+/// (a caller variable) or to a constant's temporary copy, so such a write keeps the invocation; see
+/// <see cref="IsOwnLocation"/> and <see cref="MayMutateReceiver"/>.
 /// </para>
 /// </remarks>
 internal sealed class InvocationInliningAnalysis
@@ -173,7 +181,7 @@ internal sealed class InvocationInliningAnalysis
             null => true,
             ParameterExpression parameter => ScanReference(parameter),
             ConstantExpression or DefaultExpression => true,
-            // A quoted expression is never entered by the substitution (C-05 pending): a reference inside it would stay unbound.
+            // A quoted expression is never entered by the substitution (C-05): a reference inside it would stay unbound.
             UnaryExpression { NodeType: ExpressionType.Quote } => ScanBarrier(e),
             UnaryExpression unary => ScanUnary(unary),
             BinaryExpression binary => ScanBinary(binary),
@@ -219,7 +227,7 @@ internal sealed class InvocationInliningAnalysis
         for (int i = 0; i < dynamic.Arguments.Count; i++)
         {
             Expression argument = dynamic.Arguments[i];
-            if (delegateParameters[i + 1].ParameterType.IsByRef && IsOwnParameter(argument)) return false;
+            if (delegateParameters[i + 1].ParameterType.IsByRef && IsOwnLocation(argument)) return false;
             if (!Scan(argument)) return false;
         }
 
@@ -289,6 +297,13 @@ internal sealed class InvocationInliningAnalysis
     /// <returns><see langword="false"/> if inlining is unsafe.</returns>
     private bool ScanIndex(IndexExpression index)
     {
+        // An indexer accessor of a structure held by a parameter may mutate the copy (AUD-01).
+        if (index.Indexer is not null && index.Object is not null && IsOwnLocation(index.Object)
+            && MayMutateReceiver(index.Indexer.GetMethod, index.Object.Type))
+        {
+            return false;
+        }
+
         if (!Scan(index.Object) || !ScanEach(index.Arguments)) return false;
 
         if (index.Indexer is not null)
@@ -442,7 +457,7 @@ internal sealed class InvocationInliningAnalysis
 
         bool assigns = unary.NodeType is ExpressionType.PreIncrementAssign or ExpressionType.PreDecrementAssign
             or ExpressionType.PostIncrementAssign or ExpressionType.PostDecrementAssign;
-        if (assigns && IsOwnParameter(unary.Operand))
+        if (assigns && IsOwnLocation(unary.Operand))
         {
             return false;
         }
@@ -463,7 +478,7 @@ internal sealed class InvocationInliningAnalysis
     private bool ScanBinary(BinaryExpression binary)
     {
         bool assigns = IsAssignment(binary.NodeType);
-        if (assigns && IsOwnParameter(binary.Left))
+        if (assigns && IsOwnLocation(binary.Left))
         {
             return false;
         }
@@ -489,13 +504,15 @@ internal sealed class InvocationInliningAnalysis
     /// <returns><see langword="false"/> if inlining is unsafe.</returns>
     private bool ScanCall(MethodCallExpression call)
     {
+        // An instance method of a structure held by a parameter receives the copy by reference and may mutate it (AUD-01).
+        if (call.Object is not null && IsOwnLocation(call.Object) && MayMutateReceiver(call.Method, call.Object.Type)) return false;
         if (!Scan(call.Object)) return false;
 
         ParameterInfo[] methodParameters = call.Method.GetParameters();
         for (int i = 0; i < call.Arguments.Count; i++)
         {
             Expression argument = call.Arguments[i];
-            if (methodParameters[i].ParameterType.IsByRef && IsOwnParameter(argument)) return false;
+            if (methodParameters[i].ParameterType.IsByRef && IsOwnLocation(argument)) return false;
             if (!Scan(argument)) return false;
         }
 
@@ -514,7 +531,7 @@ internal sealed class InvocationInliningAnalysis
         for (int i = 0; i < invocation.Arguments.Count; i++)
         {
             Expression argument = invocation.Arguments[i];
-            if (IsOwnParameter(argument))
+            if (IsOwnLocation(argument))
             {
                 // A parameter passed by reference could be written by the callee: substitution would lose the write.
                 delegateParameters ??= invocation.Expression.Type.GetMethod("Invoke")?.GetParameters();
@@ -533,6 +550,13 @@ internal sealed class InvocationInliningAnalysis
     /// <returns><see langword="false"/> if inlining is unsafe.</returns>
     private bool ScanMember(MemberExpression member)
     {
+        // A property getter of a structure held by a parameter may mutate the copy (AUD-01); a field read never does.
+        if (member.Member is PropertyInfo property && member.Expression is not null && IsOwnLocation(member.Expression)
+            && MayMutateReceiver(property.GetMethod, member.Expression.Type))
+        {
+            return false;
+        }
+
         if (!Scan(member.Expression)) return false;
 
         if (member.Member is not FieldInfo)
@@ -553,7 +577,7 @@ internal sealed class InvocationInliningAnalysis
         for (int i = 0; i < creation.Arguments.Count; i++)
         {
             Expression argument = creation.Arguments[i];
-            if (constructorParameters[i].ParameterType.IsByRef && IsOwnParameter(argument)) return false;
+            if (constructorParameters[i].ParameterType.IsByRef && IsOwnLocation(argument)) return false;
             if (!Scan(argument)) return false;
         }
 
@@ -606,10 +630,50 @@ internal sealed class InvocationInliningAnalysis
     /// <returns><see langword="true"/> for a local of the inlined body.</returns>
     private bool IsLocal(Expression e) => e is ParameterExpression variable && locals is not null && locals.ContainsKey(variable);
 
-    /// <summary>Tests whether <paramref name="e"/> is one of the invoked lambda's parameters.</summary>
-    /// <param name="e">The expression.</param>
-    /// <returns><see langword="true"/> if it is.</returns>
-    private bool IsOwnParameter(Expression e) => e is ParameterExpression parameter && IndexOf(parameter) >= 0;
+    /// <summary>
+    /// Tests whether <paramref name="e"/> designates storage of one of the invoked lambda's parameters: the parameter itself,
+    /// or a field, property or indexer element reached from it through value types only (AUD-01). Writing such a location
+    /// writes the parameter's own copy; after substitution it would write the argument instead.
+    /// </summary>
+    /// <param name="e">An assignment target, a by-reference argument or a receiver.</param>
+    /// <returns><see langword="true"/> if it is a location of an analysed parameter.</returns>
+    /// <remarks>An extension node is recognized by a type test before its <see cref="Expression.Type"/> is read (ETC R4).</remarks>
+    private bool IsOwnLocation(Expression e)
+    {
+        while (true)
+        {
+            switch (e)
+            {
+                case ParameterExpression parameter:
+                    return IndexOf(parameter) >= 0;
+
+                case MemberExpression { Expression: { } receiver } when !ExpressionOpacity.IsOpaque(receiver) && receiver.Type.IsValueType:
+                    e = receiver;
+                    break;
+
+                case IndexExpression { Object: { } receiver } when !ExpressionOpacity.IsOpaque(receiver) && receiver.Type.IsValueType:
+                    e = receiver;
+                    break;
+
+                default:
+                    return false;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Tests whether calling <paramref name="method"/> on a receiver of type <paramref name="receiverType"/> may mutate the
+    /// receiver (AUD-01): an instance member of a value type receives its receiver by reference, unless the type is a
+    /// <see langword="readonly"/> structure (every primitive numeric type, <see cref="decimal"/>, <see cref="DateTime"/>…) or the
+    /// member is declared <see langword="readonly"/>.
+    /// </summary>
+    /// <param name="method">The called method or accessor, or <see langword="null"/> when there is none (assumed mutating).</param>
+    /// <param name="receiverType">The static type of the receiver.</param>
+    /// <returns><see langword="true"/> if the call may write the receiver.</returns>
+    private static bool MayMutateReceiver(MethodInfo? method, Type receiverType)
+        => receiverType.IsValueType
+            && !receiverType.IsDefined(typeof(IsReadOnlyAttribute), false)
+            && (method is null || method.IsStatic || !method.IsDefined(typeof(IsReadOnlyAttribute), false));
 
     /// <summary>Finds the position of <paramref name="parameter"/> among the lambda's parameters, by reference; a parameter hidden by a nested binder is not found (ETC R2).</summary>
     /// <param name="parameter">The parameter.</param>
