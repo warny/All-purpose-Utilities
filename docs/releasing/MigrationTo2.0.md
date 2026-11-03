@@ -298,6 +298,11 @@ Behavior changes of `ExpressionTransformer`, `ExpressionSimplifier` and `Express
   opaque extension node: `CopyExpression` refused to alpha-rename a lambda whose body holds a dynamic operation, and the
   substitution renamed declarations a replacement holding one did not mention. The walk now enters the arguments of a
   dynamic operation (never its binder).
+- **Factoring a difference by 1 no longer loops (AUD-03, S5 P17).** `Simplify(c * (y - 1))`, `c * (1 - y)` with `c` other
+  than ±1, `(1 - y) / (1 / y)` and `a * x + (1 - a) * x` used to fail with a stack overflow, then (since the resource limits)
+  with an `ExpressionResourceLimitException` of kind `Stack`. They now return a simplified tree. The forms that held a
+  spurious factor 1 change: `y - 1` gives `(0 - 1) + y` (like `y - 2` gives `(0 - 2) + y`) instead of `(y - 1) * 1`,
+  `1 - y` gives `1 + (0 - y)` instead of `(1 - y) * 1`; the values are unchanged.
 
 ## Expression engine: injectable transformation tracing (additive)
 

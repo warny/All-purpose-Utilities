@@ -310,7 +310,7 @@ public class EtcAuditPropertyTests
             }
             catch (ExpressionResourceLimitException ex)
             {
-                // A controlled refusal is the resource contract, not a wrong result (AUD-03: rule loops on c * (y - 1)).
+                // A controlled refusal is the resource contract, not a wrong result (AUD-03 rule loops ended here before S5 P17).
                 refusals.Add($"{seed}:{ex.Kind}");
                 continue;
             }
@@ -434,7 +434,7 @@ public class EtcAuditPropertyTests
             }
             catch (ExpressionResourceLimitException)
             {
-                // A controlled refusal of the public comparer (AUD-03); the raw walks are still covered by the other seeds.
+                // A controlled refusal of the public comparer (AUD-03 before S5 P17); the raw walks are still covered by the other seeds.
                 continue;
             }
 
@@ -448,7 +448,7 @@ public class EtcAuditPropertyTests
             }
         }
 
-        TestContext.WriteLine($"{refused} seeds refused by the resource limits (AUD-03).");
+        TestContext.WriteLine($"{refused} seeds refused by the resource limits.");
         Assert.AreEqual(0, failures.Count, string.Join("\n", failures.Distinct().Take(10)));
     }
 
