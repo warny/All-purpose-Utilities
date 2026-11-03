@@ -1448,6 +1448,81 @@ lambda-copy used to return the lambda unchanged whatever the list (5 ns, a contr
 declarations and alpha-renames the body through the budgeted substitution (508 ns, 21 structural visits for 6 rebuilt nodes).
 No scenario runs user code.
 
+### Closure audit (2026-11-03)
+
+Independent, adversarial audit of master `7d307102` (R0–R4 merged), looking for counterexamples rather than re-running the
+existing evidence. Branch `etc-closure-audit` (tests only, no production change); corrections in PR #676
+(`etc-audit-fixes`). Neither is merged by the audit.
+
+**Baseline.** Clean Release build; Unit 14,416/14,416, Security 312/315 (3 inconclusive, platform-specific), Functional
+383/383.
+
+**Method.** A deterministic, seeded generator of valid trees (`EtcAuditGenerator`: constants, parameters, arithmetic,
+comparisons, allow-listed math calls, traced calls and throwing checks, conditionals, invoked lambdas and closures, blocks
+with assignments and increments, try/catch/finally with filters, member and list initializations, index accesses, dynamic
+operations with counting binders, quotes applied by a host, extension nodes, checked conversions, labels, jumps and
+switches; shadowing by reused instances, capture-prone declarations and shared subtrees on purpose) feeds property and
+differential campaigns (`EtcAuditPropertyTests`): every failure records its seed, is reduced automatically and can be
+replayed (`ETC_AUDIT_REPLAY`). Differential checks compare the compiled original and transformed trees on five inputs: value
+(up to rounding), exception type, and the exact sequence of effects (traced calls, accessors, `Add`, binder reports). The
+suite runs 120 seeds per campaign; the closure campaigns ran 3,000 + 600 deeper seeds in Release and 1,000 + 300 in Debug
+(mean 18 and 37 distinct nodes, depth up to 27): 14,510 differential comparisons over the three simplifier configurations
+(default, quote opt-in, derived), 13,389 substitutions, 240 trees with their clones and near-variants through equality, hash
+and canonical keys, 3,268 simplified quotes, 1,666 extension nodes in the strict campaign. Result:
+no failure besides the findings below.
+
+**Findings.**
+
+| Id | Severity | Location | Reproducer | Status |
+|---|---|---|---|---|
+| AUD-01 | Critical (silent wrong result) | `InvocationInliningAnalysis` | `{ var s; ((p) => { p.F = 5; 0 })(s); s.F }`, `p` of a mutable structure type: `Simplify` returns 5 instead of 0; also indexers, fields passed by reference, mutating methods and getters, constant and default arguments | Fixed in #676 (a write through a value-type parameter keeps the invocation) |
+| AUD-02 | Medium (false refusal) | `ExpressionTransformer.FreeVariables` | `CopyExpression((a) => dyn(a, 1) + a, a2)` throws `ArgumentException`: a plain `ExpressionVisitor` reaches a `DynamicExpression` through `VisitExtension`, so the walk treated it as an opaque extension node (also spurious renamings in substitution) | Fixed in #676 |
+| AUD-03 | High (availability), pre-existing S5, outside the ETC families | S5 multiplicative/subtractive rules | `Simplify(10 * (y - 1))`, `c * (1 - y)`, `(1 - y) / (1 / y)`: endless mutual rewriting | Open. Stack overflow at `b5c05dc3`; since R1a-Security a controlled `Stack` refusal with no state left behind (`AUD03_RuleLoop_IsAControlledRefusal`) |
+| AUD-04 | Documentation | comments, R2 tests, migration guide | "C-05 pending" after C-05 was decided in R4 | Fixed in #676 |
+
+**Verified, not anomalies.**
+- C-02: the historical binary, unary, conditional and constant copies keep their unchecked arity (short list:
+  `IndexOutOfRangeException`, extra children ignored, constant ignores the list), as the remarks of `CopyExpression` say;
+  now pinned (`C02_HistoricalFamilies_KeepTheirUncheckedArity`). Aligning them would be a separate compatibility decision.
+- S3 contract: NaN, infinity and signed-zero differences of symbolic identities (`x - x`, `0 * x`, `0 / x`,
+  `x + -1 * x`) and their consequences (another branch, an exception, another binder argument) appear only on inputs with a
+  zero or NaN; the campaigns classify them apart (83 over all runs).
+- Extension opacity: with extension nodes in positions where no framework getter delegates, no engine read or call
+  (strict campaign); in Debug builds no `NodeType` read is attributed to the engine. Remaining `Type` reads attributed to
+  engine methods are reads of a framework block or conditional whose getter tail-calls the extension's, as R4 documented.
+- Quotes: under the default policy, every quote of a simplified tree (default and derived simplifier) is an original
+  instance; substitution never enters one.
+- Resource refusals leave no session, scope or budget behind (a valid operation follows on the same instance).
+- Resilience, one isolated process per case (scratch probe, not committed): trees alternating eight families per level
+  (block with assignment, try/catch, member initialization, dynamic operation, invoked lambda, switch, quote applied by a
+  call, negation) at 200, 5,000 and 100,000 levels, under default, low and unlimited limits, on 256 KiB and 1 MiB threads,
+  through simplification (default and opt-in), generic transformation, substitution, public equality and hashing; plus a
+  shared DAG of 2^40 paths (default and low limits) and 2^18 paths (unlimited). 21/21 cases: no crash, every excess refused
+  with the expected kind (`Depth`, `Nodes`, or `Stack` when the limits allow more than the thread holds), no binder call,
+  and a valid operation succeeds afterwards on the same thread; the 2^18 DAG completes unbounded in at most 1.2 s per walk.
+
+**Framework limits (System.Linq.Expressions, .NET 9.0.22), outside the engine.** A lambda redeclaring the very parameter
+instance of an enclosing lambda and capturing it in a closure is mis-compiled (`Framework_RedeclaredCapturedParameter_IsMisCompiled`),
+and the interpreter fails on some such shapes; an uninitialized block variable may observe another variable's value after
+inlining (local slot reuse; the interpreter gives the original meaning). The campaigns skip trees whose compiled and
+interpreted meanings differ (about 1 % of generated trees).
+
+**Performance.** R4 harness (50 scenarios, one process per variant and scenario, 3 interleaved rounds, A/A control) on
+master, an A/A copy and #676: #676 is within -4.1 % to +2.7 % of master on every scenario (A/A -3.9 % to +4.1 %), with
+identical transform and structural visits and allocations. Master against the published R4 measurements (same code, R4
+checkpoint D): median drift about +2 %, largest lambda +8.5 %, p3factor12 +7.9 %, newarray +6.5 %, with identical visits and
+bytes, so an environmental drift between sessions, not a code change. No unexplained regression.
+
+**Not demonstrated.** Generated trees use `double` arithmetic over two parameters; other numeric types, lifted nullable
+operators, custom operator methods, loops, `RuntimeVariables` and by-reference lambda parameters are covered only by the
+R0–R4 deterministic tests. Equality, hash and key properties were sampled on pools of clones and near-variants, not proved.
+The parsers (ETC-16, ETC-18) are out of scope.
+
+**Recommendation.** Once #676 is merged, the ETC engine rounds R0–R4 can be closed: no critical or major ETC defect remains
+confirmed, the documented limits match the observed behavior, and resource refusals stay controlled. AUD-03 belongs to the
+S5 simplifier roadmap (rule termination) and ETC-16/ETC-18 to the `Utils.Parser` stage, so this roadmap stays open for them
+only.
+
 ## 10. Round history
 
 | Round | Date | Result |
@@ -1461,6 +1536,7 @@ No scenario runs user code.
 | R2 | 2026-10-29 | Block, Try, Switch, Loop, Goto, Label traversed and faithfully rebuilt, RuntimeVariables and DebugInfo explicit (C-03); binder frames and label bijection in equality, hashing and canonical keys (C-04); capture-avoiding substitution with alpha-renaming, RuntimeVariables C-07, Quote untouched (C-05 pending); binder-aware inlining analysis; S4 block/catch scopes; R2 families observable for the rules (ETC-15 kept); resource tests for every new walk; ETC-01/02/03 advanced, ETC-06/07/14 extended; performance in §9 R2 measurements. Follow-up in the same PR: shared DAGs validated in linear time (pre-existing exponential validation under high node limits, §9 R1a-Security "Shared DAG validation"). |
 | R3 | 2026-10-30 | MemberInit (MemberAssignment, MemberMemberBinding, MemberListBinding), ListInit (ElementInit) and Index traversed and faithfully rebuilt (C-03, C-02: flattened positional layouts, exact `Add` methods, indexers, writable targets); capture-avoiding substitution and conservative inlining through them; structural equality, hashing and canonical keys (C-04); the families stay observable for the rules (ETC-15 kept); stack guards added to the two engine-internal visitors for nested member bindings (overflow found and fixed); ETC-01/02/03 advanced, ETC-06/07/14 extended; R4 (Dynamic, Extension) and C-05 open; performance in §9 R3 measurements. |
 | R4 | 2026-11-02 | Dynamic traversed, rebuilt with the same binder and delegate type, substituted, compared and hashed by binder identity, keyed (C-03, C-02, C-04); extension nodes strictly opaque (type tests only, no member read or called, identity equality and hash, no rule dispatch); C-05 resolved by the init-only `SimplifyQuotedExpressions` option (default: quotes are simplifier boundaries); C-02 completed for Lambda (declarations, alpha-renaming); ETC-01/02/03/06/07/12/14 resolved; resource tests for every new walk; performance in §9 R4 measurements. |
+| Closure audit | 2026-11-03 | Independent audit of master `7d307102` (§9 "Closure audit"): seeded generator, property and differential campaigns (14,510 differential comparisons, 13,389 substitutions, Release and Debug), extension-opacity and quote checks, refusals without leftover state, benchmarks; AUD-01 (critical: inlining through writes to value-type parameters) and AUD-02 (dynamic operations in the free-variable walk) fixed in #676; AUD-03 (pre-existing S5 rule loop on `c * (y - 1)`, controlled refusal) pinned and left to S5; closure of R0–R4 recommended once #676 is merged. |
 
 ## 11. Decisions requested from the reviewer
 
