@@ -316,6 +316,9 @@ record is in `Utils/TODO-2026-10-27-etc-expression-tree-coverage-roadmap.md` (§
 - A tracer that throws is detached (`ExpressionTraceScope.TracerException`), and a tracer cannot call the engine from its
   callback (the call throws `InvalidOperationException` before it starts, which detaches the tracer). Export and analyze
   the events outside the callback.
+- Events whose delivery is deferred (the stack was too short to call the tracer, typically while a stack refusal unwinds)
+  wait in a bounded list; beyond it they are dropped and counted on `ExpressionTraceScope.UndeliveredEvents`, leaving a gap
+  in the sequence numbers. The resource refusal and the root failure are always kept.
 
 <a id="omy-utils-fonts-2"></a>
 ## Utils.Fonts hostile-font parsing hardening

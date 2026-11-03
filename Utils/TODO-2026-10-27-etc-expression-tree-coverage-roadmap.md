@@ -1555,6 +1555,12 @@ future rule loops. Base `master` `aa9d9e39`; branch `etc/transform-tracing`. No 
   rethrow on a possibly exhausted stack, R1a-Security pitfall); a traced outermost operation catches without rethrowing from
   the handler, lets the stack unwind, delivers the pending events, then rethrows (`ExceptionDispatchInfo`, same exception and
   translation as untraced). Every delivery checks the stack first and otherwise keeps the event pending, in order.
+- *Pending list (review follow-up).* The pending list is bounded independently of the tracer, which only bounds what it
+  keeps after delivery: at most `PendingCapacity` ordinary events (16,384, under 4 MB with the list's growth, internal per-scope tuning point), plus
+  a reserve of 64 slots for the events that conclude a failure (`ResourceLimitReached` and the failure of a root treatment),
+  so the final refusal is still delivered when the list is full. Other events are dropped, counted on the public
+  `ExpressionTraceScope.UndeliveredEvents`, and leave a gap in the sequence numbers. Without the bound, the list held one
+  failure per unwound treatment (a few thousand on a 1 MB stack, more on large stacks or under `Unlimited` limits).
 - *Tracer policy.* A tracer that throws is detached for the scope (`ExpressionTraceScope.TracerException`); during a
   callback the thread's session is replaced by a refusing one, so any engine call from a tracer is refused before it starts
   (counted as a tracer failure): a tracer can never add a transformation, a comparison or a memo entry.
@@ -1566,8 +1572,17 @@ future rule loops. Base `master` `aa9d9e39`; branch `etc/transform-tracing`. No 
   form inside its own treatment at any depth, periodic rule sequences of the deepest chain (StrictCycle, Expansion,
   Contraction, Drift, Irregular), per-rule size balances.
 
-**Tests.** `ExpressionTransformTracingTests` (22, Unit) and `ExpressionTraceResourceTests` (2, Security). Unit 14,466/14,467
-(1 inconclusive replay test), Security 314/317 (3 platform inconclusives), Functional 383/383.
+**Tests.** `ExpressionTransformTracingTests` (22, Unit) and `ExpressionTraceResourceTests` (3, Security; the third pins the
+bounded pending list: a capacity of 8 on a traced stack refusal drops and counts the extra failures, keeps the resource
+refusal and the root failure, and every created event is delivered or counted; it fails when the reserve is removed). Unit
+14,466/14,467 (1 inconclusive replay test), Security 314/317 before the follow-up (3 platform inconclusives), Functional
+383/383.
+
+**Benchmark kept in the repository (review follow-up).** `tests/ExpressionTracingBench` (not in `Utils.sln`, not run by CI)
+measures the untraced path — the fixed cost of a public operation on `ext-root` and per-node scenarios up to `li1024` — and
+optionally the tracers, against a baseline checkout with an A/A copy (`run-campaign.ps1`). Its README holds the reference
+figures below and the reading rules: every scenario inside A/A except the documented fixed cost, identical allocations, no
+drift growing with the node count.
 
 **Measurements (Release, R4 harness, 50 scenarios, one process per variant and scenario, 3 rotating rounds, A/A copy of
 the master binary).** Master `aa9d9e39`, A/A, instrumentation without scope, minimal tracer (counts events), bounded
@@ -1592,7 +1607,10 @@ diagnostic mode.
 **Limits.** A scope opened while an operation runs only affects the next operations. A transformer whose public `Transform`
 does not call `TransformCore` is not traced. An exception leaving a traced outermost operation carries the
 `ExceptionDispatchInfo` rethrow marker. Events that still cannot be delivered when a traced operation ends (the caller itself
-is out of stack) are dropped. The analyzer's identity is a fingerprint, confirmed for reported recurrences only.
+is out of stack), or that exceed the pending list, are dropped and counted (`UndeliveredEvents`). The analyzer's identity is
+a fingerprint, confirmed for reported recurrences only. The analyzer finds cycles and suspicious behaviors in the traces it
+is given; it is a search tool, not a termination proof of the rule system, and it never runs inside the engine (no implicit
+termination logic is added to the transformer).
 
 ## 10. Round history
 

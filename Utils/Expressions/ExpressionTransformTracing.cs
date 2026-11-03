@@ -115,6 +115,9 @@ public sealed class ExpressionTraceScope : IDisposable
     /// <summary>1 once disposed.</summary>
     private int _disposed;
 
+    /// <summary>The number of events dropped before delivery.</summary>
+    private long _undeliveredEvents;
+
     /// <summary>Initializes a scope.</summary>
     /// <param name="tracer">The tracer.</param>
     /// <param name="detail">The level of detail.</param>
@@ -145,12 +148,32 @@ public sealed class ExpressionTraceScope : IDisposable
     /// <summary>Gets whether the scope was disposed.</summary>
     public bool IsDisposed => Volatile.Read(ref _disposed) != 0;
 
+    /// <summary>
+    /// Gets the number of events of the scope's operations that were created but never delivered to the tracer, because the
+    /// bounded list of events awaiting delivery was full (an operation creating many events while the stack was too short to
+    /// call the tracer) or because the stack was still too short when the operation ended. A dropped event leaves a gap in the
+    /// <see cref="ExpressionTransformEvent.Sequence"/> numbers; the resource refusal and the failure of the root treatment that
+    /// conclude a failed operation are kept. The events a tracer itself discards (a bounded collector, for instance) are not
+    /// counted here.
+    /// </summary>
+    public long UndeliveredEvents => Interlocked.Read(ref _undeliveredEvents);
+
+    /// <summary>
+    /// Gets or sets the number of ordinary events an operation of the scope keeps while their delivery is deferred (internal
+    /// tuning point, read when an operation starts).
+    /// </summary>
+    internal int PendingCapacity { get; set; } = ExpressionTraceSession.DefaultPendingCapacity;
+
     /// <summary>Gets the scope this one replaced.</summary>
     internal ExpressionTraceScope? Parent { get; }
 
     /// <summary>Records the first exception of the tracer: the scope stops tracing.</summary>
     /// <param name="exception">The exception thrown by the tracer.</param>
     internal void ReportFault(Exception exception) => Interlocked.CompareExchange(ref _tracerException, exception, null);
+
+    /// <summary>Counts events dropped before delivery (see <see cref="UndeliveredEvents"/>).</summary>
+    /// <param name="count">The number of dropped events.</param>
+    internal void ReportUndelivered(long count) => Interlocked.Add(ref _undeliveredEvents, count);
 
     /// <summary>Stops tracing: the next operations of the execution context report to the enclosing scope, if any.</summary>
     /// <remarks>An operation already running keeps reporting to this scope's tracer until it returns.</remarks>

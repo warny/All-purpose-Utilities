@@ -367,6 +367,12 @@ Console.WriteLine(ExpressionTraceExporter.ToText(events));        // nested trea
 Console.WriteLine(ExpressionTraceCycleAnalyzer.ToText(ExpressionTraceCycleAnalyzer.Analyze(events)));
 ```
 
+`collector.DroppedEvents` counts the events the collector discarded beyond its capacity; `ExpressionTraceScope.UndeliveredEvents`
+counts the events the engine could not deliver at all (a bounded list holds the events whose delivery waits for the stack to
+unwind; the final resource refusal is always delivered). The cycle analyzer searches the given trace for recurrences and
+periodic rule sequences: it helps diagnose a non-terminating rule set, it does not prove termination. The cost of the
+untraced path is tracked by `tests/ExpressionTracingBench`.
+
 ## Related packages
 - `omy.Utils.Data` — data record mappers
 - `omy.Utils.IO` — stream utilities and binary serialization

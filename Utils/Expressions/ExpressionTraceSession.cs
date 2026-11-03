@@ -25,6 +25,14 @@ namespace Utils.Expressions;
 /// stack or by <see cref="Complete"/>, which the outermost operation boundary calls after the stack has unwound.
 /// </para>
 /// <para>
+/// <b>Bounded pending list.</b> The pending list is bounded independently of the tracer (a bounded collector only bounds what it
+/// keeps after delivery): it keeps at most <see cref="ExpressionTraceScope.PendingCapacity"/> events, plus
+/// <see cref="TerminalReserve"/> slots kept for the events that conclude a failure (a
+/// <see cref="ExpressionTransformEventKind.ResourceLimitReached"/> event and the failure of a root treatment), so the final
+/// refusal is still delivered when the list is full. The other events are dropped, counted on
+/// <see cref="ExpressionTraceScope.UndeliveredEvents"/>, and leave a gap in the sequence numbers.
+/// </para>
+/// <para>
 /// <b>Isolation of the tracer.</b> During a delivery the thread's resource session is replaced by a session that refuses every
 /// operation, so the tracer cannot start a transformation, a comparison or a memo entry in the operation it observes. Any
 /// exception of the tracer (a refused engine call included) stops the tracing of the scope and is reported on it
@@ -33,6 +41,12 @@ namespace Utils.Expressions;
 /// </remarks>
 internal sealed class ExpressionTraceSession
 {
+    /// <summary>The default number of ordinary events the pending list keeps (with the list's growth, under 4 MB of events).</summary>
+    internal const int DefaultPendingCapacity = 16_384;
+
+    /// <summary>The pending slots kept, beyond the capacity, for the events that conclude a failure.</summary>
+    internal const int TerminalReserve = 64;
+
     /// <summary>The last session identifier handed out in the process.</summary>
     private static long s_lastSessionId;
 
@@ -60,6 +74,9 @@ internal sealed class ExpressionTraceSession
     /// <summary>The events created but not delivered yet, in sequence order.</summary>
     private List<ExpressionTransformEvent>? _pending;
 
+    /// <summary>The number of ordinary events <see cref="_pending"/> keeps (see <see cref="ExpressionTraceScope.PendingCapacity"/>).</summary>
+    private readonly int _pendingCapacity;
+
     /// <summary>The resource failure already reported by a <see cref="ExpressionTransformEventKind.ResourceLimitReached"/> event.</summary>
     private Exception? _reportedResourceFailure;
 
@@ -76,6 +93,7 @@ internal sealed class ExpressionTraceSession
         _scope = scope;
         _tracer = scope.Tracer;
         Detailed = scope.Detail == ExpressionTraceDetail.Detailed;
+        _pendingCapacity = scope.PendingCapacity;
         _sessionId = Interlocked.Increment(ref s_lastSessionId);
     }
 
@@ -268,7 +286,10 @@ internal sealed class ExpressionTraceSession
     /// treatment crossed (the input validation), then delivers the pending events.
     /// </summary>
     /// <param name="failure">The exception that ends the operation, or <see langword="null"/>.</param>
-    /// <remarks>Pending events that still cannot be delivered (the caller itself runs out of stack) are dropped.</remarks>
+    /// <remarks>
+    /// Pending events that still cannot be delivered (the caller itself runs out of stack) are dropped and counted on
+    /// <see cref="ExpressionTraceScope.UndeliveredEvents"/>.
+    /// </remarks>
     internal void Complete(Exception? failure)
     {
         if (_stopped) return;
@@ -285,7 +306,7 @@ internal sealed class ExpressionTraceSession
             }
         }
 
-        TryFlush();
+        if (!TryFlush() && !_stopped) _scope.ReportUndelivered(_pending!.Count);
         _pending = null;
         _frames = [];
         _count = 0;
@@ -337,9 +358,30 @@ internal sealed class ExpressionTraceSession
         Deliver(traceEvent);
     }
 
-    /// <summary>Keeps an event for a later delivery (never calls the tracer).</summary>
+    /// <summary>
+    /// Keeps an event for a later delivery (never calls the tracer), or drops and counts it when the pending list is full; the
+    /// events concluding a failure use the reserve beyond the capacity.
+    /// </summary>
     /// <param name="traceEvent">The event.</param>
-    private void Record(in ExpressionTransformEvent traceEvent) => (_pending ??= []).Add(traceEvent);
+    private void Record(in ExpressionTransformEvent traceEvent)
+    {
+        List<ExpressionTransformEvent> pending = _pending ??= [];
+        int limit = IsTerminal(traceEvent) ? _pendingCapacity + TerminalReserve : _pendingCapacity;
+        if (pending.Count >= limit)
+        {
+            _scope.ReportUndelivered(1);
+            return;
+        }
+
+        pending.Add(traceEvent);
+    }
+
+    /// <summary>Gets whether an event concludes a failure: a resource refusal, or the failure of a root treatment.</summary>
+    /// <param name="traceEvent">The event.</param>
+    /// <returns><see langword="true"/> for a terminal event.</returns>
+    private static bool IsTerminal(in ExpressionTransformEvent traceEvent)
+        => traceEvent.Kind == ExpressionTransformEventKind.ResourceLimitReached
+            || (traceEvent.Kind == ExpressionTransformEventKind.TransformFailed && traceEvent.Depth == 0);
 
     /// <summary>Delivers the pending events in order when the stack allows it.</summary>
     /// <returns><see langword="true"/> when nothing is left pending.</returns>

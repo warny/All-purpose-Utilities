@@ -45,6 +45,7 @@ public class ExpressionTraceResourceTests
                 Assert.AreEqual(ExpressionResourceLimitKind.Stack, refusal.Kind);
                 Assert.IsInstanceOfType<InsufficientExecutionStackException>(refusal.InnerException);
                 Assert.IsNull(scope.TracerException);
+                Assert.AreEqual(0, scope.UndeliveredEvents);
             }
 
             Assert.AreEqual(0, ExpressionResourceBudget.OperationDepth);
@@ -65,6 +66,43 @@ public class ExpressionTraceResourceTests
 
             // The same thread keeps working normally after the refusal.
             Assert.IsTrue(ExpressionComparer.Default.Equals(CallChain(10), CallChain(10)));
+        }, SmallStack, Timeout);
+    }
+
+    /// <summary>
+    /// The list of events awaiting delivery is bounded independently of the tracer: with a tiny capacity, a traced stack refusal
+    /// drops and counts the failure events beyond it, but still delivers the resource refusal and the root failure, in order, and
+    /// every created event is either delivered or counted.
+    /// </summary>
+    [TestMethod]
+    public void TracedStackRefusal_WithFullPendingList_KeepsTheRefusal()
+    {
+        const int capacity = 8;
+        Expression negate = NegateChain(HostileDepth);
+        RunOnThread(() =>
+        {
+            var collector = new ExpressionTraceCollector(capacity: 1_000_000);
+            ExpressionTraceScope scope = ExpressionTransformTracing.Begin(collector);
+            scope.PendingCapacity = capacity;
+            using (scope)
+            {
+                ExpressionResourceLimitException refusal = Assert.ThrowsExactly<ExpressionResourceLimitException>(() => new ExpressionSimplifier(ExpressionResourceLimits.Unlimited).Simplify(negate));
+                Assert.AreEqual(ExpressionResourceLimitKind.Stack, refusal.Kind);
+                Assert.IsNull(scope.TracerException);
+            }
+
+            ExpressionTransformEvent[] events = collector.GetEvents();
+            Assert.AreEqual(0, collector.DroppedEvents);
+            Assert.IsGreaterThan(0L, scope.UndeliveredEvents);
+            Assert.AreEqual(events[^1].Sequence, events.Length + scope.UndeliveredEvents, "every event is delivered or counted");
+            CollectionAssert.AreEqual(events.Select(e => e.Sequence).Order().ToArray(), events.Select(e => e.Sequence).ToArray());
+
+            ExpressionTransformEvent[] failures = events.Where(e => e.Kind is ExpressionTransformEventKind.TransformFailed or ExpressionTransformEventKind.ResourceLimitReached).ToArray();
+            Assert.IsLessThanOrEqualTo(capacity + 2, failures.Length);
+            Assert.AreEqual(ExpressionResourceLimitKind.Stack, events.Single(e => e.Kind == ExpressionTransformEventKind.ResourceLimitReached).ResourceLimit);
+            Assert.AreEqual(ExpressionTransformEventKind.TransformFailed, events[^1].Kind);
+            Assert.AreEqual(0, events[^1].Depth, "the root failure is kept");
+            Assert.AreEqual(0, ExpressionResourceBudget.OperationDepth);
         }, SmallStack, Timeout);
     }
 

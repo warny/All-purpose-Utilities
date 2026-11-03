@@ -133,6 +133,12 @@ public sealed record ExpressionTraceCycleReport(
 /// the stack, inside the running operation or a default-limited one. Do not call the analyzer from a tracer callback, which
 /// refuses engine operations.
 /// </para>
+/// <para>
+/// <b>Scope of the conclusions.</b> The analyzer searches the events it is given for cycles and suspicious behaviors; it is not
+/// a termination proof. An empty report says that this trace shows no recurrence or period, not that the rule system
+/// terminates on other inputs, and a trace truncated by a collector or by <see cref="ExpressionTraceScope.UndeliveredEvents"/>
+/// may hide a period.
+/// </para>
 /// </remarks>
 public static class ExpressionTraceCycleAnalyzer
 {
