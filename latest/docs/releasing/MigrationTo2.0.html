@@ -340,6 +340,26 @@ opaque extension node: <code>CopyExpression</code> refused to alpha-rename a lam
 substitution renamed declarations a replacement holding one did not mention. The walk now enters the arguments of a
 dynamic operation (never its binder).</li>
 </ul>
+<h2 id="expression-engine-injectable-transformation-tracing-additive">Expression engine: injectable transformation tracing (additive)</h2>
+<p>New public API in <code>Utils.Expressions</code>, without behavior change for code that does not use it: <code>ExpressionTransformTracing</code>
+(<code>Begin(tracer, detail)</code> opens a disposable <code>ExpressionTraceScope</code>), <code>IExpressionTransformTracer</code>,
+<code>ExpressionTransformEvent</code> and its enumerations, <code>ExpressionTransformRuleInfo</code>, the bounded <code>ExpressionTraceCollector</code>,
+<code>ExpressionTraceFormatter</code>, <code>ExpressionTraceExporter</code> (indented text, JSON) and <code>ExpressionTraceCycleAnalyzer</code>. The full
+record is in <code>Utils/TODO-2026-10-27-etc-expression-tree-coverage-roadmap.md</code> (§9 &quot;Engine tracing&quot;).</p>
+<ul>
+<li>A scope is ambient per execution context (<code>AsyncLocal</code>): it traces the operations started inside it, on this flow and in
+the tasks it starts, never concurrent operations elsewhere, and never through a field of a shared simplifier. It is read
+once per outermost operation; an operation running when the scope is disposed keeps reporting to it until it returns.</li>
+<li>Tracing never changes a result, the work performed (transformation and structural visits are identical) or the
+exception thrown. One visible difference: an exception leaving a <strong>traced</strong> outermost operation is rethrown with
+<code>ExceptionDispatchInfo</code>, so its stack trace carries the &quot;End of stack trace from previous location&quot; marker.</li>
+<li>A tracer that throws is detached (<code>ExpressionTraceScope.TracerException</code>), and a tracer cannot call the engine from its
+callback (the call throws <code>InvalidOperationException</code> before it starts, which detaches the tracer). Export and analyze
+the events outside the callback.</li>
+<li>Events whose delivery is deferred (the stack was too short to call the tracer, typically while a stack refusal unwinds)
+wait in a bounded list; beyond it they are dropped and counted on <code>ExpressionTraceScope.UndeliveredEvents</code>, leaving a gap
+in the sequence numbers. The resource refusal and the root failure are always kept.</li>
+</ul>
 <p><a id="omy-utils-fonts-2"></a></p>
 <h2 id="utilsfonts-hostile-font-parsing-hardening">Utils.Fonts hostile-font parsing hardening</h2>
 <p><code>TrueTypeFont.ParseFont</code>/<code>ParseFontAsync</code> now accept an optional <code>TrueTypeFontParsingOptions</code>

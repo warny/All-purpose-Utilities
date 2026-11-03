@@ -1903,6 +1903,20 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Expressions.ExpressionRuleRejection.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Expressions.ExpressionRuleRejection.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Expressions.ExpressionRuleRejection",
+      "Summary": "<p sourcefile=\"api/Utils.Expressions.ExpressionRuleRejection.yml\" sourcestartlinenumber=\"1\">Why a candidate rule produced no result (<xref href=\"Utils.Expressions.ExpressionTransformEventKind.RuleRejected\" data-throw-if-not-resolved=\"false\"></xref>).</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.Expressions.ExpressionSignatureAttribute.yml",
       "output": {
         ".html": {
@@ -1914,6 +1928,286 @@
       "IsMRef": true,
       "Title": "Utils.Expressions.ExpressionSignatureAttribute",
       "Summary": "<p sourcefile=\"api/Utils.Expressions.ExpressionSignatureAttribute.yml\" sourcestartlinenumber=\"1\">Marks a method or parameter as having a signature requirement for a certain <xref href=\"Utils.Expressions.ExpressionSignatureAttribute.ExpressionType\" data-throw-if-not-resolved=\"false\"></xref>.\nWhen used on a method, the method is considered for transformation if its attribute matches the current node type.\nWhen used on a parameter, it further restricts which sub-expressions are permissible.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Expressions.ExpressionTraceCollector.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Expressions.ExpressionTraceCollector.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Expressions.ExpressionTraceCollector",
+      "Summary": "<p sourcefile=\"api/Utils.Expressions.ExpressionTraceCollector.yml\" sourcestartlinenumber=\"1\">A tracer that stores the events of the operations it traces, up to a fixed number (see\n<xref href=\"Utils.Expressions.ExpressionTransformTracing.Begin(Utils.Expressions.IExpressionTransformTracer%2cUtils.Expressions.ExpressionTraceDetail)\" data-throw-if-not-resolved=\"false\"></xref>).</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Expressions.ExpressionTraceCycleAnalyzer.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Expressions.ExpressionTraceCycleAnalyzer.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Expressions.ExpressionTraceCycleAnalyzer",
+      "Summary": "<p sourcefile=\"api/Utils.Expressions.ExpressionTraceCycleAnalyzer.yml\" sourcestartlinenumber=\"1\">Looks for non-terminating rewriting in trace events (see <xref href=\"Utils.Expressions.ExpressionTraceCollector\" data-throw-if-not-resolved=\"false\"></xref>): forms re-entered inside\ntheir own treatment, periodic rule sequences along the deepest recursion, and rules that never reduce the forms. A\ndiagnostic tool, separate from the engine: it never transforms, simplifies or canonicalizes anything, and never changes how\nthe engine behaves.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Expressions.ExpressionTraceCycleOptions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Expressions.ExpressionTraceCycleOptions.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Expressions.ExpressionTraceCycleOptions",
+      "Summary": "<p sourcefile=\"api/Utils.Expressions.ExpressionTraceCycleOptions.yml\" sourcestartlinenumber=\"1\">Options of <xref href=\"Utils.Expressions.ExpressionTraceCycleAnalyzer\" data-throw-if-not-resolved=\"false\"></xref>. This type only holds data.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Expressions.ExpressionTraceCycleReport.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Expressions.ExpressionTraceCycleReport.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Expressions.ExpressionTraceCycleReport",
+      "Summary": "<p sourcefile=\"api/Utils.Expressions.ExpressionTraceCycleReport.yml\" sourcestartlinenumber=\"1\">The result of <xref href=\"Utils.Expressions.ExpressionTraceCycleAnalyzer.Analyze(System.Collections.Generic.IReadOnlyList%7bUtils.Expressions.ExpressionTransformEvent%7d%2cUtils.Expressions.ExpressionTraceCycleOptions)\" data-throw-if-not-resolved=\"false\"></xref>. This type only holds data.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Expressions.ExpressionTraceDetail.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Expressions.ExpressionTraceDetail.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Expressions.ExpressionTraceDetail",
+      "Summary": "<p sourcefile=\"api/Utils.Expressions.ExpressionTraceDetail.yml\" sourcestartlinenumber=\"1\">The level of detail of a tracing scope.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Expressions.ExpressionTraceExportOptions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Expressions.ExpressionTraceExportOptions.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Expressions.ExpressionTraceExportOptions",
+      "Summary": "<p sourcefile=\"api/Utils.Expressions.ExpressionTraceExportOptions.yml\" sourcestartlinenumber=\"1\">Options of <xref href=\"Utils.Expressions.ExpressionTraceExporter\" data-throw-if-not-resolved=\"false\"></xref>. This type only holds data.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Expressions.ExpressionTraceExporter.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Expressions.ExpressionTraceExporter.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Expressions.ExpressionTraceExporter",
+      "Summary": "<p sourcefile=\"api/Utils.Expressions.ExpressionTraceExporter.yml\" sourcestartlinenumber=\"1\">Exports trace events (see <xref href=\"Utils.Expressions.ExpressionTraceCollector\" data-throw-if-not-resolved=\"false\"></xref>) as an indented text, one line per event nested by\ntreatment depth, or as JSON. Exporting is an explicit step, outside the engine: nothing is rendered while tracing.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Expressions.ExpressionTraceFormatter.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Expressions.ExpressionTraceFormatter.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Expressions.ExpressionTraceFormatter",
+      "Summary": "<p sourcefile=\"api/Utils.Expressions.ExpressionTraceFormatter.yml\" sourcestartlinenumber=\"1\">Renders expression trees for diagnostics (trace exports) without running user code: bounded in depth and length, and blind\nto the content of extension nodes.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Expressions.ExpressionTraceLoopKind.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Expressions.ExpressionTraceLoopKind.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Expressions.ExpressionTraceLoopKind",
+      "Summary": "<p sourcefile=\"api/Utils.Expressions.ExpressionTraceLoopKind.yml\" sourcestartlinenumber=\"1\">The shape of a periodic rule sequence found by <xref href=\"Utils.Expressions.ExpressionTraceCycleAnalyzer\" data-throw-if-not-resolved=\"false\"></xref>.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Expressions.ExpressionTracePeriod.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Expressions.ExpressionTracePeriod.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Expressions.ExpressionTracePeriod",
+      "Summary": "<p sourcefile=\"api/Utils.Expressions.ExpressionTracePeriod.yml\" sourcestartlinenumber=\"1\">A rule sequence that repeats along the deepest chain of nested treatments. This type only holds data.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Expressions.ExpressionTraceRecurrence.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Expressions.ExpressionTraceRecurrence.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Expressions.ExpressionTraceRecurrence",
+      "Summary": "<p sourcefile=\"api/Utils.Expressions.ExpressionTraceRecurrence.yml\" sourcestartlinenumber=\"1\">A form transformed again while it is already being transformed by an enclosing treatment: the recursion re-entered the\nsame problem. This type only holds data.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Expressions.ExpressionTraceRetention.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Expressions.ExpressionTraceRetention.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Expressions.ExpressionTraceRetention",
+      "Summary": "<p sourcefile=\"api/Utils.Expressions.ExpressionTraceRetention.yml\" sourcestartlinenumber=\"1\">Which events an <xref href=\"Utils.Expressions.ExpressionTraceCollector\" data-throw-if-not-resolved=\"false\"></xref> keeps once it is full.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Expressions.ExpressionTraceRuleBalance.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Expressions.ExpressionTraceRuleBalance.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Expressions.ExpressionTraceRuleBalance",
+      "Summary": "<p sourcefile=\"api/Utils.Expressions.ExpressionTraceRuleBalance.yml\" sourcestartlinenumber=\"1\">How the applications of one rule changed the size of the forms. This type only holds data.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Expressions.ExpressionTraceScope.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Expressions.ExpressionTraceScope.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Expressions.ExpressionTraceScope",
+      "Summary": "<p sourcefile=\"api/Utils.Expressions.ExpressionTraceScope.yml\" sourcestartlinenumber=\"1\">A tracing scope opened by <xref href=\"Utils.Expressions.ExpressionTransformTracing.Begin(Utils.Expressions.IExpressionTransformTracer%2cUtils.Expressions.ExpressionTraceDetail)\" data-throw-if-not-resolved=\"false\"></xref>: dispose it to stop tracing.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Expressions.ExpressionTraceScopeKind.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Expressions.ExpressionTraceScopeKind.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Expressions.ExpressionTraceScopeKind",
+      "Summary": "<p sourcefile=\"api/Utils.Expressions.ExpressionTraceScopeKind.yml\" sourcestartlinenumber=\"1\">The lexical scope of a <xref href=\"Utils.Expressions.ExpressionTransformEventKind.ScopeEnter\" data-throw-if-not-resolved=\"false\"></xref> or <xref href=\"Utils.Expressions.ExpressionTransformEventKind.ScopeExit\" data-throw-if-not-resolved=\"false\"></xref> event.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Expressions.ExpressionTransformEvent.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Expressions.ExpressionTransformEvent.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Expressions.ExpressionTransformEvent",
+      "Summary": "<p sourcefile=\"api/Utils.Expressions.ExpressionTransformEvent.yml\" sourcestartlinenumber=\"1\">One event of a traced expression transformation (see <xref href=\"Utils.Expressions.IExpressionTransformTracer\" data-throw-if-not-resolved=\"false\"></xref>). This type only holds data.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Expressions.ExpressionTransformEventKind.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Expressions.ExpressionTransformEventKind.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Expressions.ExpressionTransformEventKind",
+      "Summary": "<p sourcefile=\"api/Utils.Expressions.ExpressionTransformEventKind.yml\" sourcestartlinenumber=\"1\">The kind of an <xref href=\"Utils.Expressions.ExpressionTransformEvent\" data-throw-if-not-resolved=\"false\"></xref>.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Expressions.ExpressionTransformOutcome.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Expressions.ExpressionTransformOutcome.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Expressions.ExpressionTransformOutcome",
+      "Summary": "<p sourcefile=\"api/Utils.Expressions.ExpressionTransformOutcome.yml\" sourcestartlinenumber=\"1\">What produced the result of a treatment (<xref href=\"Utils.Expressions.ExpressionTransformEventKind.TransformExit\" data-throw-if-not-resolved=\"false\"></xref>) or of a finalization.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Expressions.ExpressionTransformRuleInfo.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Expressions.ExpressionTransformRuleInfo.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Expressions.ExpressionTransformRuleInfo",
+      "Summary": "<p sourcefile=\"api/Utils.Expressions.ExpressionTransformRuleInfo.yml\" sourcestartlinenumber=\"1\">Identifies one rule of a transformer (a method marked with <xref href=\"Utils.Expressions.ExpressionSignatureAttribute\" data-throw-if-not-resolved=\"false\"></xref>) in trace events.\nThis type only holds data.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Expressions.ExpressionTransformTracing.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Expressions.ExpressionTransformTracing.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Expressions.ExpressionTransformTracing",
+      "Summary": "<p sourcefile=\"api/Utils.Expressions.ExpressionTransformTracing.yml\" sourcestartlinenumber=\"1\">Opens tracing scopes for the expression transformation engine: every operation of the engine (simplification, comparison,\ntransformation, substitution) started while a scope is active on the current execution context reports its events to the\nscope's tracer.</p>\n"
     },
     {
       "type": "ManagedReference",
@@ -2026,6 +2320,20 @@
       "IsMRef": true,
       "Title": "Utils.Expressions.IExpressionCompiler",
       "Summary": "<p sourcefile=\"api/Utils.Expressions.IExpressionCompiler.yml\" sourcestartlinenumber=\"1\">Defines a contract for expression compilers that turn source text into LINQ expression trees, and,\nsince a lambda expression tree can always be compiled to a delegate, also exposes delegate compilation.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Expressions.IExpressionTransformTracer.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Expressions.IExpressionTransformTracer.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Expressions.IExpressionTransformTracer",
+      "Summary": "<p sourcefile=\"api/Utils.Expressions.IExpressionTransformTracer.yml\" sourcestartlinenumber=\"1\">Receives the events of the expression transformation engine (<xref href=\"Utils.Expressions.ExpressionTransformer\" data-throw-if-not-resolved=\"false\"></xref>, the simplifier and every\nderived transformer) while a tracing scope opened by <xref href=\"Utils.Expressions.ExpressionTransformTracing.Begin(Utils.Expressions.IExpressionTransformTracer%2cUtils.Expressions.ExpressionTraceDetail)\" data-throw-if-not-resolved=\"false\"></xref> is active.</p>\n"
     },
     {
       "type": "ManagedReference",
@@ -5665,7 +5973,7 @@
       "Uid": null,
       "IsMRef": true,
       "Title": "Utils.Mathematics.Expressions.ExpressionExtensionsException",
-      "Summary": "<p sourcefile=\"api/Utils.Mathematics.Expressions.ExpressionExtensionsException.yml\" sourcestartlinenumber=\"1\">Represents a custom exception related to expression extension operations.</p>\n"
+      "Summary": "<p sourcefile=\"api/Utils.Mathematics.Expressions.ExpressionExtensionsException.yml\" sourcestartlinenumber=\"1\">Represents validation errors that occur while building derivative expressions.</p>\n"
     },
     {
       "type": "ManagedReference",

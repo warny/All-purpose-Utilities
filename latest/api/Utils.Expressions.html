@@ -152,6 +152,81 @@ When used on a parameter, it further restricts which sub-expressions are permiss
 </dd>
     </dl>
     <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.ExpressionTraceCollector.html">ExpressionTraceCollector</a></dt>
+      <dd><p>A tracer that stores the events of the operations it traces, up to a fixed number (see
+<a class="xref" href="Utils.Expressions.ExpressionTransformTracing.html#Utils_Expressions_ExpressionTransformTracing_Begin_Utils_Expressions_IExpressionTransformTracer_Utils_Expressions_ExpressionTraceDetail_">Begin(IExpressionTransformTracer, ExpressionTraceDetail)</a>).</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.ExpressionTraceCycleAnalyzer.html">ExpressionTraceCycleAnalyzer</a></dt>
+      <dd><p>Looks for non-terminating rewriting in trace events (see <a class="xref" href="Utils.Expressions.ExpressionTraceCollector.html">ExpressionTraceCollector</a>): forms re-entered inside
+their own treatment, periodic rule sequences along the deepest recursion, and rules that never reduce the forms. A
+diagnostic tool, separate from the engine: it never transforms, simplifies or canonicalizes anything, and never changes how
+the engine behaves.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.ExpressionTraceCycleOptions.html">ExpressionTraceCycleOptions</a></dt>
+      <dd><p>Options of <a class="xref" href="Utils.Expressions.ExpressionTraceCycleAnalyzer.html">ExpressionTraceCycleAnalyzer</a>. This type only holds data.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.ExpressionTraceCycleReport.html">ExpressionTraceCycleReport</a></dt>
+      <dd><p>The result of <a class="xref" href="Utils.Expressions.ExpressionTraceCycleAnalyzer.html#Utils_Expressions_ExpressionTraceCycleAnalyzer_Analyze_System_Collections_Generic_IReadOnlyList_Utils_Expressions_ExpressionTransformEvent__Utils_Expressions_ExpressionTraceCycleOptions_">Analyze(IReadOnlyList&lt;ExpressionTransformEvent&gt;, ExpressionTraceCycleOptions?)</a>. This type only holds data.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.ExpressionTraceExportOptions.html">ExpressionTraceExportOptions</a></dt>
+      <dd><p>Options of <a class="xref" href="Utils.Expressions.ExpressionTraceExporter.html">ExpressionTraceExporter</a>. This type only holds data.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.ExpressionTraceExporter.html">ExpressionTraceExporter</a></dt>
+      <dd><p>Exports trace events (see <a class="xref" href="Utils.Expressions.ExpressionTraceCollector.html">ExpressionTraceCollector</a>) as an indented text, one line per event nested by
+treatment depth, or as JSON. Exporting is an explicit step, outside the engine: nothing is rendered while tracing.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.ExpressionTraceFormatter.html">ExpressionTraceFormatter</a></dt>
+      <dd><p>Renders expression trees for diagnostics (trace exports) without running user code: bounded in depth and length, and blind
+to the content of extension nodes.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.ExpressionTracePeriod.html">ExpressionTracePeriod</a></dt>
+      <dd><p>A rule sequence that repeats along the deepest chain of nested treatments. This type only holds data.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.ExpressionTraceRecurrence.html">ExpressionTraceRecurrence</a></dt>
+      <dd><p>A form transformed again while it is already being transformed by an enclosing treatment: the recursion re-entered the
+same problem. This type only holds data.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.ExpressionTraceRuleBalance.html">ExpressionTraceRuleBalance</a></dt>
+      <dd><p>How the applications of one rule changed the size of the forms. This type only holds data.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.ExpressionTraceScope.html">ExpressionTraceScope</a></dt>
+      <dd><p>A tracing scope opened by <a class="xref" href="Utils.Expressions.ExpressionTransformTracing.html#Utils_Expressions_ExpressionTransformTracing_Begin_Utils_Expressions_IExpressionTransformTracer_Utils_Expressions_ExpressionTraceDetail_">Begin(IExpressionTransformTracer, ExpressionTraceDetail)</a>: dispose it to stop tracing.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.ExpressionTransformRuleInfo.html">ExpressionTransformRuleInfo</a></dt>
+      <dd><p>Identifies one rule of a transformer (a method marked with <a class="xref" href="Utils.Expressions.ExpressionSignatureAttribute.html">ExpressionSignatureAttribute</a>) in trace events.
+This type only holds data.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.ExpressionTransformTracing.html">ExpressionTransformTracing</a></dt>
+      <dd><p>Opens tracing scopes for the expression transformation engine: every operation of the engine (simplification, comparison,
+transformation, substitution) started while a scope is active on the current execution context reports its events to the
+scope's tracer.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
       <dt><a class="xref" href="Utils.Expressions.ExpressionTransformer.html">ExpressionTransformer</a></dt>
       <dd><p>Provides an abstract base class to transform or rewrite LINQ expression trees.
 Subclasses may override the transformation logic for specific expression signatures.</p>
@@ -238,6 +313,14 @@ must be assignable to a specified type. Useful for restricting the
 type of an operand beyond its <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expressiontype">ExpressionType</a>.</p>
 </dd>
     </dl>
+    <h3 id="structs">
+Structs
+</h3>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.ExpressionTransformEvent.html">ExpressionTransformEvent</a></dt>
+      <dd><p>One event of a traced expression transformation (see <a class="xref" href="Utils.Expressions.IExpressionTransformTracer.html">IExpressionTransformTracer</a>). This type only holds data.</p>
+</dd>
+    </dl>
     <h3 id="interfaces">
 Interfaces
 </h3>
@@ -261,6 +344,12 @@ for scoring or ranking operations in method or constructor selection.</p>
       <dt><a class="xref" href="Utils.Expressions.IExpressionCompiler.html">IExpressionCompiler</a></dt>
       <dd><p>Defines a contract for expression compilers that turn source text into LINQ expression trees, and,
 since a lambda expression tree can always be compiled to a delegate, also exposes delegate compilation.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.IExpressionTransformTracer.html">IExpressionTransformTracer</a></dt>
+      <dd><p>Receives the events of the expression transformation engine (<a class="xref" href="Utils.Expressions.ExpressionTransformer.html">ExpressionTransformer</a>, the simplifier and every
+derived transformer) while a tracing scope opened by <a class="xref" href="Utils.Expressions.ExpressionTransformTracing.html#Utils_Expressions_ExpressionTransformTracing_Begin_Utils_Expressions_IExpressionTransformTracer_Utils_Expressions_ExpressionTraceDetail_">Begin(IExpressionTransformTracer, ExpressionTraceDetail)</a> is active.</p>
 </dd>
     </dl>
     <dl class="jumplist">
@@ -290,6 +379,41 @@ Enums
     <dl class="jumplist">
       <dt><a class="xref" href="Utils.Expressions.ExpressionResourceLimitKind.html">ExpressionResourceLimitKind</a></dt>
       <dd><p>The resource dimension whose limit an expression-tree operation exceeded.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.ExpressionRuleRejection.html">ExpressionRuleRejection</a></dt>
+      <dd><p>Why a candidate rule produced no result (<a class="xref" href="Utils.Expressions.ExpressionTransformEventKind.html#Utils_Expressions_ExpressionTransformEventKind_RuleRejected">RuleRejected</a>).</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.ExpressionTraceDetail.html">ExpressionTraceDetail</a></dt>
+      <dd><p>The level of detail of a tracing scope.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.ExpressionTraceLoopKind.html">ExpressionTraceLoopKind</a></dt>
+      <dd><p>The shape of a periodic rule sequence found by <a class="xref" href="Utils.Expressions.ExpressionTraceCycleAnalyzer.html">ExpressionTraceCycleAnalyzer</a>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.ExpressionTraceRetention.html">ExpressionTraceRetention</a></dt>
+      <dd><p>Which events an <a class="xref" href="Utils.Expressions.ExpressionTraceCollector.html">ExpressionTraceCollector</a> keeps once it is full.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.ExpressionTraceScopeKind.html">ExpressionTraceScopeKind</a></dt>
+      <dd><p>The lexical scope of a <a class="xref" href="Utils.Expressions.ExpressionTransformEventKind.html#Utils_Expressions_ExpressionTransformEventKind_ScopeEnter">ScopeEnter</a> or <a class="xref" href="Utils.Expressions.ExpressionTransformEventKind.html#Utils_Expressions_ExpressionTransformEventKind_ScopeExit">ScopeExit</a> event.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.ExpressionTransformEventKind.html">ExpressionTransformEventKind</a></dt>
+      <dd><p>The kind of an <a class="xref" href="Utils.Expressions.ExpressionTransformEvent.html">ExpressionTransformEvent</a>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.ExpressionTransformOutcome.html">ExpressionTransformOutcome</a></dt>
+      <dd><p>What produced the result of a treatment (<a class="xref" href="Utils.Expressions.ExpressionTransformEventKind.html#Utils_Expressions_ExpressionTransformEventKind_TransformExit">TransformExit</a>) or of a finalization.</p>
 </dd>
     </dl>
 
