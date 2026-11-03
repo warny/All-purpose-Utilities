@@ -276,6 +276,57 @@ the same instance, can now be equal keys of a <code>Dictionary&lt;Expression, โ€
 not make two initializations or two indexer reads interchangeable: the simplifier treats them as observable and keeps
 every construction, assignment, <code>Add</code> call and access, in order.</li>
 </ul>
+<h2 id="expression-engine-dynamic-operations-extension-nodes-quoted-expressions-and-lambda-copies-etc-r4">Expression engine: dynamic operations, extension nodes, quoted expressions and lambda copies (ETC R4)</h2>
+<p>Behavior changes of <code>ExpressionTransformer</code>, <code>ExpressionSimplifier</code> and <code>ExpressionComparer</code>, and one new public property,
+<code>ExpressionSimplifier.SimplifyQuotedExpressions</code>. The full record is in
+<code>Utils/TODO-2026-10-27-etc-expression-tree-coverage-roadmap.md</code> (ยง9 &quot;R4 result&quot;).</p>
+<ul>
+<li><p><strong>Quoted expressions are no longer simplified by default (C-05).</strong> Before R4, every simplifier rewrote the lambda inside a
+<code>Quote</code> node (<code>Quote(x =&gt; x * 1)</code> became <code>Quote(x =&gt; x)</code>), although a quote is data for its consumer (a query provider, a
+translator). A quote is now a strict boundary of <code>ExpressionSimplifier</code>: the very same <code>Quote</code> instance is kept wherever it
+appears, no rule (built-in or declared by a derived simplifier on <code>ExpressionType.Quote</code>) runs on it, and
+<code>FinalizeExpression</code> does not receive it. To keep the previous rewriting, opt in when creating the simplifier:</p>
+<pre><code class="lang-csharp">var simplifier = new ExpressionSimplifier
+{
+    SimplifyQuotedExpressions = true
+};
+</code></pre>
+<p>The quoted lambda is then simplified like any lambda (delegate type, name, tail call, parameters, labels and captured
+variables kept). The property is init-only: an instance applies one policy to every call, nested or concurrent. The
+option never changes substitution (<code>ReplaceArguments</code> and invocation inlining never enter a quote) nor
+<code>ExpressionTransformer</code> subclasses that are not simplifiers, which keep traversing quotes. Because the public
+<code>ExpressionComparer</code> simplifies with the default policy, <code>Equals(Quote(x =&gt; x * 1), Quote(x =&gt; x))</code> is now <code>false</code>; two
+structurally equal quotes are still equal.</p>
+</li>
+<li><p><strong>Dynamic operations are traversed (C-03 extended).</strong> The arguments of a <code>DynamicExpression</code> are prepared in order (a
+<code>PrepareExpression</code> override is called on each), passed to rules and <code>FinalizeExpression</code> as positional children, and the
+node is rebuilt through <code>DynamicExpression.Update</code>: the same binder instance and the exact delegate type are kept; the
+binder is never invoked and no call site is created. <code>CopyExpression</code> applies its arity contract (a wrong number of
+children, or an argument that does not fit the delegate, throws <code>ArgumentException</code>). <code>ReplaceArguments</code> substitutes inside
+the arguments. <code>ExpressionComparer</code> compares dynamic operations structurally: the binder by identity (its own <code>Equals</code> and
+<code>GetHashCode</code> are never called; two binder instances are never equal), the delegate type, then the arguments in order. A
+dynamic operation stays observable for the simplifier: it is never cancelled, merged, dropped or reordered.</p>
+</li>
+<li><p><strong>Extension nodes are strictly opaque.</strong> A node of a class outside the framework expression object model (any user
+subclass of <code>Expression</code>) is recognized by type tests only. The engine never reads its <code>NodeType</code> or <code>Type</code>, never calls
+<code>CanReduce</code>, <code>Reduce</code>, <code>VisitChildren</code>, <code>Accept</code>, <code>Equals</code>, <code>GetHashCode</code> or <code>ToString</code>. Consequences for subclasses:
+<strong>no rule runs on an extension node any more</strong>, not even a rule declared on <code>ExpressionType.Extension</code> or a wildcard rule
+(rule dispatch had to read the virtual <code>NodeType</code>); handle your own node types in a <code>FinalizeExpression</code> override, which
+still receives them with an empty child list. <code>CopyExpression</code> keeps an extension node for an empty child list and throws
+<code>ArgumentException</code> for any other list (it used to ignore the list). <code>ExpressionComparer</code> equates an extension node only
+with itself (under binders that bind the same declarations) and hashes it by identity: two distinct instances are never
+equal, and their hash no longer depends on <code>NodeType</code>/<code>Type</code>. Framework factories rebuilding a supported parent of an
+extension node (for example <code>Expression.Add</code> when its other operand changed) still read the node's <code>Type</code> and <code>NodeType</code>,
+as when the tree was built.</p>
+</li>
+<li><p><strong><code>CopyExpression</code> of a lambda (C-02 completed).</strong> The positional children of a lambda are its parameter declarations, in
+order (the list <code>FinalizeExpression</code> receives; the body is never a child). The same declarations keep the node; other
+parameters of the same types and by-reference flags alpha-rename it (capture-avoiding; delegate type, name and tail call
+kept); a wrong length, a node that is not a parameter, another type or by-reference flag, a duplicate, a renaming that would
+capture a free variable of the body, or one that cannot reach an occurrence inside a quote or an extension node throws
+<code>ArgumentException</code>. It used to return the lambda unchanged whatever the list.</p>
+</li>
+</ul>
 <p><a id="omy-utils-fonts-2"></a></p>
 <h2 id="utilsfonts-hostile-font-parsing-hardening">Utils.Fonts hostile-font parsing hardening</h2>
 <p><code>TrueTypeFont.ParseFont</code>/<code>ParseFontAsync</code> now accept an optional <code>TrueTypeFontParsingOptions</code>

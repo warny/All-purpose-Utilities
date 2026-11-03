@@ -43774,6 +43774,19 @@ references:
   isSpec: "True"
   fullName: Utils.Mathematics.Expressions.ExpressionSimplifier.Simplify
   nameWithType: ExpressionSimplifier.Simplify
+- uid: Utils.Mathematics.Expressions.ExpressionSimplifier.SimplifyQuotedExpressions
+  name: SimplifyQuotedExpressions
+  href: api/Utils.Mathematics.Expressions.ExpressionSimplifier.html#Utils_Mathematics_Expressions_ExpressionSimplifier_SimplifyQuotedExpressions
+  commentId: P:Utils.Mathematics.Expressions.ExpressionSimplifier.SimplifyQuotedExpressions
+  fullName: Utils.Mathematics.Expressions.ExpressionSimplifier.SimplifyQuotedExpressions
+  nameWithType: ExpressionSimplifier.SimplifyQuotedExpressions
+- uid: Utils.Mathematics.Expressions.ExpressionSimplifier.SimplifyQuotedExpressions*
+  name: SimplifyQuotedExpressions
+  href: api/Utils.Mathematics.Expressions.ExpressionSimplifier.html#Utils_Mathematics_Expressions_ExpressionSimplifier_SimplifyQuotedExpressions_
+  commentId: Overload:Utils.Mathematics.Expressions.ExpressionSimplifier.SimplifyQuotedExpressions
+  isSpec: "True"
+  fullName: Utils.Mathematics.Expressions.ExpressionSimplifier.SimplifyQuotedExpressions
+  nameWithType: ExpressionSimplifier.SimplifyQuotedExpressions
 - uid: Utils.Mathematics.Expressions.ExpressionSimplifier.SinConversionMath(System.Linq.Expressions.Expression,System.Linq.Expressions.Expression[])
   name: SinConversionMath(Expression, Expression[])
   href: api/Utils.Mathematics.Expressions.ExpressionSimplifier.html#Utils_Mathematics_Expressions_ExpressionSimplifier_SinConversionMath_System_Linq_Expressions_Expression_System_Linq_Expressions_Expression___
