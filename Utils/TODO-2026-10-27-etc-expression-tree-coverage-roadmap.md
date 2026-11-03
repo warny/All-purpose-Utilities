@@ -1526,6 +1526,92 @@ confirmed, the documented limits match the observed behavior, and resource refus
 S5 simplifier roadmap (rule termination) and ETC-16/ETC-18 to the `Utils.Parser` stage, so this roadmap stays open for them
 only.
 
+### Engine tracing (2026-11-03)
+
+Injectable, optional tracing of the transformation engine, added after the closure audit to diagnose AUD-03 (S5 P17) and
+future rule loops. Base `master` `aa9d9e39`; branch `etc/transform-tracing`. No algebraic or functional change.
+
+**Design.**
+
+- *Injection.* `ExpressionTransformTracing.Begin(tracer, detail)` opens a disposable scope, ambient per execution context
+  (`AsyncLocal`): a caller may open it before an `await`, it flows into the tasks started inside it and never reaches
+  concurrent operations elsewhere. No tracer is ever stored on a transformer, so a shared simplifier is traced only for the
+  calls made inside a scope. `[ThreadStatic]` alone could not carry a scope across continuations; the engine itself stays
+  synchronous, so the scope is read **once**, when the outermost operation opens, into the existing per-thread resource
+  session (`Session.Trace`). Nested comparisons, nested public calls and re-entrant rules join that session and its trace.
+- *Fast path.* Without any open scope in the process, opening an operation reads one static counter; `TransformCore`
+  reads `session.Trace` (the session is already loaded) and keeps its untraced path. No event, session, rendering,
+  reflection, timing or lock is added; scope events read the detailed trace at lambda, block and catch preparation only.
+- *Events.* Data-only `ExpressionTransformEvent` passed by `in`: `TransformEnter`, `TransformExit` (outcome Unchanged,
+  Rebuilt — a structural reconstruction or shallow copy —, Finalized — the simplifier's canonicalization —, RuleApplied,
+  Boundary), `RuleApplied` (after the rule returned: prepared input and result), `Finalize`, `ResourceLimitReached`,
+  `TransformFailed`; detailed level `RuleCandidate`, `RuleRejected` (ParameterMismatch, Declined, EffectGate),
+  `ScopeEnter`/`ScopeExit`. Session id, contiguous sequence, treatment and parent treatment ids, depth, node type (never read
+  from an extension node), transformer type, rule, input and output references (never rendered), exception, resource kind.
+- *Rules.* `ExpressionTransformRuleInfo` is built once per rule with the dispatch plan (stable `Id`, `DisplayName` with the
+  parameter types for overloads, declared node type, declaration index). The frame of a treatment holds the rule running on
+  its node, so a nested treatment knows the rule that requested it and a failure knows the rule it crossed.
+- *Failures.* An exception filter that always declines records the failure of each treatment it crosses (no handler, no
+  rethrow on a possibly exhausted stack, R1a-Security pitfall); a traced outermost operation catches without rethrowing from
+  the handler, lets the stack unwind, delivers the pending events, then rethrows (`ExceptionDispatchInfo`, same exception and
+  translation as untraced). Every delivery checks the stack first and otherwise keeps the event pending, in order.
+- *Pending list (review follow-up).* The pending list is bounded independently of the tracer, which only bounds what it
+  keeps after delivery: at most `PendingCapacity` ordinary events (16,384, under 4 MB with the list's growth, internal per-scope tuning point), plus
+  a reserve of 64 slots for the events that conclude a failure (`ResourceLimitReached` and the failure of a root treatment),
+  so the final refusal is still delivered when the list is full. Other events are dropped, counted on the public
+  `ExpressionTraceScope.UndeliveredEvents`, and leave a gap in the sequence numbers. Without the bound, the list held one
+  failure per unwound treatment (a few thousand on a 1 MB stack, more on large stacks or under `Unlimited` limits).
+- *Tracer policy.* A tracer that throws is detached for the scope (`ExpressionTraceScope.TracerException`); during a
+  callback the thread's session is replaced by a refusing one, so any engine call from a tracer is refused before it starts
+  (counted as a tracer failure): a tracer can never add a transformation, a comparison or a memo entry.
+- *Tools.* `ExpressionTraceCollector` (bounded, KeepLast circular buffer or KeepFirst, total and dropped counters,
+  thread-safe, `Clear` releases the trees); `ExpressionTraceExporter` (indented text with Before/After, JSON);
+  `ExpressionTraceFormatter` (no user code, extension nodes by class name, bounded); `ExpressionTraceCycleAnalyzer`, separate
+  from the engine: strict structural fingerprints (operand order, parameter identity, opaque nodes and non-framework constants
+  by reference; 2×64-bit hash and size) computed under the structural budget, confirmed with the raw comparer; recurrences of a
+  form inside its own treatment at any depth, periodic rule sequences of the deepest chain (StrictCycle, Expansion,
+  Contraction, Drift, Irregular), per-rule size balances.
+
+**Tests.** `ExpressionTransformTracingTests` (22, Unit) and `ExpressionTraceResourceTests` (3, Security; the third pins the
+bounded pending list: a capacity of 8 on a traced stack refusal drops and counts the extra failures, keeps the resource
+refusal and the root failure, and every created event is delivered or counted; it fails when the reserve is removed). Unit
+14,466/14,467 (1 inconclusive replay test), Security 314/317 before the follow-up (3 platform inconclusives), Functional
+383/383.
+
+**Benchmark kept in the repository (review follow-up).** `tests/ExpressionTracingBench` (not in `Utils.sln`, not run by CI)
+measures the untraced path — the fixed cost of a public operation on `ext-root` and per-node scenarios up to `li1024` — and
+optionally the tracers, against a baseline checkout with an A/A copy (`run-campaign.ps1`). Its README holds the reference
+figures below and the reading rules: every scenario inside A/A except the documented fixed cost, identical allocations, no
+drift growing with the node count.
+
+**Measurements (Release, R4 harness, 50 scenarios, one process per variant and scenario, 3 rotating rounds, A/A copy of
+the master binary).** Master `aa9d9e39`, A/A, instrumentation without scope, minimal tracer (counts events), bounded
+collector (65,536 events, KeepLast).
+
+| | median | min | max |
+|---|---|---|---|
+| A/A | -0.2 % | -2.3 % | +3.2 % |
+| Instrumentation, no scope | +0.2 % | -3.5 % | +6.6 % |
+| Minimal tracer | +138 % | -0.7 % | +342 % |
+| Bounded collector | +204 % | -0.1 % | +493 % |
+
+Transform and structural visits are identical in every variant and scenario; allocations are identical without a scope
+and grow by a fixed ~1.5 KB per traced operation (tracing state and frame stack). The scenarios outside the A/A range were
+measured again on an idle machine, 5 rounds: `ext-root` (77 ns, one public operation on an extension node) +5.2 %, i.e.
+about 4 ns of fixed cost per public operation (scope counter, trace field, traced-boundary test); `li1024` +2.5 % (A/A
++1.2 %), `mi1` +3.1 % (A/A +2.9 %), `scalar` +1.8 %, every other one within ±1.4 %. The traced variants cost one event per
+treatment, rule, finalization and failure delivered through an interface call: two to four times the time of the cheapest
+scenarios, +19 % to +64 % with the minimal tracer on the large comparer-heavy ones (`balanced64` to `hash`); it is a
+diagnostic mode.
+
+**Limits.** A scope opened while an operation runs only affects the next operations. A transformer whose public `Transform`
+does not call `TransformCore` is not traced. An exception leaving a traced outermost operation carries the
+`ExceptionDispatchInfo` rethrow marker. Events that still cannot be delivered when a traced operation ends (the caller itself
+is out of stack), or that exceed the pending list, are dropped and counted (`UndeliveredEvents`). The analyzer's identity is
+a fingerprint, confirmed for reported recurrences only. The analyzer finds cycles and suspicious behaviors in the traces it
+is given; it is a search tool, not a termination proof of the rule system, and it never runs inside the engine (no implicit
+termination logic is added to the transformer).
+
 ## 10. Round history
 
 | Round | Date | Result |
@@ -1540,6 +1626,7 @@ only.
 | R3 | 2026-10-30 | MemberInit (MemberAssignment, MemberMemberBinding, MemberListBinding), ListInit (ElementInit) and Index traversed and faithfully rebuilt (C-03, C-02: flattened positional layouts, exact `Add` methods, indexers, writable targets); capture-avoiding substitution and conservative inlining through them; structural equality, hashing and canonical keys (C-04); the families stay observable for the rules (ETC-15 kept); stack guards added to the two engine-internal visitors for nested member bindings (overflow found and fixed); ETC-01/02/03 advanced, ETC-06/07/14 extended; R4 (Dynamic, Extension) and C-05 open; performance in §9 R3 measurements. |
 | R4 | 2026-11-02 | Dynamic traversed, rebuilt with the same binder and delegate type, substituted, compared and hashed by binder identity, keyed (C-03, C-02, C-04); extension nodes strictly opaque (type tests only, no member read or called, identity equality and hash, no rule dispatch); C-05 resolved by the init-only `SimplifyQuotedExpressions` option (default: quotes are simplifier boundaries); C-02 completed for Lambda (declarations, alpha-renaming); ETC-01/02/03/06/07/12/14 resolved; resource tests for every new walk; performance in §9 R4 measurements. |
 | Closure audit | 2026-11-03 | Independent audit of master `7d307102` (§9 "Closure audit"): seeded generator, property and differential campaigns (14,510 differential comparisons, 13,389 substitutions, Release and Debug), extension-opacity and quote checks, refusals without leftover state, benchmarks; AUD-01 (critical: inlining through writes to value-type parameters) and AUD-02 (dynamic operations in the free-variable walk) fixed in #676; AUD-03 (pre-existing S5 rule loop on `c * (y - 1)`, controlled refusal) pinned and left to S5; closure of R0–R4 recommended; #676 merged on 2026-11-03 (`9d91cf3c`). |
+| Engine tracing | 2026-11-03 | Injectable tracing of the transformation engine (§9 "Engine tracing"): AsyncLocal scopes captured once per outermost operation, treatment/rule/finalization/failure events, rule identity from the plan, bounded collector, text and JSON export, cycle analyzer; no functional change, identical visits, about 4 ns of fixed cost per public operation without a scope; used to diagnose AUD-03 (S5 P17). |
 
 ## 11. Decisions requested from the reviewer
 

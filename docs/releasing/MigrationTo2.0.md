@@ -299,6 +299,27 @@ Behavior changes of `ExpressionTransformer`, `ExpressionSimplifier` and `Express
   substitution renamed declarations a replacement holding one did not mention. The walk now enters the arguments of a
   dynamic operation (never its binder).
 
+## Expression engine: injectable transformation tracing (additive)
+
+New public API in `Utils.Expressions`, without behavior change for code that does not use it: `ExpressionTransformTracing`
+(`Begin(tracer, detail)` opens a disposable `ExpressionTraceScope`), `IExpressionTransformTracer`,
+`ExpressionTransformEvent` and its enumerations, `ExpressionTransformRuleInfo`, the bounded `ExpressionTraceCollector`,
+`ExpressionTraceFormatter`, `ExpressionTraceExporter` (indented text, JSON) and `ExpressionTraceCycleAnalyzer`. The full
+record is in `Utils/TODO-2026-10-27-etc-expression-tree-coverage-roadmap.md` (§9 "Engine tracing").
+
+- A scope is ambient per execution context (`AsyncLocal`): it traces the operations started inside it, on this flow and in
+  the tasks it starts, never concurrent operations elsewhere, and never through a field of a shared simplifier. It is read
+  once per outermost operation; an operation running when the scope is disposed keeps reporting to it until it returns.
+- Tracing never changes a result, the work performed (transformation and structural visits are identical) or the
+  exception thrown. One visible difference: an exception leaving a **traced** outermost operation is rethrown with
+  `ExceptionDispatchInfo`, so its stack trace carries the "End of stack trace from previous location" marker.
+- A tracer that throws is detached (`ExpressionTraceScope.TracerException`), and a tracer cannot call the engine from its
+  callback (the call throws `InvalidOperationException` before it starts, which detaches the tracer). Export and analyze
+  the events outside the callback.
+- Events whose delivery is deferred (the stack was too short to call the tracer, typically while a stack refusal unwinds)
+  wait in a bounded list; beyond it they are dropped and counted on `ExpressionTraceScope.UndeliveredEvents`, leaving a gap
+  in the sequence numbers. The resource refusal and the root failure are always kept.
+
 <a id="omy-utils-fonts-2"></a>
 ## Utils.Fonts hostile-font parsing hardening
 

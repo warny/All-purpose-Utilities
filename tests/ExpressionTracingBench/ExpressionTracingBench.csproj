@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <!--
+        Engine tracing benchmark: measures the cost of the expression engine without any tracing scope (the path every caller
+        pays for) and with a tracer. It is deliberately not part of Utils.sln, not packable and never run by CI; see README.md
+        and run-campaign.ps1. EtcUtilsRoot points at the checkout to measure (run-campaign.ps1 builds a baseline and a
+        candidate checkout side by side).
+    -->
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net9.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>disable</ImplicitUsings>
+        <IsPackable>false</IsPackable>
+        <Optimize>true</Optimize>
+        <TieredPGO>true</TieredPGO>
+        <InvariantGlobalization>true</InvariantGlobalization>
+        <ServerGarbageCollection>false</ServerGarbageCollection>
+        <EtcUtilsRoot Condition="'$(EtcUtilsRoot)' == ''">$(MSBuildThisFileDirectory)..\..\</EtcUtilsRoot>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="$(EtcUtilsRoot)Utils\Utils.csproj" />
+    </ItemGroup>
+
+</Project>

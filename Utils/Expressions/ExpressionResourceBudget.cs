@@ -37,6 +37,13 @@ namespace Utils.Expressions;
 /// boundary is still stack-guarded); every entry point that can be reached without an enclosing operation opens one.
 /// </para>
 /// <para>
+/// <b>Tracing.</b> A tracing scope (<see cref="ExpressionTransformTracing"/>) is ambient per execution context, because a
+/// caller may open it before an <c>await</c>; it is read once, when the outermost operation opens, into
+/// <see cref="Session.Trace"/>, so the engine itself never reads the <c>AsyncLocal</c>. Without any open scope that read is a
+/// single static counter. A traced outermost operation runs through <c>RunTraced</c>, which lets the stack unwind before the
+/// pending trace events are delivered, and installs a refusing session during every tracer callback.
+/// </para>
+/// <para>
 /// <b>Exceptions.</b> Limits are checked only at visit and validation points, never in <c>finally</c> or <c>catch</c>
 /// blocks, so an exception already in flight is never replaced; <see cref="Run{TState, TResult}"/> restores the
 /// previous state in a <c>finally</c> block that does not throw. At the outermost boundary only, an
@@ -95,6 +102,7 @@ internal static class ExpressionResourceBudget
         ArgumentNullException.ThrowIfNull(limits);
         Session session = _session ??= new Session();
         Scope scope = session.Enter(limits, owner);
+        if (session.Trace is not null && scope.IsOutermost) return RunTraced(session, scope, root, secondRoot, state, body);
         try
         {
             ExpressionShapeValidator.Validate(root, session.MaxDepth, session.MaxNodes);
@@ -112,6 +120,87 @@ internal static class ExpressionResourceBudget
         {
             session.Exit(scope);
         }
+    }
+
+    /// <summary>
+    /// Body of <see cref="Run{TState, TResult}"/> for an outermost operation started inside a tracing scope: the exception, if
+    /// any, is caught without being rethrown from the handler, so the stack unwinds to this frame before the trace delivers its
+    /// pending events (<see cref="ExpressionTraceSession.Complete"/>); the outcome is then the same as an untraced operation,
+    /// except that a propagated exception carries the rethrow marker of <see cref="ExceptionDispatchInfo"/> in its stack trace.
+    /// </summary>
+    /// <typeparam name="TState">The state passed to <paramref name="body"/>.</typeparam>
+    /// <typeparam name="TResult">The result type.</typeparam>
+    /// <param name="session">The thread's session, whose operation was just opened.</param>
+    /// <param name="scope">The saved state, outermost.</param>
+    /// <param name="root">The input to validate, or <see langword="null"/>.</param>
+    /// <param name="secondRoot">A second input to validate, or <see langword="null"/>.</param>
+    /// <param name="state">The state passed to <paramref name="body"/>.</param>
+    /// <param name="body">The operation.</param>
+    /// <returns>The result of <paramref name="body"/>.</returns>
+    /// <exception cref="ExpressionResourceLimitException">An input or a budget exceeded a limit, or the stack ran out.</exception>
+    private static TResult RunTraced<TState, TResult>(Session session, Scope scope, Expression? root, Expression? secondRoot, TState state, Func<TState, TResult> body)
+    {
+        ExpressionTraceSession trace = session.Trace!;
+        ExceptionDispatchInfo? failure = null;
+        TResult result = default!;
+        try
+        {
+            ExpressionShapeValidator.Validate(root, session.MaxDepth, session.MaxNodes);
+            ExpressionShapeValidator.Validate(secondRoot, session.MaxDepth, session.MaxNodes);
+            result = body(state);
+        }
+        catch (Exception exception)
+        {
+            failure = ExceptionDispatchInfo.Capture(exception);
+        }
+        finally
+        {
+            session.Exit(scope);
+        }
+
+        trace.Complete(failure?.SourceException);
+        if (failure is null) return result;
+
+        if (TryTranslate(failure.SourceException, out Exception? translated, out bool created))
+        {
+            if (created) throw translated!;
+            ExceptionDispatchInfo.Capture(translated!).Throw();
+        }
+
+        failure.Throw();
+        return result;
+    }
+
+    /// <summary>Gets the tracing state of the running operation, or <see langword="null"/> when none runs or it is not traced.</summary>
+    internal static ExpressionTraceSession? ActiveTrace => _session is { OperationDepth: > 0 } session ? session.Trace : null;
+
+    /// <summary>Gets the tracing state of the running operation when it asked for the detailed events, otherwise <see langword="null"/>.</summary>
+    internal static ExpressionTraceSession? ActiveDetailedTrace
+        => _session is { OperationDepth: > 0, Trace: { Detailed: true } trace } ? trace : null;
+
+    /// <summary>Creates the session installed during a tracer callback: it refuses to open any operation.</summary>
+    /// <returns>A refusing session.</returns>
+    internal static Session CreateRefusingSession() => new() { RefusesOperations = true };
+
+    /// <summary>Installs <paramref name="refusingSession"/> for the duration of a tracer callback.</summary>
+    /// <param name="refusingSession">A session created by <see cref="CreateRefusingSession"/>.</param>
+    /// <returns>The thread's session, to restore with <see cref="ExitTracerCallback"/>.</returns>
+    internal static Session? EnterTracerCallback(Session refusingSession)
+    {
+        Session? engineSession = _session;
+        _session = refusingSession;
+        return engineSession;
+    }
+
+    /// <summary>Restores the thread's session after a tracer callback.</summary>
+    /// <param name="engineSession">The session returned by <see cref="EnterTracerCallback"/>.</param>
+    internal static void ExitTracerCallback(Session? engineSession) => _session = engineSession;
+
+    /// <summary>Stops tracing the running operation after its tracer failed: the engine takes its untraced path again.</summary>
+    /// <param name="trace">The failed tracing state.</param>
+    internal static void DetachTrace(ExpressionTraceSession trace)
+    {
+        if (_session is { } session && ReferenceEquals(session.Trace, trace)) session.Trace = null;
     }
 
     /// <summary>
@@ -292,12 +381,27 @@ internal static class ExpressionResourceBudget
         /// <summary>The nodes left to the running bounded effect-analysis pass.</summary>
         public int EffectBudget;
 
+        /// <summary>
+        /// The tracing state of the running operation chain, captured when the outermost operation opens inside a tracing
+        /// scope (see <see cref="ExpressionTransformTracing"/>), otherwise <see langword="null"/>; the outermost exit drops it.
+        /// </summary>
+        public ExpressionTraceSession? Trace;
+
+        /// <summary>
+        /// Whether this is the session installed while a tracer callback runs: it refuses to open any operation, so a tracer
+        /// can never run the engine inside the operation it observes.
+        /// </summary>
+        public bool RefusesOperations;
+
         /// <summary>Opens or joins an operation and returns the state to restore.</summary>
         /// <param name="limits">The limits of the entering instance.</param>
         /// <param name="owner">The entering instance.</param>
         /// <returns>The saved state.</returns>
+        /// <exception cref="InvalidOperationException">The session belongs to a tracer callback (<see cref="RefusesOperations"/>).</exception>
         public Scope Enter(ExpressionResourceLimits limits, object? owner)
         {
+            if (RefusesOperations) throw new InvalidOperationException("An expression transform tracer must not call the expression engine from its callback.");
+
             var scope = new Scope(
                 Owner,
                 OperationDepth,
@@ -322,6 +426,7 @@ internal static class ExpressionResourceBudget
                 StructuralDeadline = limits.MaxStructuralVisits;
                 MaxDepth = limits.MaxDepth;
                 MaxNodes = limits.MaxNodes;
+                Trace = ExpressionTraceSession.TryStart();
             }
             else
             {
@@ -366,6 +471,7 @@ internal static class ExpressionResourceBudget
             MaxNodes = scope.MaxNodes;
             if (scope.IsOutermost)
             {
+                Trace = null;
                 EffectCache = null;
                 EffectMode = 0;
                 TransformVisits = 0;
