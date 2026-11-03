@@ -339,6 +339,11 @@ numeric type, <code>decimal</code>, <code>DateTime</code>…) and writes through
 opaque extension node: <code>CopyExpression</code> refused to alpha-rename a lambda whose body holds a dynamic operation, and the
 substitution renamed declarations a replacement holding one did not mention. The walk now enters the arguments of a
 dynamic operation (never its binder).</li>
+<li><strong>Factoring a difference by 1 no longer loops (AUD-03, S5 P17).</strong> <code>Simplify(c * (y - 1))</code>, <code>c * (1 - y)</code> with <code>c</code> other
+than ±1, <code>(1 - y) / (1 / y)</code> and <code>a * x + (1 - a) * x</code> used to fail with a stack overflow, then (since the resource limits)
+with an <code>ExpressionResourceLimitException</code> of kind <code>Stack</code>. They now return a simplified tree. The forms that held a
+spurious factor 1 change: <code>y - 1</code> gives <code>(0 - 1) + y</code> (like <code>y - 2</code> gives <code>(0 - 2) + y</code>) instead of <code>(y - 1) * 1</code>,
+<code>1 - y</code> gives <code>1 + (0 - y)</code> instead of <code>(1 - y) * 1</code>; the values are unchanged.</li>
 </ul>
 <h2 id="expression-engine-injectable-transformation-tracing-additive">Expression engine: injectable transformation tracing (additive)</h2>
 <p>New public API in <code>Utils.Expressions</code>, without behavior change for code that does not use it: <code>ExpressionTransformTracing</code>
