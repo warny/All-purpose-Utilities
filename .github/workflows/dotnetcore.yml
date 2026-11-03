@@ -77,6 +77,23 @@ jobs:
                   cache-dependency-path: ${{ env.DOTNET_CACHE_PATHS }}
             - run: dotnet test UtilsTest/UtilsTest.Unit.csproj --configuration Release --logger trx --results-directory artifacts/test-results
 
+    # The expression-engine coverage tests attribute each extension-node read to its calling frame. In a Release build the JIT
+    # may inline a framework factory into an engine method, which hides the factory's frame, so the Release run only fails on
+    # reads it can prove are the engine's; this unoptimized run keeps every read exactly attributed and strict.
+    expression-engine-debug-tests:
+        needs: changes
+        if: needs.changes.outputs.train == 'true'
+        runs-on: ubuntu-latest
+        timeout-minutes: 20
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-dotnet@v4
+              with:
+                  dotnet-version: '9.0.x'
+                  cache: true
+                  cache-dependency-path: ${{ env.DOTNET_CACHE_PATHS }}
+            - run: dotnet test UtilsTest/UtilsTest.Unit.csproj --configuration Debug --filter "FullyQualifiedName~UtilsTest.Mathematics.Expressions.Coverage" --logger trx --results-directory artifacts/test-results
+
     functional-tests:
         needs: changes
         if: needs.changes.outputs.train == 'true'
@@ -257,7 +274,7 @@ jobs:
 
     required:
         if: always()
-        needs: [changes, build, unit-tests, functional-tests, security-tests, canonical-packages, packaged-validation-ubuntu, packaged-validation-windows-light, source-gates-ubuntu, vsix-validation]
+        needs: [changes, build, unit-tests, expression-engine-debug-tests, functional-tests, security-tests, canonical-packages, packaged-validation-ubuntu, packaged-validation-windows-light, source-gates-ubuntu, vsix-validation]
         runs-on: ubuntu-latest
         timeout-minutes: 5
         steps:
@@ -281,6 +298,7 @@ jobs:
                       publishable = $false
                       buildPassed = '${{ needs.build.result }}' -eq 'success'
                       unitTestsPassed = '${{ needs.unit-tests.result }}' -eq 'success'
+                      expressionEngineDebugTestsPassed = '${{ needs.expression-engine-debug-tests.result }}' -eq 'success'
                       functionalTestsPassed = '${{ needs.functional-tests.result }}' -eq 'success'
                       securityTestsPassed = '${{ needs.security-tests.result }}' -eq 'success'
                       canonicalPackagesProduced = '${{ needs.canonical-packages.result }}' -eq 'success'
@@ -304,6 +322,7 @@ jobs:
                   if test '${{ needs.changes.outputs.train }}' = true; then
                       test '${{ needs.build.result }}' = success
                       test '${{ needs.unit-tests.result }}' = success
+                      test '${{ needs.expression-engine-debug-tests.result }}' = success
                       test '${{ needs.functional-tests.result }}' = success
                       test '${{ needs.security-tests.result }}' = success
                       test '${{ needs.canonical-packages.result }}' = success

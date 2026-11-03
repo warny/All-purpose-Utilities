@@ -168,7 +168,7 @@ public entry point, or wrong result inside a documented scope; Medium = contract
 |---|---|---|---|---|---|---|---|---|---|
 | ETC-01 | High (root cause of ETC-08/09/10) | `ExpressionTransformer.PrepareTransform`, `PrepareDefault` | `Simplify(MemberInit(...p*1...))` | 20 node types (Default, MemberAccess, TypeIs, TypeEqual, New, NewArrayInit, NewArrayBounds, MemberInit, ListInit, Index, Block, Try, Switch, Loop, Goto, Label, RuntimeVariables, DebugInfo, Dynamic, Extension) reach `PrepareDefault`: no child prepared, `FinalizeExpression(e, [])` | each family traversed, passed through explicitly, or rejected explicitly | G, S, D | R1–R4 | `ETC01_*`, baseline `Opaque`/`Throws`/`Corrupts` rows | Confirmed; **resolved by R1b for Default, MemberAccess, TypeIs, TypeEqual, New, NewArrayInit, NewArrayBounds** (traversed, C-03); **resolved by R2 for Block, Try, Switch, Loop, Goto, Label** (traversed) with explicit policies for RuntimeVariables and DebugInfo; 5 families remain for R3–R4 (MemberInit, ListInit, Index, Dynamic, Extension); **resolved by R3 for MemberInit, ListInit and Index** (traversed with their bindings and initializers): 2 families remain for R4 (Dynamic, Extension); **R4**: Dynamic traversed (arguments); Extension stays opaque by design (recognized by type tests, never inspected) — **resolved** |
 | ETC-02 | High | `ExpressionTransformer.CopyExpression` | `CopyExpression(Block([v], …), children)` | Block loses variables and explicit type; Loop loses labels; New loses `Members`; 11 child-bearing node types (Lambda, MemberAccess, MemberInit, ListInit, Index, Try, Switch, Goto, Label, Dynamic, Extension) ignore the supplied children | rebuild preserves every M/D/L role of §1.2, or fails explicitly | G, D, every subclass using `CopyExpression` | R1 (scalar), R2 (Block/Loop), R3 | `ETC02_*` | Confirmed; explicit copies of Block, Loop, New, NewArray, TypeBinary fixed in R1a (C-02), MemberAccess in R1b (arity contract), Try, Switch, Goto, Label, RuntimeVariables and DebugInfo in R2 (positional layouts, named rebuilders); 6 ignoring families open (MemberInit, ListInit, Index, Dynamic, Extension, Lambda; R3–R4); **R3**: MemberInit, ListInit and Index follow the arity contract (flattened positional layouts, named rebuilders keeping members, binding kinds, `Add` methods and indexer, type change rejected); 3 ignoring families open (Dynamic, Extension, Lambda; R4); **R4**: Dynamic (arguments, same binder and delegate type), Extension (empty list kept, any other list refused) and Lambda (declarations, alpha-renaming) follow the arity contract — **resolved**: no family ignores the supplied children |
-| ETC-03 | High | `ExpressionTransformer.ReplaceArgumentsCore` | `ReplaceArguments(Invoke(() => p), [p], [5])` | recurses into Unary, Binary, Invocation, MethodCall, Conditional only; rebuilds unary via `CopyExpression` (typed throw → void) | capture-avoiding substitution of free occurrences in every family (§5.3) | R, S (inlining) | R2 (+R1 for unary fidelity) | `ETC03_*`, baseline `Partial`/`Opaque` | Confirmed; **partly resolved by R1b**: faithful unary rebuild (typed throw kept) and substitution through MemberAccess, TypeBinary, New, NewArray; binders (nested lambda, Block, Catch, Switch, RuntimeVariables) stay for R2 — not globally resolved; **resolved by R2 for every family traversed up to R2**: free occurrences only, shadowing, capture avoidance by alpha-renaming (lambda, conversion lambda, block, catch), control flow with the same label targets, RuntimeVariables C-07; remaining: R3–R4 families (MemberInit, ListInit, Index, Dynamic, Extension) are not entered, Quote is not entered (C-05 pending); **extended by R3** to MemberInit, ListInit and Index (binding values, nested bindings, `Add` arguments, index receivers and arguments); remaining: Dynamic, Extension (R4) and Quote (C-05 pending); **R4**: dynamic arguments entered; Quote and Extension stay barriers by design (C-05, opacity) — **resolved** |
+| ETC-03 | High | `ExpressionTransformer.ReplaceArgumentsCore` | `ReplaceArguments(Invoke(() => p), [p], [5])` | recurses into Unary, Binary, Invocation, MethodCall, Conditional only; rebuilds unary via `CopyExpression` (typed throw → void) | capture-avoiding substitution of free occurrences in every family (§5.3) | R, S (inlining) | R2 (+R1 for unary fidelity) | `ETC03_*`, baseline `Partial`/`Opaque` | Confirmed; **partly resolved by R1b**: faithful unary rebuild (typed throw kept) and substitution through MemberAccess, TypeBinary, New, NewArray; binders (nested lambda, Block, Catch, Switch, RuntimeVariables) stay for R2 — not globally resolved; **resolved by R2 for every family traversed up to R2**: free occurrences only, shadowing, capture avoidance by alpha-renaming (lambda, conversion lambda, block, catch), control flow with the same label targets, RuntimeVariables C-07; remaining: R3–R4 families (MemberInit, ListInit, Index, Dynamic, Extension) are not entered, Quote is not entered (C-05 then pending, decided in R4); **extended by R3** to MemberInit, ListInit and Index (binding values, nested bindings, `Add` arguments, index receivers and arguments); remaining: Dynamic, Extension (R4) and Quote (C-05 then pending, decided in R4); **R4**: dynamic arguments entered; Quote and Extension stay barriers by design (C-05, opacity) — **resolved** |
 | ETC-04 | Medium | `CopyUnaryExpression`, `RebuildUnaryExpression` | `RecursiveTransformer.Transform(Negate(x, FortyTwo))` | G and D drop `Method` (value 42 → -3) and typed `Throw`'s `Type`; S preserves both | policy C-01 | G, D, R | R1 | `ETC04_*`, rows `Negate.CustomMethod`, `Convert.CustomMethod`, `PreIncrementAssign.CustomMethod`, `Throw` | **Fixed in R1b** (C-01: `MakeUnary` for every transformer, `CopyExpression` and substitution) |
 | ETC-05 | Medium | `RebuildLambdaExpression` | `Transform(Lambda<CatalogDelegate>(…, "named", true, x))` | G and D rebuild `Func<double,double>`, no name, no tail call; S preserves | policy C-01 | G, D | R1 | `ETC05_*`, row `Lambda.Metadata` | **Fixed in R1b** (C-01: faithful lambda rebuild for every transformer) |
 | ETC-06 | Medium (by design) | `ExpressionComparer.EqualsCore` | two identical `Condition(…)` | `Unequal` for every family outside Parameter/Constant/Lambda/Unary/Binary/Call/Member | structural equality with scope model, family by family | E | R1–R4 | `ETC06_*`, 32 `Unequal` rows | Confirmed; **resolved by R1c for Conditional, Invoke, TypeIs, TypeEqual, Default, New, NewArrayInit, NewArrayBounds** (C-04); remaining families R2–R4; **extended by R2 to Block, Try, Switch, Loop, Goto, Label, RuntimeVariables, DebugInfo** (binder frames, label bijection); remaining R3–R4; **extended by R3 to MemberInit, ListInit, Index** (bindings and initializers in declaration order, binding kinds, members, `Add` methods, indexers); remaining R4 (Dynamic, Extension); **R4**: Dynamic compared structurally (binder identity), Extension by identity under an identity binding context — **resolved** |
@@ -889,7 +889,7 @@ R1a pass-through pins, coverage baseline (12 rows), derived-simplifier fidelity 
 **Remaining limits.** The rule gate is coarse (no rule declares which evaluations it drops), so a safe rewrite such as
 `f() * 1` is skipped when `f()` is not proven inert (the additive canonicalization still drops zero constants next to pinned terms);
 parameters are treated as mutable next to an observable term; per-rule effect declarations, a configurable purity policy
-(`[Pure]` is not trusted, as decided) and capture-aware closures are left open. Quote is unchanged (C-05 pending, ETC-12).
+(`[Pure]` is not trusted, as decided) and capture-aware closures are left open. Quote is unchanged (C-05 was then pending; decided in R4, ETC-12).
 ### R1c — Scalar equality and hashing
 
 | Change | File / method | Tests |
@@ -1448,6 +1448,84 @@ lambda-copy used to return the lambda unchanged whatever the list (5 ns, a contr
 declarations and alpha-renames the body through the budgeted substitution (508 ns, 21 structural visits for 6 rebuilt nodes).
 No scenario runs user code.
 
+### Closure audit (2026-11-03)
+
+Independent, adversarial audit of master `7d307102` (R0–R4 merged), looking for counterexamples rather than re-running the
+existing evidence. Branch `etc-closure-audit` (tests only, no production change); corrections in PR #676
+(`etc-audit-fixes`), merged on 2026-11-03 as `9d91cf3c`; this branch was then rebased onto it.
+
+**Baseline.** Clean Release build; Unit 14,416/14,416, Security 312/315 (3 inconclusive, platform-specific), Functional
+383/383.
+
+**Method.** A deterministic, seeded generator of valid trees (`EtcAuditGenerator`: constants, parameters, arithmetic,
+comparisons, allow-listed math calls, traced calls and throwing checks, conditionals, invoked lambdas and closures, blocks
+with assignments and increments, try/catch/finally with filters, member and list initializations, index accesses, dynamic
+operations with counting binders, quotes applied by a host, extension nodes, checked conversions, labels, jumps and
+switches; shadowing by reused instances, capture-prone declarations and shared subtrees on purpose) feeds property and
+differential campaigns (`EtcAuditPropertyTests`): every failure records its seed, is reduced automatically and can be
+replayed (`ETC_AUDIT_REPLAY`). Differential checks compare the compiled original and transformed trees on five inputs: value
+(up to rounding), exception type, and the exact sequence of effects (traced calls, accessors, `Add`, binder reports). The
+suite runs 120 seeds per campaign; the closure campaigns ran 3,000 + 600 deeper seeds in Release and 1,000 + 300 in Debug
+(mean 18 and 37 distinct nodes, depth up to 27): 14,510 differential comparisons over the three simplifier configurations
+(default, quote opt-in, derived), 13,389 substitutions, 240 trees with their clones and near-variants through equality, hash
+and canonical keys, 3,268 simplified quotes, 1,666 extension nodes in the strict campaign. Result:
+no failure besides the findings below.
+
+**Findings.**
+
+| Id | Severity | Location | Reproducer | Status |
+|---|---|---|---|---|
+| AUD-01 | Critical (silent wrong result) | `InvocationInliningAnalysis` | `{ var s; ((p) => { p.F = 5; 0 })(s); s.F }`, `p` of a mutable structure type: `Simplify` returns 5 instead of 0; also indexers, fields passed by reference, mutating methods and getters, constant and default arguments | Fixed in #676, merged `9d91cf3c` (a write through a value-type parameter keeps the invocation) |
+| AUD-02 | Medium (false refusal) | `ExpressionTransformer.FreeVariables` | `CopyExpression((a) => dyn(a, 1) + a, a2)` throws `ArgumentException`: a plain `ExpressionVisitor` reaches a `DynamicExpression` through `VisitExtension`, so the walk treated it as an opaque extension node (also spurious renamings in substitution) | Fixed in #676 |
+| AUD-03 | High (availability), pre-existing S5, outside the ETC families | S5 multiplicative/subtractive rules | `Simplify(10 * (y - 1))`, `c * (1 - y)`, `(1 - y) / (1 / y)`: endless mutual rewriting | Open. Stack overflow at `b5c05dc3`; since R1a-Security a controlled `Stack` refusal with no state left behind (`AUD03_RuleLoop_IsAControlledRefusal`) |
+| AUD-04 | Documentation | comments, R2 tests, migration guide | "C-05 pending" after C-05 was decided in R4 | Fixed in #676 |
+| AUD-05 | Medium (flaky test oracle), pre-existing R4 test fixture, no engine defect | `R4HostileExtension` read attribution | Once the engine methods tier up (Release, dynamic PGO), a framework factory is inlined into the engine method calling it and its getter reads show that method as caller: `ExtensionUnderSupportedFamilies_IsNeverInspectedByTheEngine` and `DistinctExtensions_AreNeverInterchangeable` failed on the Ubuntu CI of this PR (`Type <- BuildPinnedAdditiveChain`, read by an inlined `Expression.Add`), and fail on master too with `DOTNET_TC_CallCountThreshold=1`, `DOTNET_TC_CallCountingDelayMs=0` (also `NodeType <- CopyBlockExpression`, read by an inlined `Expression.Block`); the fixed `StackFrame(2)` also missed the caller when `Hit` itself is inlined | Fixed in this PR: caller = first frame outside the fixture; in an optimized build, a read attributed to a method that cannot read a getter (IL closure, `R4ReadAttribution`) is a framework read, any other is recorded as undecided instead of failing; a new pull-request job, `expression-engine-debug-tests`, runs the coverage tests in Debug, where attribution is exact and every engine read fails |
+
+**Verified, not anomalies.**
+- C-02: the historical binary, unary, conditional and constant copies keep their unchecked arity (short list:
+  `IndexOutOfRangeException`, extra children ignored, constant ignores the list), as the remarks of `CopyExpression` say;
+  now pinned (`C02_HistoricalFamilies_KeepTheirUncheckedArity`). Aligning them would be a separate compatibility decision.
+- S3 contract: NaN, infinity and signed-zero differences of symbolic identities (`x - x`, `0 * x`, `0 / x`,
+  `x + -1 * x`) and their consequences (another branch, an exception, another binder argument) appear only on inputs with a
+  zero or NaN; the campaigns classify them apart (83 over all runs).
+- Extension opacity: with extension nodes in positions where no framework getter delegates, no engine read or call
+  (strict campaign); in Debug builds no `NodeType` read is attributed to the engine. Remaining `Type` reads attributed to
+  engine methods are reads of a framework block or conditional whose getter tail-calls the extension's, as R4 documented.
+  The R4 hostile tests pass in Debug with the engine methods tiered up at their first call (no read attributed to the
+  engine), so the reads behind AUD-05 are framework reads.
+- Quotes: under the default policy, every quote of a simplified tree (default and derived simplifier) is an original
+  instance; substitution never enters one.
+- Resource refusals leave no session, scope or budget behind (a valid operation follows on the same instance).
+- Resilience, one isolated process per case (scratch probe, not committed): trees alternating eight families per level
+  (block with assignment, try/catch, member initialization, dynamic operation, invoked lambda, switch, quote applied by a
+  call, negation) at 200, 5,000 and 100,000 levels, under default, low and unlimited limits, on 256 KiB and 1 MiB threads,
+  through simplification (default and opt-in), generic transformation, substitution, public equality and hashing; plus a
+  shared DAG of 2^40 paths (default and low limits) and 2^18 paths (unlimited). 21/21 cases: no crash, every excess refused
+  with the expected kind (`Depth`, `Nodes`, or `Stack` when the limits allow more than the thread holds), no binder call,
+  and a valid operation succeeds afterwards on the same thread; the 2^18 DAG completes unbounded in at most 1.2 s per walk.
+
+**Framework limits (System.Linq.Expressions, .NET 9.0.22), outside the engine.** A lambda redeclaring the very parameter
+instance of an enclosing lambda and capturing it in a closure is mis-compiled (`Framework_RedeclaredCapturedParameter_IsMisCompiled`),
+and the interpreter fails on some such shapes; an uninitialized block variable may observe another variable's value after
+inlining (local slot reuse; the interpreter gives the original meaning). The campaigns skip trees whose compiled and
+interpreted meanings differ (about 1 % of generated trees).
+
+**Performance.** R4 harness (50 scenarios, one process per variant and scenario, 3 interleaved rounds, A/A control) on
+master, an A/A copy and #676: #676 is within -4.1 % to +2.7 % of master on every scenario (A/A -3.9 % to +4.1 %), with
+identical transform and structural visits and allocations. Master against the published R4 measurements (same code, R4
+checkpoint D): median drift about +2 %, largest lambda +8.5 %, p3factor12 +7.9 %, newarray +6.5 %, with identical visits and
+bytes, so an environmental drift between sessions, not a code change. No unexplained regression.
+
+**Not demonstrated.** Generated trees use `double` arithmetic over two parameters; other numeric types, lifted nullable
+operators, custom operator methods, loops, `RuntimeVariables` and by-reference lambda parameters are covered only by the
+R0–R4 deterministic tests. Equality, hash and key properties were sampled on pools of clones and near-variants, not proved.
+The parsers (ETC-16, ETC-18) are out of scope.
+
+**Recommendation.** #676 is merged (`9d91cf3c`), so the ETC engine rounds R0–R4 can be closed once this audit is merged: no critical or major ETC defect remains
+confirmed, the documented limits match the observed behavior, and resource refusals stay controlled. AUD-03 belongs to the
+S5 simplifier roadmap (rule termination) and ETC-16/ETC-18 to the `Utils.Parser` stage, so this roadmap stays open for them
+only.
+
 ## 10. Round history
 
 | Round | Date | Result |
@@ -1458,9 +1536,10 @@ No scenario runs user code.
 | R1a-Security | 2026-10-28 | Resource limits, per-thread budget session, iterative validator, stack guards on every engine walk, nested-call and re-entrancy policy, Stack translation; ETC-19 fixed and ETC-17 bounded for the ETC engine; rule invocation no longer re-wraps resource failures (stack overflow found and fixed); measured overhead documented (§9 R1a-Security result). |
 | R1b | 2026-10-29 | Member, TypeBinary, New, NewArray traversed and Default an explicit leaf (C-03); faithful unary and lambda reconstruction for every transformer (C-01, ETC-04/05 fixed); scalar substitution; ETC-10 fixed; ETC-15 resolved for the simplifier with the strict C-06 boundary (effect analysis, rule gate, canonicalization pinning, division identities); S5 scenarios reclassified with an inert carrier; performance in §9 R1b/R1c measurements. |
 | R1c | 2026-10-29 | Structural equality, hashing and canonical keys of Conditional, Invoke, TypeIs, TypeEqual, Default, New and NewArray (C-04, ETC-06/07/14 resolved for these families); structural equality kept apart from algebraic interchangeability; resource tests for every new walker. |
-| R2 | 2026-10-29 | Block, Try, Switch, Loop, Goto, Label traversed and faithfully rebuilt, RuntimeVariables and DebugInfo explicit (C-03); binder frames and label bijection in equality, hashing and canonical keys (C-04); capture-avoiding substitution with alpha-renaming, RuntimeVariables C-07, Quote untouched (C-05 pending); binder-aware inlining analysis; S4 block/catch scopes; R2 families observable for the rules (ETC-15 kept); resource tests for every new walk; ETC-01/02/03 advanced, ETC-06/07/14 extended; performance in §9 R2 measurements. Follow-up in the same PR: shared DAGs validated in linear time (pre-existing exponential validation under high node limits, §9 R1a-Security "Shared DAG validation"). |
+| R2 | 2026-10-29 | Block, Try, Switch, Loop, Goto, Label traversed and faithfully rebuilt, RuntimeVariables and DebugInfo explicit (C-03); binder frames and label bijection in equality, hashing and canonical keys (C-04); capture-avoiding substitution with alpha-renaming, RuntimeVariables C-07, Quote untouched (C-05 then pending, decided in R4); binder-aware inlining analysis; S4 block/catch scopes; R2 families observable for the rules (ETC-15 kept); resource tests for every new walk; ETC-01/02/03 advanced, ETC-06/07/14 extended; performance in §9 R2 measurements. Follow-up in the same PR: shared DAGs validated in linear time (pre-existing exponential validation under high node limits, §9 R1a-Security "Shared DAG validation"). |
 | R3 | 2026-10-30 | MemberInit (MemberAssignment, MemberMemberBinding, MemberListBinding), ListInit (ElementInit) and Index traversed and faithfully rebuilt (C-03, C-02: flattened positional layouts, exact `Add` methods, indexers, writable targets); capture-avoiding substitution and conservative inlining through them; structural equality, hashing and canonical keys (C-04); the families stay observable for the rules (ETC-15 kept); stack guards added to the two engine-internal visitors for nested member bindings (overflow found and fixed); ETC-01/02/03 advanced, ETC-06/07/14 extended; R4 (Dynamic, Extension) and C-05 open; performance in §9 R3 measurements. |
 | R4 | 2026-11-02 | Dynamic traversed, rebuilt with the same binder and delegate type, substituted, compared and hashed by binder identity, keyed (C-03, C-02, C-04); extension nodes strictly opaque (type tests only, no member read or called, identity equality and hash, no rule dispatch); C-05 resolved by the init-only `SimplifyQuotedExpressions` option (default: quotes are simplifier boundaries); C-02 completed for Lambda (declarations, alpha-renaming); ETC-01/02/03/06/07/12/14 resolved; resource tests for every new walk; performance in §9 R4 measurements. |
+| Closure audit | 2026-11-03 | Independent audit of master `7d307102` (§9 "Closure audit"): seeded generator, property and differential campaigns (14,510 differential comparisons, 13,389 substitutions, Release and Debug), extension-opacity and quote checks, refusals without leftover state, benchmarks; AUD-01 (critical: inlining through writes to value-type parameters) and AUD-02 (dynamic operations in the free-variable walk) fixed in #676; AUD-03 (pre-existing S5 rule loop on `c * (y - 1)`, controlled refusal) pinned and left to S5; closure of R0–R4 recommended; #676 merged on 2026-11-03 (`9d91cf3c`). |
 
 ## 11. Decisions requested from the reviewer
 
