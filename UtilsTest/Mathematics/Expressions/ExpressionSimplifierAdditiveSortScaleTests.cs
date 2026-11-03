@@ -55,13 +55,17 @@ public class ExpressionSimplifierAdditiveSortScaleTests
     private static readonly MethodInfo OnExitLambdaScopeMethod = typeof(ExpressionSimplifier).GetMethod(
         "OnExitLambdaScope", BindingFlags.NonPublic | BindingFlags.Instance)!;
 
-    /// <summary>Invokes the private <c>CanonicalizeAdditiveExpression(ExpressionType.Add, left, right)</c> directly on <paramref name="simplifier"/>.</summary>
+    /// <summary>
+    /// Invokes the private <c>CanonicalizeAdditiveExpression(ExpressionType.Add, left, right, type)</c> directly on
+    /// <paramref name="simplifier"/>; since ETC R4 the result type is passed by the caller (the node type) instead of being read
+    /// from an operand, and here it is the type of the ordinary additive node, that of <paramref name="left"/>.
+    /// </summary>
     /// <param name="simplifier">The simplifier instance to invoke the method on.</param>
     /// <param name="left">The additive expression's left branch.</param>
     /// <param name="right">The additive expression's right branch.</param>
     /// <returns>The canonicalized additive expression.</returns>
     private static Expression InvokeCanonicalizeAdditive(ExpressionSimplifier simplifier, Expression left, Expression right)
-        => (Expression)CanonicalizeAdditiveExpressionMethod.Invoke(simplifier, [ExpressionType.Add, left, right])!;
+        => (Expression)CanonicalizeAdditiveExpressionMethod.Invoke(simplifier, [ExpressionType.Add, left, right, left.Type])!;
 
     /// <summary>Pushes <paramref name="parameters"/> as a bound lexical scope frame, via <see cref="OnEnterLambdaScopeMethod"/>.</summary>
     /// <param name="simplifier">The simplifier instance whose ambient scope stack to push onto.</param>

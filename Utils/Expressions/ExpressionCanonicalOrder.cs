@@ -160,8 +160,11 @@ internal static class ExpressionCanonicalOrder
     /// <summary>Fixed rank for an <see cref="IndexExpression"/>'s <see cref="StructureKey"/> (ETC R3).</summary>
     private const int RankIndex = 23;
 
+    /// <summary>Fixed rank for a <see cref="DynamicExpression"/>'s <see cref="StructureKey"/> (ETC R4).</summary>
+    private const int RankDynamic = 24;
+
     /// <summary>Fixed rank for <see cref="UnsupportedKey"/>: sorts after every real supported node kind.</summary>
-    private const int RankUnsupported = 24;
+    private const int RankUnsupported = 25;
 
     /// <summary>
     /// Builds the complete structural canonical-order key for <paramref name="expression"/>. The generic,
@@ -375,9 +378,39 @@ internal static class ExpressionCanonicalOrder
                 null,
                 [Build(index.Object, ref scopes), .. BuildChildren(index.Arguments, ref scopes)],
                 index.Indexer),
+
+            // ETC R4: dynamic operations, keyed by delegate type, binder class and arguments (see BuildDynamic).
+            DynamicExpression dynamic => BuildDynamic(dynamic, ref scopes),
+
+            // An extension node (ExpressionOpacity): recognized by the failure of every type pattern above, never inspected.
             _ => UnsupportedKey.Instance,
         };
     }
+
+    /// <summary>
+    /// Builds the key of a <see cref="DynamicExpression"/> (ETC R4): the result type, the argument count, the exact delegate
+    /// type and the runtime class of the binder, then the argument keys in order.
+    /// </summary>
+    /// <param name="dynamic">The dynamic operation.</param>
+    /// <param name="scopes">The active scope-lookup state.</param>
+    /// <returns>The key.</returns>
+    /// <remarks>
+    /// Two binder instances have no portable, deterministic order: neither <see cref="object.ToString"/> nor any member of the
+    /// binder (user code) is used, nor any hash or reference order. The key therefore orders binders by their runtime
+    /// <see cref="Type"/> only, through the reflection-based <see cref="CompareType"/>; two distinct instances of the same binder
+    /// class tie, exactly like two free parameters (the caller's stable sort keeps their source order). A tie is never evidence
+    /// of equivalence: the simplifier groups terms through <see cref="ExpressionComparer.StructuralEqualsRaw(Expression?, Expression?)"/>,
+    /// which compares binders by identity, and a dynamic operation is observable for <see cref="ExpressionEffectAnalysis"/>, so
+    /// it is pinned and never grouped, cancelled or moved anyway (ETC R1b, C-06).
+    /// </remarks>
+    private static KeyNode BuildDynamic(DynamicExpression dynamic, ref ScopeState scopes)
+        => new StructureKey(
+            RankDynamic,
+            dynamic.Type,
+            [dynamic.Arguments.Count],
+            [dynamic.DelegateType, dynamic.Binder.GetType()],
+            null,
+            BuildChildren(dynamic.Arguments, ref scopes));
 
     /// <summary>
     /// Builds the keys of the bindings of a member initialization or of a <see cref="MemberMemberBinding"/> (ETC R3), in

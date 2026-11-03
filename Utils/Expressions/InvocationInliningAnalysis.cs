@@ -62,6 +62,12 @@ internal enum InvocationInliningKind
 /// accessor counts as user code, so a variable argument read after one of them keeps the invocation; an array element
 /// access writes no variable. The eligibility of the arguments is unchanged.
 /// </para>
+/// <para>
+/// ETC R4: a dynamic operation is scanned like a call (its arguments in order, then its call site, which runs user code: the
+/// binder and the rule it binds); its evaluation order is fully determined by the node, so the analysis is complete. The
+/// binder is never invoked. An extension node is never inspected: it cannot be substituted into, so it always keeps the
+/// invocation, and none of its members is read.
+/// </para>
 /// </remarks>
 internal sealed class InvocationInliningAnalysis
 {
@@ -111,6 +117,12 @@ internal sealed class InvocationInliningAnalysis
     /// <returns>The allowed inlining.</returns>
     public static InvocationInliningKind Analyze(LambdaExpression lambda, InvocationExpression invocation)
     {
+        // ETC R4: an extension body cannot be inspected (not even its virtual Type): the invocation is kept.
+        if (ExpressionOpacity.IsOpaque(lambda.Body))
+        {
+            return InvocationInliningKind.Preserve;
+        }
+
         // A body whose type differs from the invocation's (a void delegate, a covariant return) would change the
         // static type seen by the enclosing node.
         if (lambda.Body.Type != invocation.Type)
@@ -128,7 +140,8 @@ internal sealed class InvocationInliningAnalysis
         for (int i = 0; i < parameters.Count; i++)
         {
             Expression argument = arguments[i];
-            if (parameters[i].IsByRef || argument.Type != parameters[i].Type || argument is not (ConstantExpression or DefaultExpression or ParameterExpression))
+            // The class test comes first, so an extension argument is refused before its virtual Type is read (ETC R4).
+            if (argument is not (ConstantExpression or DefaultExpression or ParameterExpression) || parameters[i].IsByRef || argument.Type != parameters[i].Type)
             {
                 return InvocationInliningKind.Preserve;
             }
@@ -185,8 +198,33 @@ internal sealed class InvocationInliningAnalysis
             MemberInitExpression memberInit => Scan(memberInit.NewExpression) && ScanBindings(memberInit.Bindings),
             ListInitExpression listInit => Scan(listInit.NewExpression) && ScanElementInits(listInit.Initializers),
             IndexExpression index => ScanIndex(index),
+
+            // ETC R4: a dynamic operation evaluates its arguments in order, then runs its call site (user code).
+            DynamicExpression dynamic => ScanDynamic(dynamic),
             _ => ScanBarrier(e),
         };
+    }
+
+    /// <summary>
+    /// Scans a dynamic operation (ETC R4) like a call: the arguments in order, then the operation itself, whose call site runs
+    /// the binder's code and the bound rule (user code). An argument passed by reference to the call site that is one of the
+    /// analysed parameters is refused (the substitution would pass the argument's location instead).
+    /// </summary>
+    /// <param name="dynamic">The node.</param>
+    /// <returns><see langword="false"/> if inlining is unsafe.</returns>
+    private bool ScanDynamic(DynamicExpression dynamic)
+    {
+        // The first parameter of the delegate is the call site, which has no argument.
+        ParameterInfo[] delegateParameters = dynamic.DelegateType.GetMethod("Invoke")!.GetParameters();
+        for (int i = 0; i < dynamic.Arguments.Count; i++)
+        {
+            Expression argument = dynamic.Arguments[i];
+            if (delegateParameters[i + 1].ParameterType.IsByRef && IsOwnParameter(argument)) return false;
+            if (!Scan(argument)) return false;
+        }
+
+        effectSeen = true;
+        return true;
     }
 
     /// <summary>
@@ -637,6 +675,14 @@ internal sealed class InvocationInliningAnalysis
         {
             if (found) return node;
             ExpressionResourceBudget.ConsumeStructuralVisit();
+
+            // ETC R4: an extension node is recognized before the framework visitor calls its overridable Accept.
+            if (node is not null && ExpressionOpacity.IsOpaque(node))
+            {
+                found = true;
+                return node;
+            }
+
             return base.Visit(node);
         }
 

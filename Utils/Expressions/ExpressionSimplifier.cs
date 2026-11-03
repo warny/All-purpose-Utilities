@@ -404,6 +404,37 @@ namespace Utils.Mathematics.Expressions
         }
 
         /// <summary>
+        /// Gets whether quoted expressions (<see cref="ExpressionType.Quote"/>, the expression-tree arguments of query providers)
+        /// are simplified (ETC R4, compatibility entry C-05). Defaults to <see langword="false"/>.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// <b>Disabled (default).</b> A quote is a strict boundary: neither the quoted lambda nor any of its descendants is
+        /// rewritten, no rule (built-in, or declared by a derived simplifier on <see cref="ExpressionType.Quote"/>) runs on the
+        /// quote, and <see cref="FinalizeExpression"/> does not receive it; the very same <see cref="UnaryExpression"/> instance is
+        /// kept, wherever it appears (root, call argument, conditional branch, nested quote). Quoted code is data: it is never
+        /// analysed as an executable value. Structural comparison and hashing of quotes are unchanged.
+        /// </para>
+        /// <para>
+        /// <b>Enabled.</b> The quoted lambda is simplified like any other lambda: the node stays a quote of the same type, the
+        /// lambda keeps its delegate type, name, tail-call flag, parameters, labels and captured variables, under the same
+        /// scope model, effect rules (ETC-15) and resource limits as the rest of the tree. The quoted syntax may change, which is
+        /// the purpose of the option.
+        /// </para>
+        /// <para>
+        /// The option never changes substitution: inlining an invocation never substitutes through a quote, enabled or not.
+        /// It is set at construction (<c>new ExpressionSimplifier { SimplifyQuotedExpressions = true }</c>) and cannot change
+        /// afterwards, so every call on an instance, including nested, re-entrant and concurrent calls, applies the same policy;
+        /// use two instances for two policies. The comparer (<see cref="ExpressionComparer"/>) simplifies with the default.
+        /// Before ETC R4 every simplifier rewrote quoted lambdas.
+        /// </para>
+        /// </remarks>
+        public bool SimplifyQuotedExpressions { get; init; }
+
+        /// <summary>Quotes are boundaries unless <see cref="SimplifyQuotedExpressions"/> is set (ETC R4, C-05), for every runtime type, derived simplifiers included.</summary>
+        internal override bool TreatsQuotesAsBoundaries => !SimplifyQuotedExpressions;
+
+        /// <summary>
         /// Prepares an expression for transformation by calling <see cref="ExpressionTransformer.TransformCore(Expression)"/>
         /// Subclasses can override for custom logic, but here it simply re-applies <see cref="ExpressionTransformer.TransformCore(Expression)"/>
         /// </summary>
@@ -968,6 +999,9 @@ namespace Utils.Mathematics.Expressions
         {
             // Recursive helper: guard the execution stack (ETC R1a-Security).
             ExpressionResourceBudget.EnsureStack();
+
+            // ETC R4: the class is tested first, so an extension node is rejected before its virtual Type is read.
+            if (expression is not (ConstantExpression or ParameterExpression or BinaryExpression or UnaryExpression)) return false;
             if (expression.Type != typeof(double) && expression.Type != typeof(float)) return false;
             return expression switch
             {
@@ -2513,7 +2547,7 @@ namespace Utils.Mathematics.Expressions
                     && CanCanonicalizeCommutativeBinary(binaryExpression)
                     && CanonicalizesOperator(binaryExpression))
                 {
-                    return CanonicalizeAdditiveExpression(binaryExpression.NodeType, parameters[0], parameters[1]);
+                    return CanonicalizeAdditiveExpression(binaryExpression.NodeType, parameters[0], parameters[1], binaryExpression.Type);
                 }
 
                 if (binaryExpression.NodeType == ExpressionType.Multiply
@@ -2532,12 +2566,15 @@ namespace Utils.Mathematics.Expressions
             // base.FinalizeExpression must keep receiving the second, historically-distinct copy.
             // ETC R1b: the newly traversed families (Member, TypeBinary, New, NewArray, Default) are already rebuilt by their
             // Prepare* method too, so the exact type reuses that node as well, and so do the ETC R2 families (Block, Try,
-            // Switch, Loop, Goto, Label, RuntimeVariables, DebugInfo) and the ETC R3 families (MemberInit, ListInit, Index).
-            if (e is UnaryExpression or BinaryExpression or MethodCallExpression or ConditionalExpression
+            // Switch, Loop, Goto, Label, RuntimeVariables, DebugInfo), the ETC R3 families (MemberInit, ListInit, Index) and
+            // the ETC R4 dynamic operations. A lambda is rebuilt by PrepareLambda too: CopyExpression returned it unchanged
+            // before R4, and its children (the declarations it already holds) keep it unchanged since R4 (C-02), so the exact
+            // type returns it directly instead of checking them.
+            if (e is UnaryExpression or BinaryExpression or MethodCallExpression or ConditionalExpression or LambdaExpression
                     or MemberExpression or TypeBinaryExpression or NewExpression or NewArrayExpression or DefaultExpression
                     or BlockExpression or TryExpression or SwitchExpression or LoopExpression or GotoExpression
                     or LabelExpression or RuntimeVariablesExpression or DebugInfoExpression
-                    or MemberInitExpression or ListInitExpression or IndexExpression
+                    or MemberInitExpression or ListInitExpression or IndexExpression or DynamicExpression
                 && GetType() == typeof(ExpressionSimplifier))
             {
                 return e;
@@ -2553,6 +2590,11 @@ namespace Utils.Mathematics.Expressions
         /// <param name="nodeType">The additive node type that produced this operation.</param>
         /// <param name="left">Left expression branch.</param>
         /// <param name="right">Right expression branch.</param>
+        /// <param name="type">
+        /// The result type of the ordinary additive node (the type of both operands). Passed by the caller rather than read from
+        /// an operand, which may be an opaque extension node whose virtual <see cref="Expression.Type"/> the engine never reads
+        /// (ETC R4).
+        /// </param>
         /// <returns>A deterministic additive expression tree preserving semantics.</returns>
         /// <remarks>
         /// <para>
@@ -2576,7 +2618,7 @@ namespace Utils.Mathematics.Expressions
         /// on a 12-term chain: 59,049 user <see cref="object.Equals(object?)"/> calls instead of 3).
         /// </para>
         /// </remarks>
-        private Expression CanonicalizeAdditiveExpression(ExpressionType nodeType, Expression left, Expression right)
+        private Expression CanonicalizeAdditiveExpression(ExpressionType nodeType, Expression left, Expression right, Type type)
         {
             var terms = new List<(Expression Term, bool IsNegative)>();
             CollectAdditiveTerms(terms, left, false);
@@ -2585,13 +2627,13 @@ namespace Utils.Mathematics.Expressions
             // ETC R1b (C-06): a term whose evaluation is observable is never grouped, cancelled or moved past another one.
             List<(Expression Term, bool IsNegative)>? pinned = SplitPinnedTerms(terms, static term => term.Term);
             terms.RemoveAll(static term => IsOrdinaryZeroConstant(term.Term));
-            AggregateAdditiveConstants(terms, left.Type);
+            AggregateAdditiveConstants(terms, type);
 
             if (terms.Count == 0)
             {
                 return pinned is null
-                    ? Expression.Constant(Convert.ChangeType(0, left.Type), left.Type)
-                    : BuildPinnedAdditiveChain([], pinned, left.Type);
+                    ? Expression.Constant(Convert.ChangeType(0, type), type)
+                    : BuildPinnedAdditiveChain([], pinned, type);
             }
 
             ParameterExpression[][] scopes = CaptureLexicalScopeSnapshot();
@@ -2643,18 +2685,18 @@ namespace Utils.Mathematics.Expressions
                 CollectUncancelledTerms(termGroup, signedTerms);
                 if (signedTerms.Count > 0)
                 {
-                    rebuiltTerms.Add(BuildAdditiveExpression(signedTerms, left.Type));
+                    rebuiltTerms.Add(BuildAdditiveExpression(signedTerms, type));
                 }
             }
 
             if (pinned is not null)
             {
-                return BuildPinnedAdditiveChain(rebuiltTerms, pinned, left.Type);
+                return BuildPinnedAdditiveChain(rebuiltTerms, pinned, type);
             }
 
             if (rebuiltTerms.Count == 0)
             {
-                return Expression.Constant(Convert.ChangeType(0, left.Type), left.Type);
+                return Expression.Constant(Convert.ChangeType(0, type), type);
             }
 
             return BuildRightAssociative(rebuiltTerms, Expression.Add);

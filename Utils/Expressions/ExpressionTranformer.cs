@@ -120,7 +120,17 @@ public abstract class ExpressionTransformer
             ParameterType = parameterType;
             Signature = signature;
             UncachedSignatureParameter = uncachedSignatureParameter;
+            ExcludesOpaqueNodes = parameterType != typeof(Expression)
+                && parameterType.Assembly == typeof(Expression).Assembly
+                && typeof(Expression).IsAssignableFrom(parameterType);
         }
+
+        /// <summary>
+        /// Whether this parameter's type is a framework node class (<see cref="ConstantExpression"/>,
+        /// <see cref="BinaryExpression"/>, …): an argument assignable to it is never an extension node (ETC R4), so the opacity
+        /// test of <see cref="CheckParameter"/> can be skipped on the hot rule-matching path. Computed once.
+        /// </summary>
+        public bool ExcludesOpaqueNodes { get; }
     }
 
     /// <summary>
@@ -724,10 +734,24 @@ public abstract class ExpressionTransformer
         /// </summary>
         public bool IsOpaque => ReferenceEquals(expressionParameters, OpaqueChildren);
 
+        /// <summary>
+        /// Private sentinel stored in <see cref="expressionParameters"/> by <see cref="Boundary"/> (ETC R4): a node that is a
+        /// transformation boundary for this transformer and is returned as is, without rules or finalization.
+        /// </summary>
+        private static readonly Expression[] BoundaryChildren = new Expression[0];
+
+        /// <summary>Gets whether <see cref="Expression"/> is a transformation boundary (a quoted expression of a simplifier that does not simplify quotes).</summary>
+        public bool IsBoundary => ReferenceEquals(expressionParameters, BoundaryChildren);
+
         /// <summary>Creates the context of a node whose children are deliberately not prepared (see <see cref="IsOpaque"/>).</summary>
         /// <param name="expression">The original node, returned unchanged.</param>
         /// <returns>An opaque context exposing no sub-expression.</returns>
         public static TransformContext Opaque(Expression expression) => new(expression, OpaqueChildren);
+
+        /// <summary>Creates the context of a transformation boundary (see <see cref="IsBoundary"/>).</summary>
+        /// <param name="expression">The original node, returned unchanged.</param>
+        /// <returns>A boundary context.</returns>
+        public static TransformContext Boundary(Expression expression) => new(expression, BoundaryChildren);
 
         /// <summary>
         /// Initializes a new <see cref="TransformContext"/> with an already-prepared expression and its
@@ -939,7 +963,16 @@ public abstract class ExpressionTransformer
     private Expression TransformPrepared(TransformContext context)
     {
         ExpressionResourceBudget.ConsumeTransformVisit();
-        if (TryTransform(context, out Expression? result))
+
+        // ETC R4 (C-05): a boundary (a quote the simplifier must not rewrite) is returned as is: no rule, not even a subclass
+        // rule declared on ExpressionType.Quote, and no FinalizeExpression, so no override calling base.FinalizeExpression can
+        // rebuild it either.
+        if (context.IsBoundary) return context.Expression;
+
+        // ETC R4: an extension node (the only opaque context) never reaches rule dispatch, which reads the node's virtual
+        // NodeType to select candidates and match signatures: no rule, not even one declared on ExpressionType.Extension, runs
+        // on it. FinalizeExpression still receives it, with an empty child list, as before.
+        if (!context.IsOpaque && TryTransform(context, out Expression? result))
         {
             // Preserves the pre-refactor behavior where a matching rule returning null (allowed for the
             // single-parameter and Expression[]-shaped overloads, see TryInvokeTransformMethod) made
@@ -979,8 +1012,13 @@ public abstract class ExpressionTransformer
     /// <see cref="IndexExpression"/> are traversed too, with their bindings and initializers (<see cref="MemberAssignment"/>,
     /// <see cref="MemberMemberBinding"/>, <see cref="MemberListBinding"/>, <see cref="ElementInit"/>). Their positional child
     /// layout flattens the bindings and initializers in declaration order (see <see cref="PrepareMemberInit"/>,
-    /// <see cref="PrepareListInit"/> and <see cref="PrepareIndex"/>). Only <see cref="DynamicExpression"/> and extension nodes
-    /// still reach <see cref="PrepareDefault"/>.
+    /// <see cref="PrepareListInit"/> and <see cref="PrepareIndex"/>).
+    /// </para>
+    /// <para>
+    /// ETC R4 (C-03 extended): <see cref="DynamicExpression"/> is traversed too (<see cref="PrepareDynamic"/>: its arguments, in
+    /// order; the binder and the delegate type are metadata). Only nodes of a class outside the framework expression object
+    /// model (extension nodes, see <see cref="ExpressionOpacity"/>) still reach <see cref="PrepareDefault"/>; every case is a
+    /// type pattern, so such a node is recognized without reading any of its members.
     /// </para>
     /// </remarks>
     private TransformContext PrepareTransform(Expression e) => e switch
@@ -1009,6 +1047,7 @@ public abstract class ExpressionTransformer
         MemberInitExpression memberInit => PrepareMemberInit(memberInit),
         ListInitExpression listInit => PrepareListInit(listInit),
         IndexExpression index => PrepareIndex(index),
+        DynamicExpression dynamic => PrepareDynamic(dynamic),
         _ => PrepareDefault(e),
     };
 
@@ -1045,6 +1084,13 @@ public abstract class ExpressionTransformer
         if (ue.Operand is null)
         {
             return new TransformContext(ue);
+        }
+
+        // ETC R4 (C-05): a quote is a strict boundary when this transformer says so (the simplifier by default): its quoted
+        // lambda is not prepared, and the node is neither matched by rules nor finalized (see TransformPrepared).
+        if (ue.NodeType == ExpressionType.Quote && TreatsQuotesAsBoundaries)
+        {
+            return TransformContext.Boundary(ue);
         }
 
         Expression operand = PrepareExpression(ue.Operand);
@@ -1194,7 +1240,11 @@ public abstract class ExpressionTransformer
     /// then rebuilding the lambda.
     /// </summary>
     /// <param name="le">The lambda expression to prepare.</param>
-    /// <returns>The resulting <see cref="TransformContext"/>.</returns>
+    /// <returns>
+    /// The resulting <see cref="TransformContext"/>. Its positional children (passed to the rules, to
+    /// <see cref="FinalizeExpression"/> and accepted by <see cref="CopyExpression"/>, ETC R4) are the prepared parameter
+    /// declarations, in order; the body is never a child: it is transformed here and already in the rebuilt lambda.
+    /// </returns>
     private TransformContext PrepareLambda(LambdaExpression le)
     {
         // Parameters must all be prepared, in order, before TransformCore(le.Body) runs below (a subclass may rely on
@@ -1317,6 +1367,21 @@ public abstract class ExpressionTransformer
     /// <param name="node">The prepared node.</param>
     /// <returns><see langword="true"/> if the rules may run.</returns>
     internal virtual bool AllowsRules(Expression node) => true;
+
+    /// <summary>
+    /// Gets whether a quoted expression (<see cref="ExpressionType.Quote"/>) is a strict transformation boundary for this
+    /// transformer (ETC R4, compatibility entry C-05): when <see langword="true"/>, the quote is returned as is, its quoted
+    /// lambda is never prepared, no rule runs on it and <see cref="FinalizeExpression"/> does not receive it. The base
+    /// implementation returns <see langword="false"/>, so a generic transformer keeps traversing quotes as it always did.
+    /// </summary>
+    /// <remarks>
+    /// <c>internal virtual</c> like the other reconstruction hooks (H-7): not an extensibility point for third-party
+    /// subclasses. <see cref="Utils.Mathematics.Expressions.ExpressionSimplifier"/> overrides it from its init-only
+    /// <see cref="Utils.Mathematics.Expressions.ExpressionSimplifier.SimplifyQuotedExpressions"/> option, so the policy of an
+    /// instance is fixed at construction and identical for every call, nested or concurrent. This policy only concerns the
+    /// transformation: substitution (<see cref="ReplaceArguments"/>) never enters a quote, whatever it says.
+    /// </remarks>
+    internal virtual bool TreatsQuotesAsBoundaries => false;
 
     /// <summary>
     /// Rebuilds a <see cref="LambdaExpression"/> from its (already prepared) <paramref name="body"/> and
@@ -1773,9 +1838,27 @@ public abstract class ExpressionTransformer
     }
 
     /// <summary>
-    /// Prepares any expression node not handled by a more specific <c>Prepare*</c> method (since ETC R3, only
-    /// <see cref="DynamicExpression"/> and extension nodes): no sub-expression preparation is attempted, and the node is
-    /// passed through unchanged.
+    /// Prepares a <see cref="DynamicExpression"/> (ETC R4): its arguments are prepared in order and the node is rebuilt
+    /// through <see cref="DynamicExpression.Update"/>, which keeps the very same <see cref="DynamicExpression.Binder"/> instance
+    /// and the exact <see cref="DynamicExpression.DelegateType"/> (hence the result type), and returns the node itself when no
+    /// argument changed. The binder is metadata, never a child: it is never invoked, no call site is created and no dynamic
+    /// binding is performed.
+    /// </summary>
+    /// <param name="node">The dynamic operation to prepare.</param>
+    /// <returns>
+    /// The resulting <see cref="TransformContext"/>. Its children are the arguments, in order (the call site, first parameter of
+    /// the delegate type, is not an expression and has no position).
+    /// </returns>
+    private TransformContext PrepareDynamic(DynamicExpression node)
+    {
+        Expression[] arguments = PrepareChildren(node.Arguments);
+        return new TransformContext(RebuildDynamicExpression(node, arguments), arguments);
+    }
+
+    /// <summary>
+    /// Prepares any expression node not handled by a more specific <c>Prepare*</c> method (since ETC R4, only a node of a class
+    /// outside the framework expression object model: an extension node, see <see cref="ExpressionOpacity"/>): no
+    /// sub-expression preparation is attempted, none of its members is read, and the node is passed through unchanged.
     /// </summary>
     /// <param name="e">The expression to prepare.</param>
     /// <returns>An opaque <see cref="TransformContext"/> (see <see cref="TransformContext.IsOpaque"/>).</returns>
@@ -2210,6 +2293,9 @@ public abstract class ExpressionTransformer
     /// list initializations and index accesses are entered too: they declare nothing, and they are rebuilt with their
     /// constructor, members, binding kinds, exact <c>Add</c> methods and indexer (an index access that is an assignment target
     /// stays one; a replacement that cannot be assigned to is rejected by the framework factory of the enclosing assignment).
+    /// Since ETC R4, the arguments of a dynamic operation are entered too (it declares nothing; the binder is metadata, kept
+    /// and never invoked). Entering a dynamic operation only substitutes its arguments: it never makes an invocation containing
+    /// one eligible for inlining (that is <see cref="InvocationInliningAnalysis"/>'s decision).
     /// </para>
     /// <para>
     /// Every node walked counts one structural visit, stack check included (ETC R1a-Security); so do the catch handlers and
@@ -2217,7 +2303,7 @@ public abstract class ExpressionTransformer
     /// <paramref name="oldParameters"/>/<paramref name="newParameters"/> is unchanged for the families walked before R2.
     /// </para>
     /// </remarks>
-    private Expression Substitute(Expression e, IReadOnlyList<ParameterExpression>? oldParameters, IReadOnlyList<Expression>? newParameters, SubstitutionScope? scope)
+    private static Expression Substitute(Expression e, IReadOnlyList<ParameterExpression>? oldParameters, IReadOnlyList<Expression>? newParameters, SubstitutionScope? scope)
     {
         ExpressionResourceBudget.ConsumeStructuralVisit();
         switch (e)
@@ -2366,6 +2452,10 @@ public abstract class ExpressionTransformer
                     Expression? receiver = index.Object is null ? null : Substitute(index.Object, oldParameters, newParameters, scope);
                     return RebuildIndexExpression(index, receiver, SubstituteEach(index.Arguments, oldParameters, newParameters, scope));
                 }
+
+            // ETC R4: the arguments of a dynamic operation, in order. It declares nothing; the binder is metadata.
+            case DynamicExpression dynamic:
+                return RebuildDynamicExpression(dynamic, SubstituteEach(dynamic.Arguments, oldParameters, newParameters, scope));
         }
         return e;
     }
@@ -2381,7 +2471,7 @@ public abstract class ExpressionTransformer
     /// <param name="scope">See <see cref="Substitute"/>.</param>
     /// <returns>The bindings, each one the original instance when nothing in it changed.</returns>
     /// <exception cref="NotSupportedException">A binding is not one of the three framework binding classes.</exception>
-    private MemberBinding[] SubstituteBindings(ReadOnlyCollection<MemberBinding> bindings, IReadOnlyList<ParameterExpression>? oldParameters, IReadOnlyList<Expression>? newParameters, SubstitutionScope? scope)
+    private static MemberBinding[] SubstituteBindings(ReadOnlyCollection<MemberBinding> bindings, IReadOnlyList<ParameterExpression>? oldParameters, IReadOnlyList<Expression>? newParameters, SubstitutionScope? scope)
     {
         var replaced = new MemberBinding[bindings.Count];
         for (int i = 0; i < replaced.Length; i++)
@@ -2408,7 +2498,7 @@ public abstract class ExpressionTransformer
     /// <param name="newParameters">See <see cref="ReplaceArgumentsCore"/>.</param>
     /// <param name="scope">See <see cref="Substitute"/>.</param>
     /// <returns>The initializers, each one the original instance when no argument changed.</returns>
-    private ElementInit[] SubstituteElementInits(ReadOnlyCollection<ElementInit> initializers, IReadOnlyList<ParameterExpression>? oldParameters, IReadOnlyList<Expression>? newParameters, SubstitutionScope? scope)
+    private static ElementInit[] SubstituteElementInits(ReadOnlyCollection<ElementInit> initializers, IReadOnlyList<ParameterExpression>? oldParameters, IReadOnlyList<Expression>? newParameters, SubstitutionScope? scope)
     {
         var replaced = new ElementInit[initializers.Count];
         for (int i = 0; i < replaced.Length; i++)
@@ -2427,7 +2517,7 @@ public abstract class ExpressionTransformer
     /// <param name="newParameters">See <see cref="ReplaceArgumentsCore"/>.</param>
     /// <param name="scope">See <see cref="Substitute"/>.</param>
     /// <returns>The substituted children.</returns>
-    private Expression[] SubstituteEach(IReadOnlyList<Expression> children, IReadOnlyList<ParameterExpression>? oldParameters, IReadOnlyList<Expression>? newParameters, SubstitutionScope? scope)
+    private static Expression[] SubstituteEach(IReadOnlyList<Expression> children, IReadOnlyList<ParameterExpression>? oldParameters, IReadOnlyList<Expression>? newParameters, SubstitutionScope? scope)
     {
         var replaced = new Expression[children.Count];
         for (int i = 0; i < replaced.Length; i++)
@@ -2444,7 +2534,7 @@ public abstract class ExpressionTransformer
     /// <param name="newParameters">See <see cref="ReplaceArgumentsCore"/>.</param>
     /// <param name="scope">See <see cref="Substitute"/>.</param>
     /// <returns>The lambda itself when nothing changed; otherwise a lambda with the same delegate type, name and tail-call flag.</returns>
-    private Expression SubstituteLambda(LambdaExpression lambda, IReadOnlyList<ParameterExpression>? oldParameters, IReadOnlyList<Expression>? newParameters, SubstitutionScope? scope)
+    private static Expression SubstituteLambda(LambdaExpression lambda, IReadOnlyList<ParameterExpression>? oldParameters, IReadOnlyList<Expression>? newParameters, SubstitutionScope? scope)
     {
         scope ??= new SubstitutionScope();
         int mark = scope.Mark;
@@ -2468,7 +2558,7 @@ public abstract class ExpressionTransformer
     /// <param name="newParameters">See <see cref="ReplaceArgumentsCore"/>.</param>
     /// <param name="scope">See <see cref="Substitute"/>.</param>
     /// <returns>The block itself when nothing changed; otherwise a block with the same result type.</returns>
-    private Expression SubstituteBlock(BlockExpression block, IReadOnlyList<ParameterExpression>? oldParameters, IReadOnlyList<Expression>? newParameters, SubstitutionScope? scope)
+    private static Expression SubstituteBlock(BlockExpression block, IReadOnlyList<ParameterExpression>? oldParameters, IReadOnlyList<Expression>? newParameters, SubstitutionScope? scope)
     {
         scope ??= new SubstitutionScope();
         int mark = scope.Mark;
@@ -2493,7 +2583,7 @@ public abstract class ExpressionTransformer
     /// <param name="newParameters">See <see cref="ReplaceArgumentsCore"/>.</param>
     /// <param name="scope">See <see cref="Substitute"/>.</param>
     /// <returns>The try expression itself when nothing changed; otherwise a rebuilt one with the same type.</returns>
-    private Expression SubstituteTry(TryExpression node, IReadOnlyList<ParameterExpression>? oldParameters, IReadOnlyList<Expression>? newParameters, SubstitutionScope? scope)
+    private static Expression SubstituteTry(TryExpression node, IReadOnlyList<ParameterExpression>? oldParameters, IReadOnlyList<Expression>? newParameters, SubstitutionScope? scope)
     {
         Expression body = Substitute(node.Body, oldParameters, newParameters, scope);
         var handlers = new CatchBlock[node.Handlers.Count];
@@ -2513,7 +2603,7 @@ public abstract class ExpressionTransformer
     /// <param name="newParameters">See <see cref="ReplaceArgumentsCore"/>.</param>
     /// <param name="scope">See <see cref="Substitute"/>; created when the handler declares a variable and none exists yet.</param>
     /// <returns>The handler itself when nothing changed; otherwise a handler with the same test type.</returns>
-    private CatchBlock SubstituteCatchBlock(CatchBlock handler, IReadOnlyList<ParameterExpression>? oldParameters, IReadOnlyList<Expression>? newParameters, ref SubstitutionScope? scope)
+    private static CatchBlock SubstituteCatchBlock(CatchBlock handler, IReadOnlyList<ParameterExpression>? oldParameters, IReadOnlyList<Expression>? newParameters, ref SubstitutionScope? scope)
     {
         ExpressionResourceBudget.ConsumeStructuralVisit();
         if (handler.Variable is null)
@@ -2543,7 +2633,7 @@ public abstract class ExpressionTransformer
     /// <param name="newParameters">See <see cref="ReplaceArgumentsCore"/>.</param>
     /// <param name="scope">See <see cref="Substitute"/>.</param>
     /// <returns>The switch itself when nothing changed; otherwise a switch with the same type and comparison method.</returns>
-    private Expression SubstituteSwitch(SwitchExpression node, IReadOnlyList<ParameterExpression>? oldParameters, IReadOnlyList<Expression>? newParameters, SubstitutionScope? scope)
+    private static Expression SubstituteSwitch(SwitchExpression node, IReadOnlyList<ParameterExpression>? oldParameters, IReadOnlyList<Expression>? newParameters, SubstitutionScope? scope)
     {
         Expression switchValue = Substitute(node.SwitchValue, oldParameters, newParameters, scope);
         var cases = new SwitchCase[node.Cases.Count];
@@ -2568,7 +2658,7 @@ public abstract class ExpressionTransformer
     /// <param name="scope">See <see cref="Substitute"/>.</param>
     /// <returns>The node itself when no variable changed; otherwise a node over the replacing parameters.</returns>
     /// <exception cref="NotSupportedException">A variable would be replaced by an expression that is not a <see cref="ParameterExpression"/>.</exception>
-    private Expression SubstituteRuntimeVariables(RuntimeVariablesExpression node, IReadOnlyList<ParameterExpression>? oldParameters, IReadOnlyList<Expression>? newParameters, SubstitutionScope? scope)
+    private static Expression SubstituteRuntimeVariables(RuntimeVariablesExpression node, IReadOnlyList<ParameterExpression>? oldParameters, IReadOnlyList<Expression>? newParameters, SubstitutionScope? scope)
     {
         Expression[] replaced = SubstituteEach(node.Variables, oldParameters, newParameters, scope);
         for (int i = 0; i < replaced.Length; i++)
@@ -2576,7 +2666,7 @@ public abstract class ExpressionTransformer
             if (replaced[i] is not ParameterExpression)
             {
                 throw new NotSupportedException(
-                    $"The runtime variable '{node.Variables[i].Name}' can only be replaced by another ParameterExpression, not by a '{replaced[i].NodeType}' expression (C-07).");
+                    $"The runtime variable '{node.Variables[i].Name}' can only be replaced by another ParameterExpression, not by a '{ExpressionOpacity.Describe(replaced[i])}' expression (C-07).");
             }
         }
 
@@ -2755,6 +2845,14 @@ public abstract class ExpressionTransformer
         {
             if (_found) return node;
             ExpressionResourceBudget.ConsumeStructuralVisit();
+
+            // ETC R4: an extension node is recognized before the framework visitor calls its overridable Accept.
+            if (node is not null && ExpressionOpacity.IsOpaque(node))
+            {
+                _opaque = true;
+                return node;
+            }
+
             return base.Visit(node);
         }
 
@@ -3005,6 +3103,15 @@ public abstract class ExpressionTransformer
     /// dropped, an <c>Add</c> method never replaced, and a result whose type differs from <paramref name="e"/>'s is rejected
     /// with <see cref="ArgumentException"/>. These families return the node itself when no child changed.
     /// </para>
+    /// <para>
+    /// ETC R4: <c>Dynamic</c> follows the same arity contract with the layout of <see cref="PrepareDynamic"/> (the arguments, in
+    /// order): the binder instance and the exact delegate type are taken from <paramref name="e"/>, never replaced or inferred,
+    /// and the node itself is returned when no argument changed. <c>Lambda</c> completes C-02 with the layout of
+    /// <see cref="PrepareLambda"/>: its parameter declarations, in order (never the body); the same declarations keep the node,
+    /// other parameters of the same types and by-reference flags alpha-rename it, and anything else is refused (see
+    /// <see cref="CopyLambdaExpression"/>). An extension node keeps an empty list and refuses any other one, without reading any
+    /// of its members.
+    /// </para>
     /// </remarks>
     /// <param name="e">The original expression to copy.</param>
     /// <param name="parameters">The sub-expressions to insert into the copied expression.</param>
@@ -3029,6 +3136,24 @@ public abstract class ExpressionTransformer
             return CopyUnaryExpression(unaryExpr, parameters[0]);
         }
 
+        // Constants (recreated by every simplifier finalization) and parameters are the hottest families here: they take
+        // their historical branch without the opacity test below.
+        if (e is ConstantExpression constant)
+        {
+            return Expression.Constant(constant.Value, constant.Type);
+        }
+
+        if (e is ParameterExpression)
+        {
+            return e;
+        }
+
+        // ETC R4: an extension node is recognized by type tests before its virtual NodeType is read.
+        if (ExpressionOpacity.IsOpaque(e))
+        {
+            return CopyOpaqueExpression(e, parameters);
+        }
+
         return e.NodeType switch
         {
             ExpressionType.Add => Expression.Add(parameters[0], parameters[1]),
@@ -3049,7 +3174,7 @@ public abstract class ExpressionTransformer
             ExpressionType.GreaterThan => Expression.GreaterThan(parameters[0], parameters[1]),
             ExpressionType.GreaterThanOrEqual => Expression.GreaterThanOrEqual(parameters[0], parameters[1]),
             ExpressionType.Invoke => Expression.Invoke(((InvocationExpression)e).Expression, parameters),
-            ExpressionType.Lambda => e,
+            ExpressionType.Lambda => CopyLambdaExpression((LambdaExpression)e, parameters),
             ExpressionType.LeftShift => Expression.LeftShift(parameters[0], parameters[1]),
             ExpressionType.LessThan => Expression.LessThan(parameters[0], parameters[1]),
             ExpressionType.LessThanOrEqual => Expression.LessThanOrEqual(parameters[0], parameters[1]),
@@ -3080,7 +3205,7 @@ public abstract class ExpressionTransformer
             ExpressionType.Block => CopyBlockExpression((BlockExpression)e, parameters),
             ExpressionType.DebugInfo => CopyLeafExpression(e, parameters),
             ExpressionType.Decrement => Expression.Decrement(parameters[0]),
-            ExpressionType.Dynamic => e,
+            ExpressionType.Dynamic => CopyDynamicExpression((DynamicExpression)e, parameters),
             ExpressionType.Default => e,
             ExpressionType.Extension => e,
             ExpressionType.Goto => CopyGotoExpression((GotoExpression)e, parameters),
@@ -3343,7 +3468,7 @@ public abstract class ExpressionTransformer
         for (int i = 0; i < children.Length; i++)
         {
             variables[i] = children[i] as ParameterExpression
-                ?? throw new ArgumentException($"A runtime variable must stay a ParameterExpression; position {i} received '{children[i]?.NodeType}'.", nameof(children));
+                ?? throw new ArgumentException($"A runtime variable must stay a ParameterExpression; position {i} received '{ExpressionOpacity.Describe(children[i])}'.", nameof(children));
             unchanged &= ReferenceEquals(variables[i], original.Variables[i]);
         }
 
@@ -3731,6 +3856,153 @@ public abstract class ExpressionTransformer
         return RebuildIndexExpression(original, receiver, arguments);
     }
 
+    /// <summary>
+    /// Rebuilds a <see cref="LambdaExpression"/> from its positional children (ETC R4, C-02 completed). The children of a lambda
+    /// are its parameter declarations, in order: exactly the list <see cref="PrepareLambda"/> passes to the rules and to
+    /// <see cref="FinalizeExpression"/>. The body is not a child (<see cref="PrepareLambda"/> transforms it separately through
+    /// <see cref="TransformCore(Expression)"/>), so it is always taken from <paramref name="original"/>.
+    /// </summary>
+    /// <param name="original">The lambda being copied (in a finalizer, the lambda already rebuilt by <see cref="PrepareLambda"/>).</param>
+    /// <param name="children">The positional children: the declarations.</param>
+    /// <returns>
+    /// <paramref name="original"/> for an empty list or when every child is the declaration it already has; otherwise the lambda
+    /// alpha-renamed to the supplied declarations: every bound occurrence of a declaration follows it (capture-avoiding, through
+    /// the substitution of <see cref="ReplaceArgumentsCore"/>), and the delegate type, name and tail-call flag are kept.
+    /// </returns>
+    /// <exception cref="ArgumentException">
+    /// The list length differs from the number of declarations; a child is not a <see cref="ParameterExpression"/>, or differs
+    /// from its declaration by type or <see cref="ParameterExpression.IsByRef"/>; two children are the same parameter; a new
+    /// declaration occurs free in the body (it would capture it); or an old declaration still occurs after renaming (it is read
+    /// inside a quoted expression or an extension node, which the substitution never enters).
+    /// </exception>
+    private static Expression CopyLambdaExpression(LambdaExpression original, Expression[] children)
+    {
+        ReadOnlyCollection<ParameterExpression> declarations = original.Parameters;
+        if (KeepsUntraversedNode(original, children, declarations.Count)) return original;
+
+        ParameterExpression[]? renamed = null;
+        for (int i = 0; i < children.Length; i++)
+        {
+            ParameterExpression declaration = declarations[i];
+            if (children[i] is not ParameterExpression parameter)
+            {
+                throw new ArgumentException(
+                    $"Position {i} of a 'Lambda' expression is a parameter declaration and must stay a ParameterExpression, not '{ExpressionOpacity.Describe(children[i])}'.",
+                    nameof(children));
+            }
+
+            if (parameter.Type != declaration.Type || parameter.IsByRef != declaration.IsByRef)
+            {
+                throw new ArgumentException(
+                    $"Position {i} of a 'Lambda' expression declares a '{declaration.Type}' parameter (by reference: {declaration.IsByRef}), not a '{parameter.Type}' one (by reference: {parameter.IsByRef}).",
+                    nameof(children));
+            }
+
+            if (!ReferenceEquals(parameter, declaration)) (renamed ??= [.. declarations])[i] = parameter;
+        }
+
+        if (renamed is null) return original;
+
+        for (int i = 0; i < renamed.Length; i++)
+        {
+            for (int j = i + 1; j < renamed.Length; j++)
+            {
+                if (ReferenceEquals(renamed[i], renamed[j]))
+                {
+                    throw new ArgumentException($"Positions {i} and {j} of a 'Lambda' expression declare the same parameter.", nameof(children));
+                }
+            }
+        }
+
+        // The walks below count structural visits: they join the running operation, or run inside an internal one.
+        return ExpressionResourceBudget.RunInternal((Original: original, Renamed: renamed), static state => RenameLambda(state.Original, state.Renamed));
+    }
+
+    /// <summary>
+    /// Alpha-renames the declarations of <paramref name="original"/> to <paramref name="renamed"/> (ETC R4): checks that no new
+    /// declaration occurs free in the body, substitutes every free occurrence of the old declarations in the body (simultaneously,
+    /// capture-avoiding), then checks that no old declaration that is not kept still occurs.
+    /// </summary>
+    /// <param name="original">The lambda.</param>
+    /// <param name="renamed">The new declarations, validated by <see cref="CopyLambdaExpression"/>.</param>
+    /// <returns>The renamed lambda, with the same delegate type, name and tail-call flag.</returns>
+    /// <exception cref="ArgumentException">The renaming would capture a free variable, or cannot reach every occurrence.</exception>
+    private static LambdaExpression RenameLambda(LambdaExpression original, ParameterExpression[] renamed)
+    {
+        ReadOnlyCollection<ParameterExpression> declarations = original.Parameters;
+        FreeVariables sourceVariables = FreeVariables.Of(original.Body);
+        foreach (ParameterExpression parameter in renamed)
+        {
+            if (IndexOfParameter(declarations, parameter) < 0 && sourceVariables.Mentions(parameter))
+            {
+                throw new ArgumentException(
+                    $"The parameter '{parameter.Name}' may occur free in the body of the 'Lambda' expression: declaring it would capture it.",
+                    nameof(renamed));
+            }
+        }
+
+        Expression body = Substitute(original.Body, declarations, renamed, null);
+        FreeVariables renamedVariables = FreeVariables.Of(body);
+        foreach (ParameterExpression declaration in declarations)
+        {
+            if (Array.IndexOf(renamed, declaration) < 0 && renamedVariables.Mentions(declaration))
+            {
+                throw new ArgumentException(
+                    $"The parameter '{declaration.Name}' cannot be renamed: it is read inside a quoted expression or an extension node, which substitution never enters.",
+                    nameof(renamed));
+            }
+        }
+
+        return Expression.Lambda(original.Type, body, original.Name, original.TailCall, renamed);
+    }
+
+    /// <summary>
+    /// The C-02 contract of an extension node (ETC R4): its children are unknown to the engine (reading them would call
+    /// <c>VisitChildren</c> or <c>Reduce</c>, user code), so an empty list keeps the node and any other list is refused, without
+    /// reading any member of the node.
+    /// </summary>
+    /// <param name="original">The extension node.</param>
+    /// <param name="children">The supplied children.</param>
+    /// <returns><paramref name="original"/>.</returns>
+    /// <exception cref="ArgumentException"><paramref name="children"/> is not empty.</exception>
+    private static Expression CopyOpaqueExpression(Expression original, Expression[] children)
+    {
+        if (children.Length == 0) return original;
+
+        throw new ArgumentException(
+            $"An {ExpressionOpacity.Describe(original)} expression has no child the engine can replace, but {children.Length} were supplied.",
+            nameof(children));
+    }
+
+    /// <summary>
+    /// Rebuilds a <see cref="DynamicExpression"/> on <paramref name="arguments"/> (ETC R4) through
+    /// <see cref="DynamicExpression.Update"/>: the same <see cref="DynamicExpression.Binder"/> instance and the exact
+    /// <see cref="DynamicExpression.DelegateType"/> are kept (the framework factory validates each argument against the
+    /// delegate's parameter types), and the node itself is returned when every argument is the instance it already holds.
+    /// The binder is never invoked and no call site is created.
+    /// </summary>
+    /// <param name="original">The dynamic operation being rebuilt.</param>
+    /// <param name="arguments">Its (prepared or substituted) arguments, one per argument of <paramref name="original"/>.</param>
+    /// <returns>The rebuilt node, or <paramref name="original"/> when no argument changed.</returns>
+    /// <exception cref="ArgumentException">An argument does not fit the delegate type (raised by the framework factory).</exception>
+    private static DynamicExpression RebuildDynamicExpression(DynamicExpression original, Expression[] arguments)
+        => original.Update(arguments);
+
+    /// <summary>
+    /// Rebuilds a <see cref="DynamicExpression"/> from its positional children (ETC R4, C-02): the arguments, in order. The
+    /// binder and the delegate type are taken from <paramref name="original"/>, never inferred from the arguments.
+    /// </summary>
+    /// <param name="original">The dynamic operation being copied.</param>
+    /// <param name="children">The positional children.</param>
+    /// <returns>The rebuilt node, or <paramref name="original"/> (see <see cref="KeepsUntraversedNode"/>; also when no child changed).</returns>
+    /// <exception cref="ArgumentException">The list length does not match, or an argument does not fit the delegate type.</exception>
+    private static Expression CopyDynamicExpression(DynamicExpression original, Expression[] children)
+    {
+        if (KeepsUntraversedNode(original, children, original.Arguments.Count)) return original;
+
+        return RebuildDynamicExpression(original, children);
+    }
+
     /// <summary>Reads the creation of an initialization from the first positional child (ETC R3).</summary>
     /// <param name="original">The initialization being copied.</param>
     /// <param name="children">The positional children, of the expected length.</param>
@@ -3739,7 +4011,7 @@ public abstract class ExpressionTransformer
     private static NewExpression CreationChild(Expression original, Expression[] children)
         => children[0] as NewExpression
             ?? throw new ArgumentException(
-                $"The first sub-expression of a '{original.NodeType}' expression must be a NewExpression, not '{children[0]?.NodeType.ToString() ?? "null"}'.",
+                $"The first sub-expression of a '{original.NodeType}' expression must be a NewExpression, not '{ExpressionOpacity.Describe(children[0])}'.",
                 nameof(children));
 
     /// <summary>Rebuilds bindings from the positional children of an initialization (ETC R3), in declaration order.</summary>
@@ -3843,9 +4115,11 @@ public abstract class ExpressionTransformer
             return false;
 
         // If the parameter has its own known-safe ExpressionSignatureAttribute, ensure it matches
-        // using the cached instance.
+        // using the cached instance. ETC R4: an extension node never satisfies a node-type constraint, so its virtual
+        // NodeType (read by Match) is never consulted. A parameter typed with a framework node class already excluded it
+        // above, so the hot rule parameters (ConstantExpression, BinaryExpression...) skip the opacity test.
         if (parameter.Signature is not null)
-            return parameter.Signature.Match(e);
+            return (parameter.ExcludesOpaqueNodes || !ExpressionOpacity.IsOpaque(e)) && parameter.Signature.Match(e);
 
         // A custom/third-party attribute type: re-fetch (and therefore re-construct) a fresh instance
         // on every check, exactly like the pre-indexing implementation always did, since such an
@@ -3855,7 +4129,7 @@ public abstract class ExpressionTransformer
             ExpressionSignatureAttribute? signature = parameter.UncachedSignatureParameter
                 .GetCustomAttributes<ExpressionSignatureAttribute>()
                 .FirstOrDefault();
-            return signature is null || signature.Match(e);
+            return signature is null || (!ExpressionOpacity.IsOpaque(e) && signature.Match(e));
         }
 
         // No signature attribute at all.
