@@ -5145,8 +5145,9 @@ bounce on a factor 1 any more.
   fixed point within four passes, the trace of `10 * (y - 1)` (no factoring by 1, no recurrence, no period, depth < 8),
   observable operands (traced call and getter: same values, same effects in the same order), and a seeded generated
   campaign (1,500 seeds plus the first 20 counterexamples recorded on master). `AUD03_RuleLoop_IsAControlledRefusal`
-  became `AUD03_RuleLoop_Terminates`. Mutation: without the guard, 6 of the 8 tests fail (the effect test passes either
-  way: the effect gate already kept those shapes away from the rules).
+  became `AUD03_RuleLoop_Terminates`. Mutation: without the guard, 7 of the 8 tests fail (the effect test passes either
+  way: the effect gate already kept those shapes away from the rules). The audit campaigns of the closure audit now
+  report 0 refused seeds.
 - The stack overflow left open by P14 and P16 on `a * x + (1 - a) * x` had the same cause (`1 - a -> (1 - a) * 1`): it
   terminates now (`P14OpenStackOverflow_HadTheSameCause`).
 - Generated campaign, 3,000 seeds (depth up to four over `x`, `y` and the constants 1, -1, 0, 0.5, 2, 3, 10, with explicit
@@ -5161,6 +5162,11 @@ bounce on a factor 1 any more.
   "idempotent" on master were so on the defective fixed point `(y - 1) * 1`. The reproducers reach a fixed point at the
   second pass; every neighbour within four passes (`10 * y - 10` is factored on the second pass only, the factored product
   being a rule result).
+
+**Measurements.** R4 harness (Release, one process per variant and scenario, 3 rotating rounds), the 23 simplifier and
+comparer scenarios, tracing branch against this fix with an A/A copy of the tracing binary: -5.0 % to +2.0 % (A/A -2.5 %
+to +2.1 %), identical transform and structural visits and allocations on every scenario (none of them has an operand
+equal to 1 in a difference). The guard costs two type tests per `SubstractionOfEqualsElements` call.
 
 **Changed outputs (documented).** `y - 1` → `(0 - 1) + y` (was `(y - 1) * 1`), `1 - y` → `1 + (0 - y)` (was
 `(1 - y) * 1`), `-1 * (y - 1)` → `-((0 - 1) + y)` (was `-((y - 1) * 1)`), and every form that held such a factor by 1
