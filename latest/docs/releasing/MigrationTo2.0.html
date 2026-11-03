@@ -226,7 +226,7 @@ length throws <code>ArgumentException</code>).</li>
 conversion lambdas, blocks, catch handlers, switches, loops, jumps and labels. A binder redeclaring a replaced parameter
 hides it; a binder declaration that a replacement would capture is renamed to a fresh parameter (same type, by-reference
 flag and name). Replacing a runtime variable by anything but another parameter throws <code>NotSupportedException</code> (C-07). A
-quoted expression is still never entered (C-05 pending).</li>
+quoted expression is still never entered (C-05, kept in R4 whatever <code>SimplifyQuotedExpressions</code>).</li>
 <li><strong>Invocation inlining.</strong> Lambda invocations whose bodies contain nested lambdas, blocks, catch handlers or switches can be
 inlined when the analysis proves it safe (same argument eligibility as before: constants, defaults and parameter reads);
 a variable argument read inside a nested closure, after an effect, or bodies with loops, jumps, labels, runtime variables
@@ -326,6 +326,19 @@ kept); a wrong length, a node that is not a parameter, another type or by-refere
 capture a free variable of the body, or one that cannot reach an occurrence inside a quote or an extension node throws
 <code>ArgumentException</code>. It used to return the lambda unchanged whatever the list.</p>
 </li>
+</ul>
+<h2 id="expression-engine-closure-audit-corrections-after-etc-r4">Expression engine: closure-audit corrections (after ETC R4)</h2>
+<ul>
+<li><strong>Invocations writing through a value-type parameter are no longer inlined (AUD-01).</strong> A parameter of a structure type is
+a copy of its argument. When the invoked lambda assigns or increments a field or an indexer element of that parameter,
+passes such a field by reference, or calls a mutating method, getter or indexer of a non-<code>readonly</code> structure on it, the
+simplifier now keeps the invocation. It used to substitute the argument, so the write reached the caller's variable (or a
+constant's temporary) and <code>Simplify</code> changed the result. Reads, <code>readonly</code> members, <code>readonly</code> structures (every primitive
+numeric type, <code>decimal</code>, <code>DateTime</code>…) and writes through a reference-type parameter are still inlined.</li>
+<li><strong>Dynamic operations no longer block lambda copies (AUD-02).</strong> The free-variable walk treated a <code>DynamicExpression</code> as an
+opaque extension node: <code>CopyExpression</code> refused to alpha-rename a lambda whose body holds a dynamic operation, and the
+substitution renamed declarations a replacement holding one did not mention. The walk now enters the arguments of a
+dynamic operation (never its binder).</li>
 </ul>
 <p><a id="omy-utils-fonts-2"></a></p>
 <h2 id="utilsfonts-hostile-font-parsing-hardening">Utils.Fonts hostile-font parsing hardening</h2>
