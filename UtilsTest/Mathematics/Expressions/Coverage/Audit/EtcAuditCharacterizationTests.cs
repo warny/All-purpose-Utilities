@@ -74,14 +74,15 @@ public class EtcAuditCharacterizationTests
     }
 
     /// <summary>
-    /// AUD-03 (open, pre-existing since the S5 factoring rules, outside the ETC families): <c>c * (y - 1)</c> and
-    /// <c>c * (1 - y)</c> with <c>c</c> other than <c>±1</c> make the multiplicative and subtractive rules rewrite each other
-    /// without end. Before ETC R1a-Security the process died of a stack overflow (observed at <c>b5c05dc3</c>); since then the
-    /// stack guard turns it into a controlled <see cref="ExpressionResourceLimitKind.Stack"/> refusal, with nothing left
-    /// behind. Neighbouring shapes are simplified. When the rule loop is fixed, this test must change.
+    /// AUD-03 (fixed in S5 P17): <c>c * (y - 1)</c>, <c>c * (1 - y)</c> and <c>(1 - y) / (1 / y)</c> made the multiplicative
+    /// and subtractive rules rewrite each other without end (a stack overflow at <c>b5c05dc3</c>, a controlled
+    /// <see cref="ExpressionResourceLimitKind.Stack"/> refusal since ETC R1a-Security): <c>SubstractionOfEqualsElements</c>
+    /// factored <c>y - 1</c> by its constant operand 1 and <c>MultiplicationOfEqualsElements</c> moved that factor out and
+    /// transformed the product again. They now terminate with their values (see
+    /// <c>ExpressionSimplifierRuleTerminationTests</c>); neighbouring shapes are still simplified.
     /// </summary>
     [TestMethod]
-    public void AUD03_RuleLoop_IsAControlledRefusal()
+    public void AUD03_RuleLoop_Terminates()
     {
         ParameterExpression y = Expression.Parameter(typeof(double), "y");
         var simplifier = new ExpressionSimplifier();
@@ -92,10 +93,14 @@ public class EtcAuditCharacterizationTests
             Expression.Multiply(C(10), Expression.Subtract(y, C(1))),
             Expression.Multiply(C(2), Expression.Subtract(y, C(1))),
             Expression.Multiply(C(10), Expression.Subtract(C(1), y)),
+            Expression.Divide(Expression.Subtract(C(1), y), Expression.Divide(C(1), y)),
         })
         {
-            var refusal = Assert.ThrowsExactly<ExpressionResourceLimitException>(() => simplifier.Simplify(Expression.Lambda<Func<double, double>>(body, y)));
-            Assert.AreEqual(ExpressionResourceLimitKind.Stack, refusal.Kind);
+            var lambda = Expression.Lambda<Func<double, double>>(body, y);
+            var simplified = (Expression<Func<double, double>>)simplifier.Simplify(lambda);
+            // Up to rounding: (1 - y) / (1 / y) and y * (1 - y) round differently.
+            Assert.AreEqual(lambda.Compile()(3), simplified.Compile()(3), 1e-12);
+            Assert.AreEqual(lambda.Compile()(-0.5), simplified.Compile()(-0.5), 1e-12);
         }
 
         foreach (Expression body in new Expression[]
@@ -110,7 +115,7 @@ public class EtcAuditCharacterizationTests
             Assert.AreEqual(lambda.Compile()(3), simplified.Compile()(3));
         }
 
-        // Nothing is left behind by the refusals: the same instance simplifies a valid tree afterwards.
+        // The same instance keeps simplifying afterwards.
         var small = Expression.Lambda<Func<double, double>>(Expression.Multiply(y, C(1)), y);
         Assert.AreSame(y, ((LambdaExpression)simplifier.Simplify(small)).Body);
     }

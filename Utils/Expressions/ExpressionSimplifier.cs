@@ -1934,6 +1934,15 @@ namespace Utils.Mathematics.Expressions
                 rightright = right;
             }
 
+            // An operand that is the constant 1 is no product (AUD-03, same guard as AdditionOfEqualsElements): its
+            // augmentation 1 * 1 matched the augmentation coefficient 1 of the other operand and "factored" the
+            // difference by 1, y - 1 -> (y - 1) * 1, which MultiplicationOfEqualsElements turned back into the
+            // enclosing product without end (c * (y - 1) -> 1 * (c * (y - 1)) -> ...).
+            if (leftAugmented && leftright is ConstantExpression leftRightConst && NumericValueEquals(leftRightConst.Value, 1))
+                return null;
+            if (rightAugmented && rightright is ConstantExpression rightRightConst && NumericValueEquals(rightRightConst.Value, 1))
+                return null;
+
             // Attempt to unify or swap factors. A single FactorEqualityProbe is reused for every comparison
             // below, including the final cancellation check (S5) - see FactorEqualityProbe's remarks for
             // why this is semantics-preserving.

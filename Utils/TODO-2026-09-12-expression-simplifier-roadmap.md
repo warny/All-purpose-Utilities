@@ -5069,6 +5069,119 @@ holds, the P15 tests pass unmodified). No public API change; `TransformCoreWithP
 **Decision: ACCEPT** experiment C in the narrowed form above. No rule change in result, no canonical-form change, no
 threshold change; user-code calls, their order, exceptions and trees are identical on every tested input.
 
+#### S5 P17 — AUD-03: factoring a difference by the constant 1 made the rules rewrite each other without end (FIXED)
+
+**Provenance.** Open finding AUD-03 of the ETC closure audit (`Utils/TODO-2026-10-27-etc-expression-tree-coverage-roadmap.md`
+§9): `Simplify(10 * (y - 1))`, `c * (1 - y)` and `(1 - y) / (1 / y)` never terminated (a stack overflow at `b5c05dc3`, a
+controlled `Stack` refusal since ETC R1a-Security). Base: `master` `aa9d9e39`, plus the engine tracing of the preceding
+branch (`etc/transform-tracing`), which produced every trace below; no rule was changed before the cause was established.
+
+**Diagnosis (traces, observed).** Each case was traced with `ExpressionTraceCollector` and analysed with
+`ExpressionTraceCycleAnalyzer`; neighbours were traced the same way.
+
+| Case | Rules responsible | Nature of the loop | Cause |
+|---|---|---|---|
+| `10 * (y - 1)` | `SubstractionOfEqualsElements`, then `MultiplicationOfEqualsElements(e, left, Multiply right)` | Strict cycle, period 2, two forms: `10 * (y - 1)` and `1 * (10 * (y - 1))` (7 nodes), re-entered 347 times before the stack refusal | `y - 1` is factored by 1 (`(y - 1) * 1`); the multiplication rule moves the factor 1 out of `10 * ((y - 1) * 1)` and transforms `1 * (10 * (y - 1))`, whose preparation rebuilds the very first product |
+| `2 * (y - 1)` | same | same (forms `2 * (y - 1)`, `1 * (2 * (y - 1))`) | same: any coefficient other than ±1 (`±1 * X` is taken first by `MultiplicationWithZeroOrOne`) |
+| `10 * (1 - y)` | same | same (forms `10 * (1 - y)`, `1 * (10 * (1 - y))`) | `1 - y -> (1 - y) * 1`, the constant on the left this time |
+| `(1 - y) / (1 / y)` | `DivisionOfDivision(e, left, Divide right)` as entry, then `SubstractionOfEqualsElements` and `MultiplicationOfEqualsElements(e, Multiply left, right)` | Strict cycle, period 2 (forms `(1 - y) * y`, `1 * ((1 - y) * y)`) | the same factoring by 1; the division only builds `((1 - y) * 1) * y`, the other overload of the multiplication rule closes the loop. Same defect, confirmed independently |
+
+Neighbours that terminated: `10 * (y + 1)` (`AdditionOfEqualsElements` declines: it has always refused an operand equal
+to 1), `10 * (y - 2)` (no factor matches: 2 is not the augmentation coefficient 1), `-1 * (y - 1)`
+(`MultiplicationWithZeroOrOne` runs before the multiplication rule and returns `-((y - 1) * 1)`, keeping the spurious
+factor). `Simplify(y - 1)` alone returned `(y - 1) * 1`. The rule balance of every trace shows the generating rule:
+`SubstractionOfEqualsElements`, 347 applications, all growing (+2 nodes each), and no other completed rule.
+
+Excerpt of the real trace of `10 * (y - 1)` (`ExpressionTraceExporter.ToText`, unchanged leaves hidden):
+
+```text
+Session 1
+  #1 Enter Lambda op 1: (y) => 10 * (y - 1)
+    #5 Enter Multiply op 3: 10 * (y - 1)
+      #9 Enter Subtract op 5: y - 1
+      #28 RuleApplied SubstractionOfEqualsElements op 5
+         Before: y - 1
+         After:  (y - 1) * 1
+      #29 Exit op 5 RuleApplied by SubstractionOfEqualsElements: (y - 1) * 1
+      #30 Enter Multiply op 12 via MultiplicationOfEqualsElements(BinaryExpression, Expression, BinaryExpression): 1 * (10 * (y - 1))
+        #34 Enter Multiply op 14: 10 * (y - 1)
+          #38 Enter Subtract op 16: y - 1
+          #57 RuleApplied SubstractionOfEqualsElements op 16
+             Before: y - 1
+             After:  (y - 1) * 1
+          #58 Exit op 16 RuleApplied by SubstractionOfEqualsElements: (y - 1) * 1
+          #59 Enter Multiply op 23 via MultiplicationOfEqualsElements(BinaryExpression, Expression, BinaryExpression): 1 * (10 * (y - 1))
+            #63 Enter Multiply op 25: 10 * (y - 1)
+            ...
+```
+
+Cycle report: recurrences `10 * (y - 1)` (#5, depth 1, re-entered at #34, depth 3) and `1 * (10 * (y - 1))` (#30 → #59),
+both confirmed by the raw structural comparison; period `StrictCycle [child Multiply | MultiplicationOfEqualsElements]`.
+
+**Mechanism.** Both factoring rules see a non-product operand `t` as `1 * t` (the augmentation). For `y - 1`, the left
+operand is `1 * y` and the right one `1 * 1`; the swap search compares the augmentation coefficient 1 of the left
+operand with the right operand 1, finds them equal, and factors the difference by 1: coefficient `y - 1`, factor `1`.
+The result `(y - 1) * 1` is a rule result, so it is not simplified again (S5 P14), and it grows the tree by two nodes.
+`MultiplicationOfEqualsElements` rewrites `c * (part * k)` as `TransformCore(k * (c * part))` for any constant `k`;
+with `k = 1` it transforms `1 * (c * (y - 1))`, whose operand `c * (y - 1)` is the original product: preparing it
+prepares `y - 1` again, which is factored by 1 again. Neither rule is wrong alone on its usual inputs; the loop needs the
+factoring by 1, which reduces nothing. `AdditionOfEqualsElements` has always declined when an augmented operand is the
+constant 1 ("Check if the single factor is truly 1", present since the first version); `SubstractionOfEqualsElements`
+never had that guard. The audit's attribution to "multiplicative/subtractive rules" was right; the traces narrowed it to
+this missing guard.
+
+**Correction (minimal).** `SubstractionOfEqualsElements` declines, like `AdditionOfEqualsElements`, when an augmented
+operand is the constant 1 (exact comparison, `NumericValueEquals`). Nothing else changes: no rule order, no other rule, no
+budget, no recursion limit, no cycle detection in the engine. Orientation: the factoring rules only factor real common
+factors, and the multiplication rule only moves a constant factor that a real factoring produced, so the two cannot
+bounce on a factor 1 any more.
+
+**Verification.**
+
+- New tests (`ExpressionSimplifierRuleTerminationTests`): the four reproducers and the two differences (forms, values),
+  the second-pass fixed point of the reproducers, 154 neighbouring shapes (coefficients -3, -1, 0.5, 1, 2, 10; constants
+  -1, 0.5, 1, 2; `c * (y - k)`, `c * (k - y)`, `c * (y + k)`, `(y - k) * c`, `(y - k) / c`, `(k - y) / (c / y)`; two
+  parameters, expanded and nested factorizations, mixed factorization and division) terminating with their values and a
+  fixed point within four passes, the trace of `10 * (y - 1)` (no factoring by 1, no recurrence, no period, depth < 8),
+  observable operands (traced call and getter: same values, same effects in the same order), and a seeded generated
+  campaign (1,500 seeds plus the first 20 counterexamples recorded on master). `AUD03_RuleLoop_IsAControlledRefusal`
+  became `AUD03_RuleLoop_Terminates`. Mutation: without the guard, 7 of the 8 tests fail (the effect test passes either
+  way: the effect gate already kept those shapes away from the rules). The audit campaigns of the closure audit now
+  report 0 refused seeds.
+- The stack overflow left open by P14 and P16 on `a * x + (1 - a) * x` had the same cause (`1 - a -> (1 - a) * 1`): it
+  terminates now (`P14OpenStackOverflow_HadTheSameCause`).
+- Generated campaign, 3,000 seeds (depth up to four over `x`, `y` and the constants 1, -1, 0, 0.5, 2, 3, 10, with explicit
+  `c * (a - b)` nodes), master against the fix: refusals 69 (all `Stack`) → 0; value divergences 0 → 0; IEEE-class
+  differences (NaN or infinity on one side, S3 contract) 8 → 8. Among the 2,931 seeds both simplify, 44 forms change:
+  every one of them lost a `* 1` residue (42 forms of master held one, none of the fix); 41 are shorter or equal, 3 longer
+  because a canonical sorted chain replaces an unsimplified `(...) * 1` block. At the second pass, 9 of the 44 coincide
+  with master's and the 35 others differ only by master's `* 1` residue.
+- Idempotence, examined rather than imposed: with the fix, `y - 1` is simplified like `y - 2` always was, to
+  `(0 - 1) + y`, the P10 representation of a negative group, which the next pass folds to `-1 + y`. A single pass is
+  therefore not idempotent on these forms (master: `y - 2 -> (0 - 2) + y -> -2 + y` too), and the 11 seeds that were
+  "idempotent" on master were so on the defective fixed point `(y - 1) * 1`. The reproducers reach a fixed point at the
+  second pass; every neighbour within four passes (`10 * y - 10` is factored on the second pass only, the factored product
+  being a rule result).
+
+**Measurements.** R4 harness (Release, one process per variant and scenario, 3 rotating rounds), the 23 simplifier and
+comparer scenarios, tracing branch against this fix with an A/A copy of the tracing binary: -5.0 % to +2.0 % (A/A -2.5 %
+to +2.1 %), identical transform and structural visits and allocations on every scenario (none of them has an operand
+equal to 1 in a difference). The guard costs two type tests per `SubstractionOfEqualsElements` call.
+
+**Changed outputs (documented).** `y - 1` → `(0 - 1) + y` (was `(y - 1) * 1`), `1 - y` → `1 + (0 - y)` (was
+`(1 - y) * 1`), `-1 * (y - 1)` → `-((0 - 1) + y)` (was `-((y - 1) * 1)`), and every form that held such a factor by 1
+(values unchanged).
+
+**Remaining limits (not changed here).**
+
+- `DivisionOfDivision(e, left, Divide right)` returns `(left * z) / y` without simplifying it, so `(1 - y) / (1 / y)`
+  ends as `(y * (1 + (0 - y))) / 1`; the next pass removes the `/ 1`.
+- The P10 representation `0 - c` of a negative constant group (and `0 - -1` for a negative constant) is folded by the next
+  pass only; a factored coefficient (`a + (1 + (0 - a))`) is a rule result simplified by the next pass only (P14).
+- `MultiplicationOfEqualsElements` still moves any constant factor of a product operand out and transforms the product
+  again; no other generator of a factor 1 is known (the generated campaign found none), but the rule itself has no
+  termination argument of its own.
+
 ## Execution-optimizer stages
 
 These remain separate from the simplifier stages above.
