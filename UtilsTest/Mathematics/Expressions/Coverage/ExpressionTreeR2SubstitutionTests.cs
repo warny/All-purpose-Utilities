@@ -12,7 +12,7 @@ namespace UtilsTest.Mathematics.Expressions.Coverage;
 /// <summary>
 /// ETC R2, checkpoint C: capture-avoiding substitution of free occurrences (roadmap §5.3) through lambdas, conversion
 /// lambdas, blocks and catch handlers, alpha-renaming of capturing declarations, the RuntimeVariables policy (C-07), the
-/// Quote boundary (C-05 pending), and the conservative extension of invocation inlining (ETC-11). Every successful
+/// Quote boundary (C-05), and the conservative extension of invocation inlining (ETC-11). Every successful
 /// substitution is checked for unbound parameters and, when executable, against the meaning of the original
 /// (<c>((x) =&gt; body)(replacement)</c>).
 /// </summary>
@@ -352,7 +352,7 @@ public class ExpressionTreeR2SubstitutionTests
     }
 
     /// <summary>
-    /// Quote (C-05 pending): substitution never enters a quoted expression, so a captured outer reference inside it is left
+    /// Quote (C-05): substitution never enters a quoted expression, so a captured outer reference inside it is left
     /// as it is (the quoted tree is not silently rewritten), while occurrences outside the quote are substituted.
     /// </summary>
     [TestMethod]

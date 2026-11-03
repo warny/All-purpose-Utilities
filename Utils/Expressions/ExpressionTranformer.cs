@@ -2289,8 +2289,8 @@ public abstract class ExpressionTransformer
     /// replacement inserted in its scope) is alpha-renamed to a fresh parameter (same type, <see cref="ParameterExpression.IsByRef"/>
     /// and name) together with the references it binds, through the binder state, never through a recursive call of the
     /// public substitution. Control-flow nodes are rebuilt with the very same label targets. A runtime variable may only be
-    /// replaced by another parameter (C-07). A quoted expression is never entered (C-05 pending). Since ETC R3, member and
-    /// list initializations and index accesses are entered too: they declare nothing, and they are rebuilt with their
+    /// replaced by another parameter (C-07). A quoted expression is never entered, whatever the simplifier's quote option
+    /// (C-05). Since ETC R3, member and list initializations and index accesses are entered too: they declare nothing, and they are rebuilt with their
     /// constructor, members, binding kinds, exact <c>Add</c> methods and indexer (an index access that is an assignment target
     /// stays one; a replacement that cannot be assigned to is rejected by the framework factory of the enclosing assignment).
     /// Since ETC R4, the arguments of a dynamic operation are entered too (it declares nothing; the binder is metadata, kept
@@ -2338,7 +2338,7 @@ public abstract class ExpressionTransformer
                 return e;
 
             case UnaryExpression { NodeType: ExpressionType.Quote }:
-                // A quoted expression is data (C-05 pending): it is never entered, so it is never silently rewritten.
+                // A quoted expression is data (C-05): it is never entered, whatever SimplifyQuotedExpressions, so it is never silently rewritten.
                 return e;
 
             case UnaryExpression ue:
@@ -2933,8 +2933,20 @@ public abstract class ExpressionTransformer
         }
 
         /// <inheritdoc/>
+        /// <remarks>
+        /// A plain <see cref="ExpressionVisitor"/> reaches a <see cref="DynamicExpression"/> here too: its <c>Accept</c>
+        /// dispatches to <c>VisitDynamic</c> only for a dynamic-aware visitor. A dynamic operation is a framework node whose
+        /// children are its arguments (the binder is metadata, never called), so they are walked like call arguments (ETC
+        /// closure audit, AUD-02); only a real extension node makes the set opaque.
+        /// </remarks>
         protected override Expression VisitExtension(Expression node)
         {
+            if (node is DynamicExpression dynamic)
+            {
+                foreach (Expression argument in dynamic.Arguments) Visit(argument);
+                return node;
+            }
+
             _opaque = true;
             return node;
         }
