@@ -183,6 +183,12 @@ public abstract class ExpressionTransformer
         public bool ReturnsExpression { get; }
 
         /// <summary>
+        /// The identity of this rule in trace events, built once with the plan (<see cref="BuildPlan"/>) so that tracing never
+        /// reads reflection metadata per transformation.
+        /// </summary>
+        public ExpressionTransformRuleInfo Info { get; set; } = null!;
+
+        /// <summary>
         /// Whether <see cref="Method"/>'s shape is one <see cref="DetermineFastInvokerEligibility"/>
         /// considers safe to fast-path — computed once, cheaply (no reflection beyond inspecting metadata
         /// already fetched for <see cref="Method"/> and <see cref="Parameters"/>), when this rule is built.
@@ -413,6 +419,14 @@ public abstract class ExpressionTransformer
             .Where(ma => ma.Attr != null)
             .Select(ma => BuildRule(ma.Method, ma.Attr!))
             .ToList();
+
+        // The trace identity of each rule (an overloaded method name is completed with the parameter types).
+        Dictionary<string, int> nameCounts = rules.GroupBy(static rule => rule.Method.Name).ToDictionary(static group => group.Key, static group => group.Count());
+        for (int i = 0; i < rules.Count; i++)
+        {
+            TransformRule rule = rules[i];
+            rule.Info = new ExpressionTransformRuleInfo(rule.Method, transformerType, rule.Signature.ExpressionType, i, nameCounts[rule.Method.Name] > 1);
+        }
 
         var rulesByNodeType = new Dictionary<ExpressionType, List<TransformRule>>();
         foreach (ExpressionType nodeType in _allExpressionTypes)
@@ -924,7 +938,63 @@ public abstract class ExpressionTransformer
 
         // Every transformation descent goes through here: this is the stack check of the whole transformation recursion.
         ExpressionResourceBudget.EnsureStack();
-        return TransformPrepared(PrepareTransform(e));
+
+        // Tracing (ExpressionTransformTracing): one field read when the operation is not traced.
+        if (session.Trace is { } trace) return TransformTraced(trace, e);
+        return TransformPrepared(PrepareTransform(e), null);
+    }
+
+    /// <summary>
+    /// <see cref="TransformCore(Expression)"/> inside a traced operation: the same preparation, rules and finalization, inside
+    /// a treatment of the trace (enter, rule and finalization events, exit or failure).
+    /// </summary>
+    /// <param name="trace">The tracing state of the operation.</param>
+    /// <param name="e">The expression to transform.</param>
+    /// <returns>The result <see cref="TransformCore(Expression)"/> returns for <paramref name="e"/>.</returns>
+    /// <remarks>
+    /// A failure is recorded by an exception filter that always declines: the exception propagates untouched, without any
+    /// handler running on the (possibly exhausted) stack of the throw site.
+    /// </remarks>
+    private Expression TransformTraced(ExpressionTraceSession trace, Expression e)
+    {
+        int frame = trace.EnterTreatment(GetType(), e);
+        try
+        {
+            TransformContext context = PrepareTransform(e);
+            Expression result = TransformPrepared(context, trace);
+            trace.ExitTreatment(frame, e, context.Expression, result, context.IsBoundary);
+            return result;
+        }
+        catch (Exception exception) when (trace.TreatmentFailed(frame, exception))
+        {
+            // Never reached: the filter only records the failure.
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// <see cref="TransformCoreWithPreparedOperands"/> inside a traced operation (see <see cref="TransformTraced"/>).
+    /// </summary>
+    /// <param name="trace">The tracing state of the operation.</param>
+    /// <param name="expression">The binary node to transform.</param>
+    /// <param name="preparedLeft">The prepared left operand.</param>
+    /// <param name="preparedRight">The prepared right operand.</param>
+    /// <returns>The result <see cref="TransformCoreWithPreparedOperands"/> returns.</returns>
+    private Expression TransformPreparedOperandsTraced(ExpressionTraceSession trace, BinaryExpression expression, Expression preparedLeft, Expression preparedRight)
+    {
+        int frame = trace.EnterTreatment(GetType(), expression);
+        try
+        {
+            var context = new TransformContext(CopyBinaryExpression(expression, preparedLeft, preparedRight));
+            Expression result = TransformPrepared(context, trace);
+            trace.ExitTreatment(frame, expression, context.Expression, result, context.IsBoundary);
+            return result;
+        }
+        catch (Exception exception) when (trace.TreatmentFailed(frame, exception))
+        {
+            // Never reached: the filter only records the failure.
+            throw;
+        }
     }
 
     /// <summary>
@@ -945,7 +1015,8 @@ public abstract class ExpressionTransformer
     {
         // A rule may re-enter this path without passing through TransformCore: check the stack here too.
         ExpressionResourceBudget.EnsureStack();
-        return TransformPrepared(new TransformContext(CopyBinaryExpression(expression, preparedLeft, preparedRight)));
+        if (ExpressionResourceBudget.ActiveTrace is { } trace) return TransformPreparedOperandsTraced(trace, expression, preparedLeft, preparedRight);
+        return TransformPrepared(new TransformContext(CopyBinaryExpression(expression, preparedLeft, preparedRight)), null);
     }
 
     /// <summary>
@@ -953,6 +1024,7 @@ public abstract class ExpressionTransformer
     /// <see cref="TransformCore"/> that follows <see cref="PrepareTransform"/>.
     /// </summary>
     /// <param name="context">The prepared node and its prepared sub-expressions.</param>
+    /// <param name="trace">The tracing state of the operation, or <see langword="null"/> when it is not traced.</param>
     /// <returns>A possibly rewritten expression.</returns>
     /// <remarks>
     /// This is the single accounting point of the transformation budget: every execution of the engine on a node,
@@ -960,7 +1032,7 @@ public abstract class ExpressionTransformer
     /// <see cref="TransformCoreWithPreparedOperands"/>, passes here exactly once, so a future prepared path cannot
     /// bypass the count.
     /// </remarks>
-    private Expression TransformPrepared(TransformContext context)
+    private Expression TransformPrepared(TransformContext context, ExpressionTraceSession? trace)
     {
         ExpressionResourceBudget.ConsumeTransformVisit();
 
@@ -972,7 +1044,7 @@ public abstract class ExpressionTransformer
         // ETC R4: an extension node (the only opaque context) never reaches rule dispatch, which reads the node's virtual
         // NodeType to select candidates and match signatures: no rule, not even one declared on ExpressionType.Extension, runs
         // on it. FinalizeExpression still receives it, with an empty child list, as before.
-        if (!context.IsOpaque && TryTransform(context, out Expression? result))
+        if (!context.IsOpaque && TryTransform(context, trace, out Expression? result))
         {
             // Preserves the pre-refactor behavior where a matching rule returning null (allowed for the
             // single-parameter and Expression[]-shaped overloads, see TryInvokeTransformMethod) made
@@ -983,9 +1055,11 @@ public abstract class ExpressionTransformer
         // An untraversed node (PrepareDefault) is finalized with an empty child list, exactly as before ETC R1a (its opaque
         // context materializes Array.Empty), so every subclass observes the same FinalizeExpression calls;
         // CopyExpression's arity contract (C-02) then keeps it.
-        return context.Expression is ConstantExpression
+        Expression finalized = context.Expression is ConstantExpression
             ? FinalizeExpression(context.Expression, Array.Empty<Expression>())
             : FinalizeExpression(context.Expression, context.MaterializeExpressionParameters());
+        trace?.Finalized(context.Expression, finalized);
+        return finalized;
     }
 
     /// <summary>
@@ -1260,6 +1334,8 @@ public abstract class ExpressionTransformer
         // finally block guarantees the scope is always closed, even if a rule or PrepareExpression
         // throws while preparing the body.
         OnEnterLambdaScope(le, expressionParameters);
+        ExpressionTraceSession? trace = ExpressionResourceBudget.ActiveDetailedTrace;
+        trace?.Scope(ExpressionTransformEventKind.ScopeEnter, ExpressionTraceScopeKind.Lambda, le);
         Expression preparedBody;
         try
         {
@@ -1268,6 +1344,7 @@ public abstract class ExpressionTransformer
         finally
         {
             OnExitLambdaScope(le, expressionParameters);
+            trace?.Scope(ExpressionTransformEventKind.ScopeExit, ExpressionTraceScopeKind.Lambda, le);
         }
 
         LambdaExpression copied = RebuildLambdaExpression(le, preparedBody, expressionParameters);
@@ -1528,6 +1605,8 @@ public abstract class ExpressionTransformer
         ParameterExpression[] variables = PrepareVariables(block.Variables);
         Expression[] statements;
         OnEnterBlockScope(block, variables);
+        ExpressionTraceSession? trace = ExpressionResourceBudget.ActiveDetailedTrace;
+        trace?.Scope(ExpressionTransformEventKind.ScopeEnter, ExpressionTraceScopeKind.Block, block);
         try
         {
             statements = PrepareChildren(block.Expressions);
@@ -1535,6 +1614,7 @@ public abstract class ExpressionTransformer
         finally
         {
             OnExitBlockScope(block, variables);
+            trace?.Scope(ExpressionTransformEventKind.ScopeExit, ExpressionTraceScopeKind.Block, block);
         }
 
         return new TransformContext(RebuildBlockExpression(block, variables, statements), statements);
@@ -1587,6 +1667,8 @@ public abstract class ExpressionTransformer
         Expression? filter;
         Expression body;
         OnEnterCatchScope(handler, variable);
+        ExpressionTraceSession? trace = ExpressionResourceBudget.ActiveDetailedTrace;
+        trace?.Scope(ExpressionTransformEventKind.ScopeEnter, ExpressionTraceScopeKind.Catch, handler.Body);
         try
         {
             filter = handler.Filter is null ? null : children[next++] = PrepareExpression(handler.Filter);
@@ -1595,6 +1677,7 @@ public abstract class ExpressionTransformer
         finally
         {
             OnExitCatchScope(handler, variable);
+            trace?.Scope(ExpressionTransformEventKind.ScopeExit, ExpressionTraceScopeKind.Catch, handler.Body);
         }
 
         return handler.Update(variable, filter, body);
@@ -1876,7 +1959,11 @@ public abstract class ExpressionTransformer
     /// the original foreach loop's semantics, including which conditions continue to the next rule vs.
     /// return.
     /// </summary>
-    private bool TryTransform(TransformContext context, out Expression? result)
+    /// <param name="context">The prepared node.</param>
+    /// <param name="trace">The tracing state of the operation, or <see langword="null"/> when it is not traced.</param>
+    /// <param name="result">The result of the rule that applied.</param>
+    /// <returns><see langword="true"/> when a rule produced the result.</returns>
+    private bool TryTransform(TransformContext context, ExpressionTraceSession? trace, out Expression? result)
     {
         Expression e = context.Expression;
         object[]? materializedInvocationArguments = null;
@@ -1901,17 +1988,30 @@ public abstract class ExpressionTransformer
             if (!rule.Parameters[0].ParameterType.IsInstanceOfType(firstArgument))
                 continue;
 
+            if (trace is { Detailed: true }) trace.RuleCandidate(rule.Info, e);
+
             // Asked once, only when a rule could actually run (ETC R1b): a refusal skips every rule of the node.
             if (!rulesAllowed)
             {
-                if (!AllowsRules(e)) break;
+                if (!AllowsRules(e))
+                {
+                    if (trace is { Detailed: true }) trace.RuleRejected(rule.Info, e, ExpressionRuleRejection.EffectGate);
+                    break;
+                }
+
                 rulesAllowed = true;
             }
 
-            if (!TryInvokeTransformMethod(rule, context, ref materializedInvocationArguments, out object? invokeResult))
+            // The trace marks the rule as running, so that a nested treatment or a failure is attributed to it.
+            trace?.BeginRule(rule.Info);
+            if (!TryInvokeTransformMethod(rule, context, ref materializedInvocationArguments, out object? invokeResult, out ExpressionRuleRejection rejection))
+            {
+                trace?.RuleDeclined(rule.Info, e, rejection);
                 continue;
+            }
 
             result = (Expression?)invokeResult;
+            trace?.RuleApplied(rule.Info, e, result);
             return true;
         }
 
@@ -1931,13 +2031,21 @@ public abstract class ExpressionTransformer
     /// <see cref="System.Reflection.TargetInvocationException"/> thrown by the invoked rule propagates
     /// unchanged.
     /// </summary>
+    /// <param name="rule">The candidate rule.</param>
+    /// <param name="context">The prepared node.</param>
+    /// <param name="materializedInvocationArguments">The reflection argument array, once materialized.</param>
+    /// <param name="result">The rule's result.</param>
+    /// <param name="rejection">Why the rule produced no result, when it returns <see langword="false"/> (for tracing).</param>
+    /// <returns><see langword="true"/> when the rule produced a result.</returns>
     private bool TryInvokeTransformMethod(
         TransformRule rule,
         TransformContext context,
         ref object[]? materializedInvocationArguments,
-        out object? result)
+        out object? result,
+        out ExpressionRuleRejection rejection)
     {
         TransformParameter[] ruleParameters = rule.Parameters;
+        rejection = ExpressionRuleRejection.ParameterMismatch;
 
         switch (rule.Kind)
         {
@@ -1975,6 +2083,7 @@ public abstract class ExpressionTransformer
                 }
 
                 result = InvokePositionalRule(rule, context, ref materializedInvocationArguments);
+                rejection = ExpressionRuleRejection.Declined;
                 return result is not null;
 
             case InvocationKind.Single:
