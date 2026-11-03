@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.Expressions;
 using Utils.Mathematics.Expressions;
@@ -141,6 +142,7 @@ public class ExpressionTreeR4ExtensionTests
         foreach (R4HostileExtension node in armed)
         {
             Assert.AreEqual(0, node.EngineCalls, $"{message}: engine calls {string.Join(",", node.Calls.Select(call => $"{call.Key}={call.Value}"))}");
+            if (node.UndecidedReads.Count > 0) Console.WriteLine($"{message}: undecided reads (optimized build) {string.Join(", ", node.UndecidedReads.Distinct())}");
         }
     }
 
@@ -390,5 +392,50 @@ public class ExpressionTreeR4ExtensionTests
             Assert.AreNotSame(y, renamed.Parameters[0], "The opaque node may mention y: the declaration is renamed.");
             Assert.IsTrue(Contains(renamed, node));
         }, "inlining");
+    }
+
+    /// <summary>Calls a framework factory only.</summary>
+    /// <param name="left">The left operand.</param>
+    /// <param name="right">The right operand.</param>
+    /// <returns>The sum.</returns>
+    private static Expression BuildsAnAddition(Expression left, Expression right) => Expression.Add(left, right);
+
+    /// <summary>Reads a node type.</summary>
+    /// <param name="node">The node.</param>
+    /// <returns>Its type.</returns>
+    private static Type ReadsTheType(Expression node) => node.Type;
+
+    /// <summary>Reads a node type through a helper.</summary>
+    /// <param name="node">The node.</param>
+    /// <returns>Its type.</returns>
+    private static Type ReadsThroughAHelper(Expression node) => ReadsTheType(node);
+
+    /// <summary>
+    /// Closure audit, attribution of a getter read to an engine method (<see cref="R4ReadAttribution"/>): the engine methods
+    /// a read was attributed to in an optimized run, <c>BuildPinnedAdditiveChain</c> and <c>BuildRightAssociative</c>, cannot
+    /// read a getter (the read came from an inlined <c>Expression.Add</c>), while an engine method reading node types, a
+    /// method reading <c>Type</c> and a method reaching such a read through a helper stay possible readers. Only an optimized
+    /// build reclassifies a read; in an unoptimized (Debug) build every read attributed to the engine stays an engine call.
+    /// </summary>
+    [TestMethod]
+    public void ReadAttribution_SeparatesGetterFreeMethodsFromReaders()
+    {
+        static MethodInfo Engine(string name)
+            => typeof(ExpressionSimplifier).GetMethod(name, BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance)
+                ?? throw new AssertFailedException($"{name} not found.");
+
+        Assert.IsFalse(R4ReadAttribution.MayReadNodeGetters(Engine("BuildPinnedAdditiveChain")));
+        Assert.IsFalse(R4ReadAttribution.MayReadNodeGetters(Engine("BuildRightAssociative")));
+        Assert.IsTrue(R4ReadAttribution.MayReadNodeGetters(Engine("CanonicalizeAdditiveExpression")));
+        Assert.IsFalse(R4ReadAttribution.MayReadNodeGetters(((Func<Expression, Expression, Expression>)BuildsAnAddition).Method));
+        Assert.IsTrue(R4ReadAttribution.MayReadNodeGetters(((Func<Expression, Type>)ReadsTheType).Method));
+        Assert.IsTrue(R4ReadAttribution.MayReadNodeGetters(((Func<Expression, Type>)ReadsThroughAHelper).Method));
+
+        bool engineOptimized = R4ReadAttribution.IsOptimized(typeof(ExpressionSimplifier).Assembly);
+        Assert.AreEqual(engineOptimized, R4ReadAttribution.IsInlinedFrameworkRead(Engine("BuildPinnedAdditiveChain")));
+        Assert.AreEqual(engineOptimized, R4ReadAttribution.MayHoldInlinedCode(Engine("CanonicalizeAdditiveExpression")));
+        Assert.IsFalse(R4ReadAttribution.IsInlinedFrameworkRead(Engine("CanonicalizeAdditiveExpression")));
+        Assert.IsFalse(R4ReadAttribution.IsInlinedFrameworkRead(((Func<Expression, Type>)ReadsTheType).Method));
+        Assert.IsFalse(R4ReadAttribution.MayHoldInlinedCode(typeof(Expression).GetMethod(nameof(Expression.Add), [typeof(Expression), typeof(Expression)])), "A framework frame is attributed as is.");
     }
 }

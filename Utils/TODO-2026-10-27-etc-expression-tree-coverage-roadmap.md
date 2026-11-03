@@ -1479,6 +1479,7 @@ no failure besides the findings below.
 | AUD-02 | Medium (false refusal) | `ExpressionTransformer.FreeVariables` | `CopyExpression((a) => dyn(a, 1) + a, a2)` throws `ArgumentException`: a plain `ExpressionVisitor` reaches a `DynamicExpression` through `VisitExtension`, so the walk treated it as an opaque extension node (also spurious renamings in substitution) | Fixed in #676 |
 | AUD-03 | High (availability), pre-existing S5, outside the ETC families | S5 multiplicative/subtractive rules | `Simplify(10 * (y - 1))`, `c * (1 - y)`, `(1 - y) / (1 / y)`: endless mutual rewriting | Open. Stack overflow at `b5c05dc3`; since R1a-Security a controlled `Stack` refusal with no state left behind (`AUD03_RuleLoop_IsAControlledRefusal`) |
 | AUD-04 | Documentation | comments, R2 tests, migration guide | "C-05 pending" after C-05 was decided in R4 | Fixed in #676 |
+| AUD-05 | Medium (flaky test oracle), pre-existing R4 test fixture, no engine defect | `R4HostileExtension` read attribution | Once the engine methods tier up (Release, dynamic PGO), a framework factory is inlined into the engine method calling it and its getter reads show that method as caller: `ExtensionUnderSupportedFamilies_IsNeverInspectedByTheEngine` and `DistinctExtensions_AreNeverInterchangeable` failed on the Ubuntu CI of this PR (`Type <- BuildPinnedAdditiveChain`, read by an inlined `Expression.Add`), and fail on master too with `DOTNET_TC_CallCountThreshold=1`, `DOTNET_TC_CallCountingDelayMs=0` (also `NodeType <- CopyBlockExpression`, read by an inlined `Expression.Block`); the fixed `StackFrame(2)` also missed the caller when `Hit` itself is inlined | Fixed in this PR: caller = first frame outside the fixture; in an optimized build, a read attributed to a method that cannot read a getter (IL closure, `R4ReadAttribution`) is a framework read, any other is recorded as undecided instead of failing; a new pull-request job, `expression-engine-debug-tests`, runs the coverage tests in Debug, where attribution is exact and every engine read fails |
 
 **Verified, not anomalies.**
 - C-02: the historical binary, unary, conditional and constant copies keep their unchecked arity (short list:
@@ -1490,6 +1491,8 @@ no failure besides the findings below.
 - Extension opacity: with extension nodes in positions where no framework getter delegates, no engine read or call
   (strict campaign); in Debug builds no `NodeType` read is attributed to the engine. Remaining `Type` reads attributed to
   engine methods are reads of a framework block or conditional whose getter tail-calls the extension's, as R4 documented.
+  The R4 hostile tests pass in Debug with the engine methods tiered up at their first call (no read attributed to the
+  engine), so the reads behind AUD-05 are framework reads.
 - Quotes: under the default policy, every quote of a simplified tree (default and derived simplifier) is an original
   instance; substitution never enters one.
 - Resource refusals leave no session, scope or budget behind (a valid operation follows on the same instance).

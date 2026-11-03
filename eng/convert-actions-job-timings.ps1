@@ -5,6 +5,7 @@ $jobs = @((Get-Content $JobsJson -Raw | ConvertFrom-Json).jobs)
 $mapping = [ordered]@{
     'Build' = @('build')
     'Unit tests' = @('unit-tests')
+    'Expression engine Debug tests' = @('expression-engine-debug-tests')
     'Functional tests' = @('functional-tests')
     'Canonical packaging' = @('canonical-packages', 'Produce canonical packages (Ubuntu)')
     'Ubuntu packaged validation' = @('packaged-validation-ubuntu')

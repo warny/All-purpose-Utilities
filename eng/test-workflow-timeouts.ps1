@@ -20,6 +20,7 @@ Assert-WorkflowTimeouts '.github/workflows/dotnetcore.yml' @{
     changes = 5
     build = 20
     'unit-tests' = 25
+    'expression-engine-debug-tests' = 20
     'functional-tests' = 25
     'canonical-packages' = 30
     'packaged-validation-ubuntu' = 25
@@ -42,12 +43,12 @@ if ($pullRequestWorkflow -notmatch "github\.event_name.*workflow_dispatch" -or $
 foreach ($forbidden in @('assemble-pr-candidate', 'assemble-validated-product-train.ps1', 'publish-product-train.ps1', 'full-product-train-')) {
     if ($pullRequestWorkflow.Contains($forbidden)) { throw "Pull-request workflow contains publication concern '$forbidden'." }
 }
-foreach ($requiredDependency in @('build', 'unit-tests', 'functional-tests', 'canonical-packages', 'packaged-validation-ubuntu', 'packaged-validation-windows-light', 'source-gates-ubuntu')) {
+foreach ($requiredDependency in @('build', 'unit-tests', 'expression-engine-debug-tests', 'functional-tests', 'canonical-packages', 'packaged-validation-ubuntu', 'packaged-validation-windows-light', 'source-gates-ubuntu')) {
     if ($pullRequestWorkflow -notmatch [regex]::Escape("needs.$requiredDependency.result")) {
         throw "Required job does not enforce '$requiredDependency'."
     }
 }
-foreach ($parallelRoot in @('build', 'unit-tests', 'functional-tests', 'canonical-packages')) {
+foreach ($parallelRoot in @('build', 'unit-tests', 'expression-engine-debug-tests', 'functional-tests', 'canonical-packages')) {
     if ($pullRequestWorkflow -notmatch "(?ms)^    $([regex]::Escape($parallelRoot)):\s+needs: changes\s") {
         throw "Pull-request job '$parallelRoot' is not released directly by changes."
     }
