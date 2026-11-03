@@ -344,6 +344,29 @@ int result = optimised.Compile()(); // 4 — computed without any arithmetic at 
 // Boolean short-circuits: expr || true → true, expr && false → expr (side effects preserved)
 ```
 
+## Tracing expression transformations
+
+The transformation engine (`ExpressionTransformer`, `ExpressionSimplifier` and derived transformers) reports its work to a
+tracer injected for a scope: every treatment, the rule applied with its input and output, finalizations, resource refusals
+and failures. Nothing is traced, allocated or rendered outside a scope.
+
+```csharp
+using System.Linq.Expressions;
+using Utils.Expressions;
+using Utils.Mathematics.Expressions;
+
+var x = Expression.Parameter(typeof(double), "x");
+var collector = new ExpressionTraceCollector(capacity: 10_000);   // bounded, keeps the last events
+using (ExpressionTransformTracing.Begin(collector))
+{
+    new ExpressionSimplifier().Simplify(Expression.Add(Expression.Multiply(x, Expression.Constant(1.0)), Expression.Constant(0.0)));
+}
+
+ExpressionTransformEvent[] events = collector.GetEvents();
+Console.WriteLine(ExpressionTraceExporter.ToText(events));        // nested treatments, rules with before/after
+Console.WriteLine(ExpressionTraceCycleAnalyzer.ToText(ExpressionTraceCycleAnalyzer.Analyze(events)));
+```
+
 ## Related packages
 - `omy.Utils.Data` — data record mappers
 - `omy.Utils.IO` — stream utilities and binary serialization

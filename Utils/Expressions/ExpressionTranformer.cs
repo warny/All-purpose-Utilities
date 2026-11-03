@@ -923,6 +923,11 @@ public abstract class ExpressionTransformer
     /// recursion and nested comparison, is bounded by the visit budgets. Every call checks the execution stack before
     /// recursing; each node processed is counted once, by <see cref="TransformPrepared"/>.
     /// </para>
+    /// <para>
+    /// Tracing: inside a tracing scope (<see cref="ExpressionTransformTracing"/>) each call is a treatment of the trace, with
+    /// the rule that requested it, the rule applied (identified by the plan's <see cref="ExpressionTransformRuleInfo"/>), the
+    /// finalization and the outcome; the transformation itself is unchanged. Outside a scope the only cost is one field read.
+    /// </para>
     /// </remarks>
     /// <exception cref="ExpressionResourceLimitException">A resource limit was exceeded, or the stack ran out.</exception>
     protected Expression TransformCore(Expression e)

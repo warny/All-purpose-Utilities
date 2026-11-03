@@ -86,3 +86,9 @@ equality, hash, canonical-key or other recursive handler must:
     override before `base.Visit` (which calls the overridable `Accept`). Compare and hash opaque nodes by identity only.
     Never invoke a `CallSiteBinder`: a dynamic operation's binder is metadata, compared by reference. `ExpressionTreeR4Fixtures`
     (`R4HostileExtension`, `R4CountingBinder`) detect any such call.
+13. **Keep tracing observational** (`ExpressionTransformTracing`). A new transformation entry that runs the rules without
+    going through `TransformCore` opens a treatment of the active trace, as `TransformCoreWithPreparedOperands` does. Never
+    call a tracer directly: report through `ExpressionTraceSession`, which delivers events only on a sufficient stack and
+    never from an exception filter or handler (`TreatmentFailed` only records). Tracing never adds a transformation, a
+    comparison, a structural walk, a rendering or an extension-node read, and costs at most a field read when no scope is
+    open (measure it with the R4 harness: master, A/A, tracing absent).

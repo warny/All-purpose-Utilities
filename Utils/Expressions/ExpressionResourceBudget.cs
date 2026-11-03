@@ -37,6 +37,13 @@ namespace Utils.Expressions;
 /// boundary is still stack-guarded); every entry point that can be reached without an enclosing operation opens one.
 /// </para>
 /// <para>
+/// <b>Tracing.</b> A tracing scope (<see cref="ExpressionTransformTracing"/>) is ambient per execution context, because a
+/// caller may open it before an <c>await</c>; it is read once, when the outermost operation opens, into
+/// <see cref="Session.Trace"/>, so the engine itself never reads the <c>AsyncLocal</c>. Without any open scope that read is a
+/// single static counter. A traced outermost operation runs through <c>RunTraced</c>, which lets the stack unwind before the
+/// pending trace events are delivered, and installs a refusing session during every tracer callback.
+/// </para>
+/// <para>
 /// <b>Exceptions.</b> Limits are checked only at visit and validation points, never in <c>finally</c> or <c>catch</c>
 /// blocks, so an exception already in flight is never replaced; <see cref="Run{TState, TResult}"/> restores the
 /// previous state in a <c>finally</c> block that does not throw. At the outermost boundary only, an
