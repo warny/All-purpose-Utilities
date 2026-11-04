@@ -5212,6 +5212,31 @@ Reproduced documented limits: `0 - c` and `/ 1` residues, free-parameter ties, `
 Proposed order: P18a (S5A-01, S5A-02), P18b (S5A-03, S5A-13), P19a (S5A-07), P20a (S5A-05, S5A-10, `0 - c`, `/ 1`), P19b
 (S5A-08), P20b (S5A-06, S5A-09, S5A-12), P19c (`g`, first-sorted-last chains), P18c (S5A-04, after a contract decision), P22 (S5A-11, domain policies).
 
+#### S5 P18 Architecture A (2026-11-04) — behavior analysis foundation
+
+Design note: [`docs/expressions/BehaviorAnalysis.md`](../docs/expressions/BehaviorAnalysis.md). Base `master` `ad237762`.
+Distinct from the correctness items P18a/P18b/P18c above, which stay open.
+
+- New public, read-only `ExpressionBehaviorAnalysis` (`Analyze`, `AnalyzeInvocation`, `AnalyzeMethod`) returning
+  `ExpressionBehavior`/`ExpressionBehaviors`: determinism, mutable-state reads, side effects, allocation, arithmetic, runtime and
+  user-code exceptions, `Unknown` (analysis uncertainty) and `ReliesOnDeclaration` (provenance).
+- New public `[Deterministic]` attribute: reproducible outcome, no ambient state, no side effect; exceptions outside the
+  promise; honored only where bound to the code that runs; never treated as proof.
+- Explicit trusted numeric functions (`Math`, `MathF`, `double`, `float`, `Half`, `decimal`, integer types, `BigInteger`) by
+  declaring type, signature and family; user implementations of the static numeric interfaces are not trusted.
+- Lambdas analyzed recursively without compilation (invoked in place, conversion lambdas), lexical scopes, captures by
+  escaping closures and quotes, by-reference parameters, hostile nodes and reflection objects.
+- Prepared but not enabled: `ExpressionTrustPolicy`, `ExpressionBehaviorPermissions` (discard/repeat/reorder) and the
+  `ToEffects` bridge to the gate, for a future `ExpressionSimplifierOptions`/`AggressiveSimplification`.
+- No change to `ExpressionSimplifier`, `ExpressionComparer` or the R1b gate; findings A-1 … A-12 on the existing gate are
+  recorded in the design note, not fixed. A-10 is the significant one: the gate reads and trusts the metadata of a user
+  `MethodInfo` subclass, so one impersonating `Math.Sin` makes `Simplify(FakeSin(x) * 0)` return `0` (a user call dropped).
+- Next (not started, needs instructions): fix A-10 in its own pull request (method, operator, field, property and
+  conversion metadata, decided without reading a non-runtime reflection object); then Architecture B (options with three
+  independent axes: trusting declarations, `AggressiveSimplification`, exception preservation by kind); then Architecture C
+  (consumption by the simplifier and the comparer; the permissions are local and must be combined with a check that no
+  side effect runs between merged or moved evaluations).
+
 ## Execution-optimizer stages
 
 These remain separate from the simplifier stages above.

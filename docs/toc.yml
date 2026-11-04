@@ -4,3 +4,5 @@
   href: parser/toc.yml
 - name: Reflection — Process and Thread Model
   href: reflection/ProcessAndThreadModel.md
+- name: Expressions — Behavior Analysis
+  href: expressions/BehaviorAnalysis.md
