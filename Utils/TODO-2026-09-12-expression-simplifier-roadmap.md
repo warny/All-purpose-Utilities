@@ -5182,6 +5182,36 @@ equal to 1 in a difference). The guard costs two type tests per `SubstractionOfE
   again; no other generator of a factor 1 is known (the generated campaign found none), but the rule itself has no
   termination argument of its own.
 
+#### S5 deep audit (2026-11-04) — findings and the P18+ plan
+
+Full report: [`TODO-2026-11-04-s5-simplifier-deep-audit.md`](TODO-2026-11-04-s5-simplifier-deep-audit.md); campaigns:
+`tests/ExpressionSimplifierAudit` (not in `Utils.sln`); characterization tests: `ExpressionSimplifierDeepAuditTests`
+(category `S5-Audit`). Baseline `master` `af2dc928` (post-P17); no production code changed.
+
+Audited: the 76 rules (inventory, dispatch order, static and dynamic interaction graphs), termination over 66,270 corpus cases,
+convergence over 70,360 cases (up to 8 passes), 26 complexity families, 8,000 differential seeds over 7 numeric types, 8,000
+observable-effect seeds, 28,000 comparer seeds (1.46 million invariant checks) and the S3 identity matrix.
+
+Held: no rewrite loop (AUD-03 fixed by P17 holds), no observable-effect violation (C-06), no comparer symmetry, transitivity,
+hash or alpha-equivalence violation. No longer reproduced: the exponential `F` family (linear since ETC R1b gates custom
+operators).
+
+Confirmed anomalies (details, reproducers and causes in the report): S5A-01 `x^y + z^2` throws `NullReferenceException`
+(`AdditionOfCos2andSin2Number`); S5A-02 `double.Round(x, 2)` throws (`TransformCall`); S5A-03 decimal `DivisionOfDivision`
+removes or adds `DivideByZeroException`/`OverflowException`, against C-06; S5A-04 folding throws for a branch that is never
+evaluated; S5A-05 rule priorities leave `(x + y) - (x + y)` uncancelled by one pass; S5A-06 repeated passes oscillate with bound
+parameters too, so `Equals(e, Simplify(e))` can be false; S5A-07 `t + 0` and `t ^ 1` re-transform a prepared operand (up to ×10
+work, different outputs); S5A-08 nested negated differences grow super-polynomially (refused by the default budget at 70
+nodes); S5A-09 equal terms grouped but not combined; S5A-10 no `-(-t)` rule; S5A-11 the plan order relies on `GetMethods` order;
+S5A-12 `x0 - x1 - ... - x15` with free parameters is refused by the default budget (×131 against the bound tree); S5A-13
+`ExpressionEffectAnalysis` treats `a / 0.5m` as unable to throw, so `(a / 0.5m) - (a / 0.5m)` loses its `OverflowException`.
+Causal experiments: the `0 - t -> -t` re-entry of `SubstractionWithZero(0, t)` is necessary to every observed cycle and carries
+most of the cost of `Lsub`, `g` and `p` (×33, ×16, ×4.8 without it).
+Reproduced documented limits: `0 - c` and `/ 1` residues, free-parameter ties, `g`, `z`/`e`/`k`/`n`, `o`/`r`.
+
+Proposed order: P18a (S5A-01, S5A-02), P18b (S5A-03, S5A-13), P19a (S5A-07), P20a (S5A-05, S5A-10, `0 - c`, `/ 1`), P19b
+(S5A-08), P20b (S5A-06, S5A-09, S5A-12), P19c (`g`, first-sorted-last chains), P18c (S5A-04, after a contract decision), P22 (S5A-11, domain policies).
+
 ## Execution-optimizer stages
 
 These remain separate from the simplifier stages above.
