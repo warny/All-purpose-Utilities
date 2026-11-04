@@ -373,6 +373,39 @@ unwind; the final resource refusal is always delivered). The cycle analyzer sear
 periodic rule sequences: it helps diagnose a non-terminating rule set, it does not prove termination. The cost of the
 untraced path is tracked by `tests/ExpressionTracingBench`.
 
+## Expression behavior analysis
+
+`ExpressionBehaviorAnalysis` classifies what evaluating an expression tree may do besides producing its value: read mutable
+state, be nondeterministic, have side effects, allocate, or throw (arithmetic, runtime or user-code exceptions). It also
+reports the parts it could not analyze and those that rely on a `[Deterministic]` declaration. It never compiles or
+evaluates the tree, and the simplifier does not consume it yet.
+
+```csharp
+using System.Linq.Expressions;
+using Utils.Expressions;
+
+var x = Expression.Parameter(typeof(double), "x");
+
+ExpressionBehavior sine = ExpressionBehaviorAnalysis.Analyze(Expression.Call(typeof(Math).GetMethod("Sin", [typeof(double)])!, x));
+// sine.Flags == ReadsMutableState (x is free); IsDeterministic, IsSideEffectFree, !MayThrow
+
+ExpressionBehavior discount = ExpressionBehaviorAnalysis.Analyze(Expression.Call(typeof(Pricing).GetMethod("Discount")!, x));
+// IsDeterministic and IsSideEffectFree, ReliesOnDeclarations, MayThrowUserCode
+
+ExpressionBehavior clock = ExpressionBehaviorAnalysis.Analyze(Expression.Property(null, typeof(DateTime), nameof(DateTime.Now)));
+// Nondeterministic | ReadsMutableState
+
+public static class Pricing
+{
+    [Deterministic]                                   // a promise of the author, never verified
+    public static double Discount(double price) => price * 0.9;
+}
+```
+
+Only an explicit list of built-in numeric functions is trusted (`Math`, `MathF`, `double`, `float`, `Half`, `decimal`, the
+integer types and `BigInteger`, each function by declaring type and signature); user implementations of the static numeric
+interfaces are not. See `docs/expressions/BehaviorAnalysis.md` for the contract and the guarantees.
+
 ## Related packages
 - `omy.Utils.Data` — data record mappers
 - `omy.Utils.IO` — stream utilities and binary serialization

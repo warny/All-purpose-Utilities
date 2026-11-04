@@ -447,7 +447,7 @@ internal static class ExpressionEffectAnalysis
     /// <summary>Whether a boxed constant divisor can never make a division throw: neither zero nor minus one (and any nonzero decimal).</summary>
     /// <param name="divisor">The boxed divisor, of the division's type.</param>
     /// <returns><see langword="true"/> for a divisor that never throws.</returns>
-    private static bool IsSafeDivisor(object divisor) => divisor switch
+    internal static bool IsSafeDivisor(object divisor) => divisor switch
     {
         decimal value => value != 0m,
         int value => value is not (0 or -1),
