@@ -3513,15 +3513,20 @@ namespace Utils.Mathematics.Expressions
         /// </summary>
         /// <param name="unary">The unary expression to classify.</param>
         /// <returns><see langword="true"/> when <paramref name="unary"/> is ordinary built-in negation; otherwise <see langword="false"/>.</returns>
+        /// <remarks>
+        /// S5 A-10: an operator method that is not a runtime reflection object is refused first, before the framework's
+        /// <see cref="UnaryExpression.IsLifted"/> reads its parameters and before any equality runs on it.
+        /// </remarks>
         internal static bool IsOrdinaryUnaryNegate(UnaryExpression unary)
         {
             ArgumentNullException.ThrowIfNull(unary);
 
+            if (unary.Method is { } method && !ExpressionReflectionProvenance.IsRuntime(method)) return false;
             return unary.NodeType == ExpressionType.Negate
                 && !unary.IsLifted
                 && !unary.IsLiftedToNull
                 && _ordinaryNegateMethods.TryGetValue(unary.Type, out MethodInfo? expectedMethod)
-                && unary.Method == expectedMethod;
+                && ExpressionReflectionProvenance.IsSameMember(unary.Method, expectedMethod);
         }
 
         /// <summary>
@@ -3537,14 +3542,20 @@ namespace Utils.Mathematics.Expressions
         /// </summary>
         /// <param name="binary">The binary expression to classify.</param>
         /// <returns><see langword="true"/> when <paramref name="binary"/> is ordinary built-in arithmetic; otherwise <see langword="false"/>.</returns>
+        /// <remarks>
+        /// S5 A-10: an operator method that is not a runtime reflection object is refused first, before the framework's
+        /// <see cref="BinaryExpression.IsLifted"/> reads its parameters and before any equality runs on it, so a custom
+        /// <see cref="MethodInfo"/> impersonating <c>decimal.op_Addition</c> is never ordinary arithmetic.
+        /// </remarks>
         internal static bool IsOrdinaryBinaryArithmetic(BinaryExpression binary)
         {
             ArgumentNullException.ThrowIfNull(binary);
 
+            if (binary.Method is { } method && !ExpressionReflectionProvenance.IsRuntime(method)) return false;
             return !binary.IsLifted
                 && !binary.IsLiftedToNull
                 && _ordinaryBinaryOperatorMethods.TryGetValue((binary.NodeType, binary.Type), out MethodInfo? expectedMethod)
-                && binary.Method == expectedMethod;
+                && ExpressionReflectionProvenance.IsSameMember(binary.Method, expectedMethod);
         }
 
         /// <summary>

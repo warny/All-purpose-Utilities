@@ -132,9 +132,11 @@ public partial class ExpressionSimplifier
     /// <returns><see langword="true"/> only for matching concrete unary logarithm methods.</returns>
     private static bool CanCombineUnaryLogCalls(MethodCallExpression left, MethodCallExpression right)
     {
+        // S5 A-10: the equality of a reflection object that is not a runtime one is never called.
         return left.Arguments.Count == 1
             && right.Arguments.Count == 1
-            && left.Method == right.Method;
+            && ExpressionReflectionProvenance.IsRuntime(right.Method)
+            && ExpressionReflectionProvenance.IsSameMember(left.Method, right.Method);
     }
 
     #endregion
@@ -193,7 +195,10 @@ public partial class ExpressionSimplifier
 
         (var cos, var sin, _) = TrigonometricMethodsByType[left.Type];
 
-        if (!(leftLeft.Method == sin && rightLeft.Method == cos) && !(leftLeft.Method == cos && rightLeft.Method == sin)) return null;
+        // S5 A-10: compared with the runtime methods only, so an impersonating reflection object never matches.
+        bool sinCos = ExpressionReflectionProvenance.IsSameMember(leftLeft.Method, sin) && ExpressionReflectionProvenance.IsSameMember(rightLeft.Method, cos);
+        bool cosSin = ExpressionReflectionProvenance.IsSameMember(leftLeft.Method, cos) && ExpressionReflectionProvenance.IsSameMember(rightLeft.Method, sin);
+        if (!sinCos && !cosSin) return null;
 
         if (ExpressionComparer.EqualsWithinOperation(leftLeft.Arguments[0], rightLeft.Arguments[0])) return Expression.Constant(Convert.ChangeType(1.0, left.Type));
 

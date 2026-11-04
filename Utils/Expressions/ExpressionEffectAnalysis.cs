@@ -400,10 +400,11 @@ internal static class ExpressionEffectAnalysis
     /// <returns>The effects of the conversion itself.</returns>
     private static ExpressionEffects ConversionEffects(UnaryExpression unary)
     {
-        if (unary.Method is not null)
+        if (unary.Method is { } method)
         {
-            if (unary.Method.DeclaringType != typeof(decimal)) return ExpressionEffects.Observable;
-            return unary.Method.Name == "op_Implicit" ? ExpressionEffects.None : ExpressionEffects.MayThrow;
+            // S5 A-10: the metadata of a reflection object that is not a runtime one is never read.
+            if (!ExpressionReflectionProvenance.IsRuntime(method) || method.DeclaringType != typeof(decimal)) return ExpressionEffects.Observable;
+            return method.Name == "op_Implicit" ? ExpressionEffects.None : ExpressionEffects.MayThrow;
         }
 
         Type source = unary.Operand.Type;
@@ -471,7 +472,11 @@ internal static class ExpressionEffectAnalysis
     private static ExpressionEffects OperatorMethodEffects(BinaryExpression binary)
     {
         MethodInfo? method = binary.Method;
-        if (method is null || ExpressionSimplifier.IsOrdinaryBinaryArithmetic(binary)) return ExpressionEffects.None;
+        if (method is null) return ExpressionEffects.None;
+
+        // S5 A-10: an operator method that is not a runtime reflection object is user code, whatever its metadata claims.
+        if (!ExpressionReflectionProvenance.IsRuntime(method)) return ExpressionEffects.Observable;
+        if (ExpressionSimplifier.IsOrdinaryBinaryArithmetic(binary)) return ExpressionEffects.None;
 
         return method.DeclaringType == typeof(decimal) || method.DeclaringType == typeof(string)
             ? ExpressionEffects.None
@@ -488,11 +493,18 @@ internal static class ExpressionEffectAnalysis
     /// </summary>
     /// <param name="method">The called method.</param>
     /// <returns>The effects of the call itself.</returns>
-    internal static ExpressionEffects MethodEffects(MethodInfo method) => MethodEffectsCache.GetOrAdd(method, ClassifyMethod);
+    /// <remarks>
+    /// S5 A-10: a method that is not a runtime reflection object (<see cref="ExpressionReflectionProvenance.IsRuntime"/>) is
+    /// <see cref="ExpressionEffects.Observable"/> before any of its members is read and before it reaches the cache, whose
+    /// lookup would call its <see cref="object.GetHashCode"/> and <see cref="object.Equals(object?)"/>.
+    /// </remarks>
+    internal static ExpressionEffects MethodEffects(MethodInfo method)
+        => ExpressionReflectionProvenance.IsRuntime(method) ? MethodEffectsCache.GetOrAdd(method, ClassifyMethod) : ExpressionEffects.Observable;
 
     /// <summary>
-    /// The classification of every method met so far, computed once per method (reflection on the parameters allocates).
-    /// A method's classification depends on its metadata only, so it never changes.
+    /// The classification of every runtime method met so far, computed once per method (reflection on the parameters
+    /// allocates). A method's classification depends on its metadata only, so it never changes; only runtime reflection
+    /// objects are stored, so the dictionary only ever runs the runtime's own equality and hashing.
     /// </summary>
     private static readonly System.Collections.Concurrent.ConcurrentDictionary<MethodInfo, ExpressionEffects> MethodEffectsCache = new();
 
@@ -537,7 +549,8 @@ internal static class ExpressionEffectAnalysis
     /// <returns>Its effects, receiver included.</returns>
     private static ExpressionEffects AnalyzeMember(MemberExpression member)
     {
-        if (member.Member is not FieldInfo field) return ExpressionEffects.Observable | Analyze(member.Expression);
+        // S5 A-10: a field that is not a runtime reflection object cannot claim to be read-only.
+        if (member.Member is not FieldInfo field || !ExpressionReflectionProvenance.IsRuntime(field)) return ExpressionEffects.Observable | Analyze(member.Expression);
 
         ExpressionEffects own = field.IsInitOnly || field.IsLiteral ? ExpressionEffects.None : ExpressionEffects.ReadsMutableState;
         Expression? receiver = member.Expression;

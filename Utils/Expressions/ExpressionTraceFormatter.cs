@@ -32,6 +32,9 @@ public static class ExpressionTraceFormatter
     /// <summary>The marker of an elided subtree or a truncated rendering.</summary>
     private const string Ellipsis = "…";
 
+    /// <summary>The name rendered for a method or member that is not a runtime reflection object (S5 A-10).</summary>
+    private const string CustomMember = "<custom member>";
+
     /// <summary>Renders <paramref name="expression"/>.</summary>
     /// <param name="expression">The tree, or <see langword="null"/>.</param>
     /// <param name="maxDepth">The maximum depth rendered; deeper subtrees are shown as <c>…</c>.</param>
@@ -122,7 +125,10 @@ public static class ExpressionTraceFormatter
                 case ParameterExpression parameter: Append(NameOf(parameter)); break;
                 case BinaryExpression binary: WriteBinary(binary, next); break;
                 case UnaryExpression unary: WriteUnary(unary, next); break;
+                // S5 A-10: the name of a reflection object that is not a runtime one is user code and is never read.
+                case MethodCallExpression call when !ExpressionReflectionProvenance.IsRuntime(call.Method): WriteAccess(call.Object, null, CustomMember, call.Arguments, next); break;
                 case MethodCallExpression call: WriteAccess(call.Object, call.Method.DeclaringType, call.Method.Name, call.Arguments, next); break;
+                case MemberExpression member when !ExpressionReflectionProvenance.IsRuntime(member.Member): WriteAccess(member.Expression, null, CustomMember, null, next); break;
                 case MemberExpression member: WriteAccess(member.Expression, member.Member.DeclaringType, member.Member.Name, null, next); break;
                 case LambdaExpression lambda: WriteLambda(lambda, next); break;
                 case ConditionalExpression conditional: WriteConditional(conditional, next); break;

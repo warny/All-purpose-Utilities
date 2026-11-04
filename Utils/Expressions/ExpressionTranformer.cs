@@ -4379,6 +4379,12 @@ public class ExpressionCallSignatureAttribute : ExpressionSignatureAttribute
     /// array raises the same <see cref="ArgumentNullException"/> (<c>ParamName</c> <c>"source"</c>)
     /// that <c>Enumerable.Any</c>'s own null-source guard used to raise, rather than letting the loop
     /// fail with an unrelated <see cref="NullReferenceException"/> on <c>types.Length</c>.
+    /// <para>
+    /// S5 A-10: a call whose method is not a runtime reflection object (a user subclass of
+    /// <see cref="System.Reflection.MethodInfo"/>) never matches, and none of its members is read: its
+    /// <c>DeclaringType</c> and <c>Name</c> are user code and could impersonate any function, so a rule
+    /// would replace a user call by the function it imitates.
+    /// </para>
     /// </remarks>
     public override bool Match(Expression e)
     {
@@ -4386,6 +4392,7 @@ public class ExpressionCallSignatureAttribute : ExpressionSignatureAttribute
 
         Type[] types = Types;
         if (types is null) throw new ArgumentNullException("source");
+        if (!ExpressionReflectionProvenance.IsRuntime(ec.Method)) return false;
 
         Type? declaringType = ec.Method.DeclaringType;
         for (int i = 0; i < types.Length; i++)
