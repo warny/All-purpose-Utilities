@@ -11,8 +11,9 @@ internal enum ExpressionTrustPolicy
     Verified,
 
     /// <summary>
-    /// <see cref="DeterministicAttribute"/> declarations are trusted (the intended meaning of a future
-    /// <c>AggressiveSimplification</c>); exceptions of declared code still forbid dropping or moving it.
+    /// <see cref="DeterministicAttribute"/> declarations are trusted; exceptions of declared code still forbid dropping or
+    /// moving it. Unknown code stays unknown: this policy is one axis of a future option, independent of an
+    /// <c>AggressiveSimplification</c> that would rewrite unknown code, and of the exception-preservation policy.
     /// </summary>
     TrustDeclarations,
 }
@@ -33,8 +34,15 @@ internal enum ExpressionTrustPolicy
 /// </para>
 /// <para>
 /// <b>Reorder</b> (canonical ordering): deterministic, no side effect, no allocation, no exception (the order of two exceptions,
-/// or of an exception and a read, could change). Reading mutable state is allowed by every permission: the caller must not
-/// move such a read across an evaluation that has side effects, exactly as with <see cref="ExpressionEffectAnalysis"/>.
+/// or of an exception and a read, could change).
+/// </para>
+/// <para>
+/// <b>These permissions are local, not contextual.</b> Reading mutable state is allowed by every permission, so a permission
+/// alone never justifies a rewrite across other evaluations: <see cref="CanRepeat"/> only means that two evaluations in the
+/// same state agree, and <see cref="CanReorder"/> only that the evaluation is movable among other movable ones. A caller that
+/// merges, repeats or moves an evaluation that reads mutable state must also prove that no evaluation with
+/// <see cref="ExpressionBehaviors.SideEffects"/> (or unknown code) runs between the merged occurrences or across the move,
+/// exactly as <c>SplitPinnedTerms</c> does with <see cref="ExpressionEffectAnalysis"/>.
 /// </para>
 /// </remarks>
 internal static class ExpressionBehaviorPermissions
@@ -55,10 +63,13 @@ internal static class ExpressionBehaviorPermissions
     internal static bool CanDiscard(ExpressionBehavior behavior, ExpressionTrustPolicy policy)
         => (Effective(behavior, policy) & (ExpressionBehaviors.SideEffects | ExpressionBehaviors.Allocates | ExpressionBehaviors.MayThrow | ExpressionBehaviors.Unknown)) == 0;
 
-    /// <summary>Whether the evaluation can be performed a different number of times (at least once).</summary>
+    /// <summary>
+    /// Whether the evaluation can be performed a different number of times (at least once), provided no side effect runs
+    /// between the occurrences when it reads mutable state (see the remarks of the class).
+    /// </summary>
     /// <param name="behavior">The behavior.</param>
     /// <param name="policy">The trust policy.</param>
-    /// <returns><see langword="true"/> when repeating or merging it is unobservable.</returns>
+    /// <returns><see langword="true"/> when repeating or merging it is unobservable in an unchanged state.</returns>
     internal static bool CanRepeat(ExpressionBehavior behavior, ExpressionTrustPolicy policy)
         => (Effective(behavior, policy) & (ExpressionBehaviors.Nondeterministic | ExpressionBehaviors.SideEffects | ExpressionBehaviors.Allocates | ExpressionBehaviors.Unknown)) == 0;
 

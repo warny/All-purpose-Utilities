@@ -155,6 +155,39 @@ partial). This is evidence, not proof: a total classification is also backed by 
 Reproducibility of trusted functions holds within a process; their last bits may differ across platforms or runtime
 versions.
 
+### Preconditions inventory
+
+The edge-value test is evidence, not a proof of totality over every argument combination, so the list is kept
+conservative. Every total function that takes a parameter other than its values (a count, a bound, a base, a mode)
+is listed here with the reason it cannot throw; every partial function, with the precondition that makes it throw.
+
+| Function (family) | Classification | Argument that could be a precondition | Why |
+|---|---|---|---|
+| `ScaleB(x, n)` (floating) | total | `n` any `int` | saturates to ±∞ or ±0 |
+| `RootN(x, n)` (floating) | total | `n` any `int` | `n = 0` gives NaN |
+| `ILogB(x)` (floating) | total | – | NaN, 0 and ∞ map to defined `int` values |
+| `Log(x, base)` (floating, `BigInteger`) | total | `base` any value | invalid base gives NaN |
+| `Lerp(a, b, t)`, `FusedMultiplyAdd` (floating) | total | `t` any value | no validation, IEEE result |
+| `Max`/`Min` and their `Magnitude`/`Number` variants | total | – | NaN propagates, no validation |
+| `Round(x)` (floating, decimal) | total | – | single-argument overload only |
+| `RotateLeft`/`RotateRight(x, n)` (integer) | total | `n` any `int` | count masked |
+| `<<`, `>>`, `>>>` (fixed-size integers) | total | count any `int` | count masked |
+| `BigMul(a, b)` (integer) | total | – | result type wide enough |
+| `op_Implicit` (all families) | total | – | widening only |
+| `Clamp(x, min, max)` | partial | `min <= max` | `ArgumentException` |
+| `Round(x, digits[, mode])`, `Round(x, mode)` | partial | `digits` in range, `mode` defined | `ArgumentOutOfRangeException`, `ArgumentException` |
+| `Sign(x)` (floating) | partial | `x` not NaN | `ArithmeticException` |
+| `Abs`, `CopySign` (signed integer) | partial | `x != MinValue` | `OverflowException` |
+| `Log2(x)` (integer, `BigInteger`) | partial | `x >= 0` | `ArgumentOutOfRangeException` |
+| division, remainder (integer, decimal, `BigInteger`) | partial | divisor `!= 0`; not `MinValue / -1` | `DivideByZeroException`, `OverflowException` |
+| decimal arithmetic, `++`, `--` | partial | result in range | `OverflowException` |
+| `Pow(x, n)`, `ModPow` (`BigInteger`) | partial | `n >= 0`; modulus `!= 0` | `ArgumentOutOfRangeException`, `DivideByZeroException` |
+| shifts (`BigInteger`) | partial | count bounded by memory | `OverflowException`, `OutOfMemoryException` |
+| `op_Explicit`, `op_Checked*` | partial | value in the target range | `OverflowException` |
+
+Maintenance rule: a name is added as total only with its row in this table (when it takes such an argument) and its
+coverage by the edge-value test; when in doubt it is listed as partial.
+
 ## 6. Known nondeterministic members
 
 Recognized by declaring type and name: `DateTime.Now`, `DateTime.UtcNow`, `DateTime.Today`, `DateTimeOffset.Now`,
@@ -205,18 +238,30 @@ caches are concurrent dictionaries of runtime metadata. There is no thread-stati
 
 Internal, unused by any rule:
 
-- `ExpressionTrustPolicy` — `Verified` (a declaration counts as unknown code) or `TrustDeclarations` (the intended
-  semantics of a future `AggressiveSimplification`).
+- `ExpressionTrustPolicy` — `Verified` (a declaration counts as unknown code) or `TrustDeclarations` (declared code is
+  trusted; unknown code stays unknown).
 - `ExpressionBehaviorPermissions.CanDiscard` (no side effect, allocation or exception; a clock read may be dropped),
   `CanRepeat` (deterministic, no side effect or allocation; exceptions allowed), `CanReorder` (deterministic, no side
-  effect, allocation or exception). Reading mutable state stays allowed, with the same caveat as the gate.
+  effect, allocation or exception).
+- **The permissions are local, not contextual.** Reading mutable state is allowed by every permission, so none of them
+  alone justifies a rewrite across other evaluations. `CanRepeat` means that two evaluations in the same state agree; a
+  caller that merges, repeats or moves an evaluation reading mutable state must also prove that no evaluation with side
+  effects, and no unknown code, runs between the occurrences or across the move (as `SplitPinnedTerms` does today).
+  Architecture C must not use `CanRepeat` in isolation.
 - `ExpressionBehaviorPermissions.ToEffects` — the bridge to `ExpressionEffects`: exceptions become `MayThrow`, side effects,
   nondeterminism and unknown code become `Observable`. It is at least as strict as the gate on unknown code.
 
-Intended extension, for a later stage: `ExpressionSimplifierOptions { TrustPolicy, AggressiveSimplification }` set at
-construction (like `SimplifyQuotedExpressions`), consulted by `AllowsRules` and `SplitPinnedTerms` through `ToEffects` or
-the permissions, with per-rule effect declarations replacing the coarse gate. Enabling it changes simplification results
-and the number of user calls, so it needs its own contract decision.
+Intended extension, for a later stage: `ExpressionSimplifierOptions` set at construction (like
+`SimplifyQuotedExpressions`), with **three independent axes**, each off by default:
+
+1. trusting `[Deterministic]` declarations (`ExpressionTrustPolicy.TrustDeclarations`), so that annotated methods (for
+   example those of `MathEx`) can be simplified without trusting any other user code;
+2. `AggressiveSimplification`, which would rewrite unknown code; it does not imply the first axis, nor the converse;
+3. an exception-preservation policy by kind (division by zero, overflow, invalid numeric argument, user exception).
+
+The options would be consulted by `AllowsRules` and `SplitPinnedTerms` through `ToEffects` or the permissions, with
+per-rule effect declarations replacing the coarse gate. Enabling any of them changes simplification results and the
+number of user calls, so it needs its own contract decision. Finding A-10 must be fixed first.
 
 ## 10. Guarantees
 

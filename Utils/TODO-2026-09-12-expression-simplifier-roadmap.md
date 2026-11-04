@@ -5231,7 +5231,11 @@ Distinct from the correctness items P18a/P18b/P18c above, which stay open.
 - No change to `ExpressionSimplifier`, `ExpressionComparer` or the R1b gate; findings A-1 … A-12 on the existing gate are
   recorded in the design note, not fixed. A-10 is the significant one: the gate reads and trusts the metadata of a user
   `MethodInfo` subclass, so one impersonating `Math.Sin` makes `Simplify(FakeSin(x) * 0)` return `0` (a user call dropped).
-- Next (not started, needs instructions): Architecture B or C, i.e. consuming the classification under an explicit option.
+- Next (not started, needs instructions): fix A-10 in its own pull request (method, operator, field, property and
+  conversion metadata, decided without reading a non-runtime reflection object); then Architecture B (options with three
+  independent axes: trusting declarations, `AggressiveSimplification`, exception preservation by kind); then Architecture C
+  (consumption by the simplifier and the comparer; the permissions are local and must be combined with a check that no
+  side effect runs between merged or moved evaluations).
 
 ## Execution-optimizer stages
 
