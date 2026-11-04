@@ -112,6 +112,20 @@ holding a numeric value, optionally restricted to a specific set of allowed nume
 </dd>
     </dl>
     <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.DeterministicAttribute.html">DeterministicAttribute</a></dt>
+      <dd><p>Declares that a method is deterministic and free of observable side effects (S5 P18 Architecture A). The declaration is
+read by <a class="xref" href="Utils.Expressions.ExpressionBehaviorAnalysis.html">ExpressionBehaviorAnalysis</a>; it is a promise made by the author of the method, never a verified
+property of its body.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.ExpressionBehaviorAnalysis.html">ExpressionBehaviorAnalysis</a></dt>
+      <dd><p>Classifies what evaluating an expression tree may do besides producing its value: whether it is deterministic, reads
+mutable state, has side effects, allocates, and which kinds of exceptions it may throw, with the parts of the
+classification that could not be analyzed or that rely on user declarations (S5 P18 Architecture A).</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
       <dt><a class="xref" href="Utils.Expressions.ExpressionCallSignatureAttribute.html">ExpressionCallSignatureAttribute</a></dt>
       <dd><p>Marks a method as matching only method-call expressions that invoke a specific function name
 on a specific type. This is a specialized <a class="xref" href="Utils.Expressions.ExpressionSignatureAttribute.html">ExpressionSignatureAttribute</a> for calls.</p>
@@ -317,6 +331,12 @@ type of an operand beyond its <a class="xref" href="https://learn.microsoft.com/
 Structs
 </h3>
     <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.ExpressionBehavior.html">ExpressionBehavior</a></dt>
+      <dd><p>The classified behavior of an evaluation (S5 P18 Architecture A): its <a class="xref" href="Utils.Expressions.ExpressionBehaviors.html">ExpressionBehaviors</a> flags and the
+guarantees they give.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
       <dt><a class="xref" href="Utils.Expressions.ExpressionTransformEvent.html">ExpressionTransformEvent</a></dt>
       <dd><p>One event of a traced expression transformation (see <a class="xref" href="Utils.Expressions.IExpressionTransformTracer.html">IExpressionTransformTracer</a>). This type only holds data.</p>
 </dd>
@@ -376,6 +396,13 @@ as well as to manage constants in expressions.</p>
     <h3 id="enums">
 Enums
 </h3>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.ExpressionBehaviors.html">ExpressionBehaviors</a></dt>
+      <dd><p>What evaluating an expression may do besides producing its value, as classified by <a class="xref" href="Utils.Expressions.ExpressionBehaviorAnalysis.html">ExpressionBehaviorAnalysis</a>
+(S5 P18 Architecture A). Every flag but <a class="xref" href="Utils.Expressions.ExpressionBehaviors.html#Utils_Expressions_ExpressionBehaviors_ReliesOnDeclaration">ReliesOnDeclaration</a> is a &quot;may&quot; fact: an absent flag is a guarantee
+of the analysis, a present flag only says that the behavior could not be excluded.</p>
+</dd>
+    </dl>
     <dl class="jumplist">
       <dt><a class="xref" href="Utils.Expressions.ExpressionResourceLimitKind.html">ExpressionResourceLimitKind</a></dt>
       <dd><p>The resource dimension whose limit an expression-tree operation exceeded.</p>

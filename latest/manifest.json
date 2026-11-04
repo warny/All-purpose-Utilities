@@ -1805,6 +1805,62 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Expressions.DeterministicAttribute.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Expressions.DeterministicAttribute.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Expressions.DeterministicAttribute",
+      "Summary": "<p sourcefile=\"api/Utils.Expressions.DeterministicAttribute.yml\" sourcestartlinenumber=\"1\">Declares that a method is deterministic and free of observable side effects (S5 P18 Architecture A). The declaration is\nread by <xref href=\"Utils.Expressions.ExpressionBehaviorAnalysis\" data-throw-if-not-resolved=\"false\"></xref>; it is a promise made by the author of the method, never a verified\nproperty of its body.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Expressions.ExpressionBehavior.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Expressions.ExpressionBehavior.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Expressions.ExpressionBehavior",
+      "Summary": "<p sourcefile=\"api/Utils.Expressions.ExpressionBehavior.yml\" sourcestartlinenumber=\"1\">The classified behavior of an evaluation (S5 P18 Architecture A): its <xref href=\"Utils.Expressions.ExpressionBehaviors\" data-throw-if-not-resolved=\"false\"></xref> flags and the\nguarantees they give.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Expressions.ExpressionBehaviorAnalysis.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Expressions.ExpressionBehaviorAnalysis.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Expressions.ExpressionBehaviorAnalysis",
+      "Summary": "<p sourcefile=\"api/Utils.Expressions.ExpressionBehaviorAnalysis.yml\" sourcestartlinenumber=\"1\">Classifies what evaluating an expression tree may do besides producing its value: whether it is deterministic, reads\nmutable state, has side effects, allocates, and which kinds of exceptions it may throw, with the parts of the\nclassification that could not be analyzed or that rely on user declarations (S5 P18 Architecture A).</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Expressions.ExpressionBehaviors.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Expressions.ExpressionBehaviors.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Expressions.ExpressionBehaviors",
+      "Summary": "<p sourcefile=\"api/Utils.Expressions.ExpressionBehaviors.yml\" sourcestartlinenumber=\"1\">What evaluating an expression may do besides producing its value, as classified by <xref href=\"Utils.Expressions.ExpressionBehaviorAnalysis\" data-throw-if-not-resolved=\"false\"></xref>\n(S5 P18 Architecture A). Every flag but <xref href=\"Utils.Expressions.ExpressionBehaviors.ReliesOnDeclaration\" data-throw-if-not-resolved=\"false\"></xref> is a &quot;may&quot; fact: an absent flag is a guarantee\nof the analysis, a present flag only says that the behavior could not be excluded.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.Expressions.ExpressionCallSignatureAttribute.yml",
       "output": {
         ".html": {
@@ -5973,7 +6029,7 @@
       "Uid": null,
       "IsMRef": true,
       "Title": "Utils.Mathematics.Expressions.ExpressionExtensionsException",
-      "Summary": "<p sourcefile=\"api/Utils.Mathematics.Expressions.ExpressionExtensionsException.yml\" sourcestartlinenumber=\"1\">Represents a custom exception related to expression extension operations.</p>\n"
+      "Summary": "<p sourcefile=\"api/Utils.Mathematics.Expressions.ExpressionExtensionsException.yml\" sourcestartlinenumber=\"1\">Represents validation errors that occur while building derivative expressions.</p>\n"
     },
     {
       "type": "ManagedReference",
@@ -16612,6 +16668,16 @@
       "output": {
         ".html": {
           "relative_path": "docs/audit-quality-security.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/expressions/BehaviorAnalysis.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/expressions/BehaviorAnalysis.html"
         }
       },
       "version": ""

@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Expression behavior analysis — design note (S5 P18 Architecture A) | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Expression behavior analysis — design note (S5 P18 Architecture A) | omy.Utils Documentation ">
+      
+      
+      <link rel="icon" href="../../favicon.ico">
+      <link rel="stylesheet" href="../../public/docfx.min.css">
+      <link rel="stylesheet" href="../../public/main.css">
+      <meta name="docfx:navrel" content="../../toc.html">
+      <meta name="docfx:tocrel" content="../../toc.html">
+      
+      <meta name="docfx:rel" content="../../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/blob/master/docs/expressions/BehaviorAnalysis.md/#L1">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../../index.html">
+            <img id="logo" class="svg" src="../../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+
+      <div class="content">
+        <div class="actionbar">
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="expression-behavior-analysis--design-note-s5-p18-architecture-a">Expression behavior analysis — design note (S5 P18 Architecture A)</h1>
+
+<p>Status: implemented as a read-only foundation (no simplification policy consumes it).
+Base: <code>master</code> <code>ad237762</code> (after PR #680). Scope: Architecture A only; Architectures B and C are not started.</p>
+<p>Naming: this &quot;P18 Architecture A&quot; is the behavior-analysis foundation requested on 2026-11-04. It is distinct from
+the correctness fixes the S5 deep audit called P18a/P18b/P18c (S5A-01 … S5A-13), which remain open.</p>
+<h2 id="1-purpose">1. Purpose</h2>
+<p>The simplifier needs to know, before it drops, repeats, merges or moves an evaluation, whether that evaluation is
+reproducible, free of side effects, and which exceptions it may raise. Since ETC R1b the answer comes from
+<code>ExpressionEffectAnalysis</code>, a strict internal gate. It cannot express determinism, the origin of an exception, the
+parts it did not analyze, or a user's promise that a method is pure; and it does not look inside lambdas or blocks.</p>
+<p>Architecture A adds a separate, public, read-only classification (<code>ExpressionBehaviorAnalysis</code>) and a declaration
+attribute (<code>[Deterministic]</code>), with the permissions and the bridge a future policy would need. Nothing is wired into
+<code>ExpressionSimplifier</code>, <code>ExpressionComparer</code> or their rule gates: every simplification result, every observable user call
+and every comparer answer is unchanged.</p>
+<h2 id="2-audit-of-the-existing-mechanisms">2. Audit of the existing mechanisms</h2>
+<table>
+<thead>
+<tr>
+<th>Mechanism</th>
+<th>Where</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ExpressionEffectAnalysis</code></td>
+<td><code>Utils/Expressions/ExpressionEffectAnalysis.cs</code></td>
+<td>Flags <code>ReadsMutableState</code>, <code>MayThrow</code>, <code>Allocates</code>, <code>Observable</code>; permissions <code>CanDiscard</code>/<code>CanRepeat</code>/<code>CanReorder</code>/<code>IsInert</code>; bounded pass then per-operation table.</td>
+</tr>
+<tr>
+<td>Rule gate <code>AllowsRules</code></td>
+<td><code>ExpressionSimplifier.cs</code></td>
+<td>A node's rules run only when its operands are inert (or the node is an invocation, handled by the inlining analysis).</td>
+</tr>
+<tr>
+<td><code>CanonicalizesOperator</code></td>
+<td><code>ExpressionSimplifier.cs</code></td>
+<td>Reassociation only for operators without effects (excludes <code>decimal</code>).</td>
+</tr>
+<tr>
+<td><code>SplitPinnedTerms</code></td>
+<td><code>ExpressionSimplifier.cs</code></td>
+<td>Terms that are not inert keep their source order and occurrences.</td>
+</tr>
+<tr>
+<td><code>IsEliminableFloatingOperand</code></td>
+<td><code>ExpressionSimplifier.cs</code></td>
+<td>Narrow whitelist for the NaN fold (S5 P11).</td>
+</tr>
+<tr>
+<td><code>InvocationInliningAnalysis</code></td>
+<td><code>InvocationInliningAnalysis.cs</code></td>
+<td>Decides whether <code>Invoke(lambda, args)</code> can be inlined (evaluation count and order of arguments).</td>
+</tr>
+<tr>
+<td>Opacity</td>
+<td><code>ExpressionOpacity.cs</code></td>
+<td>Extension nodes are recognized by class only and never read.</td>
+</tr>
+</tbody>
+</table>
+<p>Findings (none changes a result today; none is fixed here, as the scope forbids behavior changes):</p>
+<ul>
+<li><strong>A-1</strong> <code>ArrayIndex</code> is <code>MayThrow</code> but not <code>ReadsMutableState</code>, although an element is mutable state. Harmless: a
+<code>MayThrow</code> term is already pinned.</li>
+<li><strong>A-2</strong> Checked <code>double</code>/<code>float</code> arithmetic (<code>AddChecked</code>, <code>NegateChecked</code> …) is <code>MayThrow</code>; it never throws.
+Conservative.</li>
+<li><strong>A-3</strong> Any operator method declared by <code>decimal</code> or <code>string</code> is inert (<code>OperatorMethodEffects</code>): trust by declaring
+type, not by method. <code>Expression.Add(a, b, string.Concat)</code> is inert although it allocates.</li>
+<li><strong>A-4</strong> A quote is inert (data). Evaluating it builds a tree, and with hoisted variables it captures them like a
+closure.</li>
+<li><strong>A-5</strong> A lambda is <code>Allocates</code> and its body is ignored (correct for its evaluation); a lambda invoked in place is
+<code>Observable</code>; blocks and local variables are always <code>Observable</code> (no scope model).</li>
+<li><strong>A-6</strong> Conversions with a method are trusted only for <code>decimal</code>; <code>Half</code>, <code>Int128</code>, <code>UInt128</code> and <code>BigInteger</code>
+operators and conversions are observable. Conservative.</li>
+<li><strong>A-7</strong> The total floating-point list requires every parameter to have the result type, which excludes <code>ScaleB</code>,
+<code>ILogB</code>, <code>RootN</code>, the <code>Is*</code> predicates and every integer overload of <code>Math</code> (<code>Max(int, int)</code> is observable).
+Conservative.</li>
+<li><strong>A-8</strong> Clocks, random generators and property getters are all <code>Observable</code>: nondeterminism is not distinguished from
+side effects or from unknown code.</li>
+<li><strong>A-9</strong> Custom operators and user methods are always <code>Observable</code>; there is no declaration route (<code>[Pure]</code> is
+deliberately not trusted, ETC R1b).</li>
+<li><strong>A-10 (confirmed, the most significant)</strong> The method cache and classifier read the members of the <code>MethodInfo</code>
+(<code>GetHashCode</code>, <code>DeclaringType</code>, <code>Attributes</code>, <code>GetParameters</code>, <code>ReturnType</code>, <code>Name</code>). <code>Expression.Call</code> accepts a user
+subclass of <code>MethodInfo</code>; one that forwards to <code>Math.Sin</code> and reports its metadata is classified inert by the gate, and
+<code>Simplify(FakeSin(x) * 0)</code> returns <code>0</code>: a user call is dropped on the strength of metadata the gate did not obtain from the
+runtime. It needs a hand-built call node with a custom reflection object. Fix proposed for a later stage: classify any
+reflection object that is not a runtime one as observable, without reading it, as the new analysis does. Not fixed here
+(no behavior change allowed).</li>
+<li><strong>A-11</strong> <code>IsSafeDivisor</code> accepts every nonzero <code>decimal</code> divisor (S5A-13, already reported).</li>
+<li><strong>A-12</strong> Constants are inert whatever their value; the user code of a constant's <code>Equals</code>/<code>GetHashCode</code> belongs to the
+comparer, not to the evaluation (documented on <code>ExpressionSimplifier</code>).</li>
+</ul>
+<h2 id="3-representation">3. Representation</h2>
+<p><code>ExpressionBehaviors</code> (public <code>[Flags]</code> enum) — every flag but the last is a <em>may</em> fact: an absent flag is a guarantee.</p>
+<table>
+<thead>
+<tr>
+<th>Flag</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ReadsMutableState</code></td>
+<td>Reads a free or captured variable, a non-read-only field, an array element, or the state of an object passed to a declared method.</td>
+</tr>
+<tr>
+<td><code>Nondeterministic</code></td>
+<td>Two evaluations in the same state may differ (clocks, random generators, fresh identifiers, unknown code).</td>
+</tr>
+<tr>
+<td><code>SideEffects</code></td>
+<td>Changes state that outlives the evaluation (writes to free or captured variables, fields, elements, properties; state-advancing members; unknown code).</td>
+</tr>
+<tr>
+<td><code>Allocates</code></td>
+<td>Allocates an object whose identity is observable.</td>
+</tr>
+<tr>
+<td><code>MayThrowArithmetic</code></td>
+<td>Exceptions of built-in arithmetic and trusted numeric functions (overflow, division by zero, NaN sign, invalid numeric arguments).</td>
+</tr>
+<tr>
+<td><code>MayThrowRuntime</code></td>
+<td>Other runtime exceptions (null dereference, invalid cast or unboxing, absent nullable value, index or size out of range).</td>
+</tr>
+<tr>
+<td><code>MayThrowUserCode</code></td>
+<td>Exceptions of user code: a <code>throw</code> node, a declared method, a known framework member, unknown code.</td>
+</tr>
+<tr>
+<td><code>Unknown</code></td>
+<td>Part of the evaluation was not analyzed. Always comes with every other may-flag (<code>UnknownCode</code>).</td>
+</tr>
+<tr>
+<td><code>ReliesOnDeclaration</code></td>
+<td>Provenance: part of the answer relies on a <code>[Deterministic]</code> declaration.</td>
+</tr>
+</tbody>
+</table>
+<p><code>ExpressionBehavior</code> (public <code>readonly record struct</code>) wraps the flags with the derived guarantees <code>IsFullyAnalyzed</code>,
+<code>IsDeterministic</code>, <code>IsSideEffectFree</code>, <code>IsReproducible</code>, <code>MayThrow</code>, <code>MayThrowUserCode</code>, <code>ReliesOnDeclarations</code>.</p>
+<p>Choices:</p>
+<ul>
+<li><strong>Unknown carries every flag.</strong> A consumer that tests one flag never mistakes unanalyzed code for safe code; <code>Unknown</code>
+only explains why.</li>
+<li><strong>Determinism is &quot;same state, same outcome&quot;.</strong> Reading mutable state does not make an expression nondeterministic: a
+deterministic method called with a free parameter is a deterministic expression that reads mutable state.
+<code>IsReproducible</code> is the stronger property (no state read, no effect, no allocation).</li>
+<li><strong>Exceptions are split by origin</strong>, so a future policy can, for example, accept merging an expression that may overflow
+while refusing one that runs user code.</li>
+</ul>
+<h2 id="4-deterministic">4. <code>[Deterministic]</code></h2>
+<p><code>Utils.Expressions.DeterministicAttribute</code> (methods only, not inherited, not repeatable). Contract, within one process:
+the outcome depends only on the arguments (receiver included) and on the state of the objects they reference — equal
+results, or exceptions of the same type; no global or ambient state (static mutable fields, clocks, random generators,
+environment, culture, I/O); no observable side effect. Exceptions and allocation are outside the promise.</p>
+<p>The analysis honors it only where it is bound to the code that runs and speaks for all of it:</p>
+<ul>
+<li>on a static method, a non-virtual instance method, a sealed override, or a method of a sealed or value type — not on an
+overridable virtual or abstract method (an override could run instead);</li>
+<li>not on an open generic method, nor one with a by-reference or pointer parameter or return, nor one taking a delegate or
+an expression tree (code the declaration cannot speak for);</li>
+<li>read on the exact method (<code>IsDefined(…, inherit: false)</code>), recognized by its type identity only: another library's
+attribute of the same name, and <code>[Pure]</code>, are ignored.</li>
+</ul>
+<p>A declared call is <code>ReliesOnDeclaration | MayThrowUserCode</code>, plus <code>ReadsMutableState</code> when its receiver or a parameter
+can reference mutable state (any reference type but <code>string</code>, or a value type holding one in a field, recursively), plus
+<code>Allocates</code> when it returns a reference type. Custom operators and conversions are declared on their operator method;
+getters on their accessor.</p>
+<p>The attribute is never treated as proof: a lying declaration cannot change any result today (no policy reads it), and the
+verified policy prepared for later treats it as unknown code.</p>
+<h2 id="5-trusted-built-in-numeric-functions">5. Trusted built-in numeric functions</h2>
+<p><code>ExpressionMethodBehaviors</code> trusts a method only when <strong>all</strong> hold:</p>
+<ol>
+<li>its declaring type is one of <code>Math</code>, <code>MathF</code>, <code>double</code>, <code>float</code>, <code>Half</code>, <code>decimal</code>, <code>sbyte</code>, <code>byte</code>, <code>short</code>, <code>ushort</code>,
+<code>int</code>, <code>uint</code>, <code>long</code>, <code>ulong</code>, <code>nint</code>, <code>nuint</code>, <code>Int128</code>, <code>UInt128</code>, <code>BigInteger</code> — the method itself, not an
+interface or an inherited member;</li>
+<li>it is a public, static, non-generic runtime method;</li>
+<li>every parameter and the result are numeric types of that list, <code>bool</code> or <code>MidpointRounding</code>, by value;</li>
+<li>its name is listed for the numeric family of its signature (floating, decimal, integer, <code>BigInteger</code>; for <code>Math</code>/<code>MathF</code>
+the family of the first parameter).</li>
+</ol>
+<p>Each listed name is total (<code>None</code>) or partial (<code>MayThrowArithmetic</code>) per family; <code>Round</code> is total only with one parameter;
+<code>op_Checked*</code> and <code>op_Explicit</code> are always partial. Highlights:</p>
+<ul>
+<li>floating: the IEEE functions (trigonometric, hyperbolic, <code>*Pi</code>, exponential and logarithmic families, <code>Sqrt</code>, <code>Cbrt</code>,
+<code>Hypot</code>, <code>RootN</code>, <code>ScaleB</code>, <code>ILogB</code>, <code>FusedMultiplyAdd</code>, <code>Lerp</code>, rounding without digits, <code>Min</code>/<code>Max</code> variants, <code>Is*</code>
+predicates, <code>Half</code> operators) are total; <code>Sign</code> (NaN), <code>Clamp</code> (reversed bounds), <code>Round</code> with digits or mode are partial;</li>
+<li>decimal: rounding, <code>Abs</code>, <code>Negate</code>, comparisons, <code>Sign</code>, <code>CopySign</code>, implicit conversions are total; arithmetic, <code>Clamp</code>,
+rounding with digits or mode, explicit conversions are partial;</li>
+<li>integer: <code>Min</code>/<code>Max</code> variants, <code>Sign</code>, bit counts and rotations, unchecked and bitwise operators, implicit conversions are
+total; <code>Abs</code> and <code>CopySign</code> (minimum value), <code>Log2</code> (negative), <code>Clamp</code>, division and remainder, checked and explicit
+conversions are partial;</li>
+<li><code>BigInteger</code>: addition, subtraction, multiplication, negation, comparisons, <code>GreatestCommonDivisor</code>, <code>Log</code>/<code>Log10</code> are
+total; division, remainder, <code>Pow</code>, <code>ModPow</code>, <code>Log2</code>, shifts, <code>Clamp</code>, explicit conversions are partial.</li>
+</ul>
+<p>Not trusted: estimate functions (<code>ReciprocalEstimate</code>, <code>ReciprocalSqrtEstimate</code>, whose result may depend on the code
+path), parsing and formatting (culture), tuple-returning <code>DivRem</code>, by-reference overloads (<code>BigMul(…, out)</code>), static
+abstract interface members (<code>INumberBase&lt;double&gt;.Abs</code>), and every user type, including user implementations of
+<code>INumber&lt;T&gt;</code>, <code>IAdditionOperators&lt;…&gt;</code> and the other static numeric interfaces, user methods named <code>Sin</code> or <code>Abs</code>, and
+extension methods.</p>
+<p>Verification: the unit test <code>TrustedFunctions_TotalOnesNeverThrowOnEdgeValues</code> invokes every total function of the running
+runtime (more than 300 signatures) on the edge values of its signature (zeros, ±1, extremes, NaN, infinities, epsilon,
+invalid <code>MidpointRounding</code>). The partial classification was established with the same probe (any throwing signature is
+partial). This is evidence, not proof: a total classification is also backed by the documented IEEE semantics.</p>
+<p>Reproducibility of trusted functions holds within a process; their last bits may differ across platforms or runtime
+versions.</p>
+<h3 id="preconditions-inventory">Preconditions inventory</h3>
+<p>The edge-value test is evidence, not a proof of totality over every argument combination, so the list is kept
+conservative. Every total function that takes a parameter other than its values (a count, a bound, a base, a mode)
+is listed here with the reason it cannot throw; every partial function, with the precondition that makes it throw.</p>
+<table>
+<thead>
+<tr>
+<th>Function (family)</th>
+<th>Classification</th>
+<th>Argument that could be a precondition</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ScaleB(x, n)</code> (floating)</td>
+<td>total</td>
+<td><code>n</code> any <code>int</code></td>
+<td>saturates to ±∞ or ±0</td>
+</tr>
+<tr>
+<td><code>RootN(x, n)</code> (floating)</td>
+<td>total</td>
+<td><code>n</code> any <code>int</code></td>
+<td><code>n = 0</code> gives NaN</td>
+</tr>
+<tr>
+<td><code>ILogB(x)</code> (floating)</td>
+<td>total</td>
+<td>–</td>
+<td>NaN, 0 and ∞ map to defined <code>int</code> values</td>
+</tr>
+<tr>
+<td><code>Log(x, base)</code> (floating, <code>BigInteger</code>)</td>
+<td>total</td>
+<td><code>base</code> any value</td>
+<td>invalid base gives NaN</td>
+</tr>
+<tr>
+<td><code>Lerp(a, b, t)</code>, <code>FusedMultiplyAdd</code> (floating)</td>
+<td>total</td>
+<td><code>t</code> any value</td>
+<td>no validation, IEEE result</td>
+</tr>
+<tr>
+<td><code>Max</code>/<code>Min</code> and their <code>Magnitude</code>/<code>Number</code> variants</td>
+<td>total</td>
+<td>–</td>
+<td>NaN propagates, no validation</td>
+</tr>
+<tr>
+<td><code>Round(x)</code> (floating, decimal)</td>
+<td>total</td>
+<td>–</td>
+<td>single-argument overload only</td>
+</tr>
+<tr>
+<td><code>RotateLeft</code>/<code>RotateRight(x, n)</code> (integer)</td>
+<td>total</td>
+<td><code>n</code> any <code>int</code></td>
+<td>count masked</td>
+</tr>
+<tr>
+<td><code>&lt;&lt;</code>, <code>&gt;&gt;</code>, <code>&gt;&gt;&gt;</code> (fixed-size integers)</td>
+<td>total</td>
+<td>count any <code>int</code></td>
+<td>count masked</td>
+</tr>
+<tr>
+<td><code>BigMul(a, b)</code> (integer)</td>
+<td>total</td>
+<td>–</td>
+<td>result type wide enough</td>
+</tr>
+<tr>
+<td><code>op_Implicit</code> (all families)</td>
+<td>total</td>
+<td>–</td>
+<td>widening only</td>
+</tr>
+<tr>
+<td><code>Clamp(x, min, max)</code></td>
+<td>partial</td>
+<td><code>min &lt;= max</code></td>
+<td><code>ArgumentException</code></td>
+</tr>
+<tr>
+<td><code>Round(x, digits[, mode])</code>, <code>Round(x, mode)</code></td>
+<td>partial</td>
+<td><code>digits</code> in range, <code>mode</code> defined</td>
+<td><code>ArgumentOutOfRangeException</code>, <code>ArgumentException</code></td>
+</tr>
+<tr>
+<td><code>Sign(x)</code> (floating)</td>
+<td>partial</td>
+<td><code>x</code> not NaN</td>
+<td><code>ArithmeticException</code></td>
+</tr>
+<tr>
+<td><code>Abs</code>, <code>CopySign</code> (signed integer)</td>
+<td>partial</td>
+<td><code>x != MinValue</code></td>
+<td><code>OverflowException</code></td>
+</tr>
+<tr>
+<td><code>Log2(x)</code> (integer, <code>BigInteger</code>)</td>
+<td>partial</td>
+<td><code>x &gt;= 0</code></td>
+<td><code>ArgumentOutOfRangeException</code></td>
+</tr>
+<tr>
+<td>division, remainder (integer, decimal, <code>BigInteger</code>)</td>
+<td>partial</td>
+<td>divisor <code>!= 0</code>; not <code>MinValue / -1</code></td>
+<td><code>DivideByZeroException</code>, <code>OverflowException</code></td>
+</tr>
+<tr>
+<td>decimal arithmetic, <code>++</code>, <code>--</code></td>
+<td>partial</td>
+<td>result in range</td>
+<td><code>OverflowException</code></td>
+</tr>
+<tr>
+<td><code>Pow(x, n)</code>, <code>ModPow</code> (<code>BigInteger</code>)</td>
+<td>partial</td>
+<td><code>n &gt;= 0</code>; modulus <code>!= 0</code></td>
+<td><code>ArgumentOutOfRangeException</code>, <code>DivideByZeroException</code></td>
+</tr>
+<tr>
+<td>shifts (<code>BigInteger</code>)</td>
+<td>partial</td>
+<td>count bounded by memory</td>
+<td><code>OverflowException</code>, <code>OutOfMemoryException</code></td>
+</tr>
+<tr>
+<td><code>op_Explicit</code>, <code>op_Checked*</code></td>
+<td>partial</td>
+<td>value in the target range</td>
+<td><code>OverflowException</code></td>
+</tr>
+</tbody>
+</table>
+<p>Maintenance rule: a name is added as total only with its row in this table (when it takes such an argument) and its
+coverage by the edge-value test; when in doubt it is listed as partial.</p>
+<h2 id="6-known-nondeterministic-members">6. Known nondeterministic members</h2>
+<p>Recognized by declaring type and name: <code>DateTime.Now</code>, <code>DateTime.UtcNow</code>, <code>DateTime.Today</code>, <code>DateTimeOffset.Now</code>,
+<code>DateTimeOffset.UtcNow</code>, <code>Environment.TickCount</code>, <code>Environment.TickCount64</code>, <code>Stopwatch.GetTimestamp</code>, <code>Guid.NewGuid</code>
+(<code>Nondeterministic | ReadsMutableState</code>, side-effect free), and every public instance method of <code>Random</code> (every may-flag but
+<code>Unknown</code>: it advances its state, may validate arguments, and may be overridden). They are classified, not unknown.</p>
+<h2 id="7-expression-analysis">7. Expression analysis</h2>
+<ul>
+<li><strong>Call versus expression.</strong> <code>AnalyzeMethod</code> classifies the method alone, its arguments already evaluated. <code>Analyze</code>
+classifies an expression: method ∪ receiver ∪ arguments, plus <code>MayThrowRuntime</code> for a reference receiver that is not a
+non-null constant.</li>
+<li><strong>Scopes.</strong> Free parameters are mutable state. Block variables, the parameters of a lambda invoked in place, and the
+parameters of the lambda given to <code>AnalyzeInvocation</code> are local: reading them reads no outside state, writing them is no
+side effect — unless a by-reference parameter, or a local captured by an escaping closure or quoted tree (the write is
+then observed after the evaluation). A closure containing code the walk cannot see is assumed to capture every local.
+Shadowing is handled by declaration index.</li>
+<li><strong>Lambdas.</strong> Evaluating a lambda allocates its delegate; its body does not run. A lambda invoked in place, and the
+conversion lambda of a coalescing or compound assignment, run their body, analyzed recursively with parameters bound,
+without compiling or executing anything. Any other delegate invocation is unknown code. Compiler-generated closures read
+their captures through fields of a display object: <code>ReadsMutableState</code>.</li>
+<li><strong>Operators.</strong> Intrinsic operators (no method) follow <code>ExpressionBehaviorRules</code>: unchecked, bitwise, comparison and
+logical operators never throw; checked arithmetic overflows on integers only; integer division throws unless the divisor
+is a safe constant; IEEE division never throws. An operator method is classified like any method (trusted, declared or
+unknown).</li>
+<li><strong>Conversions.</strong> Primitive and enumeration conversions never throw unchecked; checked ones may overflow an integral target;
+nullable wrapping is total, unwrapping may throw; boxing allocates; unboxing and non-widening reference casts may throw.</li>
+<li><strong>Members.</strong> A field reads mutable state unless read-only or constant; a property runs its getter, classified as a
+method; an indexer likewise; an array element is mutable state and may be out of range.</li>
+<li><strong>Branches.</strong> Conditionals and short-circuit operators contribute the union of what may run.</li>
+<li><strong>Unknown code.</strong> Unannotated user methods, getters, setters, constructors, custom operators without declaration,
+delegate invocations, loops, jumps, labels, switches, try blocks, member and list initializers, runtime variables, debug
+information, dynamic operations and extension nodes.</li>
+<li><strong>Hostile inputs.</strong> An extension node is recognized by class (<code>ExpressionOpacity.IsOpaque</code>) before any <code>Type</code> or
+<code>NodeType</code> read; no binder is invoked; a <code>MethodInfo</code>, <code>FieldInfo</code> or <code>PropertyInfo</code> that is not a runtime reflection
+object (finding A-10) is unknown code without any member read and is not cached.</li>
+<li><strong>Not modeled.</strong> Asynchronous and resource exceptions, evaluation time, termination.</li>
+</ul>
+<h2 id="8-resources-and-concurrency">8. Resources and concurrency</h2>
+<p>Each public call is one expression operation (<code>ExpressionResourceBudget.Run</code>): the input is validated against the depth and
+node limits before any recursion, every analyzed node counts one structural visit and checks the stack, and a call made
+inside a running operation joins it and can only tighten its limits. A shared DAG is walked once per use, like the other
+engine walks, so it cannot evade the node limit or the visit budget. Scope state lives in a per-call walker; the method
+caches are concurrent dictionaries of runtime metadata. There is no thread-static state.</p>
+<h2 id="9-preparation-of-future-policies-not-enabled">9. Preparation of future policies (not enabled)</h2>
+<p>Internal, unused by any rule:</p>
+<ul>
+<li><code>ExpressionTrustPolicy</code> — <code>Verified</code> (a declaration counts as unknown code) or <code>TrustDeclarations</code> (declared code is
+trusted; unknown code stays unknown).</li>
+<li><code>ExpressionBehaviorPermissions.CanDiscard</code> (no side effect, allocation or exception; a clock read may be dropped),
+<code>CanRepeat</code> (deterministic, no side effect or allocation; exceptions allowed), <code>CanReorder</code> (deterministic, no side
+effect, allocation or exception).</li>
+<li><strong>The permissions are local, not contextual.</strong> Reading mutable state is allowed by every permission, so none of them
+alone justifies a rewrite across other evaluations. <code>CanRepeat</code> means that two evaluations in the same state agree; a
+caller that merges, repeats or moves an evaluation reading mutable state must also prove that no evaluation with side
+effects, and no unknown code, runs between the occurrences or across the move (as <code>SplitPinnedTerms</code> does today).
+Architecture C must not use <code>CanRepeat</code> in isolation.</li>
+<li><code>ExpressionBehaviorPermissions.ToEffects</code> — the bridge to <code>ExpressionEffects</code>: exceptions become <code>MayThrow</code>, side effects,
+nondeterminism and unknown code become <code>Observable</code>. It is at least as strict as the gate on unknown code.</li>
+</ul>
+<p>Intended extension, for a later stage: <code>ExpressionSimplifierOptions</code> set at construction (like
+<code>SimplifyQuotedExpressions</code>), with <strong>three independent axes</strong>, each off by default:</p>
+<ol>
+<li>trusting <code>[Deterministic]</code> declarations (<code>ExpressionTrustPolicy.TrustDeclarations</code>), so that annotated methods (for
+example those of <code>MathEx</code>) can be simplified without trusting any other user code;</li>
+<li><code>AggressiveSimplification</code>, which would rewrite unknown code; it does not imply the first axis, nor the converse;</li>
+<li>an exception-preservation policy by kind (division by zero, overflow, invalid numeric argument, user exception).</li>
+</ol>
+<p>The options would be consulted by <code>AllowsRules</code> and <code>SplitPinnedTerms</code> through <code>ToEffects</code> or the permissions, with
+per-rule effect declarations replacing the coarse gate. Enabling any of them changes simplification results and the
+number of user calls, so it needs its own contract decision. Finding A-10 must be fixed first.</p>
+<h2 id="10-guarantees">10. Guarantees</h2>
+<table>
+<thead>
+<tr>
+<th>Kind</th>
+<th>Examples</th>
+<th>Basis</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Certain (verified by the analysis)</td>
+<td>absence of a flag on intrinsic operators, trusted numeric functions, local writes, constants, read-only fields; known nondeterministic members</td>
+<td>the expression model and the runtime's own types</td>
+</tr>
+<tr>
+<td>Unknown</td>
+<td><code>Unknown</code>/<code>UnknownCode</code> on user methods without declaration, getters, constructors, delegates, unsupported families, extension nodes, user reflection objects</td>
+<td>the analysis does not see the code</td>
+</tr>
+<tr>
+<td>Declared</td>
+<td><code>ReliesOnDeclaration</code> on <code>[Deterministic]</code> methods, operators, conversions and getters</td>
+<td>the author's promise, never verified</td>
+</tr>
+</tbody>
+</table>
+<h2 id="11-tests">11. Tests</h2>
+<ul>
+<li>Unit (<code>UtilsTest/Mathematics/Expressions/Coverage</code>, category <code>S5-P18A</code>, also run by the ETC Debug job):
+<code>ExpressionBehaviorAnalysisTests</code> (trusted, partial and untrusted functions; declarations honored or not; members;
+nondeterministic members; unsupported families; hostile extension node; intrinsic exceptions; conditionals; scopes;
+captures; nested, invoked and passed lambdas; permissions; exact and derived simplifiers ignore declarations, even a lying
+one, with unchanged call counts; concurrent analyses; limits) and <code>ExpressionBehaviorAnalysisPropertyTests</code> (1,500 seeded
+trees of every family but extensions: every &quot;no exception&quot;, &quot;no side effect&quot; and &quot;deterministic&quot; guarantee holds when the
+compiled tree runs; differential against the gate).</li>
+<li>Security (<code>UtilsTest.Security/Expressions/ExpressionBehaviorAnalysisResourceTests</code>): hostile nestings of six families on a
+256 KiB stack end with a <code>Stack</code> refusal and leave the thread usable; default limits refuse them before recursion; shared
+DAGs; exact visit budget; nested analyses join the running operation; a user <code>MethodInfo</code> is never read.</li>
+</ul>
+<p>Differential result on the corpus (minimal disagreeing nodes): stricter than the gate only on created quotes (442 nodes,
+A-4); more permissive only on blocks with local effects (473) and lambdas invoked in place (530), both covered by the
+run-time soundness property.</p>
+<h2 id="12-measurements">12. Measurements</h2>
+<p>Windows 11, .NET 9, Release, single process per run, global warm-up before measurement, medians of 7–9 rounds.</p>
+<p>Analysis cost (<code>ExpressionBehaviorAnalysis.Analyze</code>, default limits; &quot;gate&quot; is <code>ExpressionEffectAnalysis.Analyze</code> called
+outside a session, for scale only: it opens no operation, validates nothing and stops at the first unknown node):</p>
+<table>
+<thead>
+<tr>
+<th>Tree</th>
+<th style="text-align: right;">Nodes</th>
+<th style="text-align: right;">New analysis</th>
+<th style="text-align: right;">Allocated</th>
+<th style="text-align: right;">Gate</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>x</code></td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">39 ns</td>
+<td style="text-align: right;">56 B</td>
+<td style="text-align: right;">5 ns</td>
+</tr>
+<tr>
+<td><code>x*2 + Sin(y)</code></td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">131 ns</td>
+<td style="text-align: right;">56 B</td>
+<td style="text-align: right;">45 ns</td>
+</tr>
+<tr>
+<td><code>d(x) + d(y)</code> (declared)</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">147 ns</td>
+<td style="text-align: right;">56 B</td>
+<td style="text-align: right;">58 ns</td>
+</tr>
+<tr>
+<td><code>f(x)</code> (user)</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">83 ns</td>
+<td style="text-align: right;">56 B</td>
+<td style="text-align: right;">33 ns</td>
+</tr>
+<tr>
+<td>30-term sum</td>
+<td style="text-align: right;">119</td>
+<td style="text-align: right;">1.46 µs</td>
+<td style="text-align: right;">56 B</td>
+<td style="text-align: right;">0.94 µs</td>
+</tr>
+<tr>
+<td>400-term sum</td>
+<td style="text-align: right;">1,599</td>
+<td style="text-align: right;">19.3 µs</td>
+<td style="text-align: right;">56 B</td>
+<td style="text-align: right;">12.7 µs</td>
+</tr>
+<tr>
+<td>20 nested identities</td>
+<td style="text-align: right;">85</td>
+<td style="text-align: right;">1.01 µs</td>
+<td style="text-align: right;">56 B</td>
+<td style="text-align: right;">0.73 µs</td>
+</tr>
+<tr>
+<td>10 nested invoked lambdas</td>
+<td style="text-align: right;">61</td>
+<td style="text-align: right;">2.17 µs</td>
+<td style="text-align: right;">392 B</td>
+<td style="text-align: right;">25 ns (stops: observable)</td>
+</tr>
+<tr>
+<td>block with closure</td>
+<td style="text-align: right;">17</td>
+<td style="text-align: right;">0.83 µs</td>
+<td style="text-align: right;">784 B</td>
+<td style="text-align: right;">32 ns (stops: observable)</td>
+</tr>
+<tr>
+<td><code>AnalyzeMethod</code> (cached)</td>
+<td style="text-align: right;">–</td>
+<td style="text-align: right;">15 ns</td>
+<td style="text-align: right;">0 B</td>
+<td style="text-align: right;">–</td>
+</tr>
+</tbody>
+</table>
+<p>About 40 ns of fixed cost per call (operation boundary, shape validation, walker), then roughly 12–25 ns per node.</p>
+<p>Simplifier (<code>Simplify</code>, master <code>ad237762</code> against the branch, 10 alternating processes, 9 rounds each): no line of its path
+changed (one helper of <code>ExpressionEffectAnalysis</code> became <code>internal</code>, which changes no code generation). Branch against master
+medians: −3.6 % to +6.2 % over 11 cases (<code>g8</code> −1.0 %, 12-term sum 0.0 %, <code>(x+1)*(x+1) - x*x</code> −2.1 %, user calls −1.6 %),
+inside the A/A spread of the same campaign (master against master: up to ±26 % on the smallest cases, ±2 % on the larger
+ones). A first campaign was discarded: the machine slowed down by a factor of about 2 for both variants halfway through it.</p>
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/docs/expressions/BehaviorAnalysis.md/#L1" class="edit-link">Edit this page</a>
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>
