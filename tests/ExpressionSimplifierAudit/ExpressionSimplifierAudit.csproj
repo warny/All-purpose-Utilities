@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <!--
+        S5 deep-audit harness: reproducible campaigns (rule inventory, termination, convergence, canonicalization, comparer
+        invariants, differential, observable effects, S3 identities) and complexity measurements of ExpressionSimplifier.
+        It is deliberately not part of Utils.sln, not packable and never run by CI; see README.md and run-audit.ps1.
+        AuditUtilsRoot points at the checkout to audit (run-audit.ps1 can build another checkout side by side).
+    -->
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net9.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>disable</ImplicitUsings>
+        <IsPackable>false</IsPackable>
+        <Optimize>true</Optimize>
+        <TieredPGO>true</TieredPGO>
+        <InvariantGlobalization>true</InvariantGlobalization>
+        <ServerGarbageCollection>false</ServerGarbageCollection>
+        <AuditUtilsRoot Condition="'$(AuditUtilsRoot)' == ''">$(MSBuildThisFileDirectory)..\..\</AuditUtilsRoot>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="$(AuditUtilsRoot)Utils\Utils.csproj" />
+    </ItemGroup>
+
+</Project>
