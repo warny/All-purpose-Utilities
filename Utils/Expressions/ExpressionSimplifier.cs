@@ -3706,8 +3706,8 @@ namespace Utils.Mathematics.Expressions
 
         /// <summary>
         /// Narrower than <see cref="IsOrdinaryBinaryArithmetic(BinaryExpression)"/>: additionally requires
-        /// <paramref name="binary"/>'s type to be a field (<see cref="Types.FloatingPointNumber"/> -
-        /// floating point or <see cref="decimal"/>) rather than a ring with truncating integer division.
+        /// <paramref name="binary"/>'s type to be a binary floating-point field (<see cref="double"/> or <see cref="float"/>)
+        /// rather than a ring with truncating integer division.
         /// Identities that divide by a divisor and later multiply back (for example
         /// <c>x / (y / z) -&gt; (x*z) / y</c>) are only valid under field division; applying them to
         /// truncating integer division can change the result - see the "Symbolic-equivalence contract"
@@ -3716,13 +3716,21 @@ namespace Utils.Mathematics.Expressions
         /// </summary>
         /// <param name="binary">The division expression to classify.</param>
         /// <returns><see langword="true"/> when <paramref name="binary"/> is safe to reassociate as field division; otherwise <see langword="false"/>.</returns>
+        /// <remarks>
+        /// <see cref="decimal"/> is excluded since the S5 deep audit (S5A-03): its division throws on a zero divisor and on
+        /// overflow, and a reassociated decimal quotient underflows or overflows at other inputs than the source
+        /// (<c>1m / (b / 3m) -&gt; 3m / b</c> removed the <see cref="DivideByZeroException"/> of <c>b = 1e-28</c>), which the ETC R1b
+        /// contract (C-06: an exception the evaluation can raise is kept) forbids. IEEE-754 division never throws, so the
+        /// reassociation of <see cref="double"/> and <see cref="float"/> only changes rounding, the latitude of the
+        /// "Symbolic-equivalence contract".
+        /// </remarks>
         internal static bool IsOrdinaryFieldDivision(BinaryExpression binary)
         {
             ArgumentNullException.ThrowIfNull(binary);
 
             return binary.NodeType == ExpressionType.Divide
                 && IsOrdinaryBinaryArithmetic(binary)
-                && Types.FloatingPointNumber.Contains(binary.Type);
+                && (binary.Type == typeof(double) || binary.Type == typeof(float));
         }
 
         #endregion

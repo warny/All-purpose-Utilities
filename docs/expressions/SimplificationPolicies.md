@@ -253,7 +253,7 @@ Tests (category `S5-P18B`, also run by the ETC Debug job; the corpus tests were 
 - Only the zero and one identities consume the options (Architecture C, stages C1 and C2, §8); the canonicalization, the
   factoring and merging rules, the NaN fold and the inlining do not yet.
 - `ExpressionComparer` always simplifies with the default policy (its internal instance is not configurable).
-- The permissions inherit the P18-A classification and its known gaps: the `Pow` omission (conservative), and the A10-B, A10-C,
+- The permissions inherit the P18-A classification and its known gaps: the `Pow` omission (conservative; fixed since), and the A10-B, A10-C,
   L-1, L-2 findings (see the A-10 note).
 - `TrustDeclarations` trusts the author: a lying declaration (`[Deterministic]` on a counter) would be merged under C. This is
   the documented purpose of the axis, and the reason it is off by default.

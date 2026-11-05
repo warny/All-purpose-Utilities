@@ -568,7 +568,7 @@ the ETC R4 suites).
 |---|---|---|---|
 | Integral arithmetic (`int`, `long`, `short`, unsigned) | modular (unchecked) | zero/one identities, folding, factoring, canonical reordering | `IsOrdinaryBinaryArithmetic`; folding throws on a constant zero divisor and `MinValue / -1` (S5A-04); no field division (`DivisionOfDivision` refused), `x / -1` refused for signed types (C-06), `0 / x` refused |
 | `float` / `double` | IEEE-754, symbolic | everything, including field reassociation and `0 / x -> 0`, `x * 0 -> 0`, `x - x -> 0` | NaN, infinities and signed zeros not preserved by symbolic identities (documented); constant folding exact; zero-divisor constants refused for field division |
-| `decimal` | CLR decimal | zero/one identities, folding, **field reassociation by a constant divisor** | arithmetic is not inert (may overflow), so factoring and reordering are gated (`2m*x - 2m*x` kept); `0 / x` refused for its exception (C-06) — but `DivisionOfDivision` still reassociates (S5A-03) |
+| `decimal` | CLR decimal | zero/one identities, folding, **field reassociation by a constant divisor** | arithmetic is not inert (may overflow), so factoring and reordering are gated (`2m*x - 2m*x` kept); `0 / x` refused for its exception (C-06) — but `DivisionOfDivision` still reassociates (S5A-03, fixed by P18b: no decimal field reassociation since) |
 | Custom operator | user | none (node atomic) | `IsOrdinaryBinaryArithmetic`; not inert since R1b, so neighbouring rules are gated too |
 | Lifted nullable | lifted | none | `IsLifted`/`IsLiftedToNull` refused (`int? x * 0` kept) |
 | Math functions | function domains | logarithm combination, trigonometric quotients and products, `sin² + cos² -> 1` | positive real domain assumed for logarithms (documented); poles and rounding not preserved |
@@ -661,6 +661,9 @@ defective behavior; the fixing stage changes that assertion in the same commit a
 - **Cause (causal experiment):** restricting `IsOrdinaryFieldDivision` to `float`/`double` removes 29 of the 30 exception differences of a 6,000-seed `decimal` campaign (`EXC-ADDED` 2 → 0, `EXC-REMOVED` 9 → 1, `EXC-CHANGED` 18 → 0, the one `VALUE` difference too); the last one is S5A-13, a different cause.
 - **Fix:** exclude `decimal` from field reassociation (`IsOrdinaryFieldDivision` restricted to `float`/`double`), or a new
   decision recorded in the migration guide if decimal reassociation is to stay.
+- **Fixed (P18b, 2026-11-05):** `IsOrdinaryFieldDivision` accepts `double` and `float` only; the 6,000-seed `decimal` campaign
+  goes from 30 exception differences and 1 value difference to none (together with S5A-13). Migration guide: "decimal division
+  exceptions (S5 P18b)".
 
 ### S5A-04 — an exception of an unevaluated branch is raised while simplifying (Medium)
 
@@ -777,6 +780,8 @@ A test pinning the plan order (or an explicit priority) removes the latent risk.
   gate then lets `SubstractionOfEqualsElements` cancel the two evaluations (and lets `DivisionOfDivision` run, S5A-03).
 - **Found by:** the S5A-03 causal experiment (the one exception difference left once decimal field division is disabled).
 - **Fix:** a decimal constant divisor is safe only when its magnitude is at least 1 (ETC R1b effect table, with its own tests).
+- **Fixed (P18b, 2026-11-05):** `IsSafeDivisor` accepts a decimal divisor of magnitude at least 1 only (division and remainder).
+  The P18-A behavior analysis was never affected: a decimal division node carries `decimal.op_Division`, classified as partial.
 
 ## 11. Documented limitations, reproduced
 
@@ -853,8 +858,8 @@ campaign; the counters are machine-independent. The fixing stages must use the A
 
 | Id | Severity | Minimal expression | Cause | Status | Proposed fix |
 |---|---|---|---|---|---|
-| S5A-03 | Critical (C-06), narrow | `1m / (b / 3m)` at `b = 1e-28` | `IsOrdinaryFieldDivision` accepts `decimal` | confirmed | field reassociation for `float`/`double` only |
-| S5A-13 | Critical (C-06), narrow | `(a / 0.5m) - (a / 0.5m)` at `a = decimal.MaxValue` | `IsSafeDivisor` accepts any non-zero decimal | confirmed | safe only when the magnitude is at least 1 |
+| S5A-03 | Critical (C-06), narrow | `1m / (b / 3m)` at `b = 1e-28` | `IsOrdinaryFieldDivision` accepts `decimal` | **fixed (P18b)** | field reassociation for `float`/`double` only |
+| S5A-13 | Critical (C-06), narrow | `(a / 0.5m) - (a / 0.5m)` at `a = decimal.MaxValue` | `IsSafeDivisor` accepts any non-zero decimal | **fixed (P18b)** | safe only when the magnitude is at least 1 |
 | S5A-12 | High | `x0 - x1 - ... - x15` refused by default | free-parameter tie + `0 - t` re-entries | confirmed | stable free-parameter order or canonical fixed point |
 | S5A-01 | High | `x^y + z^2` | null dereference in `AdditionOfCos2andSin2Number` | confirmed | pattern-match the exponents |
 | S5A-02 | High | `double.Round(x, 2)` | arity-based method lookup in `TransformCall` | confirmed | keep the call's own method |

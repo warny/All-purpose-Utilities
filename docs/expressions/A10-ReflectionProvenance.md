@@ -111,8 +111,8 @@ object is observable, so these consumers never decide a rewrite of such a node.
 - **A10-C — `ExpressionOptimiser` drops evaluations.** The separate `ExpressionOptimiser` rewrites `x * 0 -> 0`, `x + 0 -> x`
   and `x * 1 -> x` without any effect or operator check: `F() * 0` loses the call of `F`, and a custom operator is treated as
   arithmetic. Unrelated to reflection provenance; proposed as a separate PR.
-- **P18-A list omission.** `Pow` is missing from the total floating functions of `ExpressionMethodBehaviors` (the gate trusts
-  it). Conservative (`UnknownCode`); to add in a separate change.
+- **P18-A list omission.** `Pow` was missing from the total floating functions of `ExpressionMethodBehaviors` (the gate trusts
+  it). Conservative (`UnknownCode`); fixed by the S5 P18 `Pow` classification change (see [BehaviorAnalysis.md](BehaviorAnalysis.md) §5).
 
 ## 6. Tests
 
