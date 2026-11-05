@@ -56,6 +56,16 @@ public enum ExpressionTrustPolicy
 /// <see cref="ExpressionBehaviors.SideEffects"/> (or unknown code) runs between the merged occurrences or across the move,
 /// exactly as <c>SplitPinnedTerms</c> does with <see cref="ExpressionEffectAnalysis"/>. No policy relaxes that condition.
 /// </para>
+/// <para>
+/// <b>A permission is not a proof of a transformation.</b> <see cref="CanRepeat(ExpressionBehavior, ExpressionSimplifierOptions)"/>
+/// only allows changing the number of evaluations; merging several evaluations into one and duplicating one are different
+/// operations (a merged clock read becomes one snapshot, a duplicated one gives several values where the source used one), so the
+/// rule must still check the values, the order and the context of its exact rewrite. A transformation that combines dropping,
+/// merging, duplicating or moving must satisfy every permission matching the modifications it actually makes: a merge that also
+/// moves the surviving evaluation (or keeps a later occurrence instead of the first) needs
+/// <see cref="CanReorder(ExpressionBehavior, ExpressionSimplifierOptions)"/> too, which a preserved exception refuses. See
+/// <c>docs/expressions/SimplificationPolicies.md</c> §3.5–3.6.
+/// </para>
 /// </remarks>
 internal static class ExpressionBehaviorPermissions
 {
@@ -110,7 +120,8 @@ internal static class ExpressionBehaviorPermissions
 
     /// <summary>
     /// Whether the evaluation can be performed a different number of times (at least once) under <paramref name="options"/>, with
-    /// the same contextual condition as <see cref="CanRepeat(ExpressionBehavior, ExpressionTrustPolicy)"/>.
+    /// the same contextual condition as <see cref="CanRepeat(ExpressionBehavior, ExpressionTrustPolicy)"/>. A local permission on
+    /// the count only: it is not sufficient for a merge or a duplication that also moves an evaluation (see the remarks of the class).
     /// </summary>
     /// <param name="behavior">The behavior.</param>
     /// <param name="options">The policy.</param>

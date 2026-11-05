@@ -120,8 +120,8 @@ The five operations of the brief:
 |---|---|---|
 | 1. Drop an exception (`t * 0 -> 0` with a throwing `t`) | the category (`CanDiscard`) | |
 | 2. Change the order of two exceptions | the category (`CanReorder`) | each moved evaluation must be movable, and so must every evaluation it crosses (contextual) |
-| 3. Repeat an expression that may throw | nothing for a deterministic one | it throws on its first evaluation either way; a nondeterministic one (aggressive only) must raise no preserved category |
-| 4. Merge several evaluations | as 3 | a merge that also moves the surviving occurrence is a reorder (2) |
+| 3. Repeat an expression that may throw | nothing for a deterministic one, locally | it throws on its first evaluation either way; a nondeterministic one (aggressive only) must raise no preserved category; the position of the first evaluation must not move (else 2 applies, §3.6) |
+| 4. Merge several evaluations | as 3, locally | a merge that also moves the surviving occurrence, or that keeps a later occurrence instead of the first, is a reorder (2); §3.6 |
 | 5. Move an exception from run time to simplification time | never | constant folding must not evaluate a throwing operation; not a policy dimension |
 | (Introduce an exception) | never | |
 
@@ -180,6 +180,42 @@ this condition.
 `ToEffects(behavior, ExpressionTrustPolicy)` is kept as it was: the gate's `ExpressionEffects` have no notion of nondeterminism
 or exception categories, so the bridge cannot express the aggressive and exception axes and stays as strict as the default
 there. A rule that honors those axes must ask the permissions with the options, not the bridged effects.
+
+### 3.5 `CanRepeat` covers two different operations
+
+`CanRepeat` is a local permission to **change the number of evaluations** (at least one remains). It covers two operations that
+are not interchangeable, and it is not a sufficient proof for either of them:
+
+- **Merging** several evaluations into one (`t + t -> 2 * t`): occurrences that could differ in the source now share one
+  value. For a deterministic evaluation in an unchanged state they agree anyway; for a nondeterministic one (aggressive only), two
+  clock reads become one snapshot.
+- **Duplicating** one evaluation (inlining an argument used twice): one value of the source becomes several evaluations. For a
+  nondeterministic one, a value the source used consistently (`c - c` with `c = Now`, always `0`) may now differ between its
+  uses (`Now - Now`), a different and stronger change than a merge.
+
+So C must check, for the exact transformation, the values (consistency of the uses of one evaluation, snapshot of several),
+the position of the surviving or added evaluations (§3.6) and the context (§3.3), instead of reading `CanRepeat` as "this rewrite
+is safe". A rule may impose a stricter condition than the permission (for example refuse to duplicate a nondeterministic
+evaluation even under aggressive simplification); it may never impose a weaker one.
+
+### 3.6 Combined transformations
+
+A transformation that combines dropping, merging, duplicating or moving must satisfy **every permission corresponding to the
+modifications it actually makes**, for each evaluation it affects, plus the contextual conditions of §3.3:
+
+| The transformation… | Permissions required for the affected evaluation |
+|---|---|
+| drops it | `CanDiscard` |
+| changes its number of evaluations, the first one staying in place | `CanRepeat` |
+| changes its number of evaluations and moves the first (or keeps a later occurrence instead of the first) | `CanRepeat` and `CanReorder` |
+| moves it | `CanReorder`, and every evaluation it crosses is movable |
+| drops some occurrences and keeps others | `CanRepeat` (count) and `CanReorder` if the kept one is not the first |
+
+Example: merging two deterministic evaluations that may throw is admissible locally (`CanRepeat`: the first one throws under
+the same conditions); a merge that also places the surviving evaluation after another one changes the order of exceptions and
+needs `CanReorder`, which a preserved category refuses. Likewise, an evaluation that reads mutable state may be merged only if
+no side effect separates the occurrences, whatever its permissions. Choosing a single permission (`CanRepeat` alone) for a
+combined rewrite is a defect of the rule, not a policy decision.
 
 ## 4. Guarantees of this version
 
@@ -241,7 +277,11 @@ Problems to solve before activation:
    node would be quadratic. C needs a per-operation, reference-keyed behavior memo inside the resource session (and the visit
    budget must count it).
 3. **Policy-keyed caches.** The comparison memos (S5 P9, P15), the factor cache (P3) and the comparer's simplification must be
-   keyed by policy, or kept on the default; a nested simplification with another policy joins the running session today.
+   keyed by policy, or kept on the default; a nested simplification with another policy joins the running session today. The
+   value equality of `ExpressionSimplifierOptions` makes it usable in a key, but it is not a sufficient key: every cache must also
+   include whatever else influences its result — the lexical scope context (bound parameters, binder frames), the resource
+   session it lives in (entries must not outlive or cross sessions), and the simplifier instance or runtime type when a derived
+   simplifier or `SimplifyQuotedExpressions` changes the rules.
 4. **Contextual ordering.** The local permissions must be combined with a proof that no side effect or unknown code runs between
    merged occurrences or across a move (§3.3); `SplitPinnedTerms` is the model.
 5. **Correctness items first.** P18b (S5A-03, S5A-13: decimal division exceptions) and the `Pow` omission change what is
@@ -274,8 +314,14 @@ median over the 10 processes. Internal permissions are called through compiled d
 | `Simplify` shared DAG (10 levels) | 35.9 ms | 36.3 ms (36.1) | +1.2 % (+0.6 %) | −0.9 % |
 
 Every `Simplify` difference, with or without explicit options, is inside the A/A spread of the same campaign: the options are
-stored, never read on the simplification path. Construction with an explicit `Options` measured 88.9 ns in this harness
-(stable over the 10 processes, against 39.6 ns without), but an isolated micro-benchmark gives 41–47 ns against 39–40 ns
-(`{ SimplifyQuotedExpressions = true }`: 40 ns), that is the cost of one more reference store; the harness value is not
-explained and is not on the simplification path. The options overloads of the permissions cost 2–3 ns more than the trust
-overloads (three property reads and the aggressive branch); they have no caller yet.
+stored, never read on the simplification path.
+
+**Open measurement: construction with explicit options.** Construction with an explicit `Options` measured 88.9 ns in this
+harness (stable over the 10 processes, about +125 % against 39.6 ns without), while an isolated micro-benchmark gives 41–47 ns
+against 39–40 ns (`{ SimplifyQuotedExpressions = true }`: 40 ns). The added code (one validated reference store over a
+field initializer) does not explain the harness value; a benchmark, JIT or object-lifetime artifact is plausible but not
+demonstrated. This note therefore does **not** conclude that the explicit-options construction has no extra cost: the harness
+value stands as measured, unexplained. Construction is not on the simplification path, so it does not block B; it should be
+re-measured (for example with BenchmarkDotNet and a disassembly of both paths) before C relies on per-call simplifier instances.
+
+The options overloads of the permissions cost 2–3 ns more than the trust overloads (three property reads and the aggressive branch); they have no caller yet.
