@@ -340,6 +340,21 @@ record is in `Utils/TODO-2026-10-27-etc-expression-tree-coverage-roadmap.md` (§
   wait in a bounded list; beyond it they are dropped and counted on `ExpressionTraceScope.UndeliveredEvents`, leaving a gap
   in the sequence numbers. The resource refusal and the root failure are always kept.
 
+## Expression engine: simplification policies consumed (S5 P18 Architecture C)
+
+`ExpressionSimplifier.Options` (Architecture B) had no effect; it is now consumed by the zero and one identities. No public
+signature changed, and the default policy (`ExpressionSimplifierOptions.Default`, or any equal value) gives exactly the previous
+results, so code that does not set `Options` is unaffected, and so is `ExpressionComparer.Default`.
+
+- Under any other policy, `F() * 1`, `F() / 1`, `0 - F()`, `F() ^ 1`, `F() * -1` and similar identities apply even when the
+  operand is not inert (they change no evaluation), and `t * 0`, `0 * t`, `0 / t`, `t ^ 0`, `0 ^ t`, `1 ^ t` drop `t` when the
+  policy lets its evaluation be discarded (for example a partial integer division without arithmetic preservation, a
+  `[Deterministic]` method under `TrustDeclarations` without user-code preservation). Unknown code and side effects are never
+  dropped. Code that set a non-default `Options` while it had no effect now gets these rewrites.
+- An integral or `decimal` division of a non-inert operand by a constant zero no longer throws while simplifying under such a
+  policy (it is left to the evaluation); under the default it never reached the rule.
+- Rules declared by a derived simplifier are unaffected (they keep the historical admission).
+
 <a id="omy-utils-fonts-2"></a>
 ## Utils.Fonts hostile-font parsing hardening
 

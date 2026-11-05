@@ -13,9 +13,11 @@ namespace UtilsTest.Mathematics.Expressions.Coverage;
 /// <summary>
 /// S5 P18 Architecture B: the public simplification policy (<see cref="ExpressionSimplifierOptions"/>), its defaults and
 /// validation, the behavior permissions under the three axes (matrix over every combination of <see cref="ExpressionBehaviors"/>
-/// flags, monotonicity, imperative obstacles), and the absence of any change to simplification: every policy gives the default
-/// results, user calls, evaluation order and exceptions, for the exact and a derived simplifier, sequentially, concurrently and
-/// re-entrantly.
+/// flags, monotonicity, imperative obstacles). Since Architecture C the policies are consumed (see
+/// <see cref="ExpressionSimplifierPolicyRulesTests"/> for the rules): a policy equal to the default gives exactly the historical
+/// results, user calls, evaluation order and exceptions, and every other policy keeps every guarantee it does not relax (no
+/// exception added, traced effects in the same order, user code during simplification unchanged), for the exact and a derived
+/// simplifier, sequentially, concurrently and re-entrantly.
 /// </summary>
 [TestClass]
 [TestCategory("S5-P18B")]
@@ -401,7 +403,7 @@ public class ExpressionSimplifierOptionsTests
         Assert.AreEqual((false, false, false), Permissions(Of("assignment"), everything), "no policy makes a side effect rewritable");
     }
 
-    // ---------------------------------------------------------------- no change to simplification
+    // ---------------------------------------------------------------- default unchanged, guarantees kept
 
     /// <summary>A traced argument: records its evaluation in <see cref="R4DynamicRuntime.Events"/>.</summary>
     /// <param name="name">The trace name.</param>
@@ -494,12 +496,20 @@ public class ExpressionSimplifierOptionsTests
     /// <returns>The rendering.</returns>
     private static string Render(Expression e) => EtcAuditSupport.Print(e) + Environment.NewLine + "distinct nodes: " + EtcAuditSupport.Nodes(e).Count;
 
+    /// <summary>The result of <see cref="Run"/>.</summary>
+    /// <param name="Render">The rendering of the simplified tree.</param>
+    /// <param name="SimplificationCalls">The user calls made while simplifying.</param>
+    /// <param name="Outcomes">The outcomes of the simplified tree, as text.</param>
+    /// <param name="Evaluated">The outcomes of the simplified tree, or <see langword="null"/> when it was not evaluated.</param>
+    /// <param name="LyingCalls">The calls of the lying declaration while evaluating.</param>
+    private sealed record RunResult(string Render, string SimplificationCalls, string Outcomes, AuditOutcome[]? Evaluated, int LyingCalls);
+
     /// <summary>Simplifies and evaluates a body, counting the user calls made during simplification.</summary>
     /// <param name="simplifier">The simplifier.</param>
     /// <param name="body">The body.</param>
     /// <param name="evaluate">Whether to compile and evaluate the result.</param>
     /// <returns>The rendering, the user calls during simplification, and the outcomes.</returns>
-    private static (string Render, string SimplificationCalls, string Outcomes) Run(ExpressionSimplifier simplifier, Expression body, bool evaluate)
+    private static RunResult Run(ExpressionSimplifier simplifier, Expression body, bool evaluate)
     {
         BehaviorMethods.LyingCalls = 0;
         int counter = BehaviorMethods.Counter;
@@ -518,6 +528,8 @@ public class ExpressionSimplifierOptionsTests
 
         string calls = $"lying {BehaviorMethods.LyingCalls}, counter {BehaviorMethods.Counter - counter}, events {string.Join(",", R4DynamicRuntime.Events)}, thrown {thrown}";
         string outcomes = "";
+        AuditOutcome[]? evaluated = null;
+        int lyingCalls = 0;
         if (evaluate && thrown.Length == 0)
         {
             Func<double, double, double>? function = EtcAuditSupport.TryCompile(EtcAuditGenerator.Wrap(result), out string? error);
@@ -528,65 +540,130 @@ public class ExpressionSimplifierOptionsTests
             else
             {
                 BehaviorMethods.LyingCalls = 0;
-                AuditOutcome[] evaluated = EtcAuditSupport.Evaluate(function);
-                outcomes = string.Join(" | ", evaluated.Select(o => o.ToString())) + $" lying {BehaviorMethods.LyingCalls}";
+                evaluated = EtcAuditSupport.Evaluate(function);
+                lyingCalls = BehaviorMethods.LyingCalls;
+                outcomes = string.Join(" | ", evaluated.Select(o => o.ToString())) + $" lying {lyingCalls}";
             }
         }
 
-        return (Render(result), calls, outcomes);
+        return new RunResult(Render(result), calls, outcomes, evaluated, lyingCalls);
+    }
+
+    /// <summary>The policies equal to the default by value, built three ways: each keeps the historical admission.</summary>
+    /// <returns>The default-equal policies.</returns>
+    private static ExpressionSimplifierOptions[] DefaultEqualPolicies()
+        => [ExpressionSimplifierOptions.Default, new ExpressionSimplifierOptions(), ExpressionSimplifierOptions.Default with { }];
+
+    /// <summary>
+    /// Asserts that the outcomes of a relaxed policy keep every guarantee the policy does not relax, compared with the default
+    /// on the same input: no exception added or changed; an exception of the default may disappear only when the policy leaves a
+    /// category unpreserved, the effects traced before it then still running first; otherwise the same traced effects in the same
+    /// order; the same value, except where the default's value is not finite (the symbolic identities such as <c>t * 0</c> do not
+    /// keep <c>NaN</c> or infinities); a lying declaration evaluated less often only when the policy trusts declarations and does not
+    /// preserve user-code exceptions, never more often.
+    /// </summary>
+    /// <param name="expected">The default's result.</param>
+    /// <param name="actual">The policy's result.</param>
+    /// <param name="options">The policy.</param>
+    /// <param name="context">The assertion context.</param>
+    private static void AssertKeepsTheGuarantees(RunResult expected, RunResult actual, ExpressionSimplifierOptions options, string context)
+    {
+        Assert.AreEqual(expected.SimplificationCalls, actual.SimplificationCalls, context);
+        Assert.AreEqual(expected.Evaluated is null, actual.Evaluated is null, context);
+        if (expected.Evaluated is null || actual.Evaluated is null) return;
+
+        bool relaxesAnException = options.ExceptionPreservation != ExpressionExceptionPreservation.All;
+        for (int k = 0; k < expected.Evaluated.Length; k++)
+        {
+            AuditOutcome source = expected.Evaluated[k], relaxed = actual.Evaluated[k];
+            string at = $"{context} input {k}: {source} vs {relaxed}";
+            if (relaxed.Exception is not null)
+            {
+                Assert.AreEqual(source.Exception, relaxed.Exception, at);
+                CollectionAssert.AreEqual(source.Events, relaxed.Events, at);
+            }
+            else if (source.Exception is not null)
+            {
+                Assert.IsTrue(relaxesAnException, at);
+                CollectionAssert.AreEqual(source.Events, relaxed.Events.Take(source.Events.Length).ToArray(), at);
+            }
+            else
+            {
+                CollectionAssert.AreEqual(source.Events, relaxed.Events, at);
+                Assert.IsTrue(source.Value.Equals(relaxed.Value) || !double.IsFinite(source.Value), at);
+            }
+        }
+
+        Assert.IsTrue(actual.LyingCalls <= expected.LyingCalls, context);
+        if (actual.LyingCalls < expected.LyingCalls)
+        {
+            Assert.IsTrue(options.TrustPolicy == ExpressionTrustPolicy.TrustDeclarations && (options.ExceptionPreservation & ExpressionExceptionPreservation.UserCode) == 0, context);
+        }
     }
 
     /// <summary>
-    /// Every policy gives the results of the default on the hand-built corpus, for the exact and a derived simplifier, with the
-    /// quote option off and on: same tree (structure and sharing), same user calls during simplification, and, when the result
-    /// runs, the same values, exceptions, traced effects in the same order, and the same number of calls of a lying declaration.
+    /// On the hand-built corpus, for the exact and a derived simplifier, with the quote option off and on: a policy equal to the
+    /// default gives exactly the historical tree (structure and sharing), user calls during simplification, and, when the result
+    /// runs, the same values, exceptions, traced effects in the same order and number of calls of a lying declaration; every other
+    /// policy keeps the guarantees it does not relax (<see cref="AssertKeepsTheGuarantees"/>).
     /// </summary>
     [TestMethod]
-    public void EveryPolicy_GivesDefaultResults_HandCorpus()
+    public void EveryPolicy_KeepsItsGuarantees_HandCorpus()
     {
         List<(string Name, Expression Body)> corpus = HandCorpus();
         foreach ((string label, _) in Simplifiers(ExpressionSimplifierOptions.Default))
         {
             foreach ((string name, Expression body) in corpus)
             {
-                var expected = Run(Reference(label), body, evaluate: true);
-                foreach (ExpressionSimplifierOptions options in AllPolicies())
+                RunResult expected = Run(Reference(label), body, evaluate: true);
+                foreach (ExpressionSimplifierOptions options in DefaultEqualPolicies())
                 {
-                    ExpressionSimplifier simplifier = Simplifiers(options).Single(s => s.Label == label).Simplifier;
-                    var actual = Run(simplifier, body, evaluate: true);
-                    string context = $"{label} {name} {options}";
-                    Assert.AreEqual(expected.Render, actual.Render, context);
-                    Assert.AreEqual(expected.SimplificationCalls, actual.SimplificationCalls, context);
-                    Assert.AreEqual(expected.Outcomes, actual.Outcomes, context);
+                    RunResult same = Run(Simplifiers(options).Single(s => s.Label == label).Simplifier, body, evaluate: true);
+                    string context = $"{label} {name} default-equal";
+                    Assert.AreEqual(expected.Render, same.Render, context);
+                    Assert.AreEqual(expected.SimplificationCalls, same.SimplificationCalls, context);
+                    Assert.AreEqual(expected.Outcomes, same.Outcomes, context);
+                }
+
+                foreach (ExpressionSimplifierOptions options in AllPolicies().Skip(1))
+                {
+                    RunResult actual = Run(Simplifiers(options).Single(s => s.Label == label).Simplifier, body, evaluate: true);
+                    AssertKeepsTheGuarantees(expected, actual, options, $"{label} {name} {options}");
                 }
             }
         }
     }
 
     /// <summary>
-    /// Every policy gives the results of the default on 150 generated trees of every family but extension nodes (conditionals,
-    /// lambdas, blocks, try, initializers, dynamic operations, quotes, checked conversions, control flow, shared subtrees).
-    /// Evaluation runs for the first 40 trees under every policy.
+    /// The same contract on 150 generated trees of every family but extension nodes (conditionals, lambdas, blocks, try,
+    /// initializers, dynamic operations, quotes, checked conversions, control flow, shared subtrees). Evaluation runs for the first
+    /// 40 trees under every policy.
     /// </summary>
     [TestMethod]
-    public void EveryPolicy_GivesDefaultResults_GeneratedCorpus()
+    public void EveryPolicy_KeepsItsGuarantees_GeneratedCorpus()
     {
         var generator = new EtcAuditGenerator(20261105, 5, AuditFamilies.All & ~AuditFamilies.Extension);
         Expression[] trees = Enumerable.Range(0, 150).Select(_ => generator.Generate()).ToArray();
-        ExpressionSimplifierOptions[] policies = AllPolicies().ToArray();
+        ExpressionSimplifierOptions[] policies = AllPolicies().Skip(1).ToArray();
         foreach ((string label, _) in Simplifiers(ExpressionSimplifierOptions.Default))
         {
             for (int i = 0; i < trees.Length; i++)
             {
                 bool evaluate = i < 40;
-                var expected = Run(Reference(label), trees[i], evaluate);
+                RunResult expected = Run(Reference(label), trees[i], evaluate);
+                foreach (ExpressionSimplifierOptions options in DefaultEqualPolicies())
+                {
+                    RunResult same = Run(Simplifiers(options).Single(s => s.Label == label).Simplifier, trees[i], evaluate);
+                    string context = $"{label} tree {i} default-equal";
+                    Assert.AreEqual(expected.Render, same.Render, context);
+                    Assert.AreEqual(expected.SimplificationCalls, same.SimplificationCalls, context);
+                    Assert.AreEqual(expected.Outcomes, same.Outcomes, context);
+                }
+
                 foreach (ExpressionSimplifierOptions options in policies)
                 {
-                    var actual = Run(Simplifiers(options).Single(s => s.Label == label).Simplifier, trees[i], evaluate);
-                    string context = $"{label} tree {i} {options}";
-                    Assert.AreEqual(expected.Render, actual.Render, context);
-                    Assert.AreEqual(expected.SimplificationCalls, actual.SimplificationCalls, context);
-                    Assert.AreEqual(expected.Outcomes, actual.Outcomes, context);
+                    RunResult actual = Run(Simplifiers(options).Single(s => s.Label == label).Simplifier, trees[i], evaluate);
+                    AssertKeepsTheGuarantees(expected, actual, options, $"{label} tree {i} {options}");
                 }
             }
         }
@@ -594,10 +671,11 @@ public class ExpressionSimplifierOptionsTests
 
     /// <summary>
     /// Extension nodes: under every policy the simplifier makes exactly the reads of the default (none of them by the engine
-    /// beyond the documented ones), and keeps the same extension instances.
+    /// beyond the documented ones) and keeps the same extension instances (an extension node is unknown code: no policy drops
+    /// it); a default-equal policy also gives the same tree size, while another policy may rewrite the nodes around them.
     /// </summary>
     [TestMethod]
-    public void EveryPolicy_GivesDefaultResults_ExtensionNodes()
+    public void EveryPolicy_KeepsExtensionNodesAndTheirReads()
     {
         var generator = new EtcAuditGenerator(20261106, 4, AuditFamilies.All, wrapExtensions: true);
         Expression[] trees = Enumerable.Range(0, 60).Select(_ => generator.Generate()).ToArray();
@@ -627,14 +705,24 @@ public class ExpressionSimplifierOptionsTests
             return $"kept [{string.Join(",", kept)}] reads [{string.Join(",", reads)}] nodes {nodes.Count}";
         }
 
+        // The kept instances and the reads, without the tree size.
+        static string KeptAndReads(string observed) => observed[..observed.LastIndexOf(" nodes ", StringComparison.Ordinal)];
+
         ExpressionSimplifierOptions[] policies = AllPolicies().ToArray();
         for (int i = 0; i < trees.Length; i++)
         {
             string expected = Observe(new ExpressionSimplifier(), trees[i]);
+            string expectedDerived = Observe(new DerivedSimplifier(), trees[i]);
+            foreach (ExpressionSimplifierOptions options in DefaultEqualPolicies())
+            {
+                Assert.AreEqual(expected, Observe(new ExpressionSimplifier { Options = options }, trees[i]), $"tree {i} default-equal");
+                Assert.AreEqual(expectedDerived, Observe(new DerivedSimplifier { Options = options }, trees[i]), $"derived tree {i} default-equal");
+            }
+
             foreach (ExpressionSimplifierOptions options in policies)
             {
-                Assert.AreEqual(expected, Observe(new ExpressionSimplifier { Options = options }, trees[i]), $"tree {i} {options}");
-                Assert.AreEqual(Observe(new DerivedSimplifier(), trees[i]), Observe(new DerivedSimplifier { Options = options }, trees[i]), $"derived tree {i} {options}");
+                Assert.AreEqual(KeptAndReads(expected), KeptAndReads(Observe(new ExpressionSimplifier { Options = options }, trees[i])), $"tree {i} {options}");
+                Assert.AreEqual(KeptAndReads(expectedDerived), KeptAndReads(Observe(new DerivedSimplifier { Options = options }, trees[i])), $"derived tree {i} {options}");
             }
         }
     }
@@ -709,15 +797,17 @@ public class ExpressionSimplifierOptionsTests
 
     /// <summary>
     /// Instances with different policies run in parallel on shared trees, and one instance is shared by every worker: every
-    /// result matches the sequential default, and no instance changes the policy of another.
+    /// result matches the sequential result of the same policy, and no instance changes the policy of another.
     /// </summary>
     [TestMethod]
     public void ConcurrentInstances_DoNotContaminateEachOther()
     {
         var generator = new EtcAuditGenerator(20261107, 4, AuditFamilies.All & ~AuditFamilies.Extension);
         Expression[] trees = Enumerable.Range(0, 60).Select(_ => generator.Generate()).ToArray();
-        string[] expected = trees.Select(t => Render(new ExpressionSimplifier().Simplify(t))).ToArray();
         ExpressionSimplifierOptions[] policies = AllPolicies().ToArray();
+        Dictionary<ExpressionSimplifierOptions, string[]> sequential = policies.ToDictionary(
+            options => options,
+            options => trees.Select(t => Render(new ExpressionSimplifier { Options = options }.Simplify(t))).ToArray());
         var shared = new ExpressionSimplifier { Options = policies[^1] };
 
         var failures = new System.Collections.Concurrent.ConcurrentBag<string>();
@@ -730,7 +820,7 @@ public class ExpressionSimplifierOptionsTests
                 int index = (k + worker * 7) % trees.Length;
                 ExpressionSimplifier simplifier = k % 3 == 0 ? shared : own;
                 string actual = Render(simplifier.Simplify(trees[index]));
-                if (actual != expected[index]) failures.Add($"worker {worker} tree {index} {options}");
+                if (actual != sequential[simplifier.Options][index]) failures.Add($"worker {worker} tree {index} {simplifier.Options}");
                 if (!ReferenceEquals(own.Options, options) || !ReferenceEquals(shared.Options, policies[^1])) failures.Add($"worker {worker}: policy changed");
             }
         });

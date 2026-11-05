@@ -1,6 +1,8 @@
 # Expression behavior analysis — design note (S5 P18 Architecture A)
 
-Status: implemented as a read-only foundation (no simplification policy consumes it). Architecture B (public options, not consumed) is described in [SimplificationPolicies.md](SimplificationPolicies.md).
+Status: implemented as a read-only foundation. Architecture B (public options) is described in
+[SimplificationPolicies.md](SimplificationPolicies.md); since Architecture C (stages C1 and C2) the zero and one identities ask
+`CanDiscard` of this analysis under a non-default policy (§8 of that note); the default policy never consults it.
 Base: `master` `ad237762` (after PR #680). Scope: Architecture A only; Architectures B and C are not started.
 
 Naming: this "P18 Architecture A" is the behavior-analysis foundation requested on 2026-11-04. It is distinct from

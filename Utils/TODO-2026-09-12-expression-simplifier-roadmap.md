@@ -5276,6 +5276,25 @@ Design note: [`docs/expressions/SimplificationPolicies.md`](../docs/expressions/
 - Next: Architecture C (consumption), after per-rule effect declarations, a per-operation behavior memo, policy-keyed caches
   and the correctness items P18b and `Pow` (§6 of the note). Not started; needs instructions.
 
+#### S5 P18 Architecture C, stages C1 and C2 (2026-11-05) — the zero and one identities consume the policy
+
+Audit and plan: [`docs/expressions/ArchitectureC-Audit.md`](../docs/expressions/ArchitectureC-Audit.md); contract:
+[`docs/expressions/SimplificationPolicies.md`](../docs/expressions/SimplificationPolicies.md) §8. Base `master` `d16ae332`.
+
+- Contract decision (user, 2026-11-05): the default policy stays strictly historical (`ExpressionComparer.Default` included);
+  the conservative improvements of the default go to a separate pull request (compatibility entry C-08, C-07 being taken);
+  intrinsic admissibility is separated from the historical compatibility by one switch (`UsesHistoricalAdmission`).
+- C1: when the R1b gate refuses a node, a non-default policy lets the audited rules run (`AllowsAuditedRulesOutsideGate`,
+  `IsAuditedRule`), with a thread-static admission flag scoped to the rule's call. Derived rules keep the historical admission.
+- C2: the ten zero and one identities are audited: the evaluation-preserving ones need no permission, the dropping ones ask
+  `CanDiscard` of the dropped operand under the policy (P18-A analysis, instance limits, counted visits), a zero divisor
+  declines instead of throwing.
+- Prerequisite candidates split out: P18b (S5A-03, S5A-13) PR #684 and `Pow` classification PR #685, both independent of C2.
+- S5 campaigns (`terminate`, `converge`, `diff`, `effects`, `s3`, `canon`, 1,000 seeds): byte-identical results on `master`
+  and on the branch (default policy).
+- Next: C2b (NaN fold under the policy), C3 (negation and reassociation family, factoring, quotients, canonicalization with a
+  per-operation behavior memo; needs #684 merged), C4 (inlining, comparer only if needed), then the C-08 pull request.
+
 ## Execution-optimizer stages
 
 These remain separate from the simplifier stages above.
