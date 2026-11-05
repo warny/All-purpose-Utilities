@@ -153,6 +153,89 @@ public class ExpressionSimplifierPolicyRulesSecurityTests
     }
 
     /// <summary>
+    /// The flag of the rules admitted outside the gate is per thread: user code reached during a simplification (here the members
+    /// of an impersonating method, read by the framework and by the engine walks) may run another simplification, of another
+    /// policy, on the same thread. Every combination of the default and the most permissive policy, outer and inner, gives the
+    /// nested operation the result its instance gives alone (<c>clock * 0</c> kept by the default, dropped by the permissive
+    /// policy), finds the flag unchanged after it, and leaves the outer result and the cleared flag as without the nesting. Some of
+    /// those nested operations start while an audited rule runs, the flag set: the nested instance clears it for its own nodes.
+    /// </summary>
+    [TestMethod]
+    public void UserCode_RunningAnotherPolicy_KeepsEachAdmission()
+    {
+        var sin = new ImpersonatingMethod(typeof(Math).GetMethod(nameof(Math.Sin), [typeof(double)])!);
+        Expression fake = Expression.Call(sin, P);
+        Expression[] sources =
+        [
+            Expression.Multiply(fake, Expression.Constant(0.0)),
+            Expression.Divide(Expression.Constant(0.0), fake),
+            Expression.Power(fake, Expression.Constant(0.0)),
+            Expression.Add(fake, Expression.Constant(0.0)),
+            Expression.Multiply(fake, Expression.Constant(1.0)),
+        ];
+        Expression clock = Expression.Convert(Expression.Call(typeof(System.Diagnostics.Stopwatch).GetMethod(nameof(System.Diagnostics.Stopwatch.GetTimestamp))!), typeof(double));
+        Expression innerSource = Expression.Multiply(clock, Expression.Constant(0.0));
+        ExpressionSimplifierOptions[] policies = [ExpressionSimplifierOptions.Default, Permissive];
+        Assert.AreNotEqual(
+            ExpressionTraceFormatter.Format(new ExpressionSimplifier().Simplify(innerSource)),
+            ExpressionTraceFormatter.Format(new ExpressionSimplifier { Options = Permissive }.Simplify(innerSource)),
+            "the inner tree tells the two admissions apart");
+
+        int setFlagHits = 0;
+        try
+        {
+            foreach (ExpressionSimplifierOptions outerOptions in policies)
+            {
+                foreach (ExpressionSimplifierOptions innerOptions in policies)
+                {
+                    var inner = new ExpressionSimplifier { Options = innerOptions };
+                    string innerAlone = ExpressionTraceFormatter.Format(inner.Simplify(innerSource));
+                    for (int index = 0; index < sources.Length; index++)
+                    {
+                        string context = $"outer {outerOptions}, inner {innerOptions}, source #{index}";
+                        sin.Trap.Observer = null;
+                        int aloneCount = Occurrences(new ExpressionSimplifier { Options = outerOptions }.Simplify(sources[index]), sin);
+
+                        var nested = new System.Collections.Generic.List<(bool Before, bool After, string Result)>();
+                        bool nesting = false;
+                        sin.Trap.Observer = _ =>
+                        {
+                            if (nesting) return;
+                            nesting = true;
+                            try
+                            {
+                                bool before = ExpressionTransformer.RuleRunsOutsideGate;
+                                string result = ExpressionTraceFormatter.Format(inner.Simplify(innerSource));
+                                nested.Add((before, ExpressionTransformer.RuleRunsOutsideGate, result));
+                            }
+                            finally
+                            {
+                                nesting = false;
+                            }
+                        };
+
+                        Expression simplified = new ExpressionSimplifier { Options = outerOptions }.Simplify(sources[index]);
+                        sin.Trap.Observer = null;
+                        Assert.AreEqual(aloneCount, Occurrences(simplified, sin), context);
+                        Assert.IsTrue(nested.Count > 0, context);
+                        Assert.IsTrue(nested.All(n => n.Result == innerAlone), $"{context}: {innerAlone}");
+                        Assert.IsTrue(nested.All(n => n.Before == n.After), context);
+                        Assert.IsFalse(ExpressionTransformer.RuleRunsOutsideGate, context);
+                        setFlagHits += nested.Count(n => n.Before);
+                    }
+                }
+            }
+        }
+        finally
+        {
+            sin.Trap.Observer = null;
+        }
+
+        // The members are read by audited rules too (the type of the operand), so the nesting is exercised with the flag set.
+        Assert.IsTrue(setFlagHits > 0, "a nested operation started while an audited rule ran");
+    }
+
+    /// <summary>
     /// The behavior analysis an audited rule runs is counted in the operation: under a non-default policy <c>F() * 0</c> (with an
     /// unknown <c>F</c>, so the drop is refused after the analysis) costs more structural visits than under the default, and the
     /// simplification is refused exactly one structural or transformation visit below its measured cost, for the exact and a

@@ -401,8 +401,9 @@ Tests (category `S5-P18C`, also run by the ETC Debug job):
   assignment, local block) × 32 policies, exact and derived, against the permission matrix and a family-by-family expectation;
   evaluation counts; exceptions removed only when their category is not preserved; the evaluation-preserving identities on
   `double`, `int`, `decimal` × 32 policies with values and call counts (`MinValue` and overflow cases included); the zero divisor;
-  derived and hiding rules; the scope of the admission flag (nested transformation, resource refusal); the instance limits of the
-  analysis; the README example.
+  derived and hiding rules; the scope of the admission flag (nested transformation, resource refusal); nested simplifications by
+  another instance of another policy, started from a rule or from an extension node's user code (each gets its own admission;
+  the analysis of an audited rule reads no member of the opaque node); the instance limits of the analysis; the README example.
 - `ExpressionSimplifierOptionsTests` (Unit, adapted): default-equal policies give the historical tree, calls and outcomes on the
   hand corpus and 150 generated trees; every other policy keeps the guarantees above on them (no exception added, traced effects
   in order, values except where the default's value is not finite, lying calls only fewer and only under trust without
@@ -410,46 +411,53 @@ Tests (category `S5-P18C`, also run by the ETC Debug job):
 - `UtilsTest.Security/Expressions/ExpressionSimplifierPolicyRulesSecurityTests` (Security): impersonating reflection objects are
   never dropped and read no member the historical path does not read; the analysis is counted in the budget (refusal exactly one
   visit below); the pathological nesting `((F() * 0) * 0) … * 0` stays bounded (quadratic structural work, linear
-  transformation work); a 100,000-level nesting ends with a `Stack` refusal on a 256 KiB stack.
+  transformation work); a 100,000-level nesting ends with a `Stack` refusal on a 256 KiB stack; user code of an impersonating
+  method running another simplification of another policy, including while an audited rule runs with the admission flag set
+  (the flag is per thread: the nested operation clears it for its own nodes and finds it unchanged afterwards).
 
 ### 8.5 Measurements
 
-Windows 11, .NET 9, Release, unlimited resource limits; `master` `d16ae332` against the branch, plus a copy of the `master`
-binary as A/A control; 10 rounds of alternating processes (rotating order), 1.5 s global warm-up, then for each tree the
-policies are measured in 15 interleaved rounds of about 20 ms (median); table = median over the 10 processes. A first campaign
-that measured the policies one after the other showed a position bias (the same `master` code measured 1.2 µs or 2.0 µs depending
-on its rank) and was discarded. `F` is an unannotated user method.
+BenchmarkDotNet 0.14.0 (in-process emit toolchain, 8 warm-up and 20 measured iterations, `MemoryDiagnoser`), Windows 11,
+.NET 9, Release, unlimited resource limits, Intel i7-12700KF. Four variants built from separate worktrees: `master` `d16ae332`,
+PR #685 (`132a866c`), this branch (`dfe7efac`), and a copy of the `master` binary as A/A control; one process per variant and
+round, the order rotated each round; table = median of the round means (3 rounds; 6 rounds for the shared DAG, the zero chain
+and the negations, re-measured alone). `F` is an unannotated user method; the relaxed policy is `AggressiveSimplification`.
 
-| Case | Policy | master | branch | Δ | A/A |
-|---|---|---:|---:|---:|---:|
-| `x*2 + sin(y)` | default | 4.16 µs | 4.29 µs | +2.9 % | −0.8 % |
-| 12-term sum | default | 2.25 ms | 2.35 ms | +4.1 % | +1.7 % |
-| `(x+1)*(x+1) - x*x` | default | 42.3 µs | 42.9 µs | +1.6 % | +0.1 % |
-| `f(x)+f(x)-f(x)` | default | 5.60 µs | 5.53 µs | −1.3 % | +4.0 % |
-| `2f(x) + 2f(y)*0` | default | 9.58 µs | 9.82 µs | +2.5 % | +1.7 % |
-| 200 nested negations | default | 1.37 ms | 1.41 ms | +2.7 % | +6.6 % |
-| 200 nested user calls | default | 196 µs | 201 µs | +2.6 % | +11.5 % |
-| shared DAG (10 levels) | default | 11.36 ms | 11.91 ms | +4.8 % | −2.3 % |
-| `((F(x)*0)*0)…` 100 / 400 levels | default | 11.0 / 186.4 ms | 11.2 / 187.2 ms | +1.4 / +0.4 % | +1.1 / +0.7 % |
-| `F(x) + 0` | non-default (3 policies) | 1.93–1.98 µs | 2.84–2.89 µs | +46 % | +3 to +7 % |
-| `F(x) * 1` | non-default | 1.93–1.98 µs | 1.75–1.79 µs | −8 to −10 % | +1 to +7 % |
-| `F(x) * 0` (drop refused) | non-default | 1.96–1.99 µs | 2.80–2.81 µs | +42 % | +3 to +4 % |
-| `(i/j) * 0` (refused / dropped) | trust, aggressive / partial | 1.39–1.41 µs | 1.90–1.91 / 1.31 µs | +36 % / −7 % | +1 % |
-| `2f(x) + 2f(y)*0` | non-default | 9.6–9.8 µs | 11.6 µs | +19 to +21 % | +0 to +2 % |
-| `((F(x)*0)*0)…` 100 / 400 levels | non-default | 11.0 / 186–188 ms | 11.4 / 190–191 ms | +3 / +2 % | ±1.5 % |
-| `new ExpressionSimplifier { Options = … }` | – | 104.1 ns | 103.2 ns | −0.8 % | −0.6 % |
+**The processes are pinned to two performance cores** (affinity on logical processors 2 and 4, high priority). The i7-12700KF is
+a hybrid processor: a process, or a phase of it, scheduled on an efficiency core runs about twice slower. Without the pinning
+the same `master` binary measured 1.15 µs or 2.0 µs, 5.9 ms or 13.2 ms, from one process to the next, which made every
+campaign bimodal. The earlier hand-written campaigns of this stage (which reported a default within +1.6 % to +4.8 %, recorded
+then as an open measurement) were not pinned; they are superseded by this one.
 
-**Default policy.** Every difference is inside the A/A spread of the campaign (−2.3 % to +11.5 %), but they are mostly positive
-(+1.6 % to +4.8 %). The default path gained one thread-static read per transformed node (`TransformPrepared`) and one integer
-test per candidate rule. An isolated run of the shared DAG, `master` against the branch against a variant of the branch without
-the per-node read (8 alternating rounds), gives 5.88, 5.90 and 5.87 ms: the read is not the cause, and no other cause was found.
-Like the construction measurement of B, this is recorded as an **open measurement**: it does not show that the default has
-no extra cost, and it should be re-measured with BenchmarkDotNet before C3.
+| Case | Policy | master | #686 | Δ | A/A | #685 Δ | Allocated master → #686 |
+|---|---|---:|---:|---:|---:|---:|---|
+| `x*2 + sin(y)` | default | 4.23 µs | 4.26 µs | +0.8 % | +1.2 % | +0.6 % | 4,297 B → 4,297 B |
+| 12-term sum | default | 1.336 ms | 1.305 ms | −2.4 % | +1.8 % | +0.7 % | identical |
+| `(x+1)*(x+1) - x*x` | default | 18.6 µs | 17.6 µs | −5.5 % | −0.1 % | +0.1 % | identical |
+| `f(x)+f(x)-f(x)` | default | 3.23 µs | 3.25 µs | +0.5 % | +1.6 % | −3.9 % | identical |
+| `2f(x) + 2f(y)*0` | default | 4.68 µs | 4.68 µs | 0.0 % | +0.8 % | −1.6 % | identical |
+| `(x+y)^2` | default | 1.89 µs | 1.84 µs | −3.0 % | −0.7 % | −0.2 % | identical |
+| 200 nested negations (6 rounds) | default | 787 µs | 757 µs | −3.8 % | −4.8 % | −1.0 % | identical |
+| 200 nested user calls | default | 119.9 µs | 119.7 µs | −0.2 % | +2.8 % | +0.3 % | identical |
+| shared DAG, 10 levels (6 rounds) | default | 5.23 ms | 5.28 ms | +0.8 % | +0.3 % | −1.3 % | identical |
+| `((F(x)*0)*0)…` 100 levels (6 rounds) | default | 5.19 ms | 5.17 ms | −0.5 % | −0.5 % | −0.1 % | identical |
+| `F(x) + 0` / `F(x) * 1` / `F(x) * 0` | default | 1.10 / 1.15 / 1.15 µs | 1.12 / 1.15 / 1.13 µs | +1.8 / 0.0 / −1.5 % | +2.7 / +4.0 / +3.5 % | −2 to −3 % | identical |
+| `(i/j) * 0` | default | 710 ns | 696 ns | −2.0 % | +2.2 % | +0.7 % | identical |
+| `F(x) + 0` | relaxed | 1.10 µs | 1.64 µs | +50 % | +3.0 % | −2.4 % | 592 B → 600 B |
+| `F(x) * 1` | relaxed | 1.15 µs | 1.00 µs | −13 % | +3.2 % | −1.8 % | 800 B → 536 B |
+| `F(x) * 0` (drop refused) | relaxed | 1.15 µs | 1.40 µs | +22 % | +3.1 % | −1.7 % | 800 B → 1,200 B |
+| `(i/j) * 0` (drop refused: runtime exceptions kept) | relaxed | 703 ns | 913 ns | +30 % | +2.8 % | +1.6 % | 768 B → 1,104 B |
+| `((F(x)*0)*0)…` 100 levels | relaxed | 5.06 ms | 5.07 ms | +0.2 % | −1.7 % | −1.2 % | 1.87 MB → 1.91 MB (+2.2 %) |
 
-**Other policies.** A node refused by the gate where an audited rule applies costs about 0.5–0.9 µs more: the audited rules run
-(with their reflection invocation), a refused drop runs the behavior analysis (validation and walk of the operand), and
-`F(x) + 0` re-transforms its operand (`AdditionWithZero` returns `TransformCore(left)`, finding S5A-07) where the default reduces
-it by the canonicalization alone. When the drop happens or the rewrite shortens the tree, the simplification is faster. Skipping
-the non-audited candidates before matching their signature did not change these figures measurably. The pathological
-nesting of products by zero stays within +2 to +4 % at 100 and 400 levels: its quadratic structural work (see the security
-test) is small next to the transformation work.
+**Default policy.** No measurable cost: every difference is within −5.5 % to +1.8 %, the A/A control within −4.8 % to +4.0 %,
+the allocations are identical to the byte (a few bytes of rounding on the largest cases), and the shared DAG, which looked like
+the largest regression in the unpinned campaigns, is +0.8 % against an A/A of +0.3 % over 6 rounds. The default path gained one
+thread-static read per transformed node (`TransformPrepared`) and one integer test per candidate rule; they are below the
+resolution of this campaign. PR #685 is within −3.9 % to +1.9 % of `master` on every case.
+
+**Relaxed policy.** A node refused by the gate where an audited rule applies costs about 0.25–0.55 µs more and up to 400 bytes:
+the audited rules run (with their reflection invocation), a refused drop runs the behavior analysis (validation and walk of the
+operand), and `F(x) + 0` re-transforms its operand (`AdditionWithZero` returns `TransformCore(left)`, finding S5A-07) where the
+default reduces it by the canonicalization alone. When the rewrite shortens the tree (`F(x) * 1`), the simplification is faster
+and allocates less. The pathological nesting of products by zero stays at +0.2 % in time and +2.2 % in allocations at 100
+levels: its quadratic structural work (see the security test) is small next to the transformation work.

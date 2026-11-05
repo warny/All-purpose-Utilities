@@ -114,6 +114,84 @@ public class ExpressionSimplifierPolicyRulesTests
     }
 
     /// <summary>
+    /// A derived simplifier whose own rule on negations runs another simplifier (of its own policy) on another tree, and records the
+    /// result and the values of <see cref="ExpressionTransformer.RuleRunsOutsideGate"/> before and after the nested operation.
+    /// </summary>
+    /// <param name="inner">The nested simplifier.</param>
+    /// <param name="innerSource">The tree the nested simplifier simplifies.</param>
+    private sealed class NestingSimplifier(ExpressionSimplifier inner, Expression innerSource) : ExpressionSimplifier
+    {
+        /// <summary>Gets the results of the nested operations.</summary>
+        public List<Expression> Results { get; } = [];
+
+        /// <summary>Gets the flag values seen before and after each nested operation.</summary>
+        public List<(bool Before, bool After)> Flags { get; } = [];
+
+        /// <summary>Runs the nested operation and declines (a positional rule returning <see langword="null"/> declines).</summary>
+        /// <param name="e">The negation.</param>
+        /// <param name="operand">Its operand.</param>
+        /// <returns><see langword="null"/>.</returns>
+        [ExpressionSignature(ExpressionType.Negate)]
+        public Expression Nest(UnaryExpression e, Expression operand)
+        {
+            bool before = RuleRunsOutsideGate;
+            Results.Add(inner.Simplify(innerSource));
+            Flags.Add((before, RuleRunsOutsideGate));
+            return null!;
+        }
+    }
+
+    /// <summary>
+    /// An extension node whose <see cref="NodeType"/> getter, user code that every walk reads (the behavior analysis an audited
+    /// rule runs included), runs another simplifier on another tree and records the result and the values of
+    /// <see cref="ExpressionTransformer.RuleRunsOutsideGate"/> before and after the nested operation.
+    /// </summary>
+    /// <param name="inner">The nested simplifier.</param>
+    /// <param name="innerSource">The tree the nested simplifier simplifies.</param>
+    private sealed class NestingNode(ExpressionSimplifier inner, Expression innerSource) : Expression
+    {
+        /// <summary>Whether a nested operation runs (the getter is not re-entered from it).</summary>
+        private bool _nesting;
+
+        /// <summary>Gets the results of the nested operations.</summary>
+        public List<Expression> Results { get; } = [];
+
+        /// <summary>Gets the flag values seen before and after each nested operation.</summary>
+        public List<(bool Before, bool After)> Flags { get; } = [];
+
+        /// <inheritdoc/>
+        public override ExpressionType NodeType
+        {
+            get
+            {
+                if (_nesting) return ExpressionType.Extension;
+                _nesting = true;
+                try
+                {
+                    bool before = ExpressionTransformer.RuleRunsOutsideGate;
+                    Results.Add(inner.Simplify(innerSource));
+                    Flags.Add((before, ExpressionTransformer.RuleRunsOutsideGate));
+                }
+                finally
+                {
+                    _nesting = false;
+                }
+
+                return ExpressionType.Extension;
+            }
+        }
+
+        /// <inheritdoc/>
+        public override Type Type => typeof(double);
+
+        /// <inheritdoc/>
+        public override bool CanReduce => false;
+
+        /// <inheritdoc/>
+        protected override Expression VisitChildren(ExpressionVisitor visitor) => this;
+    }
+
+    /// <summary>
     /// Invokes a one-argument function and returns its value (invariant text) or the name of its exception. The sign of a zero is
     /// not kept: it is the documented latitude of the symbolic contract (<c>0 - t</c> is <c>+0</c> where <c>-t</c> is <c>-0</c>).
     /// </summary>
@@ -588,6 +666,58 @@ public class ExpressionSimplifierPolicyRulesTests
         }
 
         Assert.IsTrue(refused, "a small structural budget refuses the simplification");
+    }
+
+    /// <summary>
+    /// The flag is per thread, not per instance: a simplification nested in another one on the same thread, by an instance of a
+    /// different policy, gets the admission of its own policy. Every combination of the default and a relaxed policy, outer and
+    /// inner, is run from a rule called while the outer audited rule <c>AdditionWithZero</c> transforms its operand again: the
+    /// nested result is the one the inner instance gives alone (<c>clock * 0</c> kept by the default, dropped by the relaxed
+    /// policy), the flag is the same before and after the nested operation, the outer result is unchanged, and the flag is cleared
+    /// at the end.
+    /// </summary>
+    [TestMethod]
+    public void NestedSimplifications_OfAnotherPolicy_KeepTheirOwnAdmission()
+    {
+        Expression clock = DroppableOperands().Single(o => o.Name == "clock").Operand;
+        Expression innerSource = Expression.Multiply(clock, Expression.Constant(0.0));
+        Expression call = Expression.Call(BehaviorMethods.Method(nameof(BehaviorMethods.Unannotated)), Expression.Negate(X));
+        Expression outerSource = Expression.Add(call, Expression.Constant(0.0));
+        ExpressionSimplifierOptions relaxed = new() { AggressiveSimplification = true };
+        ExpressionSimplifierOptions[] policies = [ExpressionSimplifierOptions.Default, relaxed];
+
+        foreach (ExpressionSimplifierOptions outerOptions in policies)
+        {
+            string outerAlone = Text(new ExpressionSimplifier { Options = outerOptions }.Simplify(outerSource));
+            foreach (ExpressionSimplifierOptions innerOptions in policies)
+            {
+                string context = $"outer {outerOptions}, inner {innerOptions}";
+                string innerAlone = Text(new ExpressionSimplifier { Options = innerOptions }.Simplify(innerSource));
+                var outer = new NestingSimplifier(new ExpressionSimplifier { Options = innerOptions }, innerSource) { Options = outerOptions };
+
+                Assert.AreEqual(outerAlone, Text(outer.Simplify(outerSource)), context);
+                Assert.IsTrue(outer.Results.Count > 0, context);
+                Assert.IsTrue(outer.Results.All(result => Text(result) == innerAlone), $"{context}: {innerAlone}");
+                Assert.IsTrue(outer.Flags.All(flags => flags.Before == flags.After), context);
+                Assert.IsFalse(ExpressionTransformer.RuleRunsOutsideGate, context);
+
+                // User code of an extension operand: the engine walks read its NodeType getter, which runs the nested
+                // simplification, but the audited rule itself never does (its behavior analysis reads no member of an opaque
+                // node), so no nested operation starts while the flag is set.
+                var node = new NestingNode(new ExpressionSimplifier { Options = innerOptions }, innerSource);
+                new ExpressionSimplifier { Options = outerOptions }.Simplify(Expression.Multiply(node, Expression.Constant(0.0)));
+                Assert.IsTrue(node.Results.Count > 0, context);
+                Assert.IsTrue(node.Results.All(result => Text(result) == innerAlone), $"{context}: {innerAlone}");
+                Assert.IsTrue(node.Flags.All(flags => flags.Before == flags.After), context);
+                Assert.IsFalse(node.Flags.Any(flags => flags.Before), $"{context}: the audited rule read the opaque node");
+                Assert.IsFalse(ExpressionTransformer.RuleRunsOutsideGate, context);
+            }
+        }
+
+        Assert.AreNotEqual(
+            Text(new ExpressionSimplifier().Simplify(innerSource)),
+            Text(new ExpressionSimplifier { Options = relaxed }.Simplify(innerSource)),
+            "the inner tree tells the two admissions apart");
     }
 
     /// <summary>

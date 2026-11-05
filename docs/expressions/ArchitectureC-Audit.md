@@ -221,16 +221,21 @@ Validation:
 
 | Suite | Result |
 |---|---|
-| `UtilsTest.Unit` (Release) | 14,538 run, 14,537 passed, 0 failed, 1 ignored (pre-existing) |
-| `UtilsTest.Security` (Release) | 341 run, 338 passed, 0 failed, 3 ignored (pre-existing, platform-gated) |
+| `UtilsTest.Unit` (Release) | 14,539 run, 14,538 passed, 0 failed, 1 ignored (pre-existing) |
+| `UtilsTest.Security` (Release) | 342 run, 339 passed, 0 failed, 3 ignored (pre-existing, platform-gated) |
 | `UtilsTest.Functional` (Release) | 383 passed |
-| ETC Debug job (`UtilsTest.Mathematics.Expressions.Coverage`, Debug) | 326 run, 325 passed, 1 ignored (pre-existing) |
+| ETC Debug job (`UtilsTest.Mathematics.Expressions.Coverage`, Debug) | 327 run, 326 passed, 1 ignored (pre-existing) |
 | S5 campaigns, default policy (`terminate`, `converge`, `diff`, `effects`, `s3`, `canon`, 1,000 seeds, 1,000 nested) | 19 result files byte-identical with `master` `d16ae332`; only `environment.txt` differs |
 
-Performance ([SimplificationPolicies.md](SimplificationPolicies.md) §8.5): default within the A/A spread but mostly positive
-(+1.6 % to +4.8 %), not explained (the per-node flag read was ruled out by an isolated three-way run): an open measurement to
-redo with BenchmarkDotNet before C3. Non-default policies: about +0.5–0.9 µs per node where an audited rule applies without
-shortening the tree; faster when it drops or shortens.
+Performance ([SimplificationPolicies.md](SimplificationPolicies.md) §8.5, BenchmarkDotNet, `master`, #685, #686 and an A/A
+copy, processes pinned to performance cores): default within −5.5 % to +1.8 % against an A/A of −4.8 % to +4.0 %, allocations
+identical; #685 within −3.9 % to +1.9 %. The +1.6 % to +4.8 % of the first, unpinned campaigns came from the hybrid processor
+(a process on an efficiency core runs about twice slower), not from the code. Relaxed policy: +0.25–0.55 µs and up to
+400 bytes per node where an audited rule applies without shortening the tree; faster and smaller when it shortens it.
+
+Review follow-up: the admission flag is per thread, not per instance. Tests run nested simplifications of another policy from
+a rule, from an extension node's user code and from an impersonating method's members, the last ones also while an audited
+rule runs with the flag set: each nested operation gets its own admission, and the flag is unchanged after it.
 
 ### 8.2 Remaining for the next stages
 
