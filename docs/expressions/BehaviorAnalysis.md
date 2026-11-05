@@ -58,7 +58,8 @@ Findings (none changes a result today; none is fixed here, as the scope forbids 
   runtime. It needs a hand-built call node with a custom reflection object. Not fixed in P18-A (no behavior change
   allowed); fixed by the A-10 pull request, which also found the same trust in the call-rule signatures, the
   ordinary-arithmetic checks, the field classification and the inlining analysis.
-- **A-11** `IsSafeDivisor` accepts every nonzero `decimal` divisor (S5A-13, already reported).
+- **A-11** `IsSafeDivisor` accepted every nonzero `decimal` divisor (S5A-13). Fixed by P18b: a decimal divisor is safe only
+  when its magnitude is at least 1. The behavior analysis was not affected (a decimal division carries `decimal.op_Division`).
 - **A-12** Constants are inert whatever their value; the user code of a constant's `Equals`/`GetHashCode` belongs to the
   comparer, not to the evaluation (documented on `ExpressionSimplifier`).
 

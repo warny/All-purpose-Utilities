@@ -431,7 +431,8 @@ internal static class ExpressionEffectAnalysis
 
     /// <summary>
     /// Classifies a division or remainder: binary floating-point operators never throw; an integer or decimal one throws on a
-    /// zero divisor (and an integer one on <c>MinValue / -1</c>), unless the divisor is a constant other than 0 and -1.
+    /// zero divisor (an integer one also on <c>MinValue / -1</c>, a decimal one also on overflow), unless the divisor is a safe
+    /// constant (<see cref="IsSafeDivisor"/>).
     /// </summary>
     /// <param name="binary">The division or remainder.</param>
     /// <returns>The effects of the operator itself.</returns>
@@ -445,12 +446,21 @@ internal static class ExpressionEffectAnalysis
         return safeDivisor ? method : method | ExpressionEffects.MayThrow;
     }
 
-    /// <summary>Whether a boxed constant divisor can never make a division throw: neither zero nor minus one (and any nonzero decimal).</summary>
+    /// <summary>
+    /// Whether a boxed constant divisor can never make a division or remainder throw: an integer divisor other than zero and
+    /// minus one, and a decimal divisor of magnitude at least one.
+    /// </summary>
     /// <param name="divisor">The boxed divisor, of the division's type.</param>
     /// <returns><see langword="true"/> for a divisor that never throws.</returns>
+    /// <remarks>
+    /// A decimal quotient by a divisor of magnitude below one is larger than the dividend and overflows near the bounds
+    /// (<c>decimal.MaxValue / 0.5m</c> throws <see cref="OverflowException"/>), so such a divisor is not safe (S5 deep audit,
+    /// S5A-13); a divisor of magnitude at least one gives a quotient no larger than the dividend. The remainder follows the same
+    /// rule, conservatively.
+    /// </remarks>
     internal static bool IsSafeDivisor(object divisor) => divisor switch
     {
-        decimal value => value != 0m,
+        decimal value => value >= 1m || value <= -1m,
         int value => value is not (0 or -1),
         long value => value is not (0 or -1),
         short value => value is not (0 or -1),
