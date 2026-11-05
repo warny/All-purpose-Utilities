@@ -345,6 +345,20 @@ with an <code>ExpressionResourceLimitException</code> of kind <code>Stack</code>
 spurious factor 1 change: <code>y - 1</code> gives <code>(0 - 1) + y</code> (like <code>y - 2</code> gives <code>(0 - 2) + y</code>) instead of <code>(y - 1) * 1</code>,
 <code>1 - y</code> gives <code>1 + (0 - y)</code> instead of <code>(1 - y) * 1</code>; the values are unchanged.</li>
 </ul>
+<h2 id="expression-engine-decimal-division-exceptions-s5-p18b">Expression engine: decimal division exceptions (S5 P18b)</h2>
+<p>Behavior changes of <code>ExpressionSimplifier</code> (and of <code>ExpressionComparer</code>, which simplifies first); no public signature changed.
+Both restore the C-06 promise that an exception the evaluation can raise is kept. The record is in
+<code>Utils/TODO-2026-11-04-s5-simplifier-deep-audit.md</code> (S5A-03, S5A-13).</p>
+<ul>
+<li><strong>Nested decimal divisions are no longer reassociated (S5A-03).</strong> <code>1m / (b / 3m)</code>, <code>a / (b / 3m)</code> and <code>(a / 0.5m) / b</code> are
+kept as written. They used to become <code>3m / b</code>, <code>(3m * a) / b</code> and <code>a / (0.5m * b)</code>, which underflow or overflow at other
+inputs than the source: the rewrite removed a <code>DivideByZeroException</code> (<code>b = 1e-28</code>), or added one or an <code>OverflowException</code>.
+<code>double</code> and <code>float</code> nested divisions are still reassociated (IEEE division never throws).</li>
+<li><strong>A decimal division by a constant of magnitude below 1 may throw (S5A-13).</strong> <code>a / 0.5m</code> (likewise a remainder) is no longer
+treated as unable to throw: it overflows near <code>decimal.MaxValue</code>. Rewrites that would drop, merge or move it are skipped, so
+<code>(a / 0.5m) - (a / 0.5m)</code> is kept and still throws <code>OverflowException</code> at <code>a = decimal.MaxValue</code> instead of returning <code>0</code>. A
+constant divisor of magnitude 1 or more (<code>a / 2m</code>, <code>a / -1m</code>) is still inert.</li>
+</ul>
 <h2 id="expression-engine-injectable-transformation-tracing-additive">Expression engine: injectable transformation tracing (additive)</h2>
 <p>New public API in <code>Utils.Expressions</code>, without behavior change for code that does not use it: <code>ExpressionTransformTracing</code>
 (<code>Begin(tracer, detail)</code> opens a disposable <code>ExpressionTraceScope</code>), <code>IExpressionTransformTracer</code>,

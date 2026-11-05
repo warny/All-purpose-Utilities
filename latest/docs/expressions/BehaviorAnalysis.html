@@ -161,7 +161,8 @@ subclass of <code>MethodInfo</code>; one that forwards to <code>Math.Sin</code> 
 runtime. It needs a hand-built call node with a custom reflection object. Not fixed in P18-A (no behavior change
 allowed); fixed by the A-10 pull request, which also found the same trust in the call-rule signatures, the
 ordinary-arithmetic checks, the field classification and the inlining analysis.</li>
-<li><strong>A-11</strong> <code>IsSafeDivisor</code> accepts every nonzero <code>decimal</code> divisor (S5A-13, already reported).</li>
+<li><strong>A-11</strong> <code>IsSafeDivisor</code> accepted every nonzero <code>decimal</code> divisor (S5A-13). Fixed by P18b: a decimal divisor is safe only
+when its magnitude is at least 1. The behavior analysis was not affected (a decimal division carries <code>decimal.op_Division</code>).</li>
 <li><strong>A-12</strong> Constants are inert whatever their value; the user code of a constant's <code>Equals</code>/<code>GetHashCode</code> belongs to the
 comparer, not to the evaluation (documented on <code>ExpressionSimplifier</code>).</li>
 </ul>
