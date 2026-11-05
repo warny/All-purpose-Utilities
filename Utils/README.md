@@ -406,6 +406,29 @@ Only an explicit list of built-in numeric functions is trusted (`Math`, `MathF`,
 integer types and `BigInteger`, each function by declaring type and signature); user implementations of the static numeric
 interfaces are not. See `docs/expressions/BehaviorAnalysis.md` for the contract and the guarantees.
 
+## Simplification policies
+
+`ExpressionSimplifierOptions` configures three independent policy axes of a simplifier: trusting `[Deterministic]`
+declarations, aggressive simplification (allocation identity and side-effect-free nondeterminism on analyzed code), and the
+exception categories to preserve. The defaults are conservative, the options are immutable and set at construction, and
+**no rule consults them yet**: every policy currently gives the default results.
+
+```csharp
+using Utils.Expressions;
+using Utils.Mathematics.Expressions;
+
+var simplifier = new ExpressionSimplifier
+{
+    Options = new ExpressionSimplifierOptions
+    {
+        TrustPolicy = ExpressionTrustPolicy.TrustDeclarations,
+        ExceptionPreservation = ExpressionExceptionPreservation.Runtime | ExpressionExceptionPreservation.UserCode,
+    },
+};
+```
+
+See `docs/expressions/SimplificationPolicies.md` for the contract of each axis and their future use.
+
 ## Related packages
 - `omy.Utils.Data` — data record mappers
 - `omy.Utils.IO` — stream utilities and binary serialization

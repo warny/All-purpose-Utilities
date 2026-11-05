@@ -5256,6 +5256,26 @@ Fix note: [`docs/expressions/A10-ReflectionProvenance.md`](../docs/expressions/A
   (framework getters such as `MethodCallExpression.Type` delegate to the object) and L-2 (`Type` provenance).
 - Study, not implemented: [`docs/expressions/CompiledBehavior-Study.md`](../docs/expressions/CompiledBehavior-Study.md)
   (keeping the analyzed behavior of compiled lambdas).
+
+#### S5 P18 Architecture B (2026-11-05) — configurable simplification policies
+
+Design note: [`docs/expressions/SimplificationPolicies.md`](../docs/expressions/SimplificationPolicies.md). Base `master`
+`f4bb85ec`.
+
+- New public `ExpressionSimplifierOptions` (immutable, validated record) with three independent axes, conservative by
+  default: `TrustPolicy` (`ExpressionTrustPolicy`, now public: `Verified` or `TrustDeclarations`), `AggressiveSimplification`
+  (lifts allocation identity and side-effect-free nondeterminism on analyzed code only; never unknown code, side effects,
+  exceptions or declarations) and `ExceptionPreservation` (`ExpressionExceptionPreservation` flags: arithmetic, runtime, user
+  code; default all). Set through `ExpressionSimplifier.Options { get; init; }`, frozen at construction, no ambient state.
+- `ExpressionBehaviorPermissions` takes the options (`CanDiscard`, `CanRepeat`, `CanReorder`); the P18-A overloads are kept
+  and unchanged under the default. Permissions are monotone on every axis; side effects and `Unknown` forbid every permission
+  under every policy. `Effective` now treats an undefined trust value as verified.
+- Not consumed: `AllowsRules`, `SplitPinnedTerms`, `CanonicalizesOperator`, `FinalizeExpression`, the comparer, canonical keys,
+  memos and inlining are unchanged. S5 campaigns (`terminate`, `converge`, `diff`, `effects`, `s3`, `canon`, 1,000 seeds):
+  byte-identical results on `master` and on the branch.
+- Next: Architecture C (consumption), after per-rule effect declarations, a per-operation behavior memo, policy-keyed caches
+  and the correctness items P18b and `Pow` (§6 of the note). Not started; needs instructions.
+
 ## Execution-optimizer stages
 
 These remain separate from the simplifier stages above.

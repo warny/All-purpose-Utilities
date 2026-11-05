@@ -434,6 +434,35 @@ namespace Utils.Mathematics.Expressions
         /// <summary>Quotes are boundaries unless <see cref="SimplifyQuotedExpressions"/> is set (ETC R4, C-05), for every runtime type, derived simplifiers included.</summary>
         internal override bool TreatsQuotesAsBoundaries => !SimplifyQuotedExpressions;
 
+        /// <summary>Backing field of <see cref="Options"/>.</summary>
+        private readonly ExpressionSimplifierOptions _options = ExpressionSimplifierOptions.Default;
+
+        /// <summary>
+        /// Gets the rewrite policy of this instance (S5 P18 Architecture B): declaration trust, aggressive simplification and
+        /// exception preservation. Defaults to <see cref="ExpressionSimplifierOptions.Default"/>.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// <b>Not consumed yet.</b> No rule, gate, canonicalization or comparison reads this policy in this version: every value
+        /// gives the results, user calls, exceptions and resource consumption of the default. A later version (Architecture C) will
+        /// let the rules ask the behavior permissions under it; enabling a relaxed policy will then change results, which is its
+        /// purpose.
+        /// </para>
+        /// <para>
+        /// It is set at construction (<c>new ExpressionSimplifier { Options = … }</c>, also with explicit resource limits and on a
+        /// derived simplifier) and cannot change afterwards, so every call on an instance, including nested, re-entrant and
+        /// concurrent calls, applies the same policy; use two instances for two policies. It is independent of
+        /// <see cref="SimplifyQuotedExpressions"/> and of <see cref="ExpressionTransformer.ResourceLimits"/>. The comparer
+        /// (<see cref="ExpressionComparer"/>) simplifies with the default.
+        /// </para>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException">The value is <see langword="null"/>.</exception>
+        public ExpressionSimplifierOptions Options
+        {
+            get => _options;
+            init => _options = value ?? throw new ArgumentNullException(nameof(Options));
+        }
+
         /// <summary>
         /// Prepares an expression for transformation by calling <see cref="ExpressionTransformer.TransformCore(Expression)"/>
         /// Subclasses can override for custom logic, but here it simply re-applies <see cref="ExpressionTransformer.TransformCore(Expression)"/>

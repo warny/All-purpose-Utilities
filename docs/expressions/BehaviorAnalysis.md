@@ -1,6 +1,6 @@
 # Expression behavior analysis — design note (S5 P18 Architecture A)
 
-Status: implemented as a read-only foundation (no simplification policy consumes it).
+Status: implemented as a read-only foundation (no simplification policy consumes it). Architecture B (public options, not consumed) is described in [SimplificationPolicies.md](SimplificationPolicies.md).
 Base: `master` `ad237762` (after PR #680). Scope: Architecture A only; Architectures B and C are not started.
 
 Naming: this "P18 Architecture A" is the behavior-analysis foundation requested on 2026-11-04. It is distinct from
@@ -265,6 +265,13 @@ Intended extension, for a later stage: `ExpressionSimplifierOptions` set at cons
 The options would be consulted by `AllowsRules` and `SplitPinnedTerms` through `ToEffects` or the permissions, with
 per-rule effect declarations replacing the coarse gate. Enabling any of them changes simplification results and the
 number of user calls, so it needs its own contract decision. Finding A-10 must be fixed first.
+
+**Update (Architecture B, see [SimplificationPolicies.md](SimplificationPolicies.md)).** A-10 is fixed. The options exist as
+public API (`ExpressionSimplifierOptions`, `ExpressionTrustPolicy` made public, `ExpressionExceptionPreservation` by category
+of `ExpressionBehaviors`: arithmetic, runtime, user code) and the permissions take them; nothing consumes them yet. Two
+decisions differ from the sketch above: `AggressiveSimplification` does **not** rewrite unknown code (it lifts allocation
+identity and side-effect-free nondeterminism on analyzed code only), and exception preservation is by origin category, not by
+exception type. `ToEffects` keeps the trust axis only.
 
 ## 10. Guarantees
 

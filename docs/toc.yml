@@ -10,3 +10,5 @@
   href: expressions/A10-ReflectionProvenance.md
 - name: Expressions — Compiled Behavior Study
   href: expressions/CompiledBehavior-Study.md
+- name: Expressions — Simplification Policies
+  href: expressions/SimplificationPolicies.md
