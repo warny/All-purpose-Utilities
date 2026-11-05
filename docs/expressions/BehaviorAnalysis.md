@@ -131,7 +131,7 @@ verified policy prepared for later treats it as unknown code.
 Each listed name is total (`None`) or partial (`MayThrowArithmetic`) per family; `Round` is total only with one parameter;
 `op_Checked*` and `op_Explicit` are always partial. Highlights:
 
-- floating: the IEEE functions (trigonometric, hyperbolic, `*Pi`, exponential and logarithmic families, `Sqrt`, `Cbrt`,
+- floating: the IEEE functions (trigonometric, hyperbolic, `*Pi`, exponential and logarithmic families, `Pow`, `Sqrt`, `Cbrt`,
   `Hypot`, `RootN`, `ScaleB`, `ILogB`, `FusedMultiplyAdd`, `Lerp`, rounding without digits, `Min`/`Max` variants, `Is*`
   predicates, `Half` operators) are total; `Sign` (NaN), `Clamp` (reversed bounds), `Round` with digits or mode are partial;
 - decimal: rounding, `Abs`, `Negate`, comparisons, `Sign`, `CopySign`, implicit conversions are total; arithmetic, `Clamp`,
@@ -168,6 +168,7 @@ is listed here with the reason it cannot throw; every partial function, with the
 | `RootN(x, n)` (floating) | total | `n` any `int` | `n = 0` gives NaN |
 | `ILogB(x)` (floating) | total | – | NaN, 0 and ∞ map to defined `int` values |
 | `Log(x, base)` (floating, `BigInteger`) | total | `base` any value | invalid base gives NaN |
+| `Pow(x, y)` (floating) | total | `y` any value, `x` negative with a fractional `y` | IEEE `pow`: NaN, ±∞ or ±0 (`Pow(-8, 1/3)` is NaN, `Pow(0, -1)` is +∞), never validates |
 | `Lerp(a, b, t)`, `FusedMultiplyAdd` (floating) | total | `t` any value | no validation, IEEE result |
 | `Max`/`Min` and their `Magnitude`/`Number` variants | total | – | NaN propagates, no validation |
 | `Round(x)` (floating, decimal) | total | – | single-argument overload only |
@@ -226,8 +227,9 @@ Recognized by declaring type and name: `DateTime.Now`, `DateTime.UtcNow`, `DateT
   `NodeType` read; no binder is invoked; a `MethodInfo`, `FieldInfo` or `PropertyInfo` that is not a runtime reflection
   object (finding A-10) is unknown code without any member read and is not cached. Since the A-10 fix the check is the
   engine-wide `ExpressionReflectionProvenance.IsRuntime` (a closed set of runtime classes), which also refuses emit builders.
-- **Known omission.** `Pow` is missing from the total floating functions (the gate trusts it): conservative, to add in a
-  separate change.
+- **Former omission (fixed).** `Pow` was missing from the total floating functions (the gate trusts it), so every intrinsic
+  `Power` node, which carries `Math.Pow`, was unknown code. It is listed since the S5 P18 `Pow` classification change (with its
+  precondition row above and the edge-value test); a power with a user method stays unknown, `BigInteger.Pow` stays partial.
 - **Not modeled.** Asynchronous and resource exceptions, evaluation time, termination.
 
 ## 8. Resources and concurrency

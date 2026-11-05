@@ -56,8 +56,8 @@ public class ExpressionReflectionProvenanceControlTests
             Assert.IsTrue(ExpressionReflectionProvenance.IsRuntime(function), function.ToString());
             Assert.AreEqual(ExpressionEffects.None, ExpressionEffectAnalysis.MethodEffects(function), function.ToString());
 
-            // Pow is absent from the P18-A trusted list (a conservative omission recorded in the A-10 note, out of its scope).
-            if (function.Name != nameof(Math.Pow)) Assert.AreEqual(ExpressionBehaviors.None, ExpressionBehaviorAnalysis.AnalyzeMethod(function).Flags, function.ToString());
+            // Pow was absent from the P18-A trusted list until the S5 P18 Pow classification fix; it is total like the others.
+            Assert.AreEqual(ExpressionBehaviors.None, ExpressionBehaviorAnalysis.AnalyzeMethod(function).Flags, function.ToString());
         }
 
         Assert.AreEqual(ExpressionEffects.MayThrow, ExpressionEffectAnalysis.MethodEffects(Static(typeof(Math), nameof(Math.Sign), typeof(double))));
