@@ -1903,6 +1903,20 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Expressions.ExpressionExceptionPreservation.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Expressions.ExpressionExceptionPreservation.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Expressions.ExpressionExceptionPreservation",
+      "Summary": "<p sourcefile=\"api/Utils.Expressions.ExpressionExceptionPreservation.yml\" sourcestartlinenumber=\"1\">The exception categories of <xref href=\"Utils.Expressions.ExpressionBehaviors\" data-throw-if-not-resolved=\"false\"></xref> whose observation a simplification must preserve\n(S5 P18 Architecture B). A set flag means &quot;preserve&quot;: a rewrite never drops such an exception, nor changes its order relative\nto the other observable events of the evaluation. Used by <xref href=\"Utils.Expressions.ExpressionSimplifierOptions.ExceptionPreservation\" data-throw-if-not-resolved=\"false\"></xref>.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.Expressions.ExpressionOptimiser.yml",
       "output": {
         ".html": {
@@ -1984,6 +1998,20 @@
       "IsMRef": true,
       "Title": "Utils.Expressions.ExpressionSignatureAttribute",
       "Summary": "<p sourcefile=\"api/Utils.Expressions.ExpressionSignatureAttribute.yml\" sourcestartlinenumber=\"1\">Marks a method or parameter as having a signature requirement for a certain <xref href=\"Utils.Expressions.ExpressionSignatureAttribute.ExpressionType\" data-throw-if-not-resolved=\"false\"></xref>.\nWhen used on a method, the method is considered for transformation if its attribute matches the current node type.\nWhen used on a parameter, it further restricts which sub-expressions are permissible.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Expressions.ExpressionSimplifierOptions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Expressions.ExpressionSimplifierOptions.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Expressions.ExpressionSimplifierOptions",
+      "Summary": "<p sourcefile=\"api/Utils.Expressions.ExpressionSimplifierOptions.yml\" sourcestartlinenumber=\"1\">The rewrite policy of an <code>ExpressionSimplifier</code> (S5 P18 Architecture B): three independent axes that a later stage\n(Architecture C) will let the rules consult through the behavior permissions. <b>No rule consults them yet</b>: every value\ngives the same simplification results, the same user calls and the same comparer answers as the default.</p>\n"
     },
     {
       "type": "ManagedReference",
@@ -2278,6 +2306,20 @@
       "IsMRef": true,
       "Title": "Utils.Expressions.ExpressionTransformer",
       "Summary": "<p sourcefile=\"api/Utils.Expressions.ExpressionTransformer.yml\" sourcestartlinenumber=\"1\">Provides an abstract base class to transform or rewrite LINQ expression trees.\nSubclasses may override the transformation logic for specific expression signatures.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Expressions.ExpressionTrustPolicy.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Expressions.ExpressionTrustPolicy.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Expressions.ExpressionTrustPolicy",
+      "Summary": "<p sourcefile=\"api/Utils.Expressions.ExpressionTrustPolicy.yml\" sourcestartlinenumber=\"1\">How far a simplification policy may rely on the classification of <xref href=\"Utils.Expressions.ExpressionBehaviorAnalysis\" data-throw-if-not-resolved=\"false\"></xref> (S5 P18\nArchitecture A, exposed by Architecture B as <xref href=\"Utils.Expressions.ExpressionSimplifierOptions.TrustPolicy\" data-throw-if-not-resolved=\"false\"></xref>). Not consumed by any rule\nyet: the simplifier keeps the strict gate of <xref href=\"Utils.Expressions.ExpressionEffectAnalysis\" data-throw-if-not-resolved=\"false\"></xref>.</p>\n"
     },
     {
       "type": "ManagedReference",
@@ -16698,6 +16740,16 @@
       "output": {
         ".html": {
           "relative_path": "docs/expressions/CompiledBehavior-Study.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/expressions/SimplificationPolicies.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/expressions/SimplificationPolicies.html"
         }
       },
       "version": ""

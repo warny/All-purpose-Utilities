@@ -166,6 +166,13 @@ When used on a parameter, it further restricts which sub-expressions are permiss
 </dd>
     </dl>
     <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.ExpressionSimplifierOptions.html">ExpressionSimplifierOptions</a></dt>
+      <dd><p>The rewrite policy of an <code>ExpressionSimplifier</code> (S5 P18 Architecture B): three independent axes that a later stage
+(Architecture C) will let the rules consult through the behavior permissions. <b>No rule consults them yet</b>: every value
+gives the same simplification results, the same user calls and the same comparer answers as the default.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
       <dt><a class="xref" href="Utils.Expressions.ExpressionTraceCollector.html">ExpressionTraceCollector</a></dt>
       <dd><p>A tracer that stores the events of the operations it traces, up to a fixed number (see
 <a class="xref" href="Utils.Expressions.ExpressionTransformTracing.html#Utils_Expressions_ExpressionTransformTracing_Begin_Utils_Expressions_IExpressionTransformTracer_Utils_Expressions_ExpressionTraceDetail_">Begin(IExpressionTransformTracer, ExpressionTraceDetail)</a>).</p>
@@ -404,6 +411,13 @@ of the analysis, a present flag only says that the behavior could not be exclude
 </dd>
     </dl>
     <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.ExpressionExceptionPreservation.html">ExpressionExceptionPreservation</a></dt>
+      <dd><p>The exception categories of <a class="xref" href="Utils.Expressions.ExpressionBehaviors.html">ExpressionBehaviors</a> whose observation a simplification must preserve
+(S5 P18 Architecture B). A set flag means &quot;preserve&quot;: a rewrite never drops such an exception, nor changes its order relative
+to the other observable events of the evaluation. Used by <a class="xref" href="Utils.Expressions.ExpressionSimplifierOptions.html#Utils_Expressions_ExpressionSimplifierOptions_ExceptionPreservation">ExceptionPreservation</a>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
       <dt><a class="xref" href="Utils.Expressions.ExpressionResourceLimitKind.html">ExpressionResourceLimitKind</a></dt>
       <dd><p>The resource dimension whose limit an expression-tree operation exceeded.</p>
 </dd>
@@ -441,6 +455,13 @@ of the analysis, a present flag only says that the behavior could not be exclude
     <dl class="jumplist">
       <dt><a class="xref" href="Utils.Expressions.ExpressionTransformOutcome.html">ExpressionTransformOutcome</a></dt>
       <dd><p>What produced the result of a treatment (<a class="xref" href="Utils.Expressions.ExpressionTransformEventKind.html#Utils_Expressions_ExpressionTransformEventKind_TransformExit">TransformExit</a>) or of a finalization.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.ExpressionTrustPolicy.html">ExpressionTrustPolicy</a></dt>
+      <dd><p>How far a simplification policy may rely on the classification of <a class="xref" href="Utils.Expressions.ExpressionBehaviorAnalysis.html">ExpressionBehaviorAnalysis</a> (S5 P18
+Architecture A, exposed by Architecture B as <a class="xref" href="Utils.Expressions.ExpressionSimplifierOptions.html#Utils_Expressions_ExpressionSimplifierOptions_TrustPolicy">TrustPolicy</a>). Not consumed by any rule
+yet: the simplifier keeps the strict gate of <span class="xref">Utils.Expressions.ExpressionEffectAnalysis</span>.</p>
 </dd>
     </dl>
 

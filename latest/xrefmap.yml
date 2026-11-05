@@ -12297,6 +12297,42 @@ references:
   isSpec: "True"
   fullName: Utils.Expressions.ExpressionEx.While
   nameWithType: ExpressionEx.While
+- uid: Utils.Expressions.ExpressionExceptionPreservation
+  name: ExpressionExceptionPreservation
+  href: api/Utils.Expressions.ExpressionExceptionPreservation.html
+  commentId: T:Utils.Expressions.ExpressionExceptionPreservation
+  fullName: Utils.Expressions.ExpressionExceptionPreservation
+  nameWithType: ExpressionExceptionPreservation
+- uid: Utils.Expressions.ExpressionExceptionPreservation.All
+  name: All
+  href: api/Utils.Expressions.ExpressionExceptionPreservation.html#Utils_Expressions_ExpressionExceptionPreservation_All
+  commentId: F:Utils.Expressions.ExpressionExceptionPreservation.All
+  fullName: Utils.Expressions.ExpressionExceptionPreservation.All
+  nameWithType: ExpressionExceptionPreservation.All
+- uid: Utils.Expressions.ExpressionExceptionPreservation.Arithmetic
+  name: Arithmetic
+  href: api/Utils.Expressions.ExpressionExceptionPreservation.html#Utils_Expressions_ExpressionExceptionPreservation_Arithmetic
+  commentId: F:Utils.Expressions.ExpressionExceptionPreservation.Arithmetic
+  fullName: Utils.Expressions.ExpressionExceptionPreservation.Arithmetic
+  nameWithType: ExpressionExceptionPreservation.Arithmetic
+- uid: Utils.Expressions.ExpressionExceptionPreservation.None
+  name: None
+  href: api/Utils.Expressions.ExpressionExceptionPreservation.html#Utils_Expressions_ExpressionExceptionPreservation_None
+  commentId: F:Utils.Expressions.ExpressionExceptionPreservation.None
+  fullName: Utils.Expressions.ExpressionExceptionPreservation.None
+  nameWithType: ExpressionExceptionPreservation.None
+- uid: Utils.Expressions.ExpressionExceptionPreservation.Runtime
+  name: Runtime
+  href: api/Utils.Expressions.ExpressionExceptionPreservation.html#Utils_Expressions_ExpressionExceptionPreservation_Runtime
+  commentId: F:Utils.Expressions.ExpressionExceptionPreservation.Runtime
+  fullName: Utils.Expressions.ExpressionExceptionPreservation.Runtime
+  nameWithType: ExpressionExceptionPreservation.Runtime
+- uid: Utils.Expressions.ExpressionExceptionPreservation.UserCode
+  name: UserCode
+  href: api/Utils.Expressions.ExpressionExceptionPreservation.html#Utils_Expressions_ExpressionExceptionPreservation_UserCode
+  commentId: F:Utils.Expressions.ExpressionExceptionPreservation.UserCode
+  fullName: Utils.Expressions.ExpressionExceptionPreservation.UserCode
+  nameWithType: ExpressionExceptionPreservation.UserCode
 - uid: Utils.Expressions.ExpressionOptimiser
   name: ExpressionOptimiser
   href: api/Utils.Expressions.ExpressionOptimiser.html
@@ -12614,6 +12650,64 @@ references:
   isSpec: "True"
   fullName: Utils.Expressions.ExpressionSignatureAttribute.Match
   nameWithType: ExpressionSignatureAttribute.Match
+- uid: Utils.Expressions.ExpressionSimplifierOptions
+  name: ExpressionSimplifierOptions
+  href: api/Utils.Expressions.ExpressionSimplifierOptions.html
+  commentId: T:Utils.Expressions.ExpressionSimplifierOptions
+  fullName: Utils.Expressions.ExpressionSimplifierOptions
+  nameWithType: ExpressionSimplifierOptions
+- uid: Utils.Expressions.ExpressionSimplifierOptions.AggressiveSimplification
+  name: AggressiveSimplification
+  href: api/Utils.Expressions.ExpressionSimplifierOptions.html#Utils_Expressions_ExpressionSimplifierOptions_AggressiveSimplification
+  commentId: P:Utils.Expressions.ExpressionSimplifierOptions.AggressiveSimplification
+  fullName: Utils.Expressions.ExpressionSimplifierOptions.AggressiveSimplification
+  nameWithType: ExpressionSimplifierOptions.AggressiveSimplification
+- uid: Utils.Expressions.ExpressionSimplifierOptions.AggressiveSimplification*
+  name: AggressiveSimplification
+  href: api/Utils.Expressions.ExpressionSimplifierOptions.html#Utils_Expressions_ExpressionSimplifierOptions_AggressiveSimplification_
+  commentId: Overload:Utils.Expressions.ExpressionSimplifierOptions.AggressiveSimplification
+  isSpec: "True"
+  fullName: Utils.Expressions.ExpressionSimplifierOptions.AggressiveSimplification
+  nameWithType: ExpressionSimplifierOptions.AggressiveSimplification
+- uid: Utils.Expressions.ExpressionSimplifierOptions.Default
+  name: Default
+  href: api/Utils.Expressions.ExpressionSimplifierOptions.html#Utils_Expressions_ExpressionSimplifierOptions_Default
+  commentId: P:Utils.Expressions.ExpressionSimplifierOptions.Default
+  fullName: Utils.Expressions.ExpressionSimplifierOptions.Default
+  nameWithType: ExpressionSimplifierOptions.Default
+- uid: Utils.Expressions.ExpressionSimplifierOptions.Default*
+  name: Default
+  href: api/Utils.Expressions.ExpressionSimplifierOptions.html#Utils_Expressions_ExpressionSimplifierOptions_Default_
+  commentId: Overload:Utils.Expressions.ExpressionSimplifierOptions.Default
+  isSpec: "True"
+  fullName: Utils.Expressions.ExpressionSimplifierOptions.Default
+  nameWithType: ExpressionSimplifierOptions.Default
+- uid: Utils.Expressions.ExpressionSimplifierOptions.ExceptionPreservation
+  name: ExceptionPreservation
+  href: api/Utils.Expressions.ExpressionSimplifierOptions.html#Utils_Expressions_ExpressionSimplifierOptions_ExceptionPreservation
+  commentId: P:Utils.Expressions.ExpressionSimplifierOptions.ExceptionPreservation
+  fullName: Utils.Expressions.ExpressionSimplifierOptions.ExceptionPreservation
+  nameWithType: ExpressionSimplifierOptions.ExceptionPreservation
+- uid: Utils.Expressions.ExpressionSimplifierOptions.ExceptionPreservation*
+  name: ExceptionPreservation
+  href: api/Utils.Expressions.ExpressionSimplifierOptions.html#Utils_Expressions_ExpressionSimplifierOptions_ExceptionPreservation_
+  commentId: Overload:Utils.Expressions.ExpressionSimplifierOptions.ExceptionPreservation
+  isSpec: "True"
+  fullName: Utils.Expressions.ExpressionSimplifierOptions.ExceptionPreservation
+  nameWithType: ExpressionSimplifierOptions.ExceptionPreservation
+- uid: Utils.Expressions.ExpressionSimplifierOptions.TrustPolicy
+  name: TrustPolicy
+  href: api/Utils.Expressions.ExpressionSimplifierOptions.html#Utils_Expressions_ExpressionSimplifierOptions_TrustPolicy
+  commentId: P:Utils.Expressions.ExpressionSimplifierOptions.TrustPolicy
+  fullName: Utils.Expressions.ExpressionSimplifierOptions.TrustPolicy
+  nameWithType: ExpressionSimplifierOptions.TrustPolicy
+- uid: Utils.Expressions.ExpressionSimplifierOptions.TrustPolicy*
+  name: TrustPolicy
+  href: api/Utils.Expressions.ExpressionSimplifierOptions.html#Utils_Expressions_ExpressionSimplifierOptions_TrustPolicy_
+  commentId: Overload:Utils.Expressions.ExpressionSimplifierOptions.TrustPolicy
+  isSpec: "True"
+  fullName: Utils.Expressions.ExpressionSimplifierOptions.TrustPolicy
+  nameWithType: ExpressionSimplifierOptions.TrustPolicy
 - uid: Utils.Expressions.ExpressionTraceCollector
   name: ExpressionTraceCollector
   href: api/Utils.Expressions.ExpressionTraceCollector.html
@@ -14216,6 +14310,24 @@ references:
   isSpec: "True"
   fullName: Utils.Expressions.ExpressionTransformer.TransformCore
   nameWithType: ExpressionTransformer.TransformCore
+- uid: Utils.Expressions.ExpressionTrustPolicy
+  name: ExpressionTrustPolicy
+  href: api/Utils.Expressions.ExpressionTrustPolicy.html
+  commentId: T:Utils.Expressions.ExpressionTrustPolicy
+  fullName: Utils.Expressions.ExpressionTrustPolicy
+  nameWithType: ExpressionTrustPolicy
+- uid: Utils.Expressions.ExpressionTrustPolicy.TrustDeclarations
+  name: TrustDeclarations
+  href: api/Utils.Expressions.ExpressionTrustPolicy.html#Utils_Expressions_ExpressionTrustPolicy_TrustDeclarations
+  commentId: F:Utils.Expressions.ExpressionTrustPolicy.TrustDeclarations
+  fullName: Utils.Expressions.ExpressionTrustPolicy.TrustDeclarations
+  nameWithType: ExpressionTrustPolicy.TrustDeclarations
+- uid: Utils.Expressions.ExpressionTrustPolicy.Verified
+  name: Verified
+  href: api/Utils.Expressions.ExpressionTrustPolicy.html#Utils_Expressions_ExpressionTrustPolicy_Verified
+  commentId: F:Utils.Expressions.ExpressionTrustPolicy.Verified
+  fullName: Utils.Expressions.ExpressionTrustPolicy.Verified
+  nameWithType: ExpressionTrustPolicy.Verified
 - uid: Utils.Expressions.ExpressionUtils
   name: ExpressionUtils
   href: api/Utils.Expressions.ExpressionUtils.html
@@ -45454,6 +45566,19 @@ references:
   isSpec: "True"
   fullName: Utils.Mathematics.Expressions.ExpressionSimplifier.NegateWithSubstraction
   nameWithType: ExpressionSimplifier.NegateWithSubstraction
+- uid: Utils.Mathematics.Expressions.ExpressionSimplifier.Options
+  name: Options
+  href: api/Utils.Mathematics.Expressions.ExpressionSimplifier.html#Utils_Mathematics_Expressions_ExpressionSimplifier_Options
+  commentId: P:Utils.Mathematics.Expressions.ExpressionSimplifier.Options
+  fullName: Utils.Mathematics.Expressions.ExpressionSimplifier.Options
+  nameWithType: ExpressionSimplifier.Options
+- uid: Utils.Mathematics.Expressions.ExpressionSimplifier.Options*
+  name: Options
+  href: api/Utils.Mathematics.Expressions.ExpressionSimplifier.html#Utils_Mathematics_Expressions_ExpressionSimplifier_Options_
+  commentId: Overload:Utils.Mathematics.Expressions.ExpressionSimplifier.Options
+  isSpec: "True"
+  fullName: Utils.Mathematics.Expressions.ExpressionSimplifier.Options
+  nameWithType: ExpressionSimplifier.Options
 - uid: Utils.Mathematics.Expressions.ExpressionSimplifier.PowerByZeroOrOne(System.Linq.Expressions.BinaryExpression,System.Linq.Expressions.Expression,System.Linq.Expressions.ConstantExpression)
   name: PowerByZeroOrOne(BinaryExpression, Expression, ConstantExpression)
   href: api/Utils.Mathematics.Expressions.ExpressionSimplifier.html#Utils_Mathematics_Expressions_ExpressionSimplifier_PowerByZeroOrOne_System_Linq_Expressions_BinaryExpression_System_Linq_Expressions_Expression_System_Linq_Expressions_ConstantExpression_
