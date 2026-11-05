@@ -2043,6 +2043,11 @@ public abstract class ExpressionTransformer
 
         foreach (TransformRule rule in _transformPlan.GetCandidates(e.NodeType))
         {
+            // Outside the gate, a rule that is not audited cannot run: skip it before matching its signature (a detailed trace
+            // still matches it, to report its rejection below).
+            if (admission == 2 && trace is not { Detailed: true } && !IsAuditedRuleCached(rule))
+                continue;
+
             // If the attribute doesn't match the expression, skip
             if (!rule.Signature.Match(e))
                 continue;

@@ -411,3 +411,45 @@ Tests (category `S5-P18C`, also run by the ETC Debug job):
   never dropped and read no member the historical path does not read; the analysis is counted in the budget (refusal exactly one
   visit below); the pathological nesting `((F() * 0) * 0) … * 0` stays bounded (quadratic structural work, linear
   transformation work); a 100,000-level nesting ends with a `Stack` refusal on a 256 KiB stack.
+
+### 8.5 Measurements
+
+Windows 11, .NET 9, Release, unlimited resource limits; `master` `d16ae332` against the branch, plus a copy of the `master`
+binary as A/A control; 10 rounds of alternating processes (rotating order), 1.5 s global warm-up, then for each tree the
+policies are measured in 15 interleaved rounds of about 20 ms (median); table = median over the 10 processes. A first campaign
+that measured the policies one after the other showed a position bias (the same `master` code measured 1.2 µs or 2.0 µs depending
+on its rank) and was discarded. `F` is an unannotated user method.
+
+| Case | Policy | master | branch | Δ | A/A |
+|---|---|---:|---:|---:|---:|
+| `x*2 + sin(y)` | default | 4.16 µs | 4.29 µs | +2.9 % | −0.8 % |
+| 12-term sum | default | 2.25 ms | 2.35 ms | +4.1 % | +1.7 % |
+| `(x+1)*(x+1) - x*x` | default | 42.3 µs | 42.9 µs | +1.6 % | +0.1 % |
+| `f(x)+f(x)-f(x)` | default | 5.60 µs | 5.53 µs | −1.3 % | +4.0 % |
+| `2f(x) + 2f(y)*0` | default | 9.58 µs | 9.82 µs | +2.5 % | +1.7 % |
+| 200 nested negations | default | 1.37 ms | 1.41 ms | +2.7 % | +6.6 % |
+| 200 nested user calls | default | 196 µs | 201 µs | +2.6 % | +11.5 % |
+| shared DAG (10 levels) | default | 11.36 ms | 11.91 ms | +4.8 % | −2.3 % |
+| `((F(x)*0)*0)…` 100 / 400 levels | default | 11.0 / 186.4 ms | 11.2 / 187.2 ms | +1.4 / +0.4 % | +1.1 / +0.7 % |
+| `F(x) + 0` | non-default (3 policies) | 1.93–1.98 µs | 2.84–2.89 µs | +46 % | +3 to +7 % |
+| `F(x) * 1` | non-default | 1.93–1.98 µs | 1.75–1.79 µs | −8 to −10 % | +1 to +7 % |
+| `F(x) * 0` (drop refused) | non-default | 1.96–1.99 µs | 2.80–2.81 µs | +42 % | +3 to +4 % |
+| `(i/j) * 0` (refused / dropped) | trust, aggressive / partial | 1.39–1.41 µs | 1.90–1.91 / 1.31 µs | +36 % / −7 % | +1 % |
+| `2f(x) + 2f(y)*0` | non-default | 9.6–9.8 µs | 11.6 µs | +19 to +21 % | +0 to +2 % |
+| `((F(x)*0)*0)…` 100 / 400 levels | non-default | 11.0 / 186–188 ms | 11.4 / 190–191 ms | +3 / +2 % | ±1.5 % |
+| `new ExpressionSimplifier { Options = … }` | – | 104.1 ns | 103.2 ns | −0.8 % | −0.6 % |
+
+**Default policy.** Every difference is inside the A/A spread of the campaign (−2.3 % to +11.5 %), but they are mostly positive
+(+1.6 % to +4.8 %). The default path gained one thread-static read per transformed node (`TransformPrepared`) and one integer
+test per candidate rule. An isolated run of the shared DAG, `master` against the branch against a variant of the branch without
+the per-node read (8 alternating rounds), gives 5.88, 5.90 and 5.87 ms: the read is not the cause, and no other cause was found.
+Like the construction measurement of B, this is recorded as an **open measurement**: it does not show that the default has
+no extra cost, and it should be re-measured with BenchmarkDotNet before C3.
+
+**Other policies.** A node refused by the gate where an audited rule applies costs about 0.5–0.9 µs more: the audited rules run
+(with their reflection invocation), a refused drop runs the behavior analysis (validation and walk of the operand), and
+`F(x) + 0` re-transforms its operand (`AdditionWithZero` returns `TransformCore(left)`, finding S5A-07) where the default reduces
+it by the canonicalization alone. When the drop happens or the rewrite shortens the tree, the simplification is faster. Skipping
+the non-audited candidates before matching their signature did not change these figures measurably. The pathological
+nesting of products by zero stays within +2 to +4 % at 100 and 400 levels: its quadratic structural work (see the security
+test) is small next to the transformation work.

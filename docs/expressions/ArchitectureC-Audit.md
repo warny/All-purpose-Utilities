@@ -221,8 +221,21 @@ Validation:
 
 | Suite | Result |
 |---|---|
-| `UtilsTest.Unit` (Release) | 14,536 run, 14,535 passed, 0 failed, 1 ignored (pre-existing) |
+| `UtilsTest.Unit` (Release) | 14,538 run, 14,537 passed, 0 failed, 1 ignored (pre-existing) |
 | `UtilsTest.Security` (Release) | 341 run, 338 passed, 0 failed, 3 ignored (pre-existing, platform-gated) |
 | `UtilsTest.Functional` (Release) | 383 passed |
-| ETC Debug job (`UtilsTest.Mathematics.Expressions.Coverage`, Debug) | 324 run, 323 passed, 1 ignored (pre-existing) |
+| ETC Debug job (`UtilsTest.Mathematics.Expressions.Coverage`, Debug) | 326 run, 325 passed, 1 ignored (pre-existing) |
 | S5 campaigns, default policy (`terminate`, `converge`, `diff`, `effects`, `s3`, `canon`, 1,000 seeds, 1,000 nested) | 19 result files byte-identical with `master` `d16ae332`; only `environment.txt` differs |
+
+Performance ([SimplificationPolicies.md](SimplificationPolicies.md) §8.5): default within the A/A spread but mostly positive
+(+1.6 % to +4.8 %), not explained (the per-node flag read was ruled out by an isolated three-way run): an open measurement to
+redo with BenchmarkDotNet before C3. Non-default policies: about +0.5–0.9 µs per node where an audited rule applies without
+shortening the tree; faster when it drops or shortens.
+
+### 8.2 Remaining for the next stages
+
+- C2b: `FoldNaNOperand` under the policy (static today).
+- C3: needs PR #684 (P18b) merged (`DivisionOfDivision` guards on `IsOrdinaryFieldDivision`), invariant I-1 for every
+  comparing rule, a per-operation behavior memo keyed with the lexical scope, and A10-B tests with armed fakes.
+- S5A-07 (`t + 0` re-transforms its prepared operand) now also costs about 0.9 µs per `F() + 0` under a non-default policy.
+- C-08: the category A improvements of the default (`UsesHistoricalAdmission`), with their own compatibility entry.
