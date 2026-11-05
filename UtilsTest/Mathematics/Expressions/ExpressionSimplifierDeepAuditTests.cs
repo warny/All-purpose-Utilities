@@ -139,47 +139,78 @@ public class ExpressionSimplifierDeepAuditTests
     }
 
     /// <summary>
-    /// S5A-03: <c>IsOrdinaryFieldDivision</c> accepts <see cref="decimal"/> (<c>Types.FloatingPointNumber</c> lists it), so
-    /// <c>DivisionOfDivision</c> reassociates decimal divisions by a non-zero constant. A decimal quotient can underflow to zero
-    /// or overflow, so the rewrite removes a <see cref="DivideByZeroException"/> the source raises, adds one it does not raise, or
-    /// adds an <see cref="OverflowException"/>; ETC R1b (C-06) promises that such exceptions are kept, and <c>DivideWithZero</c>
-    /// declines decimal for that very reason.
+    /// S5A-03, fixed by P18b: <c>IsOrdinaryFieldDivision</c> accepted <see cref="decimal"/> (<c>Types.FloatingPointNumber</c> lists it),
+    /// so <c>DivisionOfDivision</c> reassociated decimal divisions by a non-zero constant. A decimal quotient can underflow to zero
+    /// or overflow, so the rewrite removed a <see cref="DivideByZeroException"/> the source raises (<c>1 / (b / 3) -&gt; 3 / b</c>),
+    /// added one it does not raise (<c>(a / 0.5) / b -&gt; a / (0.5 * b)</c>) or added an <see cref="OverflowException"/>
+    /// (<c>a / (b / 3) -&gt; (3 * a) / b</c>); ETC R1b (C-06) promises that such exceptions are kept. Field reassociation is now
+    /// limited to <see cref="double"/> and <see cref="float"/>: the decimal sources are kept and raise the source's outcomes, and the
+    /// floating-point rewrites are unchanged (control).
     /// </summary>
     [TestMethod]
-    public void S5A03_DecimalNestedDivision_ChangesTheExceptions()
+    public void S5A03_DecimalNestedDivision_KeepsTheExceptions()
     {
         ParameterExpression a = Expression.Parameter(typeof(decimal), "a"), b = Expression.Parameter(typeof(decimal), "b");
         decimal tiny = 0.0000000000000000000000000001m;
 
-        // Removed: 1 / (b / 3) -> 3 / b; with b = 1e-28 the source divides by b / 3 == 0.
+        // 1 / (b / 3): with b = 1e-28 the source divides by b / 3 == 0.
         Expression removed = Expression.Divide(Expression.Constant(1m), Expression.Divide(b, Expression.Constant(3m)));
-        AssertDecimalOutcomes(removed, a, b, "3 / b", (0m, tiny), "DivideByZeroException", "30000000000000000000000000000");
+        AssertDecimalOutcomes(removed, a, b, "1 / (b / 3)", (0m, tiny), "DivideByZeroException", "DivideByZeroException");
 
-        // Added: (a / 0.5) / b -> a / (0.5 * b); with b = 1e-28 the rewritten divisor underflows to zero.
+        // (a / 0.5) / b: the source's value is kept (the old rewrite underflowed its divisor to zero).
         Expression addedDivide = Expression.Divide(Expression.Divide(a, Expression.Constant(0.5m)), b);
-        AssertDecimalOutcomes(addedDivide, a, b, "a / (0.5 * b)", (1m, tiny), "20000000000000000000000000000", "DivideByZeroException");
+        AssertDecimalOutcomes(addedDivide, a, b, "(a / 0.5) / b", (1m, tiny), "20000000000000000000000000000", "20000000000000000000000000000");
 
-        // Added: a / (b / 3) -> (3 * a) / b; with a = 3e28 and b = 3 the rewritten numerator overflows.
+        // a / (b / 3): the source's value is kept (the old rewrite overflowed its numerator).
         Expression addedOverflow = Expression.Divide(a, Expression.Divide(b, Expression.Constant(3m)));
-        AssertDecimalOutcomes(addedOverflow, a, b, "(3 * a) / b", (30000000000000000000000000000m, 3m), "30000000000000000000000000000", "OverflowException");
+        AssertDecimalOutcomes(addedOverflow, a, b, "a / (b / 3)", (30000000000000000000000000000m, 3m), "30000000000000000000000000000", "30000000000000000000000000000");
 
         // The zero identity declines decimal for the same exception (control).
         Assert.AreEqual("0m / b", Text(Simplify(Expression.Divide(Expression.Constant(0m), b))));
+
+        // Binary floating-point field reassociation is unchanged (control).
+        Assert.AreEqual("3 / y", Text(Simplify(Expression.Divide(C(1), Expression.Divide(Y, C(3))))));
+        Assert.AreEqual("(x * 3) / y", Text(Simplify(Expression.Divide(X, Expression.Divide(Y, C(3))))).Replace("3 * x", "x * 3"));
+        ParameterExpression f = Expression.Parameter(typeof(float), "f"), g = Expression.Parameter(typeof(float), "g");
+        Assert.AreEqual("3f / g", Text(Simplify(Expression.Divide(Expression.Constant(1f), Expression.Divide(g, Expression.Constant(3f))))));
+        Assert.AreNotEqual("f / (g / 3f)", Text(Simplify(Expression.Divide(f, Expression.Divide(g, Expression.Constant(3f))))));
     }
 
     /// <summary>
-    /// S5A-13: <c>ExpressionEffectAnalysis.IsSafeDivisor</c> treats a decimal division by any non-zero constant as unable to throw,
-    /// but a divisor of magnitude below 1 can overflow (<c>decimal.MaxValue / 0.5m</c>). The operand <c>a / 0.5m</c> is therefore
-    /// inert for the rule gate, and <c>(a / 0.5m) - (a / 0.5m)</c> becomes <c>0</c>, removing the <see cref="OverflowException"/>
-    /// of the source. A divisor of magnitude 1 or more cannot overflow (control: <c>a / 2m</c>, same result, no exception).
+    /// S5A-13, fixed by P18b: <c>ExpressionEffectAnalysis.IsSafeDivisor</c> treated a decimal division by any non-zero constant as
+    /// unable to throw, but a divisor of magnitude below 1 can overflow (<c>decimal.MaxValue / 0.5m</c>), so
+    /// <c>(a / 0.5m) - (a / 0.5m)</c> became <c>0</c>, removing the <see cref="OverflowException"/> of the source. Such a division is
+    /// now a throwing evaluation for the rule gate: the difference is kept and still overflows. (The behavior analysis classifies
+    /// the <c>decimal.op_Division</c> method the node carries, which is partial whatever the divisor, so it was never affected.) A divisor of magnitude 1 or more cannot overflow, so <c>a / 2m</c> and <c>a / -1m</c> stay inert and
+    /// their difference still cancels (control).
     /// </summary>
     [TestMethod]
-    public void S5A13_DecimalDivisionByASmallConstant_IsTreatedAsInert()
+    public void S5A13_DecimalDivisionByASmallConstant_IsNotInert()
     {
         ParameterExpression a = Expression.Parameter(typeof(decimal), "a"), b = Expression.Parameter(typeof(decimal), "b");
-        Expression half = Expression.Divide(a, Expression.Constant(0.5m));
-        Expression body = Expression.Subtract(half, Expression.Divide(a, Expression.Constant(0.5m)));
-        AssertDecimalOutcomes(body, a, b, "0", (decimal.MaxValue, 0m), "OverflowException", "0");
+        Expression body = Expression.Subtract(Expression.Divide(a, Expression.Constant(0.5m)), Expression.Divide(a, Expression.Constant(0.5m)));
+        AssertDecimalOutcomes(body, a, b, "(a / 0.5) - (a / 0.5)", (decimal.MaxValue, 0m), "OverflowException", "OverflowException");
+
+        Expression negative = Expression.Subtract(Expression.Divide(a, Expression.Constant(-0.5m)), Expression.Divide(a, Expression.Constant(-0.5m)));
+        AssertDecimalOutcomes(negative, a, b, "(a / -0.5) - (a / -0.5)", (decimal.MaxValue, 0m), "OverflowException", "OverflowException");
+
+        foreach (decimal divisor in new[] { 2m, -1m, 1m, -7.5m })
+        {
+            Expression control = Expression.Subtract(Expression.Divide(a, Expression.Constant(divisor)), Expression.Divide(a, Expression.Constant(divisor)));
+            AssertDecimalOutcomes(control, a, b, "0", (decimal.MaxValue, 0m), "0", "0");
+        }
+
+        // The predicate and the rule gate's classification of the division operator.
+        foreach ((decimal divisor, bool safe) in new[] { (0m, false), (0.5m, false), (-0.5m, false), (0.9999999999999999999999999999m, false), (1m, true), (-1m, true), (2m, true), (decimal.MinValue, true) })
+        {
+            string label = divisor.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            Assert.AreEqual(safe, ExpressionEffectAnalysis.IsSafeDivisor(divisor), label);
+            ExpressionEffects effects = ExpressionEffectAnalysis.Analyze(Expression.Divide(a, Expression.Constant(divisor)));
+            Assert.AreEqual(safe ? ExpressionEffects.ReadsMutableState : ExpressionEffects.ReadsMutableState | ExpressionEffects.MayThrow, effects, label);
+
+            // The behavior analysis classifies the decimal operator method itself (partial whatever the divisor): unaffected.
+            Assert.IsTrue(ExpressionBehaviorAnalysis.Analyze(Expression.Divide(a, Expression.Constant(divisor))).MayThrow, label);
+        }
     }
 
     /// <summary>Checks the simplified form of a decimal body and the outcomes of the source and the simplified form at one point.</summary>

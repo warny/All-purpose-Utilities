@@ -304,6 +304,21 @@ Behavior changes of `ExpressionTransformer`, `ExpressionSimplifier` and `Express
   spurious factor 1 change: `y - 1` gives `(0 - 1) + y` (like `y - 2` gives `(0 - 2) + y`) instead of `(y - 1) * 1`,
   `1 - y` gives `1 + (0 - y)` instead of `(1 - y) * 1`; the values are unchanged.
 
+## Expression engine: decimal division exceptions (S5 P18b)
+
+Behavior changes of `ExpressionSimplifier` (and of `ExpressionComparer`, which simplifies first); no public signature changed.
+Both restore the C-06 promise that an exception the evaluation can raise is kept. The record is in
+`Utils/TODO-2026-11-04-s5-simplifier-deep-audit.md` (S5A-03, S5A-13).
+
+- **Nested decimal divisions are no longer reassociated (S5A-03).** `1m / (b / 3m)`, `a / (b / 3m)` and `(a / 0.5m) / b` are
+  kept as written. They used to become `3m / b`, `(3m * a) / b` and `a / (0.5m * b)`, which underflow or overflow at other
+  inputs than the source: the rewrite removed a `DivideByZeroException` (`b = 1e-28`), or added one or an `OverflowException`.
+  `double` and `float` nested divisions are still reassociated (IEEE division never throws).
+- **A decimal division by a constant of magnitude below 1 may throw (S5A-13).** `a / 0.5m` (likewise a remainder) is no longer
+  treated as unable to throw: it overflows near `decimal.MaxValue`. Rewrites that would drop, merge or move it are skipped, so
+  `(a / 0.5m) - (a / 0.5m)` is kept and still throws `OverflowException` at `a = decimal.MaxValue` instead of returning `0`. A
+  constant divisor of magnitude 1 or more (`a / 2m`, `a / -1m`) is still inert.
+
 ## Expression engine: injectable transformation tracing (additive)
 
 New public API in `Utils.Expressions`, without behavior change for code that does not use it: `ExpressionTransformTracing`
