@@ -221,10 +221,10 @@ Validation:
 
 | Suite | Result |
 |---|---|
-| `UtilsTest.Unit` (Release) | 14,539 run, 14,538 passed, 0 failed, 1 ignored (pre-existing) |
+| `UtilsTest.Unit` (Release, with #684 and #685 merged) | 14,540 run, 14,539 passed, 0 failed, 1 ignored (pre-existing) |
 | `UtilsTest.Security` (Release) | 342 run, 339 passed, 0 failed, 3 ignored (pre-existing, platform-gated) |
 | `UtilsTest.Functional` (Release) | 383 passed |
-| ETC Debug job (`UtilsTest.Mathematics.Expressions.Coverage`, Debug) | 327 run, 326 passed, 1 ignored (pre-existing) |
+| ETC Debug job (`UtilsTest.Mathematics.Expressions.Coverage`, Debug) | 328 run, 327 passed, 1 ignored (pre-existing) |
 | S5 campaigns, default policy (`terminate`, `converge`, `diff`, `effects`, `s3`, `canon`, 1,000 seeds, 1,000 nested) | 19 result files byte-identical with `master` `d16ae332`; only `environment.txt` differs |
 
 Performance ([SimplificationPolicies.md](SimplificationPolicies.md) §8.5, BenchmarkDotNet, `master`, #685, #686 and an A/A
@@ -240,7 +240,7 @@ rule runs with the flag set: each nested operation gets its own admission, and t
 ### 8.2 Remaining for the next stages
 
 - C2b: `FoldNaNOperand` under the policy (static today).
-- C3: needs PR #684 (P18b) merged (`DivisionOfDivision` guards on `IsOrdinaryFieldDivision`), invariant I-1 for every
+- C3: PR #684 (P18b, `DivisionOfDivision` guards on `IsOrdinaryFieldDivision`) is merged (`50e595bd`); still needs invariant I-1 for every
   comparing rule, a per-operation behavior memo keyed with the lexical scope, and A10-B tests with armed fakes.
 - S5A-07 (`t + 0` re-transforms its prepared operand) now also costs about 0.9 µs per `F() + 0` under a non-default policy.
 - C-08: the category A improvements of the default (`UsesHistoricalAdmission`), with their own compatibility entry.
