@@ -410,24 +410,30 @@ interfaces are not. See `docs/expressions/BehaviorAnalysis.md` for the contract 
 
 `ExpressionSimplifierOptions` configures three independent policy axes of a simplifier: trusting `[Deterministic]`
 declarations, aggressive simplification (allocation identity and side-effect-free nondeterminism on analyzed code), and the
-exception categories to preserve. The defaults are conservative, the options are immutable and set at construction, and
-**no rule consults them yet**: every policy currently gives the default results.
+exception categories to preserve. The defaults are conservative, the options are immutable and set at construction. The
+default policy gives exactly the historical results. Under any other policy, the zero and one identities also apply to
+operands that are not inert: those that keep the operand's evaluation (`F() * 1 -> F()`), and those that drop it
+(`t * 0 -> 0`) when the policy lets that evaluation be discarded. Unknown code and side effects are never dropped.
 
 ```csharp
 using Utils.Expressions;
 using Utils.Mathematics.Expressions;
 
-var simplifier = new ExpressionSimplifier
+// (x / i) * 0 with integers: the division may throw DivideByZeroException.
+ParameterExpression x = Expression.Parameter(typeof(int), "x"), i = Expression.Parameter(typeof(int), "i");
+Expression product = Expression.Multiply(Expression.Divide(x, i), Expression.Constant(0));
+
+new ExpressionSimplifier().Simplify(product);                    // kept: the exception is preserved
+new ExpressionSimplifier
 {
     Options = new ExpressionSimplifierOptions
     {
-        TrustPolicy = ExpressionTrustPolicy.TrustDeclarations,
         ExceptionPreservation = ExpressionExceptionPreservation.Runtime | ExpressionExceptionPreservation.UserCode,
     },
-};
+}.Simplify(product);                                             // 0: arithmetic exceptions are not preserved
 ```
 
-See `docs/expressions/SimplificationPolicies.md` for the contract of each axis and their future use.
+See `docs/expressions/SimplificationPolicies.md` for the contract of each axis and the rules that consume them.
 
 ## Related packages
 - `omy.Utils.Data` — data record mappers

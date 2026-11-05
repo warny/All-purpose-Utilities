@@ -13,7 +13,7 @@ Taken before the design, at the user's request:
 1. **The default policy is strictly preserved.** Under `ExpressionSimplifierOptions.Default` the simplifier, and therefore
    `ExpressionComparer.Default` (whose internal simplifier uses the default), give exactly the results, user calls, exceptions and
    resource consumption of `master` before C. Verified by the S5 campaigns (§8).
-2. **Category A improvements of the default go to a separate pull request** with its own compatibility entry (C-07): the
+2. **Category A improvements of the default go to a separate pull request** with its own compatibility entry: the
    rewrites that are correct under every policy (`F() + 0 -> F()`), and the evaluations the P18-A analysis proves safe where the
    gate refuses them (invoked lambdas, blocks with local effects).
 3. **Intrinsic admissibility is separated from the historical compatibility of the default.** A rule is not admitted "only when the
@@ -26,7 +26,9 @@ Taken before the design, at the user's request:
    - *historical admission* = the ETC R1b gate (`AllowsRules`: operands inert by `ExpressionEffectAnalysis`), unchanged;
    - a node's rules run when the historical gate allows them (exactly as today); when it refuses, an **audited** rule may still run
      under its intrinsic admissibility, **except under the default policy**, which keeps the historical admission alone. That
-     exception is a single switch (`ExpressionSimplifier.UsesHistoricalAdmission`): C-07 will remove it, without touching the rules.
+     exception is a single switch (`ExpressionSimplifier.UsesHistoricalAdmission`): the category A pull request will remove it,
+     without touching the rules. Its compatibility entry will be **C-08**: C-07 is already taken (ETC R2, replacing a runtime
+     variable by anything but a parameter throws `NotSupportedException`).
 
    Consequence, documented as such: any explicit non-default policy leaves the historical-compatibility mode, so it also enables
    the category A rewrites of the audited rules, which require no permission and are correct under every policy. The three axes
@@ -120,9 +122,9 @@ for an allocation, a nondeterministic read or a non-preserved exception category
 
 | Id | Still present | Reproducer | Blocks C? | Action |
 |---|---|---|---|---|
-| **S5A-13** `IsSafeDivisor` accepts any non-zero `decimal` | yes (`ExpressionEffectAnalysis.cs` ≈ l. 451) | `(a / 0.5m) - (a / 0.5m)` → `0`; source throws `OverflowException` at `a = decimal.MaxValue` | **yes**: `ExpressionBehaviorRules.IntrinsicBinary` uses the same `IsSafeDivisor`, so the behavior analysis says `a / 0.5m` cannot throw and any policy, even one preserving every category, would let C drop it (`(a / 0.5m) * 0m -> 0`) | **prerequisite PR P18b** |
-| **S5A-03** `IsOrdinaryFieldDivision` accepts `decimal` | yes (≈ l. 3602) | `1m / (b / 3m) -> 3m / b` removes a `DivideByZeroException` at `b = 1e-28` | not for C2 (no division reassociation outside the gate); yes for C3 (`DivisionOfDivision`) | same PR P18b (the deep audit pairs them) |
-| **`Pow` omission** | yes: `Pow` is absent from the floating total names of `ExpressionMethodBehaviors` | `ExpressionBehaviorAnalysis.Analyze(x ^ 2.0)` is `UnknownCode`: an intrinsic `Power` node carries the method `Math.Pow`, classified as an unknown method | not a soundness issue (conservative), but every power makes its whole subtree `Unknown`, so C2 would never drop `x ^ 2` | **prerequisite PR** (classification, with its edge-value evidence) |
+| **S5A-13** `IsSafeDivisor` accepts any non-zero `decimal` | yes (`ExpressionEffectAnalysis.cs` ≈ l. 451) | `(a / 0.5m) - (a / 0.5m)` → `0`; source throws `OverflowException` at `a = decimal.MaxValue` | **no** for the policy path: `ExpressionBehaviorRules.DivisionBehaviors` shares `IsSafeDivisor`, but only for intrinsic (method-less) divisions; a `decimal` division node carries `decimal.op_Division`, which the behavior analysis classifies as partial whatever the divisor (verified by test). It is a defect of the historical gate, which C keeps | **PR P18b (#684)**, independent |
+| **S5A-03** `IsOrdinaryFieldDivision` accepts `decimal` | yes (≈ l. 3602) | `1m / (b / 3m) -> 3m / b` removes a `DivideByZeroException` at `b = 1e-28` | not for C2 (no division reassociation outside the gate); yes for C3 (`DivisionOfDivision` uses it as its own guard) | same PR P18b (#684); must be merged before C3 |
+| **`Pow` omission** | yes: `Pow` is absent from the floating total names of `ExpressionMethodBehaviors` | `ExpressionBehaviorAnalysis.Analyze(x ^ 2.0)` is `UnknownCode`: an intrinsic `Power` node carries the method `Math.Pow`, classified as an unknown method | not a soundness issue (conservative), but every power makes its whole subtree `Unknown`, so C2 never drops an operand holding a power (`(x ^ 2) * 0`) until it is fixed | **PR #685**, independent; C2 is correct without it, only less effective |
 | A10-B (comparer, canonical keys, memos read custom reflection objects) | yes | `ExpressionComparer.Equals(fake, real)` asymmetric | **no**, provided the invariant of §5.1 holds: outside the gate a rule checks the permissions (which classify any non-runtime reflection object as unknown code) **before** any comparison, key or memo of the operands. C2 compares nothing; C3 must keep the order and test it with armed fakes | separate PR, not a prerequisite |
 | A10-C (`ExpressionOptimiser` drops `F() * 0`) | yes | `ExpressionOptimiser` | no (another class) | separate PR |
 | L-1 (framework getters: `Type` of a call reads `ReturnType`) | yes | — | no: reads grant no trust | none |
@@ -176,13 +178,13 @@ they need no policy key. A rule that compares under a relaxed policy uses the de
 
 | Step | Content | Default behavior | Depends on |
 |---|---|---|---|
-| PR P18b | S5A-13 (`IsSafeDivisor`: a decimal divisor is safe only when its magnitude is at least 1), S5A-03 (field reassociation for `float`/`double` only) | changes (bug fix; migration note) | – |
-| PR Pow | `Pow` total in the floating family of `ExpressionMethodBehaviors`, with its precondition row and the edge-value evidence | unchanged (the analysis is not consumed by the default) | – |
-| PR C1+C2 | §5.2 mechanism; audited zero/one identities (§3.1) with their permissions; tests over the 32 policies; S5 campaigns identical on the default; measurements | unchanged | P18b (stacked) |
+| PR P18b (#684) | S5A-13 (`IsSafeDivisor`: a decimal divisor is safe only when its magnitude is at least 1), S5A-03 (field reassociation for `float`/`double` only) | changes (bug fix; migration note) | – |
+| PR Pow (#685) | `Pow` total in the floating family of `ExpressionMethodBehaviors`, with its precondition row and the edge-value evidence | unchanged (the analysis is not consumed by the default) | – |
+| PR C1+C2 | §5.2 mechanism; audited zero/one identities (§3.1) with their permissions; tests over the 32 policies; S5 campaigns identical on the default; measurements | unchanged | none (P18b and Pow independent) |
 | C2b | `FoldNaNOperand` under the policy | unchanged | C1 |
 | C3 | negation/reassociation family (§3.2), factoring and quotients (§3.3), canonicalization (`SplitPinnedTerms`, `CanonicalizesOperator`), per-operation behavior memo | unchanged | C1, A10-B tests |
 | C4 | invocations (only if a rule needs it), comparer bound to a policy (only if needed), global validation | unchanged | C3 |
-| PR C-07 | category A under the default (`UsesHistoricalAdmission` removed or narrowed), compatibility entry | changes | C2, C3 |
+| PR C-08 | category A under the default (`UsesHistoricalAdmission` removed or narrowed), compatibility entry C-08 | changes | C2, C3 |
 
 ## 7. Validation criteria
 
@@ -198,4 +200,29 @@ they need no policy key. A rule that compares under a relaxed policy uses the de
 
 ## 8. Results
 
-Filled by the implementation pull requests.
+### 8.1 Stages C1 and C2 (this pull request)
+
+Implemented as planned in §5.2, with the audited set of §3.1; contract in [SimplificationPolicies.md](SimplificationPolicies.md) §8.
+
+Findings made while implementing, recorded here because they correct the audit:
+
+- **The default already reduces `F() + 0` to `F()`.** The additive canonicalization of `FinalizeExpression` pins the non-inert
+  term and drops the zero constant, even though the gate refuses the rules. So `ExpressionComparer.Default` already answers
+  `Equals(F() + 0, F())` = `true`; category A matters for the other identities (`F() * 1`, `F() / 1`, `0 - F()`, `F() ^ 1`, …).
+- **A clock read may be dropped under every non-default policy**: B's table forbids repeating or moving a nondeterministic
+  evaluation without aggressive simplification, never dropping it.
+- **A throw is dropped only when its operand is analyzed**: `throw new E()` holds a constructor (unknown code) and is never
+  dropped; `throw <constant>` is `MayThrowUserCode` only.
+- **The impersonating reflection objects are read by the framework when a call node is rebuilt** (`ContainsGenericParameters`,
+  `Attributes`, `ReturnType`, and `GetHashCode`/`Equals` of the framework's parameter cache), on the historical path too: L-1.
+  The security test therefore checks that a relaxed policy reads no member the historical path does not read.
+
+Validation:
+
+| Suite | Result |
+|---|---|
+| `UtilsTest.Unit` (Release) | 14,536 run, 14,535 passed, 0 failed, 1 ignored (pre-existing) |
+| `UtilsTest.Security` (Release) | 341 run, 338 passed, 0 failed, 3 ignored (pre-existing, platform-gated) |
+| `UtilsTest.Functional` (Release) | 383 passed |
+| ETC Debug job (`UtilsTest.Mathematics.Expressions.Coverage`, Debug) | 324 run, 323 passed, 1 ignored (pre-existing) |
+| S5 campaigns, default policy (`terminate`, `converge`, `diff`, `effects`, `s3`, `canon`, 1,000 seeds, 1,000 nested) | 19 result files byte-identical with `master` `d16ae332`; only `environment.txt` differs |

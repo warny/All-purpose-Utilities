@@ -189,6 +189,13 @@ public abstract class ExpressionTransformer
         public ExpressionTransformRuleInfo Info { get; set; } = null!;
 
         /// <summary>
+        /// Whether the transformer audited this rule for admission outside the effect gate (<see cref="IsAuditedRule"/>):
+        /// 0 not asked yet, 1 audited, 2 not audited. Computed on first use and kept with the plan, which belongs to one
+        /// transformer type, as the answer does; a benign race computes the same value twice.
+        /// </summary>
+        public int OutsideGateAdmission;
+
+        /// <summary>
         /// Whether <see cref="Method"/>'s shape is one <see cref="DetermineFastInvokerEligibility"/>
         /// considers safe to fast-path — computed once, cheaply (no reflection beyond inspecting metadata
         /// already fetched for <see cref="Method"/> and <see cref="Parameters"/>), when this rule is built.
@@ -1039,6 +1046,9 @@ public abstract class ExpressionTransformer
     /// </remarks>
     private Expression TransformPrepared(TransformContext context, ExpressionTraceSession? trace)
     {
+        // A node transformed while a rule admitted outside the gate runs (its re-entry or a comparison) gets its own admission.
+        if (_ruleRunsOutsideGate) return TransformPreparedWithinOutsideGateRule(context, trace);
+
         ExpressionResourceBudget.ConsumeTransformVisit();
 
         // ETC R4 (C-05): a boundary (a quote the simplifier must not rewrite) is returned as is: no rule, not even a subclass
@@ -1065,6 +1075,26 @@ public abstract class ExpressionTransformer
             : FinalizeExpression(context.Expression, context.MaterializeExpressionParameters());
         trace?.Finalized(context.Expression, finalized);
         return finalized;
+    }
+
+    /// <summary>
+    /// <see cref="TransformPrepared"/> for a node reached from a rule admitted outside the effect gate: clears
+    /// <see cref="RuleRunsOutsideGate"/> while the node is transformed and restores it afterwards, even on failure.
+    /// </summary>
+    /// <param name="context">The prepared node and its prepared sub-expressions.</param>
+    /// <param name="trace">The tracing state of the operation, or <see langword="null"/>.</param>
+    /// <returns>The result of <see cref="TransformPrepared"/>.</returns>
+    private Expression TransformPreparedWithinOutsideGateRule(TransformContext context, ExpressionTraceSession? trace)
+    {
+        _ruleRunsOutsideGate = false;
+        try
+        {
+            return TransformPrepared(context, trace);
+        }
+        finally
+        {
+            _ruleRunsOutsideGate = true;
+        }
     }
 
     /// <summary>
@@ -1449,6 +1479,41 @@ public abstract class ExpressionTransformer
     /// <param name="node">The prepared node.</param>
     /// <returns><see langword="true"/> if the rules may run.</returns>
     internal virtual bool AllowsRules(Expression node) => true;
+
+    /// <summary>
+    /// Decides, when <see cref="AllowsRules"/> refused a node, whether the rules audited by <see cref="IsAuditedRule"/> may
+    /// still run on it, each checking the permissions of the evaluations it actually rewrites (S5 P18 Architecture C). Asked
+    /// at most once per refused node. The base implementation refuses, so the refusal of <see cref="AllowsRules"/> stays final.
+    /// </summary>
+    /// <remarks>
+    /// <c>internal virtual</c> like <see cref="AllowsRules"/> (H-7): not an extensibility point for third-party subclasses.
+    /// While such a rule runs, <see cref="RuleRunsOutsideGate"/> is <see langword="true"/>.
+    /// </remarks>
+    /// <param name="node">The prepared node the gate refused.</param>
+    /// <returns><see langword="true"/> if the audited rules may run.</returns>
+    internal virtual bool AllowsAuditedRulesOutsideGate(Expression node) => false;
+
+    /// <summary>
+    /// Whether <paramref name="method"/>, a rule of this transformer's plan, declares the permissions of every evaluation it
+    /// rewrites and checks them itself when <see cref="RuleRunsOutsideGate"/> is set, so that it may run on a node the effect
+    /// gate refused (see <see cref="AllowsAuditedRulesOutsideGate"/>). The base implementation audits no rule. The answer must
+    /// depend on the method only: it is cached with the plan.
+    /// </summary>
+    /// <param name="method">The rule method (a runtime reflection object of the plan).</param>
+    /// <returns><see langword="true"/> for an audited rule.</returns>
+    internal virtual bool IsAuditedRule(MethodInfo method) => false;
+
+    /// <summary>
+    /// Whether the rule running on this thread was admitted outside the effect gate (<see cref="AllowsAuditedRulesOutsideGate"/>),
+    /// so its operands are not proven inert and it must check the permissions of what it rewrites. Set by the dispatch for
+    /// the duration of such a rule's call, including the rules it calls directly, and cleared while any node is transformed
+    /// (<see cref="TransformPrepared"/>), so the nested rules and finalizations of a rewrite see their own admission.
+    /// </summary>
+    [ThreadStatic]
+    private static bool _ruleRunsOutsideGate;
+
+    /// <summary>Gets whether the rule running on this thread was admitted outside the effect gate (see <see cref="_ruleRunsOutsideGate"/>).</summary>
+    internal static bool RuleRunsOutsideGate => _ruleRunsOutsideGate;
 
     /// <summary>
     /// Gets whether a quoted expression (<see cref="ExpressionType.Quote"/>) is a strict transformation boundary for this
@@ -1972,7 +2037,9 @@ public abstract class ExpressionTransformer
     {
         Expression e = context.Expression;
         object[]? materializedInvocationArguments = null;
-        bool rulesAllowed = false;
+
+        // 0 not asked yet, 1 every rule may run (the gate allowed it), 2 only the audited rules may run (outside the gate).
+        int admission = 0;
 
         foreach (TransformRule rule in _transformPlan.GetCandidates(e.NodeType))
         {
@@ -1995,21 +2062,39 @@ public abstract class ExpressionTransformer
 
             if (trace is { Detailed: true }) trace.RuleCandidate(rule.Info, e);
 
-            // Asked once, only when a rule could actually run (ETC R1b): a refusal skips every rule of the node.
-            if (!rulesAllowed)
+            // Asked once, only when a rule could actually run (ETC R1b): a refusal skips every rule of the node, unless the
+            // transformer admits its audited rules outside the gate (S5 P18 Architecture C), which then run alone.
+            if (admission == 0)
             {
-                if (!AllowsRules(e))
+                if (AllowsRules(e))
+                {
+                    admission = 1;
+                }
+                else if (AllowsAuditedRulesOutsideGate(e))
+                {
+                    admission = 2;
+                }
+                else
                 {
                     if (trace is { Detailed: true }) trace.RuleRejected(rule.Info, e, ExpressionRuleRejection.EffectGate);
                     break;
                 }
+            }
 
-                rulesAllowed = true;
+            if (admission == 2 && !IsAuditedRuleCached(rule))
+            {
+                if (trace is { Detailed: true }) trace.RuleRejected(rule.Info, e, ExpressionRuleRejection.EffectGate);
+                continue;
             }
 
             // The trace marks the rule as running, so that a nested treatment or a failure is attributed to it.
             trace?.BeginRule(rule.Info);
-            if (!TryInvokeTransformMethod(rule, context, ref materializedInvocationArguments, out object? invokeResult, out ExpressionRuleRejection rejection))
+            object? invokeResult;
+            ExpressionRuleRejection rejection;
+            bool invoked = admission == 2
+                ? TryInvokeOutsideGate(rule, context, ref materializedInvocationArguments, out invokeResult, out rejection)
+                : TryInvokeTransformMethod(rule, context, ref materializedInvocationArguments, out invokeResult, out rejection);
+            if (!invoked)
             {
                 trace?.RuleDeclined(rule.Info, e, rejection);
                 continue;
@@ -2022,6 +2107,50 @@ public abstract class ExpressionTransformer
 
         result = null;
         return false;
+    }
+
+    /// <summary>Whether <paramref name="rule"/> is audited for admission outside the effect gate, asked once per rule of the plan.</summary>
+    /// <param name="rule">A rule of this transformer's plan.</param>
+    /// <returns>The cached answer of <see cref="IsAuditedRule"/>.</returns>
+    private bool IsAuditedRuleCached(TransformRule rule)
+    {
+        int admission = rule.OutsideGateAdmission;
+        if (admission == 0)
+        {
+            admission = IsAuditedRule(rule.Method) ? 1 : 2;
+            rule.OutsideGateAdmission = admission;
+        }
+
+        return admission == 1;
+    }
+
+    /// <summary>
+    /// Invokes an audited rule on a node the effect gate refused, with <see cref="RuleRunsOutsideGate"/> set for the duration
+    /// of the call and restored afterwards, even on failure.
+    /// </summary>
+    /// <param name="rule">The audited rule.</param>
+    /// <param name="context">The prepared node.</param>
+    /// <param name="materializedInvocationArguments">The reflection argument array, once materialized.</param>
+    /// <param name="result">The rule's result.</param>
+    /// <param name="rejection">Why the rule produced no result.</param>
+    /// <returns><see langword="true"/> when the rule produced a result.</returns>
+    private bool TryInvokeOutsideGate(
+        TransformRule rule,
+        TransformContext context,
+        ref object[]? materializedInvocationArguments,
+        out object? result,
+        out ExpressionRuleRejection rejection)
+    {
+        bool previous = _ruleRunsOutsideGate;
+        _ruleRunsOutsideGate = true;
+        try
+        {
+            return TryInvokeTransformMethod(rule, context, ref materializedInvocationArguments, out result, out rejection);
+        }
+        finally
+        {
+            _ruleRunsOutsideGate = previous;
+        }
     }
 
     /// <summary>
