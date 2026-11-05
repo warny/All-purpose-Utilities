@@ -44,7 +44,8 @@ namespace Utils.Expressions;
 /// (<see cref="ExpressionOpacity.IsOpaque"/>): none of its members is read, nor the <see cref="Expression.Type"/> or
 /// <see cref="Expression.NodeType"/> of a node that may be one. A dynamic operation's binder is never invoked. A reflection
 /// object that is not a runtime one (a user subclass of <see cref="MethodInfo"/>, <see cref="FieldInfo"/> or
-/// <see cref="PropertyInfo"/>) is unknown code without any member read.
+/// <see cref="PropertyInfo"/>, an emit builder) is unknown code without any
+/// member read.
 /// </para>
 /// <para>
 /// <b>Not modeled.</b> Asynchronous and resource exceptions (<see cref="OutOfMemoryException"/>, a stack overflow, a thread
@@ -427,7 +428,7 @@ public static class ExpressionBehaviorAnalysis
             {
                 case ParameterExpression parameter:
                     return VisitWrite(parameter) | (reads ? VisitRead(parameter) : ExpressionBehaviors.None);
-                case MemberExpression { Member: FieldInfo field } member when ExpressionMethodBehaviors.IsRuntimeReflectionObject(field):
+                case MemberExpression { Member: FieldInfo field } member when ExpressionReflectionProvenance.IsRuntime(field):
                     return ExpressionBehaviors.SideEffects | ExpressionBehaviors.ReadsMutableState | VisitReceiver(member.Expression);
                 case IndexExpression { Indexer: null } index:
                     return ExpressionBehaviors.SideEffects | ExpressionBehaviors.ReadsMutableState | ExpressionBehaviors.MayThrowRuntime
@@ -496,7 +497,7 @@ public static class ExpressionBehaviorAnalysis
         private ExpressionBehaviors VisitMember(MemberExpression member)
         {
             MemberInfo info = member.Member;
-            if (!ExpressionMethodBehaviors.IsRuntimeReflectionObject(info)) return Unsupported() | Visit(member.Expression);
+            if (!ExpressionReflectionProvenance.IsRuntime(info)) return Unsupported() | Visit(member.Expression);
 
             ExpressionBehaviors own = info switch
             {
@@ -541,7 +542,7 @@ public static class ExpressionBehaviorAnalysis
             }
             else
             {
-                own = ExpressionMethodBehaviors.IsRuntimeReflectionObject(index.Indexer) && index.Indexer.GetGetMethod(nonPublic: true) is { } getter
+                own = ExpressionReflectionProvenance.IsRuntime(index.Indexer) && index.Indexer.GetGetMethod(nonPublic: true) is { } getter
                     ? ExpressionMethodBehaviors.Classify(getter)
                     : Unsupported();
             }

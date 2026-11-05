@@ -297,6 +297,9 @@ internal sealed class InvocationInliningAnalysis
     /// <returns><see langword="false"/> if inlining is unsafe.</returns>
     private bool ScanIndex(IndexExpression index)
     {
+        // S5 A-10: the accessors of an indexer that is not a runtime reflection object are user code; never inlined.
+        if (index.Indexer is not null && !ExpressionReflectionProvenance.IsRuntime(index.Indexer)) return false;
+
         // An indexer accessor of a structure held by a parameter may mutate the copy (AUD-01).
         if (index.Indexer is not null && index.Object is not null && IsOwnLocation(index.Object)
             && MayMutateReceiver(index.Indexer.GetMethod, index.Object.Type))
@@ -504,6 +507,9 @@ internal sealed class InvocationInliningAnalysis
     /// <returns><see langword="false"/> if inlining is unsafe.</returns>
     private bool ScanCall(MethodCallExpression call)
     {
+        // S5 A-10: the parameters and attributes of a reflection object that is not a runtime one are user code; never inlined.
+        if (!ExpressionReflectionProvenance.IsRuntime(call.Method)) return false;
+
         // An instance method of a structure held by a parameter receives the copy by reference and may mutate it (AUD-01).
         if (call.Object is not null && IsOwnLocation(call.Object) && MayMutateReceiver(call.Method, call.Object.Type)) return false;
         if (!Scan(call.Object)) return false;
@@ -550,6 +556,9 @@ internal sealed class InvocationInliningAnalysis
     /// <returns><see langword="false"/> if inlining is unsafe.</returns>
     private bool ScanMember(MemberExpression member)
     {
+        // S5 A-10: a member that is not a runtime reflection object may run user code on read; never inlined.
+        if (!ExpressionReflectionProvenance.IsRuntime(member.Member)) return false;
+
         // A property getter of a structure held by a parameter may mutate the copy (AUD-01); a field read never does.
         if (member.Member is PropertyInfo property && member.Expression is not null && IsOwnLocation(member.Expression)
             && MayMutateReceiver(property.GetMethod, member.Expression.Type))
@@ -572,6 +581,9 @@ internal sealed class InvocationInliningAnalysis
     /// <returns><see langword="false"/> if inlining is unsafe.</returns>
     private bool ScanNew(NewExpression creation)
     {
+        // S5 A-10: the parameters of a constructor that is not a runtime reflection object are user code; never inlined.
+        if (creation.Constructor is not null && !ExpressionReflectionProvenance.IsRuntime(creation.Constructor)) return false;
+
         // Only a constructor-less value-type creation has no constructor, and it has no argument.
         ParameterInfo[] constructorParameters = creation.Constructor?.GetParameters() ?? [];
         for (int i = 0; i < creation.Arguments.Count; i++)

@@ -51,13 +51,13 @@ Findings (none changes a result today; none is fixed here, as the scope forbids 
   side effects or from unknown code.
 - **A-9** Custom operators and user methods are always `Observable`; there is no declaration route (`[Pure]` is
   deliberately not trusted, ETC R1b).
-- **A-10 (confirmed, the most significant)** The method cache and classifier read the members of the `MethodInfo`
+- **A-10 (confirmed, fixed: see [A10-ReflectionProvenance.md](A10-ReflectionProvenance.md))** The method cache and classifier read the members of the `MethodInfo`
   (`GetHashCode`, `DeclaringType`, `Attributes`, `GetParameters`, `ReturnType`, `Name`). `Expression.Call` accepts a user
   subclass of `MethodInfo`; one that forwards to `Math.Sin` and reports its metadata is classified inert by the gate, and
   `Simplify(FakeSin(x) * 0)` returns `0`: a user call is dropped on the strength of metadata the gate did not obtain from the
-  runtime. It needs a hand-built call node with a custom reflection object. Fix proposed for a later stage: classify any
-  reflection object that is not a runtime one as observable, without reading it, as the new analysis does. Not fixed here
-  (no behavior change allowed).
+  runtime. It needs a hand-built call node with a custom reflection object. Not fixed in P18-A (no behavior change
+  allowed); fixed by the A-10 pull request, which also found the same trust in the call-rule signatures, the
+  ordinary-arithmetic checks, the field classification and the inlining analysis.
 - **A-11** `IsSafeDivisor` accepts every nonzero `decimal` divisor (S5A-13, already reported).
 - **A-12** Constants are inert whatever their value; the user code of a constant's `Equals`/`GetHashCode` belongs to the
   comparer, not to the evaluation (documented on `ExpressionSimplifier`).
@@ -223,7 +223,10 @@ Recognized by declaring type and name: `DateTime.Now`, `DateTime.UtcNow`, `DateT
   information, dynamic operations and extension nodes.
 - **Hostile inputs.** An extension node is recognized by class (`ExpressionOpacity.IsOpaque`) before any `Type` or
   `NodeType` read; no binder is invoked; a `MethodInfo`, `FieldInfo` or `PropertyInfo` that is not a runtime reflection
-  object (finding A-10) is unknown code without any member read and is not cached.
+  object (finding A-10) is unknown code without any member read and is not cached. Since the A-10 fix the check is the
+  engine-wide `ExpressionReflectionProvenance.IsRuntime` (a closed set of runtime classes), which also refuses emit builders.
+- **Known omission.** `Pow` is missing from the total floating functions (the gate trusts it): conservative, to add in a
+  separate change.
 - **Not modeled.** Asynchronous and resource exceptions, evaluation time, termination.
 
 ## 8. Resources and concurrency

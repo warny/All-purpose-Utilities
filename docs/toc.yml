@@ -6,3 +6,7 @@
   href: reflection/ProcessAndThreadModel.md
 - name: Expressions — Behavior Analysis
   href: expressions/BehaviorAnalysis.md
+- name: Expressions — A-10 Reflection Provenance
+  href: expressions/A10-ReflectionProvenance.md
+- name: Expressions — Compiled Behavior Study
+  href: expressions/CompiledBehavior-Study.md

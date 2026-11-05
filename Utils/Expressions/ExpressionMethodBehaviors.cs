@@ -40,8 +40,9 @@ namespace Utils.Expressions;
 /// declaration is honored.
 /// </para>
 /// <para>
-/// <b>No user code runs.</b> A <see cref="MethodInfo"/> that is not a runtime reflection object (a user subclass, whose
-/// members are user code) is <see cref="ExpressionBehaviors.UnknownCode"/> without any member read and is not cached. Reading
+/// <b>No user code runs.</b> A <see cref="MethodInfo"/> that is not a runtime reflection object
+/// (<see cref="ExpressionReflectionProvenance.IsRuntime"/>: a user subclass, an emit builder, another loader's object) is
+/// <see cref="ExpressionBehaviors.UnknownCode"/> without any member read and is not cached. Reading
 /// the attribute of a runtime method does not construct any attribute instance.
 /// </para>
 /// </remarks>
@@ -203,15 +204,7 @@ internal static class ExpressionMethodBehaviors
     /// <param name="method">The method.</param>
     /// <returns>Its behavior.</returns>
     internal static ExpressionBehaviors Classify(MethodInfo method)
-        => IsRuntimeReflectionObject(method) ? Cache.GetOrAdd(method, static m => ClassifyCore(m)) : ExpressionBehaviors.UnknownCode;
-
-    /// <summary>
-    /// Whether <paramref name="member"/> is a reflection object of the runtime itself: its members are framework code, while
-    /// those of a user subclass of <see cref="MemberInfo"/> are user code that must not run.
-    /// </summary>
-    /// <param name="member">The member.</param>
-    /// <returns><see langword="true"/> for a runtime reflection object.</returns>
-    internal static bool IsRuntimeReflectionObject(MemberInfo member) => member.GetType().Assembly == typeof(object).Assembly;
+        => ExpressionReflectionProvenance.IsRuntime(method) ? Cache.GetOrAdd(method, static m => ClassifyCore(m)) : ExpressionBehaviors.UnknownCode;
 
     /// <summary>Computes the classification returned by <see cref="Classify"/>.</summary>
     /// <param name="method">A runtime method.</param>

@@ -5231,12 +5231,31 @@ Distinct from the correctness items P18a/P18b/P18c above, which stay open.
 - No change to `ExpressionSimplifier`, `ExpressionComparer` or the R1b gate; findings A-1 … A-12 on the existing gate are
   recorded in the design note, not fixed. A-10 is the significant one: the gate reads and trusts the metadata of a user
   `MethodInfo` subclass, so one impersonating `Math.Sin` makes `Simplify(FakeSin(x) * 0)` return `0` (a user call dropped).
-- Next (not started, needs instructions): fix A-10 in its own pull request (method, operator, field, property and
+- A-10 fixed in its own pull request (see below).
+- Next (not started, needs instructions), originally: fix A-10 in its own pull request (method, operator, field, property and
   conversion metadata, decided without reading a non-runtime reflection object); then Architecture B (options with three
   independent axes: trusting declarations, `AggressiveSimplification`, exception preservation by kind); then Architecture C
   (consumption by the simplifier and the comparer; the permissions are local and must be combined with a check that no
   side effect runs between merged or moved evaluations).
 
+#### S5 A-10 (2026-11-04) — trust in reflection metadata
+
+Fix note: [`docs/expressions/A10-ReflectionProvenance.md`](../docs/expressions/A10-ReflectionProvenance.md). Base `master`
+`623c7802`.
+
+- Root cause: the effect gate, the ordinary-arithmetic checks, the call-rule signatures (`ExpressionCallSignatureAttribute.Match`),
+  the field classification and the inlining analysis trusted (and ran) the members of user subclasses of `MethodInfo`/`FieldInfo`.
+  Before: `FakeSin(x) * 0 -> 0`, `FakeDoubleSin(x) -> double.Sin(x)`, `FakePow(x, 2) -> x ** 2`, `d + 0m -> d` with a fake
+  `decimal.op_Addition`, a fake read-only field inert.
+- Fix: one provenance check, `ExpressionReflectionProvenance` (closed set of runtime reflection classes, tested by reference on
+  `GetType()`), applied before any member read or cache; P18-A aligned on it.
+- Non-regression: the S5 campaigns `terminate`, `converge`, `diff`, `effects`, `s3` and `canon` (1,000 seeds) produce
+  byte-identical results on `master` and on the fix.
+- Distinct findings, not fixed: A10-B (comparer, canonical keys and memos call the members of custom reflection objects;
+  asymmetric equality), A10-C (`ExpressionOptimiser` drops evaluations: `F() * 0 -> 0`), P18-A `Pow` omission; residual L-1
+  (framework getters such as `MethodCallExpression.Type` delegate to the object) and L-2 (`Type` provenance).
+- Study, not implemented: [`docs/expressions/CompiledBehavior-Study.md`](../docs/expressions/CompiledBehavior-Study.md)
+  (keeping the analyzed behavior of compiled lambdas).
 ## Execution-optimizer stages
 
 These remain separate from the simplifier stages above.
