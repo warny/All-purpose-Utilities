@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>S5 A-10 — Trust in reflection metadata (fix note) | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="S5 A-10 — Trust in reflection metadata (fix note) | omy.Utils Documentation ">
+      
+      
+      <link rel="icon" href="../../favicon.ico">
+      <link rel="stylesheet" href="../../public/docfx.min.css">
+      <link rel="stylesheet" href="../../public/main.css">
+      <meta name="docfx:navrel" content="../../toc.html">
+      <meta name="docfx:tocrel" content="../../toc.html">
+      
+      <meta name="docfx:rel" content="../../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/blob/master/docs/expressions/A10-ReflectionProvenance.md/#L1">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../../index.html">
+            <img id="logo" class="svg" src="../../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+
+      <div class="content">
+        <div class="actionbar">
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="s5-a-10--trust-in-reflection-metadata-fix-note">S5 A-10 — Trust in reflection metadata (fix note)</h1>
+
+<p>Base: <code>master</code> <code>623c7802</code> (after PR #681). Scope: the expression engine must never give the privileges of an intrinsic or
+trusted member to a reflection object that is not the runtime's own, and its decisions must never run the members of such an
+object. This is not a general protection against user code: user methods obtained through ordinary reflection stay user code,
+analyzed as before.</p>
+<h2 id="1-root-cause">1. Root cause</h2>
+<p><code>System.Linq.Expressions</code> factories accept any subclass of <code>MethodInfo</code>, <code>FieldInfo</code>, <code>PropertyInfo</code> and <code>ConstructorInfo</code>.
+Every member of such a subclass is user code: <code>DeclaringType</code>, <code>Name</code>, <code>Attributes</code>, <code>GetParameters</code>, <code>ReturnType</code>,
+<code>IsDefined</code>, <code>Equals</code>, <code>GetHashCode</code>. Several engine decisions read that metadata, or compared it with <code>==</code> (which calls
+the left operand's <code>Equals</code>), to decide that a node was intrinsic or inert:</p>
+<ul>
+<li>the effect gate's method classification and its <code>ConcurrentDictionary&lt;MethodInfo, …&gt;</code> cache (hash and equality first,
+then <code>DeclaringType == typeof(Math)</code> and the name);</li>
+<li>the &quot;ordinary arithmetic&quot; checks (<code>IsOrdinaryBinaryArithmetic</code>, <code>IsOrdinaryUnaryNegate</code>), which compared the node's
+operator method with the expected one through the node method's own <code>Equals</code>;</li>
+<li>the call-rule signatures (<code>ExpressionCallSignatureAttribute.Match</code>), which matched rules on <code>DeclaringType</code> and <code>Name</code>, and
+whose rules replace the call by an intrinsic node or by the real function;</li>
+<li>the gate's operator and conversion classification (<code>DeclaringType == typeof(decimal)</code>, <code>Name == &quot;op_Implicit&quot;</code>) and its
+field classification (<code>IsInitOnly</code>, <code>IsLiteral</code>, read from the user's <code>Attributes</code>);</li>
+<li>the inlining analysis (<code>GetParameters</code> for by-reference arguments, <code>IsDefined(IsReadOnlyAttribute)</code> for receiver mutation).</li>
+</ul>
+<h2 id="2-reproducers-before-the-fix-master-623c7802">2. Reproducers (before the fix, <code>master</code> <code>623c7802</code>)</h2>
+<table>
+<thead>
+<tr>
+<th>Tree</th>
+<th>Result before</th>
+<th>After</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>FakeMathSin(x) * 0</code></td>
+<td><code>0</code>: the user call is dropped</td>
+<td><code>0 * FakeMathSin(x)</code>: kept, evaluated once</td>
+</tr>
+<tr>
+<td><code>FakeDoubleSin(x)</code></td>
+<td><code>double.Sin(x)</code>: replaced by the real function (call rule)</td>
+<td>unchanged</td>
+</tr>
+<tr>
+<td><code>FakeMathPow(x, 2)</code></td>
+<td><code>x ** 2</code>: replaced by an intrinsic power (call rule)</td>
+<td>unchanged</td>
+</tr>
+<tr>
+<td><code>d + 0m</code> with a fake <code>decimal.op_Addition</code></td>
+<td><code>d</code>: the user operator is dropped</td>
+<td>unchanged</td>
+</tr>
+<tr>
+<td><code>d * 0m</code> with a fake <code>decimal.op_Multiply</code></td>
+<td><code>0</code></td>
+<td>unchanged</td>
+</tr>
+<tr>
+<td><code>Convert(i, decimal, fake op_Implicit)</code></td>
+<td>gate: inert</td>
+<td>gate: observable</td>
+</tr>
+<tr>
+<td>field <code>cell.V</code> through a fake <code>FieldInfo</code> claiming <code>InitOnly</code></td>
+<td>gate: inert; <code>cell.V * 0 -&gt; 0</code></td>
+<td>observable; kept</td>
+</tr>
+<tr>
+<td>any analysis of a fake method</td>
+<td>hostile <code>GetHashCode</code>, <code>Equals</code>, <code>DeclaringType</code>, <code>Name</code>, <code>GetParameters</code>, <code>ReturnType</code> called</td>
+<td>none called (§6)</td>
+</tr>
+</tbody>
+</table>
+<p>&quot;Fake&quot; is a user <code>MethodInfo</code>/<code>FieldInfo</code> forwarding to the real member and answering <code>true</code> when compared with it. The
+same tests run against <code>master</code> fail 7 of 8 (<code>UtilsTest.Security/Expressions/ExpressionReflectionProvenanceTests</code>).</p>
+<h2 id="3-fix">3. Fix</h2>
+<p>One provenance check, <code>ExpressionReflectionProvenance</code> (internal, <code>Utils/Expressions/ExpressionReflectionProvenance.cs</code>):</p>
+<ul>
+<li><code>IsRuntime(member)</code> compares <code>member.GetType()</code> (not virtual) by reference with the closed set of concrete classes the
+runtime uses for loaded code: methods (<code>RuntimeMethodInfo</code>: ordinary, generic definitions and instantiations, array
+methods, methods of created dynamic and collectible types), constructors, ordinary and literal fields, properties, and
+<code>DynamicMethod</code>. The classes are read at type initialization from members of <code>object</code>, <code>string</code> and <code>int</code>, never named.</li>
+<li><code>IsSameMember(actual, expected)</code> compares a node's member with an expected runtime member without calling the equality of
+an object that is not a runtime one.</li>
+</ul>
+<p>Applied at every decision point found by the audit (§4), always before any member of the object is read and before it
+reaches a cache:</p>
+<table>
+<thead>
+<tr>
+<th>Site</th>
+<th>Change</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ExpressionEffectAnalysis.MethodEffects</code> and its cache</td>
+<td>non-runtime method: <code>Observable</code>, never cached</td>
+</tr>
+<tr>
+<td><code>ExpressionEffectAnalysis.OperatorMethodEffects</code></td>
+<td>non-runtime operator method: <code>Observable</code></td>
+</tr>
+<tr>
+<td><code>ExpressionEffectAnalysis.ConversionEffects</code></td>
+<td>non-runtime conversion method: <code>Observable</code></td>
+</tr>
+<tr>
+<td><code>ExpressionEffectAnalysis.AnalyzeMember</code></td>
+<td>non-runtime field: <code>Observable</code></td>
+</tr>
+<tr>
+<td><code>ExpressionSimplifier.IsOrdinaryBinaryArithmetic</code>, <code>IsOrdinaryUnaryNegate</code> (hence <code>IsOrdinaryFieldDivision</code>)</td>
+<td>non-runtime method refused before <code>IsLifted</code>; comparison through <code>IsSameMember</code></td>
+</tr>
+<tr>
+<td><code>ExpressionCallSignatureAttribute.Match</code></td>
+<td>non-runtime method never matches a call rule</td>
+</tr>
+<tr>
+<td><code>AdditionOfCos2andSin2Number</code>, <code>CanCombineUnaryLogCalls</code></td>
+<td>comparison through <code>IsSameMember</code> (defense in depth)</td>
+</tr>
+<tr>
+<td><code>InvocationInliningAnalysis</code> (<code>ScanCall</code>, <code>ScanMember</code>, <code>ScanNew</code>, <code>ScanIndex</code>)</td>
+<td>non-runtime member: <code>Preserve</code></td>
+</tr>
+<tr>
+<td><code>ExpressionMethodBehaviors</code>, <code>ExpressionBehaviorAnalysis</code> (P18-A)</td>
+<td>same check (previously &quot;declared in the core library&quot;, which also accepted emit builders)</td>
+</tr>
+<tr>
+<td><code>ExpressionTraceFormatter</code></td>
+<td>renders <code>&lt;custom member&gt;</code> instead of reading the name</td>
+</tr>
+</tbody>
+</table>
+<p>No public API change. <code>ExpressionCallSignatureAttribute.Match</code> (public) no longer matches a call whose method is not a runtime
+reflection object; nothing else changes for runtime objects. Declarations (<code>[Deterministic]</code>) are still not consumed, and
+the exception policy is unchanged.</p>
+<h2 id="4-audited-paths">4. Audited paths</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Path</th>
+<th>Object, provenance</th>
+<th>Check before</th>
+<th>Custom object before</th>
+<th>Impact before</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>ExpressionEffectAnalysis.MethodEffects</code> + cache</td>
+<td><code>MethodCallExpression.Method</code>, caller</td>
+<td>none</td>
+<td><code>GetHashCode</code>, <code>Equals</code>, <code>DeclaringType</code>, <code>IsStatic</code>, <code>GetParameters</code>, <code>ReturnType</code>, <code>Name</code> run; Math/double impersonation trusted</td>
+<td>drop, merge, reorder (<code>AllowsRules</code>, <code>SplitPinnedTerms</code>)</td>
+<td><strong>fixed</strong></td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>TryAnalyzeShallow</code></td>
+<td>same</td>
+<td>via 1</td>
+<td>same</td>
+<td>same</td>
+<td>fixed via 1</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>OperatorMethodEffects</code></td>
+<td><code>BinaryExpression.Method</code></td>
+<td>none</td>
+<td><code>Equals</code> (via 7), <code>DeclaringType</code></td>
+<td>custom operator inert</td>
+<td><strong>fixed</strong></td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>ConversionEffects</code></td>
+<td><code>UnaryExpression.Method</code></td>
+<td>none</td>
+<td><code>DeclaringType</code>, <code>Name</code></td>
+<td>custom conversion inert</td>
+<td><strong>fixed</strong></td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>UnaryOwnEffects</code></td>
+<td><code>UnaryExpression.Method</code></td>
+<td>via 7</td>
+<td><code>Equals</code></td>
+<td>custom negation inert</td>
+<td>fixed via 7</td>
+</tr>
+<tr>
+<td>6</td>
+<td><code>AnalyzeMember</code></td>
+<td><code>MemberExpression.Member</code></td>
+<td>none</td>
+<td><code>Attributes</code> (<code>IsInitOnly</code>, <code>IsLiteral</code>)</td>
+<td>field claims read-only → inert</td>
+<td><strong>fixed</strong>; properties were already observable without read</td>
+</tr>
+<tr>
+<td>7</td>
+<td><code>IsOrdinaryBinaryArithmetic</code>, <code>IsOrdinaryUnaryNegate</code>, <code>IsOrdinaryFieldDivision</code></td>
+<td>node method</td>
+<td>none</td>
+<td><code>Equals</code> lies; <code>IsLifted</code> reads <code>GetParameters</code></td>
+<td>algebraic rules on a custom operator (<code>d + 0m -&gt; d</code>)</td>
+<td><strong>fixed</strong></td>
+</tr>
+<tr>
+<td>8</td>
+<td><code>ExpressionCallSignatureAttribute.Match</code></td>
+<td>call method</td>
+<td>none</td>
+<td><code>DeclaringType</code>, <code>Name</code></td>
+<td>call rules replace the call (<code>Pow</code> → <code>Power</code>, <code>double.Sin</code> → real)</td>
+<td><strong>fixed</strong></td>
+</tr>
+<tr>
+<td>9</td>
+<td><code>CanCombineUnaryLogCalls</code></td>
+<td>two matched calls</td>
+<td>via 8</td>
+<td><code>Equals</code></td>
+<td>log combination</td>
+<td>fixed via 8, hardened</td>
+</tr>
+<tr>
+<td>10</td>
+<td><code>AdditionOfCos2andSin2Number</code></td>
+<td><code>Power</code> operand calls</td>
+<td>gate (1)</td>
+<td><code>Equals</code> lies</td>
+<td><code>sin² + cos² -&gt; 1</code></td>
+<td>fixed via 1, hardened</td>
+</tr>
+<tr>
+<td>11</td>
+<td><code>ClassifyForAdditiveGrouping</code> (<code>Method.Name</code>)</td>
+<td>unpinned terms</td>
+<td>gate (1)</td>
+<td><code>Name</code></td>
+<td>ordering only</td>
+<td>not vulnerable after 1 (hostile terms are pinned)</td>
+</tr>
+<tr>
+<td>12</td>
+<td><code>InvocationInliningAnalysis</code> scans</td>
+<td>call, member, constructor, indexer</td>
+<td>none</td>
+<td><code>GetParameters</code>, <code>IsStatic</code>, <code>IsDefined</code></td>
+<td>wrong inlining (lost by-reference write, struct receiver mutation)</td>
+<td><strong>fixed</strong> (<code>Preserve</code>)</td>
+</tr>
+<tr>
+<td>13</td>
+<td><code>InvocationInliningAnalysis.Analyze</code> body type check</td>
+<td><code>MethodCallExpression.Type</code> = <code>Method.ReturnType</code></td>
+<td>none</td>
+<td><code>ReturnType</code></td>
+<td>none (type equality)</td>
+<td>residual L-1</td>
+</tr>
+<tr>
+<td>14</td>
+<td><code>ExpressionMethodBehaviors</code>, <code>ExpressionBehaviorAnalysis</code></td>
+<td>P18-A</td>
+<td>assembly test</td>
+<td>none read, but emit builders accepted</td>
+<td>—</td>
+<td>tightened</td>
+</tr>
+<tr>
+<td>15</td>
+<td><code>ExpressionTraceFormatter</code></td>
+<td>call method, member</td>
+<td>none</td>
+<td><code>DeclaringType</code>, <code>Name</code></td>
+<td>trace text only, inside a tracing scope</td>
+<td><strong>fixed</strong></td>
+</tr>
+<tr>
+<td>16</td>
+<td><code>ExpressionTraceCycleAnalyzer.MixIdentity</code></td>
+<td>members</td>
+<td>reference identity</td>
+<td>none</td>
+<td>—</td>
+<td>not vulnerable</td>
+</tr>
+<tr>
+<td>17</td>
+<td><code>ExpressionComparer</code> equality and hash</td>
+<td><code>Method</code>, <code>Member</code>, <code>Constructor</code>, <code>Indexer</code>, <code>AddMethod</code></td>
+<td>none</td>
+<td><code>Equals</code>, <code>GetHashCode</code></td>
+<td>asymmetric equality, forced hash collisions</td>
+<td><strong>separate finding A10-B</strong></td>
+</tr>
+<tr>
+<td>18</td>
+<td><code>ExpressionCanonicalOrder</code> comparisons</td>
+<td>same</td>
+<td>none</td>
+<td><code>Name</code>, <code>DeclaringType</code>, <code>GetParameters</code>, <code>MetadataToken</code>, <code>Module</code></td>
+<td>ordering of keys</td>
+<td>A10-B (simplifier keys are built for inert terms only)</td>
+</tr>
+<tr>
+<td>19</td>
+<td><code>ComparisonMemo</code>, <code>ObservedComparisonMemo</code></td>
+<td>same</td>
+<td>none</td>
+<td><code>GetHashCode</code>, <code>Equals</code></td>
+<td>memo key collisions</td>
+<td>A10-B (memoized comparisons run on inert operands only)</td>
+</tr>
+<tr>
+<td>20</td>
+<td>Rebuilds (<code>CopyExpression</code>, substitution)</td>
+<td>node members</td>
+<td>none</td>
+<td>framework factories read them</td>
+<td>none (validation)</td>
+<td>residual L-1 (framework reads, ETC R4 policy)</td>
+</tr>
+<tr>
+<td>21</td>
+<td>Rule discovery (<code>BuildRule</code>)</td>
+<td>the transformer's own methods</td>
+<td>runtime reflection</td>
+<td>none</td>
+<td>—</td>
+<td>not vulnerable</td>
+</tr>
+<tr>
+<td>22</td>
+<td><code>TransformCall</code> (<code>ExpressionSimplifier.Math.cs</code>)</td>
+<td>method resolved by name on <code>FloatingPointType</code></td>
+<td>—</td>
+<td>—</td>
+<td>reached only through 8</td>
+<td>fixed via 8</td>
+</tr>
+<tr>
+<td>23</td>
+<td><code>Type</code> of nodes</td>
+<td><code>TypeDelegator</code> and user <code>Type</code> subclasses are accepted by the factories</td>
+<td>none</td>
+<td><code>IsPrimitive</code>, <code>IsValueType</code>, <code>IsEnum</code>, equality</td>
+<td>conversion classification</td>
+<td>residual L-2</td>
+</tr>
+</tbody>
+</table>
+<p>Why 17–19 are not bypasses of the fix: the simplifier compares, hashes, memoizes or keys only operands that passed the gate
+(<code>AllowsRules</code>) or terms that were not pinned (<code>SplitPinnedTerms</code>); after the fix any node holding a non-runtime reflection
+object is observable, so these consumers never decide a rewrite of such a node.</p>
+<h2 id="5-distinct-findings-not-fixed-here">5. Distinct findings (not fixed here)</h2>
+<ul>
+<li><strong>A10-B — structural consumers call the members of custom reflection objects.</strong> <code>ExpressionComparer.Equals(fake, real)</code>
+returns <code>true</code> while <code>Equals(real, fake)</code> returns <code>false</code> (asymmetric), both hash alike, and the comparison calls the
+fake's <code>Attributes</code>, <code>GetHashCode</code>, <code>GetParameters</code>, <code>DeclaringType</code>, <code>Equals</code> and <code>ReturnType</code>. Same pattern in the canonical
+keys and the comparison memos. Proposed fix (separate PR): compare and hash non-runtime reflection objects by reference
+identity, never through their members.</li>
+<li><strong>A10-C — <code>ExpressionOptimiser</code> drops evaluations.</strong> The separate <code>ExpressionOptimiser</code> rewrites <code>x * 0 -&gt; 0</code>, <code>x + 0 -&gt; x</code>
+and <code>x * 1 -&gt; x</code> without any effect or operator check: <code>F() * 0</code> loses the call of <code>F</code>, and a custom operator is treated as
+arithmetic. Unrelated to reflection provenance; proposed as a separate PR.</li>
+<li><strong>P18-A list omission.</strong> <code>Pow</code> is missing from the total floating functions of <code>ExpressionMethodBehaviors</code> (the gate trusts
+it). Conservative (<code>UnknownCode</code>); to add in a separate change.</li>
+</ul>
+<h2 id="6-tests">6. Tests</h2>
+<ul>
+<li><code>UtilsTest.Security/Expressions/ExpressionReflectionProvenanceTests</code> (8 tests; 7 fail on <code>master</code>):
+S-01/S-08 impersonated <code>Math.Sin</code>, <code>double.Sin</code>, <code>Math.Pow</code> keep every evaluation (counted through the expression interpreter,
+which calls the fake's <code>Invoke</code>) for the exact and a derived simplifier; S-02/S-10 with every member armed to throw, the
+provenance check, the gate, the ordinary-arithmetic checks, the call signatures, the inlining analysis and the public
+analysis read nothing; S-06 caches, sequential and concurrent, with hash-sharing impersonations; S-03 operators; S-04
+conversions; S-05 fields and properties; provenance classes (ordinary, generic, array, dynamic, collectible, <code>DynamicMethod</code>,
+constructors, literal fields, properties accepted; emit builders, user subclasses, <code>null</code> refused); S-09 hostile nestings and
+DAGs refused by the resource limits without any member read.</li>
+<li><code>UtilsTest/Mathematics/Expressions/Coverage/ExpressionReflectionProvenanceControlTests</code> (category <code>S5-A10</code>, S-07): real
+<code>Math.Sin</code>, <code>MathF.Sin</code>, <code>double.Sin</code>, <code>float.Sin</code>, <code>Math.Pow</code>, decimal operators, conversions and fields keep their
+classification and simplifications.</li>
+</ul>
+<h2 id="7-residual-limitations">7. Residual limitations</h2>
+<ul>
+<li><strong>L-1 — framework getters delegate to the object.</strong> <code>MethodCallExpression.Type</code> returns <code>Method.ReturnType</code>;
+<code>BinaryExpression.IsLifted</code> and <code>UnaryExpression.IsLifted</code> read <code>GetParameters</code> for nullable operands; the framework
+factories that rebuild a parent read the members they validate. Every engine walk reads node types, so a custom method's
+<code>ReturnType</code> still runs during simplification (the tests count these reads instead of refusing them). These reads cannot
+grant any trust; making such nodes fully opaque would mean treating every node that holds a custom reflection object like an
+extension node in every walk.</li>
+<li><strong>L-2 — <code>Type</code> provenance.</strong> The factories accept <code>TypeDelegator</code> and user <code>Type</code> subclasses as node types. The gate's
+conversion rules read <code>IsPrimitive</code>, <code>IsValueType</code> and <code>IsEnum</code> of node types. Out of the scope of this fix (method, member,
+operator and conversion metadata); to study separately.</li>
+<li>Emit builders (<code>MethodBuilder</code> before <code>CreateType</code>, generic instantiations over type builders) are refused conservatively.</li>
+</ul>
+<h2 id="8-measurements">8. Measurements</h2>
+<p>Windows 11, .NET 9, Release; <code>master</code> <code>623c7802</code> against the fix, 5 alternating processes per variant, 9 rounds each, medians;
+A/A = master's odd runs against its even runs. Gate entries are called outside an operation, through compiled accessors.</p>
+<table>
+<thead>
+<tr>
+<th>Case</th>
+<th style="text-align: right;">master</th>
+<th style="text-align: right;">fix</th>
+<th style="text-align: right;">Δ</th>
+<th style="text-align: right;">A/A</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>MethodEffects(Math.Sin)</code>, warm cache</td>
+<td style="text-align: right;">6.5 ns</td>
+<td style="text-align: right;">6.7 ns</td>
+<td style="text-align: right;">+3 %</td>
+<td style="text-align: right;">1 %</td>
+</tr>
+<tr>
+<td><code>MethodEffects(fake)</code></td>
+<td style="text-align: right;">7.9 ns</td>
+<td style="text-align: right;">3.9 ns</td>
+<td style="text-align: right;">−51 %</td>
+<td style="text-align: right;">−5 %</td>
+</tr>
+<tr>
+<td><code>IsOrdinaryBinaryArithmetic</code>, <code>decimal +</code></td>
+<td style="text-align: right;">16.3 ns</td>
+<td style="text-align: right;">19.3 ns</td>
+<td style="text-align: right;">+18 %</td>
+<td style="text-align: right;">4 %</td>
+</tr>
+<tr>
+<td><code>IsOrdinaryBinaryArithmetic</code>, <code>double *</code></td>
+<td style="text-align: right;">13.7 ns</td>
+<td style="text-align: right;">13.6 ns</td>
+<td style="text-align: right;">−1 %</td>
+<td style="text-align: right;">−4 %</td>
+</tr>
+<tr>
+<td>gate, <code>Math.Sin(x)</code></td>
+<td style="text-align: right;">23.7 ns</td>
+<td style="text-align: right;">23.9 ns</td>
+<td style="text-align: right;">+1 %</td>
+<td style="text-align: right;">0 %</td>
+</tr>
+<tr>
+<td>gate, <code>d + 1m</code> (operator method)</td>
+<td style="text-align: right;">44.5 ns</td>
+<td style="text-align: right;">49.5 ns</td>
+<td style="text-align: right;">+11 %</td>
+<td style="text-align: right;">−1 %</td>
+</tr>
+<tr>
+<td>gate, <code>int -&gt; decimal</code> (implicit conversion)</td>
+<td style="text-align: right;">21.6 ns</td>
+<td style="text-align: right;">22.8 ns</td>
+<td style="text-align: right;">+6 %</td>
+<td style="text-align: right;">2 %</td>
+</tr>
+<tr>
+<td>gate, <code>decimal -&gt; int</code> (explicit conversion)</td>
+<td style="text-align: right;">43.9 ns</td>
+<td style="text-align: right;">45.0 ns</td>
+<td style="text-align: right;">+3 %</td>
+<td style="text-align: right;">−3 %</td>
+</tr>
+<tr>
+<td>gate, mutable field</td>
+<td style="text-align: right;">65.2 ns</td>
+<td style="text-align: right;">68.3 ns</td>
+<td style="text-align: right;">+5 %</td>
+<td style="text-align: right;">−3 %</td>
+</tr>
+<tr>
+<td>gate, literal field</td>
+<td style="text-align: right;">48.0 ns</td>
+<td style="text-align: right;">51.6 ns</td>
+<td style="text-align: right;">+8 %</td>
+<td style="text-align: right;">3 %</td>
+</tr>
+<tr>
+<td>gate, property</td>
+<td style="text-align: right;">56.0 ns</td>
+<td style="text-align: right;">55.8 ns</td>
+<td style="text-align: right;">0 %</td>
+<td style="text-align: right;">−1 %</td>
+</tr>
+<tr>
+<td>gate, mixed tree (8 nodes)</td>
+<td style="text-align: right;">429 ns</td>
+<td style="text-align: right;">430 ns</td>
+<td style="text-align: right;">0 %</td>
+<td style="text-align: right;">3 %</td>
+</tr>
+<tr>
+<td>gate, 400 nested calls</td>
+<td style="text-align: right;">44.8 µs</td>
+<td style="text-align: right;">42.7 µs</td>
+<td style="text-align: right;">−5 %</td>
+<td style="text-align: right;">0 %</td>
+</tr>
+<tr>
+<td>gate, shared DAG (10 levels)</td>
+<td style="text-align: right;">108.3 µs</td>
+<td style="text-align: right;">106.7 µs</td>
+<td style="text-align: right;">−1 %</td>
+<td style="text-align: right;">1 %</td>
+</tr>
+<tr>
+<td>gate, hostile call</td>
+<td style="text-align: right;">56.9 ns</td>
+<td style="text-align: right;">45.3 ns</td>
+<td style="text-align: right;">−20 %</td>
+<td style="text-align: right;">−7 %</td>
+</tr>
+<tr>
+<td>cold classification, 370 methods (per method)</td>
+<td style="text-align: right;">2.59 µs</td>
+<td style="text-align: right;">2.56 µs</td>
+<td style="text-align: right;">−1 %</td>
+<td style="text-align: right;">2 %</td>
+</tr>
+</tbody>
+</table>
+<p>The check costs a few nanoseconds where it runs (an operator, conversion or field node: +1 to +5 ns); a warm method lookup is
+unchanged, and the hostile case is cheaper because nothing is read. <code>Simplify</code> on the 11-case corpus: −2.0 % to +4.5 %, inside
+the A/A spread of the same campaign (up to ±19 % on the smallest cases, ±1–4 % on the larger ones). Earlier iterations of the
+fix measured +10–20 % on <code>decimal +</code> (the comparison called the runtime <code>Equals</code> instead of testing the reference first) and a
+bimodal <code>int -&gt; decimal</code> (24/48 ns, a code-layout effect); <code>IsSameMember</code> now tests the reference first and the conversion reads
+the method once. The S5 campaigns (<code>terminate</code>, <code>converge</code>, <code>diff</code>, <code>effects</code>, <code>s3</code>, <code>canon</code>, 1,000 seeds) produce
+byte-identical result files on <code>master</code> and on the fix.</p>
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/docs/expressions/A10-ReflectionProvenance.md/#L1" class="edit-link">Edit this page</a>
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

@@ -154,13 +154,13 @@ Conservative.</li>
 side effects or from unknown code.</li>
 <li><strong>A-9</strong> Custom operators and user methods are always <code>Observable</code>; there is no declaration route (<code>[Pure]</code> is
 deliberately not trusted, ETC R1b).</li>
-<li><strong>A-10 (confirmed, the most significant)</strong> The method cache and classifier read the members of the <code>MethodInfo</code>
+<li><strong>A-10 (confirmed, fixed: see <a href="A10-ReflectionProvenance.html">A10-ReflectionProvenance.md</a>)</strong> The method cache and classifier read the members of the <code>MethodInfo</code>
 (<code>GetHashCode</code>, <code>DeclaringType</code>, <code>Attributes</code>, <code>GetParameters</code>, <code>ReturnType</code>, <code>Name</code>). <code>Expression.Call</code> accepts a user
 subclass of <code>MethodInfo</code>; one that forwards to <code>Math.Sin</code> and reports its metadata is classified inert by the gate, and
 <code>Simplify(FakeSin(x) * 0)</code> returns <code>0</code>: a user call is dropped on the strength of metadata the gate did not obtain from the
-runtime. It needs a hand-built call node with a custom reflection object. Fix proposed for a later stage: classify any
-reflection object that is not a runtime one as observable, without reading it, as the new analysis does. Not fixed here
-(no behavior change allowed).</li>
+runtime. It needs a hand-built call node with a custom reflection object. Not fixed in P18-A (no behavior change
+allowed); fixed by the A-10 pull request, which also found the same trust in the call-rule signatures, the
+ordinary-arithmetic checks, the field classification and the inlining analysis.</li>
 <li><strong>A-11</strong> <code>IsSafeDivisor</code> accepts every nonzero <code>decimal</code> divisor (S5A-13, already reported).</li>
 <li><strong>A-12</strong> Constants are inert whatever their value; the user code of a constant's <code>Equals</code>/<code>GetHashCode</code> belongs to the
 comparer, not to the evaluation (documented on <code>ExpressionSimplifier</code>).</li>
@@ -458,7 +458,10 @@ delegate invocations, loops, jumps, labels, switches, try blocks, member and lis
 information, dynamic operations and extension nodes.</li>
 <li><strong>Hostile inputs.</strong> An extension node is recognized by class (<code>ExpressionOpacity.IsOpaque</code>) before any <code>Type</code> or
 <code>NodeType</code> read; no binder is invoked; a <code>MethodInfo</code>, <code>FieldInfo</code> or <code>PropertyInfo</code> that is not a runtime reflection
-object (finding A-10) is unknown code without any member read and is not cached.</li>
+object (finding A-10) is unknown code without any member read and is not cached. Since the A-10 fix the check is the
+engine-wide <code>ExpressionReflectionProvenance.IsRuntime</code> (a closed set of runtime classes), which also refuses emit builders.</li>
+<li><strong>Known omission.</strong> <code>Pow</code> is missing from the total floating functions (the gate trusts it): conservative, to add in a
+separate change.</li>
 <li><strong>Not modeled.</strong> Asynchronous and resource exceptions, evaluation time, termination.</li>
 </ul>
 <h2 id="8-resources-and-concurrency">8. Resources and concurrency</h2>

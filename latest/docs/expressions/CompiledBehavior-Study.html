@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Keeping the analyzed behavior of a compiled lambda — design study | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Keeping the analyzed behavior of a compiled lambda — design study | omy.Utils Documentation ">
+      
+      
+      <link rel="icon" href="../../favicon.ico">
+      <link rel="stylesheet" href="../../public/docfx.min.css">
+      <link rel="stylesheet" href="../../public/main.css">
+      <meta name="docfx:navrel" content="../../toc.html">
+      <meta name="docfx:tocrel" content="../../toc.html">
+      
+      <meta name="docfx:rel" content="../../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/blob/master/docs/expressions/CompiledBehavior-Study.md/#L1">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../../index.html">
+            <img id="logo" class="svg" src="../../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+
+      <div class="content">
+        <div class="actionbar">
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="keeping-the-analyzed-behavior-of-a-compiled-lambda--design-study">Keeping the analyzed behavior of a compiled lambda — design study</h1>
+
+<p>Status: study only, nothing implemented. Requested with the A-10 fix (2026-11-04); not part of Architectures B or C.</p>
+<h2 id="1-goal-and-non-goals">1. Goal and non-goals</h2>
+<p>When a <code>LambdaExpression</code> is compiled, classify its behavior once (<code>ExpressionBehaviorAnalysis</code>) and keep the result with the
+delegate, so that later analyses meeting that delegate can reuse it instead of classifying an invocation of it as unknown code.</p>
+<p>Non-goals: verifying compiled code, promoting an analysis to a <code>[Deterministic]</code> declaration, trusting a delegate because its
+<code>Method</code> looks like one already analyzed, or changing any simplification before an explicit policy (Architecture B/C).</p>
+<h2 id="2-analyzelambda-versus-analyzeinvocationlambda-point-e">2. <code>Analyze(lambda)</code> versus <code>AnalyzeInvocation(lambda)</code> (point E)</h2>
+<p><code>Analyze(lambda)</code> classifies <em>creating</em> the delegate: <code>Allocates</code>, whatever the body does. <code>AnalyzeInvocation(lambda)</code>
+classifies <em>one call</em> of it: the body, its parameters local. A compiled delegate is a callable value, so the stored behavior is
+the invocation behavior. The creation behavior is irrelevant once the delegate exists.</p>
+<h2 id="3-options">3. Options</h2>
+<h3 id="a-compiledexpressiontdelegate-recommended-public">A. <code>CompiledExpression&lt;TDelegate&gt;</code> (recommended, public)</h3>
+<pre><code class="lang-csharp">public sealed class CompiledExpression&lt;TDelegate&gt; where TDelegate : Delegate
+{
+    public Expression&lt;TDelegate&gt; Source { get; }          // the tree actually compiled (after any finalization)
+    public TDelegate Delegate { get; }
+    public ExpressionBehavior Behavior { get; }           // AnalyzeInvocation(Source), computed once
+    public ExpressionTrustPolicy Policy { get; }          // the analysis policy in force (verified or declarations trusted)
+    public IReadOnlyList&lt;MethodInfo&gt; Declarations { get; } // the [Deterministic] methods the behavior relies on, if any
+}
+
+public static class ExpressionCompilation
+{
+    public static CompiledExpression&lt;TDelegate&gt; Compile&lt;TDelegate&gt;(Expression&lt;TDelegate&gt; lambda, CompiledExpressionOptions? options = null)
+        where TDelegate : Delegate;
+}
+</code></pre>
+<p>Explicit, self-describing, no global state. The caller decides where the result travels. <code>Declarations</code> makes the provenance
+of the guarantees auditable (point A of the brief): <code>ReliesOnDeclarations</code> says <em>that</em> it relies on declarations; this list says
+<em>on which</em>.</p>
+<h3 id="b-registry-by-delegate-identity-recommended-internal-fed-by-a">B. Registry by delegate identity (recommended, internal, fed by A)</h3>
+<p><code>ConditionalWeakTable&lt;Delegate, CompiledBehaviorRecord&gt;</code> filled by <code>ExpressionCompilation.Compile</code>, keyed by the delegate
+<strong>instance</strong> (reference identity, as <code>ConditionalWeakTable</code> does), never by <code>Delegate.Method</code>. The record lives exactly as long
+as the delegate and keeps <code>Source</code> alive for that time.</p>
+<p>Why identity and not <code>Method</code>: every compiled lambda's <code>Method</code> is an anonymously hosted dynamic method. Two delegates can share
+it with different closures, <code>Delegate.CreateDelegate</code> can bind it to another target, and <code>Delegate.Combine</code> builds a new
+multicast instance. None of them is registered, so none inherits a behavior.</p>
+<h3 id="c-emitting-annotated-methods-rejected">C. Emitting annotated methods (rejected)</h3>
+<p>.NET does not offer <code>LambdaExpression.CompileToMethod</code>. A <code>DynamicMethod</code> cannot carry custom attributes. Emitting into a
+collectible <code>AssemblyBuilder</code> would work only for closed lambdas (no hoisted closure), would cost an assembly per batch, and,
+above all, would turn an analysis result into a <code>[Deterministic]</code> <em>declaration</em>, which the brief forbids. Rejected.</p>
+<h2 id="4-validity-point-d">4. Validity (point D)</h2>
+<p>The record describes the code, not the values:</p>
+<ul>
+<li><strong>Captured mutable state.</strong> Closures read hoisted variables and captured objects. The analysis already reports these reads
+as <code>ReadsMutableState</code> (and writes to captured locals as <code>SideEffects</code>). The record stays valid when those values change:
+determinism is &quot;same state, same outcome&quot;, and reproducibility is not claimed.</li>
+<li><strong>Argument state.</strong> Reference-typed arguments may change between calls; a declared method receiving one already reports
+<code>ReadsMutableState</code>.</li>
+<li><strong>Tree changes.</strong> Expression trees are immutable; the record holds the exact <code>Source</code> that was compiled. A modified tree is a
+new tree, compiled into a new delegate with its own record.</li>
+<li><strong>Rebuilt delegates.</strong> A delegate rebuilt by <code>CreateDelegate</code>, <code>Combine</code> or a second <code>Compile</code> is a new instance: no record,
+unknown code.</li>
+<li><strong>Metadata.</strong> Reflection metadata and attributes of runtime methods do not change at run time, except under hot reload
+(<code>MetadataUpdateHandler</code>), which should clear the registry. Custom reflection objects are unknown code (A-10), so they never
+produce a stable trusted record.</li>
+<li><strong>Policy.</strong> The record stores the policy it was computed under. A consumer with a stricter policy widens a
+declaration-based record to unknown code (<code>ExpressionBehaviorPermissions.Effective</code>), never the reverse.</li>
+<li><strong>No promotion.</strong> An <code>Unknown</code> part stays unknown; a declaration-based part keeps <code>ReliesOnDeclaration</code>. Nothing is ever
+converted into <code>[Deterministic]</code>.</li>
+</ul>
+<h2 id="5-future-consumers-point-f">5. Future consumers (point F)</h2>
+<ul>
+<li><strong><code>ExpressionBehaviorAnalysis</code>.</strong> On <code>Invoke(Constant(d), args)</code> and <code>Call(Constant(d), d.GetType().GetMethod(&quot;Invoke&quot;), args)</code>
+with <code>d</code> registered: behavior = record ∪ arguments, instead of unknown code. Any other delegate stays unknown.</li>
+<li><strong><code>ExpressionSimplifier</code></strong> (Architecture C only, behind an explicit option): such an invocation could become discardable or
+mergeable under the permissions of <code>ExpressionBehaviorPermissions</code>, which are local (no side effect may run between the
+merged occurrences).</li>
+<li><strong><code>InvocationInliningAnalysis</code>.</strong> Inlining <code>Invoke(Constant(d), args)</code> by substituting <code>Source</code> is valid only for a <em>closed</em>
+lambda (no hoisted variable, no quote, no free parameter): otherwise the compiled closure binds variables the source tree would
+rebind to the enclosing scope. The record would carry an <code>IsClosed</code> flag; only then may inlining be considered.</li>
+<li><strong><code>ExpressionComparer</code>.</strong> No change. Delegates in constants compare by reference; equal records never make two delegates
+equal.</li>
+<li><strong>Architecture B/C.</strong> The record is one more source of verified behavior. It lets annotated or analyzed helpers be simplified
+without trusting unrelated user code.</li>
+</ul>
+<h2 id="6-cost-estimate">6. Cost estimate</h2>
+<p>From the P18-A measurements: about 40 ns per analysis plus 12–25 ns per node, so about 25 µs for a 1,000-node lambda.
+<code>LambdaExpression.Compile</code> costs tens of microseconds to milliseconds for such trees, so the analysis adds roughly 5–20 % to a
+compilation and nothing to an invocation. A <code>ConditionalWeakTable</code> insertion costs about 100 ns and a lookup 20–50 ns. Memory:
+one record per delegate (about 64 bytes plus the declaration list); it keeps the source tree alive as long as the delegate,
+which matters for callers that drop the tree after compiling. Option A without B costs nothing beyond the analysis.</p>
+<h2 id="7-recommendation">7. Recommendation</h2>
+<p>Implement A as the public entry point, with B as an internal registry fed only by A. Consult B only from
+<code>ExpressionBehaviorAnalysis</code>, and only for invocations of a registered delegate instance. Leave the simplifier, the comparer and
+the inlining analysis unchanged until Architecture B/C defines the policies. Reject C.</p>
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/docs/expressions/CompiledBehavior-Study.md/#L1" class="edit-link">Edit this page</a>
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>
