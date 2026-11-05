@@ -448,8 +448,8 @@ identity, never through their members.</li>
 <li><strong>A10-C — <code>ExpressionOptimiser</code> drops evaluations.</strong> The separate <code>ExpressionOptimiser</code> rewrites <code>x * 0 -&gt; 0</code>, <code>x + 0 -&gt; x</code>
 and <code>x * 1 -&gt; x</code> without any effect or operator check: <code>F() * 0</code> loses the call of <code>F</code>, and a custom operator is treated as
 arithmetic. Unrelated to reflection provenance; proposed as a separate PR.</li>
-<li><strong>P18-A list omission.</strong> <code>Pow</code> is missing from the total floating functions of <code>ExpressionMethodBehaviors</code> (the gate trusts
-it). Conservative (<code>UnknownCode</code>); to add in a separate change.</li>
+<li><strong>P18-A list omission.</strong> <code>Pow</code> was missing from the total floating functions of <code>ExpressionMethodBehaviors</code> (the gate trusts
+it). Conservative (<code>UnknownCode</code>); fixed by the S5 P18 <code>Pow</code> classification change (see <a href="BehaviorAnalysis.html">BehaviorAnalysis.md</a> §5).</li>
 </ul>
 <h2 id="6-tests">6. Tests</h2>
 <ul>
