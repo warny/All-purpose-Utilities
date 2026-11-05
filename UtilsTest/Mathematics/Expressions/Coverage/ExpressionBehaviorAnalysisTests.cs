@@ -86,6 +86,53 @@ public class ExpressionBehaviorAnalysisTests
         Assert.IsFalse(free.IsReproducible);
     }
 
+    /// <summary>A user power function with the signature of <see cref="Math.Pow(double, double)"/>.</summary>
+    /// <param name="x">The base.</param>
+    /// <param name="y">The exponent.</param>
+    /// <returns><c>x * y</c>.</returns>
+    public static double UserPow(double x, double y) => x * y;
+
+    /// <summary>
+    /// The floating-point <c>Pow</c> functions are total (IEEE-754 <c>pow</c> returns <c>NaN</c>, an infinity or a signed zero
+    /// instead of throwing; the edge values are covered by <see cref="TrustedFunctions_TotalOnesNeverThrowOnEdgeValues"/>). They
+    /// were missing from the trusted list, so every intrinsic <see cref="ExpressionType.Power"/> node, which carries
+    /// <see cref="Math.Pow(double, double)"/>, was unknown code. A power with a user method stays unknown, and the integer
+    /// <see cref="BigInteger.Pow(BigInteger, int)"/> stays partial.
+    /// </summary>
+    [TestMethod]
+    public void FloatingPow_IsTotalAndPowerNodesAreAnalyzed()
+    {
+        MethodInfo[] pow =
+        [
+            Static(typeof(Math), nameof(Math.Pow), typeof(double), typeof(double)),
+            Static(typeof(MathF), nameof(MathF.Pow), typeof(float), typeof(float)),
+            Static(typeof(double), nameof(double.Pow), typeof(double), typeof(double)),
+            Static(typeof(float), nameof(float.Pow), typeof(float), typeof(float)),
+            Static(typeof(Half), nameof(Half.Pow), typeof(Half), typeof(Half)),
+        ];
+
+        foreach (MethodInfo method in pow)
+        {
+            Assert.AreEqual(ExpressionBehaviors.None, ExpressionBehaviorAnalysis.AnalyzeMethod(method).Flags, method.ToString());
+        }
+
+        BinaryExpression power = Expression.Power(X, Expression.Constant(2.0));
+        Assert.AreEqual(pow[0], power.Method, "an intrinsic double power carries Math.Pow");
+        Assert.AreEqual(ExpressionBehaviors.ReadsMutableState, Flags(power));
+        Assert.IsTrue(ExpressionBehaviorAnalysis.Analyze(Expression.Power(Expression.Constant(-8.0), Expression.Constant(1.0 / 3))).IsReproducible);
+        Assert.AreEqual(ExpressionBehaviors.ReadsMutableState, Flags(Expression.Call(pow[0], X, X)));
+
+        Assert.AreEqual(ExpressionBehaviors.UnknownCode, Flags(Expression.Power(X, X, typeof(ExpressionBehaviorAnalysisTests).GetMethod(nameof(UserPow))!)));
+        Assert.AreEqual(ExpressionBehaviors.MayThrowArithmetic, ExpressionBehaviorAnalysis.AnalyzeMethod(Static(typeof(BigInteger), nameof(BigInteger.Pow), typeof(BigInteger), typeof(int))).Flags);
+
+        // The edge values that make other libraries throw (negative base with a fractional exponent, 0^-1, NaN, infinities).
+        foreach ((double x, double y) in new[] { (-8.0, 1.0 / 3), (0.0, -1.0), (-0.0, -3.0), (double.NaN, 0.0), (1.0, double.NaN), (double.NegativeInfinity, 0.5), (-1.0, double.PositiveInfinity), (double.MaxValue, 2.0) })
+        {
+            _ = Math.Pow(x, y);
+            _ = MathF.Pow((float)x, (float)y);
+        }
+    }
+
     /// <summary>Partial built-in numeric functions are deterministic and free of effects but may throw an arithmetic exception.</summary>
     [TestMethod]
     public void PartialNumericFunctions_MayThrowArithmetic()

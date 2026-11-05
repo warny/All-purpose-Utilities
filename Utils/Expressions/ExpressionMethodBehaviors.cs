@@ -121,7 +121,7 @@ internal static class ExpressionMethodBehaviors
                 "IsEvenInteger", "IsFinite", "IsInfinity", "IsInteger", "IsNaN", "IsNegative", "IsNegativeInfinity", "IsNormal",
                 "IsOddInteger", "IsPositive", "IsPositiveInfinity", "IsPow2", "IsRealNumber", "IsSubnormal", "Lerp", "Log",
                 "Log10", "Log10P1", "Log2", "Log2P1", "LogP1", "Max", "MaxMagnitude", "MaxMagnitudeNumber", "MaxNumber", "Min",
-                "MinMagnitude", "MinMagnitudeNumber", "MinNumber", "RadiansToDegrees", "RootN", "Round", "ScaleB", "Sin", "Sinh",
+                "MinMagnitude", "MinMagnitudeNumber", "MinNumber", "Pow", "RadiansToDegrees", "RootN", "Round", "ScaleB", "Sin", "Sinh",
                 "SinPi", "Sqrt", "Tan", "Tanh", "TanPi", "Truncate", "op_Addition", "op_Subtraction", "op_Multiply",
                 "op_Division", "op_Modulus", "op_UnaryNegation", "op_UnaryPlus", "op_Increment", "op_Decrement", "op_Implicit",
                 .. ComparisonOperators,
