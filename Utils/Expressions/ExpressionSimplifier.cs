@@ -56,9 +56,10 @@ namespace Utils.Mathematics.Expressions
     /// (see the previous paragraph).
     /// </para>
     /// <para>
-    /// The <c>NaN</c> propagation of S5 P11 (<see cref="FoldNaNOperand"/>) only drops an operand that
-    /// <see cref="IsEliminableFloatingOperand"/> proves free of effects and exceptions, a narrower whitelist than the
-    /// inert evaluations of <see cref="ExpressionEffectAnalysis"/>.
+    /// The <c>NaN</c> propagation of S5 P11 (<see cref="FoldNaNOperand"/>) only drops, under the default policy, an operand
+    /// that <see cref="IsEliminableFloatingOperand"/> proves free of effects and exceptions, a narrower whitelist than the
+    /// inert evaluations of <see cref="ExpressionEffectAnalysis"/>; another policy also drops an operand whose behavior it
+    /// lets be discarded (S5 P18 Architecture C, stage C2b).
     /// </para>    /// <para>
     /// <b>Domain-sensitive identities.</b> Rules with a mathematical precondition are valid only on their
     /// common domain. <c>Log(x) + Log(y) -&gt; Log(x*y)</c> (and the <c>Log10</c>/subtraction variants)
@@ -1026,8 +1027,11 @@ namespace Utils.Mathematics.Expressions
         /// <para>
         /// IEEE-754 makes these four operations return <c>NaN</c> whenever an operand is <c>NaN</c>, whatever the
         /// other operand is, so the result is numerically inevitable. Dropping the other operand is a separate
-        /// question, answered by <see cref="IsEliminableFloatingOperand"/>: only operands whose evaluation cannot
-        /// throw, run user code or have any other effect qualify. The returned constant is the operand itself, so its
+        /// question. Under the default <see cref="Options"/> (<see cref="UsesHistoricalAdmission"/>) it is answered by
+        /// <see cref="IsEliminableFloatingOperand"/> alone (<see cref="FoldNaNOperandHistorical"/>): only operands whose
+        /// evaluation cannot throw, run user code or have any other effect qualify. Under any other policy (S5 P18
+        /// Architecture C, stage C2b) an operand the whitelist refuses may still be dropped when its behavior may be
+        /// discarded under that policy (<see cref="FoldNaNOperandWithPolicy"/>). The returned constant is the operand itself, so its
         /// type is the node's; its payload may differ from the one the hardware would produce, which the
         /// "Symbolic-equivalence contract" does not promise anyway. <see cref="ExpressionType.Power"/> is excluded:
         /// <c>Math.Pow(NaN, 0)</c> and <c>Math.Pow(1, NaN)</c> are <c>1</c>.
@@ -1041,7 +1045,16 @@ namespace Utils.Mathematics.Expressions
         /// parent's own rules as a constant.
         /// </para>
         /// </remarks>
-        private static Expression FoldNaNOperand(Expression expression)
+        private Expression FoldNaNOperand(Expression expression)
+            => _usesHistoricalAdmission ? FoldNaNOperandHistorical(expression) : FoldNaNOperandWithPolicy(expression);
+
+        /// <summary>
+        /// The historical <c>NaN</c> fold of S5 P11b, the only one of the default policy: the other operand is dropped only when
+        /// the whitelist <see cref="IsEliminableFloatingOperand"/> proves it free of effects and exceptions.
+        /// </summary>
+        /// <param name="expression">A fully simplified expression.</param>
+        /// <returns>The <c>NaN</c> operand, or <paramref name="expression"/> unchanged.</returns>
+        private static Expression FoldNaNOperandHistorical(Expression expression)
         {
             if (expression is not BinaryExpression binary) return expression;
             ConstantExpression nan;
@@ -1056,6 +1069,124 @@ namespace Utils.Mathematics.Expressions
                 ? nan
                 : expression;
         }
+
+        /// <summary>
+        /// The <c>NaN</c> fold of a non-default policy (S5 P18 Architecture C, stage C2b): same recognition as
+        /// <see cref="FoldNaNOperandHistorical"/>, and the other operand is also dropped when its behavior may be discarded
+        /// under <see cref="Options"/>.
+        /// </summary>
+        /// <param name="expression">A fully simplified expression.</param>
+        /// <returns>The <c>NaN</c> operand, or <paramref name="expression"/> unchanged.</returns>
+        /// <remarks>
+        /// <para>
+        /// The decision only drops one evaluation: it merges, duplicates and moves nothing, so
+        /// <c>ExpressionBehaviorPermissions.CanDiscard</c> is the only permission involved (a clock read may be dropped,
+        /// nondeterminism only forbids repeating or moving). Side effects and unknown code are never dropped, an exception
+        /// only when the policy does not preserve its category, an allocation only under aggressive simplification.
+        /// </para>
+        /// <para>
+        /// The checks run from the cheapest: the historical recognition (a node without a <c>NaN</c> operand, another
+        /// operator or a custom, lifted or checked operator is left before anything else); then the whitelist, which is
+        /// enough for every operand it accepts under every policy (constants, parameters and IEEE arithmetic have no
+        /// behavior flag that any policy treats as an obstacle); then an operand that is itself a <c>NaN</c> operation
+        /// (<see cref="IsNaNOperation"/>) is kept, inert or not (see below); then an operand made of inert arithmetic alone
+        /// (<see cref="IsInertArithmetic"/>, such as <c>x ^ y</c>) keeps the historical decision, so that preparing an
+        /// inert operand again builds the tree the comparer's default simplification builds, which the S5 P16 reuse of
+        /// <see cref="EqualsKeepingSimplifiedForms"/> relies on; then an operand that directly evaluates a <c>NaN</c>
+        /// node this policy left unfolded is refused without analysis (<see cref="HoldsRefusedNaNFold"/>; with the previous
+        /// check, it keeps nested refusals linear); only then is the dropped operand, and it alone, analyzed by
+        /// <see cref="ExpressionBehaviorAnalysis"/>. The analysis runs no user code, reads no member of an opaque node, and
+        /// joins the running operation under this instance's limits, which count its visits.
+        /// </para>
+        /// <para>
+        /// The policy is read from this instance, never from <see cref="ExpressionTransformer.RuleRunsOutsideGate"/>: the fold
+        /// runs after the rules of a node, in whatever rule context prepared it, and a nested simplification by another
+        /// instance applies its own policy.
+        /// </para>
+        /// </remarks>
+        private Expression FoldNaNOperandWithPolicy(Expression expression)
+        {
+            if (expression is not BinaryExpression binary) return expression;
+            ConstantExpression nan;
+            Expression other;
+            if (TryGetNaNOperand(binary.Left, out nan)) other = binary.Right;
+            else if (TryGetNaNOperand(binary.Right, out nan)) other = binary.Left;
+            else return expression;
+
+            if (binary.NodeType is not (ExpressionType.Add or ExpressionType.Subtract or ExpressionType.Multiply or ExpressionType.Divide)
+                || !IsOrdinaryBinaryArithmetic(binary))
+            {
+                return expression;
+            }
+
+            if (IsEliminableFloatingOperand(other)) return nan;
+
+            // A NaN operation is kept whether it is inert (historical decision) or not (refused fold): tested before the walk.
+            if (IsNaNOperation(other)) return expression;
+            if (IsInertArithmetic(other)) return expression;
+            if (HoldsRefusedNaNFold(other)) return expression;
+            return ExpressionBehaviorPermissions.CanDiscard(ExpressionBehaviorAnalysis.Analyze(other, ResourceLimits), _options) ? nan : expression;
+        }
+
+        /// <summary>
+        /// Determines whether <paramref name="operand"/> is, or directly evaluates, a <c>NaN</c> node whose fold this policy has
+        /// already refused, so that it cannot be discarded either (S5 P18 C2b, performance audit).
+        /// </summary>
+        /// <param name="operand">The operand the fold would drop, neither in the whitelist nor inert arithmetic.</param>
+        /// <returns><see langword="true"/> when the drop is known to be refused without analyzing <paramref name="operand"/>.</returns>
+        /// <remarks>
+        /// <para>
+        /// Without this shortcut a nesting of refused folds, <c>NaN + (NaN * (… F()))</c> or <c>NaN + S * (NaN + S * (… F()))</c>,
+        /// analyzes at every level the whole operand below, that is the levels already refused: quadratic structural work.
+        /// </para>
+        /// <para>
+        /// A fully simplified <c>NaN</c> node (<see cref="TryGetNaNOperand"/> on either side of an ordinary <c>+</c>, <c>-</c>,
+        /// <c>*</c> or <c>/</c>) that is still there and is not inert arithmetic went through <see cref="FoldNaNOperandWithPolicy"/>
+        /// of this instance and its other operand was refused by the analysis. The behavior of an operand that is that node, or an
+        /// ordinary method-less arithmetic node evaluating it, includes the node's flags, and <c>CanDiscard</c> only tests the
+        /// absence of flags: the analysis would refuse it too. Only the operand itself and its direct operands are inspected, so
+        /// the check is constant work besides <see cref="IsInertArithmetic"/>, which stops at the first non-arithmetic node. The
+        /// caller tests <see cref="IsNaNOperation"/> before <see cref="IsInertArithmetic"/>: on <c>NaN + (NaN * (… F()))</c>
+        /// the inert walk would otherwise descend every level below, as the historical whitelist already does.
+        /// </para>
+        /// <para>
+        /// A <c>NaN</c> node rebuilt after its own preparation has not been through the fold; the shortcut then keeps a fold the
+        /// analysis might have allowed. That is a missed simplification, never an unsound one; the S5 campaigns under a
+        /// non-default policy give the same results with and without the shortcut.
+        /// </para>
+        /// </remarks>
+        private static bool HoldsRefusedNaNFold(Expression operand)
+        {
+            // The caller has already established that the operand is not inert arithmetic.
+            if (IsNaNOperation(operand)) return true;
+            return operand is BinaryExpression binary
+                && IsNaNCandidateOperation(binary)
+                && ((IsNaNOperation(binary.Left) && !IsInertArithmetic(binary.Left))
+                    || (IsNaNOperation(binary.Right) && !IsInertArithmetic(binary.Right)));
+        }
+
+        /// <summary>
+        /// Determines whether <paramref name="node"/> is an ordinary, method-less <see cref="double"/> or <see cref="float"/>
+        /// addition, subtraction, multiplication or division with a <c>NaN</c> operand (<see cref="TryGetNaNOperand"/>).
+        /// </summary>
+        /// <param name="node">A node.</param>
+        /// <returns><see langword="true"/> for such a node.</returns>
+        private static bool IsNaNOperation(Expression node)
+            => node is BinaryExpression binary
+                && IsNaNCandidateOperation(binary)
+                && (TryGetNaNOperand(binary.Left, out _) || TryGetNaNOperand(binary.Right, out _));
+
+        /// <summary>
+        /// Determines whether <paramref name="binary"/> is an ordinary, method-less <see cref="double"/> or <see cref="float"/>
+        /// addition, subtraction, multiplication or division, which evaluates both operands and adds no behavior of its own.
+        /// </summary>
+        /// <param name="binary">A binary node.</param>
+        /// <returns><see langword="true"/> for such a node.</returns>
+        private static bool IsNaNCandidateOperation(BinaryExpression binary)
+            => binary.Method is null
+                && binary.NodeType is ExpressionType.Add or ExpressionType.Subtract or ExpressionType.Multiply or ExpressionType.Divide
+                && (binary.Type == typeof(double) || binary.Type == typeof(float))
+                && IsOrdinaryBinaryArithmetic(binary);
 
         /// <summary>
         /// Recognizes an operand that is, or immediately wraps, a <c>NaN</c> constant: the constant itself, its
@@ -1436,7 +1567,9 @@ namespace Utils.Mathematics.Expressions
         /// <item>No lambda encloses the node: the comparer simplifies an operand outside any lambda scope, as a public call
         /// does, while <see cref="PrepareExpression"/> orders bound parameters by the enclosing scopes. With an empty scope
         /// both compute <c>FoldNaNOperand(TransformCore(operand))</c> with the same instance type, a deterministic function
-        /// of the operand when it calls no user code.</item>
+        /// of the operand when it calls no user code. The comparer simplifies with the default policy, this instance may not:
+        /// on inert arithmetic both agree, because no audited rule runs outside the gate there and the <c>NaN</c> fold of a
+        /// non-default policy keeps the historical decision for an inert operand (<see cref="FoldNaNOperandWithPolicy"/>).</item>
         /// <item>Both operands and both forms are inert arithmetic (<see cref="IsInertArithmetic"/>): ordinary arithmetic
         /// over numeric parameters and primitive numeric constants. Simplifying such a tree calls no user code and no rule
         /// can throw on it, so the second preparation would have built the same trees without any observable effect.
