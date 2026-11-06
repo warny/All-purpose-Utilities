@@ -397,6 +397,9 @@ internal static class Families
         ("plus0", "((x0 * x1) + 0) * x2 + 0 ... (AdditionWithZero(t, 0) re-transforms its prepared operand)"),
         ("zeroplus", "0 + ((0 + (x0 * x1)) * x2) ... (AdditionWithZero(0, t) returns its operand: control of plus0)"),
         ("pow1", "((x0 * x1) ^ 1 * x2) ^ 1 ... (PowerByZeroOrOne exponent 1 re-transforms its prepared operand)"),
+        ("horner", "((x0 * x1 + 1) * x1 + 1) * x1 + 1 ... (Horner chain: the power rule compares (1 + ...) with x1 at every level, comparer depth capped at 7)"),
+        ("constabs", "2 + Abs(2 + Abs(... Sin(x0))) (AdditionOfEqualsElements probes a constant other than 1 against a call: 2^n comparer simplifications)"),
+        ("nanabs", "NaN + Abs(NaN + Abs(... Sin(x0))) (constabs with NaN; a non-default policy folds every level, S5 P18 C2b)"),
     ];
 
     /// <summary>Builds family <paramref name="name"/> at size <paramref name="n"/>.</summary>
@@ -434,6 +437,9 @@ internal static class Families
             "plus0" => Nest(xs, (acc, v) => Expression.Add(Expression.Multiply(acc, v), Expression.Constant(0.0))),
             "zeroplus" => Nest(xs, (acc, v) => Expression.Add(Expression.Constant(0.0), Expression.Multiply(acc, v))),
             "pow1" => Nest(xs, (acc, v) => Expression.Power(Expression.Multiply(acc, v), Expression.Constant(1.0))),
+            "nanabs" => Enumerable.Range(0, n).Aggregate((Expression)Expression.Call(Sin, x), (acc, _) => Expression.Add(Expression.Constant(double.NaN), Expression.Call(typeof(Math).GetMethod(nameof(Math.Abs), [typeof(double)])!, acc))),
+            "constabs" => Enumerable.Range(0, n).Aggregate((Expression)Expression.Call(Sin, x), (acc, _) => Expression.Add(Expression.Constant(2.0), Expression.Call(typeof(Math).GetMethod(nameof(Math.Abs), [typeof(double)])!, acc))),
+            "horner" => Enumerable.Range(0, n).Aggregate((Expression)xs[0], (acc, _) => Expression.Add(Expression.Multiply(acc, xs[Math.Min(1, n - 1)]), Expression.Constant(1.0))),
             "bal" => Balanced(Enumerable.Range(0, Math.Max(1, n / 2)).Select(i => (Expression)Expression.Subtract(xs[2 * i % n], xs[(2 * i + 1) % n])).ToList()),
             _ => throw new ArgumentException("Unknown family " + name),
         };

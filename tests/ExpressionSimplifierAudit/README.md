@@ -54,6 +54,16 @@ $exe = '.\tests\ExpressionSimplifierAudit\bin\Release\net9.0\ExpressionSimplifie
 & $exe measure negsum 20 --unlimited --out .\artifacts\s5-audit\manual
 ```
 
+The campaigns simplify with the default policy. Set `S5_AUDIT_POLICY` to run them under another one (S5 P18 Architecture C):
+`permissive` (trust declarations, aggressive, no exception preserved), or a comma-separated list of `trust`, `aggressive` and the
+exception categories still preserved (`arithmetic`, `runtime`, `usercode`), for example `aggressive,runtime,usercode`.
+
+```powershell
+$env:S5_AUDIT_POLICY = 'permissive'
+& $exe diff --out .\artifacts\s5-audit\permissive --seeds 1000
+Remove-Item Env:\S5_AUDIT_POLICY
+```
+
 Exit codes: `0` no anomaly, `1` anomalies found, `2` usage error, `3` harness failure, `5` a case exceeded `--timeout`, `6` the
 managed heap exceeded `--memory` (MB). On `5` and `6` the case is appended to `<campaign>-aborted.txt`; `run-audit.ps1` resumes
 the campaign after it (`--start`, `--resume`).

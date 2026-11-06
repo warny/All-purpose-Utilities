@@ -115,7 +115,7 @@ for an allocation, a nondeterministic read or a non-preserved exception category
 |---|---|---|
 | `FinalizeExpression` / `CanonicalizeAdditiveExpression` / `CanonicalizeMultiplicativeExpression` | regroup, reorder, aggregate constants; pins non-inert terms (`SplitPinnedTerms`) | C3: pin the terms that are not `CanReorder` under the policy, keep the §3.3 context |
 | `CanonicalizesOperator` | `decimal` chains are not reassociated | C3: only when `Arithmetic` is not preserved, and never by a fold that throws while simplifying |
-| `FoldNaNOperand` | `t + NaN -> NaN` drops `t` (whitelist) | C2b: `CanDiscard(t)` under the policy; the method is static today |
+| `FoldNaNOperand` | `t + NaN -> NaN` drops `t` (whitelist) | C2b (done, §8.2): `CanDiscard(t)` under the policy, whitelist kept as the default path and the fast path |
 | derived-simplifier rules | run behind the gate | **never admitted outside the gate**: only the methods declared by `ExpressionSimplifier` itself and listed as audited are (identified by method handle, so a `new` method of a subclass is not) |
 
 ## 4. Pre-existing anomalies (verified on `d16ae332`)
@@ -182,6 +182,7 @@ they need no policy key. A rule that compares under a relaxed policy uses the de
 | PR Pow (#685) | `Pow` total in the floating family of `ExpressionMethodBehaviors`, with its precondition row and the edge-value evidence | unchanged (the analysis is not consumed by the default) | – |
 | PR C1+C2 | §5.2 mechanism; audited zero/one identities (§3.1) with their permissions; tests over the 32 policies; S5 campaigns identical on the default; measurements | unchanged | none (P18b and Pow independent) |
 | C2b | `FoldNaNOperand` under the policy | unchanged | C1 |
+| P19d | comparer probes on prepared operands (S5 tracking S5A-14, S5A-15: exponential `AdditionOfEqualsElements`/`FactorEqualityProbe`, about n^3.8 power probe) | changes (performance only) | – (before C3) |
 | C3 | negation/reassociation family (§3.2), factoring and quotients (§3.3), canonicalization (`SplitPinnedTerms`, `CanonicalizesOperator`), per-operation behavior memo | unchanged | C1, A10-B tests |
 | C4 | invocations (only if a rule needs it), comparer bound to a policy (only if needed), global validation | unchanged | C3 |
 | PR C-08 | category A under the default (`UsesHistoricalAdmission` removed or narrowed), compatibility entry C-08 | changes | C2, C3 |
@@ -237,9 +238,42 @@ Review follow-up: the admission flag is per thread, not per instance. Tests run 
 a rule, from an extension node's user code and from an impersonating method's members, the last ones also while an audited
 rule runs with the flag set: each nested operation gets its own admission, and the flag is unchanged after it.
 
-### 8.2 Remaining for the next stages
+### 8.2 Stage C2b (`NaN` fold under the policy)
 
-- C2b: `FoldNaNOperand` under the policy (static today).
+Implemented as planned; contract, admitted operands and measurements in [SimplificationPolicies.md](SimplificationPolicies.md)
+§9. The default keeps the historical fold unchanged (`FoldNaNOperandHistorical`, no analysis call); every other policy, selected
+by `UsesHistoricalAdmission`, keeps the whitelist as its fast path and otherwise drops the operand when
+`CanDiscard(Analyze(t, ResourceLimits), Options)` allows it, at the three places the fold runs.
+
+Findings made while implementing:
+
+- **Nested refused folds were quadratic.** Analyzing the dropped operand at every level re-analyzes the levels already refused.
+  Monotonicity of `CanDiscard` over the flag union lets the fold refuse, without analysis, an operand that is or directly
+  evaluates a `NaN` operation still present; a first version tested inertness first, and that uncounted walk cost +26 % at
+  100 levels: the `NaN` operation is now recognized first. The overhead left is a constant number of visits per tree, so no
+  per-operation memo is introduced.
+- **Two pre-existing superlinear families**, met while measuring and identical on #686 and C2b under the same policy: S5A-14
+  (`AdditionOfEqualsElements`/`FactorEqualityProbe`, exponential on `c + Abs(c + Abs(…))` with `c ≠ 1`) and S5A-15 (the power
+  probe of `MultiplicationOfEqualsElements`, about n^3.8 on a Horner chain). They are left to P19d (§6), before C3. A
+  non-default policy makes the `NaN` variant of S5A-14 linear, since every level folds.
+- **Reflection reads.** C2b reads no member that #686 does not read under the same policy (180 sequences compared); the
+  non-default policy's two extra node type reads on `t / NaN` are pre-existing, from the C1/C2 audited division rules.
+
+Validation:
+
+| Suite | Result |
+|---|---|
+| `UtilsTest.Unit` (Release) | 14,556 run, 14,555 passed, 0 failed, 1 ignored (pre-existing) |
+| `UtilsTest.Security` (Release) | 348 run, 345 passed, 0 failed, 3 ignored (pre-existing, platform-gated) |
+| `UtilsTest.Functional` (Release) | 383 passed |
+| ETC Debug job (`UtilsTest.Mathematics.Expressions.Coverage`, Debug) | 344 run, 343 passed, 1 ignored (pre-existing) |
+| S5 campaigns, default policy (`terminate`, `converge`, `diff`, `effects`, `s3`, `canon`, 1,000 seeds, 1,000 nested) | identical to #686 `30046b86`: 19 result files byte-identical except the 15 `converge` cases of the three corpus families this pull request adds (`horner`, `constabs`, `nanabs`), absent from #686's harness; without them, byte-identical |
+| S5 campaigns, permissive policy (`S5_AUDIT_POLICY=permissive`), against #686 under the same policy | 2 of 64,400 `converge` cases differ, both newly allowed folds over total functions (`gen#782`: `NaN * (Cos(y ** 2) / (1 + Log(10 * z)))` → `NaN`; `gen#967`: the exponent `3 * (z * (NaN + Log(10)))` → `NaN`, the `Power` itself kept); every other file identical |
+| S5 campaigns, permissive policy, with and without the nested-refusal shortcut (§9.5 of the contract) | identical |
+
+### 8.3 Remaining for the next stages
+
+- P19d: S5A-14 and S5A-15 (comparer probes on prepared operands), before C3.
 - C3: PR #684 (P18b, `DivisionOfDivision` guards on `IsOrdinaryFieldDivision`) is merged (`50e595bd`); still needs invariant I-1 for every
   comparing rule, a per-operation behavior memo keyed with the lexical scope, and A10-B tests with armed fakes.
 - S5A-07 (`t + 0` re-transforms its prepared operand) now also costs about 0.9 µs per `F() + 0` under a non-default policy.
