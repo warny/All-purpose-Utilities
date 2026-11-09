@@ -256,6 +256,11 @@ Findings made while implementing:
   (`AdditionOfEqualsElements`/`FactorEqualityProbe`, exponential on `c + Abs(c + Abs(…))` with `c ≠ 1`) and S5A-15 (the power
   probe of `MultiplicationOfEqualsElements`, about n^3.8 on a Horner chain). They are left to P19d (§6), before C3. A
   non-default policy makes the `NaN` variant of S5A-14 linear, since every level folds.
+- **The inertness walk is quadratic on inert nestings, but not worth a memo.** On `NaN + (NaN + (… x0) ^ 2) ^ 2` (harness
+  family `nanpow`) the uncounted `IsInertArithmetic` walk examines `2n² + n` nodes. A per-operation memo keyed by reference
+  identity in the budget session made it linear (8,256 → 255 nodes at n = 64) with identical results, but gave no measurable
+  gain (the comparer probes of S5A-14/15 cost 12.7 million structural visits on the same tree under every policy) and cost
+  +5 % and +215 B on a two-node operand and +9 % on uncacheable operands; it was withdrawn (contract §9.7).
 - **Reflection reads.** C2b reads no member that #686 does not read under the same policy (180 sequences compared); the
   non-default policy's two extra node type reads on `t / NaN` are pre-existing, from the C1/C2 audited division rules.
 
@@ -273,7 +278,8 @@ Validation:
 
 ### 8.3 Remaining for the next stages
 
-- P19d: S5A-14 and S5A-15 (comparer probes on prepared operands), before C3.
+- P19d: S5A-14 and S5A-15 (comparer probes on prepared operands), before C3. Once they are fixed, re-measure the `nanpow` family
+  to decide whether the inert-classification memo studied for C2b (contract §9.7) becomes worth shipping.
 - C3: PR #684 (P18b, `DivisionOfDivision` guards on `IsOrdinaryFieldDivision`) is merged (`50e595bd`); still needs invariant I-1 for every
   comparing rule, a per-operation behavior memo keyed with the lexical scope, and A10-B tests with armed fakes.
 - S5A-07 (`t + 0` re-transforms its prepared operand) now also costs about 0.9 µs per `F() + 0` under a non-default policy.

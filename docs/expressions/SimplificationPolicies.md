@@ -616,3 +616,55 @@ copy of the base binaries and C2b; the median of the round means:
 The base rounds of this campaign were the slowest (the A/A spread is skewed negative): under the default every C2b case is
 within the A/A spread, with identical allocations. Under the permissive policy the only cost is the analysis itself, about
 80–130 ns and 51 bytes per analyzed operand, paid only where the whitelist refuses the operand.
+
+### 9.7 Per-operation memo of the inert classification (studied, not kept)
+
+Step 3 of §9.1 tests `IsInertArithmetic` on the operand at every level, and that walk is not counted in the visits. On a nesting
+whose operand is inert arithmetic at every level, the harness family `nanpow`, `NaN + (NaN + (… x0) ^ 2) ^ 2`, every level walks
+the whole operand again: the walk examines `2n² + n` nodes (136, 528, 2,080, 8,256 at n = 8, 16, 32, 64), a quadratic
+term. A memo of the classification was implemented and measured on `ecfacda4`, then withdrawn; the patch is not kept in the
+repository.
+
+**What was built.** A table `Dictionary<Expression, bool>` keyed by reference identity (`ReferenceEqualityComparer.Instance`, never
+`ExpressionComparer` nor the nodes' or constants' `Equals`), held by the thread's `ExpressionResourceBudget` session, created on
+the first classification and dropped when the outermost operation exits. Only `IsInertArithmetic` was memoized, through a new
+cached entry point used by `FoldNaNOperandWithPolicy` and `HoldsRefusedNaNFold`; the historical walk kept its callers. It stored
+every intermediate node and the negative results. Every examined node consumed one structural visit (none on a table hit). A
+node was stored only when its classification read no metadata that user code can supply: a node type that is not a runtime type
+(`TypeDelegator`, L-2), a user `MethodInfo` (A10-B), or an operand whose `Type` is not stored (`IsLifted` reads `Left.Type`,
+L-1) left its result uncached, never turned into `false`.
+
+**Classification work, permissive policy** (nodes examined by the walk, base → memo; results, transform visits and the default
+policy identical on all 94 measured rows):
+
+| Family | n | base | memo | table entries | structural visits, base → memo |
+|---|---|---|---|---|---|
+| `nanpow` | 8 / 16 / 32 / 64 | 136 / 528 / 2,080 / 8,256 | 31 / 63 / 127 / 255 | 15 / 31 / 63 / 127 | 12,679,500 → 12,679,755 (n = 64) |
+| `nanpow` with `Add` levels (M3) | 8 / 64 | 152 / 8,384 | 33 / 257 | 16 / 128 | 13,039,106 → 13,039,363 (n = 64) |
+| shared DAG `NaN * (x_k * S)` (G) | 2 / 20 | 141 / 8,205 | 71 / 719 | 35 / 359 | 211,579 → 212,298 (n = 20) |
+| `nanpow` over an opaque leaf (U) | 256 | 98,432 | 98,432 (65,536 uncacheable) | 0 | 394,752 → 493,184 |
+| D (method-call left operand) | 256 | 1,532 | 1,532 (766 uncacheable) | 0 | 398,630 → 400,162 |
+| A, B, C, E, K | all | 0 or 1 per tree | unchanged | — | +0 to +16 |
+
+**Why it was withdrawn.** The quadratic term is real but negligible: at n = 64 the walk's 8,256 nodes sit next to 12.7 million
+structural visits that every policy, the default included, spends in the comparer probes of `AdditionOfEqualsElements` (the
+mechanism of S5A-14/S5A-15), and `nanpow` takes 907 ms under the default and the permissive policy alike. BenchmarkDotNet 0.14.0
+(in-process, 8 warmups, 20 iterations, memory diagnoser, affinity `0x14`, high priority), three rounds in rotated order of the
+base, an A/A copy of its binaries and the memo; the median of the round means:
+
+| Case | A/A vs base | memo vs base | Allocated, base → memo |
+|---|---|---|---|
+| permissive `nanpow` 8 / 16 / 32 | +2.7 % / −0.8 % / +0.3 % | +2.4 % / −0.6 % / −0.8 % | +993 B / +2,079 B / +4,628 B |
+| permissive M3 32, G10 | −1.5 %, −0.5 % | −0.3 %, −2.3 % | +4,628 B, +10,189 B |
+| permissive `NaN + x ** y` (two-node operand) | +2.9 % | +5.1 % (+135 ns, stable over the three rounds) | +215 B (the table) |
+| aggressive `NaN + x ** y` | +1.3 % | +6.5 % | +215 B |
+| permissive U64, U256 (uncacheable) | −1.0 %, −1.4 % | +8.8 %, +8.9 % | +0, +113 B |
+| permissive C100 / default C100 | +4.1 % / +2.1 % | +11.0 % / +10.8 % | identical (bimodal: base rounds 794–892 µs, memo 828–920 µs; the default path does not reach the memo) |
+| default, other 8 cases | −1.0 % to +1.8 % | −1.1 % to +2.2 % | identical |
+| permissive and aggressive, other 12 cases | −2.0 % to +3.1 % | −1.8 % to +3.0 % | identical, except aggressive `nanpow` 16 (+2,079 B) |
+
+No case gains beyond the A/A spread. Small trees pay the table's allocation and a lookup per examined node, and the trust checks
+plus the counted visits cost about 9 % on uncacheable trees. Following the decision rule of the study (keep only a net benefit
+with no regression on small trees or memory), the memo is not shipped: `IsInertArithmetic` stays an uncounted, unmemoized walk.
+The study is worth redoing after P19d, when the comparer probes no longer dominate these families; the harness family `nanpow`
+stays for that purpose.

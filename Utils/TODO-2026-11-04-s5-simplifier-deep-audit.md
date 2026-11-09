@@ -950,7 +950,11 @@ Proposed order, each PR independent unless stated:
 8b. **P19d — comparer probes on prepared operands (S5A-14, S5A-15), priority: before Architecture C stage C3.** C3 adds
    reassociation and factoring under a policy, which would run the same probes on more shapes. Changes: compare constants and
    power bases with prepared operands structurally, or reuse the prepared forms (P16). Tests and measures: families `constabs`,
-   `nanabs`, `horner`, `pow`, and the P9–P16 families with A/A.
+   `nanabs`, `horner`, `pow`, and the P9–P16 families with A/A. Afterwards, re-measure `nanpow`
+   (`NaN + (NaN + (… x0) ^ 2) ^ 2`): its uncounted `IsInertArithmetic` walk is quadratic (`2n² + n` nodes) under a non-default
+   policy; a per-operation memo was measured on C2b (2026-11-09) and withdrawn because these probes dominate (12.7 million
+   structural visits at n = 64 under every policy) and the memo cost +5 % on small trees
+   (`docs/expressions/SimplificationPolicies.md` §9.7).
 9. **P22 — domains and determinism (S5A-11, L-8–L-10).** Pin the plan order; record the decimal and nullable policies and the
    cross-type comparer model in the S3 contract.
 
