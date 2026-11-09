@@ -154,11 +154,14 @@ audited rules (the rules stay atomic on them), and the behavior analysis classif
   `false`); if that also refuses, the loop stops exactly as today (same trace). Otherwise only the rules for which
   `IsAuditedRule(method)` holds are invoked, each with an ambient, thread-static "outside the gate" flag set for the duration of
   the call (saved and restored, so nested rules and comparer simplifications see their own admission); the other candidates are
-  traced as rejected by the effect gate.
+  traced as rejected by the effect gate, without their signature being matched (a custom `Match` is user code, and a detailed
+  trace must not run more of it than the untraced run).
 - `ExpressionSimplifier`: `AllowsAuditedRulesOutsideGate` is `!UsesHistoricalAdmission` (`Options` equal to the default); the
   audited set is a static set of method handles of its own rules.
 - Rule helpers: `CanDropOperand(t)` is `true` inside the gate (the gate proved `t` inert) and, outside it, `CanDiscard` of
-  `ExpressionBehaviorAnalysis.Analyze(t)` under `Options`.
+  the behavior of `t` under `Options`, computed by the internal entry `ExpressionBehaviorAnalysis.AnalyzeWithinOperation`: it
+  joins the running operation without opening a nested one nor validating `t` again; every analyzed node, rebuilt ones
+  included, still consumes a structural visit and checks the stack.
 
 ### 5.3 Behavior analysis cost and caches
 
@@ -238,12 +241,32 @@ Review follow-up: the admission flag is per thread, not per instance. Tests run 
 a rule, from an extension node's user code and from an impersonating method's members, the last ones also while an audited
 rule runs with the flag set: each nested operation gets its own admission, and the flag is unchanged after it.
 
+Second review follow-up (2026-11-09):
+
+- **Detailed tracing matched skipped signatures.** Once a node is outside the gate, an unaudited rule was skipped before its
+  `Match` untraced, but matched under detailed tracing to report its rejection: tracing ran user code the untraced run does not
+  (a custom `ExpressionSignatureAttribute.Match` can count, mutate or throw). The rule is now refused before `Match` at every
+  level of tracing, the rejection still reported (`DetailedTracing_MatchesNoSkippedSignature`, which fails on the previous code).
+- **The dropping identities called the public analysis entry.** `Analyze(t, ResourceLimits)` opened a nested operation and
+  validated `t` again for every attempted drop. The internal entry `AnalyzeWithinOperation` joins the running operation: the
+  budgets are the same (the simplifier's limits are already those of the operation), the analysis visits stay counted (exact
+  refusal one visit below), and a rebuilt or shared operand is still bounded by the structural budget and the stack guard
+  (`InternalAnalysis_JoinsTheRunningOperation`). A rebuilt operand larger than the node limit is now refused by the structural
+  budget rather than by the node limit.
+- **Resource-limit tests moved to `UtilsTest.Security`**: `AuditedRuleAnalysis_UsesTheInstanceLimits` and the budget-refusal
+  part of `OutsideGateFlag_IsScopedToTheAuditedRule` (now `ResourceRefusal_ClearsTheOutsideGateFlag`).
+
+Both code changes run only outside the gate, so the default path is unchanged. Validation after this follow-up: `UtilsTest.Unit`
+(Release) 14,539 run, 14,538 passed, 1 ignored; `UtilsTest.Security` (Release) 346 run, 343 passed, 3 ignored;
+`UtilsTest.Functional` 383 passed; ETC Debug job 327 run, 326 passed, 1 ignored.
+
 ### 8.2 Stage C2b (`NaN` fold under the policy)
 
 Implemented as planned; contract, admitted operands and measurements in [SimplificationPolicies.md](SimplificationPolicies.md)
 §9. The default keeps the historical fold unchanged (`FoldNaNOperandHistorical`, no analysis call); every other policy, selected
 by `UsesHistoricalAdmission`, keeps the whitelist as its fast path and otherwise drops the operand when
-`CanDiscard(Analyze(t, ResourceLimits), Options)` allows it, at the three places the fold runs.
+`CanDiscard(AnalyzeWithinOperation(t, ResourceLimits), Options)` allows it, at the three places the fold runs (the internal
+analysis entry of §8.1's second review follow-up; the public `Analyze` was used before it).
 
 Findings made while implementing:
 
@@ -261,6 +284,12 @@ Findings made while implementing:
   identity in the budget session made it linear (8,256 → 255 nodes at n = 64) with identical results, but gave no measurable
   gain (the comparer probes of S5A-14/15 cost 12.7 million structural visits on the same tree under every policy) and cost
   +5 % and +215 B on a two-node operand and +9 % on uncacheable operands; it was withdrawn (contract §9.7).
+- **Repository invariant revised (review, 2026-11-09).** Point 9 of `Utils/AGENTS.md` still required every dropped evaluation
+  to be proven inert by `ExpressionEffectAnalysis`, which contradicts the explicit policies (`NaN + (double)(10 / i)` folds to
+  `NaN` when arithmetic exceptions are not preserved). Adding an `IsInert` check before `CanDiscard` would void the policies, so
+  the invariant now distinguishes the historical admission, the explicit-policy admission (audited rules,
+  `ExpressionBehaviorPermissions` and the transformation's own conditions) and the guarantees common to every policy. Pinned
+  by `IntegralDivision_KeepsItsExceptionExactlyWhenPreserved` (four forms, 32 policies, compiled at `i = 0` and `i = 5`).
 - **Reflection reads.** C2b reads no member that #686 does not read under the same policy (180 sequences compared); the
   non-default policy's two extra node type reads on `t / NaN` are pre-existing, from the C1/C2 audited division rules.
 
@@ -275,6 +304,7 @@ Validation:
 | S5 campaigns, default policy (`terminate`, `converge`, `diff`, `effects`, `s3`, `canon`, 1,000 seeds, 1,000 nested) | identical to #686 `30046b86`: 19 result files byte-identical except the 15 `converge` cases of the three corpus families this pull request adds (`horner`, `constabs`, `nanabs`), absent from #686's harness; without them, byte-identical |
 | S5 campaigns, permissive policy (`S5_AUDIT_POLICY=permissive`), against #686 under the same policy | 2 of 64,400 `converge` cases differ, both newly allowed folds over total functions (`gen#782`: `NaN * (Cos(y ** 2) / (1 + Log(10 * z)))` → `NaN`; `gen#967`: the exponent `3 * (z * (NaN + Log(10)))` → `NaN`, the `Power` itself kept); every other file identical |
 | S5 campaigns, permissive policy, with and without the nested-refusal shortcut (§9.5 of the contract) | identical |
+| After the review follow-up (merge of #686 `c5ad265f`, internal analysis entry, `AGENTS.md` point 9), Release | Unit 14,556 run, 14,555 passed, 1 ignored; Security 352 run, 349 passed, 3 ignored; Functional 383 passed; ETC Debug 344 run, 343 passed, 1 ignored |
 
 ### 8.3 Remaining for the next stages
 

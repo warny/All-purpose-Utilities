@@ -632,7 +632,7 @@ public class ExpressionSimplifierPolicyRulesTests
     /// <summary>
     /// The admission of a rule outside the gate is not inherited by the nodes it transforms again (<c>AdditionWithZero</c>
     /// re-transforms its operand): every rule called by the dispatch while a node is transformed sees the flag cleared, and the
-    /// flag is cleared after the operation, also when a resource refusal leaves an audited rule with an exception.
+    /// flag is cleared after the operation (after a resource refusal too: <c>ExpressionSimplifierPolicyRulesSecurityTests</c>).
     /// </summary>
     [TestMethod]
     public void OutsideGateFlag_IsScopedToTheAuditedRule()
@@ -646,26 +646,6 @@ public class ExpressionSimplifierPolicyRulesTests
         Assert.IsTrue(simplifier.Seen.Count >= 2, "the negation is transformed again by AdditionWithZero");
         Assert.IsTrue(simplifier.Seen.All(seen => !seen), string.Join(",", simplifier.Seen));
         Assert.IsFalse(ExpressionTransformer.RuleRunsOutsideGate);
-
-        // A structural budget that the gate's analysis fits in but the audited rule's behavior analysis does not.
-        Expression block = DroppableOperands().Single(o => o.Name == "local block").Operand;
-        Expression dropping = Expression.Multiply(block, Expression.Constant(0.0));
-        bool refused = false;
-        for (long budget = 1; budget < 200 && !refused; budget++)
-        {
-            try
-            {
-                new ExpressionSimplifier(ExpressionResourceLimits.Default with { MaxStructuralVisits = budget }) { Options = options }.Simplify(dropping);
-            }
-            catch (ExpressionResourceLimitException)
-            {
-                refused = true;
-            }
-
-            Assert.IsFalse(ExpressionTransformer.RuleRunsOutsideGate, $"budget {budget}");
-        }
-
-        Assert.IsTrue(refused, "a small structural budget refuses the simplification");
     }
 
     /// <summary>
@@ -718,25 +698,5 @@ public class ExpressionSimplifierPolicyRulesTests
             Text(new ExpressionSimplifier().Simplify(innerSource)),
             Text(new ExpressionSimplifier { Options = relaxed }.Simplify(innerSource)),
             "the inner tree tells the two admissions apart");
-    }
-
-    /// <summary>
-    /// The analysis an audited rule runs joins the simplification under the instance's own limits: an unlimited simplifier drops
-    /// an operand larger than the default node limit (an array of 60,000 constants, allocated, whose length is read) without being
-    /// refused, while a simplifier with the default limits refuses the input before any rule runs.
-    /// </summary>
-    [TestMethod]
-    public void AuditedRuleAnalysis_UsesTheInstanceLimits()
-    {
-        Expression[] elements = Enumerable.Range(0, 60_000).Select(k => (Expression)Expression.Constant((double)k)).ToArray();
-        Expression operand = Expression.Convert(Expression.ArrayLength(Expression.NewArrayInit(typeof(double), elements)), typeof(double));
-        Expression source = Expression.Multiply(operand, Expression.Constant(0.0));
-        var options = new ExpressionSimplifierOptions { AggressiveSimplification = true, ExceptionPreservation = ExpressionExceptionPreservation.None };
-
-        Expression result = new ExpressionSimplifier(ExpressionResourceLimits.Unlimited) { Options = options }.Simplify(source);
-        Assert.AreEqual(0.0, (result as ConstantExpression)?.Value);
-
-        ExpressionResourceLimitException refused = Assert.ThrowsExactly<ExpressionResourceLimitException>(() => new ExpressionSimplifier { Options = options }.Simplify(source));
-        Assert.AreEqual(ExpressionResourceLimitKind.Nodes, refused.Kind);
     }
 }

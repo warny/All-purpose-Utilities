@@ -99,7 +99,9 @@ public enum ExpressionRuleRejection
 
     /// <summary>
     /// The effect gate of the transformer (ETC R1b) refused every rule of the node, whose operands are not proven inert;
-    /// the node goes to its finalization.
+    /// the node goes to its finalization. Under a non-default simplification policy that admits the audited rules outside the
+    /// gate (S5 P18 Architecture C), a rule that is not audited is refused with this reason too, without its signature being
+    /// matched, and the following candidates are still tried.
     /// </summary>
     EffectGate,
 }

@@ -550,12 +550,13 @@ namespace Utils.Mathematics.Expressions
         /// <remarks>
         /// Dropping needs no contextual proof (B §3.3): it moves nothing, and reading mutable state is unobservable. The
         /// operand is analyzed out of its lexical context, which is conservative (a parameter bound outside it is read as mutable
-        /// state, a write to it as a side effect). The analysis joins the running operation under this instance's limits and
-        /// counts its visits there. The permission is asked before anything compares or keys the operand (invariant I-1).
+        /// state, a write to it as a side effect). The analysis joins the running operation through the internal entry
+        /// <c>AnalyzeWithinOperation</c> (no nested operation, no second shape validation) and counts its visits there. The
+        /// permission is asked before anything compares or keys the operand (invariant I-1).
         /// </remarks>
         private bool CanDropOperand(Expression operand)
             => !RuleRunsOutsideGate
-                || ExpressionBehaviorPermissions.CanDiscard(ExpressionBehaviorAnalysis.Analyze(operand, ResourceLimits), _options);
+                || ExpressionBehaviorPermissions.CanDiscard(ExpressionBehaviorAnalysis.AnalyzeWithinOperation(operand, ResourceLimits), _options);
 
         /// <summary>
         /// Prepares an expression for transformation by calling <see cref="ExpressionTransformer.TransformCore(Expression)"/>
@@ -1096,7 +1097,8 @@ namespace Utils.Mathematics.Expressions
         /// node this policy left unfolded is refused without analysis (<see cref="HoldsRefusedNaNFold"/>; with the previous
         /// check, it keeps nested refusals linear); only then is the dropped operand, and it alone, analyzed by
         /// <see cref="ExpressionBehaviorAnalysis"/>. The analysis runs no user code, reads no member of an opaque node, and
-        /// joins the running operation under this instance's limits, which count its visits.
+        /// joins the running operation through the internal entry <c>AnalyzeWithinOperation</c> (no nested operation, no
+        /// second shape validation), whose budget counts its visits.
         /// </para>
         /// <para>
         /// The policy is read from this instance, never from <see cref="ExpressionTransformer.RuleRunsOutsideGate"/>: the fold
@@ -1125,7 +1127,7 @@ namespace Utils.Mathematics.Expressions
             if (IsNaNOperation(other)) return expression;
             if (IsInertArithmetic(other)) return expression;
             if (HoldsRefusedNaNFold(other)) return expression;
-            return ExpressionBehaviorPermissions.CanDiscard(ExpressionBehaviorAnalysis.Analyze(other, ResourceLimits), _options) ? nan : expression;
+            return ExpressionBehaviorPermissions.CanDiscard(ExpressionBehaviorAnalysis.AnalyzeWithinOperation(other, ResourceLimits), _options) ? nan : expression;
         }
 
         /// <summary>

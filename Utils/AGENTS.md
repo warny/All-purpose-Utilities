@@ -63,9 +63,19 @@ equality, hash, canonical-key or other recursive handler must:
 7. **Test deep and shared inputs**: a deep nesting of the new family on a 256 KiB worker thread (controlled `Stack`
    refusal), a shared DAG, and budget refusals just above the limit.
 8. **Benchmark the handler** against `master` (paired runs with an A/A control).
-9. **Respect the effect permissions** (ETC R1b, C-06): a simplifier rule or canonicalization step that drops, repeats,
-   merges or moves an evaluation must only do so on operands `ExpressionEffectAnalysis` proves inert (the shared rule gate
-   `AllowsRules` covers the operands of a node; a rule that removes the exception of its own operator must check it itself).
+9. **Respect the effect permissions** (ETC R1b, C-06; S5 P18 Architectures B and C). A simplifier rule or canonicalization
+   step that drops, repeats, merges or moves an evaluation is admitted in one of two ways:
+   - **Historical admission** (the default `ExpressionSimplifierOptions`, `UsesHistoricalAdmission`): only on operands
+     `ExpressionEffectAnalysis` proves inert. The shared rule gate `AllowsRules` covers the operands of a node; a rule that
+     removes the exception of its own operator must check it itself.
+   - **Explicit policy** (any other `ExpressionSimplifierOptions`): outside the gate, only the audited rules (`IsAuditedRule`)
+     run, and each one checks, for the evaluations it changes, the permission `ExpressionBehaviorPermissions` grants for the
+     behavior `ExpressionBehaviorAnalysis` computes (`CanDiscard` for a drop), plus the conditions specific to its
+     transformation. An evaluation whose only obstacle is an exception of a category the policy does not preserve may then
+     be dropped (`NaN + (double)(10 / i)` folds to `NaN` when arithmetic exceptions are not preserved), as the policy states.
+   - **Under every policy**: no side effect and no unknown code is ever dropped, repeated or moved; no exception of a
+     preserved category is lost; nothing is repeated, merged or moved without a contextual proof; a derived simplifier's own
+     rules keep the historical admission.
    Structural equality alone never makes two evaluations interchangeable.
 10. **Respect the lexical scope model** (ETC R2): a walk that enters a binder (lambda, conversion lambda, block, catch
     handler) opens its frame before the scope and closes it in `finally` (comparer frames, hash scopes, key scopes,

@@ -790,4 +790,46 @@ public class ExpressionSimplifierPolicyNaNTests
         });
         Assert.IsTrue(failures.IsEmpty, string.Join("; ", failures));
     }
+
+    /// <summary>
+    /// Non-regression of the explicit-policy admission (<c>Utils/AGENTS.md</c>, point 9): the arithmetic exception of a dropped
+    /// integral division, <c>NaN + (double)(10 / i)</c> and its other forms, is lost exactly when a non-default policy does not
+    /// preserve arithmetic exceptions. Otherwise the division is kept and its compiled form still throws
+    /// <see cref="DivideByZeroException"/> for <c>i = 0</c>; either way it returns <c>NaN</c> for any other <c>i</c>.
+    /// </summary>
+    [TestMethod]
+    public void IntegralDivision_KeepsItsExceptionExactlyWhenPreserved()
+    {
+        ConstantExpression nan = Expression.Constant(double.NaN);
+        Expression operand = Expression.Convert(Expression.Divide(Expression.Constant(10), I), typeof(double));
+        Expression[] sources =
+        [
+            Expression.Add(nan, operand),
+            Expression.Add(operand, nan),
+            Expression.Subtract(nan, operand),
+            Expression.Multiply(operand, nan),
+        ];
+
+        foreach (ExpressionSimplifierOptions options in Policies())
+        {
+            bool removed = options != ExpressionSimplifierOptions.Default && Arithmetic(options);
+            foreach (Expression source in sources)
+            {
+                string context = $"{options}: {Text(source)}";
+                Expression simplified = new ExpressionSimplifier { Options = options }.Simplify(source);
+                Assert.AreEqual(removed, IsNaN(simplified, typeof(double)), $"{context} -> {Text(simplified)}");
+
+                Func<int, double> function = Expression.Lambda<Func<int, double>>(simplified, I).Compile();
+                Assert.IsTrue(double.IsNaN(function(5)), context);
+                if (removed)
+                {
+                    Assert.IsTrue(double.IsNaN(function(0)), context);
+                }
+                else
+                {
+                    Assert.ThrowsExactly<DivideByZeroException>(() => function(0), context);
+                }
+            }
+        }
+    }
 }

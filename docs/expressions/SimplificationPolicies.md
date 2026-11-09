@@ -368,7 +368,8 @@ its own flags of the permission table (§3.1).
 | integral or `decimal` `t / 0` | – | declines: no exception while simplifying, the dividend still runs first | – |
 
 The dropped operand is analyzed out of its lexical context, which is conservative, by `ExpressionBehaviorAnalysis` under the
-instance's own limits, joining the running operation (its visits are counted there).
+instance's own limits, joining the running operation through its internal entry (no nested operation, no second validation of
+the operand; its visits are counted there, and the structural budget and the stack guard bound it, rebuilt operands included).
 
 ### 8.3 Examples
 
@@ -457,8 +458,8 @@ thread-static read per transformed node (`TransformPrepared`) and one integer te
 resolution of this campaign. PR #685 is within −3.9 % to +1.9 % of `master` on every case.
 
 **Relaxed policy.** A node refused by the gate where an audited rule applies costs about 0.25–0.55 µs more and up to 400 bytes:
-the audited rules run (with their reflection invocation), a refused drop runs the behavior analysis (validation and walk of the
-operand), and `F(x) + 0` re-transforms its operand (`AdditionWithZero` returns `TransformCore(left)`, finding S5A-07) where the
+the audited rules run (with their reflection invocation), a refused drop runs the behavior analysis (at the time of this
+measurement a validation and a walk of the operand; the walk alone since the internal entry of §8.2), and `F(x) + 0` re-transforms its operand (`AdditionWithZero` returns `TransformCore(left)`, finding S5A-07) where the
 default reduces it by the canonicalization alone. When the rewrite shortens the tree (`F(x) * 1`), the simplification is faster
 and allocates less. The pathological nesting of products by zero stays at +0.2 % in time and +2.2 % in allocations at 100
 levels: its quadratic structural work (see the security test) is small next to the transformation work.
@@ -492,8 +493,8 @@ node, at the three places it always ran: the root of an operation (`TransformWit
      default's tree, stays valid;
   5. an operand that directly evaluates a `NaN` node the policy left unfolded is refused without analysis
      (`HoldsRefusedNaNFold`, §9.5);
-  6. otherwise `t`, and `t` alone, is analyzed: `ExpressionBehaviorPermissions.CanDiscard(ExpressionBehaviorAnalysis.Analyze(t,
-     ResourceLimits), Options)`.
+  6. otherwise `t`, and `t` alone, is analyzed: `ExpressionBehaviorPermissions.CanDiscard(ExpressionBehaviorAnalysis.AnalyzeWithinOperation(t,
+     ResourceLimits), Options)`, the internal entry that joins the running operation without validating `t` again (§8.2).
 
 The fold drops one evaluation and does nothing else: it merges, duplicates and moves nothing, so `CanDiscard` is the only
 permission involved, and the `NaN` constant returned is the operand's own (its payload and type are kept).
