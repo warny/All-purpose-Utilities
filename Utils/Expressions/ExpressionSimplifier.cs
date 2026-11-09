@@ -37,7 +37,9 @@ namespace Utils.Mathematics.Expressions
     /// <c>0 * (4 + Function())</c>, <c>2 * Function() + (-2) * Function()</c> and <c>++v + ++v</c> keep every evaluation
     /// of the source, and an exception the source can raise is still raised. Before R1b the rewrites assumed pure
     /// operands and did not preserve evaluation count, order or exceptions. Structural equality is unaffected: two calls
-    /// <c>f(x)</c> still compare equal, they are just not interchangeable.
+    /// <c>f(x)</c> still compare equal, they are just not interchangeable. This is the behavior of the default
+    /// <see cref="Options"/>; another policy relaxes it explicitly and only for the evaluations its axes cover (see
+    /// <see cref="Options"/>).
     /// </para>
     /// <para>
     /// <b>User code during simplification.</b> Three different things must be told apart. (1) The simplifier never
@@ -437,16 +439,29 @@ namespace Utils.Mathematics.Expressions
         /// <summary>Backing field of <see cref="Options"/>.</summary>
         private readonly ExpressionSimplifierOptions _options = ExpressionSimplifierOptions.Default;
 
+        /// <summary>Backing field of <see cref="UsesHistoricalAdmission"/>, set with <see cref="Options"/>.</summary>
+        private readonly bool _usesHistoricalAdmission = true;
+
         /// <summary>
         /// Gets the rewrite policy of this instance (S5 P18 Architecture B): declaration trust, aggressive simplification and
         /// exception preservation. Defaults to <see cref="ExpressionSimplifierOptions.Default"/>.
         /// </summary>
         /// <remarks>
         /// <para>
-        /// <b>Not consumed yet.</b> No rule, gate, canonicalization or comparison reads this policy in this version: every value
-        /// gives the results, user calls, exceptions and resource consumption of the default. A later version (Architecture C) will
-        /// let the rules ask the behavior permissions under it; enabling a relaxed policy will then change results, which is its
-        /// purpose.
+        /// <b>Default: historical behavior.</b> Under <see cref="ExpressionSimplifierOptions.Default"/> (or any equal value) the
+        /// simplifier gives exactly the results, user calls, exceptions and resource consumption it gave before the policies
+        /// existed: a node's rules run only when its operands are inert (ETC R1b, C-06).
+        /// </para>
+        /// <para>
+        /// <b>Any other policy (S5 P18 Architecture C).</b> When the operands of a node are not inert, the rules audited for it
+        /// may still run, each asking the permissions (<see cref="ExpressionSimplifierOptions"/>) of the evaluations it actually
+        /// drops, merges or moves, as classified by <see cref="ExpressionBehaviorAnalysis"/>; a rewrite that changes no evaluation
+        /// needs none. In this version the audited rules are the zero and one identities: <c>F() + 0 -&gt; F()</c>,
+        /// <c>F() * 1 -&gt; F()</c>, <c>0 - F() -&gt; -F()</c>, <c>F() / 1 -&gt; F()</c>, <c>F() ^ 1 -&gt; F()</c> (no evaluation
+        /// changes: under every non-default policy), and <c>t * 0 -&gt; 0</c>, <c>0 / t -&gt; 0</c>, <c>t ^ 0 -&gt; 1</c>,
+        /// <c>0 ^ t -&gt; 0</c>, <c>1 ^ t -&gt; 1</c> (the evaluation of <c>t</c> is dropped: only when the policy lets it be
+        /// discarded). Side effects and unknown code are never dropped, no exception is introduced, and a zero divisor never
+        /// throws while simplifying such a node. The rules declared by a derived simplifier keep the historical admission.
         /// </para>
         /// <para>
         /// It is set at construction (<c>new ExpressionSimplifier { Options = … }</c>, also with explicit resource limits and on a
@@ -460,8 +475,87 @@ namespace Utils.Mathematics.Expressions
         public ExpressionSimplifierOptions Options
         {
             get => _options;
-            init => _options = value ?? throw new ArgumentNullException(nameof(Options));
+            init
+            {
+                _options = value ?? throw new ArgumentNullException(nameof(Options));
+                _usesHistoricalAdmission = value.Equals(ExpressionSimplifierOptions.Default);
+            }
         }
+
+        /// <summary>
+        /// Whether this instance keeps the historical rule admission alone (S5 P18 Architecture C): <see langword="true"/> when
+        /// <see cref="Options"/> equals <see cref="ExpressionSimplifierOptions.Default"/>, so the default behavior is strictly
+        /// preserved; otherwise the audited rules may also run outside the effect gate (<see cref="AllowsAuditedRulesOutsideGate"/>).
+        /// </summary>
+        /// <remarks>
+        /// This is the single switch between the historical compatibility of the default and the intrinsic admissibility of the
+        /// audited rules. The rules themselves do not read it: they check their permissions whenever they run outside the gate,
+        /// so enabling their conservative rewrites under the default later (compatibility entry C-08) only changes this switch.
+        /// </remarks>
+        internal bool UsesHistoricalAdmission => _usesHistoricalAdmission;
+
+        /// <summary>
+        /// Lets the audited rules (<see cref="IsAuditedRule"/>) run on a node whose operands are not inert, unless this instance
+        /// keeps the historical admission (<see cref="UsesHistoricalAdmission"/>). An invocation never reaches here: the gate
+        /// always allows its own inlining analysis.
+        /// </summary>
+        /// <param name="node">The prepared node the gate refused.</param>
+        /// <returns><see langword="true"/> under a non-default policy.</returns>
+        internal override bool AllowsAuditedRulesOutsideGate(Expression node) => !_usesHistoricalAdmission;
+
+        /// <summary>
+        /// The rules audited for admission outside the effect gate: methods declared by <see cref="ExpressionSimplifier"/> itself,
+        /// identified by method handle (so a method of a derived simplifier, even one hiding a base rule with <c>new</c>, never
+        /// is). Each one checks the permissions of the evaluations it drops (<see cref="CanDropOperand"/>) and never throws for
+        /// a zero divisor when <see cref="ExpressionTransformer.RuleRunsOutsideGate"/> is set. See
+        /// <c>docs/expressions/ArchitectureC-Audit.md</c> §3.1 for the matrix.
+        /// </summary>
+        private static readonly HashSet<RuntimeMethodHandle> AuditedRules = BuildAuditedRules();
+
+        /// <summary>Builds <see cref="AuditedRules"/>: every overload of the zero and one identities.</summary>
+        /// <returns>The method handles of the audited rules.</returns>
+        private static HashSet<RuntimeMethodHandle> BuildAuditedRules()
+        {
+            string[] names =
+            [
+                nameof(AdditionWithZero), nameof(SubstractionWithZero), nameof(MultiplicationWithZeroOrOne), nameof(DivideWithZeroOrOne),
+                nameof(DivideWithZero), nameof(PowerOfZeroOrOne), nameof(PowerByZeroOrOne),
+            ];
+
+            var handles = new HashSet<RuntimeMethodHandle>();
+            foreach (MethodInfo method in typeof(ExpressionSimplifier).GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly))
+            {
+                if (Array.IndexOf(names, method.Name) >= 0 && method.IsDefined(typeof(ExpressionSignatureAttribute), inherit: false)) handles.Add(method.MethodHandle);
+            }
+
+            return handles;
+        }
+
+        /// <summary>Gets the number of audited rules (focused tests).</summary>
+        internal static int AuditedRuleCount => AuditedRules.Count;
+
+        /// <inheritdoc cref="ExpressionTransformer.IsAuditedRule"/>
+        internal override bool IsAuditedRule(MethodInfo method) => AuditedRules.Contains(method.MethodHandle);
+
+        /// <summary>
+        /// Whether the rule running now may drop the evaluation of <paramref name="operand"/>: always inside the effect gate (the
+        /// gate proved the operands inert); outside it, only when the behavior of <paramref name="operand"/> may be discarded
+        /// under <see cref="Options"/> (<c>ExpressionBehaviorPermissions.CanDiscard</c>: no side effect, no unknown code, no
+        /// trusted-only declaration under the verified policy, allocation and nondeterminism only under aggressive
+        /// simplification, exceptions only of categories the policy does not preserve).
+        /// </summary>
+        /// <param name="operand">The prepared operand the rule would drop.</param>
+        /// <returns><see langword="true"/> when the drop is allowed.</returns>
+        /// <remarks>
+        /// Dropping needs no contextual proof (B §3.3): it moves nothing, and reading mutable state is unobservable. The
+        /// operand is analyzed out of its lexical context, which is conservative (a parameter bound outside it is read as mutable
+        /// state, a write to it as a side effect). The analysis joins the running operation through the internal entry
+        /// <c>AnalyzeWithinOperation</c> (no nested operation, no second shape validation) and counts its visits there. The
+        /// permission is asked before anything compares or keys the operand (invariant I-1).
+        /// </remarks>
+        private bool CanDropOperand(Expression operand)
+            => !RuleRunsOutsideGate
+                || ExpressionBehaviorPermissions.CanDiscard(ExpressionBehaviorAnalysis.AnalyzeWithinOperation(operand, ResourceLimits), _options);
 
         /// <summary>
         /// Prepares an expression for transformation by calling <see cref="ExpressionTransformer.TransformCore(Expression)"/>
@@ -517,10 +611,12 @@ namespace Utils.Mathematics.Expressions
         /// <remarks>
         /// Applies to every runtime type, derived simplifiers included: it protects the evaluation of the user's tree, not a
         /// reconstruction detail. The operands are still simplified on their own (their own rules see their own operands),
-        /// so only the rewrites that would cross the observable evaluation are skipped. The gate is coarse on purpose (no
-        /// rule declares which evaluations it drops, merges or moves), so a rewrite that would be safe, such as
-        /// <c>f() + 0 -&gt; f()</c>, is skipped too. The canonicalization of <see cref="FinalizeExpression"/> is finer: it pins
-        /// the terms that are not inert instead (see <see cref="SplitPinnedTerms{T}"/>).
+        /// so only the rewrites that would cross the observable evaluation are skipped. The gate is coarse on purpose, so under
+        /// the default policy a rewrite that would be safe, such as <c>f() * 1 -&gt; f()</c>, is skipped too. Under any other
+        /// policy (S5 P18 Architecture C) the rules audited for it still run when this gate refuses, each checking the
+        /// permissions of what it rewrites (<see cref="AllowsAuditedRulesOutsideGate"/>). The canonicalization of
+        /// <see cref="FinalizeExpression"/> is finer: it pins the terms that are not inert instead (see
+        /// <see cref="SplitPinnedTerms{T}"/>), which already reduces <c>f() + 0</c> to <c>f()</c>.
         /// </remarks>
         internal override bool AllowsRules(Expression node)
             => node is InvocationExpression || ExpressionEffectAnalysis.HasInertOperands(node);
@@ -1104,12 +1200,16 @@ namespace Utils.Mathematics.Expressions
         /// <summary>
         /// Simplifies multiplication by 0, 1, or -1 (e.g., <c>x * 0</c> to 0, <c>x * 1</c> to <c>x</c>, etc.).
         /// </summary>
-        /// <remarks>Declines when <paramref name="left"/> is a constant: see <see cref="IsConstantPair"/>.</remarks>
+        /// <remarks>
+        /// Declines when <paramref name="left"/> is a constant: see <see cref="IsConstantPair"/>. Outside the effect gate (S5 P18
+        /// Architecture C) <c>x * 0</c> drops <paramref name="left"/> only when <see cref="CanDropOperand"/> allows it; the
+        /// <c>±1</c> identities keep its single evaluation, and the ordinary operator cannot throw for these constants.
+        /// </remarks>
         [ExpressionSignature(ExpressionType.Multiply)]
         public Expression MultiplicationWithZeroOrOne(BinaryExpression e, Expression left, [ConstantNumeric(0, 1, -1)] ConstantExpression right)
         {
             if (!IsOrdinaryBinaryArithmetic(e) || IsConstantPair(e)) return null;
-            if (NumericValueEquals(right.Value, 0)) return right;  // x * 0 => 0
+            if (NumericValueEquals(right.Value, 0)) return CanDropOperand(left) ? right : null;  // x * 0 => 0
             if (NumericValueEquals(right.Value, 1)) return left;   // x * 1 => x
             if (NumericValueEquals(right.Value, -1)) return Expression.Negate(left); // x * -1 => -x
             return null;
@@ -1118,12 +1218,15 @@ namespace Utils.Mathematics.Expressions
         /// <summary>
         /// Simplifies multiplication by 0, 1, or -1 (e.g., <c>0 * x</c>, <c>1 * x</c>, <c>-1 * x</c>).
         /// </summary>
-        /// <remarks>Declines when <paramref name="right"/> is a constant: see <see cref="IsConstantPair"/>.</remarks>
+        /// <remarks>
+        /// Declines when <paramref name="right"/> is a constant: see <see cref="IsConstantPair"/>. Outside the effect gate,
+        /// <c>0 * x</c> drops <paramref name="right"/> only when <see cref="CanDropOperand"/> allows it.
+        /// </remarks>
         [ExpressionSignature(ExpressionType.Multiply)]
         public Expression MultiplicationWithZeroOrOne(BinaryExpression e, [ConstantNumeric(0, 1, -1)] ConstantExpression left, Expression right)
         {
             if (!IsOrdinaryBinaryArithmetic(e) || IsConstantPair(e)) return null;
-            if (NumericValueEquals(left.Value, 0)) return left;
+            if (NumericValueEquals(left.Value, 0)) return CanDropOperand(right) ? left : null;
             if (NumericValueEquals(left.Value, 1)) return right;
             if (NumericValueEquals(left.Value, -1)) return Expression.Negate(right);
             return null;
@@ -1149,6 +1252,11 @@ namespace Utils.Mathematics.Expressions
         /// <c>x = MinValue</c> the negation wraps where the division throws <see cref="OverflowException"/>, and a rule must
         /// not remove an exception the evaluation can raise.
         /// </para>
+        /// <para>
+        /// Outside the effect gate (S5 P18 Architecture C) the dividend is not inert, so a zero divisor is declined instead of
+        /// throwing: the evaluation of the dividend (a call, an assignment) comes first and must stay, and the exception must stay
+        /// an evaluation-time exception. The <c>±1</c> identities keep the dividend's single evaluation.
+        /// </para>
         /// </remarks>
         [ExpressionSignature(ExpressionType.Divide)]
         public Expression DivideWithZeroOrOne(BinaryExpression e, Expression left, ConstantExpression right)
@@ -1156,7 +1264,11 @@ namespace Utils.Mathematics.Expressions
             if (!IsOrdinaryBinaryArithmetic(e)) return null;
             if (NumericValueEquals(right.Value, 0))
             {
-                if (e.Type != typeof(double) && e.Type != typeof(float)) throw new DivideByZeroException();
+                if (e.Type != typeof(double) && e.Type != typeof(float))
+                {
+                    if (RuleRunsOutsideGate) return null;
+                    throw new DivideByZeroException();
+                }
             }
             else if (left is not ConstantExpression)
             {
@@ -1176,13 +1288,14 @@ namespace Utils.Mathematics.Expressions
         /// non-constant divisor it is the symbolic identity of the "Symbolic-equivalence contract" (the sign of the
         /// zero and a <c>NaN</c> for <c>x = 0</c> or <c>x = NaN</c> are not preserved). It applies to the floating-point
         /// types only since ETC R1b (C-06): an integral or <see cref="decimal"/> division by a zero <c>x</c> throws
-        /// <see cref="DivideByZeroException"/>, which the identity would remove.
+        /// <see cref="DivideByZeroException"/>, which the identity would remove. Outside the effect gate (S5 P18 Architecture
+        /// C) it drops <paramref name="right"/> only when <see cref="CanDropOperand"/> allows it.
         /// </remarks>
         [ExpressionSignature(ExpressionType.Divide)]
         public Expression DivideWithZero(BinaryExpression e, [ConstantNumeric(0)] ConstantExpression left, Expression right)
         {
             if (!IsOrdinaryBinaryArithmetic(e) || right is ConstantExpression || !Types.FloatingPointNumber.Contains(e.Type) || e.Type == typeof(decimal)) return null;
-            if (NumericValueEquals(left.Value, 0)) return left;
+            if (NumericValueEquals(left.Value, 0)) return CanDropOperand(right) ? left : null;
             return null;
         }
 
@@ -1195,15 +1308,15 @@ namespace Utils.Mathematics.Expressions
         /// <c>(-0)^2</c> is <c>+0</c> and <c>(-0)^-3</c> is <c>-inf</c>, whereas this identity returned the base
         /// (S5 P11 already declined on a non-finite constant). On a non-constant exponent <c>0^x -&gt; 0</c> stays the
         /// domain-sensitive identity of the "Symbolic-equivalence contract" (valid for <c>x &gt; 0</c>; the sign of a
-        /// <c>-0</c> base is not preserved).
+        /// <c>-0</c> base is not preserved). Outside the effect gate (S5 P18 Architecture C) both identities drop
+        /// <paramref name="right"/> only when <see cref="CanDropOperand"/> allows it.
         /// </remarks>
         [ExpressionSignature(ExpressionType.Power)]
         public Expression PowerOfZeroOrOne(BinaryExpression e, [ConstantNumeric(0, 1)] ConstantExpression left, Expression right)
         {
             if (!IsOrdinaryBinaryArithmetic(e) || right is ConstantExpression) return null;
-            if (NumericValueEquals(left.Value, 0)) return left; // 0^x => 0
-            if (NumericValueEquals(left.Value, 1)) return left; // 1^x => 1
-            return null;
+            if (!NumericValueEquals(left.Value, 0) && !NumericValueEquals(left.Value, 1)) return null;
+            return CanDropOperand(right) ? left : null; // 0^x => 0, 1^x => 1
         }
 
         /// <summary>
@@ -1223,12 +1336,17 @@ namespace Utils.Mathematics.Expressions
         /// symbolic base, but a constant base has an exact value, so it is folded instead (<c>2^-2</c> was left as the
         /// unevaluated <c>1 / 4</c>, and <c>0^-2</c> became <c>0</c> through <see cref="PowerOfZeroOrOne"/>).
         /// </para>
+        /// <para>
+        /// Outside the effect gate (S5 P18 Architecture C) <c>x^0 -&gt; 1</c> drops <paramref name="left"/> only when
+        /// <see cref="CanDropOperand"/> allows it; the other identities keep its single evaluation (IEEE power and division never
+        /// throw).
+        /// </para>
         /// </remarks>
         [ExpressionSignature(ExpressionType.Power)]
         public Expression PowerByZeroOrOne(BinaryExpression e, Expression left, ConstantExpression right)
         {
             if (!IsOrdinaryBinaryArithmetic(e) || left is ConstantExpression || right.Value is not double exponent || !double.IsFinite(exponent)) return null;
-            if (exponent == 0) return Expression.Constant(Convert.ChangeType(1, right.Type));
+            if (exponent == 0) return CanDropOperand(left) ? Expression.Constant(Convert.ChangeType(1, right.Type)) : null;
             if (exponent == 1) return TransformCore(left);
             if (exponent == -1) return TransformCore(Expression.Divide(Expression.Constant(Convert.ChangeType(1, left.Type)), left));
             if (exponent < 0) return Expression.Divide(Expression.Constant(Convert.ChangeType(1, left.Type)), TransformCore(Expression.Power(left, Expression.Constant(-exponent))));

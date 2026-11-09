@@ -81,6 +81,28 @@ public static class ExpressionBehaviorAnalysis
     }
 
     /// <summary>
+    /// Classifies the evaluation of <paramref name="expression"/> from inside the expression engine (S5 P18 Architecture C):
+    /// when an operation runs on the thread, the analysis joins it directly, without opening a nested operation nor validating
+    /// <paramref name="expression"/> again, which is a part of a tree the engine is already working on; otherwise it is the public
+    /// entry <see cref="Analyze(Expression, ExpressionResourceLimits)"/>.
+    /// </summary>
+    /// <remarks>
+    /// Joining the running operation keeps every guard on the analyzed nodes, rebuilt ones included: each one consumes one
+    /// structural visit of the operation's budget and checks the execution stack, so a large or deeply nested operand, or a
+    /// shared DAG walked once per path, is refused by the structural budget or the stack guard. A nested public call would apply
+    /// the same budgets (the simplifier's limits are already those of the running operation), so only the shape validation, a
+    /// second full walk, is saved.
+    /// </remarks>
+    /// <param name="expression">The expression.</param>
+    /// <param name="resourceLimits">The limits of the calling instance, used only when no operation runs.</param>
+    /// <returns>Its behavior.</returns>
+    /// <exception cref="ExpressionResourceLimitException">A resource limit was exceeded, or the stack ran out.</exception>
+    internal static ExpressionBehavior AnalyzeWithinOperation(Expression expression, ExpressionResourceLimits resourceLimits)
+        => ExpressionResourceBudget.IsActive
+            ? new ExpressionBehavior(new Walker().AnalyzeRoot(expression))
+            : Analyze(expression, resourceLimits);
+
+    /// <summary>
     /// Classifies one invocation of <paramref name="lambda"/> with arbitrary arguments, with
     /// <see cref="ExpressionResourceLimits.Default"/> limits: the behavior of its body, its parameters being local.
     /// </summary>

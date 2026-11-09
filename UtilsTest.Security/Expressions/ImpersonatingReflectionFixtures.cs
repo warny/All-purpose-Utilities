@@ -21,6 +21,9 @@ internal sealed class ReflectionTrap
     /// <summary>Gets or sets whether every call throws.</summary>
     public bool Armed { get; set; }
 
+    /// <summary>Gets or sets user code run on every recorded call, with the member name (before the call is forwarded).</summary>
+    public Action<string>? Observer { get; set; }
+
     /// <summary>Gets the number of calls made while armed.</summary>
     public int ArmedCalls => Volatile.Read(ref _armedCalls);
 
@@ -57,6 +60,7 @@ internal sealed class ReflectionTrap
     public T Hit<T>(string member, T value)
     {
         Calls.Enqueue(member);
+        Observer?.Invoke(member);
         if (Armed && member is "ReturnType" or "FieldType" or "PropertyType")
         {
             Interlocked.Increment(ref _typeReads);
