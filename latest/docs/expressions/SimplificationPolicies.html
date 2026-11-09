@@ -73,9 +73,11 @@
         <article data-uid="">
 <h1 id="simplification-policies--design-note-s5-p18-architecture-b">Simplification policies — design note (S5 P18 Architecture B)</h1>
 
-<p>Status: public configuration only. <strong>No rule, gate, canonicalization or comparison consults it yet</strong>: every policy gives the
-results, user calls, exceptions and resource consumption of the default.
-Base: <code>master</code> <code>f4bb85ec</code> (after PR #682, A-10). Scope: Architecture B only; Architecture C (consumption) is not started.</p>
+<p>Status: public configuration (Architecture B), <strong>consumed by the zero and one identities since Architecture C, stages C1 and
+C2</strong> (§8). The default policy gives exactly the historical results, user calls, exceptions and resource consumption; the
+canonicalization, the other rules, the comparer and the inlining do not consult the policy yet.
+Base of B: <code>master</code> <code>f4bb85ec</code> (after PR #682, A-10). Architecture C: audit and plan in
+<a href="ArchitectureC-Audit.html">ArchitectureC-Audit.md</a>.</p>
 <p>Related notes: <a href="BehaviorAnalysis.html">BehaviorAnalysis.md</a> (Architecture A: the classification and the permissions it
 prepared), <a href="A10-ReflectionProvenance.html">A10-ReflectionProvenance.md</a> (trust in reflection metadata).</p>
 <h2 id="1-api">1. API</h2>
@@ -394,15 +396,16 @@ the same conditions); a merge that also places the surviving evaluation after an
 needs <code>CanReorder</code>, which a preserved category refuses. Likewise, an evaluation that reads mutable state may be merged only if
 no side effect separates the occurrences, whatever its permissions. Choosing a single permission (<code>CanRepeat</code> alone) for a
 combined rewrite is a defect of the rule, not a policy decision.</p>
-<h2 id="4-guarantees-of-this-version">4. Guarantees of this version</h2>
+<h2 id="4-guarantees-of-architecture-b-historical-see-8-for-what-c-changed">4. Guarantees of Architecture B (historical; see §8 for what C changed)</h2>
 <ul>
-<li>The simplifier stores the options and never reads them: no rule, gate (<code>AllowsRules</code>), <code>SplitPinnedTerms</code>,
-<code>CanonicalizesOperator</code>, <code>FinalizeExpression</code>, comparer, canonical key, memo or inlining decision changes.</li>
-<li><code>ExpressionComparer.Default</code> and the comparer's internal simplifier are unchanged (default options).</li>
-<li>No new analysis runs during simplification and no user code runs because of the options.</li>
-<li>Resource consumption is identical (same transformation and structural visits; same refusals; same stack guard).</li>
+<li>The simplifier stored the options and never read them: no rule, gate (<code>AllowsRules</code>), <code>SplitPinnedTerms</code>,
+<code>CanonicalizesOperator</code>, <code>FinalizeExpression</code>, comparer, canonical key, memo or inlining decision changed.</li>
+<li><code>ExpressionComparer.Default</code> and the comparer's internal simplifier are unchanged (default options). <strong>Still true after C.</strong></li>
+<li>No new analysis ran during simplification and no user code ran because of the options.</li>
+<li>Resource consumption was identical (same transformation and structural visits; same refusals; same stack guard). <strong>Still
+true after C for the default policy.</strong></li>
 </ul>
-<p>Tests (category <code>S5-P18B</code>, also run by the ETC Debug job):</p>
+<p>Tests (category <code>S5-P18B</code>, also run by the ETC Debug job; the corpus tests were adapted by C, see §8):</p>
 <ul>
 <li><code>UtilsTest/Mathematics/Expressions/Coverage/ExpressionSimplifierOptionsTests</code> (Unit): defaults on every constructor; setting
 at construction; invalid values (direct and <code>with</code>); independence of the axes; the permission matrix (equivalence with P18-A
@@ -424,20 +427,22 @@ thread afterwards; joining a running operation without loosening it.</li>
 </ul>
 <h2 id="5-limitations">5. Limitations</h2>
 <ul>
-<li>The options have no effect yet; their meaning is fixed, their consumption is Architecture C.</li>
+<li>Only the zero and one identities consume the options (Architecture C, stages C1 and C2, §8); the canonicalization, the
+factoring and merging rules, the NaN fold and the inlining do not yet.</li>
 <li><code>ExpressionComparer</code> always simplifies with the default policy (its internal instance is not configurable).</li>
 <li>The permissions inherit the P18-A classification and its known gaps: the <code>Pow</code> omission (conservative; fixed since), and the A10-B, A10-C,
 L-1, L-2 findings (see the A-10 note).</li>
 <li><code>TrustDeclarations</code> trusts the author: a lying declaration (<code>[Deterministic]</code> on a counter) would be merged under C. This is
 the documented purpose of the axis, and the reason it is off by default.</li>
 </ul>
-<h2 id="6-preparation-of-architecture-c-not-done">6. Preparation of Architecture C (not done)</h2>
-<p>Integration points, unchanged in this version:</p>
+<h2 id="6-preparation-of-architecture-c">6. Preparation of Architecture C</h2>
+<p>Integration points (status after stages C1 and C2 in the last column; the detailed plan is in
+<a href="ArchitectureC-Audit.html">ArchitectureC-Audit.md</a> §6):</p>
 <table>
 <thead>
 <tr>
 <th>Point</th>
-<th>Today</th>
+<th>Before C</th>
 <th>C would</th>
 </tr>
 </thead>
@@ -445,7 +450,7 @@ the documented purpose of the axis, and the reason it is off by default.</li>
 <tr>
 <td><code>ExpressionSimplifier.AllowsRules</code></td>
 <td>operands inert by <code>ExpressionEffectAnalysis</code></td>
-<td>ask, per rule, the permissions of the operation the rule performs (drop, merge, move), with <code>Options</code></td>
+<td>ask, per rule, the permissions of the operation the rule performs (drop, merge, move), with <code>Options</code> — <strong>done for the zero and one identities (C1, C2)</strong></td>
 </tr>
 <tr>
 <td><code>SplitPinnedTerms</code></td>
@@ -484,10 +489,11 @@ the documented purpose of the axis, and the reason it is off by default.</li>
 </tr>
 </tbody>
 </table>
-<p>Problems to solve before activation:</p>
+<p>Problems to solve before activation (status after C2 in bold):</p>
 <ol>
 <li><strong>Per-rule effect declarations.</strong> The gate is coarse (operands inert or not). Each rule must declare which evaluations it
-drops, merges or moves, so the right permission is asked; otherwise a relaxed policy over-applies.</li>
+drops, merges or moves, so the right permission is asked; otherwise a relaxed policy over-applies. <strong>Solved by audited rules
+that check their own permissions (§8); only the zero and one identities are audited.</strong></li>
 <li><strong>Cost.</strong> <code>ExpressionBehaviorAnalysis</code> costs about 40 ns plus 12–25 ns per node per call; asking it at every rule on every
 node would be quadratic. C needs a per-operation, reference-keyed behavior memo inside the resource session (and the visit
 budget must count it).</li>
@@ -500,9 +506,12 @@ simplifier or <code>SimplifyQuotedExpressions</code> changes the rules.</li>
 <li><strong>Contextual ordering.</strong> The local permissions must be combined with a proof that no side effect or unknown code runs between
 merged occurrences or across a move (§3.3); <code>SplitPinnedTerms</code> is the model.</li>
 <li><strong>Correctness items first.</strong> P18b (S5A-03, S5A-13: decimal division exceptions) and the <code>Pow</code> omission change what is
-classified as throwing; A10-B must be fixed before any policy widens comparisons of nodes holding reflection objects.</li>
+classified as throwing; A10-B must be fixed before any policy widens comparisons of nodes holding reflection objects.
+<strong>P18b and <code>Pow</code> are separate pull requests (#684, #685), not prerequisites of C2 (the audit, §4, explains why); A10-B is
+avoided by invariant I-1 (permissions before any comparison) rather than fixed.</strong></li>
 <li><strong>Contract decision.</strong> Enabling any axis changes results and user-call counts; C needs its own compatibility entry (as C-05
-and C-06 had).</li>
+and C-06 had). <strong>Decided on 2026-11-05: the default stays strictly historical; the conservative improvements of the default
+go to a separate pull request with the compatibility entry C-08 (§8).</strong></li>
 </ol>
 <h2 id="7-measurements">7. Measurements</h2>
 <p>Windows 11, .NET 9, Release; <code>master</code> <code>f4bb85ec</code> against the branch, plus a copy of the <code>master</code> binary as A/A control;
@@ -636,6 +645,362 @@ demonstrated. This note therefore does <strong>not</strong> conclude that the ex
 value stands as measured, unexplained. Construction is not on the simplification path, so it does not block B; it should be
 re-measured (for example with BenchmarkDotNet and a disassembly of both paths) before C relies on per-call simplifier instances.</p>
 <p>The options overloads of the permissions cost 2–3 ns more than the trust overloads (three property reads and the aggressive branch); they have no caller yet.</p>
+<h2 id="8-architecture-c-stages-c1-and-c2--the-zero-and-one-identities-consume-the-policy">8. Architecture C, stages C1 and C2 — the zero and one identities consume the policy</h2>
+<p>Audit, decisions and plan: <a href="ArchitectureC-Audit.html">ArchitectureC-Audit.md</a>.</p>
+<h3 id="81-admission">8.1 Admission</h3>
+<ul>
+<li><strong>Historical admission (unchanged).</strong> A node's rules run when its operands are inert (<code>AllowsRules</code>, ETC R1b, C-06).</li>
+<li><strong>Default policy: historical admission alone.</strong> <code>ExpressionSimplifier.UsesHistoricalAdmission</code> is <code>true</code> when <code>Options</code> equals
+<code>ExpressionSimplifierOptions.Default</code> by value: results, user calls, exceptions and resource consumption are those of <code>master</code>
+before C (the S5 campaigns give byte-identical files), and so are the answers of <code>ExpressionComparer.Default</code>.</li>
+<li><strong>Any other policy: audited rules outside the gate.</strong> When the gate refuses a node, the dispatch (<code>ExpressionTransformer.TryTransform</code>)
+asks <code>AllowsAuditedRulesOutsideGate</code> once; if it allows, only the rules <code>IsAuditedRule</code> lists run, each with the thread-static
+flag <code>RuleRunsOutsideGate</code> set for its call (and the rules it calls directly), cleared for every node transformed meanwhile
+(<code>TransformPrepared</code>), restored on failure. Every other candidate is traced as rejected by the effect gate.</li>
+<li><strong>Audited rules.</strong> The ten overloads of <code>AdditionWithZero</code>, <code>SubstractionWithZero</code>, <code>MultiplicationWithZeroOrOne</code>,
+<code>DivideWithZeroOrOne</code>, <code>DivideWithZero</code>, <code>PowerOfZeroOrOne</code> and <code>PowerByZeroOrOne</code> declared by <code>ExpressionSimplifier</code>,
+identified by method handle: a derived simplifier's own rules, even one hiding an audited rule with <code>new</code>, keep the
+historical admission.</li>
+</ul>
+<p>Leaving the historical mode is not a relaxation of an axis: any non-default policy, whatever its axes, also enables the rewrites
+that change no evaluation (category A of the audit), because they are correct under every policy. Each axis still relaxes only
+its own flags of the permission table (§3.1).</p>
+<h3 id="82-what-each-audited-rule-checks-outside-the-gate">8.2 What each audited rule checks outside the gate</h3>
+<table>
+<thead>
+<tr>
+<th>Rewrite</th>
+<th>Evaluations changed</th>
+<th>Check</th>
+<th>Operator</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>t + 0</code>, <code>0 + t</code>, <code>t - 0</code>, <code>0 - t -&gt; -t</code>, <code>t * ±1</code>, <code>±1 * t</code>, <code>t / 1</code>, <code>t / -1 -&gt; -t</code> (not signed integral), <code>t ^ 1</code>, <code>t ^ -1 -&gt; 1 / t</code>, <code>t ^ -n -&gt; 1 / t^n</code></td>
+<td>none</td>
+<td>none</td>
+<td>none of these can throw (<code>decimal</code> included); <code>MinValue * -1</code> and <code>-MinValue</code> wrap alike</td>
+</tr>
+<tr>
+<td><code>t * 0</code>, <code>0 * t</code>, <code>0 / t</code> (IEEE), <code>t ^ 0</code>, <code>0 ^ t</code>, <code>1 ^ t</code></td>
+<td><code>t</code> dropped</td>
+<td><code>CanDiscard(Analyze(t), Options)</code> before anything compares or keys <code>t</code></td>
+<td><code>* 0</code>, IEEE division and <code>Math.Pow</code> never throw</td>
+</tr>
+<tr>
+<td>integral or <code>decimal</code> <code>t / 0</code></td>
+<td>–</td>
+<td>declines: no exception while simplifying, the dividend still runs first</td>
+<td>–</td>
+</tr>
+</tbody>
+</table>
+<p>The dropped operand is analyzed out of its lexical context, which is conservative, by <code>ExpressionBehaviorAnalysis</code> under the
+instance's own limits, joining the running operation through its internal entry (no nested operation, no second validation of
+the operand; its visits are counted there, and the structural budget and the stack guard bound it, rebuilt operands included).</p>
+<h3 id="83-examples">8.3 Examples</h3>
+<p>With <code>F</code> an unannotated user method, <code>S</code> a <code>[Deterministic]</code> method, <code>i</code>, <code>j</code> integers:</p>
+<table>
+<thead>
+<tr>
+<th>Source</th>
+<th>Default</th>
+<th><code>TrustDeclarations</code></th>
+<th><code>AggressiveSimplification</code></th>
+<th><code>ExceptionPreservation = Runtime \| UserCode</code></th>
+<th><code>TrustDeclarations</code>, preserve <code>Arithmetic \| Runtime</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>F(x) * 1</code></td>
+<td>kept</td>
+<td><code>F(x)</code></td>
+<td><code>F(x)</code></td>
+<td><code>F(x)</code></td>
+<td><code>F(x)</code></td>
+</tr>
+<tr>
+<td><code>F(x) * 0</code></td>
+<td>kept</td>
+<td>kept</td>
+<td>kept</td>
+<td>kept</td>
+<td>kept</td>
+</tr>
+<tr>
+<td><code>S(x) * 0</code></td>
+<td>kept</td>
+<td>kept (user-code exceptions preserved)</td>
+<td>kept</td>
+<td>kept (declaration not trusted)</td>
+<td><code>0</code></td>
+</tr>
+<tr>
+<td><code>(i / j) * 0</code></td>
+<td>kept</td>
+<td>kept</td>
+<td>kept</td>
+<td><code>0</code></td>
+<td>kept</td>
+</tr>
+<tr>
+<td><code>Stopwatch.GetTimestamp() * 0</code></td>
+<td>kept</td>
+<td><code>0</code></td>
+<td><code>0</code></td>
+<td><code>0</code></td>
+<td><code>0</code></td>
+</tr>
+<tr>
+<td><code>F(i) / 0</code></td>
+<td>kept (no exception while simplifying)</td>
+<td>kept</td>
+<td>kept</td>
+<td>kept</td>
+<td>kept</td>
+</tr>
+</tbody>
+</table>
+<p>A clock read is nondeterministic but has no side effect: B's table forbids repeating or moving it without aggressive
+simplification, never dropping it. Note that the default canonicalization already reduces <code>F(x) + 0</code> to <code>F(x)</code>.</p>
+<h3 id="84-guarantees-kept-under-every-policy">8.4 Guarantees kept under every policy</h3>
+<p>No side effect or unknown code is dropped; no exception is added, and none is moved to simplification time; an exception
+disappears only with a dropped evaluation of a category the policy does not preserve; no evaluation is duplicated, merged or
+moved by C2; no user code runs because of the policy (the dropped operand is analyzed, never evaluated; a custom reflection
+object is unknown code, read no more than by the historical path); the resource limits, the visit budgets and the stack guard
+apply to the analysis.</p>
+<p>Tests (category <code>S5-P18C</code>, also run by the ETC Debug job):</p>
+<ul>
+<li><code>UtilsTest/Mathematics/Expressions/Coverage/ExpressionSimplifierPolicyRulesTests</code> (Unit): historical admission exactly for the
+default-equal policies, the exact audited set (inherited, never derived or hiding); the six dropping identities × 12 operand
+families (unknown, declared, lying declaration, integer division, checked conversion, unboxing, two throws, clock, allocation,
+assignment, local block) × 32 policies, exact and derived, against the permission matrix and a family-by-family expectation;
+evaluation counts; exceptions removed only when their category is not preserved; the evaluation-preserving identities on
+<code>double</code>, <code>int</code>, <code>decimal</code> × 32 policies with values and call counts (<code>MinValue</code> and overflow cases included); the zero divisor;
+derived and hiding rules; the scope of the admission flag (nested transformation, resource refusal); nested simplifications by
+another instance of another policy, started from a rule or from an extension node's user code (each gets its own admission;
+the analysis of an audited rule reads no member of the opaque node); the instance limits of the analysis; the README example.</li>
+<li><code>ExpressionSimplifierOptionsTests</code> (Unit, adapted): default-equal policies give the historical tree, calls and outcomes on the
+hand corpus and 150 generated trees; every other policy keeps the guarantees above on them (no exception added, traced effects
+in order, values except where the default's value is not finite, lying calls only fewer and only under trust without
+user-code preservation); extension nodes keep their instances and reads; concurrency compares each policy with itself.</li>
+<li><code>UtilsTest.Security/Expressions/ExpressionSimplifierPolicyRulesSecurityTests</code> (Security): impersonating reflection objects are
+never dropped and read no member the historical path does not read; the analysis is counted in the budget (refusal exactly one
+visit below); the pathological nesting <code>((F() * 0) * 0) … * 0</code> stays bounded (quadratic structural work, linear
+transformation work); a 100,000-level nesting ends with a <code>Stack</code> refusal on a 256 KiB stack; user code of an impersonating
+method running another simplification of another policy, including while an audited rule runs with the admission flag set
+(the flag is per thread: the nested operation clears it for its own nodes and finds it unchanged afterwards).</li>
+</ul>
+<h3 id="85-measurements">8.5 Measurements</h3>
+<p>BenchmarkDotNet 0.14.0 (in-process emit toolchain, 8 warm-up and 20 measured iterations, <code>MemoryDiagnoser</code>), Windows 11,
+.NET 9, Release, unlimited resource limits, Intel i7-12700KF. Four variants built from separate worktrees: <code>master</code> <code>d16ae332</code>,
+PR #685 (<code>132a866c</code>), this branch (<code>dfe7efac</code>), and a copy of the <code>master</code> binary as A/A control; one process per variant and
+round, the order rotated each round; table = median of the round means (3 rounds; 6 rounds for the shared DAG, the zero chain
+and the negations, re-measured alone). <code>F</code> is an unannotated user method; the relaxed policy is <code>AggressiveSimplification</code>.</p>
+<p><strong>The processes are pinned to two performance cores</strong> (affinity on logical processors 2 and 4, high priority). The i7-12700KF is
+a hybrid processor: a process, or a phase of it, scheduled on an efficiency core runs about twice slower. Without the pinning
+the same <code>master</code> binary measured 1.15 µs or 2.0 µs, 5.9 ms or 13.2 ms, from one process to the next, which made every
+campaign bimodal. The earlier hand-written campaigns of this stage (which reported a default within +1.6 % to +4.8 %, recorded
+then as an open measurement) were not pinned; they are superseded by this one.</p>
+<table>
+<thead>
+<tr>
+<th>Case</th>
+<th>Policy</th>
+<th style="text-align: right;">master</th>
+<th style="text-align: right;">#686</th>
+<th style="text-align: right;">Δ</th>
+<th style="text-align: right;">A/A</th>
+<th style="text-align: right;">#685 Δ</th>
+<th>Allocated master → #686</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>x*2 + sin(y)</code></td>
+<td>default</td>
+<td style="text-align: right;">4.23 µs</td>
+<td style="text-align: right;">4.26 µs</td>
+<td style="text-align: right;">+0.8 %</td>
+<td style="text-align: right;">+1.2 %</td>
+<td style="text-align: right;">+0.6 %</td>
+<td>4,297 B → 4,297 B</td>
+</tr>
+<tr>
+<td>12-term sum</td>
+<td>default</td>
+<td style="text-align: right;">1.336 ms</td>
+<td style="text-align: right;">1.305 ms</td>
+<td style="text-align: right;">−2.4 %</td>
+<td style="text-align: right;">+1.8 %</td>
+<td style="text-align: right;">+0.7 %</td>
+<td>identical</td>
+</tr>
+<tr>
+<td><code>(x+1)*(x+1) - x*x</code></td>
+<td>default</td>
+<td style="text-align: right;">18.6 µs</td>
+<td style="text-align: right;">17.6 µs</td>
+<td style="text-align: right;">−5.5 %</td>
+<td style="text-align: right;">−0.1 %</td>
+<td style="text-align: right;">+0.1 %</td>
+<td>identical</td>
+</tr>
+<tr>
+<td><code>f(x)+f(x)-f(x)</code></td>
+<td>default</td>
+<td style="text-align: right;">3.23 µs</td>
+<td style="text-align: right;">3.25 µs</td>
+<td style="text-align: right;">+0.5 %</td>
+<td style="text-align: right;">+1.6 %</td>
+<td style="text-align: right;">−3.9 %</td>
+<td>identical</td>
+</tr>
+<tr>
+<td><code>2f(x) + 2f(y)*0</code></td>
+<td>default</td>
+<td style="text-align: right;">4.68 µs</td>
+<td style="text-align: right;">4.68 µs</td>
+<td style="text-align: right;">0.0 %</td>
+<td style="text-align: right;">+0.8 %</td>
+<td style="text-align: right;">−1.6 %</td>
+<td>identical</td>
+</tr>
+<tr>
+<td><code>(x+y)^2</code></td>
+<td>default</td>
+<td style="text-align: right;">1.89 µs</td>
+<td style="text-align: right;">1.84 µs</td>
+<td style="text-align: right;">−3.0 %</td>
+<td style="text-align: right;">−0.7 %</td>
+<td style="text-align: right;">−0.2 %</td>
+<td>identical</td>
+</tr>
+<tr>
+<td>200 nested negations (6 rounds)</td>
+<td>default</td>
+<td style="text-align: right;">787 µs</td>
+<td style="text-align: right;">757 µs</td>
+<td style="text-align: right;">−3.8 %</td>
+<td style="text-align: right;">−4.8 %</td>
+<td style="text-align: right;">−1.0 %</td>
+<td>identical</td>
+</tr>
+<tr>
+<td>200 nested user calls</td>
+<td>default</td>
+<td style="text-align: right;">119.9 µs</td>
+<td style="text-align: right;">119.7 µs</td>
+<td style="text-align: right;">−0.2 %</td>
+<td style="text-align: right;">+2.8 %</td>
+<td style="text-align: right;">+0.3 %</td>
+<td>identical</td>
+</tr>
+<tr>
+<td>shared DAG, 10 levels (6 rounds)</td>
+<td>default</td>
+<td style="text-align: right;">5.23 ms</td>
+<td style="text-align: right;">5.28 ms</td>
+<td style="text-align: right;">+0.8 %</td>
+<td style="text-align: right;">+0.3 %</td>
+<td style="text-align: right;">−1.3 %</td>
+<td>identical</td>
+</tr>
+<tr>
+<td><code>((F(x)*0)*0)…</code> 100 levels (6 rounds)</td>
+<td>default</td>
+<td style="text-align: right;">5.19 ms</td>
+<td style="text-align: right;">5.17 ms</td>
+<td style="text-align: right;">−0.5 %</td>
+<td style="text-align: right;">−0.5 %</td>
+<td style="text-align: right;">−0.1 %</td>
+<td>identical</td>
+</tr>
+<tr>
+<td><code>F(x) + 0</code> / <code>F(x) * 1</code> / <code>F(x) * 0</code></td>
+<td>default</td>
+<td style="text-align: right;">1.10 / 1.15 / 1.15 µs</td>
+<td style="text-align: right;">1.12 / 1.15 / 1.13 µs</td>
+<td style="text-align: right;">+1.8 / 0.0 / −1.5 %</td>
+<td style="text-align: right;">+2.7 / +4.0 / +3.5 %</td>
+<td style="text-align: right;">−2 to −3 %</td>
+<td>identical</td>
+</tr>
+<tr>
+<td><code>(i/j) * 0</code></td>
+<td>default</td>
+<td style="text-align: right;">710 ns</td>
+<td style="text-align: right;">696 ns</td>
+<td style="text-align: right;">−2.0 %</td>
+<td style="text-align: right;">+2.2 %</td>
+<td style="text-align: right;">+0.7 %</td>
+<td>identical</td>
+</tr>
+<tr>
+<td><code>F(x) + 0</code></td>
+<td>relaxed</td>
+<td style="text-align: right;">1.10 µs</td>
+<td style="text-align: right;">1.64 µs</td>
+<td style="text-align: right;">+50 %</td>
+<td style="text-align: right;">+3.0 %</td>
+<td style="text-align: right;">−2.4 %</td>
+<td>592 B → 600 B</td>
+</tr>
+<tr>
+<td><code>F(x) * 1</code></td>
+<td>relaxed</td>
+<td style="text-align: right;">1.15 µs</td>
+<td style="text-align: right;">1.00 µs</td>
+<td style="text-align: right;">−13 %</td>
+<td style="text-align: right;">+3.2 %</td>
+<td style="text-align: right;">−1.8 %</td>
+<td>800 B → 536 B</td>
+</tr>
+<tr>
+<td><code>F(x) * 0</code> (drop refused)</td>
+<td>relaxed</td>
+<td style="text-align: right;">1.15 µs</td>
+<td style="text-align: right;">1.40 µs</td>
+<td style="text-align: right;">+22 %</td>
+<td style="text-align: right;">+3.1 %</td>
+<td style="text-align: right;">−1.7 %</td>
+<td>800 B → 1,200 B</td>
+</tr>
+<tr>
+<td><code>(i/j) * 0</code> (drop refused: runtime exceptions kept)</td>
+<td>relaxed</td>
+<td style="text-align: right;">703 ns</td>
+<td style="text-align: right;">913 ns</td>
+<td style="text-align: right;">+30 %</td>
+<td style="text-align: right;">+2.8 %</td>
+<td style="text-align: right;">+1.6 %</td>
+<td>768 B → 1,104 B</td>
+</tr>
+<tr>
+<td><code>((F(x)*0)*0)…</code> 100 levels</td>
+<td>relaxed</td>
+<td style="text-align: right;">5.06 ms</td>
+<td style="text-align: right;">5.07 ms</td>
+<td style="text-align: right;">+0.2 %</td>
+<td style="text-align: right;">−1.7 %</td>
+<td style="text-align: right;">−1.2 %</td>
+<td>1.87 MB → 1.91 MB (+2.2 %)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Default policy.</strong> No measurable cost: every difference is within −5.5 % to +1.8 %, the A/A control within −4.8 % to +4.0 %,
+the allocations are identical to the byte (a few bytes of rounding on the largest cases), and the shared DAG, which looked like
+the largest regression in the unpinned campaigns, is +0.8 % against an A/A of +0.3 % over 6 rounds. The default path gained one
+thread-static read per transformed node (<code>TransformPrepared</code>) and one integer test per candidate rule; they are below the
+resolution of this campaign. PR #685 is within −3.9 % to +1.9 % of <code>master</code> on every case.</p>
+<p><strong>Relaxed policy.</strong> A node refused by the gate where an audited rule applies costs about 0.25–0.55 µs more and up to 400 bytes:
+the audited rules run (with their reflection invocation), a refused drop runs the behavior analysis (validation and walk of the
+operand), and <code>F(x) + 0</code> re-transforms its operand (<code>AdditionWithZero</code> returns <code>TransformCore(left)</code>, finding S5A-07) where the
+default reduces it by the canonicalization alone. When the rewrite shortens the tree (<code>F(x) * 1</code>), the simplification is faster
+and allocates less. The pathological nesting of products by zero stays at +0.2 % in time and +2.2 % in allocations at 100
+levels: its quadratic structural work (see the security test) is small next to the transformation work.</p>
 
 </article>
 

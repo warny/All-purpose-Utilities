@@ -379,6 +379,20 @@ the events outside the callback.</li>
 wait in a bounded list; beyond it they are dropped and counted on <code>ExpressionTraceScope.UndeliveredEvents</code>, leaving a gap
 in the sequence numbers. The resource refusal and the root failure are always kept.</li>
 </ul>
+<h2 id="expression-engine-simplification-policies-consumed-s5-p18-architecture-c">Expression engine: simplification policies consumed (S5 P18 Architecture C)</h2>
+<p><code>ExpressionSimplifier.Options</code> (Architecture B) had no effect; it is now consumed by the zero and one identities. No public
+signature changed, and the default policy (<code>ExpressionSimplifierOptions.Default</code>, or any equal value) gives exactly the previous
+results, so code that does not set <code>Options</code> is unaffected, and so is <code>ExpressionComparer.Default</code>.</p>
+<ul>
+<li>Under any other policy, <code>F() * 1</code>, <code>F() / 1</code>, <code>0 - F()</code>, <code>F() ^ 1</code>, <code>F() * -1</code> and similar identities apply even when the
+operand is not inert (they change no evaluation), and <code>t * 0</code>, <code>0 * t</code>, <code>0 / t</code>, <code>t ^ 0</code>, <code>0 ^ t</code>, <code>1 ^ t</code> drop <code>t</code> when the
+policy lets its evaluation be discarded (for example a partial integer division without arithmetic preservation, a
+<code>[Deterministic]</code> method under <code>TrustDeclarations</code> without user-code preservation). Unknown code and side effects are never
+dropped. Code that set a non-default <code>Options</code> while it had no effect now gets these rewrites.</li>
+<li>An integral or <code>decimal</code> division of a non-inert operand by a constant zero no longer throws while simplifying under such a
+policy (it is left to the evaluation); under the default it never reached the rule.</li>
+<li>Rules declared by a derived simplifier are unaffected (they keep the historical admission).</li>
+</ul>
 <p><a id="omy-utils-fonts-2"></a></p>
 <h2 id="utilsfonts-hostile-font-parsing-hardening">Utils.Fonts hostile-font parsing hardening</h2>
 <p><code>TrueTypeFont.ParseFont</code>/<code>ParseFontAsync</code> now accept an optional <code>TrueTypeFontParsingOptions</code>

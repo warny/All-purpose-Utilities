@@ -233,7 +233,9 @@ Enum ExpressionRuleRejection  <a class="header-action link-secondary" title="Vie
     <dt id="Utils_Expressions_ExpressionRuleRejection_EffectGate"><code>EffectGate = 3</code></dt>
   
   <dd><p>The effect gate of the transformer (ETC R1b) refused every rule of the node, whose operands are not proven inert;
-the node goes to its finalization.</p>
+the node goes to its finalization. Under a non-default simplification policy that admits the audited rules outside the
+gate (S5 P18 Architecture C), a rule that is not audited is refused with this reason too, without its signature being
+matched, and the following candidates are still tried.</p>
 </dd>
     <dt id="Utils_Expressions_ExpressionRuleRejection_None"><code>None = 0</code></dt>
   

@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Architecture C — audit before integrating the simplification policies (S5 P18) | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Architecture C — audit before integrating the simplification policies (S5 P18) | omy.Utils Documentation ">
+      
+      
+      <link rel="icon" href="../../favicon.ico">
+      <link rel="stylesheet" href="../../public/docfx.min.css">
+      <link rel="stylesheet" href="../../public/main.css">
+      <meta name="docfx:navrel" content="../../toc.html">
+      <meta name="docfx:tocrel" content="../../toc.html">
+      
+      <meta name="docfx:rel" content="../../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/blob/master/docs/expressions/ArchitectureC-Audit.md/#L1">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../../index.html">
+            <img id="logo" class="svg" src="../../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+
+      <div class="content">
+        <div class="actionbar">
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="architecture-c--audit-before-integrating-the-simplification-policies-s5-p18">Architecture C — audit before integrating the simplification policies (S5 P18)</h1>
+
+<p>Status: <strong>phase 1 report</strong> (audit, dependencies, plan). Base: <code>master</code> <code>d16ae332</code> (PR #683, Architecture B, merged).
+Scope: what the rules of <code>ExpressionSimplifier</code> would have to declare and check to consume <code>ExpressionSimplifierOptions</code>, which
+anomalies block that, and in which order to integrate it. Related notes: <a href="BehaviorAnalysis.html">BehaviorAnalysis.md</a> (A),
+<a href="SimplificationPolicies.html">SimplificationPolicies.md</a> (B), <a href="A10-ReflectionProvenance.html">A10-ReflectionProvenance.md</a>, the S5
+deep audit (<code>Utils/TODO-2026-11-04-s5-simplifier-deep-audit.md</code>).</p>
+<h2 id="1-contract-decision-2026-11-05">1. Contract decision (2026-11-05)</h2>
+<p>Taken before the design, at the user's request:</p>
+<ol>
+<li><p><strong>The default policy is strictly preserved.</strong> Under <code>ExpressionSimplifierOptions.Default</code> the simplifier, and therefore
+<code>ExpressionComparer.Default</code> (whose internal simplifier uses the default), give exactly the results, user calls, exceptions and
+resource consumption of <code>master</code> before C. Verified by the S5 campaigns (§8).</p>
+</li>
+<li><p><strong>Category A improvements of the default go to a separate pull request</strong> with its own compatibility entry: the
+rewrites that are correct under every policy (<code>F() + 0 -&gt; F()</code>), and the evaluations the P18-A analysis proves safe where the
+gate refuses them (invoked lambdas, blocks with local effects).</p>
+</li>
+<li><p><strong>Intrinsic admissibility is separated from the historical compatibility of the default.</strong> A rule is not admitted &quot;only when the
+explicit policy grants a permission the default lacks&quot;: that would make the rules that are correct under every policy
+unreachable under every policy. Instead:</p>
+<ul>
+<li><em>intrinsic admissibility</em> of a rewrite = the permissions of the evaluations it actually drops, merges, duplicates or moves,
+under the instance's <code>Options</code>, plus the contextual conditions (B §3.3, §3.5, §3.6); a rewrite that changes no evaluation
+needs no permission;</li>
+<li><em>historical admission</em> = the ETC R1b gate (<code>AllowsRules</code>: operands inert by <code>ExpressionEffectAnalysis</code>), unchanged;</li>
+<li>a node's rules run when the historical gate allows them (exactly as today); when it refuses, an <strong>audited</strong> rule may still run
+under its intrinsic admissibility, <strong>except under the default policy</strong>, which keeps the historical admission alone. That
+exception is a single switch (<code>ExpressionSimplifier.UsesHistoricalAdmission</code>): the category A pull request will remove it,
+without touching the rules. Its compatibility entry will be <strong>C-08</strong>: C-07 is already taken (ETC R2, replacing a runtime
+variable by anything but a parameter throws <code>NotSupportedException</code>).</li>
+</ul>
+<p>Consequence, documented as such: any explicit non-default policy leaves the historical-compatibility mode, so it also enables
+the category A rewrites of the audited rules, which require no permission and are correct under every policy. The three axes
+stay independent in what they <em>relax</em> (each lifts only its own flags of the permission table); leaving the compatibility
+mode is not a relaxation.</p>
+</li>
+</ol>
+<h2 id="2-where-the-policy-can-plug-in">2. Where the policy can plug in</h2>
+<table>
+<thead>
+<tr>
+<th>Point</th>
+<th>File</th>
+<th>Today</th>
+<th>Observation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>AllowsRules</code></td>
+<td><code>ExpressionSimplifier.cs</code> (≈ l. 525)</td>
+<td><code>node is InvocationExpression \|\| HasInertOperands(node)</code></td>
+<td>asked once per node, before the first matching rule; a refusal skips <strong>every</strong> rule of the node (<code>ExpressionTranformer.TryTransform</code>, ≈ l. 1999)</td>
+</tr>
+<tr>
+<td>rule plan</td>
+<td><code>ExpressionTranformer.BuildPlan</code></td>
+<td>rules = annotated methods of the runtime type, in reflection order</td>
+<td>a derived simplifier adds its own rules to the same plan; they run behind the same gate</td>
+</tr>
+<tr>
+<td><code>SplitPinnedTerms</code></td>
+<td><code>ExpressionSimplifier.cs</code> (≈ l. 558)</td>
+<td>non-inert terms pinned in source order; reads of mutable state pinned when an observable term exists</td>
+<td>the contextual model of B §3.3</td>
+</tr>
+<tr>
+<td><code>CanonicalizesOperator</code></td>
+<td>idem (≈ l. 535)</td>
+<td>reassociation only for an operator with no effect (excludes <code>decimal</code>)</td>
+<td></td>
+</tr>
+<tr>
+<td><code>FoldNaNOperand</code> / <code>IsEliminableFloatingOperand</code></td>
+<td>idem (≈ l. 949, 1027)</td>
+<td>static, narrow whitelist, applied to every prepared node</td>
+<td>static: no access to <code>Options</code></td>
+</tr>
+<tr>
+<td><code>InvokeExpression</code> + <code>InvocationInliningAnalysis</code></td>
+<td>idem, <code>InvocationInliningAnalysis.cs</code></td>
+<td>its own analysis; not behind the gate</td>
+<td></td>
+</tr>
+<tr>
+<td>comparer</td>
+<td><code>ExpressionComparer</code> + <code>SimplifyForComparisonInSession</code></td>
+<td>always the comparer's shared exact simplifier (default options, <code>JoinsRunningOperation</code>)</td>
+<td>the P9/P15 memos store only that simplifier's results</td>
+</tr>
+</tbody>
+</table>
+<h2 id="3-rule-matrix">3. Rule matrix</h2>
+<p>76 rules (deep audit §3; locations of <code>master</code> <code>d16ae332</code>). Columns: what the rewrite does to the <strong>evaluations of its non-constant
+operands</strong> (a constant, a default and a parameter read are not evaluations that can be observed); &quot;Op.&quot; = whether the node's own
+operator(s) can throw and whether the rewrite changes that; &quot;Needs&quot; = the permissions of B §3.6 the rewrite needs when an operand is
+not inert; &quot;Cat.&quot; = A (correct under every policy, no permission), B (needs permissions every policy may grant), C (needs a
+relaxation only an explicit policy grants, e.g. an operator exception), — (no non-constant operand, or out of scope).</p>
+<h3 id="31-zero-and-one-identities-expressionsimplifiercs-l-10551236--integrated-by-c2">3.1 Zero and one identities (<code>ExpressionSimplifier.cs</code> l. 1055–1236) — integrated by C2</h3>
+<table>
+<thead>
+<tr>
+<th>Rule (overload)</th>
+<th>Rewrite</th>
+<th>Dropped</th>
+<th>Merged / duplicated</th>
+<th>Moved</th>
+<th>Op.</th>
+<th>Needs</th>
+<th>Cat.</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>AdditionWithZero(e, t, 0)</code></td>
+<td><code>t + 0 -&gt; T(t)</code></td>
+<td>–</td>
+<td>–</td>
+<td>–</td>
+<td><code>+ 0</code> never throws (ordinary, non-lifted; <code>decimal + 0m</code> cannot overflow)</td>
+<td>none</td>
+<td>A</td>
+</tr>
+<tr>
+<td><code>AdditionWithZero(e, 0, t)</code></td>
+<td><code>0 + t -&gt; t</code></td>
+<td>–</td>
+<td>–</td>
+<td>–</td>
+<td>idem</td>
+<td>none</td>
+<td>A</td>
+</tr>
+<tr>
+<td><code>SubstractionWithZero(e, t, 0)</code></td>
+<td><code>t - 0 -&gt; t</code></td>
+<td>–</td>
+<td>–</td>
+<td>–</td>
+<td>idem</td>
+<td>none</td>
+<td>A</td>
+</tr>
+<tr>
+<td><code>SubstractionWithZero(e, 0, t)</code></td>
+<td><code>0 - t -&gt; T(-t)</code></td>
+<td>–</td>
+<td>–</td>
+<td>–</td>
+<td><code>0 - t</code> and <code>-t</code> wrap alike (integers), are exact (<code>decimal</code>, IEEE)</td>
+<td>none</td>
+<td>A</td>
+</tr>
+<tr>
+<td><code>MultiplicationWithZeroOrOne</code> (both)</td>
+<td><code>t * 1 -&gt; t</code>, <code>t * -1 -&gt; -t</code></td>
+<td>–</td>
+<td>–</td>
+<td>–</td>
+<td><code>* ±1</code> never throws (<code>MinValue * -1</code> and <code>-MinValue</code> wrap alike)</td>
+<td>none</td>
+<td>A</td>
+</tr>
+<tr>
+<td>idem</td>
+<td><code>t * 0 -&gt; 0</code></td>
+<td><code>t</code></td>
+<td>–</td>
+<td>–</td>
+<td><code>* 0</code> never throws</td>
+<td><code>CanDiscard(t)</code></td>
+<td>B/C</td>
+</tr>
+<tr>
+<td><code>DivideWithZeroOrOne</code></td>
+<td><code>t / 1 -&gt; t</code>, <code>t / -1 -&gt; -t</code> (not signed integral)</td>
+<td>–</td>
+<td>–</td>
+<td>–</td>
+<td><code>/ ±1</code> never throws there</td>
+<td>none</td>
+<td>A</td>
+</tr>
+<tr>
+<td>idem</td>
+<td>integral/decimal <code>t / 0</code> <strong>throws while simplifying</strong></td>
+<td>(all)</td>
+<td>–</td>
+<td>–</td>
+<td>moves an exception to simplification time</td>
+<td><strong>never outside the gate</strong> (B §2.3, op. 5; S5A-04)</td>
+<td>–</td>
+</tr>
+<tr>
+<td><code>DivideWithZero</code></td>
+<td><code>0 / t -&gt; 0</code> (<code>float</code>/<code>double</code>)</td>
+<td><code>t</code></td>
+<td>–</td>
+<td>–</td>
+<td>IEEE division never throws</td>
+<td><code>CanDiscard(t)</code></td>
+<td>B/C</td>
+</tr>
+<tr>
+<td><code>PowerOfZeroOrOne</code></td>
+<td><code>0 ^ t -&gt; 0</code>, <code>1 ^ t -&gt; 1</code></td>
+<td><code>t</code></td>
+<td>–</td>
+<td>–</td>
+<td><code>Math.Pow</code> never throws</td>
+<td><code>CanDiscard(t)</code></td>
+<td>B/C</td>
+</tr>
+<tr>
+<td><code>PowerByZeroOrOne</code></td>
+<td><code>t ^ 0 -&gt; 1</code></td>
+<td><code>t</code></td>
+<td>–</td>
+<td>–</td>
+<td>idem</td>
+<td><code>CanDiscard(t)</code></td>
+<td>B/C</td>
+</tr>
+<tr>
+<td>idem</td>
+<td><code>t ^ 1 -&gt; T(t)</code>, <code>t ^ -1 -&gt; T(1 / t)</code>, <code>t ^ -n -&gt; 1 / T(t ^ n)</code></td>
+<td>–</td>
+<td>–</td>
+<td>–</td>
+<td>IEEE, never throws</td>
+<td>none</td>
+<td>A</td>
+</tr>
+</tbody>
+</table>
+<p><code>T(x)</code> is <code>TransformCore(x)</code>: a re-transformation of an already prepared operand (S5A-07), which evaluates nothing. &quot;B/C&quot;: the
+drop is allowed by the default permissions for an evaluation without effect, allocation or exception (B), and by an explicit policy
+for an allocation, a nondeterministic read or a non-preserved exception category (C); <code>Unknown</code> and <code>SideEffects</code> are never dropped.</p>
+<h3 id="32-negation-and-reassociation-rewrites-l-12451466--c3">3.2 Negation and reassociation rewrites (l. 1245–1466) — C3</h3>
+<table>
+<thead>
+<tr>
+<th>Rule</th>
+<th>Rewrite</th>
+<th>Effect on evaluations</th>
+<th>Op.</th>
+<th>Needs</th>
+<th>Cat.</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>AdditionWithNegate</code> (both)</td>
+<td><code>t + -u -&gt; t - u</code></td>
+<td>none</td>
+<td>same exceptions (<code>decimal</code>: same overflow condition)</td>
+<td>none</td>
+<td>A</td>
+</tr>
+<tr>
+<td>idem</td>
+<td><code>t + -t -&gt; 0</code> (comparer says equal)</td>
+<td>drops both</td>
+<td>–</td>
+<td><code>CanDiscard</code> ×2, <strong>and the comparison runs only after the permissions</strong> (§5.1)</td>
+<td>B/C</td>
+</tr>
+<tr>
+<td><code>SubstractionWithNegate</code>, <code>NegateWithSubstraction</code></td>
+<td><code>t - -u -&gt; t + u</code>, <code>-t - u -&gt; -(t + u)</code>, <code>-(t - u) -&gt; -t + u</code></td>
+<td>none (order kept)</td>
+<td>identical exceptions and IEEE results</td>
+<td>none</td>
+<td>A</td>
+</tr>
+<tr>
+<td><code>SubstractionWithAddition</code></td>
+<td><code>t - (u + v) -&gt; (t - u) - v</code></td>
+<td>none (order kept)</td>
+<td><code>decimal</code>: different overflow conditions; IEEE: rounding (S3)</td>
+<td>integral/IEEE: none; <code>decimal</code>: an operator exception may change → <code>Arithmetic</code> not preserved</td>
+<td>A / C</td>
+</tr>
+<tr>
+<td><code>SubstractionWithSubstraction</code></td>
+<td><code>t - (u - v) -&gt; (t + v) - u</code></td>
+<td><code>v</code> moved before <code>u</code></td>
+<td>idem</td>
+<td><code>CanReorder(u, v)</code> + context</td>
+<td>B/C</td>
+</tr>
+<tr>
+<td><code>MultiplicationWithNegate</code>, <code>DivisionWithNegate</code></td>
+<td><code>t * -u -&gt; -(t * u)</code>, …</td>
+<td>none</td>
+<td>identical (division: signed-integral guard already present)</td>
+<td>none</td>
+<td>A</td>
+</tr>
+<tr>
+<td><code>Multiplication(e, t, c)</code></td>
+<td><code>t * c -&gt; c * t</code></td>
+<td>none (a constant crosses <code>t</code>)</td>
+<td>–</td>
+<td>none</td>
+<td>A</td>
+</tr>
+<tr>
+<td><code>Multiplication(e, c, c2 * t)</code>, <code>(e, a*b, c*d)</code></td>
+<td>coefficient folding, reassociation</td>
+<td>none; but folds <code>c * c2</code> (may throw while simplifying for integers/decimal)</td>
+<td>reassociation changes operator exceptions (<code>decimal</code>)</td>
+<td><code>Arithmetic</code> not preserved for <code>decimal</code>; never a simplification-time fold of a throwing pair</td>
+<td>C</td>
+</tr>
+</tbody>
+</table>
+<h3 id="33-factoring-merging-and-quotients--c3">3.3 Factoring, merging and quotients — C3</h3>
+<table>
+<thead>
+<tr>
+<th>Rule</th>
+<th>Rewrite</th>
+<th>Effect</th>
+<th>Needs</th>
+<th>Cat.</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>AdditionOfEqualsElements</code>, <code>SubstractionOfEqualsElements</code></td>
+<td><code>a*x ± b*x -&gt; (a ± b)*x</code>, <code>x - x -&gt; 0</code>, …</td>
+<td>merges occurrences of <code>x</code> (and may keep a later one), may drop</td>
+<td><code>CanRepeat</code> (+ <code>CanReorder</code> when the kept occurrence is not the first) and <code>CanDiscard</code> per affected evaluation, context of B §3.3; comparisons after the permissions</td>
+<td>B/C</td>
+</tr>
+<tr>
+<td><code>MultiplicationOfEqualsElements</code> (3)</td>
+<td><code>t * t -&gt; t ^ 2</code>, <code>t^a * t^b -&gt; t^(a+b)</code>, distribution</td>
+<td>merges</td>
+<td><code>CanRepeat</code>, first in place; distribution duplicates (<code>CanRepeat</code> on every new occurrence)</td>
+<td>B/C</td>
+</tr>
+<tr>
+<td><code>DivisionOfDivision</code> (3)</td>
+<td><code>(x/y)/(z/w) -&gt; (x*w)/(y*z)</code>, …</td>
+<td>moves <code>w</code> before <code>y</code>, <code>z</code></td>
+<td><code>CanReorder</code> + context; field division only (<code>float</code>/<code>double</code>) after P18b</td>
+<td>B/C</td>
+</tr>
+<tr>
+<td><code>AdditionOfCos2andSin2Number</code></td>
+<td><code>sin²t + cos²t -&gt; 1</code></td>
+<td>drops both evaluations of <code>t</code></td>
+<td><code>CanDiscard</code> ×2, comparison after the permissions</td>
+<td>B/C</td>
+</tr>
+<tr>
+<td><code>DivisionOfCosAndSinNumber</code> and the four other quotient/product rules (<code>.INumber.cs</code>)</td>
+<td><code>sin t / cos t -&gt; tan t</code>, …</td>
+<td>merge two evaluations of <code>t</code> into the first</td>
+<td><code>CanRepeat(t)</code>, first in place, no evaluation between the two occurrences</td>
+<td>B/C</td>
+</tr>
+<tr>
+<td><code>Logarithm*Simplification*Number</code> (4)</td>
+<td><code>log t + log u -&gt; log(t * u)</code></td>
+<td>none (order kept)</td>
+<td>domain (S3)</td>
+<td>A</td>
+</tr>
+</tbody>
+</table>
+<h3 id="34-calls-and-conversions">3.4 Calls and conversions</h3>
+<table>
+<thead>
+<tr>
+<th>Rule</th>
+<th>Rewrite</th>
+<th>Effect</th>
+<th>Cat.</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PowerConvertionNumber1/2</code>, <code>PowerConversionMath</code></td>
+<td><code>Pow(t, u) -&gt; t ^ u</code></td>
+<td>none</td>
+<td>A</td>
+</tr>
+<tr>
+<td>25 <code>*ConversionMath</code> rules (<code>.Math.cs</code>)</td>
+<td><code>double.F(t) -&gt; INumber&lt;double&gt;.F(t)</code></td>
+<td>none (both trusted)</td>
+<td>A (S5A-02 first for <code>Round</code>)</td>
+</tr>
+<tr>
+<td><code>InvokeExpression</code></td>
+<td>inlining</td>
+<td>own analysis (<code>InvocationInliningAnalysis</code>), outside the gate</td>
+<td>C4 (see §6)</td>
+</tr>
+<tr>
+<td>constant folds (<code>*OfConstants</code>, <code>PowerOfConstants</code>)</td>
+<td>fold</td>
+<td>no non-constant operand: the gate always allows them</td>
+<td>–</td>
+</tr>
+</tbody>
+</table>
+<h3 id="35-outside-the-rules">3.5 Outside the rules</h3>
+<table>
+<thead>
+<tr>
+<th>Mechanism</th>
+<th>Effect</th>
+<th>C stage</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>FinalizeExpression</code> / <code>CanonicalizeAdditiveExpression</code> / <code>CanonicalizeMultiplicativeExpression</code></td>
+<td>regroup, reorder, aggregate constants; pins non-inert terms (<code>SplitPinnedTerms</code>)</td>
+<td>C3: pin the terms that are not <code>CanReorder</code> under the policy, keep the §3.3 context</td>
+</tr>
+<tr>
+<td><code>CanonicalizesOperator</code></td>
+<td><code>decimal</code> chains are not reassociated</td>
+<td>C3: only when <code>Arithmetic</code> is not preserved, and never by a fold that throws while simplifying</td>
+</tr>
+<tr>
+<td><code>FoldNaNOperand</code></td>
+<td><code>t + NaN -&gt; NaN</code> drops <code>t</code> (whitelist)</td>
+<td>C2b: <code>CanDiscard(t)</code> under the policy; the method is static today</td>
+</tr>
+<tr>
+<td>derived-simplifier rules</td>
+<td>run behind the gate</td>
+<td><strong>never admitted outside the gate</strong>: only the methods declared by <code>ExpressionSimplifier</code> itself and listed as audited are (identified by method handle, so a <code>new</code> method of a subclass is not)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="4-pre-existing-anomalies-verified-on-d16ae332">4. Pre-existing anomalies (verified on <code>d16ae332</code>)</h2>
+<table>
+<thead>
+<tr>
+<th>Id</th>
+<th>Still present</th>
+<th>Reproducer</th>
+<th>Blocks C?</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>S5A-13</strong> <code>IsSafeDivisor</code> accepts any non-zero <code>decimal</code></td>
+<td>yes (<code>ExpressionEffectAnalysis.cs</code> ≈ l. 451)</td>
+<td><code>(a / 0.5m) - (a / 0.5m)</code> → <code>0</code>; source throws <code>OverflowException</code> at <code>a = decimal.MaxValue</code></td>
+<td><strong>no</strong> for the policy path: <code>ExpressionBehaviorRules.DivisionBehaviors</code> shares <code>IsSafeDivisor</code>, but only for intrinsic (method-less) divisions; a <code>decimal</code> division node carries <code>decimal.op_Division</code>, which the behavior analysis classifies as partial whatever the divisor (verified by test). It is a defect of the historical gate, which C keeps</td>
+<td><strong>PR P18b (#684)</strong>, independent</td>
+</tr>
+<tr>
+<td><strong>S5A-03</strong> <code>IsOrdinaryFieldDivision</code> accepts <code>decimal</code></td>
+<td>yes (≈ l. 3602)</td>
+<td><code>1m / (b / 3m) -&gt; 3m / b</code> removes a <code>DivideByZeroException</code> at <code>b = 1e-28</code></td>
+<td>not for C2 (no division reassociation outside the gate); yes for C3 (<code>DivisionOfDivision</code> uses it as its own guard)</td>
+<td>same PR P18b (#684); must be merged before C3</td>
+</tr>
+<tr>
+<td><strong><code>Pow</code> omission</strong></td>
+<td>yes: <code>Pow</code> is absent from the floating total names of <code>ExpressionMethodBehaviors</code></td>
+<td><code>ExpressionBehaviorAnalysis.Analyze(x ^ 2.0)</code> is <code>UnknownCode</code>: an intrinsic <code>Power</code> node carries the method <code>Math.Pow</code>, classified as an unknown method</td>
+<td>not a soundness issue (conservative), but every power makes its whole subtree <code>Unknown</code>, so C2 never drops an operand holding a power (<code>(x ^ 2) * 0</code>) until it is fixed</td>
+<td><strong>PR #685</strong>, independent; C2 is correct without it, only less effective</td>
+</tr>
+<tr>
+<td>A10-B (comparer, canonical keys, memos read custom reflection objects)</td>
+<td>yes</td>
+<td><code>ExpressionComparer.Equals(fake, real)</code> asymmetric</td>
+<td><strong>no</strong>, provided the invariant of §5.1 holds: outside the gate a rule checks the permissions (which classify any non-runtime reflection object as unknown code) <strong>before</strong> any comparison, key or memo of the operands. C2 compares nothing; C3 must keep the order and test it with armed fakes</td>
+<td>separate PR, not a prerequisite</td>
+</tr>
+<tr>
+<td>A10-C (<code>ExpressionOptimiser</code> drops <code>F() * 0</code>)</td>
+<td>yes</td>
+<td><code>ExpressionOptimiser</code></td>
+<td>no (another class)</td>
+<td>separate PR</td>
+</tr>
+<tr>
+<td>L-1 (framework getters: <code>Type</code> of a call reads <code>ReturnType</code>)</td>
+<td>yes</td>
+<td>—</td>
+<td>no: reads grant no trust</td>
+<td>none</td>
+</tr>
+<tr>
+<td>L-2 (<code>Type</code> provenance)</td>
+<td>yes</td>
+<td><code>TypeDelegator</code> node types</td>
+<td>no new exposure: C reads behaviors, not conversion types</td>
+<td>none</td>
+</tr>
+<tr>
+<td>S5A-04 (fold throws while simplifying an unevaluated branch)</td>
+<td>yes</td>
+<td><code>i &gt; 0 ? 1 / 0 : 2</code></td>
+<td>constrains C2: outside the gate <code>DivideWithZeroOrOne</code> must <strong>decline</strong> a zero divisor instead of throwing (otherwise <code>F() / 0</code> would lose <code>F()</code>'s effect and move the exception to simplification time)</td>
+<td>rule-local guard in C2</td>
+</tr>
+<tr>
+<td>S5A-01, S5A-02</td>
+<td>yes</td>
+<td><code>x^y + z^2</code>, <code>double.Round(x, 2)</code></td>
+<td>no for C2</td>
+<td>P18a (independent)</td>
+</tr>
+</tbody>
+</table>
+<p>Opaque nodes, custom operators and conversions: <code>IsOrdinaryBinaryArithmetic</code>/<code>IsOrdinaryUnaryNegate</code> keep refusing them inside the
+audited rules (the rules stay atomic on them), and the behavior analysis classifies them as unknown or declared code.</p>
+<h2 id="5-design-of-the-integration">5. Design of the integration</h2>
+<h3 id="51-invariants">5.1 Invariants</h3>
+<ul>
+<li><strong>I-1 Permissions before structure.</strong> Outside the gate, a rule decides from the permissions before it compares, hashes, keys or
+memoizes an operand. So a node holding a custom reflection object (unknown code) never reaches the A10-B consumers through C.</li>
+<li><strong>I-2 Every affected evaluation, every operation.</strong> A rule asks the permission of each evaluation it actually drops, merges,
+duplicates or moves (B §3.6); a rewrite that changes none asks nothing.</li>
+<li><strong>I-3 No new exception, none at simplification time.</strong> Outside the gate a rule never throws for a zero divisor or an overflowing
+fold; it declines.</li>
+<li><strong>I-4 Derived rules stay behind the gate.</strong> Only the audited methods of <code>ExpressionSimplifier</code> run outside it.</li>
+<li><strong>I-5 Default unchanged.</strong> Under <code>ExpressionSimplifierOptions.Default</code> no rule runs outside the gate.</li>
+</ul>
+<h3 id="52-mechanism-c1">5.2 Mechanism (C1)</h3>
+<ul>
+<li><code>ExpressionTransformer.TryTransform</code>: when <code>AllowsRules(node)</code> refuses, it asks once <code>AllowsAuditedRulesOutsideGate(node)</code> (base:
+<code>false</code>); if that also refuses, the loop stops exactly as today (same trace). Otherwise only the rules for which
+<code>IsAuditedRule(method)</code> holds are invoked, each with an ambient, thread-static &quot;outside the gate&quot; flag set for the duration of
+the call (saved and restored, so nested rules and comparer simplifications see their own admission); the other candidates are
+traced as rejected by the effect gate, without their signature being matched (a custom <code>Match</code> is user code, and a detailed
+trace must not run more of it than the untraced run).</li>
+<li><code>ExpressionSimplifier</code>: <code>AllowsAuditedRulesOutsideGate</code> is <code>!UsesHistoricalAdmission</code> (<code>Options</code> equal to the default); the
+audited set is a static set of method handles of its own rules.</li>
+<li>Rule helpers: <code>CanDropOperand(t)</code> is <code>true</code> inside the gate (the gate proved <code>t</code> inert) and, outside it, <code>CanDiscard</code> of
+the behavior of <code>t</code> under <code>Options</code>, computed by the internal entry <code>ExpressionBehaviorAnalysis.AnalyzeWithinOperation</code>: it
+joins the running operation without opening a nested one nor validating <code>t</code> again; every analyzed node, rebuilt ones
+included, still consumes a structural visit and checks the stack.</li>
+</ul>
+<h3 id="53-behavior-analysis-cost-and-caches">5.3 Behavior analysis cost and caches</h3>
+<p>A drop analyzes the dropped operand once (<code>Analyze</code>: ≈ 40 ns + 12–25 ns per node, joining the running operation, counted in its
+visit budget). Analyzing a subtree out of its lexical context is conservative (a parameter bound outside it is read as mutable
+state, a write to it as a side effect), so no context-keyed cache is needed for correctness, and none is added in C2: a cache is
+justified only by a measurement (pathological family <code>((F() * 0) * 0) … * 0</code> with an unknown <code>F</code>, quadratic in depth, bounded by
+the visit budget, measured in §8). C3 (merges and moves, several analyses per chain) is where a per-operation, reference-keyed
+memo inside the resource session becomes necessary; its key must then include the lexical scope (the canonicalization already
+knows it) and must not outlive the session.</p>
+<p>The comparer keeps the default simplifier (<code>ExpressionComparer.Default</code> unchanged): the P9/P15 memos only store its results, so
+they need no policy key. A rule that compares under a relaxed policy uses the default comparer's equality, which is a sound
+(conservative) notion of equality for every policy.</p>
+<h2 id="6-plan">6. Plan</h2>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Content</th>
+<th>Default behavior</th>
+<th>Depends on</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PR P18b (#684)</td>
+<td>S5A-13 (<code>IsSafeDivisor</code>: a decimal divisor is safe only when its magnitude is at least 1), S5A-03 (field reassociation for <code>float</code>/<code>double</code> only)</td>
+<td>changes (bug fix; migration note)</td>
+<td>–</td>
+</tr>
+<tr>
+<td>PR Pow (#685)</td>
+<td><code>Pow</code> total in the floating family of <code>ExpressionMethodBehaviors</code>, with its precondition row and the edge-value evidence</td>
+<td>unchanged (the analysis is not consumed by the default)</td>
+<td>–</td>
+</tr>
+<tr>
+<td>PR C1+C2</td>
+<td>§5.2 mechanism; audited zero/one identities (§3.1) with their permissions; tests over the 32 policies; S5 campaigns identical on the default; measurements</td>
+<td>unchanged</td>
+<td>none (P18b and Pow independent)</td>
+</tr>
+<tr>
+<td>C2b</td>
+<td><code>FoldNaNOperand</code> under the policy</td>
+<td>unchanged</td>
+<td>C1</td>
+</tr>
+<tr>
+<td>C3</td>
+<td>negation/reassociation family (§3.2), factoring and quotients (§3.3), canonicalization (<code>SplitPinnedTerms</code>, <code>CanonicalizesOperator</code>), per-operation behavior memo</td>
+<td>unchanged</td>
+<td>C1, A10-B tests</td>
+</tr>
+<tr>
+<td>C4</td>
+<td>invocations (only if a rule needs it), comparer bound to a policy (only if needed), global validation</td>
+<td>unchanged</td>
+<td>C3</td>
+</tr>
+<tr>
+<td>PR C-08</td>
+<td>category A under the default (<code>UsesHistoricalAdmission</code> removed or narrowed), compatibility entry C-08</td>
+<td>changes</td>
+<td>C2, C3</td>
+</tr>
+</tbody>
+</table>
+<h2 id="7-validation-criteria">7. Validation criteria</h2>
+<ul>
+<li>Default policy: the S5 campaigns (<code>terminate</code>, <code>converge</code>, <code>diff</code>, <code>effects</code>, <code>s3</code>, <code>canon</code>, 1,000 seeds, 1,000 nested) give
+byte-identical result files on <code>master</code> and on the branch (only <code>environment.txt</code> differs); the existing suites are unchanged.</li>
+<li>Explicit policies: for every audited rule, positive and negative cases over the 32 policies; generated trees run compiled give
+the values, exceptions, traced effects and call counts the policy still guarantees (an evaluation dropped only when its
+permission holds; none added, repeated or moved in C2); no user call during simplification beyond the default's.</li>
+<li>Security: custom reflection objects armed to throw are never read outside the gate; resource limits, stack guard and visit
+budget unchanged (256 KiB stack, deep trees, DAGs); derived simplifiers' own rules never run outside the gate.</li>
+<li>Performance: A/A-controlled campaigns (default unchanged within the A/A spread; relaxed policies measured, with the pathological
+drop family).</li>
+</ul>
+<h2 id="8-results">8. Results</h2>
+<h3 id="81-stages-c1-and-c2-this-pull-request">8.1 Stages C1 and C2 (this pull request)</h3>
+<p>Implemented as planned in §5.2, with the audited set of §3.1; contract in <a href="SimplificationPolicies.html">SimplificationPolicies.md</a> §8.</p>
+<p>Findings made while implementing, recorded here because they correct the audit:</p>
+<ul>
+<li><strong>The default already reduces <code>F() + 0</code> to <code>F()</code>.</strong> The additive canonicalization of <code>FinalizeExpression</code> pins the non-inert
+term and drops the zero constant, even though the gate refuses the rules. So <code>ExpressionComparer.Default</code> already answers
+<code>Equals(F() + 0, F())</code> = <code>true</code>; category A matters for the other identities (<code>F() * 1</code>, <code>F() / 1</code>, <code>0 - F()</code>, <code>F() ^ 1</code>, …).</li>
+<li><strong>A clock read may be dropped under every non-default policy</strong>: B's table forbids repeating or moving a nondeterministic
+evaluation without aggressive simplification, never dropping it.</li>
+<li><strong>A throw is dropped only when its operand is analyzed</strong>: <code>throw new E()</code> holds a constructor (unknown code) and is never
+dropped; <code>throw &lt;constant&gt;</code> is <code>MayThrowUserCode</code> only.</li>
+<li><strong>The impersonating reflection objects are read by the framework when a call node is rebuilt</strong> (<code>ContainsGenericParameters</code>,
+<code>Attributes</code>, <code>ReturnType</code>, and <code>GetHashCode</code>/<code>Equals</code> of the framework's parameter cache), on the historical path too: L-1.
+The security test therefore checks that a relaxed policy reads no member the historical path does not read.</li>
+</ul>
+<p>Validation:</p>
+<table>
+<thead>
+<tr>
+<th>Suite</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>UtilsTest.Unit</code> (Release, with #684 and #685 merged)</td>
+<td>14,540 run, 14,539 passed, 0 failed, 1 ignored (pre-existing)</td>
+</tr>
+<tr>
+<td><code>UtilsTest.Security</code> (Release)</td>
+<td>342 run, 339 passed, 0 failed, 3 ignored (pre-existing, platform-gated)</td>
+</tr>
+<tr>
+<td><code>UtilsTest.Functional</code> (Release)</td>
+<td>383 passed</td>
+</tr>
+<tr>
+<td>ETC Debug job (<code>UtilsTest.Mathematics.Expressions.Coverage</code>, Debug)</td>
+<td>328 run, 327 passed, 1 ignored (pre-existing)</td>
+</tr>
+<tr>
+<td>S5 campaigns, default policy (<code>terminate</code>, <code>converge</code>, <code>diff</code>, <code>effects</code>, <code>s3</code>, <code>canon</code>, 1,000 seeds, 1,000 nested)</td>
+<td>19 result files byte-identical with <code>master</code> <code>d16ae332</code>; only <code>environment.txt</code> differs</td>
+</tr>
+</tbody>
+</table>
+<p>Performance (<a href="SimplificationPolicies.html">SimplificationPolicies.md</a> §8.5, BenchmarkDotNet, <code>master</code>, #685, #686 and an A/A
+copy, processes pinned to performance cores): default within −5.5 % to +1.8 % against an A/A of −4.8 % to +4.0 %, allocations
+identical; #685 within −3.9 % to +1.9 %. The +1.6 % to +4.8 % of the first, unpinned campaigns came from the hybrid processor
+(a process on an efficiency core runs about twice slower), not from the code. Relaxed policy: +0.25–0.55 µs and up to
+400 bytes per node where an audited rule applies without shortening the tree; faster and smaller when it shortens it.</p>
+<p>Review follow-up: the admission flag is per thread, not per instance. Tests run nested simplifications of another policy from
+a rule, from an extension node's user code and from an impersonating method's members, the last ones also while an audited
+rule runs with the flag set: each nested operation gets its own admission, and the flag is unchanged after it.</p>
+<p>Second review follow-up (2026-11-09):</p>
+<ul>
+<li><strong>Detailed tracing matched skipped signatures.</strong> Once a node is outside the gate, an unaudited rule was skipped before its
+<code>Match</code> untraced, but matched under detailed tracing to report its rejection: tracing ran user code the untraced run does not
+(a custom <code>ExpressionSignatureAttribute.Match</code> can count, mutate or throw). The rule is now refused before <code>Match</code> at every
+level of tracing, the rejection still reported (<code>DetailedTracing_MatchesNoSkippedSignature</code>, which fails on the previous code).</li>
+<li><strong>The dropping identities called the public analysis entry.</strong> <code>Analyze(t, ResourceLimits)</code> opened a nested operation and
+validated <code>t</code> again for every attempted drop. The internal entry <code>AnalyzeWithinOperation</code> joins the running operation: the
+budgets are the same (the simplifier's limits are already those of the operation), the analysis visits stay counted (exact
+refusal one visit below), and a rebuilt or shared operand is still bounded by the structural budget and the stack guard
+(<code>InternalAnalysis_JoinsTheRunningOperation</code>). A rebuilt operand larger than the node limit is now refused by the structural
+budget rather than by the node limit.</li>
+<li><strong>Resource-limit tests moved to <code>UtilsTest.Security</code></strong>: <code>AuditedRuleAnalysis_UsesTheInstanceLimits</code> and the budget-refusal
+part of <code>OutsideGateFlag_IsScopedToTheAuditedRule</code> (now <code>ResourceRefusal_ClearsTheOutsideGateFlag</code>).</li>
+</ul>
+<p>Both code changes run only outside the gate, so the default path is unchanged. Validation after this follow-up: <code>UtilsTest.Unit</code>
+(Release) 14,539 run, 14,538 passed, 1 ignored; <code>UtilsTest.Security</code> (Release) 346 run, 343 passed, 3 ignored;
+<code>UtilsTest.Functional</code> 383 passed; ETC Debug job 327 run, 326 passed, 1 ignored.</p>
+<h3 id="82-remaining-for-the-next-stages">8.2 Remaining for the next stages</h3>
+<ul>
+<li>C2b: <code>FoldNaNOperand</code> under the policy (static today).</li>
+<li>C3: PR #684 (P18b, <code>DivisionOfDivision</code> guards on <code>IsOrdinaryFieldDivision</code>) is merged (<code>50e595bd</code>); still needs invariant I-1 for every
+comparing rule, a per-operation behavior memo keyed with the lexical scope, and A10-B tests with armed fakes.</li>
+<li>S5A-07 (<code>t + 0</code> re-transforms its prepared operand) now also costs about 0.9 µs per <code>F() + 0</code> under a non-default policy.</li>
+<li>C-08: the category A improvements of the default (<code>UsesHistoricalAdmission</code>), with their own compatibility entry.</li>
+</ul>
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/docs/expressions/ArchitectureC-Audit.md/#L1" class="edit-link">Edit this page</a>
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>
