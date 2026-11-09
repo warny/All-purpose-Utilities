@@ -505,7 +505,7 @@ for an allocation, a nondeterministic read or a non-preserved exception category
 <tr>
 <td><code>FoldNaNOperand</code></td>
 <td><code>t + NaN -&gt; NaN</code> drops <code>t</code> (whitelist)</td>
-<td>C2b: <code>CanDiscard(t)</code> under the policy; the method is static today</td>
+<td>C2b (done, §8.2): <code>CanDiscard(t)</code> under the policy, whitelist kept as the default path and the fast path</td>
 </tr>
 <tr>
 <td>derived-simplifier rules</td>
@@ -667,6 +667,12 @@ they need no policy key. A rule that compares under a relaxed policy uses the de
 <td>C1</td>
 </tr>
 <tr>
+<td>P19d</td>
+<td>comparer probes on prepared operands (S5 tracking S5A-14, S5A-15: exponential <code>AdditionOfEqualsElements</code>/<code>FactorEqualityProbe</code>, about n^3.8 power probe)</td>
+<td>changes (performance only)</td>
+<td>– (before C3)</td>
+</tr>
+<tr>
 <td>C3</td>
 <td>negation/reassociation family (§3.2), factoring and quotients (§3.3), canonicalization (<code>SplitPinnedTerms</code>, <code>CanonicalizesOperator</code>), per-operation behavior memo</td>
 <td>unchanged</td>
@@ -771,9 +777,84 @@ part of <code>OutsideGateFlag_IsScopedToTheAuditedRule</code> (now <code>Resourc
 <p>Both code changes run only outside the gate, so the default path is unchanged. Validation after this follow-up: <code>UtilsTest.Unit</code>
 (Release) 14,539 run, 14,538 passed, 1 ignored; <code>UtilsTest.Security</code> (Release) 346 run, 343 passed, 3 ignored;
 <code>UtilsTest.Functional</code> 383 passed; ETC Debug job 327 run, 326 passed, 1 ignored.</p>
-<h3 id="82-remaining-for-the-next-stages">8.2 Remaining for the next stages</h3>
+<h3 id="82-stage-c2b-nan-fold-under-the-policy">8.2 Stage C2b (<code>NaN</code> fold under the policy)</h3>
+<p>Implemented as planned; contract, admitted operands and measurements in <a href="SimplificationPolicies.html">SimplificationPolicies.md</a>
+§9. The default keeps the historical fold unchanged (<code>FoldNaNOperandHistorical</code>, no analysis call); every other policy, selected
+by <code>UsesHistoricalAdmission</code>, keeps the whitelist as its fast path and otherwise drops the operand when
+<code>CanDiscard(AnalyzeWithinOperation(t, ResourceLimits), Options)</code> allows it, at the three places the fold runs (the internal
+analysis entry of §8.1's second review follow-up; the public <code>Analyze</code> was used before it).</p>
+<p>Findings made while implementing:</p>
 <ul>
-<li>C2b: <code>FoldNaNOperand</code> under the policy (static today).</li>
+<li><strong>Nested refused folds were quadratic.</strong> Analyzing the dropped operand at every level re-analyzes the levels already refused.
+Monotonicity of <code>CanDiscard</code> over the flag union lets the fold refuse, without analysis, an operand that is or directly
+evaluates a <code>NaN</code> operation still present; a first version tested inertness first, and that uncounted walk cost +26 % at
+100 levels: the <code>NaN</code> operation is now recognized first. The overhead left is a constant number of visits per tree, so no
+per-operation memo is introduced.</li>
+<li><strong>Two pre-existing superlinear families</strong>, met while measuring and identical on #686 and C2b under the same policy: S5A-14
+(<code>AdditionOfEqualsElements</code>/<code>FactorEqualityProbe</code>, exponential on <code>c + Abs(c + Abs(…))</code> with <code>c ≠ 1</code>) and S5A-15 (the power
+probe of <code>MultiplicationOfEqualsElements</code>, about n^3.8 on a Horner chain). They are left to P19d (§6), before C3. A
+non-default policy makes the <code>NaN</code> variant of S5A-14 linear, since every level folds.</li>
+<li><strong>The inertness walk is quadratic on inert nestings, but not worth a memo.</strong> On <code>NaN + (NaN + (… x0) ^ 2) ^ 2</code> (harness
+family <code>nanpow</code>) the uncounted <code>IsInertArithmetic</code> walk examines <code>2n² + n</code> nodes. A per-operation memo keyed by reference
+identity in the budget session made it linear (8,256 → 255 nodes at n = 64) with identical results, but gave no measurable
+gain (the comparer probes of S5A-14/15 cost 12.7 million structural visits on the same tree under every policy) and cost
++5 % and +215 B on a two-node operand and +9 % on uncacheable operands; it was withdrawn (contract §9.7).</li>
+<li><strong>Repository invariant revised (review, 2026-11-09).</strong> Point 9 of <code>Utils/AGENTS.md</code> still required every dropped evaluation
+to be proven inert by <code>ExpressionEffectAnalysis</code>, which contradicts the explicit policies (<code>NaN + (double)(10 / i)</code> folds to
+<code>NaN</code> when arithmetic exceptions are not preserved). Adding an <code>IsInert</code> check before <code>CanDiscard</code> would void the policies, so
+the invariant now distinguishes the historical admission, the explicit-policy admission (audited rules,
+<code>ExpressionBehaviorPermissions</code> and the transformation's own conditions) and the guarantees common to every policy. Pinned
+by <code>IntegralDivision_KeepsItsExceptionExactlyWhenPreserved</code> (four forms, 32 policies, compiled at <code>i = 0</code> and <code>i = 5</code>).</li>
+<li><strong>Reflection reads.</strong> C2b reads no member that #686 does not read under the same policy (180 sequences compared); the
+non-default policy's two extra node type reads on <code>t / NaN</code> are pre-existing, from the C1/C2 audited division rules.</li>
+</ul>
+<p>Validation:</p>
+<table>
+<thead>
+<tr>
+<th>Suite</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>UtilsTest.Unit</code> (Release)</td>
+<td>14,556 run, 14,555 passed, 0 failed, 1 ignored (pre-existing)</td>
+</tr>
+<tr>
+<td><code>UtilsTest.Security</code> (Release)</td>
+<td>348 run, 345 passed, 0 failed, 3 ignored (pre-existing, platform-gated)</td>
+</tr>
+<tr>
+<td><code>UtilsTest.Functional</code> (Release)</td>
+<td>383 passed</td>
+</tr>
+<tr>
+<td>ETC Debug job (<code>UtilsTest.Mathematics.Expressions.Coverage</code>, Debug)</td>
+<td>344 run, 343 passed, 1 ignored (pre-existing)</td>
+</tr>
+<tr>
+<td>S5 campaigns, default policy (<code>terminate</code>, <code>converge</code>, <code>diff</code>, <code>effects</code>, <code>s3</code>, <code>canon</code>, 1,000 seeds, 1,000 nested)</td>
+<td>identical to #686 <code>30046b86</code>: 19 result files byte-identical except the 15 <code>converge</code> cases of the three corpus families this pull request adds (<code>horner</code>, <code>constabs</code>, <code>nanabs</code>), absent from #686's harness; without them, byte-identical</td>
+</tr>
+<tr>
+<td>S5 campaigns, permissive policy (<code>S5_AUDIT_POLICY=permissive</code>), against #686 under the same policy</td>
+<td>2 of 64,400 <code>converge</code> cases differ, both newly allowed folds over total functions (<code>gen#782</code>: <code>NaN * (Cos(y ** 2) / (1 + Log(10 * z)))</code> → <code>NaN</code>; <code>gen#967</code>: the exponent <code>3 * (z * (NaN + Log(10)))</code> → <code>NaN</code>, the <code>Power</code> itself kept); every other file identical</td>
+</tr>
+<tr>
+<td>S5 campaigns, permissive policy, with and without the nested-refusal shortcut (§9.5 of the contract)</td>
+<td>identical</td>
+</tr>
+<tr>
+<td>After the review follow-up (merge of #686 <code>c5ad265f</code>, internal analysis entry, <code>AGENTS.md</code> point 9), Release</td>
+<td>Unit 14,556 run, 14,555 passed, 1 ignored; Security 352 run, 349 passed, 3 ignored; Functional 383 passed; ETC Debug 344 run, 343 passed, 1 ignored</td>
+</tr>
+</tbody>
+</table>
+<h3 id="83-remaining-for-the-next-stages">8.3 Remaining for the next stages</h3>
+<ul>
+<li>P19d: S5A-14 and S5A-15 (comparer probes on prepared operands), before C3. Once they are fixed, re-measure the <code>nanpow</code> family
+to decide whether the inert-classification memo studied for C2b (contract §9.7) becomes worth shipping.</li>
 <li>C3: PR #684 (P18b, <code>DivisionOfDivision</code> guards on <code>IsOrdinaryFieldDivision</code>) is merged (<code>50e595bd</code>); still needs invariant I-1 for every
 comparing rule, a per-operation behavior memo keyed with the lexical scope, and A10-B tests with armed fakes.</li>
 <li>S5A-07 (<code>t + 0</code> re-transforms its prepared operand) now also costs about 0.9 µs per <code>F() + 0</code> under a non-default policy.</li>
