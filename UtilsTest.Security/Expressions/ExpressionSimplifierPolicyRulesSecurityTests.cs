@@ -264,8 +264,8 @@ public class ExpressionSimplifierPolicyRulesSecurityTests
     }
 
     /// <summary>
-    /// The pathological nesting <c>((F() * 0) * 0) … * 0</c> with an unknown <c>F</c> makes every level analyze (and validate) the
-    /// operand below it: the structural work grows quadratically with the depth but stays bounded by the budget, the default limits
+    /// The pathological nesting <c>((F() * 0) * 0) … * 0</c> with an unknown <c>F</c> makes every level analyze the operand below
+    /// it: the structural work grows quadratically with the depth but stays bounded by the budget, the default limits
     /// accept the 400-level nesting (well below their structural budget), and the transformation work is the default's.
     /// </summary>
     [TestMethod]
@@ -306,5 +306,208 @@ public class ExpressionSimplifierPolicyRulesSecurityTests
                 Assert.AreEqual(ExpressionType.Call, simplifier.Simplify(small).NodeType);
             }, SmallStack, Timeout);
         }
+    }
+
+    /// <summary>
+    /// The analysis an audited rule runs joins the simplification under the instance's own limits: an unlimited simplifier drops
+    /// an operand larger than the default node limit (an array of 60,000 constants, allocated, whose length is read) without being
+    /// refused, while a simplifier with the default limits refuses the input before any rule runs.
+    /// </summary>
+    [TestMethod]
+    public void AuditedRuleAnalysis_UsesTheInstanceLimits()
+    {
+        Expression[] elements = Enumerable.Range(0, 60_000).Select(k => (Expression)Expression.Constant((double)k)).ToArray();
+        Expression operand = Expression.Convert(Expression.ArrayLength(Expression.NewArrayInit(typeof(double), elements)), typeof(double));
+        Expression source = Expression.Multiply(operand, Expression.Constant(0.0));
+        var options = new ExpressionSimplifierOptions { AggressiveSimplification = true, ExceptionPreservation = ExpressionExceptionPreservation.None };
+
+        Expression result = new ExpressionSimplifier(ExpressionResourceLimits.Unlimited) { Options = options }.Simplify(source);
+        Assert.AreEqual(0.0, (result as ConstantExpression)?.Value);
+
+        ExpressionResourceLimitException refused = Assert.ThrowsExactly<ExpressionResourceLimitException>(() => new ExpressionSimplifier { Options = options }.Simplify(source));
+        Assert.AreEqual(ExpressionResourceLimitKind.Nodes, refused.Kind);
+    }
+
+    /// <summary>
+    /// A resource refusal that leaves an audited rule with an exception clears the outside-gate admission flag: for every structural
+    /// budget below the cost of <c>{ v = x; v * 2 } * 0</c> under a relaxed policy, the simplification either completes or is
+    /// refused, and the flag is cleared afterwards; a small budget refuses it.
+    /// </summary>
+    [TestMethod]
+    public void ResourceRefusal_ClearsTheOutsideGateFlag()
+    {
+        ParameterExpression local = Expression.Variable(typeof(double), "v");
+        Expression block = Expression.Block(typeof(double), [local], Expression.Assign(local, P), Expression.Multiply(local, Expression.Constant(2.0)));
+        Expression dropping = Expression.Multiply(block, Expression.Constant(0.0));
+        var options = new ExpressionSimplifierOptions { AggressiveSimplification = true };
+        bool refused = false;
+        for (long budget = 1; budget < 200 && !refused; budget++)
+        {
+            try
+            {
+                new ExpressionSimplifier(ExpressionResourceLimits.Default with { MaxStructuralVisits = budget }) { Options = options }.Simplify(dropping);
+            }
+            catch (ExpressionResourceLimitException)
+            {
+                refused = true;
+            }
+
+            Assert.IsFalse(ExpressionTransformer.RuleRunsOutsideGate, $"budget {budget}");
+            Assert.AreEqual(0, ExpressionResourceBudget.OperationDepth, $"budget {budget}");
+        }
+
+        Assert.IsTrue(refused, "a small structural budget refuses the simplification");
+    }
+
+    /// <summary>
+    /// The internal analysis entry the audited rules use joins the running operation: it opens no nested operation and does not
+    /// validate its input again (a tree above the running node limit is analyzed, where the public entry refuses it), every analyzed
+    /// node counts one structural visit (refused exactly one visit below), and a shared DAG, walked once per path, ends with a
+    /// structural refusal instead of an unbounded walk. Without a running operation it is the public entry, validation included.
+    /// </summary>
+    [TestMethod]
+    public void InternalAnalysis_JoinsTheRunningOperation()
+    {
+        Expression tree = CallChain(40);
+        long nodes = CountNodes(tree);
+        ExpressionResourceLimits tight = ExpressionResourceLimits.Default with { MaxNodes = 10 };
+
+        (long visits, int depth) = ExpressionResourceBudget.Run(tight, null, null, null, tree, static root =>
+        {
+            long before = ExpressionResourceBudget.StructuralVisits;
+            int depthBefore = ExpressionResourceBudget.OperationDepth;
+            ExpressionBehaviorAnalysis.AnalyzeWithinOperation(root, ExpressionResourceLimits.Unlimited);
+            Assert.AreEqual(depthBefore, ExpressionResourceBudget.OperationDepth);
+            return (ExpressionResourceBudget.StructuralVisits - before, depthBefore);
+        });
+        Assert.AreEqual(nodes, visits, "one structural visit per analyzed node");
+        Assert.AreEqual(1, depth);
+
+        Assert.AreEqual(ExpressionResourceLimitKind.Nodes, Assert.ThrowsExactly<ExpressionResourceLimitException>(
+            () => ExpressionResourceBudget.Run(tight, null, null, null, tree, static root => ExpressionBehaviorAnalysis.Analyze(root, ExpressionResourceLimits.Unlimited))).Kind);
+        Assert.AreEqual(ExpressionResourceLimitKind.Nodes, Assert.ThrowsExactly<ExpressionResourceLimitException>(
+            () => ExpressionBehaviorAnalysis.AnalyzeWithinOperation(tree, tight)).Kind);
+
+        ExpressionResourceLimits exact = ExpressionResourceLimits.Unlimited with { MaxStructuralVisits = nodes };
+        ExpressionResourceBudget.Run(exact, null, null, null, tree, static root => ExpressionBehaviorAnalysis.AnalyzeWithinOperation(root, ExpressionResourceLimits.Unlimited));
+        Assert.AreEqual(ExpressionResourceLimitKind.StructuralWork, Assert.ThrowsExactly<ExpressionResourceLimitException>(
+            () => ExpressionResourceBudget.Run(exact with { MaxStructuralVisits = nodes - 1 }, null, null, null, tree,
+                static root => ExpressionBehaviorAnalysis.AnalyzeWithinOperation(root, ExpressionResourceLimits.Unlimited))).Kind);
+
+        Expression dag = P;
+        for (int level = 0; level < 40; level++) dag = Expression.Add(dag, dag);
+        ExpressionResourceLimits bounded = ExpressionResourceLimits.Unlimited with { MaxStructuralVisits = 100_000 };
+        Assert.AreEqual(ExpressionResourceLimitKind.StructuralWork, Assert.ThrowsExactly<ExpressionResourceLimitException>(
+            () => ExpressionResourceBudget.Run(bounded, null, null, null, dag,
+                static root => ExpressionBehaviorAnalysis.AnalyzeWithinOperation(root, ExpressionResourceLimits.Unlimited))).Kind);
+        Assert.AreEqual(0, ExpressionResourceBudget.OperationDepth);
+    }
+
+    /// <summary>Counts the nodes of a tree without sharing (each node once per path).</summary>
+    /// <param name="tree">The tree.</param>
+    /// <returns>The number of nodes.</returns>
+    private static long CountNodes(Expression tree)
+    {
+        var counter = new NodeCounter();
+        counter.Visit(tree);
+        return counter.Count;
+    }
+
+    /// <summary>Counts every node it visits.</summary>
+    private sealed class NodeCounter : ExpressionVisitor
+    {
+        /// <summary>Gets the number of nodes visited.</summary>
+        public long Count { get; private set; }
+
+        /// <inheritdoc/>
+        public override Expression? Visit(Expression? node)
+        {
+            if (node is not null) Count++;
+            return base.Visit(node);
+        }
+    }
+
+    /// <summary>A signature matching additions that counts its calls: <see cref="ExpressionSignatureAttribute.Match"/> is user code.</summary>
+    [AttributeUsage(AttributeTargets.Method)]
+    private sealed class CountingAddSignatureAttribute : ExpressionSignatureAttribute
+    {
+        /// <summary>The number of calls of <see cref="Match"/> on the current thread.</summary>
+        [ThreadStatic]
+        public static int Calls;
+
+        /// <summary>Initializes the signature for <see cref="ExpressionType.Add"/>.</summary>
+        public CountingAddSignatureAttribute()
+            : base(ExpressionType.Add)
+        {
+        }
+
+        /// <inheritdoc/>
+        public override bool Match(Expression e)
+        {
+            Calls++;
+            return e.NodeType == ExpressionType.Add;
+        }
+    }
+
+    /// <summary>A derived simplifier with two unaudited addition rules whose signatures count their matches; both decline.</summary>
+    private sealed class MatchCountingSimplifier : ExpressionSimplifier
+    {
+        /// <summary>Declines.</summary>
+        /// <param name="e">The addition.</param>
+        /// <returns><see langword="null"/>.</returns>
+        [CountingAddSignature]
+        public Expression? FirstUnaudited(BinaryExpression e) => null;
+
+        /// <summary>Declines.</summary>
+        /// <param name="e">The addition.</param>
+        /// <returns><see langword="null"/>.</returns>
+        [CountingAddSignature]
+        public Expression? SecondUnaudited(BinaryExpression e) => null;
+    }
+
+    /// <summary>
+    /// Detailed tracing never matches a signature the untraced run skips: outside the gate (a relaxed policy on <c>F(x) + 0</c>),
+    /// once the first candidate has established that only audited rules run, a later unaudited rule is refused before its
+    /// <see cref="ExpressionSignatureAttribute.Match"/> is called, traced or not, so the user code of the custom signatures runs
+    /// the same number of times at every level of tracing, with the same result; the detailed trace reports the rejection.
+    /// </summary>
+    [TestMethod]
+    public void DetailedTracing_MatchesNoSkippedSignature()
+    {
+        Expression source = Expression.Add(Expression.Call(OpaqueMethod, P), Expression.Constant(0.0));
+        var options = new ExpressionSimplifierOptions { AggressiveSimplification = true };
+        string Run(ExpressionTraceDetail? detail, out int calls, out ExpressionTransformEvent[] events)
+        {
+            var collector = new ExpressionTraceCollector();
+            CountingAddSignatureAttribute.Calls = 0;
+            Expression result;
+            if (detail is { } level)
+            {
+                using (ExpressionTransformTracing.Begin(collector, level))
+                {
+                    result = new MatchCountingSimplifier { Options = options }.Simplify(source);
+                }
+            }
+            else
+            {
+                result = new MatchCountingSimplifier { Options = options }.Simplify(source);
+            }
+
+            calls = CountingAddSignatureAttribute.Calls;
+            events = collector.GetEvents();
+            return ExpressionTraceFormatter.Format(result);
+        }
+
+        string untraced = Run(null, out int untracedCalls, out _);
+        string standard = Run(ExpressionTraceDetail.Standard, out int standardCalls, out _);
+        string detailed = Run(ExpressionTraceDetail.Detailed, out int detailedCalls, out ExpressionTransformEvent[] events);
+
+        Assert.AreEqual(untraced, standard);
+        Assert.AreEqual(untraced, detailed);
+        Assert.IsTrue(untracedCalls > 0, "the first candidate is matched");
+        Assert.AreEqual(untracedCalls, standardCalls);
+        Assert.AreEqual(untracedCalls, detailedCalls, "detailed tracing matched a skipped signature");
+        Assert.IsTrue(events.Any(e => e.Kind == ExpressionTransformEventKind.RuleRejected && e.Rejection == ExpressionRuleRejection.EffectGate));
+        Assert.IsFalse(ExpressionTransformer.RuleRunsOutsideGate);
     }
 }

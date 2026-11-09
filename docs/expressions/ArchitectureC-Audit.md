@@ -154,11 +154,14 @@ audited rules (the rules stay atomic on them), and the behavior analysis classif
   `false`); if that also refuses, the loop stops exactly as today (same trace). Otherwise only the rules for which
   `IsAuditedRule(method)` holds are invoked, each with an ambient, thread-static "outside the gate" flag set for the duration of
   the call (saved and restored, so nested rules and comparer simplifications see their own admission); the other candidates are
-  traced as rejected by the effect gate.
+  traced as rejected by the effect gate, without their signature being matched (a custom `Match` is user code, and a detailed
+  trace must not run more of it than the untraced run).
 - `ExpressionSimplifier`: `AllowsAuditedRulesOutsideGate` is `!UsesHistoricalAdmission` (`Options` equal to the default); the
   audited set is a static set of method handles of its own rules.
 - Rule helpers: `CanDropOperand(t)` is `true` inside the gate (the gate proved `t` inert) and, outside it, `CanDiscard` of
-  `ExpressionBehaviorAnalysis.Analyze(t)` under `Options`.
+  the behavior of `t` under `Options`, computed by the internal entry `ExpressionBehaviorAnalysis.AnalyzeWithinOperation`: it
+  joins the running operation without opening a nested one nor validating `t` again; every analyzed node, rebuilt ones
+  included, still consumes a structural visit and checks the stack.
 
 ### 5.3 Behavior analysis cost and caches
 
@@ -236,6 +239,25 @@ identical; #685 within −3.9 % to +1.9 %. The +1.6 % to +4.8 % of the first, un
 Review follow-up: the admission flag is per thread, not per instance. Tests run nested simplifications of another policy from
 a rule, from an extension node's user code and from an impersonating method's members, the last ones also while an audited
 rule runs with the flag set: each nested operation gets its own admission, and the flag is unchanged after it.
+
+Second review follow-up (2026-11-09):
+
+- **Detailed tracing matched skipped signatures.** Once a node is outside the gate, an unaudited rule was skipped before its
+  `Match` untraced, but matched under detailed tracing to report its rejection: tracing ran user code the untraced run does not
+  (a custom `ExpressionSignatureAttribute.Match` can count, mutate or throw). The rule is now refused before `Match` at every
+  level of tracing, the rejection still reported (`DetailedTracing_MatchesNoSkippedSignature`, which fails on the previous code).
+- **The dropping identities called the public analysis entry.** `Analyze(t, ResourceLimits)` opened a nested operation and
+  validated `t` again for every attempted drop. The internal entry `AnalyzeWithinOperation` joins the running operation: the
+  budgets are the same (the simplifier's limits are already those of the operation), the analysis visits stay counted (exact
+  refusal one visit below), and a rebuilt or shared operand is still bounded by the structural budget and the stack guard
+  (`InternalAnalysis_JoinsTheRunningOperation`). A rebuilt operand larger than the node limit is now refused by the structural
+  budget rather than by the node limit.
+- **Resource-limit tests moved to `UtilsTest.Security`**: `AuditedRuleAnalysis_UsesTheInstanceLimits` and the budget-refusal
+  part of `OutsideGateFlag_IsScopedToTheAuditedRule` (now `ResourceRefusal_ClearsTheOutsideGateFlag`).
+
+Both code changes run only outside the gate, so the default path is unchanged. Validation after this follow-up: `UtilsTest.Unit`
+(Release) 14,539 run, 14,538 passed, 1 ignored; `UtilsTest.Security` (Release) 346 run, 343 passed, 3 ignored;
+`UtilsTest.Functional` 383 passed; ETC Debug job 327 run, 326 passed, 1 ignored.
 
 ### 8.2 Remaining for the next stages
 

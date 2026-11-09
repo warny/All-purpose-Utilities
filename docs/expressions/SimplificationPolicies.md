@@ -367,7 +367,8 @@ its own flags of the permission table (§3.1).
 | integral or `decimal` `t / 0` | – | declines: no exception while simplifying, the dividend still runs first | – |
 
 The dropped operand is analyzed out of its lexical context, which is conservative, by `ExpressionBehaviorAnalysis` under the
-instance's own limits, joining the running operation (its visits are counted there).
+instance's own limits, joining the running operation through its internal entry (no nested operation, no second validation of
+the operand; its visits are counted there, and the structural budget and the stack guard bound it, rebuilt operands included).
 
 ### 8.3 Examples
 

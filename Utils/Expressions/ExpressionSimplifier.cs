@@ -549,12 +549,13 @@ namespace Utils.Mathematics.Expressions
         /// <remarks>
         /// Dropping needs no contextual proof (B §3.3): it moves nothing, and reading mutable state is unobservable. The
         /// operand is analyzed out of its lexical context, which is conservative (a parameter bound outside it is read as mutable
-        /// state, a write to it as a side effect). The analysis joins the running operation under this instance's limits and
-        /// counts its visits there. The permission is asked before anything compares or keys the operand (invariant I-1).
+        /// state, a write to it as a side effect). The analysis joins the running operation through the internal entry
+        /// <c>AnalyzeWithinOperation</c> (no nested operation, no second shape validation) and counts its visits there. The
+        /// permission is asked before anything compares or keys the operand (invariant I-1).
         /// </remarks>
         private bool CanDropOperand(Expression operand)
             => !RuleRunsOutsideGate
-                || ExpressionBehaviorPermissions.CanDiscard(ExpressionBehaviorAnalysis.Analyze(operand, ResourceLimits), _options);
+                || ExpressionBehaviorPermissions.CanDiscard(ExpressionBehaviorAnalysis.AnalyzeWithinOperation(operand, ResourceLimits), _options);
 
         /// <summary>
         /// Prepares an expression for transformation by calling <see cref="ExpressionTransformer.TransformCore(Expression)"/>
