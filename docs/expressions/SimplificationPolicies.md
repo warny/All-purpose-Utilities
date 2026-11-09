@@ -1,8 +1,9 @@
 # Simplification policies — design note (S5 P18 Architecture B)
 
 Status: public configuration (Architecture B), **consumed by the zero and one identities since Architecture C, stages C1 and
-C2** (§8). The default policy gives exactly the historical results, user calls, exceptions and resource consumption; the
-canonicalization, the other rules, the comparer and the inlining do not consult the policy yet.
+C2** (§8), **and by the `NaN` fold since stage C2b** (§9). The default policy gives exactly the historical results, user calls,
+exceptions and resource consumption; the canonicalization, the other rules, the comparer and the inlining do not consult the
+policy yet.
 Base of B: `master` `f4bb85ec` (after PR #682, A-10). Architecture C: audit and plan in
 [ArchitectureC-Audit.md](ArchitectureC-Audit.md).
 
@@ -250,8 +251,8 @@ Tests (category `S5-P18B`, also run by the ETC Debug job; the corpus tests were 
 
 ## 5. Limitations
 
-- Only the zero and one identities consume the options (Architecture C, stages C1 and C2, §8); the canonicalization, the
-  factoring and merging rules, the NaN fold and the inlining do not yet.
+- Only the zero and one identities (Architecture C, stages C1 and C2, §8) and the `NaN` fold (stage C2b, §9) consume the
+  options; the canonicalization, the factoring and merging rules and the inlining do not yet.
 - `ExpressionComparer` always simplifies with the default policy (its internal instance is not configurable).
 - The permissions inherit the P18-A classification and its known gaps: the `Pow` omission (conservative; fixed since), and the A10-B, A10-C,
   L-1, L-2 findings (see the A-10 note).
@@ -457,8 +458,214 @@ thread-static read per transformed node (`TransformPrepared`) and one integer te
 resolution of this campaign. PR #685 is within −3.9 % to +1.9 % of `master` on every case.
 
 **Relaxed policy.** A node refused by the gate where an audited rule applies costs about 0.25–0.55 µs more and up to 400 bytes:
-the audited rules run (with their reflection invocation), a refused drop runs the behavior analysis (validation and walk of the
-operand), and `F(x) + 0` re-transforms its operand (`AdditionWithZero` returns `TransformCore(left)`, finding S5A-07) where the
+the audited rules run (with their reflection invocation), a refused drop runs the behavior analysis (at the time of this
+measurement a validation and a walk of the operand; the walk alone since the internal entry of §8.2), and `F(x) + 0` re-transforms its operand (`AdditionWithZero` returns `TransformCore(left)`, finding S5A-07) where the
 default reduces it by the canonicalization alone. When the rewrite shortens the tree (`F(x) * 1`), the simplification is faster
 and allocates less. The pathological nesting of products by zero stays at +0.2 % in time and +2.2 % in allocations at 100
 levels: its quadratic structural work (see the security test) is small next to the transformation work.
+
+## 9. Architecture C, stage C2b — the `NaN` fold consumes the policy
+
+### 9.1 Two paths
+
+IEEE-754 makes `+`, `-`, `*` and `/` return `NaN` when an operand is `NaN`, so `t + NaN -> NaN` is numerically exact whatever `t`
+is; the only question is whether the evaluation of `t` may be dropped. The fold (S5 P11b) runs after the rules of every prepared
+node, at the three places it always ran: the root of an operation (`TransformWithinBoundary`), every prepared node
+(`PrepareExpression`) and every lambda body (`RebuildLambdaExpression`, so a body that is not prepared on its own is folded too).
+
+- **Historical path, the default policy's only one** (`FoldNaNOperandHistorical`, the former `FoldNaNOperand` unchanged): `t` is
+  dropped only when the static whitelist `IsEliminableFloatingOperand` proves it is made of constants, parameters, ordinary
+  negations and ordinary IEEE `+ - * /` of `double`/`float`. No behavior analysis runs, so results, visits and allocations are
+  those of PR #686 (the S5 campaigns are byte-identical).
+- **Policy path, every other policy** (`FoldNaNOperandWithPolicy`), chosen by `UsesHistoricalAdmission` of the instance, never by
+  the thread-static `RuleRunsOutsideGate` (the fold runs in whatever rule context prepared the node, and a nested simplification
+  by another instance applies its own policy). Its checks, from the cheapest:
+  1. the historical recognition, unchanged: a `NaN` operand (`TryGetNaNOperand`: the constant, its ordinary negation, `c - NaN`),
+     one of the four operators, `IsOrdinaryBinaryArithmetic` (no custom, lifted, nullable or checked operator, no `Power`);
+  2. the whitelist: accepted operands are dropped without analysis. This fast path is sound under every policy: what it accepts
+     has no behavior flag at all (a parameter read, a constant, IEEE arithmetic that cannot throw), and `CanDiscard` only tests
+     for flags;
+  3. an operand that is itself a `NaN` operation (`IsNaNOperation`) is kept: inert, it keeps the historical decision of step 4;
+     otherwise its own fold was refused (§9.5). Testing it first spares the inert walk of step 4, which would descend every
+     level of `NaN + (NaN * (… F()))`;
+  4. inert arithmetic (`IsInertArithmetic`, such as `x ^ y`) keeps the historical decision, so that the S5 P16 reuse of the
+     comparer's simplified forms (`EqualsKeepingSimplifiedForms`), which assumes that preparing an inert operand again builds the
+     default's tree, stays valid;
+  5. an operand that directly evaluates a `NaN` node the policy left unfolded is refused without analysis
+     (`HoldsRefusedNaNFold`, §9.5);
+  6. otherwise `t`, and `t` alone, is analyzed: `ExpressionBehaviorPermissions.CanDiscard(ExpressionBehaviorAnalysis.AnalyzeWithinOperation(t,
+     ResourceLimits), Options)`, the internal entry that joins the running operation without validating `t` again (§8.2).
+
+The fold drops one evaluation and does nothing else: it merges, duplicates and moves nothing, so `CanDiscard` is the only
+permission involved, and the `NaN` constant returned is the operand's own (its payload and type are kept).
+
+### 9.2 Newly admitted operands
+
+With `F` an unannotated user method, `S` a `[Deterministic]` method, `i` an `int`, `o` an `object`; "kept" means the
+`NaN` node stays as it is.
+
+| Operand `t` of `NaN + t` | Default | Other policies |
+|---|---|---|
+| `x`, `x * y + 1` | `NaN` | `NaN` (whitelist) |
+| `x ^ y` (inert) | kept | kept (historical decision, §9.1 step 4) |
+| `Math.Sin(x)`, `Math.Abs(x ^ y)`, `(float)x` | kept | `NaN` |
+| `Stopwatch.GetTimestamp()` converted | kept | `NaN` (nondeterministic, but dropping it is allowed, §8.3) |
+| block with a local assignment, invoked lambda over total functions | kept | `NaN` |
+| `(double)new[] { x }.Length` | kept | `NaN` with `AggressiveSimplification` and runtime exceptions not preserved |
+| `(double)(10 / i)`, checked conversion | kept | `NaN` when arithmetic exceptions are not preserved |
+| `(double)o` (unboxing) | kept | `NaN` when runtime exceptions are not preserved |
+| `throw <constant>` | kept | `NaN` when user-code exceptions are not preserved |
+| `throw new E()` | kept | kept (constructor: unknown code) |
+| `S(x)` | kept | `NaN` under `TrustDeclarations` without user-code exception preservation |
+| `F(x)`, `w = x`, `h.Value`, a custom operator, an extension node | kept | kept |
+
+### 9.3 Guarantees kept under every policy
+
+Only `float` and `double` and the four operators fold; a custom, lifted, nullable or checked operator and `Power` never do. No
+side effect, unknown code, opaque node or custom reflection object is dropped; an exception disappears only with a dropped
+evaluation whose category the policy does not preserve; an allocation only under aggressive simplification; nothing is added,
+repeated or moved. The analysis never runs the analyzed tree, reads no member of an opaque node (it is classified by its class)
+and none of a custom reflection object (§9.4); it joins the running operation under the instance's limits, so its visits count
+in `MaxStructuralVisits` and its recursion in the stack guard. A disabled quote stays a strict boundary.
+
+### 9.4 Reflection reads
+
+On the same trees and policies (default, aggressive, trust, no exception preserved, permissive; exact and derived simplifiers;
+nine `NaN` shapes around an impersonation of `Math.Sin` and around a recording extension node, including nested refusals and a
+lambda body), PR #686 and C2b read **exactly the same members, in the same order**, with the same outcomes (180 sequences
+compared): C2b introduces no reflection read. The reads that a non-default policy adds over the default are pre-existing, from
+C1/C2: on `t / NaN` only, two more node type reads (`ReturnType` of the impersonating method, `Type` of the extension node),
+because the audited zero/one rules rebuild the division; the other members read are the same (L-1 of the A-10 note).
+
+### 9.5 Nested refusals
+
+Without steps 3 and 5, a nesting of refused folds analyzes at every level the whole operand below it, that is the levels already
+refused: `NaN + (NaN * (NaN + … F()))` added `n² + n` structural visits (65,792 at n = 256, on top of the 96,649 of the default),
+and `NaN + S * (NaN + S * (… F()))`, linear under the default, became quadratic (+657,920 at n = 256). Steps 3 and 5 rely on
+monotonicity: the behavior of an ordinary method-less IEEE operation is the union of its operands' flags, and `CanDiscard` only
+tests the absence of flags, so an operand that is, or directly evaluates, a refused `NaN` node cannot be discarded either. A `NaN`
+node still present, fully simplified and not inert has been through the policy path of this instance and was refused (or a
+node it directly evaluates was, by induction). A `NaN` node rebuilt after its own preparation has not been through the fold:
+the shortcut may then keep a fold the analysis would allow, a missed simplification, never an unsound one (the S5 campaigns under
+the permissive policy, 1,000 seeds, give byte-identical results with and without the shortcut; the unit test `NestedRefusal_DecidesAsTheAnalysis`
+checks the decision against the analysis on every family and policy). With it, both nestings cost the default's visits plus one
+analysis of the bottom level (+2 and +20 structural visits at every depth).
+
+### 9.6 Measurements
+
+PR #686 (`30046b86`, "base") and C2b were built side by side and measured under strictly identical configurations: same trees,
+same policies (the default, and the permissive policy `TrustDeclarations` + `AggressiveSimplification` + no exception preserved;
+the aggressive policy gives the same counts as the permissive one on these families), one process per variant pinned to two
+performance cores (affinity `0x14`, high priority). Visits are the engine's counters (`TransformVisits`, `StructuralVisits`) and
+are deterministic; times are medians of a growth probe, indicative only. The families:
+
+- A: `((x*y + 1)*y + 1)…`, Horner, no `NaN`;
+- B: `NaN + Abs(NaN + Abs(… Sin(x)))`;
+- C: `NaN + (NaN * (NaN + (… F(x))))`, nested refused folds;
+- D: `NaN + S * (NaN + S * (… F(x)))`, with `S` a shared chain of 16 `Sin`/`Cos`;
+- E: `NaN + { v = x; v = Sin(v) * 2; … ; v }`, a block of `n` statements.
+
+**Historical anomalies (pre-existing on #686, outside C2b).** Family A grows as about n^3.8 under every policy, identically on
+both builds (the power-combination probe of `MultiplicationOfEqualsElements`, finding S5A-15). Family B is exponential under the
+default (`AdditionOfEqualsElements` and `FactorEqualityProbe` compare a constant other than 1 with the call at every level,
+2^(n+2) − 4 comparer simplifications, finding S5A-14), identically on both builds. Family C is already quadratic in structural
+visits under the default (the comparer probes of each level walk the levels below). Their correction (P19d of the S5 tracking)
+is not part of C2b.
+
+| A (no `NaN`) | n = 8 | 16 | 32 |
+|---|---|---|---|
+| transform visits, every policy, base = C2b | 1,176 | 6,004 | 30,188 |
+| structural visits, every policy, base = C2b | 7,388 | 81,004 | 1,138,284 |
+| time (ms), permissive, base / C2b | 0.85 / 0.85 | 6.7 / 6.6 | 72.8 / 72.2 |
+
+| B | n = 4 | 8 | 12 | 16 |
+|---|---|---|---|---|
+| structural visits, default, base = C2b | 435 | 8,519 | 139,003 | 2,227,887 |
+| structural visits, permissive, base | 435 | 8,519 | 139,003 | 2,227,887 |
+| structural visits, permissive, C2b (the tree folds to `NaN`) | 55 | 103 | 151 | 199 |
+| time (µs), permissive, base / C2b | 344 / 75 | 1,204 / 31 | 19,371 / 43 | 318,351 / 55 |
+
+| C | n = 8 | 16 | 32 | 64 | 128 | 256 |
+|---|---|---|---|---|---|---|
+| structural visits, default, base = C2b | 53 | 289 | 1,337 | 5,737 | 23,753 | 96,649 |
+| structural visits, permissive, base | 53 | 289 | 1,337 | 5,737 | 23,753 | 96,649 |
+| structural visits, permissive, C2b | 55 | 291 | 1,339 | 5,739 | 23,755 | 96,651 |
+| transform visits, every policy, base = C2b | 18 | 34 | 66 | 130 | 258 | 514 |
+| allocated bytes, permissive, base / C2b | 12,472 / 12,528 | 24,792 / 24,848 | 49,432 / 49,488 | 98,712 / 98,768 | 197,272 / 197,328 | 394,392 / 394,448 |
+
+**Overhead introduced by C2b.** On C, +2 structural visits and +56 bytes at every depth (one analysis of the bottom level), with
+the same transform visits; on D, +20 structural visits and +56 bytes at every depth, against 398,610 visits at n = 256; on E, the
+fold is newly allowed and costs one linear analysis (n + 2 structural visits, +568 bytes) while the result shrinks from 1,544
+nodes to 1. A first version of the policy path tested `IsInertArithmetic` before recognizing a nested `NaN` operation: that walk
+is not counted in the visits but descended every level of C, so C at n = 100 cost +26 % under the permissive policy
+(BenchmarkDotNet); testing the `NaN` operation first (§9.1 step 3) removed it. No memo is needed.
+
+BenchmarkDotNet 0.14.0 (in-process, 8 warmups, 20 iterations, memory diagnoser), three rounds in rotated order, base, an A/A
+copy of the base binaries and C2b; the median of the round means:
+
+| Case | A/A vs base | C2b vs base | Allocated, base → C2b |
+|---|---|---|---|
+| default, 13 cases (A64, B8, C100, D32, E64, `NaN + t`, …) | −13.6 % to +0.2 % | −11.9 % to +0.9 % | identical |
+| permissive `NaN + x` (whitelist) | −0.3 % | +0.2 % | identical |
+| permissive C100, D32 | −1.7 %, −5.4 % | +0.6 %, −5.7 % | +51 B |
+| permissive A64 | −1.2 % | +1.1 % | identical |
+| permissive `NaN + F(x)` (refused after analysis) | −0.9 % | +5.4 % (+81 ns) | +51 B |
+| permissive `NaN + clock`, `NaN + (double)(10 / i)` (folded after analysis) | −1.0 %, −1.6 % | +7.7 %, +8.6 % (+121, +130 ns) | +51 B |
+| permissive E64 | −2.8 % | +6.4 % | +573 B |
+| permissive B8 | −3.5 % | −97.7 % (1.25 ms → 29 µs) | 1.2 MB → 34 KB |
+
+The base rounds of this campaign were the slowest (the A/A spread is skewed negative): under the default every C2b case is
+within the A/A spread, with identical allocations. Under the permissive policy the only cost is the analysis itself, about
+80–130 ns and 51 bytes per analyzed operand, paid only where the whitelist refuses the operand.
+
+### 9.7 Per-operation memo of the inert classification (studied, not kept)
+
+Step 3 of §9.1 tests `IsInertArithmetic` on the operand at every level, and that walk is not counted in the visits. On a nesting
+whose operand is inert arithmetic at every level, the harness family `nanpow`, `NaN + (NaN + (… x0) ^ 2) ^ 2`, every level walks
+the whole operand again: the walk examines `2n² + n` nodes (136, 528, 2,080, 8,256 at n = 8, 16, 32, 64), a quadratic
+term. A memo of the classification was implemented and measured on `ecfacda4`, then withdrawn; the patch is not kept in the
+repository.
+
+**What was built.** A table `Dictionary<Expression, bool>` keyed by reference identity (`ReferenceEqualityComparer.Instance`, never
+`ExpressionComparer` nor the nodes' or constants' `Equals`), held by the thread's `ExpressionResourceBudget` session, created on
+the first classification and dropped when the outermost operation exits. Only `IsInertArithmetic` was memoized, through a new
+cached entry point used by `FoldNaNOperandWithPolicy` and `HoldsRefusedNaNFold`; the historical walk kept its callers. It stored
+every intermediate node and the negative results. Every examined node consumed one structural visit (none on a table hit). A
+node was stored only when its classification read no metadata that user code can supply: a node type that is not a runtime type
+(`TypeDelegator`, L-2), a user `MethodInfo` (A10-B), or an operand whose `Type` is not stored (`IsLifted` reads `Left.Type`,
+L-1) left its result uncached, never turned into `false`.
+
+**Classification work, permissive policy** (nodes examined by the walk, base → memo; results, transform visits and the default
+policy identical on all 94 measured rows):
+
+| Family | n | base | memo | table entries | structural visits, base → memo |
+|---|---|---|---|---|---|
+| `nanpow` | 8 / 16 / 32 / 64 | 136 / 528 / 2,080 / 8,256 | 31 / 63 / 127 / 255 | 15 / 31 / 63 / 127 | 12,679,500 → 12,679,755 (n = 64) |
+| `nanpow` with `Add` levels (M3) | 8 / 64 | 152 / 8,384 | 33 / 257 | 16 / 128 | 13,039,106 → 13,039,363 (n = 64) |
+| shared DAG `NaN * (x_k * S)` (G) | 2 / 20 | 141 / 8,205 | 71 / 719 | 35 / 359 | 211,579 → 212,298 (n = 20) |
+| `nanpow` over an opaque leaf (U) | 256 | 98,432 | 98,432 (65,536 uncacheable) | 0 | 394,752 → 493,184 |
+| D (method-call left operand) | 256 | 1,532 | 1,532 (766 uncacheable) | 0 | 398,630 → 400,162 |
+| A, B, C, E, K | all | 0 or 1 per tree | unchanged | — | +0 to +16 |
+
+**Why it was withdrawn.** The quadratic term is real but negligible: at n = 64 the walk's 8,256 nodes sit next to 12.7 million
+structural visits that every policy, the default included, spends in the comparer probes of `AdditionOfEqualsElements` (the
+mechanism of S5A-14/S5A-15), and `nanpow` takes 907 ms under the default and the permissive policy alike. BenchmarkDotNet 0.14.0
+(in-process, 8 warmups, 20 iterations, memory diagnoser, affinity `0x14`, high priority), three rounds in rotated order of the
+base, an A/A copy of its binaries and the memo; the median of the round means:
+
+| Case | A/A vs base | memo vs base | Allocated, base → memo |
+|---|---|---|---|
+| permissive `nanpow` 8 / 16 / 32 | +2.7 % / −0.8 % / +0.3 % | +2.4 % / −0.6 % / −0.8 % | +993 B / +2,079 B / +4,628 B |
+| permissive M3 32, G10 | −1.5 %, −0.5 % | −0.3 %, −2.3 % | +4,628 B, +10,189 B |
+| permissive `NaN + x ** y` (two-node operand) | +2.9 % | +5.1 % (+135 ns, stable over the three rounds) | +215 B (the table) |
+| aggressive `NaN + x ** y` | +1.3 % | +6.5 % | +215 B |
+| permissive U64, U256 (uncacheable) | −1.0 %, −1.4 % | +8.8 %, +8.9 % | +0, +113 B |
+| permissive C100 / default C100 | +4.1 % / +2.1 % | +11.0 % / +10.8 % | identical (bimodal: base rounds 794–892 µs, memo 828–920 µs; the default path does not reach the memo) |
+| default, other 8 cases | −1.0 % to +1.8 % | −1.1 % to +2.2 % | identical |
+| permissive and aggressive, other 12 cases | −2.0 % to +3.1 % | −1.8 % to +3.0 % | identical, except aggressive `nanpow` 16 (+2,079 B) |
+
+No case gains beyond the A/A spread. Small trees pay the table's allocation and a lookup per examined node, and the trust checks
+plus the counted visits cost about 9 % on uncacheable trees. Following the decision rule of the study (keep only a net benefit
+with no regression on small trees or memory), the memo is not shipped: `IsInertArithmetic` stays an uncounted, unmemoized walk.
+The study is worth redoing after P19d, when the comparer probes no longer dominate these families; the harness family `nanpow`
+stays for that purpose.

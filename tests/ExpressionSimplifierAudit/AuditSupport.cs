@@ -615,14 +615,46 @@ internal sealed class ResultWriter : IDisposable
 /// <summary>Simplifies with resource limits and an optional tracer, and classifies the outcome.</summary>
 internal static class Simplification
 {
-    /// <summary>Simplifies <paramref name="source"/> with a fresh simplifier.</summary>
+    /// <summary>
+    /// The simplification policy of the campaigns, read once from the <c>S5_AUDIT_POLICY</c> environment variable (S5 P18
+    /// Architecture C): absent or <c>default</c> for <see cref="ExpressionSimplifierOptions.Default"/>, otherwise a comma-separated
+    /// list of <c>trust</c>, <c>aggressive</c> and the exception categories still preserved, <c>arithmetic</c>, <c>runtime</c>,
+    /// <c>usercode</c> (none listed: no category preserved). <c>permissive</c> stands for <c>trust,aggressive</c>.
+    /// </summary>
+    public static readonly ExpressionSimplifierOptions Policy = ParsePolicy(Environment.GetEnvironmentVariable("S5_AUDIT_POLICY"));
+
+    /// <summary>Parses the value of <c>S5_AUDIT_POLICY</c>.</summary>
+    /// <param name="text">The value, or <see langword="null"/>.</param>
+    /// <returns>The policy.</returns>
+    private static ExpressionSimplifierOptions ParsePolicy(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text) || text.Trim().Equals("default", StringComparison.OrdinalIgnoreCase)) return ExpressionSimplifierOptions.Default;
+        if (text.Trim().Equals("permissive", StringComparison.OrdinalIgnoreCase)) text = "trust,aggressive";
+        var options = new ExpressionSimplifierOptions { ExceptionPreservation = ExpressionExceptionPreservation.None };
+        foreach (string item in text.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            options = item.ToLowerInvariant() switch
+            {
+                "trust" => options with { TrustPolicy = ExpressionTrustPolicy.TrustDeclarations },
+                "aggressive" => options with { AggressiveSimplification = true },
+                "arithmetic" => options with { ExceptionPreservation = options.ExceptionPreservation | ExpressionExceptionPreservation.Arithmetic },
+                "runtime" => options with { ExceptionPreservation = options.ExceptionPreservation | ExpressionExceptionPreservation.Runtime },
+                "usercode" => options with { ExceptionPreservation = options.ExceptionPreservation | ExpressionExceptionPreservation.UserCode },
+                _ => throw new ArgumentException("Unknown S5_AUDIT_POLICY item: " + item),
+            };
+        }
+
+        return options;
+    }
+
+    /// <summary>Simplifies <paramref name="source"/> with a fresh simplifier of <see cref="Policy"/>.</summary>
     /// <param name="source">The source tree.</param>
     /// <param name="limits">The resource limits (default limits when <see langword="null"/>).</param>
     /// <param name="tracer">An optional tracer.</param>
     /// <returns>The result or the exception.</returns>
     public static (Expression? Result, Exception? Error) Run(Expression source, ExpressionResourceLimits? limits = null, IExpressionTransformTracer? tracer = null)
     {
-        var simplifier = limits is null ? new ExpressionSimplifier() : new ExpressionSimplifier(limits);
+        var simplifier = limits is null ? new ExpressionSimplifier { Options = Policy } : new ExpressionSimplifier(limits) { Options = Policy };
         ExpressionTraceScope? scope = tracer is null ? null : ExpressionTransformTracing.Begin(tracer);
         try
         {

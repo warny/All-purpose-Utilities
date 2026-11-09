@@ -783,6 +783,45 @@ A test pinning the plan order (or an explicit priority) removes the latent risk.
 - **Fixed (P18b, 2026-11-05):** `IsSafeDivisor` accepts a decimal divisor of magnitude at least 1 only (division and remainder).
   The P18-A behavior analysis was never affected: a decimal division node carries `decimal.op_Division`, classified as partial.
 
+### S5A-14 — a constant other than 1 added to a call nesting grows exponentially (High)
+
+Found by the S5 P18 C2b performance audit (2026-11-06), on the PR #686 head `30046b86`, under the **default** policy; present
+under every policy as long as the levels are not folded. Not caused by C1/C2 nor by C2b.
+
+- **Reproducer (harness families `constabs` and `nanabs`):** `c + Abs(c + Abs(... Sin(x0)))` with a constant `c` other than 1
+  (`2`, `NaN`, ...). Comparer simplifications `2^(n+2) - 4` (12, 60, 252, 1,020, 4,092 at n = 2, 4, 6, 8, 10), comparer depth
+  `n` (no cap), every re-entry attributed to `AdditionOfEqualsElements`; transformation visits 137, 2,297, 36,857, 589,817 at
+  n = 4, 8, 12, 16, structural visits 435, 8,519, 139,003, 2,227,887, 0.31 s at n = 16 for a 50-node tree. Control
+  `1 + Abs(1 + Abs(...))`: no comparer simplification, 8 to 32 visits.
+- **Cause:** `AdditionOfEqualsElements` only declines when an augmented operand is the constant **exactly 1**
+  (`ExpressionSimplifier.cs`, "Check if the single factor is truly 1"); for any other constant it probes the factors with
+  `FactorEqualityProbe`, which simplifies the other operand `Abs(...)` through the comparer. That simplification of the whole
+  subtree runs the same probe on the level below, so each level doubles the work. The S5 P16 reuse of prepared forms does not
+  apply: it is restricted to inert arithmetic, and `Abs` is a call.
+- **Comparison with #686:** identical counters with the C2b branch under the default policy. Under a non-default policy C2b folds
+  every `NaN` level before the rule runs: 199 structural visits and 56 µs at n = 16 (`nanabs`), which hides, without fixing, the
+  `c` ≠ `NaN` case.
+- **Fix (proposed P19d, independent, before C3):** the operands a rule receives are already prepared, so the probe should not
+  simplify them again level by level: compare a constant with an already prepared operand structurally (a prepared operand
+  equal to a constant is that constant, constant folding having run), or extend the P16 prepared-operand reuse to this probe.
+  Declining outright is not equivalent: `c + t` factors into `(1 + 1) * c` when `t` simplifies to `c`. Tests: the `constabs`
+  family bounded (linear visits), the factoring suites unchanged, the P9/P15 comparer-memo invariants.
+
+### S5A-15 — the power-combination probe makes a Horner chain grow polynomially of high degree (High)
+
+Found by the same audit, same base, default policy, also present under every policy (no `NaN` involved).
+
+- **Reproducer (harness family `horner`):** `((x0 * x1 + 1) * x1 + 1) * x1 + 1 ...`. Comparer simplifications 6, 30, 396, 1,144,
+  2,276 at n = 2, 4, 8, 12, 16 (comparer depth capped at 7), re-entries of `MultiplicationOfEqualsElements` 6, 30, 383, 909,
+  1,451; transformation visits 1,176, 6,004, 30,188 and structural visits 7,388, 81,004, 1,138,284 at n = 8, 16, 32 (×14 per
+  doubling, about n^3.8), 74 ms at n = 32 for a 129-node tree; extrapolated to seconds at n = 64.
+- **Cause:** at every level the power rule `MultiplicationOfEqualsElements(e, left, right)` (`x^a * x^b -> x^(a+b)`) compares the
+  bases `(1 + x1 * (...))` and `x1` with `ExpressionComparer.EqualsWithinOperation`, which simplifies both operands; the nested
+  simplification of the left operand meets the same comparison on every lower level.
+- **Comparison with #686:** identical counters with the C2b branch under the default, aggressive and permissive policies.
+- **Fix (same P19d):** compare the bases structurally first when neither operand is a power and their node types differ before
+  any simplification, or reuse the prepared operands (the P16 path) for the bases; measure with `horner` and the `pow` family.
+
 ## 11. Documented limitations, reproduced
 
 | Id | Limitation | Source | Reproduced |
@@ -861,6 +900,8 @@ campaign; the counters are machine-independent. The fixing stages must use the A
 | S5A-03 | Critical (C-06), narrow | `1m / (b / 3m)` at `b = 1e-28` | `IsOrdinaryFieldDivision` accepts `decimal` | **fixed (P18b)** | field reassociation for `float`/`double` only |
 | S5A-13 | Critical (C-06), narrow | `(a / 0.5m) - (a / 0.5m)` at `a = decimal.MaxValue` | `IsSafeDivisor` accepts any non-zero decimal | **fixed (P18b)** | safe only when the magnitude is at least 1 |
 | S5A-12 | High | `x0 - x1 - ... - x15` refused by default | free-parameter tie + `0 - t` re-entries | confirmed | stable free-parameter order or canonical fixed point |
+| S5A-14 | High | `2 + Abs(2 + Abs(... Sin(x)))`, 0.31 s at 16 levels | `AdditionOfEqualsElements` probes constants other than 1 through the comparer | confirmed (2026-11-06) | P19d, before C3 |
+| S5A-15 | High | Horner chain `((x*y + 1)*y + 1)...`, n^3.8 | power-combination probe simplifies its bases | confirmed (2026-11-06) | P19d, before C3 |
 | S5A-01 | High | `x^y + z^2` | null dereference in `AdditionOfCos2andSin2Number` | confirmed | pattern-match the exponents |
 | S5A-02 | High | `double.Round(x, 2)` | arity-based method lookup in `TransformCall` | confirmed | keep the call's own method |
 | S5A-08 | High | `negsum` n = 24 refused by default | negation rules re-prepare prepared operands | confirmed | extend the P16 prepared-operand path |
@@ -906,6 +947,14 @@ Proposed order, each PR independent unless stated:
 7. **P19c — `g` and the first-sorted-last chains (L-5, L-6).** Study the factoring probes of non-canonical left-associated
    differences; separate the eliminable work from the user calls the contract imposes (L-7 needs a contract change, P15).
 8. **P18c — exceptions of unevaluated branches (S5A-04).** Needs a contract decision first.
+8b. **P19d — comparer probes on prepared operands (S5A-14, S5A-15), priority: before Architecture C stage C3.** C3 adds
+   reassociation and factoring under a policy, which would run the same probes on more shapes. Changes: compare constants and
+   power bases with prepared operands structurally, or reuse the prepared forms (P16). Tests and measures: families `constabs`,
+   `nanabs`, `horner`, `pow`, and the P9–P16 families with A/A. Afterwards, re-measure `nanpow`
+   (`NaN + (NaN + (… x0) ^ 2) ^ 2`): its uncounted `IsInertArithmetic` walk is quadratic (`2n² + n` nodes) under a non-default
+   policy; a per-operation memo was measured on C2b (2026-11-09) and withdrawn because these probes dominate (12.7 million
+   structural visits at n = 64 under every policy) and the memo cost +5 % on small trees
+   (`docs/expressions/SimplificationPolicies.md` §9.7).
 9. **P22 — domains and determinism (S5A-11, L-8–L-10).** Pin the plan order; record the decimal and nullable policies and the
    cross-type comparer model in the S3 contract.
 
