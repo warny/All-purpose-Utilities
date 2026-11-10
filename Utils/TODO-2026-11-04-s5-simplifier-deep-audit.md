@@ -811,8 +811,11 @@ under every policy as long as the levels are not folded. Not caused by C1/C2 nor
   on arithmetic of depth 2 at any comparison depth and on a method call from comparison depth 2 (the P9 signal D6/A2 required depth 6 and an
   arithmetic root, which `Abs(...)` never is), and (2) is retained across the comparison sessions of one `Transform` frame
   instead of being released with each outermost comparer simplification. Entries are unchanged (strict keys, user-code-free
-  results only), so no result changes. `constabs`: 589,817 -> 461 visits at n = 16, 72 ms at n = 64 (quadratic). Pinned by
-  `S5A14_ConstantPlusCallNesting_GrowsPolynomially`.
+  results only): when both versions complete, they return the same results; the reduced work can let an operation that the
+  resource limits refused before complete now. `constabs`: 589,817 -> 468 visits at n = 16, 72 ms at n = 64 (quadratic).
+  Pinned by `S5A14_ConstantPlusCallNesting_GrowsPolynomially`. Review follow-up: a public `ExpressionComparer.Equals` made from
+  user code detaches the retained memo, and the observed tier refuses a call or member whose reflection object is not the
+  runtime's (ArchitectureC-Audit.md §8.3).
 
 ### S5A-15 — the power-combination probe makes a Horner chain grow polynomially of high degree (High)
 

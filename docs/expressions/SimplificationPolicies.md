@@ -572,7 +572,8 @@ default (`AdditionOfEqualsElements` and `FactorEqualityProbe` compare a constant
 visits under the default (the comparer probes of each level walk the levels below). Their correction (P19d of the S5 tracking)
 is not part of C2b. P19d (2026-11-10) fixed A and B by retaining the comparison memo across the comparison sessions of one
 operation ([ArchitectureC-Audit.md](ArchitectureC-Audit.md) §8.3): Horner at n = 64 takes 8,388 visits and is accepted by the
-default limits, `constabs` grows quadratically.
+default limits, `constabs` grows quadratically. When both versions complete, the results are the same; the reduced work can let
+an operation that the resource limits refused before complete now.
 
 | A (no `NaN`) | n = 8 | 16 | 32 |
 |---|---|---|---|

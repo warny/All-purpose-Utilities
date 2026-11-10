@@ -4,6 +4,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Utils.Expressions;
 using Utils.Mathematics.Expressions;
 
 namespace UtilsTest.Mathematics.Expressions;
@@ -525,6 +526,62 @@ public class ExpressionSimplifierComparisonMemoTests
 
         Assert.IsTrue(sawDepthZero, "The spy must run between two comparer sessions.");
         Assert.IsTrue(reused, "The second session must reuse the first session's result.");
+        AssertNoMemoState();
+    }
+
+    /// <summary>
+    /// S5 P19d review: a public <see cref="ExpressionComparer.Equals(Expression?, Expression?)"/> made from user code between
+    /// two comparison sessions of an operation, while the operation's retained memo holds entries, is an independent
+    /// operation: its comparer simplifications never reuse the caller's entries, it releases its own memo with its session,
+    /// and the caller's retained memo is restored intact afterwards.
+    /// </summary>
+    [TestMethod]
+    public void PublicEquals_FromUserCode_IsDetachedFromTheRetainedMemo()
+    {
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+        Expression operand = Expression.Add(Expression.Multiply(Expression.Constant(2.0), x), Expression.Constant(1.0));
+        Expression? callerResult = null;
+        bool innerRan = false;
+        bool innerReusedCallerEntry = true;
+        bool innerRetained = true;
+        bool callerRestored = false;
+        var innerSpy = new CallbackConstant(() =>
+        {
+            innerRan = true;
+            innerRetained = ExpressionSimplifier.IsComparisonMemoRetained;
+            innerReusedCallerEntry = ReferenceEquals(callerResult, ExpressionComparer.SimplifyForComparison(operand));
+        });
+        Func<Expression> inner = () => Expression.Add(
+            Expression.Multiply(Expression.Constant(2.0), SafeOpaqueTerm.Carrier(innerSpy)),
+            Expression.Multiply(Expression.Constant(3.0), SafeOpaqueTerm.Carrier(new CountingConstant())));
+        bool outerRan = false;
+        var outerSpy = new CallbackConstant(() =>
+        {
+            if (outerRan || ExpressionSimplifier.ComparisonMemoDepth != 0) return;
+            outerRan = true;
+            callerResult = ExpressionComparer.SimplifyForComparison(operand);
+            int entries = ExpressionSimplifier.ComparisonMemoEntryCount;
+            Assert.AreSame(callerResult, ExpressionComparer.SimplifyForComparison(operand), "the caller's memo is retained");
+
+            ExpressionComparer.Create(ExpressionResourceLimits.Default).Equals(inner(), inner());
+
+            callerRestored = ExpressionSimplifier.IsComparisonMemoRetained
+                && ExpressionSimplifier.ComparisonMemoDepth == 0
+                && ExpressionSimplifier.ComparisonMemoEntryCount == entries
+                && ReferenceEquals(callerResult, ExpressionComparer.SimplifyForComparison(operand));
+        });
+        Expression source = Expression.Add(
+            Expression.Multiply(Expression.Constant(2.0), SafeOpaqueTerm.Carrier(outerSpy)),
+            Expression.Multiply(Expression.Constant(3.0), SafeOpaqueTerm.Carrier(new CountingConstant())));
+
+        AssertNoMemoState();
+        new ExpressionSimplifier().Simplify(source);
+
+        Assert.IsTrue(outerRan, "The outer spy must run between two comparer sessions.");
+        Assert.IsTrue(innerRan, "The inner spy must run inside the public comparison.");
+        Assert.IsFalse(innerRetained, "A public comparison outside a Transform frame keeps the P9 lifetime.");
+        Assert.IsFalse(innerReusedCallerEntry, "The public comparison must not reuse the caller's entry.");
+        Assert.IsTrue(callerRestored, "The caller's retained memo is restored intact.");
         AssertNoMemoState();
     }
 

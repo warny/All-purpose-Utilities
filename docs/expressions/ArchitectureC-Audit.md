@@ -315,8 +315,9 @@ entries (strict keys; observed tier stores only results computed without user co
 
 - **Operation scope.** Inside a `Transform` frame (`TransformDetached`), the memo is no longer released when an outermost
   comparer simplification returns: it serves every later comparison session of the same operation and is released with the
-  frame. The replay argument that justifies an entry does not depend on the session it was computed in. A public comparer call
-  outside any `Transform` frame keeps the P9 lifetime.
+  frame. The replay argument that justifies an entry does not depend on the session it was computed in. A public
+  `ExpressionComparer.Equals` keeps the P9 lifetime and, made from user code inside a frame, detaches the frame's memo (review
+  follow-up below).
 - **Activation signal.** P9's D6/A2 (comparison depth 6, arithmetic root of depth 2) is replaced by: arithmetic of depth 2 at
   any depth, or a method call from depth 2. `constabs` never activated the memo (its compared operand `Abs(…)` is a call);
   `horner` activated it only from depth 6. The call signal is restricted to nested comparisons because a first version that
@@ -355,12 +356,35 @@ counts (8,143 of 66,270 cases fewer, none more; results, errors, sizes and the 9
 opaque family `o` (n = 8), whose second pass was refused by the default work limit on `master` and now reaches its fixed point
 (first pass identical).
 
+Contract: when both versions complete normally, they return the same results; the reduced work can let an operation that the
+resource limits refused on `master` complete now (the `o` case above). No rule and no admission changes.
+
+Review follow-up (two isolation points of the extended memo lifetime and activation):
+
+- **Public `Equals` from user code.** `ExpressionComparer.Equals` called from user code between two comparison sessions of a
+  `Transform` frame (for example from a constant's `Equals`) joined the frame's retained memo, so an independent public
+  operation, with its own limits, could reuse (and populate) the caller's entries. It now detaches the caller's memo state like
+  `TransformDetached` does (`DetachComparisonMemo`, restored on return or exception), with the P9 lifetime;
+  `EqualsWithinOperation`, used by the rules, still joins the running operation. Pinned by
+  `PublicEquals_FromUserCode_IsDetachedFromTheRetainedMemo` (failed before the fix).
+- **Reflection provenance in the observed tier.** Building an observed key hashed `MethodCallExpression.Method` and
+  `MemberExpression.Member`, and comparing two keys compared them: for a user subclass of `MethodInfo`, `FieldInfo` or
+  `PropertyInfo` this runs its code, which the user-code counter does not see (A10-B). The call signal from depth 2 makes the
+  path reachable on ordinary probes. A call or member whose reflection object is not the runtime's
+  (`ExpressionReflectionProvenance.IsRuntime`) is now ineligible, so no key is built and the operand is simplified as before;
+  `Math.Abs`, `double.Sin` and every runtime member keep their keys (the `constabs`, `horner` and `p` counters are unchanged:
+  468 / 8,388 / 2,388). Pinned by the Security tests `ObservedComparisonMemo_NeverKeysImpersonatingMembers` and
+  `ConstantPlusCallNesting_WithImpersonatedMethod_IsNeverKeyedByTheMemo` (both failed before the fix). The framework itself
+  still hashes the method when `Expression.Call` rebuilds a node (its parameter cache), which is limitation L-1 of the A-10
+  note, not the memo.
+
 Tests changed, all characterizations of cost: `NonInertChains_KeepTheirComparerWork` (17,718 → 3,158 comparer simplifications,
 still equal for the three heads), `TailSortedChain_ComparerWorkIsPolynomial` (absolute bounds tightened, ratio bound 2 → 3: the
 removed fixed work made the old ratio look flatter than the remaining n^3), `S5A07_ZeroAndOneIdentities_RetransformAPreparedOperand`
 (the extra pass is still pinned, its ratio is lower), and the two `IndependentPublicCall_FromUserCode_*` tests (the independent
 operation may now hold a memo of its own; they check that it never serves the caller's entry). New: `S5A14_…`, `S5A15_…`,
-`RetainedMemo_ServesLaterSessionsOfTheOperation_AndIsReleasedWithIt`, `RetainedMemo_IsReleasedWhenTheOperationThrows`.
+`RetainedMemo_ServesLaterSessionsOfTheOperation_AndIsReleasedWithIt`, `RetainedMemo_IsReleasedWhenTheOperationThrows`, and the
+three review follow-up tests above.
 
 ### 8.4 Remaining for the next stages
 

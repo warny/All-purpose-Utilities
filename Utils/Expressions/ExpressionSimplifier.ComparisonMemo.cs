@@ -23,9 +23,10 @@ namespace Utils.Mathematics.Expressions
     /// comparer's own nested simplifier pass. The memo can only become active inside a session and only when the
     /// activation signal fires (<see cref="IsComparisonMemoActivationCandidate"/>). Every
     /// <see cref="Transform(Expression)"/> call (a public <see cref="Simplify(Expression)"/>,
-    /// <see cref="ExpressionComparer.GetHashCode(Expression)"/>, or a call made from user code) detaches the caller's
-    /// session state and restores it afterwards, so it starts with an inactive memo and can never observe or populate
-    /// the caller's entries.
+    /// <see cref="ExpressionComparer.GetHashCode(Expression)"/>, or a call made from user code), and every public
+    /// <see cref="ExpressionComparer.Equals(Expression?, Expression?)"/>, detaches the caller's session state and restores
+    /// it afterwards (<see cref="DetachComparisonMemo"/>), so it starts with an inactive memo and can never observe or
+    /// populate the caller's entries.
     /// </para>
     /// <para>
     /// <b>Operation boundary (S5 P19d).</b> Inside such a <see cref="Transform(Expression)"/> frame, the memo outlives
@@ -35,9 +36,10 @@ namespace Utils.Mathematics.Expressions
     /// of every lower level once per enclosing level. The replay argument that justifies an entry (a successful,
     /// user-code-free simplification by the shared comparer simplifier is a function of its strict key alone, and runs
     /// inside its own lexical-scope boundary) does not depend on the session it was computed in, so reusing it in a
-    /// later session of the same operation is as unobservable as reusing it within its own. A comparer call made
-    /// outside any <see cref="Transform(Expression)"/> frame (a public <see cref="ExpressionComparer.Equals(Expression?, Expression?)"/>)
-    /// keeps the P9 lifetime: its memo is released with its session.
+    /// later session of the same operation is as unobservable as reusing it within its own. A public
+    /// <see cref="ExpressionComparer.Equals(Expression?, Expression?)"/> keeps the P9 lifetime: its memo is released with
+    /// its session. Made from user code inside a frame, it is an independent operation with its own limits, so it detaches
+    /// the frame's retained memo instead of joining it.
     /// </para>
     /// <para>
     /// <b>Key identity.</b> Keys are strict and oriented: node type, static result type, operator
@@ -106,9 +108,9 @@ namespace Utils.Mathematics.Expressions
         /// before it is disposed). Disposing the returned scope restores the previous session state.
         /// </summary>
         /// <returns>The scope restoring the previous state.</returns>
-        internal static ComparisonMemoTestSession BeginActivatedComparisonMemoSessionForTesting()
+        internal static ComparisonMemoScope BeginActivatedComparisonMemoSessionForTesting()
         {
-            ComparisonMemoTestSession scope = ComparisonMemoTestSession.CaptureCurrent();
+            ComparisonMemoScope scope = ComparisonMemoScope.CaptureCurrent();
             _comparisonMemoDepth = 1;
             _comparisonMemoActive = true;
             _comparisonMemoRetained = false;
@@ -117,8 +119,35 @@ namespace Utils.Mathematics.Expressions
             return scope;
         }
 
-        /// <summary>Restores the comparison session state saved by <see cref="BeginActivatedComparisonMemoSessionForTesting"/>.</summary>
-        internal readonly struct ComparisonMemoTestSession : IDisposable
+        /// <summary>
+        /// Opens an independent expression operation's comparison-memo state: saves the caller's state (an operation in
+        /// progress on this thread may have called user code that started this one) and starts with no session and no memo,
+        /// so the new operation can never observe or populate the caller's entries. Disposing the returned scope restores
+        /// the caller's state. Used by <see cref="TransformDetached"/> and by the public
+        /// <see cref="ExpressionComparer.Equals(Expression?, Expression?)"/>.
+        /// </summary>
+        /// <param name="retain">
+        /// <see langword="true"/> for a <see cref="Transform(Expression)"/> frame, whose comparison sessions share one memo
+        /// released with the frame (S5 P19d); <see langword="false"/> for a public comparison, whose memo keeps the P9
+        /// lifetime and is released with its session.
+        /// </param>
+        /// <returns>The scope restoring the caller's state.</returns>
+        internal static ComparisonMemoScope DetachComparisonMemo(bool retain)
+        {
+            ComparisonMemoScope scope = ComparisonMemoScope.CaptureCurrent();
+            _comparisonMemoDepth = 0;
+            _comparisonMemoActive = false;
+            _comparisonMemoRetained = retain;
+            _comparisonMemo = null;
+            _observedComparisonMemo = null;
+            return scope;
+        }
+
+        /// <summary>
+        /// Restores the comparison session state saved by <see cref="DetachComparisonMemo"/> or
+        /// <see cref="BeginActivatedComparisonMemoSessionForTesting"/>.
+        /// </summary>
+        internal readonly struct ComparisonMemoScope : IDisposable
         {
             /// <summary>The saved depth.</summary>
             private readonly int _depth;
@@ -137,7 +166,7 @@ namespace Utils.Mathematics.Expressions
 
             /// <summary>Captures the current thread's session state.</summary>
             /// <param name="capture">Ignored; distinguishes this constructor from the default one.</param>
-            private ComparisonMemoTestSession(bool capture)
+            private ComparisonMemoScope(bool capture)
             {
                 _depth = _comparisonMemoDepth;
                 _active = _comparisonMemoActive;
@@ -148,7 +177,7 @@ namespace Utils.Mathematics.Expressions
 
             /// <summary>Captures the current thread's session state for later restoration.</summary>
             /// <returns>The captured state.</returns>
-            internal static ComparisonMemoTestSession CaptureCurrent() => new(capture: true);
+            internal static ComparisonMemoScope CaptureCurrent() => new(capture: true);
 
             /// <summary>Restores the saved state.</summary>
             public void Dispose()
