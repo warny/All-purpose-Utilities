@@ -806,6 +806,16 @@ under every policy as long as the levels are not folded. Not caused by C1/C2 nor
   equal to a constant is that constant, constant folding having run), or extend the P16 prepared-operand reuse to this probe.
   Declining outright is not equivalent: `c + t` factors into `(1 + 1) * c` when `t` simplifies to `c`. Tests: the `constabs`
   family bounded (linear visits), the factoring suites unchanged, the P9/P15 comparer-memo invariants.
+- **Fixed (P19d, 2026-11-10), exact route (user decision):** both structural short-cuts above were rejected because they are
+  not exact (a second pass can reveal the equality the prepared operand hides). Instead the P9/P15 comparison memo (1) activates
+  on arithmetic of depth 2 at any comparison depth and on a method call from comparison depth 2 (the P9 signal D6/A2 required depth 6 and an
+  arithmetic root, which `Abs(...)` never is), and (2) is retained across the comparison sessions of one `Transform` frame
+  instead of being released with each outermost comparer simplification. Entries are unchanged (strict keys, user-code-free
+  results only): when both versions complete, they return the same results; the reduced work can let an operation that the
+  resource limits refused before complete now. `constabs`: 589,817 -> 468 visits at n = 16, 72 ms at n = 64 (quadratic).
+  Pinned by `S5A14_ConstantPlusCallNesting_GrowsPolynomially`. Review follow-up: a public `ExpressionComparer.Equals` made from
+  user code detaches the retained memo, and the observed tier refuses a call or member whose reflection object is not the
+  runtime's (ArchitectureC-Audit.md §8.3).
 
 ### S5A-15 — the power-combination probe makes a Horner chain grow polynomially of high degree (High)
 
@@ -821,6 +831,13 @@ Found by the same audit, same base, default policy, also present under every pol
 - **Comparison with #686:** identical counters with the C2b branch under the default, aggressive and permissive policies.
 - **Fix (same P19d):** compare the bases structurally first when neither operand is a power and their node types differ before
   any simplification, or reuse the prepared operands (the P16 path) for the bases; measure with `horner` and the `pow` family.
+- **Fixed (P19d, 2026-11-10), same exact route as S5A-14:** the memo was already active from comparer depth 6, but each
+  outermost comparison of the main pass started an empty one, and the structural work (additive and multiplicative
+  canonicalization of every re-simplified base) dominated. With the memo retained across the sessions of the operation:
+  structural visits 1,138,284 -> 144,878 at n = 32 and 17,960,428 -> 1,146,846 at n = 64 (still about n^3: each canonicalization
+  walks its whole operand), transformation visits 6,004 -> 564 at n = 16 and 8,388 at n = 64 (quadratic), 1,077 ms -> 65 ms at
+  n = 64, which the default structural budget (10,000,000) no longer refuses. `pow` unchanged (153 visits, no comparer
+  simplification). Pinned by `S5A15_HornerChain_GrowsPolynomially`.
 
 ## 11. Documented limitations, reproduced
 
@@ -900,8 +917,8 @@ campaign; the counters are machine-independent. The fixing stages must use the A
 | S5A-03 | Critical (C-06), narrow | `1m / (b / 3m)` at `b = 1e-28` | `IsOrdinaryFieldDivision` accepts `decimal` | **fixed (P18b)** | field reassociation for `float`/`double` only |
 | S5A-13 | Critical (C-06), narrow | `(a / 0.5m) - (a / 0.5m)` at `a = decimal.MaxValue` | `IsSafeDivisor` accepts any non-zero decimal | **fixed (P18b)** | safe only when the magnitude is at least 1 |
 | S5A-12 | High | `x0 - x1 - ... - x15` refused by default | free-parameter tie + `0 - t` re-entries | confirmed | stable free-parameter order or canonical fixed point |
-| S5A-14 | High | `2 + Abs(2 + Abs(... Sin(x)))`, 0.31 s at 16 levels | `AdditionOfEqualsElements` probes constants other than 1 through the comparer | confirmed (2026-11-06) | P19d, before C3 |
-| S5A-15 | High | Horner chain `((x*y + 1)*y + 1)...`, n^3.8 | power-combination probe simplifies its bases | confirmed (2026-11-06) | P19d, before C3 |
+| S5A-14 | High | `2 + Abs(2 + Abs(... Sin(x)))`, 0.31 s at 16 levels | `AdditionOfEqualsElements` probes constants other than 1 through the comparer | **fixed** (P19d, 2026-11-10) | P19d, before C3 |
+| S5A-15 | High | Horner chain `((x*y + 1)*y + 1)...`, n^3.8 | power-combination probe simplifies its bases | **fixed** (P19d, 2026-11-10) | P19d, before C3 |
 | S5A-01 | High | `x^y + z^2` | null dereference in `AdditionOfCos2andSin2Number` | confirmed | pattern-match the exponents |
 | S5A-02 | High | `double.Round(x, 2)` | arity-based method lookup in `TransformCall` | confirmed | keep the call's own method |
 | S5A-08 | High | `negsum` n = 24 refused by default | negation rules re-prepare prepared operands | confirmed | extend the P16 prepared-operand path |
@@ -947,7 +964,7 @@ Proposed order, each PR independent unless stated:
 7. **P19c — `g` and the first-sorted-last chains (L-5, L-6).** Study the factoring probes of non-canonical left-associated
    differences; separate the eliminable work from the user calls the contract imposes (L-7 needs a contract change, P15).
 8. **P18c — exceptions of unevaluated branches (S5A-04).** Needs a contract decision first.
-8b. **P19d — comparer probes on prepared operands (S5A-14, S5A-15), priority: before Architecture C stage C3.** C3 adds
+8b. **P19d — comparer probes on prepared operands (S5A-14, S5A-15), priority: before Architecture C stage C3. Done 2026-11-10 (operation-scoped comparison memo, see §10).** C3 adds
    reassociation and factoring under a policy, which would run the same probes on more shapes. Changes: compare constants and
    power bases with prepared operands structurally, or reuse the prepared forms (P16). Tests and measures: families `constabs`,
    `nanabs`, `horner`, `pow`, and the P9–P16 families with A/A. Afterwards, re-measure `nanpow`

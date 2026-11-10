@@ -306,10 +306,90 @@ Validation:
 | S5 campaigns, permissive policy, with and without the nested-refusal shortcut (§9.5 of the contract) | identical |
 | After the review follow-up (merge of #686 `c5ad265f`, internal analysis entry, `AGENTS.md` point 9), Release | Unit 14,556 run, 14,555 passed, 1 ignored; Security 352 run, 349 passed, 3 ignored; Functional 383 passed; ETC Debug 344 run, 343 passed, 1 ignored |
 
-### 8.3 Remaining for the next stages
+### 8.3 Stage P19d (comparer probes, S5A-14 and S5A-15)
 
-- P19d: S5A-14 and S5A-15 (comparer probes on prepared operands), before C3. Once they are fixed, re-measure the `nanpow` family
-  to decide whether the inert-classification memo studied for C2b (contract §9.7) becomes worth shipping.
+User decision: the exact route. The two structural short-cuts proposed by the S5 tracking (compare a constant or a power base
+with the prepared operand without simplifying it) were rejected, because a second pass can reveal an equality the prepared
+operand hides: they would change results under the default. The P9/P15 comparison memo is extended instead, with unchanged
+entries (strict keys; observed tier stores only results computed without user code), in two ways:
+
+- **Operation scope.** Inside a `Transform` frame (`TransformDetached`), the memo is no longer released when an outermost
+  comparer simplification returns: it serves every later comparison session of the same operation and is released with the
+  frame. The replay argument that justifies an entry does not depend on the session it was computed in. A public
+  `ExpressionComparer.Equals` keeps the P9 lifetime and, made from user code inside a frame, detaches the frame's memo (review
+  follow-up below).
+- **Activation signal.** P9's D6/A2 (comparison depth 6, arithmetic root of depth 2) is replaced by: arithmetic of depth 2 at
+  any depth, or a method call from depth 2. `constabs` never activated the memo (its compared operand `Abs(…)` is a call);
+  `horner` activated it only from depth 6. The call signal is restricted to nested comparisons because a first version that
+  accepted calls at depth 1 cost +3.5 % to +10.5 % (and +0.47 KB) on small call trees and on a shared chain of calls, for keys
+  never reused.
+
+Measurements (harness `measure`, default policy, counters exact):
+
+| Family | `master` `af8ce3f8` | P19d |
+|---|---|---|
+| `constabs` n = 16 | 589,817 visits, 262,140 comparer simplifications, 733 ms | 468 visits, 544, 7 ms |
+| `constabs` n = 64 | out of reach (doubles per level) | 6,444 visits, 72 ms |
+| `horner` n = 16 / 64 | 6,004 / 194,012 visits; 17,960,428 structural at 64, refused by the default limits | 564 / 8,388 visits; 1,146,846 structural, accepted |
+| `p` n = 12 / 16 / 64 | 17,108 / 30,664 / 568,568 comparer simplifications | 2,388 / 5,916 / about 421,000 |
+| `B` n = 8 | 3,034 visits | 733 |
+| `negsum` n = 16 | 150,970 visits | 22,830 |
+| `pow` n = 16 | 153 visits, no comparer simplification | unchanged |
+
+BenchmarkDotNet 0.14.0 (in-process, 8 warmups, 20 iterations, memory diagnoser, affinity `0x14`, high priority), base, an A/A copy
+of its binaries and the branch in rotated order, median of the round means. Full campaign (two rounds, 22 cases) on the first
+version; targeted campaign (two rounds, 11 cases) on the final signal:
+
+| Case (default policy) | A/A | P19d | Allocated, base → P19d |
+|---|---|---|---|
+| `sub8` / `sub12` (`p` family) | +0.3 % / +0.1 % | −85.4 % / −81.0 % | 5,231 → 662 KB / 16,844 → 2,592 KB |
+| `abs4` / `abs8` (`constabs`) | +0.7 % / +1.0 % | −30.7 % / −82.2 % | 76.5 → 52.5 KB / 1,344 → 221 KB |
+| `A4` / `A8` / `A16` (`horner`) | −0.5 % / −1.4 % / +0.7 % | −25.4 % / −73.3 % / −80.7 % | 6,980 → 1,099 KB at 16 |
+| `sum12` | +0.0 % | −59.6 % | 2,299 → 892 KB |
+| `2+sin(x)`, `NaN+sin(x)`, `x*2+sin(y)`, `a*x+b*x`, `x*x*y` | −1.5 % to +1.6 % | −1.4 % to +2.3 % | identical |
+| `C100`, `D32`, `neg200` | −2.4 % to +2.4 % | −1.2 % to +1.9 % | identical |
+| permissive `A8`, `abs8`, `sub8` | +0.8 % to +2.0 % | −72.8 % to −85.0 % | as under the default |
+
+Exactness (S5 campaigns `terminate`, `converge`, `canon`, `comparer`, `diff`, `effects`, `s3`, 4,000 seeds, 4,000 nested, default
+policy, against `master`): `canon`, `comparer`, `diff`, `effects` and `s3` byte-identical; `terminate` identical except its visit
+counts (8,143 of 66,270 cases fewer, none more; results, errors, sizes and the 975 pre-existing S5A-01 anomalies identical; largest case 700 -> 269 visits); `converge` identical except one case of the
+opaque family `o` (n = 8), whose second pass was refused by the default work limit on `master` and now reaches its fixed point
+(first pass identical).
+
+Contract: when both versions complete normally, they return the same results; the reduced work can let an operation that the
+resource limits refused on `master` complete now (the `o` case above). No rule and no admission changes.
+
+Review follow-up (two isolation points of the extended memo lifetime and activation):
+
+- **Public `Equals` from user code.** `ExpressionComparer.Equals` called from user code between two comparison sessions of a
+  `Transform` frame (for example from a constant's `Equals`) joined the frame's retained memo, so an independent public
+  operation, with its own limits, could reuse (and populate) the caller's entries. It now detaches the caller's memo state like
+  `TransformDetached` does (`DetachComparisonMemo`, restored on return or exception), with the P9 lifetime;
+  `EqualsWithinOperation`, used by the rules, still joins the running operation. Pinned by
+  `PublicEquals_FromUserCode_IsDetachedFromTheRetainedMemo` (failed before the fix).
+- **Reflection provenance in the observed tier.** Building an observed key hashed `MethodCallExpression.Method` and
+  `MemberExpression.Member`, and comparing two keys compared them: for a user subclass of `MethodInfo`, `FieldInfo` or
+  `PropertyInfo` this runs its code, which the user-code counter does not see (A10-B). The call signal from depth 2 makes the
+  path reachable on ordinary probes. A call or member whose reflection object is not the runtime's
+  (`ExpressionReflectionProvenance.IsRuntime`) is now ineligible, so no key is built and the operand is simplified as before;
+  `Math.Abs`, `double.Sin` and every runtime member keep their keys (the `constabs`, `horner` and `p` counters are unchanged:
+  468 / 8,388 / 2,388). Pinned by the Security tests `ObservedComparisonMemo_NeverKeysImpersonatingMembers` and
+  `ConstantPlusCallNesting_WithImpersonatedMethod_IsNeverKeyedByTheMemo` (both failed before the fix). The framework itself
+  still hashes the method when `Expression.Call` rebuilds a node (its parameter cache), which is limitation L-1 of the A-10
+  note, not the memo.
+
+Tests changed, all characterizations of cost: `NonInertChains_KeepTheirComparerWork` (17,718 → 3,158 comparer simplifications,
+still equal for the three heads), `TailSortedChain_ComparerWorkIsPolynomial` (absolute bounds tightened, ratio bound 2 → 3: the
+removed fixed work made the old ratio look flatter than the remaining n^3), `S5A07_ZeroAndOneIdentities_RetransformAPreparedOperand`
+(the extra pass is still pinned, its ratio is lower), and the two `IndependentPublicCall_FromUserCode_*` tests (the independent
+operation may now hold a memo of its own; they check that it never serves the caller's entry). New: `S5A14_…`, `S5A15_…`,
+`RetainedMemo_ServesLaterSessionsOfTheOperation_AndIsReleasedWithIt`, `RetainedMemo_IsReleasedWhenTheOperationThrows`, and the
+three review follow-up tests above.
+
+### 8.4 Remaining for the next stages
+
+- `nanpow` after P19d: 66 ms at n = 64 instead of 907 ms under every policy ([SimplificationPolicies.md](SimplificationPolicies.md)
+  §9.7); whether the inert-classification memo studied for C2b becomes worth shipping is a separate decision.
 - C3: PR #684 (P18b, `DivisionOfDivision` guards on `IsOrdinaryFieldDivision`) is merged (`50e595bd`); still needs invariant I-1 for every
   comparing rule, a per-operation behavior memo keyed with the lexical scope, and A10-B tests with armed fakes.
 - S5A-07 (`t + 0` re-transforms its prepared operand) now also costs about 0.9 µs per `F() + 0` under a non-default policy.

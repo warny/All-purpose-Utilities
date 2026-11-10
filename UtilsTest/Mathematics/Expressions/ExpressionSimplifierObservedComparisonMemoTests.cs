@@ -361,32 +361,34 @@ public class ExpressionSimplifierObservedComparisonMemoTests
 
     /// <summary>
     /// A public simplification started from user code inside an active session neither sees nor populates the caller's
-    /// observed memo, and the caller's entries are intact afterwards.
+    /// observed memo, and the caller's entries are intact afterwards. Since S5 P19d the independent operation may hold an
+    /// observed memo of its own, so the test checks that it never serves the caller's entry.
     /// </summary>
     [TestMethod]
     public void IndependentPublicCall_FromUserCode_IsDetachedFromObservedMemo()
     {
         ParameterExpression x = Expression.Parameter(typeof(double), "x");
         Expression cached = Expression.Add(Expression.Call(Sin, x), x);
-        bool observedMemo = true;
+        Expression? cachedResult = null;
+        bool observedCallerEntry = true;
         int callbacks = 0;
         var spy = new CountingConstant(callback: () =>
         {
             callbacks++;
-            observedMemo = ExpressionSimplifier.HasObservedComparisonMemo;
+            observedCallerEntry = ReferenceEquals(cachedResult, ExpressionComparer.SimplifyForComparison(cached));
         });
         Expression independent = Expression.Add(OpaqueTerm(2, spy), OpaqueTerm(3, new CountingConstant()));
 
         using (ExpressionSimplifier.BeginActivatedComparisonMemoSessionForTesting())
         {
-            Expression cachedResult = ExpressionComparer.SimplifyForComparison(cached);
+            cachedResult = ExpressionComparer.SimplifyForComparison(cached);
             int entries = ExpressionSimplifier.ObservedComparisonMemoEntryCount;
             Assert.IsTrue(entries >= 1);
 
             new ExpressionSimplifier().Simplify(independent);
 
             Assert.IsTrue(callbacks > 0);
-            Assert.IsFalse(observedMemo);
+            Assert.IsFalse(observedCallerEntry, "The independent call must not reuse the caller's observed entry.");
             Assert.AreEqual(entries, ExpressionSimplifier.ObservedComparisonMemoEntryCount);
             Assert.AreSame(cachedResult, ExpressionComparer.SimplifyForComparison(cached));
         }

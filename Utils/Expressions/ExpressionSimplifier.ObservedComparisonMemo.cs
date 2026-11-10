@@ -47,13 +47,17 @@ namespace Utils.Mathematics.Expressions
     /// parameters, constants, unary nodes other than <see cref="ExpressionType.Quote"/> and
     /// <see cref="ExpressionType.Throw"/>, binary nodes without conversion lambda, method calls and member accesses.
     /// A unary or binary node with a user-defined operator method stays ineligible, exactly as in P9 (a custom
-    /// operator operand is never memoized). Lambdas, conditionals and every other node kind (including extension
+    /// operator operand is never memoized). A call or member access whose method or member is not a runtime reflection
+    /// object (<see cref="ExpressionReflectionProvenance.IsRuntime"/>) is ineligible too, because hashing or comparing it
+    /// would run its code. Lambdas, conditionals and every other node kind (including extension
     /// nodes, whose members are user code) make the operand ineligible. The same 1,024-node per-path budget as P9
     /// bounds key work and recursion.
     /// </para>
     /// <para>
     /// <b>Lifetime.</b> The observed memo belongs to the P9 session: it is allocated lazily after activation, detached
-    /// by every independent <see cref="Transform(Expression)"/> call and released with the session.
+    /// by every independent operation (a <see cref="Transform(Expression)"/> call or a public
+    /// <see cref="ExpressionComparer.Equals(Expression?, Expression?)"/>) and released with the P9 memo: with the session,
+    /// or with the <see cref="Transform(Expression)"/> frame that retains it (S5 P19d).
     /// </para>
     /// </remarks>
     public partial class ExpressionSimplifier
@@ -313,15 +317,21 @@ namespace Utils.Mathematics.Expressions
                 return true;
             }
 
-            /// <summary>Hashes a method call: method, receiver (absent for a static call) and ordered arguments.</summary>
+            /// <summary>
+            /// Hashes a method call: method, receiver (absent for a static call) and ordered arguments. A method that is
+            /// not a runtime reflection object (<see cref="ExpressionReflectionProvenance.IsRuntime"/>) is ineligible: its
+            /// <see cref="object.GetHashCode"/> and <see cref="object.Equals(object?)"/>, which hashing and comparing the key
+            /// would run, are user code that the user-code counter does not see (S5 A-10, P19d review).
+            /// </summary>
             /// <param name="expression">A <see cref="MethodCallExpression"/>.</param>
             /// <param name="budget">The remaining per-path node budget.</param>
             /// <param name="hash">The node hash.</param>
-            /// <returns><see langword="true"/> when the receiver and every argument are eligible.</returns>
+            /// <returns><see langword="true"/> when the method has runtime provenance and the receiver and every argument are eligible.</returns>
             private static bool HashCall(Expression expression, ref int budget, out int hash)
             {
                 var call = (MethodCallExpression)expression;
                 hash = 0;
+                if (!ExpressionReflectionProvenance.IsRuntime(call.Method)) return false;
                 if (!TryHash(call.Object, ref budget, out int objectHash)) return false;
                 var callHash = new HashCode();
                 callHash.Add(ExpressionType.Call);
@@ -337,15 +347,19 @@ namespace Utils.Mathematics.Expressions
                 return true;
             }
 
-            /// <summary>Hashes a member access: type, member and owner (absent for a static member).</summary>
+            /// <summary>
+            /// Hashes a member access: type, member and owner (absent for a static member). As for a call, a member that is
+            /// not a runtime reflection object is ineligible.
+            /// </summary>
             /// <param name="expression">A <see cref="MemberExpression"/>.</param>
             /// <param name="budget">The remaining per-path node budget.</param>
             /// <param name="hash">The node hash.</param>
-            /// <returns><see langword="true"/> when the owner is eligible.</returns>
+            /// <returns><see langword="true"/> when the member has runtime provenance and the owner is eligible.</returns>
             private static bool HashMember(Expression expression, ref int budget, out int hash)
             {
                 var member = (MemberExpression)expression;
                 hash = 0;
+                if (!ExpressionReflectionProvenance.IsRuntime(member.Member)) return false;
                 if (!TryHash(member.Expression, ref budget, out int ownerHash)) return false;
                 hash = HashCode.Combine(ExpressionType.MemberAccess, member.Type, member.Member, ownerHash);
                 return true;

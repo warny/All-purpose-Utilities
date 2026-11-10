@@ -570,7 +570,10 @@ both builds (the power-combination probe of `MultiplicationOfEqualsElements`, fi
 default (`AdditionOfEqualsElements` and `FactorEqualityProbe` compare a constant other than 1 with the call at every level,
 2^(n+2) − 4 comparer simplifications, finding S5A-14), identically on both builds. Family C is already quadratic in structural
 visits under the default (the comparer probes of each level walk the levels below). Their correction (P19d of the S5 tracking)
-is not part of C2b.
+is not part of C2b. P19d (2026-11-10) fixed A and B by retaining the comparison memo across the comparison sessions of one
+operation ([ArchitectureC-Audit.md](ArchitectureC-Audit.md) §8.3): Horner at n = 64 takes 8,388 visits and is accepted by the
+default limits, `constabs` grows quadratically. When both versions complete, the results are the same; the reduced work can let
+an operation that the resource limits refused before complete now.
 
 | A (no `NaN`) | n = 8 | 16 | 32 |
 |---|---|---|---|
@@ -668,4 +671,6 @@ No case gains beyond the A/A spread. Small trees pay the table's allocation and 
 plus the counted visits cost about 9 % on uncacheable trees. Following the decision rule of the study (keep only a net benefit
 with no regression on small trees or memory), the memo is not shipped: `IsInertArithmetic` stays an uncounted, unmemoized walk.
 The study is worth redoing after P19d, when the comparer probes no longer dominate these families; the harness family `nanpow`
-stays for that purpose.
+stays for that purpose. **After P19d (2026-11-10):** `nanpow` takes 602 / 2,218 / 8,522 visits and 2.6 / 15.7 / 66 ms at
+n = 16 / 32 / 64 (907 ms at 64 before), identically under the default and the permissive policy, so the walk's 8,256 nodes at
+n = 64 are now of the same order as the whole simplification. Redoing the study is a separate decision; P19d does not ship the memo.

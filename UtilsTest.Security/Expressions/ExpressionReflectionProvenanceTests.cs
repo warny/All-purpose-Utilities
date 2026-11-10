@@ -413,6 +413,102 @@ public class ExpressionReflectionProvenanceTests
         context.Unload();
     }
 
+    // ---------------------------------------------------------------- observed comparison memo (S5 P19d review)
+
+    /// <summary>
+    /// The observed comparison memo never builds a key over an impersonating method, field or property, at the root or nested
+    /// below a runtime call: building one would hash it (and comparing two keys would compare it), which runs its code. Since
+    /// S5 P19d the memo activates on a nested call, so this path is reached by ordinary probes such as
+    /// <c>2 + Abs(2 + Abs(FakeSin(x)))</c>. Runtime members stay eligible (positive controls).
+    /// </summary>
+    [TestMethod]
+    public void ObservedComparisonMemo_NeverKeysImpersonatingMembers()
+    {
+        MethodInfo realSin = Static(typeof(Math), nameof(Math.Sin), typeof(double));
+        MethodInfo abs = Static(typeof(Math), nameof(Math.Abs), typeof(double));
+        var sin = new ImpersonatingMethod(realSin);
+        var field = new ImpersonatingField(typeof(Cell).GetField(nameof(Cell.Value))!);
+        var property = new ImpersonatingProperty(typeof(Cell).GetProperty(nameof(Cell.Property))!);
+        ConstantExpression cell = Expression.Constant(new Cell());
+        Expression[] impersonating =
+        [
+            Expression.Call(sin, X),
+            Expression.Call(abs, Expression.Call(sin, X)),
+            Expression.Add(Expression.Constant(2.0), Expression.Call(abs, Expression.Call(sin, X))),
+            Expression.Field(cell, field),
+            Expression.Call(abs, Expression.Property(cell, property)),
+        ];
+        ReflectionTrap[] traps = [sin.Trap, field.Trap, property.Trap];
+        foreach (ReflectionTrap trap in traps)
+        {
+            trap.Reset();
+            trap.Armed = true;
+        }
+
+        try
+        {
+            foreach (Expression tree in impersonating)
+            {
+                Assert.IsFalse(ExpressionSimplifier.IsObservedComparisonMemoEligible(tree));
+            }
+        }
+        finally
+        {
+            foreach (ReflectionTrap trap in traps) trap.Armed = false;
+        }
+
+        foreach (ReflectionTrap trap in traps)
+        {
+            Assert.AreEqual(0, trap.ArmedCalls, string.Join(", ", trap.Calls));
+        }
+
+        // Positive controls: runtime calls and members keep their observed key.
+        Assert.IsTrue(ExpressionSimplifier.IsObservedComparisonMemoEligible(Expression.Call(abs, Expression.Call(realSin, X))));
+        Assert.IsTrue(ExpressionSimplifier.IsObservedComparisonMemoEligible(Expression.Field(cell, nameof(Cell.Value))));
+        Assert.IsTrue(ExpressionSimplifier.IsObservedComparisonMemoEligible(Expression.Property(cell, nameof(Cell.Property))));
+    }
+
+    /// <summary>
+    /// End to end, with and without memo activation: simplifying a nesting <c>2 + Abs(2 + Abs(… FakeSin(x)))</c>, whose probes
+    /// activate the comparison memo on its nested calls (S5 P19d), keeps the impersonating method's evaluations, never reaches
+    /// it from the observed memo's keys, and gives the same result as the same simplification run inside an already activated
+    /// comparison session. The framework itself still hashes the method when a call node is rebuilt
+    /// (<c>Expression.Call</c> caches parameters by method); only the calls made from the memo's frames are counted.
+    /// </summary>
+    [TestMethod]
+    public void ConstantPlusCallNesting_WithImpersonatedMethod_IsNeverKeyedByTheMemo()
+    {
+        var sin = new ImpersonatingMethod(Static(typeof(Math), nameof(Math.Sin), typeof(double)));
+        MethodInfo abs = Static(typeof(Math), nameof(Math.Abs), typeof(double));
+        Expression nesting = Expression.Call(sin, X);
+        for (int i = 0; i < 6; i++) nesting = Expression.Add(Expression.Constant(2.0), Expression.Call(abs, nesting));
+
+        AssertUserEvaluationKept(nesting, X, sin, sin.Trap, 0.5);
+
+        int memoCalls = 0;
+        sin.Trap.Observer = _ =>
+        {
+            if (Environment.StackTrace.Contains("ObservedComparisonMemoKey", StringComparison.Ordinal)) memoCalls++;
+        };
+        string plain;
+        string activated;
+        try
+        {
+            plain = new ExpressionSimplifier().Simplify(nesting).ToString();
+            using (ExpressionSimplifier.BeginActivatedComparisonMemoSessionForTesting())
+            {
+                activated = ExpressionComparer.SimplifyForComparison(nesting).ToString();
+            }
+        }
+        finally
+        {
+            sin.Trap.Observer = null;
+        }
+
+        Assert.AreEqual(0, memoCalls, "The observed memo must not hash or compare an impersonating method.");
+        Assert.AreEqual(plain, activated);
+    }
+
     // ---------------------------------------------------------------- S-09
 
     /// <summary>

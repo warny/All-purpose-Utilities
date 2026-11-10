@@ -20,12 +20,26 @@ namespace Utils.Mathematics.Expressions
     /// <b>Session boundary.</b> A comparison session is one outermost comparer simplification on the current
     /// thread (comparison depth 0 to 1) together with every comparer simplification synchronously nested in it,
     /// including those reached through nested <see cref="FactorEqualityProbe"/> instances and through the
-    /// comparer's own nested simplifier pass. The memo can only become active inside a session, only when the
-    /// activation signal fires, and it is released when the outermost comparer simplification of that session
-    /// returns or throws. Every other <see cref="Transform(Expression)"/> call (a public
-    /// <see cref="Simplify(Expression)"/>, <see cref="ExpressionComparer.GetHashCode(Expression)"/>, or a call
-    /// made from user code) detaches the caller's session state and restores it afterwards, so it starts with an
-    /// inactive memo and can never observe or populate the caller's entries.
+    /// comparer's own nested simplifier pass. The memo can only become active inside a session and only when the
+    /// activation signal fires (<see cref="IsComparisonMemoActivationCandidate"/>). Every
+    /// <see cref="Transform(Expression)"/> call (a public <see cref="Simplify(Expression)"/>,
+    /// <see cref="ExpressionComparer.GetHashCode(Expression)"/>, or a call made from user code), and every public
+    /// <see cref="ExpressionComparer.Equals(Expression?, Expression?)"/>, detaches the caller's session state and restores
+    /// it afterwards (<see cref="DetachComparisonMemo"/>), so it starts with an inactive memo and can never observe or
+    /// populate the caller's entries.
+    /// </para>
+    /// <para>
+    /// <b>Operation boundary (S5 P19d).</b> Inside such a <see cref="Transform(Expression)"/> frame, the memo outlives
+    /// each session: once active, it serves every later session of the same operation and is released when the frame
+    /// returns or throws. Without it, every comparison of the main pass started an empty memo, and a probe that
+    /// re-simplifies the operand below it (<c>2 + Abs(2 + Abs(…))</c>, S5A-14; a Horner chain, S5A-15) redid the work
+    /// of every lower level once per enclosing level. The replay argument that justifies an entry (a successful,
+    /// user-code-free simplification by the shared comparer simplifier is a function of its strict key alone, and runs
+    /// inside its own lexical-scope boundary) does not depend on the session it was computed in, so reusing it in a
+    /// later session of the same operation is as unobservable as reusing it within its own. A public
+    /// <see cref="ExpressionComparer.Equals(Expression?, Expression?)"/> keeps the P9 lifetime: its memo is released with
+    /// its session. Made from user code inside a frame, it is an independent operation with its own limits, so it detaches
+    /// the frame's retained memo instead of joining it.
     /// </para>
     /// <para>
     /// <b>Key identity.</b> Keys are strict and oriented: node type, static result type, operator
@@ -50,12 +64,6 @@ namespace Utils.Mathematics.Expressions
     /// </remarks>
     public partial class ExpressionSimplifier
     {
-        /// <summary>
-        /// Minimum comparison depth at which the activation signal is evaluated (P9 policy D6/A2: depth 6 and a
-        /// continuous ordinary-arithmetic depth of at least 2, see <see cref="HasArithmeticDepthOfAtLeastTwo"/>).
-        /// </summary>
-        private const int ComparisonMemoMinimumDepth = 6;
-
         /// <summary>Maximum logical node count, counted per path, for which a strict key is built.</summary>
         private const int ComparisonMemoNodeBudget = 1024;
 
@@ -66,6 +74,16 @@ namespace Utils.Mathematics.Expressions
         /// <summary>Whether the activation signal has fired in the current comparison session.</summary>
         [ThreadStatic]
         private static bool _comparisonMemoActive;
+
+        /// <summary>
+        /// Whether the current thread runs inside a <see cref="TransformDetached"/> frame, whose comparison sessions share
+        /// one memo (S5 P19d): the memo then outlives each outermost comparer simplification and is released with the frame.
+        /// </summary>
+        [ThreadStatic]
+        private static bool _comparisonMemoRetained;
+
+        /// <summary>Gets whether the current thread retains its comparison memo across sessions (focused tests).</summary>
+        internal static bool IsComparisonMemoRetained => _comparisonMemoRetained;
 
         /// <summary>Lazily allocated memo of the current comparison session.</summary>
         [ThreadStatic]
@@ -86,27 +104,59 @@ namespace Utils.Mathematics.Expressions
         /// <summary>
         /// Test support: opens an already activated comparison session on the current thread, so focused tests can
         /// exercise key identity, reuse, re-entrancy and isolation on small expressions without reaching the
-        /// production activation depth. Disposing the returned scope restores the previous session state.
+        /// production activation signal. The session is not retained across sessions (it never returns to depth 0
+        /// before it is disposed). Disposing the returned scope restores the previous session state.
         /// </summary>
         /// <returns>The scope restoring the previous state.</returns>
-        internal static ComparisonMemoTestSession BeginActivatedComparisonMemoSessionForTesting()
+        internal static ComparisonMemoScope BeginActivatedComparisonMemoSessionForTesting()
         {
-            ComparisonMemoTestSession scope = ComparisonMemoTestSession.CaptureCurrent();
+            ComparisonMemoScope scope = ComparisonMemoScope.CaptureCurrent();
             _comparisonMemoDepth = 1;
             _comparisonMemoActive = true;
+            _comparisonMemoRetained = false;
             _comparisonMemo = null;
             _observedComparisonMemo = null;
             return scope;
         }
 
-        /// <summary>Restores the comparison session state saved by <see cref="BeginActivatedComparisonMemoSessionForTesting"/>.</summary>
-        internal readonly struct ComparisonMemoTestSession : IDisposable
+        /// <summary>
+        /// Opens an independent expression operation's comparison-memo state: saves the caller's state (an operation in
+        /// progress on this thread may have called user code that started this one) and starts with no session and no memo,
+        /// so the new operation can never observe or populate the caller's entries. Disposing the returned scope restores
+        /// the caller's state. Used by <see cref="TransformDetached"/> and by the public
+        /// <see cref="ExpressionComparer.Equals(Expression?, Expression?)"/>.
+        /// </summary>
+        /// <param name="retain">
+        /// <see langword="true"/> for a <see cref="Transform(Expression)"/> frame, whose comparison sessions share one memo
+        /// released with the frame (S5 P19d); <see langword="false"/> for a public comparison, whose memo keeps the P9
+        /// lifetime and is released with its session.
+        /// </param>
+        /// <returns>The scope restoring the caller's state.</returns>
+        internal static ComparisonMemoScope DetachComparisonMemo(bool retain)
+        {
+            ComparisonMemoScope scope = ComparisonMemoScope.CaptureCurrent();
+            _comparisonMemoDepth = 0;
+            _comparisonMemoActive = false;
+            _comparisonMemoRetained = retain;
+            _comparisonMemo = null;
+            _observedComparisonMemo = null;
+            return scope;
+        }
+
+        /// <summary>
+        /// Restores the comparison session state saved by <see cref="DetachComparisonMemo"/> or
+        /// <see cref="BeginActivatedComparisonMemoSessionForTesting"/>.
+        /// </summary>
+        internal readonly struct ComparisonMemoScope : IDisposable
         {
             /// <summary>The saved depth.</summary>
             private readonly int _depth;
 
             /// <summary>The saved activation flag.</summary>
             private readonly bool _active;
+
+            /// <summary>The saved retention flag (S5 P19d).</summary>
+            private readonly bool _retained;
 
             /// <summary>The saved memo.</summary>
             private readonly Dictionary<ComparisonMemoKey, Expression>? _memo;
@@ -116,23 +166,25 @@ namespace Utils.Mathematics.Expressions
 
             /// <summary>Captures the current thread's session state.</summary>
             /// <param name="capture">Ignored; distinguishes this constructor from the default one.</param>
-            private ComparisonMemoTestSession(bool capture)
+            private ComparisonMemoScope(bool capture)
             {
                 _depth = _comparisonMemoDepth;
                 _active = _comparisonMemoActive;
+                _retained = _comparisonMemoRetained;
                 _memo = _comparisonMemo;
                 _observedMemo = _observedComparisonMemo;
             }
 
             /// <summary>Captures the current thread's session state for later restoration.</summary>
             /// <returns>The captured state.</returns>
-            internal static ComparisonMemoTestSession CaptureCurrent() => new(capture: true);
+            internal static ComparisonMemoScope CaptureCurrent() => new(capture: true);
 
             /// <summary>Restores the saved state.</summary>
             public void Dispose()
             {
                 _comparisonMemoDepth = _depth;
                 _comparisonMemoActive = _active;
+                _comparisonMemoRetained = _retained;
                 _comparisonMemo = _memo;
                 _observedComparisonMemo = _observedMemo;
             }
@@ -162,13 +214,13 @@ namespace Utils.Mathematics.Expressions
         /// <returns>The simplified operand.</returns>
         internal static Expression SimplifyForComparisonInSession(ExpressionSimplifier simplifier, Expression expression)
         {
-            int depth = ++_comparisonMemoDepth;
+            _comparisonMemoDepth++;
             long userCodeBefore = ExpressionComparer.UserCodeInvocationCount;
             try
             {
                 if (!_comparisonMemoActive)
                 {
-                    if (depth < ComparisonMemoMinimumDepth || !HasArithmeticDepthOfAtLeastTwo(expression))
+                    if (!IsComparisonMemoActivationCandidate(expression, _comparisonMemoDepth))
                     {
                         Expression inactiveResult = simplifier.TransformWithinBoundary(expression);
 
@@ -198,7 +250,9 @@ namespace Utils.Mathematics.Expressions
             }
             finally
             {
-                if (--_comparisonMemoDepth == 0)
+                // Inside a TransformDetached frame the memo serves every later session of the same operation (S5 P19d);
+                // the frame releases it. Elsewhere (a public comparer call) it is released with its session.
+                if (--_comparisonMemoDepth == 0 && !_comparisonMemoRetained)
                 {
                     _comparisonMemoActive = false;
                     _comparisonMemo = null;
@@ -239,6 +293,21 @@ namespace Utils.Mathematics.Expressions
             Dictionary<ComparisonMemoKey, Expression> memo = _comparisonMemo ??= new Dictionary<ComparisonMemoKey, Expression>(ComparisonMemoKeyComparer.Instance);
             memo.TryAdd(key, result);
         }
+
+        /// <summary>
+        /// The activation signal (S5 P19d, replacing the P9 policy D6/A2): at any comparison depth, an operand whose
+        /// continuous ordinary-arithmetic depth is at least 2 (<see cref="HasArithmeticDepthOfAtLeastTwo"/>); from depth 2,
+        /// that is inside another comparer simplification, also a method call. Both are the operands the factoring and
+        /// power probes re-simplify level after level: arithmetic chains (P9) and call nestings such as
+        /// <c>2 + Abs(2 + Abs(…))</c> (S5A-14), whose repetition only starts with a nested comparison. A call compared at
+        /// depth 1 only (<c>2 + Sin(x)</c>, a shared chain of calls) would otherwise pay for keys it never reuses.
+        /// Constant time; no subtree is traversed.
+        /// </summary>
+        /// <param name="expression">The operand of a comparer simplification while the memo is inactive.</param>
+        /// <param name="depth">The comparison depth of this simplification (1 for an outermost one).</param>
+        /// <returns><see langword="true"/> when the memo becomes active for this operand.</returns>
+        private static bool IsComparisonMemoActivationCandidate(Expression expression, int depth)
+            => (depth >= 2 && expression is MethodCallExpression) || HasArithmeticDepthOfAtLeastTwo(expression);
 
         /// <summary>
         /// Determines in constant time whether <paramref name="expression"/>'s continuous ordinary-arithmetic depth

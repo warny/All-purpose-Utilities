@@ -135,26 +135,10 @@ namespace Utils.Mathematics.Expressions
         internal Expression TransformDetached(Expression expression)
         {
             // Detach the caller's comparison-memo session (S5 P9): an independent Transform call never shares
-            // memo entries with, nor activates or releases, a session that is in progress on this thread.
-            int callerMemoDepth = _comparisonMemoDepth;
-            bool callerMemoActive = _comparisonMemoActive;
-            Dictionary<ComparisonMemoKey, Expression>? callerMemo = _comparisonMemo;
-            Dictionary<ObservedComparisonMemoKey, Expression>? callerObservedMemo = _observedComparisonMemo;
-            _comparisonMemoDepth = 0;
-            _comparisonMemoActive = false;
-            _comparisonMemo = null;
-            _observedComparisonMemo = null;
-            try
-            {
-                return TransformWithinBoundary(expression);
-            }
-            finally
-            {
-                _comparisonMemoDepth = callerMemoDepth;
-                _comparisonMemoActive = callerMemoActive;
-                _comparisonMemo = callerMemo;
-                _observedComparisonMemo = callerObservedMemo;
-            }
+            // memo entries with, nor activates or releases, a session that is in progress on this thread. The comparison
+            // sessions of this operation share one memo, released when it returns (S5 P19d).
+            using ComparisonMemoScope callerMemoState = DetachComparisonMemo(retain: true);
+            return TransformWithinBoundary(expression);
         }
 
         /// <summary>

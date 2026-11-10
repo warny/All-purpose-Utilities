@@ -208,7 +208,23 @@ public class ExpressionComparer : IEqualityComparer<Expression>
     {
         if (TryFastPathEquals(x, y, out bool fastResult)) return fastResult;
 
-        return ExpressionResourceBudget.Run(ResourceLimits, this, x, y, (X: x!, Y: y!), static state => EqualsAfterFastPath(state.X, state.Y));
+        return ExpressionResourceBudget.Run(ResourceLimits, this, x, y, (X: x!, Y: y!), static state => EqualsDetached(state.X, state.Y));
+    }
+
+    /// <summary>
+    /// The body of the public <see cref="Equals(Expression?, Expression?)"/> operation: <see cref="EqualsAfterFastPath"/>
+    /// with the caller's comparison memo detached. A public comparison made from user code while an operation is in
+    /// progress (for example from a constant's <see cref="object.Equals(object?)"/>) is an independent operation, with its
+    /// own limits: it must neither reuse nor populate the memo that operation retains (S5 P19d). Its own memo keeps the P9
+    /// lifetime, released with each session. <see cref="EqualsWithinOperation"/> does not detach.
+    /// </summary>
+    /// <param name="x">The first operand, not <see langword="null"/>.</param>
+    /// <param name="y">The second operand, not <see langword="null"/>.</param>
+    /// <returns><see langword="true"/> when both operands are equivalent after simplification.</returns>
+    private static bool EqualsDetached(Expression x, Expression y)
+    {
+        using ExpressionSimplifier.ComparisonMemoScope callerMemoState = ExpressionSimplifier.DetachComparisonMemo(retain: false);
+        return EqualsAfterFastPath(x, y);
     }
 
     /// <summary>
