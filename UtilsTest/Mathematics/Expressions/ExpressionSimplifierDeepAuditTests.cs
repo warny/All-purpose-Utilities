@@ -344,8 +344,9 @@ public class ExpressionSimplifierDeepAuditTests
     /// <summary>
     /// S5A-07: <c>AdditionWithZero(e, t, 0)</c> and <c>PowerByZeroOrOne</c> (exponent 1) return <c>TransformCore(t)</c> on an
     /// operand that is already prepared, whereas <c>AdditionWithZero(e, 0, t)</c> returns <c>t</c>. The extra pass multiplies the
-    /// work of nested shapes (here more than three times at twelve terms) and, the simplifier not being idempotent, even changes
-    /// the result: <c>t + 0</c> and <c>0 + t</c> simplify differently.
+    /// work of nested shapes and, the simplifier not being idempotent, even changes the result: <c>t + 0</c> and <c>0 + t</c>
+    /// simplify differently. The work ratio was more than three at twelve terms; since S5 P19d the comparison memo serves the
+    /// repeated comparer simplifications of the extra pass (830 visits against 557), so only the excess itself is pinned.
     /// </summary>
     [TestMethod]
     public void S5A07_ZeroAndOneIdentities_RetransformAPreparedOperand()
@@ -353,8 +354,8 @@ public class ExpressionSimplifierDeepAuditTests
         long plusZero = Visits(Nest(12, (acc, v) => Expression.Add(Expression.Multiply(acc, v), C(0))));
         long zeroPlus = Visits(Nest(12, (acc, v) => Expression.Add(C(0), Expression.Multiply(acc, v))));
         long powerOne = Visits(Nest(12, (acc, v) => Expression.Power(Expression.Multiply(acc, v), C(1))));
-        Assert.IsTrue(plusZero > 3 * zeroPlus, $"t + 0: {plusZero} visits, 0 + t: {zeroPlus}");
-        Assert.IsTrue(powerOne > 3 * zeroPlus, $"t ^ 1: {powerOne} visits, 0 + t: {zeroPlus}");
+        Assert.IsTrue(plusZero > zeroPlus * 5 / 4, $"t + 0: {plusZero} visits, 0 + t: {zeroPlus}");
+        Assert.IsTrue(powerOne > zeroPlus * 5 / 4, $"t ^ 1: {powerOne} visits, 0 + t: {zeroPlus}");
 
         Expression difference = Expression.Subtract(Expression.Subtract(X, Y), Z);
         string right = Text(Simplify(Expression.Lambda<Func<double, double, double, double>>(Expression.Add(difference, C(0)), X, Y, Z)));
@@ -402,6 +403,52 @@ public class ExpressionSimplifierDeepAuditTests
         Assert.IsNotNull(refusal, "x0 - ... - x13 (27 nodes) exceeds 100,000 visits");
         Assert.IsNotNull(limited.Simplify(Expression.Lambda(freeChain, ys)), "the bound chain stays within the same budget");
         Assert.AreEqual(ExpressionResourceLimitKind.Work, refusal.Kind);
+    }
+
+    /// <summary>
+    /// S5A-14 (fixed by P19d): <c>AdditionOfEqualsElements</c> probes a constant other than 1 against the call below it, whose
+    /// comparer simplification runs the same probe on every lower level. On <c>af8ce3f8</c> the work doubled with each level
+    /// (589,817 visits at sixteen levels); the comparison memo now activates on calls and serves every later comparison of the
+    /// operation (461 visits at sixteen, 1,685 at thirty-two). Nothing simplifies, so the result is the source.
+    /// </summary>
+    [TestMethod]
+    public void S5A14_ConstantPlusCallNesting_GrowsPolynomially()
+    {
+        MethodInfo abs = typeof(Math).GetMethod(nameof(Math.Abs), [typeof(double)])!;
+        static Expression ConstAbs(MethodInfo abs, int n)
+        {
+            Expression e = Expression.Call(Sin, X);
+            for (int i = 0; i < n; i++) e = Expression.Add(C(2), Expression.Call(abs, e));
+            return e;
+        }
+
+        long v16 = Visits(ConstAbs(abs, 16)), v32 = Visits(ConstAbs(abs, 32));
+        Assert.IsTrue(v16 < 2_000, $"n = 16: {v16} visits");
+        Assert.IsTrue(v32 < 5 * v16, $"n = 16: {v16} visits, n = 32: {v32}");
+        Assert.AreEqual("2 + Math.Abs(2 + Math.Abs(Double.Sin(x)))", Text(Simplify(ConstAbs(abs, 2))));
+        Assert.IsNotNull(Simplify(ConstAbs(abs, 64)), "the default limits accept sixty-four levels");
+    }
+
+    /// <summary>
+    /// S5A-15 (fixed by P19d): at every level of a Horner chain the power rule compares <c>1 + y * (…)</c> with <c>y</c>, and the
+    /// comparer simplification of the left base redoes every lower level. On <c>af8ce3f8</c> the work grew about as n^3.8 and the
+    /// default structural budget refused sixty-four levels; the comparison memo now serves every later comparison of the
+    /// operation (564 visits at sixteen levels, 2,148 at thirty-two, 8,388 at sixty-four).
+    /// </summary>
+    [TestMethod]
+    public void S5A15_HornerChain_GrowsPolynomially()
+    {
+        static Expression Horner(int n)
+        {
+            Expression e = Expression.Multiply(X, Y);
+            for (int i = 1; i < n; i++) e = Expression.Multiply(Expression.Add(e, C(1)), Y);
+            return Expression.Add(e, C(1));
+        }
+
+        long v16 = Visits(Horner(16)), v32 = Visits(Horner(32));
+        Assert.IsTrue(v16 < 2_000, $"n = 16: {v16} visits");
+        Assert.IsTrue(v32 < 5 * v16, $"n = 16: {v16} visits, n = 32: {v32}");
+        Assert.IsNotNull(Simplify(Horner(64)), "the default limits accept sixty-four levels");
     }
 
     /// <summary>

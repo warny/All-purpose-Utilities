@@ -78,6 +78,8 @@ public class ExpressionSimplifierComparisonMemoTests
         Assert.AreEqual(0, ExpressionSimplifier.ComparisonMemoDepth);
         Assert.IsFalse(ExpressionSimplifier.IsComparisonMemoActive);
         Assert.IsFalse(ExpressionSimplifier.HasComparisonMemo);
+        Assert.IsFalse(ExpressionSimplifier.HasObservedComparisonMemo);
+        Assert.IsFalse(ExpressionSimplifier.IsComparisonMemoRetained);
     }
 
     /// <summary>Builds coefficient terms 2, 3, 4, ... whose coefficient/parameter order alternates by parity.</summary>
@@ -496,24 +498,90 @@ public class ExpressionSimplifierComparisonMemoTests
     }
 
     /// <summary>
+    /// S5 P19d: inside one public simplification, a completed comparer simplification serves the later sessions of the same
+    /// operation (two comparer calls made at depth 0 from user code return the same object), and the memo is released with
+    /// the operation. Outside any operation the P9 lifetime is kept (see <see cref="InactivePath_NeverAllocatesOrReuses"/>).
+    /// </summary>
+    [TestMethod]
+    public void RetainedMemo_ServesLaterSessionsOfTheOperation_AndIsReleasedWithIt()
+    {
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+        Expression operand = Expression.Add(Expression.Multiply(Expression.Constant(2.0), x), Expression.Constant(1.0));
+        bool sawDepthZero = false;
+        bool reused = false;
+        var spy = new CallbackConstant(() =>
+        {
+            if (ExpressionSimplifier.ComparisonMemoDepth != 0) return;
+            sawDepthZero = true;
+            Expression first = ExpressionComparer.SimplifyForComparison(operand);
+            reused |= ReferenceEquals(first, ExpressionComparer.SimplifyForComparison(operand));
+        });
+        Expression source = Expression.Add(
+            Expression.Multiply(Expression.Constant(2.0), SafeOpaqueTerm.Carrier(spy)),
+            Expression.Multiply(Expression.Constant(3.0), SafeOpaqueTerm.Carrier(new CountingConstant())));
+
+        AssertNoMemoState();
+        new ExpressionSimplifier().Simplify(source);
+
+        Assert.IsTrue(sawDepthZero, "The spy must run between two comparer sessions.");
+        Assert.IsTrue(reused, "The second session must reuse the first session's result.");
+        AssertNoMemoState();
+    }
+
+    /// <summary>
+    /// S5 P19d: the memo of an operation that throws is released with it, and the next operation starts without memo state.
+    /// </summary>
+    [TestMethod]
+    public void RetainedMemo_IsReleasedWhenTheOperationThrows()
+    {
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+        Expression operand = Expression.Add(Expression.Multiply(Expression.Constant(2.0), x), Expression.Constant(1.0));
+        var spy = new CallbackConstant(() =>
+        {
+            if (ExpressionSimplifier.ComparisonMemoDepth != 0) return;
+            ExpressionComparer.SimplifyForComparison(operand);
+            throw new InvalidOperationException("spy");
+        });
+        Expression source = Expression.Add(
+            Expression.Multiply(Expression.Constant(2.0), SafeOpaqueTerm.Carrier(spy)),
+            Expression.Multiply(Expression.Constant(3.0), SafeOpaqueTerm.Carrier(new CountingConstant())));
+
+        Exception? failure = null;
+        try
+        {
+            new ExpressionSimplifier().Simplify(source);
+        }
+        catch (Exception exception)
+        {
+            failure = exception;
+        }
+
+        Assert.IsNotNull(failure, "The spy must have thrown through the simplification.");
+        AssertNoMemoState();
+    }
+
+    /// <summary>
     /// An independent public simplification started from user code while a session is active neither sees nor
-    /// populates the caller's memo, and the caller's session is restored intact afterwards.
+    /// populates the caller's memo, and the caller's session is restored intact afterwards. Since S5 P19d the
+    /// independent operation may activate a memo of its own (its arithmetic comparisons activate it from depth 1), so the
+    /// test checks that this memo never holds the caller's entry, instead of checking that no memo exists.
     /// </summary>
     [TestMethod]
     public void IndependentPublicCall_FromUserCode_IsDetachedFromCallerSession()
     {
         ParameterExpression x = Expression.Parameter(typeof(double), "x");
         Expression cached = Expression.Add(Expression.Multiply(Expression.Constant(2.0), x), Expression.Constant(1.0));
+        Expression? cachedResult = null;
         int observedDepth = -1;
-        bool observedActive = true;
-        bool observedMemo = true;
+        bool observedRetained = false;
+        bool observedCallerEntry = true;
         int callbacks = 0;
         var spy = new CallbackConstant(() =>
         {
             callbacks++;
             observedDepth = ExpressionSimplifier.ComparisonMemoDepth;
-            observedActive = ExpressionSimplifier.IsComparisonMemoActive;
-            observedMemo = ExpressionSimplifier.HasComparisonMemo;
+            observedRetained = ExpressionSimplifier.IsComparisonMemoRetained;
+            observedCallerEntry = ReferenceEquals(cachedResult, ExpressionComparer.SimplifyForComparison(cached));
         });
         Expression independent = Expression.Add(
             Expression.Multiply(Expression.Constant(2.0), SafeOpaqueTerm.Carrier(spy)),
@@ -521,7 +589,7 @@ public class ExpressionSimplifierComparisonMemoTests
 
         using (ExpressionSimplifier.BeginActivatedComparisonMemoSessionForTesting())
         {
-            Expression cachedResult = ExpressionComparer.SimplifyForComparison(cached);
+            cachedResult = ExpressionComparer.SimplifyForComparison(cached);
             int entries = ExpressionSimplifier.ComparisonMemoEntryCount;
             Assert.IsTrue(entries >= 1);
 
@@ -529,8 +597,9 @@ public class ExpressionSimplifierComparisonMemoTests
 
             Assert.IsTrue(callbacks > 0, "The spy must have observed the independent call.");
             Assert.AreEqual(0, observedDepth);
-            Assert.IsFalse(observedActive);
-            Assert.IsFalse(observedMemo);
+            Assert.IsTrue(observedRetained, "The independent call runs in its own operation frame.");
+            Assert.IsFalse(observedCallerEntry, "The independent call must not reuse the caller's entry.");
+            Assert.IsFalse(ExpressionSimplifier.IsComparisonMemoRetained, "The caller's retention flag is restored.");
             Assert.AreEqual(1, ExpressionSimplifier.ComparisonMemoDepth);
             Assert.IsTrue(ExpressionSimplifier.IsComparisonMemoActive);
             Assert.AreEqual(entries, ExpressionSimplifier.ComparisonMemoEntryCount);

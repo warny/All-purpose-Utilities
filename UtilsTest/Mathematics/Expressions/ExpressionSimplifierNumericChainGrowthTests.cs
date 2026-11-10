@@ -617,14 +617,17 @@ public class ExpressionSimplifierNumericChainGrowthTests
     /// opaque constant (never compared), its known-safe control, a call, and the decimal chain (its arithmetic can throw on
     /// overflow). The opaque chain still costs exactly its known-safe control (S5 P15). Measured on the baseline. Since ETC
     /// R1b (C-06) the decimal chain is no longer rewritten at all (its operands may throw), so it makes only the comparer
-    /// work of preparing its leaves, far below the former 17,718.
+    /// work of preparing its leaves, far below the former 17,718. Since S5 P19d the comparison memo outlives each comparer
+    /// session within the operation and activates on arithmetic from depth 1, so the three non-inert chains request 3,158 comparer
+    /// simplifications instead of 17,718 - still exactly the same number for the three heads, and the opaque constant is
+    /// still never called.
     /// </summary>
     /// <param name="head">The head term.</param>
     /// <param name="expected">The number of comparer simplifications.</param>
     [TestMethod]
-    [DataRow("opaque", 17_718)]
-    [DataRow("knownSafe", 17_718)]
-    [DataRow("call", 17_718)]
+    [DataRow("opaque", 3_158)]
+    [DataRow("knownSafe", 3_158)]
+    [DataRow("call", 3_158)]
     [DataRow("decimal", 8)]
     public void NonInertChains_KeepTheirComparerWork(string head, int expected)
     {
@@ -658,7 +661,11 @@ public class ExpressionSimplifierNumericChainGrowthTests
 
     /// <summary>
     /// The comparer work of the P16 chain no longer doubles with each term: 12 terms cost under 20,000 comparer
-    /// simplifications (101,414 before P16) and 16 terms under twice as many as 12 (991,350 before P16, about 9.8 times).
+    /// simplifications (101,414 before P16) and 16 terms under three times as many as 12 (991,350 before P16, about 9.8
+    /// times; doubling per term would be 16 times). Since S5 P19d both sizes cost far less (2,388 and 5,916 instead of
+    /// 17,108 and 30,664): the fixed work the memo removed made the former ratio (1.8) look flatter than the remaining
+    /// growth (about n^3, 2.5 times), so the ratio bound moved from 2 to 3 and absolute bounds were added below the
+    /// former values.
     /// </summary>
     [TestMethod]
     public void TailSortedChain_ComparerWorkIsPolynomial()
@@ -666,8 +673,9 @@ public class ExpressionSimplifierNumericChainGrowthTests
         int twelve = CountComparerSimplifications(TailSortedChain(12));
         int sixteen = CountComparerSimplifications(TailSortedChain(16));
 
-        Assert.IsTrue(twelve < 20_000, $"{twelve} comparer simplifications for 12 terms.");
-        Assert.IsTrue(sixteen < 2 * twelve, $"{sixteen} comparer simplifications for 16 terms, {twelve} for 12.");
+        Assert.IsTrue(twelve < 5_000, $"{twelve} comparer simplifications for 12 terms.");
+        Assert.IsTrue(sixteen < 10_000, $"{sixteen} comparer simplifications for 16 terms.");
+        Assert.IsTrue(sixteen < 3 * twelve, $"{sixteen} comparer simplifications for 16 terms, {twelve} for 12.");
     }
 
     /// <summary>

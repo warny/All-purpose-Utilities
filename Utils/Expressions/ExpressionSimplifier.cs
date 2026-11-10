@@ -140,16 +140,21 @@ namespace Utils.Mathematics.Expressions
             bool callerMemoActive = _comparisonMemoActive;
             Dictionary<ComparisonMemoKey, Expression>? callerMemo = _comparisonMemo;
             Dictionary<ObservedComparisonMemoKey, Expression>? callerObservedMemo = _observedComparisonMemo;
+            bool callerMemoRetained = _comparisonMemoRetained;
             _comparisonMemoDepth = 0;
             _comparisonMemoActive = false;
             _comparisonMemo = null;
             _observedComparisonMemo = null;
+
+            // The comparison sessions of this operation share one memo, released when it returns (S5 P19d).
+            _comparisonMemoRetained = true;
             try
             {
                 return TransformWithinBoundary(expression);
             }
             finally
             {
+                _comparisonMemoRetained = callerMemoRetained;
                 _comparisonMemoDepth = callerMemoDepth;
                 _comparisonMemoActive = callerMemoActive;
                 _comparisonMemo = callerMemo;
