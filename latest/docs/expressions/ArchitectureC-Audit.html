@@ -851,10 +851,164 @@ non-default policy's two extra node type reads on <code>t / NaN</code> are pre-e
 </tr>
 </tbody>
 </table>
-<h3 id="83-remaining-for-the-next-stages">8.3 Remaining for the next stages</h3>
+<h3 id="83-stage-p19d-comparer-probes-s5a-14-and-s5a-15">8.3 Stage P19d (comparer probes, S5A-14 and S5A-15)</h3>
+<p>User decision: the exact route. The two structural short-cuts proposed by the S5 tracking (compare a constant or a power base
+with the prepared operand without simplifying it) were rejected, because a second pass can reveal an equality the prepared
+operand hides: they would change results under the default. The P9/P15 comparison memo is extended instead, with unchanged
+entries (strict keys; observed tier stores only results computed without user code), in two ways:</p>
 <ul>
-<li>P19d: S5A-14 and S5A-15 (comparer probes on prepared operands), before C3. Once they are fixed, re-measure the <code>nanpow</code> family
-to decide whether the inert-classification memo studied for C2b (contract §9.7) becomes worth shipping.</li>
+<li><strong>Operation scope.</strong> Inside a <code>Transform</code> frame (<code>TransformDetached</code>), the memo is no longer released when an outermost
+comparer simplification returns: it serves every later comparison session of the same operation and is released with the
+frame. The replay argument that justifies an entry does not depend on the session it was computed in. A public
+<code>ExpressionComparer.Equals</code> keeps the P9 lifetime and, made from user code inside a frame, detaches the frame's memo (review
+follow-up below).</li>
+<li><strong>Activation signal.</strong> P9's D6/A2 (comparison depth 6, arithmetic root of depth 2) is replaced by: arithmetic of depth 2 at
+any depth, or a method call from depth 2. <code>constabs</code> never activated the memo (its compared operand <code>Abs(…)</code> is a call);
+<code>horner</code> activated it only from depth 6. The call signal is restricted to nested comparisons because a first version that
+accepted calls at depth 1 cost +3.5 % to +10.5 % (and +0.47 KB) on small call trees and on a shared chain of calls, for keys
+never reused.</li>
+</ul>
+<p>Measurements (harness <code>measure</code>, default policy, counters exact):</p>
+<table>
+<thead>
+<tr>
+<th>Family</th>
+<th><code>master</code> <code>af8ce3f8</code></th>
+<th>P19d</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>constabs</code> n = 16</td>
+<td>589,817 visits, 262,140 comparer simplifications, 733 ms</td>
+<td>468 visits, 544, 7 ms</td>
+</tr>
+<tr>
+<td><code>constabs</code> n = 64</td>
+<td>out of reach (doubles per level)</td>
+<td>6,444 visits, 72 ms</td>
+</tr>
+<tr>
+<td><code>horner</code> n = 16 / 64</td>
+<td>6,004 / 194,012 visits; 17,960,428 structural at 64, refused by the default limits</td>
+<td>564 / 8,388 visits; 1,146,846 structural, accepted</td>
+</tr>
+<tr>
+<td><code>p</code> n = 12 / 16 / 64</td>
+<td>17,108 / 30,664 / 568,568 comparer simplifications</td>
+<td>2,388 / 5,916 / about 421,000</td>
+</tr>
+<tr>
+<td><code>B</code> n = 8</td>
+<td>3,034 visits</td>
+<td>733</td>
+</tr>
+<tr>
+<td><code>negsum</code> n = 16</td>
+<td>150,970 visits</td>
+<td>22,830</td>
+</tr>
+<tr>
+<td><code>pow</code> n = 16</td>
+<td>153 visits, no comparer simplification</td>
+<td>unchanged</td>
+</tr>
+</tbody>
+</table>
+<p>BenchmarkDotNet 0.14.0 (in-process, 8 warmups, 20 iterations, memory diagnoser, affinity <code>0x14</code>, high priority), base, an A/A copy
+of its binaries and the branch in rotated order, median of the round means. Full campaign (two rounds, 22 cases) on the first
+version; targeted campaign (two rounds, 11 cases) on the final signal:</p>
+<table>
+<thead>
+<tr>
+<th>Case (default policy)</th>
+<th>A/A</th>
+<th>P19d</th>
+<th>Allocated, base → P19d</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>sub8</code> / <code>sub12</code> (<code>p</code> family)</td>
+<td>+0.3 % / +0.1 %</td>
+<td>−85.4 % / −81.0 %</td>
+<td>5,231 → 662 KB / 16,844 → 2,592 KB</td>
+</tr>
+<tr>
+<td><code>abs4</code> / <code>abs8</code> (<code>constabs</code>)</td>
+<td>+0.7 % / +1.0 %</td>
+<td>−30.7 % / −82.2 %</td>
+<td>76.5 → 52.5 KB / 1,344 → 221 KB</td>
+</tr>
+<tr>
+<td><code>A4</code> / <code>A8</code> / <code>A16</code> (<code>horner</code>)</td>
+<td>−0.5 % / −1.4 % / +0.7 %</td>
+<td>−25.4 % / −73.3 % / −80.7 %</td>
+<td>6,980 → 1,099 KB at 16</td>
+</tr>
+<tr>
+<td><code>sum12</code></td>
+<td>+0.0 %</td>
+<td>−59.6 %</td>
+<td>2,299 → 892 KB</td>
+</tr>
+<tr>
+<td><code>2+sin(x)</code>, <code>NaN+sin(x)</code>, <code>x*2+sin(y)</code>, <code>a*x+b*x</code>, <code>x*x*y</code></td>
+<td>−1.5 % to +1.6 %</td>
+<td>−1.4 % to +2.3 %</td>
+<td>identical</td>
+</tr>
+<tr>
+<td><code>C100</code>, <code>D32</code>, <code>neg200</code></td>
+<td>−2.4 % to +2.4 %</td>
+<td>−1.2 % to +1.9 %</td>
+<td>identical</td>
+</tr>
+<tr>
+<td>permissive <code>A8</code>, <code>abs8</code>, <code>sub8</code></td>
+<td>+0.8 % to +2.0 %</td>
+<td>−72.8 % to −85.0 %</td>
+<td>as under the default</td>
+</tr>
+</tbody>
+</table>
+<p>Exactness (S5 campaigns <code>terminate</code>, <code>converge</code>, <code>canon</code>, <code>comparer</code>, <code>diff</code>, <code>effects</code>, <code>s3</code>, 4,000 seeds, 4,000 nested, default
+policy, against <code>master</code>): <code>canon</code>, <code>comparer</code>, <code>diff</code>, <code>effects</code> and <code>s3</code> byte-identical; <code>terminate</code> identical except its visit
+counts (8,143 of 66,270 cases fewer, none more; results, errors, sizes and the 975 pre-existing S5A-01 anomalies identical; largest case 700 -&gt; 269 visits); <code>converge</code> identical except one case of the
+opaque family <code>o</code> (n = 8), whose second pass was refused by the default work limit on <code>master</code> and now reaches its fixed point
+(first pass identical).</p>
+<p>Contract: when both versions complete normally, they return the same results; the reduced work can let an operation that the
+resource limits refused on <code>master</code> complete now (the <code>o</code> case above). No rule and no admission changes.</p>
+<p>Review follow-up (two isolation points of the extended memo lifetime and activation):</p>
+<ul>
+<li><strong>Public <code>Equals</code> from user code.</strong> <code>ExpressionComparer.Equals</code> called from user code between two comparison sessions of a
+<code>Transform</code> frame (for example from a constant's <code>Equals</code>) joined the frame's retained memo, so an independent public
+operation, with its own limits, could reuse (and populate) the caller's entries. It now detaches the caller's memo state like
+<code>TransformDetached</code> does (<code>DetachComparisonMemo</code>, restored on return or exception), with the P9 lifetime;
+<code>EqualsWithinOperation</code>, used by the rules, still joins the running operation. Pinned by
+<code>PublicEquals_FromUserCode_IsDetachedFromTheRetainedMemo</code> (failed before the fix).</li>
+<li><strong>Reflection provenance in the observed tier.</strong> Building an observed key hashed <code>MethodCallExpression.Method</code> and
+<code>MemberExpression.Member</code>, and comparing two keys compared them: for a user subclass of <code>MethodInfo</code>, <code>FieldInfo</code> or
+<code>PropertyInfo</code> this runs its code, which the user-code counter does not see (A10-B). The call signal from depth 2 makes the
+path reachable on ordinary probes. A call or member whose reflection object is not the runtime's
+(<code>ExpressionReflectionProvenance.IsRuntime</code>) is now ineligible, so no key is built and the operand is simplified as before;
+<code>Math.Abs</code>, <code>double.Sin</code> and every runtime member keep their keys (the <code>constabs</code>, <code>horner</code> and <code>p</code> counters are unchanged:
+468 / 8,388 / 2,388). Pinned by the Security tests <code>ObservedComparisonMemo_NeverKeysImpersonatingMembers</code> and
+<code>ConstantPlusCallNesting_WithImpersonatedMethod_IsNeverKeyedByTheMemo</code> (both failed before the fix). The framework itself
+still hashes the method when <code>Expression.Call</code> rebuilds a node (its parameter cache), which is limitation L-1 of the A-10
+note, not the memo.</li>
+</ul>
+<p>Tests changed, all characterizations of cost: <code>NonInertChains_KeepTheirComparerWork</code> (17,718 → 3,158 comparer simplifications,
+still equal for the three heads), <code>TailSortedChain_ComparerWorkIsPolynomial</code> (absolute bounds tightened, ratio bound 2 → 3: the
+removed fixed work made the old ratio look flatter than the remaining n^3), <code>S5A07_ZeroAndOneIdentities_RetransformAPreparedOperand</code>
+(the extra pass is still pinned, its ratio is lower), and the two <code>IndependentPublicCall_FromUserCode_*</code> tests (the independent
+operation may now hold a memo of its own; they check that it never serves the caller's entry). New: <code>S5A14_…</code>, <code>S5A15_…</code>,
+<code>RetainedMemo_ServesLaterSessionsOfTheOperation_AndIsReleasedWithIt</code>, <code>RetainedMemo_IsReleasedWhenTheOperationThrows</code>, and the
+three review follow-up tests above.</p>
+<h3 id="84-remaining-for-the-next-stages">8.4 Remaining for the next stages</h3>
+<ul>
+<li><code>nanpow</code> after P19d: 66 ms at n = 64 instead of 907 ms under every policy (<a href="SimplificationPolicies.html">SimplificationPolicies.md</a>
+§9.7); whether the inert-classification memo studied for C2b becomes worth shipping is a separate decision.</li>
 <li>C3: PR #684 (P18b, <code>DivisionOfDivision</code> guards on <code>IsOrdinaryFieldDivision</code>) is merged (<code>50e595bd</code>); still needs invariant I-1 for every
 comparing rule, a per-operation behavior memo keyed with the lexical scope, and A10-B tests with armed fakes.</li>
 <li>S5A-07 (<code>t + 0</code> re-transforms its prepared operand) now also costs about 0.9 µs per <code>F() + 0</code> under a non-default policy.</li>
