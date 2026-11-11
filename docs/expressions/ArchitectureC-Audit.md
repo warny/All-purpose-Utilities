@@ -374,7 +374,8 @@ Review follow-up (two isolation points of the extended memo lifetime and activat
   (`ExpressionReflectionProvenance.IsRuntime`) is now ineligible, so no key is built and the operand is simplified as before;
   `Math.Abs`, `double.Sin` and every runtime member keep their keys (the `constabs`, `horner` and `p` counters are unchanged:
   468 / 8,388 / 2,388). Pinned by the Security tests `ObservedComparisonMemo_NeverKeysImpersonatingMembers` and
-  `ConstantPlusCallNesting_WithImpersonatedMethod_IsNeverKeyedByTheMemo` (both failed before the fix). The framework itself
+  `ConstantPlusCallNesting_WithImpersonatedMethod_IsNeverKeyedByTheMemo` (both failed before the fix; the second one is
+  deterministic since the review finalization below). The framework itself
   still hashes the method when `Expression.Call` rebuilds a node (its parameter cache), which is limitation L-1 of the A-10
   note, not the memo.
 
@@ -385,6 +386,27 @@ removed fixed work made the old ratio look flatter than the remaining n^3), `S5A
 operation may now hold a memo of its own; they check that it never serves the caller's entry). New: `S5A14_…`, `S5A15_…`,
 `RetainedMemo_ServesLaterSessionsOfTheOperation_AndIsReleasedWithIt`, `RetainedMemo_IsReleasedWhenTheOperationThrows`, and the
 three review follow-up tests above.
+
+Review finalization (2026-11-11, tests only, no production change):
+
+- **P19d-R1, budgets of a nested public `Equals`.** `NestedPublicComparisonLimitTests` (Security) fills the retained memo of an
+  unlimited simplification with both operands of a comparison, then calls `ExpressionComparer.Create(limits).Equals` on fresh
+  copies from a constant's `Equals`. The nested comparison costs exactly the structural visits it costs with an empty memo
+  (75, measured inside a bare operation); a budget of exactly 75 is accepted, 74 is refused with `StructuralWork` (limit 74,
+  75 visits consumed, the counters of the operation not reset), the exception reaches the user code unchanged, and the caller's
+  memo (entries, depth, activation, retention), deadlines and later reuse are restored after success, refusal, and a user
+  exception thrown during the comparison. Before the detachment of `4f7edc43` the same call cost 1 visit (memo hit), so every
+  budget from 1 to 74 accepted it. The counterpart `EqualsWithinOperation_KeepsReusingTheRetainedMemo_WhilePublicEqualsDoesNot`
+  (Unit) checks that the rules' internal comparison still reuses the retained entries.
+- **P19d-R2, no stack-trace attribution.** `ConstantPlusCallNesting_WithImpersonatedMethod_IsNeverKeyedByTheMemo` no longer
+  searches `Environment.StackTrace` for a method name (sensitive to inlining and to the configuration). The key walks are now
+  tested directly with armed traps on trees built before arming (`ObservedComparisonMemoKeys_NeverRunImpersonatingMembers_InAnyPosition`:
+  calls under one or several runtime calls, members inside arithmetic or under calls, key comparison of two copies: no call at all,
+  not even a type read), and the end-to-end simplification attributes each call by count: the only calls into the impersonating
+  method are the framework's `Expression.Call` validations (L-1), one `ContainsGenericParameters`, one `Attributes` and one
+  parameter-cache `GetHashCode` each, identical with and without prior activation; a member access is never hashed or compared
+  (`…WithImpersonatedMembers…`). Removing the provenance check from `HashCall` makes three of these tests fail, and so does removing
+  it from `HashMember`, in Release.
 
 ### 8.4 Remaining for the next stages
 

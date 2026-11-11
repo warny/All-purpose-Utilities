@@ -586,6 +586,61 @@ public class ExpressionSimplifierComparisonMemoTests
     }
 
     /// <summary>
+    /// S5 P19d review (R1 counterpart): the engine-internal comparison <see cref="ExpressionComparer.EqualsWithinOperation"/>
+    /// keeps joining the running operation and its retained memo. Between two sessions of an operation whose memo holds both
+    /// operands, it reuses their entries (fewer structural visits than the detached public comparison of fresh copies, no new
+    /// entry, same result), while the public comparison does the whole work again; the isolation of the public entry point is
+    /// therefore not obtained by disabling the memo of every comparison.
+    /// </summary>
+    [TestMethod]
+    public void EqualsWithinOperation_KeepsReusingTheRetainedMemo_WhilePublicEqualsDoesNot()
+    {
+        ParameterExpression x = Expression.Parameter(typeof(double), "x");
+        Expression Left() => Expression.Add(
+            Expression.Add(Expression.Multiply(Expression.Constant(2.0), x), Expression.Constant(1.0)),
+            Expression.Multiply(Expression.Constant(3.0), x));
+        Expression Right() => Expression.Multiply(
+            Expression.Add(Expression.Constant(1.0), Expression.Multiply(Expression.Constant(5.0), x)),
+            Expression.Constant(2.0));
+        bool ran = false;
+        long internalCost = -1;
+        long publicCost = -1;
+        bool internalResult = false;
+        bool publicResult = true;
+        int entriesBefore = -1;
+        int entriesAfterInternal = -1;
+        var spy = new CallbackConstant(() =>
+        {
+            if (ran || ExpressionSimplifier.ComparisonMemoDepth != 0) return;
+            ran = true;
+            ExpressionComparer.SimplifyForComparison(Left());
+            ExpressionComparer.SimplifyForComparison(Right());
+            entriesBefore = ExpressionSimplifier.ComparisonMemoEntryCount;
+
+            long before = ExpressionResourceBudget.StructuralVisits;
+            internalResult = ExpressionComparer.EqualsWithinOperation(Left(), Right());
+            internalCost = ExpressionResourceBudget.StructuralVisits - before;
+            entriesAfterInternal = ExpressionSimplifier.ComparisonMemoEntryCount;
+
+            before = ExpressionResourceBudget.StructuralVisits;
+            publicResult = ExpressionComparer.Default.Equals(Left(), Right());
+            publicCost = ExpressionResourceBudget.StructuralVisits - before;
+        });
+        Expression source = Expression.Add(
+            Expression.Multiply(Expression.Constant(2.0), SafeOpaqueTerm.Carrier(spy)),
+            Expression.Multiply(Expression.Constant(3.0), SafeOpaqueTerm.Carrier(new CountingConstant())));
+
+        new ExpressionSimplifier().Simplify(source);
+
+        Assert.IsTrue(ran, "The spy must run between two comparer sessions.");
+        Assert.IsTrue(entriesBefore >= 2, $"the operation's memo holds both operands ({entriesBefore})");
+        Assert.AreEqual(entriesBefore, entriesAfterInternal, "the internal comparison is served by the existing entries");
+        Assert.AreEqual(publicResult, internalResult);
+        Assert.IsTrue(internalCost < publicCost, $"internal {internalCost} must reuse the memo, public {publicCost} must not");
+        AssertNoMemoState();
+    }
+
+    /// <summary>
     /// S5 P19d: the memo of an operation that throws is released with it, and the next operation starts without memo state.
     /// </summary>
     [TestMethod]
