@@ -55,6 +55,13 @@ public enum ExpressionTransformEventKind
 
     /// <summary>(Detailed level) The traversal leaves a lexical scope (<see cref="ExpressionTransformEvent.ScopeKind"/>).</summary>
     ScopeExit,
+
+    /// <summary>
+    /// (Detailed level) An arithmetic chain was extracted for the <see cref="FlattenAttribute"/> rules of the node
+    /// (<see cref="ExpressionTransformEvent.Input"/> is the root of the chain); the rules' candidate, applied and rejected
+    /// events follow.
+    /// </summary>
+    ChainFlattened,
 }
 
 /// <summary>What produced the result of a treatment (<see cref="ExpressionTransformEventKind.TransformExit"/>) or of a finalization.</summary>

@@ -4,7 +4,8 @@ using System.Reflection;
 namespace Utils.Expressions;
 
 /// <summary>
-/// Identifies one rule of a transformer (a method marked with <see cref="ExpressionSignatureAttribute"/>) in trace events.
+/// Identifies one rule of a transformer (a method marked with <see cref="ExpressionSignatureAttribute"/> or
+/// <see cref="FlattenAttribute"/>) in trace events.
 /// This type only holds data.
 /// </summary>
 /// <remarks>
@@ -24,12 +25,20 @@ public sealed class ExpressionTransformRuleInfo
     /// <param name="declaredNodeType">The node type declared by the rule's signature attribute (<c>(ExpressionType)(-1)</c> for every node type).</param>
     /// <param name="declarationIndex">The position of the rule in the plan's declaration order.</param>
     /// <param name="isOverloaded">Whether another rule of the same plan has the same method name.</param>
-    internal ExpressionTransformRuleInfo(MethodInfo method, Type transformerType, ExpressionType declaredNodeType, int declarationIndex, bool isOverloaded)
+    /// <param name="flattenedNodeTypes">For a <see cref="FlattenAttribute"/> rule, the operators it declares; otherwise empty.</param>
+    internal ExpressionTransformRuleInfo(
+        MethodInfo method,
+        Type transformerType,
+        ExpressionType declaredNodeType,
+        int declarationIndex,
+        bool isOverloaded,
+        IReadOnlyList<ExpressionType>? flattenedNodeTypes = null)
     {
         Method = method;
         TransformerType = transformerType;
         DeclaredNodeType = declaredNodeType;
         DeclarationIndex = declarationIndex;
+        FlattenedNodeTypes = flattenedNodeTypes ?? [];
         _parameterList = string.Join(", ", method.GetParameters().Select(static parameter => parameter.ParameterType.Name));
         DisplayName = isOverloaded ? $"{method.Name}({_parameterList})" : method.Name;
         Id = $"{method.DeclaringType?.FullName}.{method.Name}({_parameterList})";
@@ -47,8 +56,18 @@ public sealed class ExpressionTransformRuleInfo
     /// <summary>Gets the node type declared by the rule's signature attribute, or <c>(ExpressionType)(-1)</c> for a rule declared on every node type.</summary>
     public ExpressionType DeclaredNodeType { get; }
 
-    /// <summary>Gets the position of the rule in the declaration order of the plan (the order in which candidates are tried).</summary>
+    /// <summary>
+    /// Gets the position of the rule in the declaration order of the plan (the order in which candidates are tried). The
+    /// <see cref="FlattenAttribute"/> rules are numbered separately, in their own declaration order, since they are tried at a
+    /// different point (before the chain is traversed).
+    /// </summary>
     public int DeclarationIndex { get; }
+
+    /// <summary>
+    /// Gets, for a <see cref="FlattenAttribute"/> rule, the operators it declares (its <see cref="DeclaredNodeType"/> is the first
+    /// one); empty for a rule marked with <see cref="ExpressionSignatureAttribute"/>.
+    /// </summary>
+    public IReadOnlyList<ExpressionType> FlattenedNodeTypes { get; }
 
     /// <summary>Gets the short name of the rule: the method name, with its parameter types when the name is overloaded.</summary>
     public string DisplayName { get; }

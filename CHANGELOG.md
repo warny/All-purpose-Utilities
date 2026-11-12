@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added — `omy.Utils` (expression engine: flatten rules)
+- `ExpressionTransformer` rules can receive a whole arithmetic chain at once: a method marked with the new
+  `FlattenAttribute` (`[Flatten(ExpressionType.Add, ExpressionType.Subtract, ExpressionType.Negate)]` or
+  `[Flatten(ExpressionType.Multiply, ExpressionType.Divide)]`) receives the chain as a `FlattenedTerm[]` (operation,
+  raw operand, source index), optionally preceded by the source node, before the chain is traversed. The extraction is
+  iterative and counted in the resource budgets; a `null` result falls back to the historical node-by-node processing.
+  `ExpressionTransformer.RebuildFlattenedChain` rebuilds a chain with new operands and its original grouping. Opt-in:
+  a transformer that declares no such rule, including `ExpressionSimplifier`, `ExpressionDerivation<T>` and
+  `ExpressionIntegration<T>`, is unchanged. New trace event kind `ExpressionTransformEventKind.ChainFlattened` and
+  `ExpressionTransformRuleInfo.FlattenedNodeTypes`. See `docs/expressions/FlattenArchitecture.md`.
+
 ### Changed — `omy.Utils` (expression engine: resource limits, ETC R1a-Security)
 - **Behavioural change — resource limits on by default.** `ExpressionSimplifier.Simplify`/`Transform`,
   `ExpressionComparer.Equals`/`GetHashCode`, `ExpressionExtensions.Simplify` and every `ExpressionTransformer` subclass

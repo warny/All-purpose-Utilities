@@ -16,7 +16,7 @@ namespace Utils.Expressions;
 /// Provides an abstract base class to transform or rewrite LINQ expression trees.
 /// Subclasses may override the transformation logic for specific expression signatures.
 /// </summary>
-public abstract class ExpressionTransformer
+public abstract partial class ExpressionTransformer
 {
     /// <summary>
     /// A reference to the <see cref="System.Linq.Expressions.Expression"/> type, used to validate that
@@ -158,6 +158,12 @@ public abstract class ExpressionTransformer
 
         /// <summary>The method declares more than one parameter, matched and passed positionally.</summary>
         Positional,
+
+        /// <summary>
+        /// A <see cref="FlattenAttribute"/> rule: it receives the flattened chain (<c>FlattenedTerm[]</c>), preceded by the
+        /// source node when it declares two parameters. Never a candidate of the per-node-type buckets.
+        /// </summary>
+        Flattened,
     }
 
     /// <summary>
@@ -170,8 +176,12 @@ public abstract class ExpressionTransformer
         /// <summary>The annotated transform rule method.</summary>
         public MethodInfo Method { get; }
 
-        /// <summary>The method-level <see cref="ExpressionSignatureAttribute"/> that makes this a candidate rule.</summary>
-        public ExpressionSignatureAttribute Signature { get; }
+        /// <summary>
+        /// The method-level <see cref="ExpressionSignatureAttribute"/> that makes this a candidate rule; <see langword="null"/>
+        /// exactly for a <see cref="FlattenAttribute"/> rule (<see cref="InvocationKind.Flattened"/>), which is never placed in
+        /// the per-node-type buckets and therefore never matched by signature.
+        /// </summary>
+        public ExpressionSignatureAttribute? Signature { get; }
 
         /// <summary>Precomputed metadata for every parameter of <see cref="Method"/>, in declaration order.</summary>
         public TransformParameter[] Parameters { get; }
@@ -262,7 +272,7 @@ public abstract class ExpressionTransformer
         /// <summary>Initializes a new <see cref="TransformRule"/> with its precomputed dispatch metadata.</summary>
         public TransformRule(
             MethodInfo method,
-            ExpressionSignatureAttribute signature,
+            ExpressionSignatureAttribute? signature,
             TransformParameter[] parameters,
             InvocationKind kind,
             bool returnsExpression,
@@ -315,10 +325,44 @@ public abstract class ExpressionTransformer
         /// <see cref="GetCandidates"/> returns for an <see cref="ExpressionType"/> outside
         /// <paramref name="rulesByNodeType"/>'s keys.
         /// </param>
-        public TransformPlan(Dictionary<ExpressionType, TransformRule[]> rulesByNodeType, TransformRule[] allRules)
+        /// <param name="flattenGroups">
+        /// The validated groups of <see cref="FlattenAttribute"/> rules (see <see cref="FlattenGroup"/>); empty when the
+        /// transformer declares none, which keeps <see cref="HasFlattenRules"/> false and the historical path unchanged.
+        /// </param>
+        public TransformPlan(Dictionary<ExpressionType, TransformRule[]> rulesByNodeType, TransformRule[] allRules, FlattenGroup[] flattenGroups)
         {
             _rulesByNodeType = rulesByNodeType;
             _allRules = allRules;
+            HasFlattenRules = flattenGroups.Length > 0;
+            _flattenGroupsByOperator = new FlattenGroup?[FlattenOperatorCount];
+            foreach (FlattenGroup group in flattenGroups)
+            {
+                foreach (ExpressionType operation in group.Operations)
+                {
+                    _flattenGroupsByOperator[FlattenOperatorIndex(operation)] = group;
+                }
+            }
+        }
+
+        /// <summary>
+        /// The flatten group whose operators include each flattenable operator, indexed by <see cref="FlattenOperatorIndex"/>;
+        /// at most one group per operator (validated by <see cref="BuildFlattenGroups"/>).
+        /// </summary>
+        private readonly FlattenGroup?[] _flattenGroupsByOperator;
+
+        /// <summary>Gets whether the transformer declares at least one <see cref="FlattenAttribute"/> rule.</summary>
+        public bool HasFlattenRules { get; }
+
+        /// <summary>
+        /// Returns the flatten group a chain rooted at a node of <paramref name="nodeType"/> belongs to, or
+        /// <see langword="null"/> when no flatten rule declares that operator.
+        /// </summary>
+        /// <param name="nodeType">The node type of a framework <see cref="BinaryExpression"/> or <see cref="UnaryExpression"/>.</param>
+        /// <returns>The group, or <see langword="null"/>.</returns>
+        public FlattenGroup? GetFlattenGroup(ExpressionType nodeType)
+        {
+            int index = FlattenOperatorIndex(nodeType);
+            return index < 0 ? null : _flattenGroupsByOperator[index];
         }
 
         /// <summary>
@@ -382,7 +426,14 @@ public abstract class ExpressionTransformer
         ArgumentNullException.ThrowIfNull(resourceLimits);
         ResourceLimits = resourceLimits;
         _transformPlan = _transformPlanCache.GetOrAdd(GetType(), static t => BuildPlan(t));
+        _hasFlattenRules = _transformPlan.HasFlattenRules;
     }
+
+    /// <summary>
+    /// Copy of <see cref="TransformPlan.HasFlattenRules"/>, so that the historical path of <see cref="TransformCore(Expression)"/>
+    /// costs a single field read for a transformer that declares no <see cref="FlattenAttribute"/> rule.
+    /// </summary>
+    private readonly bool _hasFlattenRules;
 
     /// <summary>
     /// Gets the resource limits of this instance (ETC R1a-Security). They apply when this instance starts an operation:
@@ -420,20 +471,42 @@ public abstract class ExpressionTransformer
     /// <returns>The resulting <see cref="TransformPlan"/>.</returns>
     private static TransformPlan BuildPlan(Type transformerType)
     {
-        List<TransformRule> rules = transformerType
-            .GetMethods(Public | NonPublic | InvokeMethod | Instance)
-            .Select(m => (Method: m, Attr: m.GetCustomAttributes<ExpressionSignatureAttribute>().FirstOrDefault()))
-            .Where(ma => ma.Attr != null)
-            .Select(ma => BuildRule(ma.Method, ma.Attr!))
-            .ToList();
+        // One scan of the instance methods, in the order GetMethods returns them: the signature rules keep exactly their
+        // historical order; the flatten rules (FlattenAttribute, never an ExpressionSignatureAttribute) are collected in the
+        // same pass and validated by BuildFlattenGroups.
+        var rules = new List<TransformRule>();
+        List<MethodInfo>? flattenMethods = null;
+        foreach (MethodInfo method in transformerType.GetMethods(Public | NonPublic | InvokeMethod | Instance))
+        {
+            ExpressionSignatureAttribute? signature = method.GetCustomAttributes<ExpressionSignatureAttribute>().FirstOrDefault();
+            if (method.IsDefined(typeof(FlattenAttribute), inherit: true))
+            {
+                if (signature is not null) throw InvalidFlattenRule(transformerType, method, "it is also marked with an ExpressionSignatureAttribute");
+                (flattenMethods ??= []).Add(method);
+                continue;
+            }
 
-        // The trace identity of each rule (an overloaded method name is completed with the parameter types).
-        Dictionary<string, int> nameCounts = rules.GroupBy(static rule => rule.Method.Name).ToDictionary(static group => group.Key, static group => group.Count());
+            if (signature is not null) rules.Add(BuildRule(method, signature));
+        }
+
+        ThrowOnStaticFlattenRule(transformerType);
+        FlattenGroup[] flattenGroups = [];
+        TransformRule[] flattenRules = [];
+        if (flattenMethods is not null) flattenGroups = BuildFlattenGroups(transformerType, flattenMethods, out flattenRules);
+
+        // The trace identity of each rule (an overloaded method name is completed with the parameter types). Flatten rules
+        // count in the overload detection and are numbered in their own sequence (see ExpressionTransformRuleInfo).
+        Dictionary<string, int> nameCounts = rules.Select(static rule => rule.Method.Name)
+            .Concat(flattenRules.Select(static rule => rule.Method.Name))
+            .GroupBy(static name => name)
+            .ToDictionary(static group => group.Key, static group => group.Count());
         for (int i = 0; i < rules.Count; i++)
         {
             TransformRule rule = rules[i];
-            rule.Info = new ExpressionTransformRuleInfo(rule.Method, transformerType, rule.Signature.ExpressionType, i, nameCounts[rule.Method.Name] > 1);
+            rule.Info = new ExpressionTransformRuleInfo(rule.Method, transformerType, rule.Signature!.ExpressionType, i, nameCounts[rule.Method.Name] > 1);
         }
+
+        AssignFlattenRuleInfos(transformerType, flattenRules, nameCounts);
 
         var rulesByNodeType = new Dictionary<ExpressionType, List<TransformRule>>();
         foreach (ExpressionType nodeType in _allExpressionTypes)
@@ -443,7 +516,7 @@ public abstract class ExpressionTransformer
 
         foreach (TransformRule rule in rules)
         {
-            bool isUnrestrictedCandidate = rule.Signature.ExpressionType == WildcardExpressionType
+            bool isUnrestrictedCandidate = rule.Signature!.ExpressionType == WildcardExpressionType
                 || !IsKnownSignatureAttributeType(rule.Signature.GetType());
 
             if (isUnrestrictedCandidate)
@@ -475,7 +548,7 @@ public abstract class ExpressionTransformer
             result[bucket.Key] = bucket.Value.ToArray();
         }
 
-        return new TransformPlan(result, rules.ToArray());
+        return new TransformPlan(result, rules.ToArray(), flattenGroups);
     }
 
     /// <summary>
@@ -624,7 +697,7 @@ public abstract class ExpressionTransformer
     /// <returns><see langword="true"/> if safe to fast-path; otherwise <see langword="false"/>.</returns>
     private static bool DetermineFastInvokerEligibility(MethodInfo method, TransformParameter[] parameters, InvocationKind kind)
     {
-        if (kind is not (InvocationKind.Single or InvocationKind.ExpressionArray or InvocationKind.Positional))
+        if (kind is not (InvocationKind.Single or InvocationKind.ExpressionArray or InvocationKind.Positional or InvocationKind.Flattened))
         {
             return false;
         }
@@ -953,6 +1026,9 @@ public abstract class ExpressionTransformer
 
         // Tracing (ExpressionTransformTracing): one field read when the operation is not traced.
         if (session.Trace is { } trace) return TransformTraced(trace, e);
+
+        // Flatten rules (FlattenAttribute): one field read for a transformer that declares none.
+        if (_hasFlattenRules) return TransformWithFlatten(e, null, out _, out _);
         return TransformPrepared(PrepareTransform(e), null);
     }
 
@@ -972,6 +1048,13 @@ public abstract class ExpressionTransformer
         int frame = trace.EnterTreatment(GetType(), e);
         try
         {
+            if (_hasFlattenRules)
+            {
+                Expression flattenResult = TransformWithFlatten(e, trace, out Expression prepared, out bool boundary);
+                trace.ExitTreatment(frame, e, prepared, flattenResult, boundary);
+                return flattenResult;
+            }
+
             TransformContext context = PrepareTransform(e);
             Expression result = TransformPrepared(context, trace);
             trace.ExitTreatment(frame, e, context.Expression, result, context.IsBoundary);
@@ -2052,8 +2135,8 @@ public abstract class ExpressionTransformer
                 continue;
             }
 
-            // If the attribute doesn't match the expression, skip
-            if (!rule.Signature.Match(e))
+            // If the attribute doesn't match the expression, skip (the buckets only hold signature rules)
+            if (!rule.Signature!.Match(e))
                 continue;
 
             // The method must return an Expression (or derived) type

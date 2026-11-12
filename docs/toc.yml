@@ -12,3 +12,5 @@
   href: expressions/CompiledBehavior-Study.md
 - name: Expressions — Simplification Policies
   href: expressions/SimplificationPolicies.md
+- name: Expressions — Flatten Rules
+  href: expressions/FlattenArchitecture.md
