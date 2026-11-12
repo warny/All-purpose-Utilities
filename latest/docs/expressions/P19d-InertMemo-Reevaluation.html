@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>P19d — Re-evaluation of the inert-classification memo | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="P19d — Re-evaluation of the inert-classification memo | omy.Utils Documentation ">
+      
+      
+      <link rel="icon" href="../../favicon.ico">
+      <link rel="stylesheet" href="../../public/docfx.min.css">
+      <link rel="stylesheet" href="../../public/main.css">
+      <meta name="docfx:navrel" content="../../toc.html">
+      <meta name="docfx:tocrel" content="../../toc.html">
+      
+      <meta name="docfx:rel" content="../../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/blob/master/docs/expressions/P19d-InertMemo-Reevaluation.md/#L1">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../../index.html">
+            <img id="logo" class="svg" src="../../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+
+      <div class="content">
+        <div class="actionbar">
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="p19d--re-evaluation-of-the-inert-classification-memo">P19d — Re-evaluation of the inert-classification memo</h1>
+
+<p>Status: <strong>studied, not kept</strong> (2026-11-12). No production change; the prototype stays on a local experiment branch.</p>
+<p>This note answers the question left open by <a href="SimplificationPolicies.html">SimplificationPolicies.md</a> §9.7 and
+<a href="ArchitectureC-Audit.html">ArchitectureC-Audit.md</a> §8.4: now that P19d (#688) has removed most of the comparer probe work, is the
+per-operation memo of <code>IsInertArithmetic</code>, withdrawn at C2b, worth shipping?</p>
+<h2 id="1-what-was-measured">1. What was measured</h2>
+<table>
+<thead>
+<tr>
+<th>Variant</th>
+<th>Source</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A</td>
+<td><code>6a14a78c</code> (<code>master</code> <code>c027aa7f</code> + the P19d review finalization tests, PR #689, squash-merged as <code>e64c0ba1</code>)</td>
+<td>base, no memo</td>
+</tr>
+<tr>
+<td>B</td>
+<td>a copy of A's binaries</td>
+<td>A/A control (noise of the protocol)</td>
+</tr>
+<tr>
+<td>C</td>
+<td><code>cefdb53d</code>, experiment branch <code>experiment/s5-p19d-inert-memo</code> (not pushed)</td>
+<td>the C2b memo ported onto A</td>
+</tr>
+<tr>
+<td>D</td>
+<td>C with <code>INERT_MEMO_DIAGNOSTICS</code> defined</td>
+<td>classification counters; never timed</td>
+</tr>
+</tbody>
+</table>
+<p>The prototype is the C2b patch of §9.7 (<code>Dictionary&lt;Expression, bool&gt;</code> keyed by reference identity, held by the
+<code>ExpressionResourceBudget</code> session, intermediate and negative results stored, nodes whose classification reads user-suppliable
+metadata left uncached), with two deliberate differences:</p>
+<ul>
+<li>the memoized walk counts <strong>no</strong> structural visit, like the historical walk, so budgets and refusals cannot differ from A;</li>
+<li>the diagnostics counters exist only under <code>INERT_MEMO_DIAGNOSTICS</code>, so the timed build C carries no counter.</li>
+</ul>
+<h2 id="2-exactness-and-work-deterministic">2. Exactness and work (deterministic)</h2>
+<p>Growth harness, 11 families (<code>N</code> = <code>nanpow</code>, <code>U</code>, <code>A</code>, <code>B</code>, <code>K</code>, <code>C</code>, <code>D</code>, <code>E</code>, <code>G</code>, <code>V</code>, <code>M3</code>), n = 8, 16, 32, 64, 128, 256,
+policies default, aggressive, trust and permissive: 260 rows per variant. A case whose first, unlimited simplification takes more
+than 2 s is recorded as stopped, without measured columns, and its policy is skipped for the larger n of the family; the 25
+stopped rows are the same for A, C and D (n = 256 of <code>A</code>, <code>K</code>, <code>M3</code>, <code>N</code>, <code>V</code> under the four policies, of <code>B</code> under the default,
+and n = 128 of <code>G</code> under the four policies). On the 235 measured rows, results, result sizes, transform and structural visits,
+comparer simplifications, verdict under the default limits and opaque type reads are <strong>identical</strong> for A, C and D.</p>
+<p>Classification work, permissive policy (variant D; the base walk is the <code>2n² + n</code> of §9.7):</p>
+<table>
+<thead>
+<tr>
+<th>Family</th>
+<th>n</th>
+<th>walk, base</th>
+<th>walk, memo</th>
+<th>table entries</th>
+<th>structural visits (all variants)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>nanpow</code> (N)</td>
+<td>8 / 32 / 64 / 128</td>
+<td>136 / 2,080 / 8,256 / 32,896</td>
+<td>31 / 127 / 255 / 511</td>
+<td>15 / 63 / 127 / 255</td>
+<td>1,863 / 103,059 / 805,155 / 6,365,763</td>
+</tr>
+<tr>
+<td><code>nanpow</code> with <code>Add</code> levels (M3)</td>
+<td>64 / 128</td>
+<td>8,384 at 64</td>
+<td>257 / 513</td>
+<td>128 / 256</td>
+<td>823,682 / 6,439,682</td>
+</tr>
+<tr>
+<td>shared DAG (G)</td>
+<td>64</td>
+<td>—</td>
+<td>2,303</td>
+<td>1,151</td>
+<td>5,101,748</td>
+</tr>
+<tr>
+<td>opaque leaf (U)</td>
+<td>256</td>
+<td>98,432</td>
+<td>98,432 (65,536 uncacheable)</td>
+<td>0</td>
+<td>394,752</td>
+</tr>
+<tr>
+<td>method-call left operand (D)</td>
+<td>256</td>
+<td>1,532</td>
+<td>1,532 (766 uncacheable)</td>
+<td>0</td>
+<td>398,630</td>
+</tr>
+</tbody>
+</table>
+<p>The memo still makes the walk linear. The walk is not counted among the structural visits, so the two figures measure different
+traversals; as a ratio of traversal volumes, the nodes the walk examines are about 1 % of the structural visits at n = 64 (8,256 /
+805,155) and 0.5 % at n = 128 (32,896 / 6,365,763). This is not a measure of CPU time (a walk step and a structural visit do not
+cost the same); §3 measures the time directly. The volume of <code>nanpow</code> is elsewhere: per doubling of n, structural visits grow
+×7.8 (≈ n³) and comparer simplifications are exactly <code>2n² + 2n</code> (144, 544, 2,112, 8,320, 33,024 at n = 8 to 128). That is the
+remaining comparer-probe term of S5A-14/S5A-15 on this family, which P19d reduced by a constant factor (907 → 66 ms at n = 64)
+but not in order. The default policy never reaches the memo path and is unaffected by it.</p>
+<h2 id="3-timing-benchmarkdotnet">3. Timing (BenchmarkDotNet)</h2>
+<p>BenchmarkDotNet 0.14.0, in-process, 8 warmups, 20 iterations, memory diagnoser, affinity <code>0x14</code>, high priority, one process per
+variant and round, three rounds in rotated order (A, B, C / B, C, A / C, A, B), median of the round means. Round 0 and the B run of
+round 1 were taken on 2026-11-11, the other runs on 2026-11-12 (the campaign was interrupted by a shutdown). The memo is
+therefore always compared with a base measured the same day; only the A/A pair of round 1 spans the two days. The A/A column
+estimates the dispersion of the protocol, but it does not neutralize a systematic drift between two measurement sessions, and
+the per-round values below show such a drift.</p>
+<table>
+<thead>
+<tr>
+<th>Case</th>
+<th>A/A (B vs A)</th>
+<th>memo (C vs A)</th>
+<th>Allocated, A → C</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>permissive / aggressive / default / trust <code>NaN + x ** y</code> (two-node operand)</td>
+<td>−1.5 / −0.3 / −3.0 / −2.5 %</td>
+<td><strong>+5.2 / +5.5</strong> / +1.2 / +0.8 %</td>
+<td>+215 B (the table) except default (identical)</td>
+</tr>
+<tr>
+<td>permissive U64 / U256 (uncacheable)</td>
+<td>−0.6 / −1.7 %</td>
+<td><strong>+8.8 / +4.9 %</strong></td>
+<td>identical</td>
+</tr>
+<tr>
+<td>permissive <code>sum12</code></td>
+<td>−0.5 %</td>
+<td>+4.4 %</td>
+<td>identical</td>
+</tr>
+<tr>
+<td>permissive N8 / N16 / N32 / N64 / N128</td>
+<td>−2.0 / −2.3 / −0.7 / −0.8 / 0.0 %</td>
+<td>+0.3 / −1.8 / +1.3 / +0.6 / −0.2 %</td>
+<td>+993 B to +22 KB</td>
+</tr>
+<tr>
+<td>default / aggressive / trust N64</td>
+<td>−1.4 / −1.1 / −0.1 %</td>
+<td>+1.5 / +1.3 / 0.0 %</td>
+<td>+0 to +13 KB</td>
+</tr>
+<tr>
+<td>permissive M3_32, G10, G100, V64</td>
+<td>−4.1, +2.3, −3.0, +0.6 %</td>
+<td>+2.3, −2.6, −0.2, +1.2 %</td>
+<td>+4.6 KB, +10 KB, +100 KB, +10 KB</td>
+</tr>
+<tr>
+<td>default / permissive C100</td>
+<td>−9.8 / −12.0 %</td>
+<td>−3.2 / −5.7 %</td>
+<td>identical (bimodal, path untouched)</td>
+</tr>
+<tr>
+<td>default / permissive A16, K16</td>
+<td>−5.9 / −4.5 %, −3.0 / −3.9 %</td>
+<td>+2.2 / −0.5 %, +1.5 / −1.7 %</td>
+<td>identical</td>
+</tr>
+<tr>
+<td>other 11 cases</td>
+<td>−3.7 % to +2.7 %</td>
+<td>−1.2 % to +2.4 %</td>
+<td>identical</td>
+</tr>
+</tbody>
+</table>
+<p>No case gains beyond the A/A spread, <code>nanpow</code> included: at n = 128 the variants are within 0.2 % (485 ms), with memo deltas of
++0.1 / +3.8 / −2.7 % per round. This absence of gain is the robust result.</p>
+<p>The time costs are less stable than at C2b. Per round (memo vs base, rounds 0 / 1 / 2):</p>
+<table>
+<thead>
+<tr>
+<th>Case</th>
+<th>memo vs base per round</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>permissive / aggressive <code>NaN + x ** y</code></td>
+<td>+4.4 / +10.5 / −1.4 %, +5.5 / +9.8 / +3.1 %</td>
+</tr>
+<tr>
+<td>permissive U64 / U256</td>
+<td>+8.8 / +10.6 / +0.2 %, +7.1 / +8.5 / +0.3 %</td>
+</tr>
+</tbody>
+</table>
+<p>Rounds 0 and 1 reproduce the C2b costs, round 2, measured entirely on 2026-11-12, does not. The +215 B of the table on small
+operands is deterministic; the time costs (about +150 ns on <code>NaN + x ** y</code>, +5 to +9 % on the uncacheable trees) are likely but
+not established by this campaign. Dropping the counted visits is not expected to remove them, since they come from the table and
+the lookups, not from the budget.</p>
+<p><strong>Raw data.</strong> The BenchmarkDotNet reports of the nine runs (and, for the 2026-11-12 runs, the logs and per-iteration
+measurements), the growth tables, the bench program, the scripts with the exact commands, and the prototype as a <code>git am</code> patch
+are archived locally as <code>p19d-inert-memo-raw-2026-11-12.zip</code> (484,099 bytes, SHA-256
+<code>1228F1B3499A1C3F83F2794F63C9B8D796B5E8A925B1894EDA9B78754F521AE6</code>), with a README listing the variants, the build and run
+commands and the stopped cases. It is not committed: the repository keeps no measurement data.</p>
+<h3 id="comparison-with-the-c2b-study-97-ecfacda4-before-p19d">Comparison with the C2b study (§9.7, <code>ecfacda4</code>, before P19d)</h3>
+<table>
+<thead>
+<tr>
+<th>Case</th>
+<th>C2b memo vs base</th>
+<th>P19d memo vs base</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>permissive <code>NaN + x ** y</code></td>
+<td>+5.1 %, +215 B</td>
+<td>+5.2 %, +215 B</td>
+</tr>
+<tr>
+<td>aggressive <code>NaN + x ** y</code></td>
+<td>+6.5 %</td>
+<td>+5.5 %</td>
+</tr>
+<tr>
+<td>permissive U64 / U256</td>
+<td>+8.8 / +8.9 %</td>
+<td>+8.8 / +4.9 %</td>
+</tr>
+<tr>
+<td>permissive <code>nanpow</code> 8 / 16 / 32</td>
+<td>+2.4 / −0.6 / −0.8 %</td>
+<td>+0.3 / −1.8 / +1.3 %</td>
+</tr>
+<tr>
+<td><code>nanpow</code> n = 64, time</td>
+<td>907 ms (every policy)</td>
+<td>64–65 ms (every policy, every variant)</td>
+</tr>
+<tr>
+<td><code>nanpow</code> n = 64, structural visits</td>
+<td>12,679,500</td>
+<td>805,155</td>
+</tr>
+</tbody>
+</table>
+<p>P19d divided the surrounding work by about 16, yet the walk's share stays negligible because the surrounding work is still
+super-quadratic; the medians of the memo's costs on small and uncacheable trees are of the same order as at C2b (with the
+round-to-round instability noted above).</p>
+<h2 id="4-decision">4. Decision</h2>
+<p>Following the decision rule of the study (keep only a net benefit with no regression on small trees or memory): <strong>the memo is not
+shipped</strong>, the result matches C2b. The decision rests on the absence of any gain and on the deterministic +215 B per small
+operand; it does not depend on the time costs, which this campaign does not establish firmly. <code>IsInertArithmetic</code> stays an uncounted, unmemoized walk; the branch <code>experiment/s5-p19d-inert-memo</code>
+is kept locally for reference only and is not to be merged.</p>
+<p>Redoing the study only makes sense if the comparer probes of <code>nanpow</code> (≈ n³ structural visits, <code>2n² + 2n</code> comparer simplifications)
+become linear or close to it; that is an S5A-14/S5A-15 follow-up, outside the scope of C3 and of this note. The harness family
+<code>nanpow</code> stays for that purpose.</p>
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/docs/expressions/P19d-InertMemo-Reevaluation.md/#L1" class="edit-link">Edit this page</a>
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

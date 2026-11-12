@@ -16756,6 +16756,16 @@
     },
     {
       "type": "Conceptual",
+      "source_relative_path": "docs/expressions/P19d-InertMemo-Reevaluation.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/expressions/P19d-InertMemo-Reevaluation.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
       "source_relative_path": "docs/expressions/SimplificationPolicies.md",
       "output": {
         ".html": {
