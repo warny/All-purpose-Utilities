@@ -994,7 +994,8 @@ path reachable on ordinary probes. A call or member whose reflection object is n
 (<code>ExpressionReflectionProvenance.IsRuntime</code>) is now ineligible, so no key is built and the operand is simplified as before;
 <code>Math.Abs</code>, <code>double.Sin</code> and every runtime member keep their keys (the <code>constabs</code>, <code>horner</code> and <code>p</code> counters are unchanged:
 468 / 8,388 / 2,388). Pinned by the Security tests <code>ObservedComparisonMemo_NeverKeysImpersonatingMembers</code> and
-<code>ConstantPlusCallNesting_WithImpersonatedMethod_IsNeverKeyedByTheMemo</code> (both failed before the fix). The framework itself
+<code>ConstantPlusCallNesting_WithImpersonatedMethod_IsNeverKeyedByTheMemo</code> (both failed before the fix; the second one is
+deterministic since the review finalization below). The framework itself
 still hashes the method when <code>Expression.Call</code> rebuilds a node (its parameter cache), which is limitation L-1 of the A-10
 note, not the memo.</li>
 </ul>
@@ -1005,6 +1006,27 @@ removed fixed work made the old ratio look flatter than the remaining n^3), <cod
 operation may now hold a memo of its own; they check that it never serves the caller's entry). New: <code>S5A14_…</code>, <code>S5A15_…</code>,
 <code>RetainedMemo_ServesLaterSessionsOfTheOperation_AndIsReleasedWithIt</code>, <code>RetainedMemo_IsReleasedWhenTheOperationThrows</code>, and the
 three review follow-up tests above.</p>
+<p>Review finalization (2026-11-11, tests only, no production change):</p>
+<ul>
+<li><strong>P19d-R1, budgets of a nested public <code>Equals</code>.</strong> <code>NestedPublicComparisonLimitTests</code> (Security) fills the retained memo of an
+unlimited simplification with both operands of a comparison, then calls <code>ExpressionComparer.Create(limits).Equals</code> on fresh
+copies from a constant's <code>Equals</code>. The nested comparison costs exactly the structural visits it costs with an empty memo
+(75, measured inside a bare operation); a budget of exactly 75 is accepted, 74 is refused with <code>StructuralWork</code> (limit 74,
+75 visits consumed, the counters of the operation not reset), the exception reaches the user code unchanged, and the caller's
+memo (entries, depth, activation, retention), deadlines and later reuse are restored after success, refusal, and a user
+exception thrown during the comparison. Before the detachment of <code>4f7edc43</code> the same call cost 1 visit (memo hit), so every
+budget from 1 to 74 accepted it. The counterpart <code>EqualsWithinOperation_KeepsReusingTheRetainedMemo_WhilePublicEqualsDoesNot</code>
+(Unit) checks that the rules' internal comparison still reuses the retained entries.</li>
+<li><strong>P19d-R2, no stack-trace attribution.</strong> <code>ConstantPlusCallNesting_WithImpersonatedMethod_IsNeverKeyedByTheMemo</code> no longer
+searches <code>Environment.StackTrace</code> for a method name (sensitive to inlining and to the configuration). The key walks are now
+tested directly with armed traps on trees built before arming (<code>ObservedComparisonMemoKeys_NeverRunImpersonatingMembers_InAnyPosition</code>:
+calls under one or several runtime calls, members inside arithmetic or under calls, key comparison of two copies: no call at all,
+not even a type read), and the end-to-end simplification attributes each call by count: the only calls into the impersonating
+method are the framework's <code>Expression.Call</code> validations (L-1), one <code>ContainsGenericParameters</code>, one <code>Attributes</code> and one
+parameter-cache <code>GetHashCode</code> each, identical with and without prior activation; a member access is never hashed or compared
+(<code>…WithImpersonatedMembers…</code>). Removing the provenance check from <code>HashCall</code> makes three of these tests fail, and so does removing
+it from <code>HashMember</code>, in Release.</li>
+</ul>
 <h3 id="84-remaining-for-the-next-stages">8.4 Remaining for the next stages</h3>
 <ul>
 <li><code>nanpow</code> after P19d: 66 ms at n = 64 instead of 907 ms under every policy (<a href="SimplificationPolicies.html">SimplificationPolicies.md</a>
