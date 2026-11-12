@@ -616,12 +616,12 @@ public abstract partial class ExpressionTransformer
     }
 
     /// <summary>
-    /// <see cref="TransformWithFlatten"/> outside a tracing scope. Kept out of line so that <see cref="TransformCore(Expression)"/>
-    /// holds neither the call's out locals nor its code when the transformer declares no flatten rule.
+    /// <see cref="TransformWithFlatten"/> outside a tracing scope: the single-argument entry of the flatten path, so that
+    /// <see cref="TransformCore(Expression)"/> holds none of the call's out locals. Inlining is left to the JIT (no measured
+    /// difference either way).
     /// </summary>
     /// <param name="e">The node to transform.</param>
     /// <returns>The result of the node.</returns>
-    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
     private Expression TransformWithFlattenUntraced(Expression e) => TransformWithFlatten(e, null, out _, out _);
 
     /// <summary>The historical part of <see cref="TransformCore(Expression)"/>: preparation, signature rules and finalization.</summary>

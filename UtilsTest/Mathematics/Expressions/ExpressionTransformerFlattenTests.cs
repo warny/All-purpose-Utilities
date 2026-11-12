@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.Expressions;
@@ -873,14 +874,53 @@ public class ExpressionTransformerFlattenTests
         Assert.IsTrue(results.All(static r => (int)r == 3));
     }
 
-    /// <summary>The attribute keeps a private copy of its operators.</summary>
+    /// <summary>
+    /// One instance used by several threads at once: the fallback link is per thread, so every thread sees its own chains
+    /// extracted once each (the shared chain, and the chain under the call) and gets the historical result, whatever the
+    /// interleaving.
+    /// </summary>
     [TestMethod]
-    public void Attribute_CopiesItsOperators()
+    public void SameInstance_OnSeveralThreads_KeepsTheFallbackPerThread()
     {
-        ExpressionType[] operations = [ExpressionType.Add, ExpressionType.Subtract];
-        var attribute = new FlattenAttribute(operations);
-        operations[0] = ExpressionType.Power;
-        CollectionAssert.AreEqual(new[] { ExpressionType.Add, ExpressionType.Subtract }, attribute.Operations.ToArray());
-        Assert.AreEqual(0, new FlattenAttribute(null!).Operations.Count);
+        MethodInfo abs = typeof(Math).GetMethod(nameof(Math.Abs), [typeof(double)])!;
+        Expression shared = Expression.Add(A, Expression.Subtract(B, C));
+        Expression expression = Expression.Add(shared, Expression.Call(abs, shared));
+        string expected = new LoggingTransformer().Transform(expression).ToString();
+        var transformer = new ConcurrentDecliningTransformer();
+
+        string[] results = new string[256];
+        Parallel.For(0, results.Length, i => results[i] = transformer.Transform(expression).ToString());
+
+        Assert.IsTrue(results.All(r => r == expected));
+        Assert.AreEqual(2 * results.Length, transformer.Invocations);
+    }
+
+    /// <summary>A stateless transformer whose additive flatten rule counts its invocations atomically and declines.</summary>
+    private sealed class ConcurrentDecliningTransformer : ExpressionTransformer
+    {
+        /// <summary>The number of invocations of the flatten rule.</summary>
+        private int _invocations;
+
+        /// <summary>Gets the number of invocations of the flatten rule.</summary>
+        public int Invocations => Volatile.Read(ref _invocations);
+
+        /// <inheritdoc/>
+        public override Expression Transform(Expression expression) => TransformCore(expression);
+
+        /// <inheritdoc/>
+        protected override Expression PrepareExpression(Expression e) => TransformCore(e);
+
+        /// <inheritdoc/>
+        protected override Expression FinalizeExpression(Expression e, Expression[] parameters) => CopyExpression(e, parameters);
+
+        /// <summary>Counts the invocation and declines.</summary>
+        /// <param name="terms">The terms.</param>
+        /// <returns><see langword="null"/>.</returns>
+        [Flatten(ExpressionType.Add, ExpressionType.Subtract, ExpressionType.Negate)]
+        private Expression? Additions(FlattenedTerm[] terms)
+        {
+            Interlocked.Increment(ref _invocations);
+            return null;
+        }
     }
 }

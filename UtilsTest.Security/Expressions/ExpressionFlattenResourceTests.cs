@@ -378,6 +378,24 @@ public class ExpressionFlattenResourceTests
     }
 
     /// <summary>
+    /// <see cref="FlattenAttribute"/> is immutable: it keeps a private copy of its operators, so mutating the array given to
+    /// its constructor never changes the declared set, and the published collection is read-only (no mutable alias).
+    /// </summary>
+    [TestMethod]
+    public void Attribute_CopiesItsOperators()
+    {
+        ExpressionType[] operations = [ExpressionType.Add, ExpressionType.Subtract];
+        var attribute = new FlattenAttribute(operations);
+
+        operations[0] = ExpressionType.Power;
+
+        CollectionAssert.AreEqual(new[] { ExpressionType.Add, ExpressionType.Subtract }, attribute.Operations.ToArray());
+        Assert.IsNotInstanceOfType<ExpressionType[]>(attribute.Operations);
+        Assert.ThrowsExactly<NotSupportedException>(() => ((IList<ExpressionType>)attribute.Operations)[0] = ExpressionType.Power);
+        Assert.AreEqual(0, new FlattenAttribute(null!).Operations.Count);
+    }
+
+    /// <summary>
     /// A chain never crosses a lexical boundary: the body of a lambda (invoked or quoted) is a chain of its own, reached only
     /// through the historical traversal that opens the lambda's scope.
     /// </summary>

@@ -302,7 +302,13 @@ Measured in processes that run no flatten transformer (median of the round means
 
 No difference beyond the A/A spread, and identical allocations: the historical path costs one field read.
 
-**A process that mixes both kinds of transformers.** In the three-round campaign where the same process also ran the flatten
+These rows were measured while the flatten entry called by `TransformCore` was marked `NoInlining`. The attribute was then
+removed (review: no demonstrated gain) and the cases measured again, three rounds, A against C, without an A/A control:
+simplifier −2.8 % and 0.0 %, derivation +0.2 %, `copy` +1.8 % (16 operands), +0.5 % (left, 256) and +4.0 % (balanced, 256),
+allocations identical; the A/A spread of the `copy` cases in the campaigns above is ±7 %. In a mixed process, `copy` on the
+left chain of 256 operands took 23.9 µs after the flatten cases, against 22.7 µs alone (+5 %).
+
+**A process that mixes both kinds of transformers.** In the three-round campaign (with the `NoInlining` entry) where the same process also ran the flatten
 subclasses of `copy`, the `copy` cases were 5 % to 28 % slower than on `master` (A/A: −7 % to +1 %), with identical
 allocations, and the simplifier and derivation cases 3 % slower (A/A: −1.5 % to −3.6 %). This is not a cost of the added
 code: the same binaries measured alone show no difference (table above), and with dynamic PGO disabled
