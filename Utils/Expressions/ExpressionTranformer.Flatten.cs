@@ -615,6 +615,15 @@ public abstract partial class ExpressionTransformer
         return TransformDeclinedChainNode(e, group.Mask, trace, out prepared, out boundary);
     }
 
+    /// <summary>
+    /// <see cref="TransformWithFlatten"/> outside a tracing scope. Kept out of line so that <see cref="TransformCore(Expression)"/>
+    /// holds neither the call's out locals nor its code when the transformer declares no flatten rule.
+    /// </summary>
+    /// <param name="e">The node to transform.</param>
+    /// <returns>The result of the node.</returns>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+    private Expression TransformWithFlattenUntraced(Expression e) => TransformWithFlatten(e, null, out _, out _);
+
     /// <summary>The historical part of <see cref="TransformCore(Expression)"/>: preparation, signature rules and finalization.</summary>
     /// <param name="e">The node to transform.</param>
     /// <param name="trace">The tracing state of the operation, or <see langword="null"/>.</param>

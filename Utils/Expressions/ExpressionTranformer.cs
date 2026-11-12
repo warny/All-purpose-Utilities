@@ -1027,8 +1027,9 @@ public abstract partial class ExpressionTransformer
         // Tracing (ExpressionTransformTracing): one field read when the operation is not traced.
         if (session.Trace is { } trace) return TransformTraced(trace, e);
 
-        // Flatten rules (FlattenAttribute): one field read for a transformer that declares none.
-        if (_hasFlattenRules) return TransformWithFlatten(e, null, out _, out _);
+        // Flatten rules (FlattenAttribute): one field read for a transformer that declares none. The call takes the node
+        // alone and is never inlined, so this method, the hot recursion of every transformer, keeps its historical frame.
+        if (_hasFlattenRules) return TransformWithFlattenUntraced(e);
         return TransformPrepared(PrepareTransform(e), null);
     }
 

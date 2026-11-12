@@ -281,7 +281,77 @@ decision. No event changes for a transformer without flatten rules.
 
 ## 19. Measurements
 
-See §19.1–19.3 (filled from the benchmark campaign of the PR).
+Machine: i7-12700KF, Windows 11, .NET 9. BenchmarkDotNet 0.14.0, in-process, 8 warmups, 20 iterations, memory diagnoser,
+affinity `0x14`, high priority, one process per variant and round. Variants: A = `master` `a925436a`, B = a copy of A's
+binaries (A/A control), C = this branch. The test transformer `copy` recurses into every child and copies every node (the
+smallest possible work per node, so the most sensitive to the infrastructure); `decline`, `accept` and `extract` are
+subclasses of it with flatten rules.
+
+### 19.1 Transformers without flatten rules
+
+Measured in processes that run no flatten transformer (median of the round means):
+
+| Case | A (`master`) | B (A/A) | C (branch) | Allocated |
+|---|---|---|---|---|
+| `ExpressionSimplifier`, `x * 2 + sin(y)` (3 rounds) | 4.410 µs | +0.6 % | +1.2 % | identical |
+| `ExpressionSimplifier`, left sum of 16 parameters (3 rounds) | 1,595 µs | +0.5 % | +1.8 % | identical |
+| `ExpressionDerivation<double>`, `x²·sin(x) + 3x − exp(2x)/x` (3 rounds) | 303.2 µs | +1.4 % | +1.7 % | identical |
+| `copy`, left chain of 16 operands (2 rounds) | 1.189 / 1.288 µs | — | 1.203 / 1.184 µs | identical |
+| `copy`, left chain of 256 operands (2 rounds) | 22.02 / 23.85 µs | — | 22.36 / 21.86 µs | identical |
+| `copy`, balanced chain of 256 operands (2 rounds) | 18.96 / 19.06 µs | — | 18.51 / 18.82 µs | identical |
+
+No difference beyond the A/A spread, and identical allocations: the historical path costs one field read.
+
+**A process that mixes both kinds of transformers.** In the three-round campaign where the same process also ran the flatten
+subclasses of `copy`, the `copy` cases were 5 % to 28 % slower than on `master` (A/A: −7 % to +1 %), with identical
+allocations, and the simplifier and derivation cases 3 % slower (A/A: −1.5 % to −3.6 %). This is not a cost of the added
+code: the same binaries measured alone show no difference (table above), and with dynamic PGO disabled
+(`DOTNET_TieredPGO=0`) `copy` takes the same time alone (37.6 / 36.8 µs) and after the flatten cases (37.6 / 36.2 µs). The
+engine methods shared by all transformers are compiled once per process, from the profile of whatever ran first; a process
+that runs flatten transformers before historical ones on a hot path can therefore see the historical ones slower.
+
+### 19.2 Opt-in transformers
+
+Against `copy` on the same tree, same process, three rounds (median; the rounds agree within a few points, except `accept` on 16 operands, −3 % to −16 %):
+
+| Tree | `decline` (rules always return `null`) | `accept` (transform each operand, faithful rebuild) | `extract` (the rule returns a constant) |
+|---|---|---|---|
+| left, 16 operands | +56 % time, +70 % allocated | −10 %, +100 % | −73 %, −30 % |
+| left, 256 | +55 %, +60 % | −35 %, +74 % | −82 %, −40 % |
+| right, 256 | +57 %, +36 % | −32 %, +26 % | −81 %, −64 % |
+| balanced, 256 | +55 %, +38 % | −23 %, +29 % | −78 %, −62 % |
+| multiplicative, 256 | +62 %, +60 % | −33 %, +74 % | −81 %, −40 % |
+
+- **A declined chain is not free.** It pays the extraction (lists of terms, one array) and the rule invocation on top of the
+  unchanged historical traversal: about +55 % time on a transformer that does almost nothing per node. The absolute cost is
+  about 55 ns and 80 B per operand; it weighs less on a transformer whose rules do real work. A transformer should declare
+  a flatten rule only for chains it mostly accepts.
+- **An accepted chain** is faster than the historical traversal (no per-level rule dispatch, preparation or finalization) but
+  allocates more in this benchmark, because the rule builds an operand array and `RebuildFlattenedChain` extracts the chain
+  a second time.
+- **Extraction alone** costs about a fifth of the historical traversal.
+
+### 19.3 Growth (exact counts)
+
+For every shape (left, right, balanced, alternating `+`/`−`, multiplicative, shared DAG) and every size from 8 to 4,096
+operands (DAG: 3 to 12 levels, up to 8,191 logical nodes), with `n` operands:
+
+| Mode | Transformation visits | Structural visits | Flatten invocations | `PrepareExpression` calls | `FinalizeExpression` calls |
+|---|---|---|---|---|---|
+| `copy` (historical) | `2n − 1` | none | — | `2n − 2` | `2n − 1` |
+| `decline` | `2n` | `2n − 1` | 1 | `2n − 2` | `2n − 1` |
+| `accept` | `n + 1` | `4n − 2` | 1 | 0 | `n` |
+| `extract` | 1 | `2n − 1` | 1 | 0 | 0 |
+
+One flatten invocation per chain in every case, including the shared DAG. The result of `decline` and `accept` has the same
+`2n − 1` nodes as the source. Stack: a chain of 100,000 operands of every shape is extracted, given to its rule and rebuilt on
+a 256 KiB thread (security tests); the same chain, declined, ends with the controlled `Stack` refusal of the historical
+recursion.
+
+### 19.4 Not measured
+
+The one-time cost of building the plan of a transformer type (one more reflection scan, for static methods, and an
+attribute test per method) was not measured.
 
 ## 20. Future uses (not part of PR A)
 
