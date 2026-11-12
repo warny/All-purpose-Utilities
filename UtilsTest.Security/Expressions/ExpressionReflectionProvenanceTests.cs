@@ -469,11 +469,113 @@ public class ExpressionReflectionProvenanceTests
     }
 
     /// <summary>
-    /// End to end, with and without memo activation: simplifying a nesting <c>2 + Abs(2 + Abs(… FakeSin(x)))</c>, whose probes
-    /// activate the comparison memo on its nested calls (S5 P19d), keeps the impersonating method's evaluations, never reaches
-    /// it from the observed memo's keys, and gives the same result as the same simplification run inside an already activated
-    /// comparison session. The framework itself still hashes the method when a call node is rebuilt
-    /// (<c>Expression.Call</c> caches parameters by method); only the calls made from the memo's frames are counted.
+    /// S5 P19d review (R2): the observed memo's key construction and key comparison never run a member of an impersonating
+    /// method, field or property, wherever it sits: at the root, below one or several runtime calls, inside ordinary arithmetic,
+    /// or as the receiver or owner of a runtime member. Every tree is built before the traps are armed, so the framework
+    /// factories (limitation L-1) cannot be the source of a recorded call; any call made while armed throws and is counted.
+    /// Each tree is refused, and two trees holding the same impersonating object are never compared (no key exists).
+    /// </summary>
+    [TestMethod]
+    public void ObservedComparisonMemoKeys_NeverRunImpersonatingMembers_InAnyPosition()
+    {
+        MethodInfo realSin = Static(typeof(Math), nameof(Math.Sin), typeof(double));
+        MethodInfo abs = Static(typeof(Math), nameof(Math.Abs), typeof(double));
+        MethodInfo max = Static(typeof(Math), nameof(Math.Max), typeof(double), typeof(double));
+        var sin = new ImpersonatingMethod(realSin);
+        var field = new ImpersonatingField(typeof(Cell).GetField(nameof(Cell.Value))!);
+        var property = new ImpersonatingProperty(typeof(Cell).GetProperty(nameof(Cell.Property))!);
+        ConstantExpression cell = Expression.Constant(new Cell());
+        Func<Expression, Expression> absOf = e => Expression.Call(abs, e);
+        Func<Expression>[] builders =
+        [
+            () => Expression.Call(sin, X),
+            () => absOf(absOf(absOf(Expression.Call(sin, X)))),
+            () => Expression.Add(Expression.Constant(2.0), absOf(Expression.Add(Expression.Constant(2.0), absOf(Expression.Call(sin, X))))),
+            () => Expression.Multiply(X, Expression.Subtract(Expression.Call(sin, X), Expression.Constant(1.0))),
+            () => Expression.Call(max, absOf(X), absOf(Expression.Negate(Expression.Call(sin, X)))),
+            () => Expression.Field(cell, field),
+            () => Expression.Add(Expression.Multiply(Expression.Constant(2.0), Expression.Field(cell, field)), X),
+            () => absOf(Expression.Add(Expression.Constant(2.0), absOf(Expression.Field(cell, field)))),
+            () => Expression.Property(cell, property),
+            () => Expression.Subtract(X, Expression.Property(cell, property)),
+            () => Expression.Call(max, X, absOf(absOf(Expression.Property(cell, property)))),
+        ];
+
+        // Two independent instances of every tree, built before arming: no framework factory runs below.
+        Expression[] left = [.. builders.Select(build => build())];
+        Expression[] right = [.. builders.Select(build => build())];
+        ReflectionTrap[] traps = [sin.Trap, field.Trap, property.Trap];
+        foreach (ReflectionTrap trap in traps)
+        {
+            trap.Reset();
+            trap.Armed = true;
+        }
+
+        try
+        {
+            for (int i = 0; i < left.Length; i++)
+            {
+                Assert.IsFalse(ExpressionSimplifier.IsObservedComparisonMemoEligible(left[i]), $"tree {i} must have no observed key");
+                Assert.IsFalse(ExpressionSimplifier.ObservedComparisonMemoKeysEqual(left[i], right[i]), $"tree {i} must never be compared as a key");
+                Assert.IsFalse(ExpressionSimplifier.ObservedComparisonMemoKeysEqual(left[i], left[i]), $"tree {i} must never be compared as a key");
+            }
+        }
+        finally
+        {
+            foreach (ReflectionTrap trap in traps) trap.Armed = false;
+        }
+
+        foreach (ReflectionTrap trap in traps)
+        {
+            Assert.AreEqual(0, trap.ArmedCalls, string.Join(", ", trap.Calls));
+            Assert.AreEqual(0, trap.Calls.Count, "the key walks must not even read the type of an impersonating member: " + string.Join(", ", trap.Calls));
+        }
+
+        // Positive controls: the same shapes over runtime members keep equal observed keys.
+        Expression runtimeNesting() => Expression.Add(Expression.Constant(2.0), absOf(Expression.Add(Expression.Constant(2.0), absOf(Expression.Call(realSin, X)))));
+        Expression runtimeField() => absOf(Expression.Add(Expression.Constant(2.0), absOf(Expression.Field(cell, nameof(Cell.Value)))));
+        Expression runtimeProperty() => Expression.Call(max, X, absOf(absOf(Expression.Property(cell, nameof(Cell.Property)))));
+        Assert.IsTrue(ExpressionSimplifier.ObservedComparisonMemoKeysEqual(runtimeNesting(), runtimeNesting()));
+        Assert.IsTrue(ExpressionSimplifier.ObservedComparisonMemoKeysEqual(runtimeField(), runtimeField()));
+        Assert.IsTrue(ExpressionSimplifier.ObservedComparisonMemoKeysEqual(runtimeProperty(), runtimeProperty()));
+    }
+
+    /// <summary>Counts the recorded calls of <paramref name="trap"/> by member name.</summary>
+    /// <param name="trap">The trap.</param>
+    /// <returns>The number of calls per member name.</returns>
+    private static Dictionary<string, int> CountCalls(ReflectionTrap trap)
+        => trap.Calls.GroupBy(name => name).ToDictionary(group => group.Key, group => group.Count());
+
+    /// <summary>
+    /// Asserts that the recorded calls of an impersonating method are exactly those of the framework's
+    /// <c>Expression.Call</c> validations (limitation L-1), which the transformer runs when it rebuilds a call node: each
+    /// validation reads <see cref="MethodBase.ContainsGenericParameters"/> and <see cref="MethodBase.Attributes"/> once and
+    /// looks the method up once in the framework's parameter cache (one <see cref="object.GetHashCode"/>, at most one
+    /// <see cref="object.Equals(object?)"/>); <see cref="MethodInfo.ReturnType"/> is read by the <c>Type</c> getter of the
+    /// node. The engine itself reads none of them (<see cref="DecisionPoints_NeverReadImpersonatingObjects"/>), so a key built
+    /// or compared over the method would add a hash or an equality call that no validation accounts for.
+    /// </summary>
+    /// <param name="calls">The calls per member name.</param>
+    /// <param name="label">The assertion label.</param>
+    private static void AssertOnlyCallValidations(Dictionary<string, int> calls, string label)
+    {
+        string recorded = string.Join(", ", calls.Select(pair => pair.Key + "=" + pair.Value));
+        string[] allowed = [nameof(MethodBase.ContainsGenericParameters), nameof(MethodBase.Attributes), nameof(GetHashCode), nameof(Equals), nameof(MethodInfo.ReturnType)];
+        CollectionAssert.IsSubsetOf(calls.Keys.ToArray(), allowed, $"{label}: {recorded}");
+        int validations = calls.GetValueOrDefault(nameof(MethodBase.ContainsGenericParameters));
+        Assert.IsTrue(validations > 0, $"{label}: the call node is rebuilt at least once ({recorded})");
+        Assert.AreEqual(validations, calls.GetValueOrDefault(nameof(MethodBase.Attributes)), $"{label}: {recorded}");
+        Assert.AreEqual(validations, calls.GetValueOrDefault(nameof(GetHashCode)), $"{label}: one parameter-cache lookup per validation ({recorded})");
+        Assert.IsTrue(calls.GetValueOrDefault(nameof(Equals)) <= validations, $"{label}: {recorded}");
+    }
+
+    /// <summary>
+    /// End to end, with and without prior memo activation: simplifying a nesting <c>2 + Abs(2 + Abs(… FakeSin(x)))</c>, whose
+    /// probes activate the comparison memo on its nested calls (S5 P19d), keeps the impersonating method's evaluations, reaches
+    /// it only through the framework's own call validations (L-1, <see cref="AssertOnlyCallValidations"/>), never from the
+    /// observed memo's keys, and gives the same result and the same calls as the same simplification run inside an already
+    /// activated comparison session. Replaces an earlier attribution by the names found in <see cref="Environment.StackTrace"/>,
+    /// which depended on inlining and on the build configuration.
     /// </summary>
     [TestMethod]
     public void ConstantPlusCallNesting_WithImpersonatedMethod_IsNeverKeyedByTheMemo()
@@ -485,28 +587,70 @@ public class ExpressionReflectionProvenanceTests
 
         AssertUserEvaluationKept(nesting, X, sin, sin.Trap, 0.5);
 
-        int memoCalls = 0;
-        sin.Trap.Observer = _ =>
+        sin.Trap.Reset();
+        Expression plain = new ExpressionSimplifier().Simplify(nesting);
+        Dictionary<string, int> plainCalls = CountCalls(sin.Trap);
+
+        sin.Trap.Reset();
+        Expression activated;
+        using (ExpressionSimplifier.BeginActivatedComparisonMemoSessionForTesting())
         {
-            if (Environment.StackTrace.Contains("ObservedComparisonMemoKey", StringComparison.Ordinal)) memoCalls++;
-        };
-        string plain;
-        string activated;
-        try
-        {
-            plain = new ExpressionSimplifier().Simplify(nesting).ToString();
-            using (ExpressionSimplifier.BeginActivatedComparisonMemoSessionForTesting())
-            {
-                activated = ExpressionComparer.SimplifyForComparison(nesting).ToString();
-            }
-        }
-        finally
-        {
-            sin.Trap.Observer = null;
+            activated = ExpressionComparer.SimplifyForComparison(nesting);
         }
 
-        Assert.AreEqual(0, memoCalls, "The observed memo must not hash or compare an impersonating method.");
-        Assert.AreEqual(plain, activated);
+        Dictionary<string, int> activatedCalls = CountCalls(sin.Trap);
+
+        AssertOnlyCallValidations(plainCalls, "plain");
+        AssertOnlyCallValidations(activatedCalls, "activated");
+        CollectionAssert.AreEquivalent(plainCalls.ToArray(), activatedCalls.ToArray(), "prior activation must not change the calls into the impersonating method");
+        Assert.AreEqual(Occurrences(nesting, sin), Occurrences(plain, sin));
+        Assert.AreEqual(Occurrences(nesting, sin), Occurrences(activated, sin));
+        Assert.AreEqual(plain.ToString(), activated.ToString());
+    }
+
+    /// <summary>
+    /// End to end on member accesses: simplifying <c>2 + Abs(2 + Abs(… cell.Field))</c> and the same nesting over a property,
+    /// with and without prior memo activation, never hashes or compares the impersonating field or property (the framework's
+    /// rebuild of a member access looks nothing up by member), keeps the member reads, and gives the same results.
+    /// </summary>
+    [TestMethod]
+    public void ConstantPlusCallNesting_WithImpersonatedMembers_IsNeverKeyedByTheMemo()
+    {
+        MethodInfo abs = Static(typeof(Math), nameof(Math.Abs), typeof(double));
+        var field = new ImpersonatingField(typeof(Cell).GetField(nameof(Cell.Value))!);
+        var property = new ImpersonatingProperty(typeof(Cell).GetProperty(nameof(Cell.Property))!);
+        ConstantExpression cell = Expression.Constant(new Cell());
+        (Expression Leaf, MemberInfo Member, ReflectionTrap Trap)[] cases =
+        [
+            (Expression.Field(cell, field), field, field.Trap),
+            (Expression.Property(cell, property), property, property.Trap),
+        ];
+
+        foreach ((Expression leaf, MemberInfo member, ReflectionTrap trap) in cases)
+        {
+            Expression nesting = leaf;
+            for (int i = 0; i < 6; i++) nesting = Expression.Add(Expression.Constant(2.0), Expression.Call(abs, nesting));
+
+            trap.Reset();
+            Expression plain = new ExpressionSimplifier().Simplify(nesting);
+            Dictionary<string, int> plainCalls = CountCalls(trap);
+            trap.Reset();
+            Expression activated;
+            using (ExpressionSimplifier.BeginActivatedComparisonMemoSessionForTesting())
+            {
+                activated = ExpressionComparer.SimplifyForComparison(nesting);
+            }
+
+            Dictionary<string, int> activatedCalls = CountCalls(trap);
+            string recorded = string.Join(", ", plainCalls.Select(pair => pair.Key + "=" + pair.Value));
+
+            Assert.AreEqual(0, plainCalls.GetValueOrDefault(nameof(GetHashCode)), recorded);
+            Assert.AreEqual(0, plainCalls.GetValueOrDefault(nameof(Equals)), recorded);
+            CollectionAssert.AreEquivalent(plainCalls.ToArray(), activatedCalls.ToArray());
+            Assert.AreEqual(Occurrences(nesting, member), Occurrences(plain, member));
+            Assert.AreEqual(Occurrences(nesting, member), Occurrences(activated, member));
+            Assert.AreEqual(plain.ToString(), activated.ToString());
+        }
     }
 
     // ---------------------------------------------------------------- S-09
