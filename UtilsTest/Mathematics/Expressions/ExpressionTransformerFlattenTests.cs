@@ -295,28 +295,85 @@ public class ExpressionTransformerFlattenTests
     }
 
     /// <summary>
-    /// Documented limit of the fallback: while a declined chain is processed historically, its crossed nodes are recognized by
-    /// reference, so another occurrence of the very same node object under one of its operands (<c>s + Abs(s)</c>) is
-    /// processed historically too instead of being offered as a chain; a structurally equal but distinct node is offered.
+    /// The fallback excludes positions, not node objects. In <c>s + Abs(s)</c> with <c>s = a + b</c>, the first occurrence of
+    /// <c>s</c> belongs to the root chain and the second one, under the call, is a chain of its own even though it is the same
+    /// object: a rule that declines three terms and accepts two declines the root and still transforms the occurrence under the
+    /// call, exactly as it does for a structurally equal but distinct node. The result does not depend on the sharing.
     /// </summary>
     [TestMethod]
-    public void DeclinedChain_SharedCrossedNode_IsNotOfferedAgainDuringTheFallback()
+    public void DeclinedChain_SharedNode_IsStillOfferedAtItsOtherOccurrences()
     {
         MethodInfo abs = typeof(Math).GetMethod(nameof(Math.Abs), [typeof(double)])!;
         Expression shared = Expression.Add(A, B);
+        Func<FlatteningTransformer, Expression, FlattenedTerm[], Expression?> acceptPairs =
+            static (_, _, terms) => terms.Length == 2 ? Expression.Constant(42.0) : null;
 
-        var sharing = new FlatteningTransformer();
-        sharing.Transform(Expression.Add(shared, Expression.Call(abs, shared)));
-        Assert.AreEqual(1, sharing.Received.Count);
+        var sharing = new FlatteningTransformer { Additive = acceptPairs };
+        Expression sharedResult = sharing.Transform(Expression.Add(shared, Expression.Call(abs, shared)));
 
-        var distinct = new FlatteningTransformer();
-        distinct.Transform(Expression.Add(shared, Expression.Call(abs, Expression.Add(A, B))));
-        Assert.AreEqual(2, distinct.Received.Count);
+        var distinct = new FlatteningTransformer { Additive = acceptPairs };
+        Expression distinctResult = distinct.Transform(Expression.Add(shared, Expression.Call(abs, Expression.Add(A, B))));
 
-        // After the fallback the marks are gone: the shared node is a chain root again.
-        sharing.Received.Clear();
-        sharing.Transform(shared);
-        Assert.AreEqual(1, sharing.Received.Count);
+        Assert.AreEqual("((a + b) + Abs(42))", sharedResult.ToString());
+        Assert.AreEqual(sharedResult.ToString(), distinctResult.ToString());
+        CollectionAssert.AreEqual(new[] { 3, 2 }, sharing.Received.Select(static r => r.Terms.Length).ToArray());
+        Assert.AreSame(shared, sharing.Received[1].Source);
+
+        // A node object crossed several times by the declined chain itself is never offered: s + s is extracted once.
+        var twice = new FlatteningTransformer();
+        twice.Transform(Expression.Add(shared, shared));
+        Assert.AreEqual(1, twice.Received.Count);
+    }
+
+    /// <summary>
+    /// The positional link of the fallback is restored when the traversal fails: after an exception thrown by the preparation
+    /// of a chain node, before that node consumed its link, the same instance offers that very node as a chain root again.
+    /// </summary>
+    [TestMethod]
+    public void DeclinedChain_FailingFallback_LeavesNoLink()
+    {
+        Expression inner = Expression.Add(A, B);
+        Expression chain = Expression.Add(inner, C);
+        var transformer = new ThrowingFallbackTransformer();
+
+        Assert.ThrowsExactly<InvalidOperationException>(() => transformer.Transform(chain));
+        CollectionAssert.AreEqual(new[] { 3 }, transformer.Received);
+
+        transformer.Received.Clear();
+        transformer.Throw = false;
+        transformer.Transform(inner);
+        transformer.Transform(chain);
+        CollectionAssert.AreEqual(new[] { 2, 3 }, transformer.Received);
+    }
+
+    /// <summary>A flatten rule that always declines, with a preparation that throws on demand for an operator node.</summary>
+    private sealed class ThrowingFallbackTransformer : ExpressionTransformer
+    {
+        /// <summary>Gets or sets whether the preparation of an operator node throws.</summary>
+        public bool Throw { get; set; } = true;
+
+        /// <summary>Gets the term counts of the chains received.</summary>
+        public List<int> Received { get; } = [];
+
+        /// <inheritdoc/>
+        public override Expression Transform(Expression expression) => TransformCore(expression);
+
+        /// <inheritdoc/>
+        protected override Expression PrepareExpression(Expression e)
+            => Throw && e is BinaryExpression ? throw new InvalidOperationException("fallback failure") : TransformCore(e);
+
+        /// <inheritdoc/>
+        protected override Expression FinalizeExpression(Expression e, Expression[] parameters) => CopyExpression(e, parameters);
+
+        /// <summary>Records the chain and declines.</summary>
+        /// <param name="terms">The terms.</param>
+        /// <returns><see langword="null"/>.</returns>
+        [Flatten(ExpressionType.Add)]
+        private Expression? Additions(FlattenedTerm[] terms)
+        {
+            Received.Add(terms.Length);
+            return null;
+        }
     }
 
     /// <summary>

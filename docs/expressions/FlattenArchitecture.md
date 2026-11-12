@@ -112,7 +112,7 @@ For a chain of `n` operands made of binary operators (`2n − 1` nodes):
 | Transformation budget | 1 visit for the chain |
 | Stack | constant |
 | Faithful reconstruction (§12) | O(n), iterative; one more extraction |
-| Fallback after a refusal (§13) | the historical traversal, plus O(n) to mark and unmark the crossed nodes |
+| Fallback after a refusal (§13) | the historical traversal, plus a constant per crossed node (the positional link) |
 
 These bounds cover the infrastructure only. A rule that sorts, compares or re-transforms its terms adds its own cost, and a
 declined chain keeps the historical cost, including its recursion depth.
@@ -196,9 +196,11 @@ operand whose type does not fit its operator fails in the expression factory.
 
 When every rule of the group returns `null`, the transformer processes the root exactly as it does without flatten rules:
 `PrepareExpression` on the children, the signature rules, `FinalizeExpression`, in the historical order, with the historical
-recursion. While it does so, the crossed nodes of the declined chain are marked (per thread and per transformer instance,
-by reference), so reaching one of them through `TransformCore` does not extract a sub-chain again. The marks are removed in
-a `finally`.
+recursion. The fallback does not extract the chain again from its own nodes, and it identifies them **by position, not by
+reference**: when a node of the declined chain prepares a child that the chain also crosses, the engine leaves a link (per
+thread, naming the transformer and the child) that the first `TransformCore` call on that child, made during its
+`PrepareExpression`, consumes; that call continues the declined chain. The link is restored in a `finally`. No table of
+nodes is kept.
 
 Consequences:
 
@@ -208,9 +210,11 @@ Consequences:
 - `PrepareExpression` keeps its meaning for every transformer: it is not replaced by a transformation of the inner nodes
   (in `ExpressionDerivation`, `PrepareExpression` does not differentiate).
 - The depth gain exists only for a chain that a rule accepts.
-- A chain inside an operand of the declined chain is still offered when the traversal reaches it. One limit: another
-  occurrence of the **same node object** as a crossed node, under an operand (`s + Abs(s)` with `s = a + b`), is processed
-  historically during the fallback, since the marks identify nodes, not positions.
+- A chain inside an operand of the declined chain is still offered when the traversal reaches it, **including another
+  occurrence of a node object the declined chain crosses**: in `s + Abs(s)` with `s = a + b`, the `s` under the call is a
+  chain of its own, exactly as a structurally equal but distinct node would be. The result never depends on whether a
+  sub-tree is shared. (A node object crossed twice by the same chain, `s + s`, is part of that chain at both positions.)
+- A `PrepareExpression` override that does not call `TransformCore` on the child it receives simply leaves the link unused.
 - Invoking a flatten rule is opt-in behavior in itself: a rule with side effects has them even when it declines.
 
 A rule that accepts is responsible for its operands (it calls `TransformCore` on those it wants transformed, in the order it
@@ -228,8 +232,11 @@ rejected because it would add state and could change the order of transformation
 - `RebuildFlattenedChain`: one more extraction. Called outside an operation, it starts one with the transformer's limits.
 - The fallback counts its historical visits; a declined chain therefore costs the historical traversal plus one
   transformation visit and `2n − 1` structural visits, once.
-- `MaxDepth` and `MaxNodes` are validated when the operation starts, before any rule: a chain deeper than the limit is still
-  refused, even if a flatten rule would have accepted it without recursion.
+- `MaxDepth` and `MaxNodes` are validated when the operation starts (`ExpressionShapeValidator`, before any rule): a chain
+  deeper than the limit is still refused, even if a flatten rule would have accepted it without recursion. Two different
+  quantities must not be confused: the **depth the budget accepts** (`MaxDepth`, 512 by default) is unchanged by flatten
+  rules; what an accepted chain reduces is the **execution stack actually used** by the transformation. Flatten rules do not
+  raise the first; they only make the second independent of the chain's depth.
 - `ExpressionResourceLimitException` and `InsufficientExecutionStackException` are never caught, never wrapped when they
   cross a flatten rule, and never turned into a result.
 
@@ -260,8 +267,8 @@ decision. No event changes for a transformer without flatten rules.
   inspected; an operator carrying a user `MethodInfo` is never crossed.
 - A chain never crosses a lexical scope (lambda, conversion lambda, block, catch) or a quote.
 - Operator methods, `Type` objects and operand references are preserved by the reconstruction.
-- No global mutable state: the plan is immutable per transformer type; the fallback marks are per thread and removed in
-  `finally`.
+- No global mutable state: the plan is immutable per transformer type; the fallback link is one per-thread value, restored
+  in `finally`.
 
 ## 18. Compatibility
 

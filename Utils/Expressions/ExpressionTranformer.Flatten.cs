@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using static System.Reflection.BindingFlags;
 
 namespace Utils.Expressions;
@@ -339,14 +338,17 @@ public abstract partial class ExpressionTransformer
     /// </summary>
     private sealed class FlattenedChain
     {
-        /// <summary>The crossed nodes and operands, in pre-order.</summary>
-        private readonly ChainEntry[] _entries;
+        /// <summary>
+        /// The crossed nodes and operands, in pre-order; <see langword="null"/> when the chain was extracted for rule dispatch
+        /// only (the reconstruction extracts its own).
+        /// </summary>
+        private readonly List<ChainEntry>? _entries;
 
         /// <summary>Initializes a chain.</summary>
         /// <param name="source">The root of the chain.</param>
-        /// <param name="entries">The crossed nodes and operands, in pre-order.</param>
+        /// <param name="entries">The crossed nodes and operands, in pre-order, when the provenance is kept.</param>
         /// <param name="terms">The terms, in operand order.</param>
-        private FlattenedChain(Expression source, ChainEntry[] entries, FlattenedTerm[] terms)
+        private FlattenedChain(Expression source, List<ChainEntry>? entries, FlattenedTerm[] terms)
         {
             Source = source;
             _entries = entries;
@@ -359,9 +361,6 @@ public abstract partial class ExpressionTransformer
         /// <summary>Gets the terms, in operand order (the pristine copy kept by the engine).</summary>
         public FlattenedTerm[] Terms { get; }
 
-        /// <summary>Gets the operator nodes the chain crosses, root first, in pre-order (with repetitions for shared nodes).</summary>
-        public IEnumerable<Expression> CrossedNodes => _entries.Where(static entry => entry.Crossed).Select(static entry => entry.Node);
-
         /// <summary>
         /// Extracts the chain rooted at <paramref name="root"/> with an explicit work stack (no recursion, whatever the depth of
         /// the chain), counting one structural visit per node examined. Every occurrence of a shared node is kept.
@@ -370,11 +369,12 @@ public abstract partial class ExpressionTransformer
         /// <param name="root">The root of the chain; the caller checked that it is crossed.</param>
         /// <param name="mask">The operator bit set of the chain's group.</param>
         /// <param name="additive">Whether the operators are the additive ones (otherwise the multiplicative ones).</param>
+        /// <param name="keepProvenance">Whether the grouping is recorded, as <see cref="Rebuild"/> requires.</param>
         /// <returns>The extracted chain.</returns>
         /// <exception cref="ExpressionResourceLimitException">The structural budget is exhausted.</exception>
-        internal static FlattenedChain Extract(ExpressionTransformer transformer, Expression root, int mask, bool additive)
+        internal static FlattenedChain Extract(ExpressionTransformer transformer, Expression root, int mask, bool additive, bool keepProvenance)
         {
-            var entries = new List<ChainEntry>();
+            List<ChainEntry>? entries = keepProvenance ? [] : null;
             var terms = new List<FlattenedTerm>();
             var work = new Stack<(Expression Node, bool Positive)>();
             work.Push((root, true));
@@ -386,7 +386,7 @@ public abstract partial class ExpressionTransformer
 
                 if (!ReferenceEquals(node, root) && !transformer.IsCrossedByChain(node, mask))
                 {
-                    entries.Add(new ChainEntry(node, Crossed: false));
+                    entries?.Add(new ChainEntry(node, Crossed: false));
                     ExpressionType operation = additive
                         ? positive ? ExpressionType.Add : ExpressionType.Subtract
                         : positive ? ExpressionType.Multiply : ExpressionType.Divide;
@@ -394,7 +394,7 @@ public abstract partial class ExpressionTransformer
                     continue;
                 }
 
-                entries.Add(new ChainEntry(node, Crossed: true));
+                entries?.Add(new ChainEntry(node, Crossed: true));
                 if (node is UnaryExpression unary)
                 {
                     // Negate: the operand's sign is inverted.
@@ -410,7 +410,7 @@ public abstract partial class ExpressionTransformer
                 work.Push((binary.Left, positive));
             }
 
-            return new FlattenedChain(root, entries.ToArray(), terms.ToArray());
+            return new FlattenedChain(root, entries, terms.ToArray());
         }
 
         /// <summary>
@@ -424,6 +424,7 @@ public abstract partial class ExpressionTransformer
         internal Expression Rebuild(IReadOnlyList<Expression> operands)
         {
             ArgumentNullException.ThrowIfNull(operands);
+            List<ChainEntry> entries = _entries ?? throw new InvalidOperationException("The chain was extracted without its provenance.");
             if (operands.Count != Terms.Length) throw new ArgumentException($"Expected {Terms.Length} operands, got {operands.Count}.", nameof(operands));
 
             bool unchanged = true;
@@ -434,9 +435,9 @@ public abstract partial class ExpressionTransformer
             // is on top of the stack, the right one below it.
             var values = new Stack<Expression>();
             int operand = operands.Count;
-            for (int i = _entries.Length - 1; i >= 0; i--)
+            for (int i = entries.Count - 1; i >= 0; i--)
             {
-                ChainEntry entry = _entries[i];
+                ChainEntry entry = entries[i];
                 if (!entry.Crossed)
                 {
                     values.Push(operands[--operand]);
@@ -506,50 +507,35 @@ public abstract partial class ExpressionTransformer
             throw new ArgumentException("The expression is not the root of a chain of this transformer's flatten rules.", nameof(source));
         }
 
-        return FlattenedChain.Extract(this, source, group.Mask, group.IsAdditive).Rebuild(operands);
-    }
-
-    /// <summary>A crossed node of a chain whose flatten rules all declined, for one transformer (see <see cref="_refusedChainNodes"/>).</summary>
-    /// <param name="Transformer">The transformer whose rules declined.</param>
-    /// <param name="Node">The crossed node.</param>
-    private readonly record struct RefusedChainKey(ExpressionTransformer Transformer, Expression Node);
-
-    /// <summary>Compares <see cref="RefusedChainKey"/> values by the identity of both references, never calling a node's own members.</summary>
-    private sealed class RefusedChainKeyComparer : IEqualityComparer<RefusedChainKey>
-    {
-        /// <summary>The single instance.</summary>
-        public static readonly RefusedChainKeyComparer Instance = new();
-
-        /// <inheritdoc/>
-        public bool Equals(RefusedChainKey x, RefusedChainKey y)
-            => ReferenceEquals(x.Transformer, y.Transformer) && ReferenceEquals(x.Node, y.Node);
-
-        /// <inheritdoc/>
-        public int GetHashCode(RefusedChainKey key)
-            => HashCode.Combine(RuntimeHelpers.GetHashCode(key.Transformer), RuntimeHelpers.GetHashCode(key.Node));
+        return FlattenedChain.Extract(this, source, group.Mask, group.IsAdditive, keepProvenance: true).Rebuild(operands);
     }
 
     /// <summary>
-    /// The crossed nodes of the chains being processed historically after all their flatten rules declined, per transformer,
-    /// with an occurrence count (a shared node can be crossed several times). While a node is here, reaching it again through
-    /// <see cref="TransformCore(Expression)"/> does not extract a chain from it again: the fallback stays historical and the
-    /// extraction is never repeated at every level. Per thread, like the other engine state, since one transformer instance
-    /// may serve several threads; entries are removed in <c>finally</c>.
+    /// The child a node of a declined chain is preparing: the positional link that keeps the historical fallback of a declined
+    /// chain from extracting its sub-chains again. Data only.
+    /// </summary>
+    /// <param name="Transformer">The transformer whose flatten rules declined the chain.</param>
+    /// <param name="Node">The child being prepared, itself crossed by the chain.</param>
+    /// <param name="Mask">The operator bit set of the chain's group.</param>
+    private readonly record struct PendingChainChild(ExpressionTransformer? Transformer, Expression? Node, int Mask);
+
+    /// <summary>
+    /// Set by <see cref="PrepareChainChild"/> while a node of a declined chain prepares a child the chain also crosses, and
+    /// consumed by the first <see cref="TransformCore(Expression)"/> call of the same transformer on that very child: this call,
+    /// and only this one, continues the declined chain (see <see cref="TransformDeclinedChainNode"/>). The link is a position
+    /// in the traversal, not a property of the node: another occurrence of the same node object reached by another path (under
+    /// a call, for example) finds no link and is offered to the flatten rules as a chain of its own. Per thread, since one
+    /// transformer instance may serve several threads; restored in <c>finally</c>.
     /// </summary>
     [ThreadStatic]
-    private static Dictionary<RefusedChainKey, int>? _refusedChainNodes;
-
-    /// <summary>Whether <paramref name="node"/> is a crossed node of a chain this transformer is processing historically.</summary>
-    /// <param name="node">The node about to be transformed.</param>
-    /// <returns><see langword="true"/> when its flatten rules already declined it.</returns>
-    private bool IsRefusedChainNode(Expression node)
-        => _refusedChainNodes is { Count: > 0 } refused && refused.ContainsKey(new RefusedChainKey(this, node));
+    private static PendingChainChild _pendingChainChild;
 
     /// <summary>
     /// <see cref="TransformCore(Expression)"/> for a transformer that declares flatten rules. When <paramref name="e"/> is the
-    /// root of a chain (a crossed node of a declared operator, not already declined), the chain is extracted from the raw tree
-    /// and given to the rules of its group, in declaration order; the first non-<see langword="null"/> result is the result of
-    /// the node. Otherwise, and when every rule declines, the node is transformed exactly as without flatten rules.
+    /// root of a chain (a crossed node of a declared operator that does not continue a declined chain), the chain is extracted
+    /// from the raw tree and given to the rules of its group, in declaration order; the first non-<see langword="null"/>
+    /// result is the result of the node. Otherwise, and when every rule declines, the node is transformed exactly as without
+    /// flatten rules.
     /// </summary>
     /// <param name="e">The node to transform.</param>
     /// <param name="trace">The tracing state of the operation, or <see langword="null"/>.</param>
@@ -572,9 +558,17 @@ public abstract partial class ExpressionTransformer
             }
         }
 
+        // The node continues a declined chain: its flatten rules already declined it as part of that chain.
+        PendingChainChild pending = _pendingChainChild;
+        if (pending.Node is not null && ReferenceEquals(pending.Node, e) && ReferenceEquals(pending.Transformer, this))
+        {
+            _pendingChainChild = default;
+            return TransformDeclinedChainNode(e, pending.Mask, trace, out prepared, out boundary);
+        }
+
         // Type tests first: the node type of an extension node is never read (ETC R4).
         FlattenGroup? group = e is BinaryExpression or UnaryExpression ? _transformPlan.GetFlattenGroup(e.NodeType) : null;
-        if (group is null || !CanFlattenThrough(e) || IsRefusedChainNode(e))
+        if (group is null || !CanFlattenThrough(e))
         {
             return TransformHistorically(e, trace, out prepared, out boundary);
         }
@@ -591,18 +585,22 @@ public abstract partial class ExpressionTransformer
             return TransformHistorically(e, trace, out prepared, out boundary);
         }
 
-        FlattenedChain chain = FlattenedChain.Extract(this, e, group.Mask, group.IsAdditive);
+        FlattenedChain chain = FlattenedChain.Extract(this, e, group.Mask, group.IsAdditive, keepProvenance: false);
         if (trace is { Detailed: true }) trace.ChainFlattened(e);
 
         // The node is processed here: one transformation visit, before any rule runs (the historical fallback counts its own).
         ExpressionResourceBudget.ConsumeTransformVisit();
-        foreach (TransformRule rule in group.Rules)
+        TransformRule[] rules = group.Rules;
+        for (int i = 0; i < rules.Length; i++)
         {
+            TransformRule rule = rules[i];
             if (trace is { Detailed: true }) trace.RuleCandidate(rule.Info, e);
             trace?.BeginRule(rule.Info);
 
-            // Every rule receives its own copy: a declining rule that reorders or overwrites its array never affects the next one.
-            Expression? result = InvokeFlattenRule(rule, e, (FlattenedTerm[])chain.Terms.Clone());
+            // Every rule receives its own array: a declining rule that reorders or overwrites it never affects the next one.
+            // The last rule can receive the engine's array itself, which nothing reads afterwards.
+            FlattenedTerm[] terms = i == rules.Length - 1 ? chain.Terms : (FlattenedTerm[])chain.Terms.Clone();
+            Expression? result = InvokeFlattenRule(rule, e, terms);
             if (result is not null)
             {
                 trace?.RuleApplied(rule.Info, e, result);
@@ -614,7 +612,7 @@ public abstract partial class ExpressionTransformer
             trace?.RuleDeclined(rule.Info, e, ExpressionRuleRejection.Declined);
         }
 
-        return TransformDeclinedChain(e, chain, trace, out prepared, out boundary);
+        return TransformDeclinedChainNode(e, group.Mask, trace, out prepared, out boundary);
     }
 
     /// <summary>The historical part of <see cref="TransformCore(Expression)"/>: preparation, signature rules and finalization.</summary>
@@ -632,38 +630,58 @@ public abstract partial class ExpressionTransformer
     }
 
     /// <summary>
-    /// Processes a chain whose flatten rules all declined exactly as without flatten rules (<see cref="TransformHistorically"/>),
-    /// with its crossed nodes marked as declined for the duration, so that the descent never extracts a sub-chain of it again.
-    /// The marks are removed in <c>finally</c>.
+    /// Processes a crossed node of a chain whose flatten rules all declined exactly as without flatten rules: its children go
+    /// through <see cref="PrepareExpression"/> in order, the node is rebuilt as <see cref="PrepareBinary"/> and
+    /// <see cref="PrepareUnary"/> rebuild it, then the signature rules and <see cref="FinalizeExpression"/> run. The only
+    /// difference is the link left for each child the chain also crosses (<see cref="PrepareChainChild"/>), so that the chain
+    /// is never extracted again from one of its own nodes.
     /// </summary>
-    /// <param name="e">The root of the chain.</param>
-    /// <param name="chain">The extracted chain.</param>
+    /// <param name="e">A crossed node of the declined chain: a binary operator, or a negation.</param>
+    /// <param name="mask">The operator bit set of the chain's group.</param>
     /// <param name="trace">The tracing state of the operation, or <see langword="null"/>.</param>
     /// <param name="prepared">The node rebuilt by the traversal.</param>
-    /// <param name="boundary">Whether the node was a transformation boundary.</param>
+    /// <param name="boundary">Always <see langword="false"/>: a crossed node is never a transformation boundary.</param>
     /// <returns>The result of the node.</returns>
-    private Expression TransformDeclinedChain(Expression e, FlattenedChain chain, ExpressionTraceSession? trace, out Expression prepared, out bool boundary)
+    private Expression TransformDeclinedChainNode(Expression e, int mask, ExpressionTraceSession? trace, out Expression prepared, out bool boundary)
     {
-        Dictionary<RefusedChainKey, int> refused = _refusedChainNodes ??= new Dictionary<RefusedChainKey, int>(RefusedChainKeyComparer.Instance);
-        foreach (Expression node in chain.CrossedNodes)
+        TransformContext context;
+        if (e is BinaryExpression binary)
         {
-            var key = new RefusedChainKey(this, node);
-            refused[key] = refused.TryGetValue(key, out int count) ? count + 1 : 1;
+            Expression left = PrepareChainChild(binary.Left, mask);
+            Expression right = PrepareChainChild(binary.Right, mask);
+            context = new TransformContext(CopyBinaryExpression(binary, left, right));
+        }
+        else
+        {
+            UnaryExpression unary = (UnaryExpression)e;
+            context = new TransformContext(RebuildUnaryExpression(unary, PrepareChainChild(unary.Operand, mask)));
         }
 
+        prepared = context.Expression;
+        boundary = false;
+        return TransformPrepared(context, trace);
+    }
+
+    /// <summary>
+    /// <see cref="PrepareExpression"/> for a child of a declined chain node. When the chain also crosses the child, the link
+    /// <see cref="_pendingChainChild"/> is set for the duration of the call and restored afterwards, even on failure.
+    /// </summary>
+    /// <param name="child">The raw child.</param>
+    /// <param name="mask">The operator bit set of the chain's group.</param>
+    /// <returns>What <see cref="PrepareExpression"/> returns for <paramref name="child"/>.</returns>
+    private Expression PrepareChainChild(Expression child, int mask)
+    {
+        if (!IsCrossedByChain(child, mask)) return PrepareExpression(child);
+
+        PendingChainChild previous = _pendingChainChild;
+        _pendingChainChild = new PendingChainChild(this, child, mask);
         try
         {
-            return TransformHistorically(e, trace, out prepared, out boundary);
+            return PrepareExpression(child);
         }
         finally
         {
-            foreach (Expression node in chain.CrossedNodes)
-            {
-                var key = new RefusedChainKey(this, node);
-                int count = refused[key];
-                if (count == 1) refused.Remove(key);
-                else refused[key] = count - 1;
-            }
+            _pendingChainChild = previous;
         }
     }
 
