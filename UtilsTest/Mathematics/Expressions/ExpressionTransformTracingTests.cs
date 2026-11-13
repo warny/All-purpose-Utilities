@@ -240,9 +240,12 @@ public class ExpressionTransformTracingTests
             .All(e => e.Outcome == ExpressionTransformOutcome.Unchanged));
 
         // (1 + x) + 2 becomes 3 + x through the canonicalization of the finalization (constant aggregation): neither a rule
-        // nor a reconstruction. The inner 1 + x is already canonical: its finalization only rebuilds it.
-        Expression inner = Expression.Add(C(1), X);
-        Expression sum = Expression.Add(inner, C(2));
+        // nor a reconstruction. The inner 1 + x is already canonical: its finalization only rebuilds it. The chain is of type
+        // short, which the flatten rule of the simplifier declines (docs/expressions/SimplifierFlatten.md): a double chain
+        // of this shape is canonicalized by that rule, without any finalization.
+        ParameterExpression shortX = Expression.Parameter(typeof(short), "x");
+        Expression inner = Expression.Add(Expression.Constant((short)1), shortX);
+        Expression sum = Expression.Add(inner, Expression.Constant((short)2));
         ExpressionTransformEvent[] canonical = Trace(() => new ExpressionSimplifier().Simplify(sum));
         ExpressionTransformEvent sumExit = canonical.Single(e => e.Kind == ExpressionTransformEventKind.TransformExit && ReferenceEquals(e.Input, sum));
         ExpressionTransformEvent finalize = canonical.Single(e => e.Kind == ExpressionTransformEventKind.Finalize && e.OperationId == sumExit.OperationId);
@@ -489,9 +492,11 @@ public class ExpressionTransformTracingTests
     [TestMethod]
     public void DetailedLevel_ReportsCandidatesRejectionsAndScopes()
     {
+        // x + x^2: not a linear chain, so the flatten rule of the simplifier declines it and the rules of the addition run
+        // (x + 2, used here before that rule existed, is canonicalized by it without any declined rule).
         ParameterExpression v = Expression.Variable(typeof(double), "v");
         var lambda = Expression.Lambda<Func<double, double>>(
-            Expression.Block([v], Expression.Assign(v, Expression.Add(X, C(2))), Expression.Multiply(v, C(3))), X);
+            Expression.Block([v], Expression.Assign(v, Expression.Add(X, Expression.Power(X, C(2)))), Expression.Multiply(v, C(3))), X);
 
         ExpressionTransformEvent[] standard = Trace(() => new ExpressionSimplifier().Simplify(lambda));
         Assert.IsFalse(standard.Any(e => e.Kind is ExpressionTransformEventKind.RuleCandidate or ExpressionTransformEventKind.RuleRejected

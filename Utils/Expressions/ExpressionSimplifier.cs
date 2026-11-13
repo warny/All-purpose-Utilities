@@ -2897,7 +2897,28 @@ namespace Utils.Mathematics.Expressions
             var terms = new List<(Expression Term, bool IsNegative)>();
             CollectAdditiveTerms(terms, left, false);
             CollectAdditiveTerms(terms, right, nodeType == ExpressionType.Subtract);
+            return CanonicalizeAdditiveTerms(terms, type);
+        }
 
+        /// <summary>
+        /// Builds the canonical additive form of a list of signed terms: the core of
+        /// <see cref="CanonicalizeAdditiveExpression"/>, shared with the flatten rule of the additive chains
+        /// (<see cref="FlattenAdditiveChain"/>), which already holds the terms of the whole chain.
+        /// </summary>
+        /// <param name="terms">
+        /// The signed terms, already prepared and collected (<see cref="CollectAdditiveTerms"/>), in collection order; the
+        /// list is consumed (updated in place).
+        /// </param>
+        /// <param name="type">The result type of the ordinary additive chain, hence of every term.</param>
+        /// <returns>A deterministic additive expression tree preserving semantics.</returns>
+        /// <remarks>
+        /// Pinned terms, zero constants, constant aggregation, keys, stable ordering, grouping, cancellation and the
+        /// right-associated reconstruction are exactly those documented on <see cref="CanonicalizeAdditiveExpression"/>.
+        /// The order of <paramref name="terms"/> matters: the sort is stable, so terms whose keys tie (two free
+        /// parameters, for example) keep their collection order.
+        /// </remarks>
+        private Expression CanonicalizeAdditiveTerms(List<(Expression Term, bool IsNegative)> terms, Type type)
+        {
             // ETC R1b (C-06): a term whose evaluation is observable is never grouped, cancelled or moved past another one.
             List<(Expression Term, bool IsNegative)>? pinned = SplitPinnedTerms(terms, static term => term.Term);
             terms.RemoveAll(static term => IsOrdinaryZeroConstant(term.Term));

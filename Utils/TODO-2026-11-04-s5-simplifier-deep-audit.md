@@ -770,6 +770,11 @@ A test pinning the plan order (or an explicit priority) removes the latent risk.
   causal experiment shows that the cost is carried by the `0 - t` re-entries of `SubstractionWithZero(0, t)` (×33 without them).
 - **Fix (P19/P20):** order free parameters deterministically (first-occurrence position within the canonicalized node, or a stable
   identity), or make the canonical chain a fixed point (S5A-06); both need the P10 user-code gate.
+- **Mitigated, not fixed (Flatten PR B, 2026-11-13):** the built-in simplifier canonicalizes a linear source chain at once
+  (`docs/expressions/SimplifierFlatten.md`): `x0 - ... - x(n-1)` costs `n + 1` visits and is no longer refused, with the same
+  result. The cause is open: the canonical chain is still not a fixed point, so simplifying the *result* again (its `0 - t`
+  terms are not linear), a derived simplifier, and any chain that is not linear still pay the level by level growth. The same
+  rule removes about a sixth of the visits of S5A-08 (117,637 to 99,916 at n = 20) without changing its growth.
 
 ### S5A-13 — a decimal division by a constant of magnitude below 1 is treated as inert (Critical for the C-06 contract, narrow trigger)
 

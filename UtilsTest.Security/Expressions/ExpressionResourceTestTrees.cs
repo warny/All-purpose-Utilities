@@ -87,6 +87,26 @@ internal static class ExpressionResourceTestTrees
         return acc;
     }
 
+    /// <summary>
+    /// Builds the nested negated differences <c>-(-(-(x0 - x1) - x2) ... - x(n-1))</c> (S5 finding S5A-08), whose
+    /// simplification work grows faster than any small polynomial of <paramref name="terms"/> while depth and size stay tiny:
+    /// about 20,000 transformation visits at sixteen terms and 100,000 at twenty.
+    /// </summary>
+    /// <param name="terms">The number of terms.</param>
+    /// <returns>The tree.</returns>
+    /// <remarks>
+    /// The combinatorial vehicle of the budget tests since the flatten rule of the built-in simplifier
+    /// (<c>docs/expressions/SimplifierFlatten.md</c>): the sums and differences of distinct parameters that
+    /// <see cref="LeftSum"/> and <see cref="EqualCoefficientChain"/> build, directly or in their factored coefficients, are
+    /// now canonicalized at once and no longer exhaust a budget.
+    /// </remarks>
+    public static Expression NegatedDifferenceChain(int terms)
+    {
+        Expression acc = Expression.Parameter(typeof(double), "x0");
+        for (int i = 1; i < terms; i++) acc = Expression.Negate(Expression.Subtract(acc, Expression.Parameter(typeof(double), "x" + i)));
+        return acc;
+    }
+
     /// <summary>Limits with the given depth and node limits and the default budgets.</summary>
     /// <param name="maxDepth">The depth limit.</param>
     /// <param name="maxNodes">The node limit.</param>

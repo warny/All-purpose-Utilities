@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed — `omy.Utils` (expression simplifier: linear sums canonicalized at once)
+- `ExpressionSimplifier` (the built-in type, under every policy) canonicalizes a *linear* additive chain once, from the
+  terms of the whole chain, instead of once per level: a sum or difference of distinct parameters, finite non-zero
+  constants (two at most) and products of a parameter by another parameter or by a constant, of type `double`, `float`,
+  `int`, `long`, `uint` or `ulong`, without a subtracted group. **The results are unchanged** (same trees, same user-code
+  calls, same exceptions); every other chain, and every derived simplifier, keeps the level by level treatment. The work
+  is much lower on these chains (`x0 - x1 - ... - x11` with free parameters: 39,011 treatments before, 13 now), so a
+  chain the resource budget refused may now be accepted (`x0 - ... - x15` was refused by the default budget), and such a
+  chain no longer recurses: 100,000 terms are simplified on a 256 KiB stack when the limits allow that depth. Traces of
+  these chains show one treatment per chain; a chain that is not linear reports the new rejection reason
+  `ExpressionRuleRejection.ChainNotAdmitted` at the detailed level. See `docs/expressions/SimplifierFlatten.md`.
+
 ### Added — `omy.Utils` (expression engine: flatten rules)
 - `ExpressionTransformer` rules can receive a whole arithmetic chain at once: a method marked with the new
   `FlattenAttribute` (`[Flatten(ExpressionType.Add, ExpressionType.Subtract, ExpressionType.Negate)]` or
