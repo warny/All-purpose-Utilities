@@ -1565,6 +1565,29 @@ public abstract partial class ExpressionTransformer
     internal virtual bool AllowsRules(Expression node) => true;
 
     /// <summary>
+    /// Decides whether the <see cref="FlattenAttribute"/> rules may receive the chain rooted at <paramref name="root"/>, asked
+    /// once per chain root, on the raw root, before the extraction. The base implementation asks <see cref="AllowsRules"/>:
+    /// inert operands make the whole chain inert.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <c>internal virtual</c> like <see cref="AllowsRules"/> (H-7): not an extensibility point for third-party subclasses.
+    /// A chain that is not admitted is neither extracted nor given to a rule: its root is transformed historically, and the
+    /// chains below it are offered when the traversal reaches them.
+    /// </para>
+    /// <para>
+    /// A transformer of this assembly overrides it to decide by itself, before anything is extracted, which chains its
+    /// flatten rules treat (<see cref="ExpressionRuleRejection.ChainNotAdmitted"/> otherwise). Its test must then imply what
+    /// <see cref="AllowsRules"/> guarantees, since the effect gate is not asked. <see cref="AllowsRules"/> analyzes the
+    /// operands recursively: one more walk per chain, and a chain depth bounded by the execution stack.
+    /// </para>
+    /// </remarks>
+    /// <param name="root">The raw root of a chain: a crossed node of a declared operator.</param>
+    /// <returns><see cref="ExpressionRuleRejection.None"/> to extract the chain and give it to its rules; otherwise the reason reported by a detailed trace.</returns>
+    internal virtual ExpressionRuleRejection FlattenAdmission(Expression root)
+        => AllowsRules(root) ? ExpressionRuleRejection.None : ExpressionRuleRejection.EffectGate;
+
+    /// <summary>
     /// Decides, when <see cref="AllowsRules"/> refused a node, whether the rules audited by <see cref="IsAuditedRule"/> may
     /// still run on it, each checking the permissions of the evaluations it actually rewrites (S5 P18 Architecture C). Asked
     /// at most once per refused node. The base implementation refuses, so the refusal of <see cref="AllowsRules"/> stays final.

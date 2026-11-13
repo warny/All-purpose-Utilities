@@ -111,6 +111,14 @@ public enum ExpressionRuleRejection
     /// matched, and the following candidates are still tried.
     /// </summary>
     EffectGate,
+
+    /// <summary>
+    /// The transformer did not admit the chain to its <see cref="FlattenAttribute"/> rules: the chain was not extracted, no
+    /// flatten rule ran, and its root is transformed as without flatten rules (the chains below it are offered in turn).
+    /// <see cref="Utils.Mathematics.Expressions.ExpressionSimplifier"/> reports it for every additive chain that is not a
+    /// linear chain.
+    /// </summary>
+    ChainNotAdmitted,
 }
 
 /// <summary>The lexical scope of a <see cref="ExpressionTransformEventKind.ScopeEnter"/> or <see cref="ExpressionTransformEventKind.ScopeExit"/> event.</summary>

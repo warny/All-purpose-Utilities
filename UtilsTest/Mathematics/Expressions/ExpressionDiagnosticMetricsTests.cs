@@ -186,10 +186,13 @@ public class ExpressionDiagnosticMetricsTests
         ParameterExpression[] parameters = Enumerable.Range(0, 4)
             .Select(index => Expression.Parameter(typeof(double), $"p{index}"))
             .ToArray();
+        // 2*p0 + 3*p1 + 4*p2 + 2*p3: the last coefficient repeats the first one, so the chain is not a linear chain and the
+        // flatten rule of the simplifier declines it (docs/expressions/SimplifierFlatten.md); with distinct coefficients the
+        // chain is canonicalized by that rule without any comparison. The factoring probes of each level then nest as before.
         Expression source = Expression.Multiply(Expression.Constant(2.0), parameters[0]);
         for (int i = 1; i < parameters.Length; i++)
         {
-            source = Expression.Add(source, Expression.Multiply(Expression.Constant((double)i + 2), parameters[i]));
+            source = Expression.Add(source, Expression.Multiply(Expression.Constant((double)(i % 3) + 2), parameters[i]));
         }
 
         new ExpressionSimplifier().Simplify(source);

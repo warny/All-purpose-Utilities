@@ -370,6 +370,12 @@ public class ExpressionSimplifierDeepAuditTests
     /// faster than any small polynomial: the default visit budget refuses the 70-node tree of n = 24. Measured by the audit campaign (isolated
     /// processes); the bounds below only pin the order of magnitude.
     /// </summary>
+    /// <remarks>
+    /// Since the flatten rule of the built-in simplifier (PR B, <c>docs/expressions/SimplifierFlatten.md</c>) the linear
+    /// chains these re-entries build are canonicalized at once, which removes about a sixth of the visits (117,637 to 99,916
+    /// at n = 20; 776,790 at n = 24, now under the default budget) without changing the growth: the budget of the refusal
+    /// below went from 100,000 to 50,000 visits for the same tree.
+    /// </remarks>
     [TestMethod]
     public void S5A08_NestedNegatedDifferences_GrowSuperPolynomially()
     {
@@ -377,9 +383,9 @@ public class ExpressionSimplifierDeepAuditTests
         long v8 = Visits(NegatedDifferences(8)), v16 = Visits(NegatedDifferences(16));
         Assert.IsTrue(v16 > 25 * v8, $"n = 8: {v8} visits, n = 16: {v16}");
 
-        var limited = new ExpressionSimplifier(new ExpressionResourceLimits { MaxTransformVisits = 100_000 });
+        var limited = new ExpressionSimplifier(new ExpressionResourceLimits { MaxTransformVisits = 50_000 });
         var refusal = Innermost(() => limited.Simplify(NegatedDifferences(20))) as ExpressionResourceLimitException;
-        Assert.IsNotNull(refusal, "a 58-node tree exceeds 100,000 visits");
+        Assert.IsNotNull(refusal, "a 58-node tree exceeds 50,000 visits");
         Assert.AreEqual(ExpressionResourceLimitKind.Work, refusal.Kind);
     }
 
@@ -388,21 +394,64 @@ public class ExpressionSimplifierDeepAuditTests
     /// whereas the same tree with its parameters bound by a lambda grows polynomially: free parameters tie in the S4 order. The
     /// default visit budget (1,000,000) refuses the free chain from sixteen terms (31 nodes); the test uses a smaller budget.
     /// </summary>
+    /// <remarks>
+    /// Since the flatten rule of the built-in simplifier (PR B, <c>docs/expressions/SimplifierFlatten.md</c>) this source chain
+    /// is a linear chain, canonicalized once from its terms: the built-in simplifier no longer treats it level by level (one
+    /// visit for the chain and one per term), and gives the same result. The level by level treatment, which a derived
+    /// simplifier keeps, still grows exponentially: the cause of S5A-12 (the canonical chain is not a fixed point) is open, and
+    /// a canonical chain given back to the built-in simplifier (its <c>0 - t</c> terms are not linear) still pays it.
+    /// </remarks>
     [TestMethod]
     public void S5A12_DifferenceOfFreeParameters_GrowsExponentially()
     {
         ParameterExpression[] xs = Enumerable.Range(0, 12).Select(i => Expression.Parameter(typeof(double), "x" + i)).ToArray();
         Expression chain = xs.Aggregate<Expression>(Expression.Subtract);
-        long free = Visits(chain), bound = Visits(Expression.Lambda(chain, xs));
+        long free = LevelByLevelVisits(chain), bound = LevelByLevelVisits(Expression.Lambda(chain, xs));
         Assert.IsTrue(free > 5 * bound, $"free: {free} visits, bound: {bound}");
 
         ParameterExpression[] ys = Enumerable.Range(0, 14).Select(i => Expression.Parameter(typeof(double), "y" + i)).ToArray();
-        var limited = new ExpressionSimplifier(new ExpressionResourceLimits { MaxTransformVisits = 100_000 });
+        var limits = new ExpressionResourceLimits { MaxTransformVisits = 100_000 };
+        var limited = new LevelByLevelSimplifier(limits);
         Expression freeChain = ys.Aggregate<Expression>(Expression.Subtract);
         var refusal = Innermost(() => limited.Simplify(freeChain)) as ExpressionResourceLimitException;
         Assert.IsNotNull(refusal, "x0 - ... - x13 (27 nodes) exceeds 100,000 visits");
         Assert.IsNotNull(limited.Simplify(Expression.Lambda(freeChain, ys)), "the bound chain stays within the same budget");
         Assert.AreEqual(ExpressionResourceLimitKind.Work, refusal.Kind);
+
+        // The built-in simplifier: the source chain is flattened (n + 1 visits) and gives the level by level result; the
+        // canonical chain it returns is not linear, and simplifying it again is still exponential.
+        Assert.AreEqual(xs.Length + 1, Visits(chain));
+        ParameterExpression[] zs = xs.Take(8).ToArray();
+        Expression small = zs.Aggregate<Expression>(Expression.Subtract);
+        Expression canonical = Simplify(small);
+        Assert.AreEqual(Text(new LevelByLevelSimplifier(ExpressionResourceLimits.Unlimited).Simplify(small)), Text(canonical));
+        Assert.IsNotNull(new ExpressionSimplifier(limits).Simplify(freeChain), "the flattened source chain stays within the budget");
+        Assert.IsTrue(Visits(canonical) > 20 * (zs.Length + 1), $"second pass: {Visits(canonical)} visits");
+    }
+
+    /// <summary>A derived simplifier without any member: its plan does not hold the flatten rule of the built-in type, so it keeps the level by level treatment.</summary>
+    private sealed class LevelByLevelSimplifier : ExpressionSimplifier
+    {
+        /// <summary>Initializes the simplifier.</summary>
+        /// <param name="limits">The resource limits.</param>
+        public LevelByLevelSimplifier(ExpressionResourceLimits limits)
+            : base(limits)
+        {
+        }
+    }
+
+    /// <summary>Counts the treatments of the level by level simplification of <paramref name="expression"/>, without limits.</summary>
+    /// <param name="expression">The expression.</param>
+    /// <returns>The number of treatments entered.</returns>
+    private static long LevelByLevelVisits(Expression expression)
+    {
+        var counter = new VisitCounter();
+        using (ExpressionTransformTracing.Begin(counter))
+        {
+            new LevelByLevelSimplifier(ExpressionResourceLimits.Unlimited).Simplify(expression);
+        }
+
+        return counter.Visits;
     }
 
     /// <summary>

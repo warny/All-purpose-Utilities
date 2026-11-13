@@ -573,13 +573,16 @@ public abstract partial class ExpressionTransformer
             return TransformHistorically(e, trace, out prepared, out boundary);
         }
 
-        // The effect gate, on the raw root: inert operands make the whole chain inert. Flatten rules are never audited, so a
-        // refusal leaves the node to the historical path (where audited signature rules may still run outside the gate).
-        if (!AllowsRules(e))
+        // The admission of the chain, on the raw root: by default the effect gate (inert operands make the whole chain inert);
+        // a transformer of this assembly may decide by itself which chains its rules treat (see FlattenAdmission). Flatten
+        // rules are never audited, so a refusal leaves the node to the historical path (where audited signature rules may
+        // still run outside the gate); the chains below the node are offered when the traversal reaches them.
+        ExpressionRuleRejection refusal = FlattenAdmission(e);
+        if (refusal != ExpressionRuleRejection.None)
         {
             if (trace is { Detailed: true })
             {
-                foreach (TransformRule rule in group.Rules) trace.RuleRejected(rule.Info, e, ExpressionRuleRejection.EffectGate);
+                foreach (TransformRule rule in group.Rules) trace.RuleRejected(rule.Info, e, refusal);
             }
 
             return TransformHistorically(e, trace, out prepared, out boundary);

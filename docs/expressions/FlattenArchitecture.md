@@ -1,7 +1,8 @@
 # Flatten rules of `ExpressionTransformer`
 
-Status: infrastructure (PR A). No shipped transformer declares a flatten rule: `ExpressionSimplifier`,
-`ExpressionDerivation<T>` and `ExpressionIntegration<T>` are unchanged.
+Status: infrastructure (PR A), used since PR B by the built-in `ExpressionSimplifier` for its linear additive chains (see
+[SimplifierFlatten.md](SimplifierFlatten.md)). `ExpressionDerivation<T>` and `ExpressionIntegration<T>` declare no flatten
+rule. The measurements of §19 are those of PR A, taken when no shipped transformer declared one.
 
 ## 1. Motivation
 
@@ -79,8 +80,11 @@ For a transformer that declares flatten rules, `TransformCore(e)` proceeds as fo
 1. `e` is a **chain root** when it is a framework `BinaryExpression`/`UnaryExpression` whose operator a group declares,
    that the transformer accepts to cross (§10), and that is not a node of a chain being processed after a refusal (§13).
    Otherwise the node is processed historically.
-2. The effect gate (`AllowsRules`, an engine-internal hook, always open for a user transformer) is asked on the raw root. A
-   refusal leaves the node to the historical path.
+2. The admission of the chain (`FlattenAdmission`, an engine-internal hook) is asked on the raw root. By default it is the
+   effect gate (`AllowsRules`, always open for a user transformer). A transformer of the `Utils` assembly may decide by
+   itself which chains its rules treat: the built-in simplifier admits its linear chains only, with an iterative test that
+   implies what the gate guarantees (PR B). A chain that is not admitted is not extracted: its root goes to the historical
+   path, and the chains below it are offered when the traversal reaches them.
 3. The chain is extracted (§6) and given to the rules of its group **in declaration order** (the order of
    `Type.GetMethods`, as for signature rules).
 4. The first non-`null` result is the result of `e`: no signature rule and no `FinalizeExpression` runs on the chain.
@@ -254,6 +258,7 @@ Inside a tracing scope, for a transformer that declares flatten rules:
 | `RuleApplied` | Standard | the rule returned a result; the treatment's exit reports `RuleApplied` |
 | `RuleRejected` (`Declined`) | Detailed | the rule returned `null` |
 | `RuleRejected` (`EffectGate`) | Detailed | the effect gate refused the root |
+| `RuleRejected` (`ChainNotAdmitted`) | Detailed | the transformer did not admit the chain (PR B: a chain of the built-in simplifier that is not linear) |
 | `TransformFailed` | Standard | an exception left the treatment; `Rule` is the flatten rule that was running |
 
 `ExpressionTransformRuleInfo.FlattenedNodeTypes` lists the operators of a flatten rule (`DeclaredNodeType` is the first
@@ -275,9 +280,12 @@ decision. No event changes for a transformer without flatten rules.
 - A transformer type without flatten rules is unchanged: same rules, order, exceptions, preparations, counters and traces.
 - A plan belongs to a concrete type. A subclass inherits the flatten rules of its base; a subclass that adds one opts in for
   itself only.
-- `ExpressionSimplifier`, `ExpressionDerivation<T>` and `ExpressionIntegration<T>` declare none.
+- `ExpressionDerivation<T>` and `ExpressionIntegration<T>` declare none. Since PR B the built-in `ExpressionSimplifier`
+  declares one **private** rule, which a derived simplifier does not inherit (a plan is built from the methods the concrete
+  type sees: the private methods of a base type are not among them).
 - New public API: `FlattenAttribute`, `FlattenedTerm`, `ExpressionTransformer.RebuildFlattenedChain`,
-  `ExpressionTransformRuleInfo.FlattenedNodeTypes`, `ExpressionTransformEventKind.ChainFlattened`.
+  `ExpressionTransformRuleInfo.FlattenedNodeTypes`, `ExpressionTransformEventKind.ChainFlattened`; since PR B,
+  `ExpressionRuleRejection.ChainNotAdmitted`.
 
 ## 19. Measurements
 
@@ -361,10 +369,9 @@ attribute test per method) was not measured.
 
 ## 20. Future uses (not part of PR A)
 
-- **Simplifier (PR B).** One additive rule that reproduces the existing regrouping (`CollectAdditiveTerms`,
-  `AggregateAdditiveConstants`, `CanonicalizeAdditiveExpression`), with `CanFlattenThrough` overridden from the simplifier's
-  ordinary-arithmetic classification, under exact compatibility of the default mode. The prepared-operand entry
-  (`TransformCoreWithPreparedOperands`) does not go through the flatten path and must be reviewed there.
+- **Simplifier (PR B, done for the linear additive chains).** See [SimplifierFlatten.md](SimplifierFlatten.md): one private
+  additive rule on `Add` and `Subtract`, the default `CanFlattenThrough`, exact compatibility of the results. Open: the
+  chains that are not linear (repeated terms, calls, powers, negations, subtracted groups), the multiplicative chains.
 - **Derivation.** Term-wise derivation of a sum with `RebuildFlattenedChain`; n-ary product rule with prefix and suffix
   products (sharing `Expression` objects does not share evaluations).
 - **Integration.** Term-wise integration of sums; extraction of the factors that are constant with respect to the

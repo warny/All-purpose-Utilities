@@ -165,13 +165,17 @@ public class ExpressionResourceLimitsTests
     }
 
     /// <summary>
-    /// A tiny tree that passes validation but whose simplification explodes (S5 family g, comparer re-simplifications
+    /// A tiny tree that passes validation but whose simplification explodes (S5 finding S5A-08, comparer re-simplifications
     /// included) is stopped by the transformation budget.
     /// </summary>
+    /// <remarks>
+    /// The tree was the S5 family g until the flatten rule of the built-in simplifier canonicalized its coefficient chains at
+    /// once (147 visits at twelve terms instead of 15,056): see <see cref="ExpressionResourceTestTrees.NegatedDifferenceChain"/>.
+    /// </remarks>
     [TestMethod]
     public void Work_CombinatorialSimplification_IsStoppedByTheBudget()
     {
-        Expression tree = EqualCoefficientChain(16);
+        Expression tree = NegatedDifferenceChain(20);
         var simplifier = new ExpressionSimplifier(ExpressionResourceLimits.Default with { MaxTransformVisits = 20_000 });
 
         ExpressionResourceLimitException exception = Assert.ThrowsExactly<ExpressionResourceLimitException>(() => simplifier.Simplify(tree));
@@ -211,12 +215,23 @@ public class ExpressionResourceLimitsTests
     /// sort's "failed to compare" <see cref="InvalidOperationException"/> wrapped in a <see cref="System.Reflection.TargetInvocationException"/>.
     /// Regression found by the R1a-Security isolated campaign (left sum of 100 terms).
     /// </summary>
+    /// <remarks>
+    /// Since the flatten rule of the built-in simplifier, that sum is sorted once instead of once per level and no longer
+    /// exhausts the default structural budget: the budget of this test is half the structural work of the whole
+    /// simplification, which falls inside that single sort (the key comparisons of 100 tied terms are more than half of it).
+    /// </remarks>
     [TestMethod]
     public void StructuralWork_ExhaustedInsideASort_IsReportedAsTheRefusal()
     {
         (Expression sum, _) = LeftSum(100);
+        long structural = ExpressionResourceBudget.Run(ExpressionResourceLimits.Unlimited, null, null, null, sum, static s =>
+        {
+            new ExpressionSimplifier(ExpressionResourceLimits.Unlimited).Simplify(s);
+            return ExpressionResourceBudget.StructuralVisits;
+        });
+        var limited = new ExpressionSimplifier(ExpressionResourceLimits.Default with { MaxStructuralVisits = structural / 2 });
 
-        ExpressionResourceLimitException exception = Assert.ThrowsExactly<ExpressionResourceLimitException>(() => new ExpressionSimplifier().Simplify(sum));
+        ExpressionResourceLimitException exception = Assert.ThrowsExactly<ExpressionResourceLimitException>(() => limited.Simplify(sum));
         Assert.AreEqual(ExpressionResourceLimitKind.StructuralWork, exception.Kind);
 
         var refusal = new ExpressionResourceLimitException(ExpressionResourceLimitKind.StructuralWork, 1, 2);
@@ -336,7 +351,7 @@ public class ExpressionResourceLimitsTests
     [TestMethod]
     public void Reentrancy_ConstantEquals_CallingTheSimplifier_IsBounded()
     {
-        var heavy = new ReentrantValue(() => new ExpressionSimplifier(ExpressionResourceLimits.Unlimited).Simplify(EqualCoefficientChain(18)));
+        var heavy = new ReentrantValue(() => new ExpressionSimplifier(ExpressionResourceLimits.Unlimited).Simplify(NegatedDifferenceChain(18)));
         ExpressionComparer comparer = ExpressionComparer.Create(ExpressionResourceLimits.Default with { MaxTransformVisits = 5_000 });
 
         ExpressionResourceLimitException exception = Assert.ThrowsExactly<ExpressionResourceLimitException>(
@@ -351,7 +366,7 @@ public class ExpressionResourceLimitsTests
     [TestMethod]
     public void Reentrancy_ConstantGetHashCode_CallingTheComparer_IsBounded()
     {
-        var heavy = new ReentrantValue(() => ExpressionComparer.Create(ExpressionResourceLimits.Unlimited).GetHashCode(EqualCoefficientChain(18)));
+        var heavy = new ReentrantValue(() => ExpressionComparer.Create(ExpressionResourceLimits.Unlimited).GetHashCode(NegatedDifferenceChain(18)));
         ExpressionComparer comparer = ExpressionComparer.Create(ExpressionResourceLimits.Default with { MaxTransformVisits = 5_000 });
 
         ExpressionResourceLimitException exception = Assert.ThrowsExactly<ExpressionResourceLimitException>(() => comparer.GetHashCode(Expression.Constant(heavy)));
@@ -390,7 +405,7 @@ public class ExpressionResourceLimitsTests
         Action[] failures =
         [
             () => new ExpressionSimplifier(Shape(maxDepth: 4)).Simplify(NegateChain(10)),
-            () => new ExpressionSimplifier(ExpressionResourceLimits.Default with { MaxTransformVisits = 3_000 }).Simplify(Expression.Lambda(EqualCoefficientChain(14))),
+            () => new ExpressionSimplifier(ExpressionResourceLimits.Default with { MaxTransformVisits = 3_000 }).Simplify(Expression.Lambda(NegatedDifferenceChain(16))),
             () => ExpressionComparer.Create(ExpressionResourceLimits.Default with { MaxStructuralVisits = 40 }).Equals(CallChain(60), CallChain(60)),
             () => RunOnThread(() => new ExpressionSimplifier(ExpressionResourceLimits.Unlimited).Simplify(NegateChain(200_000)), 256 * 1024, Timeout),
         ];
