@@ -254,6 +254,16 @@ internal sealed class ExpressionTraceSession
             _frames[index].TransformerType, rule, input, null, ExpressionTransformOutcome.None, rejection, ExpressionTraceScopeKind.None, null, null));
     }
 
+    /// <summary>(Detailed level) Reports that the chain rooted at <paramref name="root"/> was extracted for its flatten rules.</summary>
+    /// <param name="root">The root of the chain.</param>
+    internal void ChainFlattened(Expression root)
+    {
+        if (_stopped || _count == 0) return;
+
+        int index = _count - 1;
+        Emit(Create(ExpressionTransformEventKind.ChainFlattened, _frames[index].Id, ParentOf(index), index, _frames[index].TransformerType, null, root, null, ExpressionTransformOutcome.None));
+    }
+
     /// <summary>Reports the finalization of the innermost treatment (<see cref="ExpressionTransformEventKind.Finalize"/>).</summary>
     /// <param name="prepared">The node given to <c>FinalizeExpression</c>.</param>
     /// <param name="finalized">Its result.</param>
