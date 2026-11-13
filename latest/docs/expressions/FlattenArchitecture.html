@@ -73,8 +73,9 @@
         <article data-uid="">
 <h1 id="flatten-rules-of-expressiontransformer">Flatten rules of <code>ExpressionTransformer</code></h1>
 
-<p>Status: infrastructure (PR A). No shipped transformer declares a flatten rule: <code>ExpressionSimplifier</code>,
-<code>ExpressionDerivation&lt;T&gt;</code> and <code>ExpressionIntegration&lt;T&gt;</code> are unchanged.</p>
+<p>Status: infrastructure (PR A), used since PR B by the built-in <code>ExpressionSimplifier</code> for its linear additive chains (see
+<a href="SimplifierFlatten.html">SimplifierFlatten.md</a>). <code>ExpressionDerivation&lt;T&gt;</code> and <code>ExpressionIntegration&lt;T&gt;</code> declare no flatten
+rule. The measurements of §19 are those of PR A, taken when no shipped transformer declared one.</p>
 <h2 id="1-motivation">1. Motivation</h2>
 <p><code>System.Linq.Expressions</code> represents <code>a + (b + (c - (d + e)))</code> as nested binary nodes. <code>ExpressionTransformer</code> processes
 each of them separately: a recursive descent into the operands, the rules of the node, structural comparisons, rebuilds and,
@@ -136,8 +137,11 @@ plan is built.</p>
 <li><code>e</code> is a <strong>chain root</strong> when it is a framework <code>BinaryExpression</code>/<code>UnaryExpression</code> whose operator a group declares,
 that the transformer accepts to cross (§10), and that is not a node of a chain being processed after a refusal (§13).
 Otherwise the node is processed historically.</li>
-<li>The effect gate (<code>AllowsRules</code>, an engine-internal hook, always open for a user transformer) is asked on the raw root. A
-refusal leaves the node to the historical path.</li>
+<li>The admission of the chain (<code>FlattenAdmission</code>, an engine-internal hook) is asked on the raw root. By default it is the
+effect gate (<code>AllowsRules</code>, always open for a user transformer). A transformer of the <code>Utils</code> assembly may decide by
+itself which chains its rules treat: the built-in simplifier admits its linear chains only, with an iterative test that
+implies what the gate guarantees (PR B). A chain that is not admitted is not extracted: its root goes to the historical
+path, and the chains below it are offered when the traversal reaches them.</li>
 <li>The chain is extracted (§6) and given to the rules of its group <strong>in declaration order</strong> (the order of
 <code>Type.GetMethods</code>, as for signature rules).</li>
 <li>The first non-<code>null</code> result is the result of <code>e</code>: no signature rule and no <code>FinalizeExpression</code> runs on the chain.</li>
@@ -401,6 +405,11 @@ it can reach a limit earlier. A transformer without flatten rules has identical 
 <td>the effect gate refused the root</td>
 </tr>
 <tr>
+<td><code>RuleRejected</code> (<code>ChainNotAdmitted</code>)</td>
+<td>Detailed</td>
+<td>the transformer did not admit the chain (PR B: a chain of the built-in simplifier that is not linear)</td>
+</tr>
+<tr>
 <td><code>TransformFailed</code></td>
 <td>Standard</td>
 <td>an exception left the treatment; <code>Rule</code> is the flatten rule that was running</td>
@@ -425,9 +434,12 @@ in <code>finally</code>.</li>
 <li>A transformer type without flatten rules is unchanged: same rules, order, exceptions, preparations, counters and traces.</li>
 <li>A plan belongs to a concrete type. A subclass inherits the flatten rules of its base; a subclass that adds one opts in for
 itself only.</li>
-<li><code>ExpressionSimplifier</code>, <code>ExpressionDerivation&lt;T&gt;</code> and <code>ExpressionIntegration&lt;T&gt;</code> declare none.</li>
+<li><code>ExpressionDerivation&lt;T&gt;</code> and <code>ExpressionIntegration&lt;T&gt;</code> declare none. Since PR B the built-in <code>ExpressionSimplifier</code>
+declares one <strong>private</strong> rule, which a derived simplifier does not inherit (a plan is built from the methods the concrete
+type sees: the private methods of a base type are not among them).</li>
 <li>New public API: <code>FlattenAttribute</code>, <code>FlattenedTerm</code>, <code>ExpressionTransformer.RebuildFlattenedChain</code>,
-<code>ExpressionTransformRuleInfo.FlattenedNodeTypes</code>, <code>ExpressionTransformEventKind.ChainFlattened</code>.</li>
+<code>ExpressionTransformRuleInfo.FlattenedNodeTypes</code>, <code>ExpressionTransformEventKind.ChainFlattened</code>; since PR B,
+<code>ExpressionRuleRejection.ChainNotAdmitted</code>.</li>
 </ul>
 <h2 id="19-measurements">19. Measurements</h2>
 <p>Machine: i7-12700KF, Windows 11, .NET 9. BenchmarkDotNet 0.14.0, in-process, 8 warmups, 20 iterations, memory diagnoser,
@@ -617,10 +629,9 @@ recursion.</p>
 attribute test per method) was not measured.</p>
 <h2 id="20-future-uses-not-part-of-pr-a">20. Future uses (not part of PR A)</h2>
 <ul>
-<li><strong>Simplifier (PR B).</strong> One additive rule that reproduces the existing regrouping (<code>CollectAdditiveTerms</code>,
-<code>AggregateAdditiveConstants</code>, <code>CanonicalizeAdditiveExpression</code>), with <code>CanFlattenThrough</code> overridden from the simplifier's
-ordinary-arithmetic classification, under exact compatibility of the default mode. The prepared-operand entry
-(<code>TransformCoreWithPreparedOperands</code>) does not go through the flatten path and must be reviewed there.</li>
+<li><strong>Simplifier (PR B, done for the linear additive chains).</strong> See <a href="SimplifierFlatten.html">SimplifierFlatten.md</a>: one private
+additive rule on <code>Add</code> and <code>Subtract</code>, the default <code>CanFlattenThrough</code>, exact compatibility of the results. Open: the
+chains that are not linear (repeated terms, calls, powers, negations, subtracted groups), the multiplicative chains.</li>
 <li><strong>Derivation.</strong> Term-wise derivation of a sum with <code>RebuildFlattenedChain</code>; n-ary product rule with prefix and suffix
 products (sharing <code>Expression</code> objects does not share evaluations).</li>
 <li><strong>Integration.</strong> Term-wise integration of sums; extraction of the factors that are constant with respect to the

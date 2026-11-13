@@ -12575,6 +12575,12 @@ references:
   commentId: T:Utils.Expressions.ExpressionRuleRejection
   fullName: Utils.Expressions.ExpressionRuleRejection
   nameWithType: ExpressionRuleRejection
+- uid: Utils.Expressions.ExpressionRuleRejection.ChainNotAdmitted
+  name: ChainNotAdmitted
+  href: api/Utils.Expressions.ExpressionRuleRejection.html#Utils_Expressions_ExpressionRuleRejection_ChainNotAdmitted
+  commentId: F:Utils.Expressions.ExpressionRuleRejection.ChainNotAdmitted
+  fullName: Utils.Expressions.ExpressionRuleRejection.ChainNotAdmitted
+  nameWithType: ExpressionRuleRejection.ChainNotAdmitted
 - uid: Utils.Expressions.ExpressionRuleRejection.Declined
   name: Declined
   href: api/Utils.Expressions.ExpressionRuleRejection.html#Utils_Expressions_ExpressionRuleRejection_Declined

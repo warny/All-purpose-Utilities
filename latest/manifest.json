@@ -16814,6 +16814,16 @@
     },
     {
       "type": "Conceptual",
+      "source_relative_path": "docs/expressions/SimplifierFlatten.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/expressions/SimplifierFlatten.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
       "source_relative_path": "docs/getting-started.md",
       "output": {
         ".html": {

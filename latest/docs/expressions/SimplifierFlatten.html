@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Flatten rule of ExpressionSimplifier (PR B) | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Flatten rule of ExpressionSimplifier (PR B) | omy.Utils Documentation ">
+      
+      
+      <link rel="icon" href="../../favicon.ico">
+      <link rel="stylesheet" href="../../public/docfx.min.css">
+      <link rel="stylesheet" href="../../public/main.css">
+      <meta name="docfx:navrel" content="../../toc.html">
+      <meta name="docfx:tocrel" content="../../toc.html">
+      
+      <meta name="docfx:rel" content="../../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/blob/master/docs/expressions/SimplifierFlatten.md/#L1">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../../index.html">
+            <img id="logo" class="svg" src="../../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+
+      <div class="content">
+        <div class="actionbar">
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="flatten-rule-of-expressionsimplifier-pr-b">Flatten rule of <code>ExpressionSimplifier</code> (PR B)</h1>
+
+<p>Status: first n-ary treatment of the simplifier, restricted to the <em>linear additive chains</em>. Built on the infrastructure of
+<a href="FlattenArchitecture.html">FlattenArchitecture.md</a> (PR A, <code>a9ec71ac</code>). No multiplicative chain, no division, no C3, no change to
+<code>ExpressionDerivation&lt;T&gt;</code> or <code>ExpressionIntegration&lt;T&gt;</code>.</p>
+<h2 id="1-purpose">1. Purpose</h2>
+<p>Level by level, a sum of <code>n</code> terms costs <code>n - 1</code> node treatments, and each of them prepares its operands, dispatches the
+additive rules, runs the factor comparisons of <code>AdditionOfEqualsElements</code> / <code>SubstractionOfEqualsElements</code> (each comparison
+simplifies both operands again through the comparer) and canonicalizes the whole sub-chain. On a left-associated chain the
+sub-chain grows by one term per level, and the comparer simplifies a canonical chain that is not a fixed point of the
+subtraction rules (S5A-12): <code>x0 - x1 - ... - x15</code> with free parameters is refused by the default budget.</p>
+<p>The flatten rule treats a whole chain at once: the terms are prepared once, and the canonicalization runs once.</p>
+<h2 id="2-b0-audit-the-level-by-level-pipeline">2. B0 audit: the level by level pipeline</h2>
+<p>For a binary node <code>e</code>, <code>TransformCore(e)</code> does, in this order:</p>
+<ol>
+<li><code>PrepareExpression(left)</code>, then <code>PrepareExpression(right)</code>: for the simplifier, <code>FoldNaNOperand(TransformCore(child))</code>.
+The children are therefore complete results, canonicalized and <code>NaN</code>-folded, before the node sees them.</li>
+<li>The node is rebuilt from the prepared children (<code>CopyBinaryExpression</code>).</li>
+<li>The candidate rules of the node type run in plan order; the effect gate (<code>AllowsRules</code>) is asked once, when the first
+candidate matches. The first rule that returns a result ends the treatment: <strong>no finalization, no canonicalization</strong>.</li>
+<li>Otherwise <code>FinalizeExpression</code>: for an ordinary <code>Add</code>/<code>Subtract</code> of a type whose operator cannot throw,
+<code>CanonicalizeAdditiveExpression(left, right)</code>, which collects the terms of both prepared operands (<code>CollectAdditiveTerms</code>,
+through ordinary <code>Add</code>, <code>Subtract</code> and <code>Negate</code>), pins the terms that are not inert, drops zero constants, aggregates the
+constants when the level holds at least two of them, sorts (stable), groups, cancels and rebuilds a right-associated chain.</li>
+<li>The result goes back to the parent, whose <code>PrepareExpression</code> applies <code>FoldNaNOperand</code> to it.</li>
+</ol>
+<p>Consequences that matter for an n-ary treatment:</p>
+<ul>
+<li><strong>The result of an inner node is what its parent's rules match.</strong> A canonical sub-chain is an <code>Add</code> node (or <code>0 - t</code>, a
+<code>Subtract</code>); a single term, a constant or a product can also come up when terms cancel.</li>
+<li><strong>A rule result is not canonical.</strong> <code>SubstractionWithAddition</code> returns <code>(a - b) - c</code> as built; the factoring rules return
+<code>(a + b) * k</code>; <code>AdditionWithZero(t, 0)</code> transforms <code>t</code> again.</li>
+<li><strong>The sort is stable and free parameters tie</strong> (S4: two free parameters of one type have no order), so the order of tied
+terms is the order in which the level collected them, which depends on the grouping and on the rules that ran below.</li>
+<li><strong>Constants are aggregated per level</strong>, only when a level holds two of them.</li>
+</ul>
+<p>Hence the level by level result of a chain is <em>not</em> a function of its signed terms: <code>a + a</code> is <code>2 * a</code>, <code>a + (b + a)</code> is
+<code>(a + a) + b</code>; <code>2*a + 2*b</code> is <code>(a + b) * 2</code>; <code>a - (b + c)</code> is <code>(a - b) - c</code>; <code>(c - b) - a</code> is <code>(0 - b) + ((0 - a) + c)</code> and
+simplifying that again gives <code>(0 - a) + ((0 - b) + c)</code>; <code>((a + 5) - 5) - 3</code> is <code>(0 - 3) + a</code> while <code>(a + 5) - 8</code> is <code>-3 + a</code>.</p>
+<h3 id="21-rule-matrix">2.1 Rule matrix</h3>
+<p><code>L'</code>, <code>R'</code> are the prepared operands of the node. &quot;Linear chain&quot; is defined in §3.</p>
+<table>
+<thead>
+<tr>
+<th>Rule (plan order within its node type)</th>
+<th>Operands it needs</th>
+<th>Compares?</th>
+<th>May run user code?</th>
+<th>What it does to evaluations</th>
+<th>On a linear chain</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>AdditionWithZero</code> (2 overloads)</td>
+<td>one zero constant</td>
+<td>no</td>
+<td>no</td>
+<td>drops the zero; <code>(t, 0)</code> re-transforms <code>t</code></td>
+<td>never matches: no zero constant term, no pair of constants, no sub-chain cancels to zero</td>
+</tr>
+<tr>
+<td><code>SubstractionWithZero(t, 0)</code></td>
+<td>zero constant on the right</td>
+<td>no</td>
+<td>no</td>
+<td>drops the zero</td>
+<td>never matches</td>
+</tr>
+<tr>
+<td><code>SubstractionWithZero(0, t)</code></td>
+<td>zero constant on the left</td>
+<td>no</td>
+<td>no</td>
+<td>builds <code>-t</code> and transforms it (then <code>AdditionWithNegate</code> reorders the parent)</td>
+<td>never matches: the <code>0 - t</code> of a canonical operand is not the left operand of a subtraction node of the source</td>
+</tr>
+<tr>
+<td><code>AdditionOfConstants</code>, <code>SubstractionOfConstants</code></td>
+<td>two constants</td>
+<td>no</td>
+<td>no</td>
+<td>folds</td>
+<td>never matches: no node has two constant operands, and a sub-chain with a parameter never collapses to a constant</td>
+</tr>
+<tr>
+<td><code>AdditionWithNegate</code> (2), <code>SubstractionWithNegate</code> (2)</td>
+<td>a <code>Negate</code> operand</td>
+<td>yes (<code>EqualsKeepingSimplifiedForms</code>), then <code>TransformCore</code> or the prepared-operand entry</td>
+<td>yes, through the comparer</td>
+<td>merges (<code>t + (-t)</code> → <code>0</code>), re-transforms</td>
+<td>never matches: a negation is not crossed and is not a linear term; no rule builds one</td>
+</tr>
+<tr>
+<td><code>NegateWithSubstraction</code></td>
+<td><code>Negate</code> root</td>
+<td>no</td>
+<td>no</td>
+<td>re-transforms</td>
+<td>not a chain root (<code>Negate</code> is not declared)</td>
+</tr>
+<tr>
+<td><code>SubstractionWithAddition</code>, <code>SubstractionWithSubstraction</code></td>
+<td><code>R'</code> is <code>Add</code> / <code>Subtract</code></td>
+<td>no</td>
+<td>no</td>
+<td>regroups without canonicalizing; the second swaps two terms</td>
+<td>never matches: no subtraction has a crossed right operand, and a prepared term is never additive</td>
+</tr>
+<tr>
+<td><code>LogarithmSimplification*</code>, <code>AdditionOfCos2andSin2Number</code></td>
+<td>calls, powers</td>
+<td>yes</td>
+<td>yes</td>
+<td>merges calls</td>
+<td>never matches: no call, no power</td>
+</tr>
+<tr>
+<td><code>AdditionOfEqualsElements</code>, <code>SubstractionOfEqualsElements</code></td>
+<td>any</td>
+<td>up to 6 comparer equalities on <code>{1 or factor} × {1 or factor}</code></td>
+<td>yes, through the comparer</td>
+<td>merges equal factors (<code>a*x + b*x</code>), cancels (<code>t - t</code>)</td>
+<td>runs and <strong>always declines</strong> (§3.2); its comparisons are the cost the flatten rule removes</td>
+</tr>
+<tr>
+<td>Finalization (<code>CanonicalizeAdditiveExpression</code>)</td>
+<td>—</td>
+<td>structural keys, group equality</td>
+<td>group equality of custom constants</td>
+<td>reorders inert terms, aggregates constants, cancels</td>
+<td>the only transformation of every level; composes into one global canonicalization (§3.3)</td>
+</tr>
+</tbody>
+</table>
+<p>No historical rule is removed: the level by level path, the derived simplifiers and every chain that is not linear use them
+unchanged.</p>
+<h2 id="3-linear-chains">3. Linear chains</h2>
+<p>A chain rooted at an ordinary <code>Add</code> or <code>Subtract</code> node is <strong>linear</strong> when (<code>ExpressionSimplifier.IsLinearChain</code>):</p>
+<ol>
+<li>its type is <code>double</code>, <code>float</code>, <code>int</code>, <code>long</code>, <code>uint</code> or <code>ulong</code>, and every crossed node is an ordinary operator
+(<code>IsOrdinaryBinaryArithmetic</code>); the crossed nodes are the <code>Add</code> and <code>Subtract</code> nodes the default <code>CanFlattenThrough</code>
+accepts (no operator method, intrinsic non-nullable result type), so <code>decimal</code>, checked, lifted and user-defined
+operators are operands, and a <code>Negate</code> is an operand too (it is not declared);</li>
+<li>no <code>Subtract</code> has a crossed right operand, and no crossed node has two constant operands;</li>
+<li>every term is a <strong>linear term</strong>: a parameter; a finite non-zero constant (a boxed primitive of exactly the chain type); or
+an ordinary product of a parameter by another parameter, or by a finite constant other than <code>0</code>, <code>1</code> and <code>-1</code>;</li>
+<li>no parameter occurs twice in the chain (as a term or as a factor), no constant coefficient value occurs twice, and no
+coefficient equals a constant term;</li>
+<li>the chain holds at most two constant terms.</li>
+</ol>
+<h3 id="31-preparing-a-linear-term">3.1 Preparing a linear term</h3>
+<p>A parameter and a constant are their own preparation. A product <code>c * x</code>, <code>x * c</code> or <code>x * y</code> is prepared by the
+multiplicative rules into a product (<code>Multiplication(left, const)</code> commutes the constant first; the zero and one identities
+do not match; <code>MultiplicationOfEqualsElements</code> compares two distinct operands and declines; the finalization orders the
+factors). No user code runs, nothing throws, and the prepared term is never a sum, a difference, a negation or a constant.
+The <code>NaN</code> fold cannot apply (no non-finite constant).</p>
+<h3 id="32-no-rule-applies-at-any-level">3.2 No rule applies at any level</h3>
+<p>By induction on the levels, with the matrix above. The only rule that runs is the factoring rule, and its comparisons fail:</p>
+<ul>
+<li>two operands of one node never hold the same parameter (condition 4), and the comparer's simplifier never introduces a
+parameter, so <code>L'</code> and <code>R'</code>, or a factor of one and the other operand, cannot simplify to equal trees;</li>
+<li>a constant coefficient is compared with another coefficient (distinct values), with a parameter, or with a constant term
+(distinct from every coefficient);</li>
+<li>the constant <code>1</code> the rule supplies for an operand that is not a product is compared with a factor, never <code>1</code>; an operand
+that is the constant <code>1</code> makes the rule decline before any comparison.</li>
+</ul>
+<p>Nothing cancels (no repeated parameter), so a sub-chain with <code>k</code> non-constant terms keeps <code>k</code> groups, and every group holds
+one term.</p>
+<h3 id="33-the-per-level-canonicalizations-compose">3.3 The per-level canonicalizations compose</h3>
+<p>Every level therefore ends with <code>CanonicalizeAdditiveExpression</code> on its two operands. Its result is rebuilt from one-term
+groups in sorted order (<code>t</code> or <code>0 - t</code>), and the parent collects it back in that same order. A stable sort of the
+concatenation of two stably sorted lists is the stable sort of the concatenation of their sources, so by induction the root
+orders the terms as one stable sort of the source order does. The key comparer is the same at every level (one lexical
+scope: a chain never crosses a binder).</p>
+<p>Constants: with at most two constant terms, the level where the second one arrives is the only aggregation, with the two
+constants in source order, exactly as one aggregation of the whole list does. With three or more it differs (found by the
+differential campaign): a floating-point sum depends on the grouping, and when the first two cancel the third stays alone
+and is not rewritten (<code>0 - 3</code> instead of <code>-3</code>).</p>
+<p>So the level by level result is <code>CanonicalizeAdditiveTerms(prepared terms in source order)</code>, which is what the rule returns.
+The helper is the body of <code>CanonicalizeAdditiveExpression</code>, extracted without change; both paths share it.</p>
+<h3 id="34-what-is-refused-and-what-is-still-accepted-below-it">3.4 What is refused, and what is still accepted below it</h3>
+<p>Everything else is refused before anything is prepared: a repeated parameter (<code>a + a</code>, <code>a*b + a</code>, a shared sub-chain), equal
+coefficients (<code>2*a + 2*b</code>), a coefficient equal to a constant term (<code>2 + 2*a</code>), a zero, <code>NaN</code> or infinite constant, the
+coefficients <code>0</code>, <code>1</code>, <code>-1</code>, a subtracted group (<code>a - (b + c)</code>), a pair of constants (<code>a + (1 + 2)</code>), a third constant, a
+negation, a call, a power, a division, a conversion, a nested product, any node with effects, <code>short</code>, <code>ushort</code> and
+<code>decimal</code> chains.</p>
+<p>A refused chain is transformed from its root exactly as before, and <strong>the chains below it are offered in turn</strong>: in
+<code>(x0 - x1 - ... - x9) + Sin(y)</code> the root is refused and its left operand is a linear chain of its own. This also applies to
+the additive nodes the rules rebuild and transform again (<code>a - (-b)</code> → <code>a + b</code>), and to the trees the comparer simplifies.</p>
+<p><strong>Limit: the decision is all or nothing per chain root.</strong> One term that is not linear, or one repetition, anywhere in the
+chain sends the root to the level by level treatment, with its historical cost; only the linear sub-chains <em>below</em> the
+refused node are treated at once. On a left-associated chain whose last term is the offending one, the whole prefix is a
+linear sub-chain and most of the gain remains; when the offending term comes first, or when the repetition is far from
+the start, the levels above the repetition pay the historical cost. Example: the S5 family <code>p</code>
+(<code>100*x0 - x1*3 - 4*x2 - ...</code>, coefficient <code>i + 2</code>) repeats its first coefficient at term 98: up to 97 terms it is
+accepted (linear cost), from 99 terms the levels above term 98 are treated as on <code>master</code>, whose cost on this family
+grows too fast for 256 terms to finish in hours (measured: stopped after three hours on the branch; the same tree is not
+expected to be faster on <code>master</code>). Splitting a refused chain into maximal linear runs is the natural next step and is not
+part of this PR: it changes which terms are canonicalized together, so it needs its own proof of compatibility.</p>
+<h2 id="4-mechanism">4. Mechanism</h2>
+<ul>
+<li><code>[Flatten(ExpressionType.Add, ExpressionType.Subtract)] private Expression? FlattenAdditiveChain(Expression source, FlattenedTerm[] terms)</code>: prepares each term once, in source order, with <code>PrepareExpression</code> (transformation, then <code>NaN</code>
+fold), collects it with <code>CollectAdditiveTerms</code>, and returns <code>CanonicalizeAdditiveTerms</code>. It never declines.</li>
+<li><code>FlattenAdmission(root)</code> (new engine-internal hook, see <a href="FlattenArchitecture.html">FlattenArchitecture.md</a> §5): the built-in
+simplifier admits the linear chains only. The test is one iterative walk of the crossed nodes that stops at the first
+refusal, reads framework operators and leaves by type tests only (an extension node is never read, an operator method
+is only tested for provenance), counts one structural visit per node, and is linear in the distinct nodes of a shared DAG.</li>
+<li>The effect gate is not asked for the built-in type: a linear chain only holds parameters, primitive constants and ordinary
+products under operators that cannot throw, a subset of what <code>ExpressionEffectAnalysis.HasInertOperands</code> proves inert (a
+test asserts it on every accepted chain of the differential corpus). The gate analyzes the operands recursively, which
+would bound the depth of an accepted chain by the execution stack.</li>
+<li>A chain that is not admitted reports <code>RuleRejected</code> with the new reason <code>ExpressionRuleRejection.ChainNotAdmitted</code>
+(detailed trace) and is not extracted.</li>
+</ul>
+<h3 id="41-derived-simplifiers">4.1 Derived simplifiers</h3>
+<p>The rule is <code>private</code>. <code>BuildPlan</code> scans <code>GetMethods(Public | NonPublic | Instance)</code> of the concrete type, which does not
+return the private methods of a base type: the plan of a derived simplifier holds no flatten rule, and its
+<code>PrepareExpression</code>, <code>FinalizeExpression</code>, own rules and hiding rules see every node as before. A derived simplifier that
+declares its own <code>[Flatten]</code> rule opts in for itself, and keeps the effect gate as its admission. No public extension point
+was added. The comparisons a derived simplifier triggers still simplify with the built-in type (as before), which now
+flattens the linear chains it meets; results are unchanged.</p>
+<h3 id="42-policies">4.2 Policies</h3>
+<p>The operands of a linear chain are inert: the gate admits every rule on every node of it under every
+<code>ExpressionSimplifierOptions</code>, no audited rule runs outside the gate, and the <code>NaN</code> fold of a non-default policy keeps the
+historical decision on inert arithmetic. The rule is therefore policy-independent; <code>AuditedRules</code>, <code>CanDiscard</code>,
+<code>CanRepeat</code> and <code>CanReorder</code> are untouched.</p>
+<h3 id="43-the-prepared-operand-entry">4.3 The prepared-operand entry</h3>
+<p><code>TransformCoreWithPreparedOperands</code> (two calls, both in <code>AdditionWithNegate</code>) still does not go through the flatten path:
+it runs the rules and the finalization of one rebuilt <code>Subtract</code> node on operands that are already prepared. It is only
+reached from a node with a <code>Negate</code> operand, which is never part of a linear chain, so no accepted chain depends on it, and
+its results are those of <code>master</code>. It was left unchanged on purpose: routing it to the flatten path would hand prepared
+operands to a rule that prepares its terms.</p>
+<p>A rule that calls <code>TransformCore</code> on a rebuilt additive node (<code>SubstractionWithNegate</code>, <code>NegateWithSubstraction</code>,
+<code>AdditionWithZero</code>, the difference of <code>AdditionWithNegate</code> when no form is reused) offers that node as a chain: its operands
+are prepared results, so it is linear only if they are linear terms or linear sub-chains, and then §3 applies to it as to a
+source chain (preparing a prepared linear term again is what the level by level path does too).</p>
+<h2 id="5-budgets-and-depth">5. Budgets and depth</h2>
+<p>Not identical to <code>master</code>, by design: the rule removes work.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Level by level</th>
+<th>Accepted linear chain of <code>n</code> terms</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Transformation visits</td>
+<td><code>2n - 1</code> node treatments, plus every treatment of the comparer simplifications of the factoring probes</td>
+<td><code>1 + </code> the preparation of each term (<code>n + 1</code> for parameters and constants)</td>
+</tr>
+<tr>
+<td>Structural visits</td>
+<td>keys, comparisons, hashes and effect analyses of every level, and of every comparer simplification</td>
+<td>admission walk (<code>n - 1</code>), extraction (<code>2n - 1</code>), then the keys, sort and grouping of one canonicalization</td>
+</tr>
+<tr>
+<td>Execution stack</td>
+<td>one recursion per level, and the recursive effect analysis</td>
+<td>constant</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Every piece of work is still counted, in the session of the operation; a refusal is never absorbed; the instance is
+reusable after a refusal (security tests, just above each limit).</li>
+<li><code>MaxDepth</code> and <code>MaxNodes</code> are validated before any rule, as before: a chain deeper than 512 nodes is refused by the
+default limits although the rule would treat it without recursion.</li>
+<li><strong>Refusals that became acceptances.</strong> A chain whose level by level work exceeded a budget and is linear is now accepted
+(<code>x0 - ... - x15</code>, free parameters: 1,960,419 visits on <code>master</code>, 17 now). The reverse does not occur on an accepted
+chain. A chain that is not linear keeps its level by level counters, minus the work saved on the linear chains below it
+and in its comparer simplifications.</li>
+<li>The statement of <code>SimplificationPolicies.md</code> that the default policy keeps the historical <em>resource consumption</em> holds for
+the policy mechanism; it does not describe this rule, which lowers the consumption of the linear chains under every policy.</li>
+</ul>
+<h2 id="6-compatibility">6. Compatibility</h2>
+<p>Under every policy, for the built-in type: same result trees (structure, types, constants, parameter instances) for the
+first and the second pass, same user-code calls in the same order, same exceptions, as <code>master</code> <code>a9ec71ac</code>, except the
+resource refusals that became acceptances (§5). Derived simplifiers: unchanged, counters included, except for the work of
+the comparisons they trigger. Traces of the built-in type differ on the chains concerned (one treatment per chain, the
+flatten rule as the applied rule, <code>ChainNotAdmitted</code> rejections at the detailed level).</p>
+<h2 id="7-validation">7. Validation</h2>
+<p>Reference: <code>master</code> <code>a9ec71ac</code> in a separate worktree, same machine, runtime and configuration.</p>
+<ul>
+<li><strong>Differential corpus</strong> (a dedicated harness, the same deterministic corpus simplified by both checkouts, compared line by
+line): every tree of two terms over a pool of twenty linear and non-linear terms for <code>double</code>, <code>float</code>, <code>int</code>, <code>long</code>,
+<code>uint</code> and <code>decimal</code>, every tree of three terms and every assignment of <code>+</code>/<code>-</code> for <code>double</code> and <code>int</code> (96,768 trees), and
+seeded random trees of two to twelve terms, left, right, random and mixed groupings, free, lambda-bound and wrapped under
+another node, with linear terms, repeated parameters, zero/one/<code>NaN</code>/infinite constants, negations, calls, powers,
+divisions, checked nodes, unknown calls and logged custom constants. Compared: the result of the first and of the second
+pass, the exception, the number and the ordered log of the user <code>Equals</code>/<code>GetHashCode</code> calls, the number of effectful
+calls. <strong>460,008 cases under the default policy: 0 difference.</strong> 109,008 cases under each of four other policies (trust,
+aggressive, no exception preserved, permissive) and with a derived simplifier: 0 difference.
+The first run of this corpus found the three-constant divergence of §3.3 (4 cases out of 154,008), which narrowed
+condition 5.</li>
+<li><strong>S5 campaigns</strong> (<code>tests/ExpressionSimplifierAudit/run-audit.ps1</code>, 1,000 seeds, 1,000 nested compositions, default
+policy): <code>canon</code>, <code>comparer</code>, <code>diff</code>, <code>effects</code> and <code>s3</code> are byte-identical. <code>converge</code> (64,420 cases): the first pass,
+the last pass, the category and the sizes are identical; only the list of rule names applied by the second pass differs
+(<code>FlattenAdditiveChain</code> appears in 8,419 cases). <code>terminate</code> (63,270 cases): classes, exceptions, results and output sizes
+are identical; the counters differ: 739,669 treatments on <code>master</code>, 618,329 on the branch (−16.4 %), fewer in 12,719
+cases, more in 2 cases (at most +7; not investigated further), trace depth lower in 4,349 cases and never higher.</li>
+<li><strong>Suites</strong>: <code>UtilsTest.Unit</code>, <code>UtilsTest.Security</code> and <code>UtilsTest.Functional</code> pass.</li>
+<li><strong>Mutations</strong> (applied one at a time, then removed): a term prepared twice, the terms in reverse order, the signs ignored,
+the admission always granted, a call accepted as a term, repeated parameters, a third constant, a subtracted group, zero
+and non-finite constants, equal coefficients, a pair of constants, the gate of derived simplifiers removed: each makes
+at least one test of <code>ExpressionSimplifierFlattenTests</code> fail. One mutation survives because it is equivalent: preparing
+the terms with <code>TransformCore</code> instead of <code>PrepareExpression</code> (no linear term can hold a <code>NaN</code> operation). The mutations
+of the brief about <code>decimal</code> and about the prepared-operand entry have nothing to mutate: <code>decimal</code> chains are not
+crossed, and that entry is not on the flatten path.</li>
+</ul>
+<p>Tests whose input was a linear chain used as a vehicle were given another vehicle, with the same assertions (see the PR
+description): two tracing tests, one comparer diagnostic test, and the budget tests of <code>UtilsTest.Security</code> that relied on
+the S5 families <code>g</code> and on a left sum of 100 parameters to exhaust a budget. <code>S5A12</code> and <code>S5A08</code> of the deep-audit tests now
+pin the level by level growth on a derived simplifier, respectively a lower budget, and the new behavior of the built-in
+type.</p>
+<h2 id="8-measures">8. Measures</h2>
+<p>Release, .NET 9, x64, affinity <code>0x14</code>, high priority. A = <code>master</code> <code>a9ec71ac</code>, B = a copy of the A binaries (A/A
+control), C = this branch; BenchmarkDotNet in-process, 8 warm-up and 20 measured iterations, one process per variant and
+round, three rounds in rotated order (A B C, B C A, C A B). Figures: median of the three round means.</p>
+<p><strong>Noise.</strong> The A/A control is the limit of what can be read: B differs from A by −0.8 % to −37 % (median), and by up to
+±45 % within one round (round 1, where A ran last, was about 30 % slower for every case). Time differences below that
+band are not significant; allocations are deterministic and are.</p>
+<table>
+<thead>
+<tr>
+<th>Case (<code>n</code> terms)</th>
+<th>Linear?</th>
+<th>A time</th>
+<th>B vs A</th>
+<th>C vs A</th>
+<th>A alloc</th>
+<th>C alloc</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>sumL</code> 16 (left sum of parameters)</td>
+<td>yes</td>
+<td>2.14 ms</td>
+<td>−7.0 %</td>
+<td><strong>−99.7 %</strong></td>
+<td>2,497 KB</td>
+<td>11 KB</td>
+</tr>
+<tr>
+<td><code>sumL</code> 64</td>
+<td>yes</td>
+<td>419 ms</td>
+<td>+1.2 %</td>
+<td><strong>−99.99 %</strong></td>
+<td>433,883 KB</td>
+<td>40 KB</td>
+</tr>
+<tr>
+<td><code>sumR</code> 64 (right sum)</td>
+<td>yes</td>
+<td>26.0 ms</td>
+<td>−4.7 %</td>
+<td><strong>−99.9 %</strong></td>
+<td>26,431 KB</td>
+<td>38 KB</td>
+</tr>
+<tr>
+<td><code>sumB</code> 64 (balanced sum)</td>
+<td>yes</td>
+<td>9.08 ms</td>
+<td>−3.5 %</td>
+<td><strong>−99.7 %</strong></td>
+<td>9,745 KB</td>
+<td>39 KB</td>
+</tr>
+<tr>
+<td><code>sumLbound</code> 16 (lambda-bound)</td>
+<td>yes</td>
+<td>2.13 ms</td>
+<td>0.0 %</td>
+<td><strong>−99.6 %</strong></td>
+<td>2,498 KB</td>
+<td>12 KB</td>
+</tr>
+<tr>
+<td><code>subL</code> 12 (left difference)</td>
+<td>yes</td>
+<td>33.2 ms</td>
+<td>+4.0 %</td>
+<td><strong>−99.99 %</strong></td>
+<td>24,545 KB</td>
+<td>10 KB</td>
+</tr>
+<tr>
+<td><code>p</code> 12 (S5 family <code>p</code>)</td>
+<td>yes</td>
+<td>3.97 ms</td>
+<td>−6.7 %</td>
+<td><strong>−99.4 %</strong></td>
+<td>2,592 KB</td>
+<td>33 KB</td>
+</tr>
+<tr>
+<td><code>lin</code> 32 (parameters × coefficients)</td>
+<td>yes</td>
+<td>93.1 ms</td>
+<td>−13.8 %</td>
+<td><strong>−99.9 %</strong></td>
+<td>58,254 KB</td>
+<td>105 KB</td>
+</tr>
+<tr>
+<td><code>g</code> 12 (S5 family <code>g</code>)</td>
+<td>yes</td>
+<td>13.3 ms</td>
+<td>−37.3 %</td>
+<td><strong>−99.3 %</strong></td>
+<td>9,485 KB</td>
+<td>94 KB</td>
+</tr>
+<tr>
+<td><code>repeatLast</code> 16 (repeated parameter in the last term)</td>
+<td>below the root</td>
+<td>2.21 ms</td>
+<td>−7.8 %</td>
+<td><strong>−99.3 %</strong></td>
+<td>2,496 KB</td>
+<td>30 KB</td>
+</tr>
+<tr>
+<td><code>negsum</code> 12 (negated sums)</td>
+<td>sub-chains</td>
+<td>4.36 ms</td>
+<td>−8.5 %</td>
+<td>−42.8 %</td>
+<td>4,036 KB</td>
+<td>2,914 KB</td>
+</tr>
+<tr>
+<td><code>poly</code> 6 (powers)</td>
+<td>no</td>
+<td>0.367 ms</td>
+<td>−0.8 %</td>
+<td>−26.4 % (noise)</td>
+<td>254 KB</td>
+<td>257 KB (+1.2 %)</td>
+</tr>
+<tr>
+<td><code>mul</code> 16 (product chain)</td>
+<td>not additive</td>
+<td>1.25 ms</td>
+<td>−7.7 %</td>
+<td>−28.0 % (noise)</td>
+<td>827 KB</td>
+<td>827 KB</td>
+</tr>
+<tr>
+<td><code>calls</code> 16 (unknown calls)</td>
+<td>no</td>
+<td>4.49 ms</td>
+<td>−6.0 %</td>
+<td>+1.0 %</td>
+<td>3,155 KB</td>
+<td>3,155 KB</td>
+</tr>
+<tr>
+<td><code>small</code> 2</td>
+<td>no</td>
+<td>6.3 µs</td>
+<td>−4.6 %</td>
+<td>+5.4 %</td>
+<td>4.2 KB</td>
+<td>4.2 KB</td>
+</tr>
+<tr>
+<td><code>subR</code> 12 (right difference, subtracted groups)</td>
+<td>no</td>
+<td>10.1 µs</td>
+<td>−1.6 %</td>
+<td>−7.6 %</td>
+<td>4.3 KB</td>
+<td>4.2 KB</td>
+</tr>
+<tr>
+<td><code>H</code> 12 (refused chain)</td>
+<td>no</td>
+<td>44.5 µs</td>
+<td>−8.9 %</td>
+<td>+2.1 %</td>
+<td>33.6 KB</td>
+<td>37.9 KB (+12.8 %)</td>
+</tr>
+<tr>
+<td><code>badFirst</code> 32 (call in the deepest term)</td>
+<td>no</td>
+<td>35.6 ms</td>
+<td>−5.3 %</td>
+<td>+11.6 %</td>
+<td>32,650 KB</td>
+<td>35,334 KB (+8.2 %)</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>Accepted chains</strong>: −99 % or better in time and allocations; the cost becomes linear in the number of terms (§5).</li>
+<li><strong>Refused chains</strong>: same transformation visits, time within the A/A band, allocations +0 to +13 %. The extra allocations
+are the admission walk (its stack and operand sets) repeated for every sub-chain of a refused chain: when the term that
+causes the refusal is the deepest one (<code>badFirst</code>), each level walks down to it again, which is quadratic in the depth
+of the chain, like the per-level canonicalizations that the level by level path performs on the same chain anyway.</li>
+</ul>
+<p><strong>Growth</strong> (one process per measure, default limits; <code>visits</code> = transformation visits):</p>
+<table>
+<thead>
+<tr>
+<th>Family</th>
+<th><code>n</code></th>
+<th>A</th>
+<th>C</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>subL</code></td>
+<td>12</td>
+<td>25.1 ms, 39,011 visits</td>
+<td>0.010 ms, 13 visits</td>
+</tr>
+<tr>
+<td><code>subL</code></td>
+<td>14</td>
+<td>189 ms, 263,313 visits</td>
+<td>0.012 ms</td>
+</tr>
+<tr>
+<td><code>p</code></td>
+<td>20</td>
+<td>20.7 ms, 13,240 visits</td>
+<td>0.16 ms, 81 visits</td>
+</tr>
+<tr>
+<td><code>p</code></td>
+<td>64</td>
+<td>3,090 ms, refused (<code>StructuralWork</code>)</td>
+<td>0.53 ms, 257 visits</td>
+</tr>
+<tr>
+<td><code>p</code></td>
+<td>97</td>
+<td>12,978 ms, refused (<code>StructuralWork</code>)</td>
+<td>1.16 ms, 390 visits</td>
+</tr>
+<tr>
+<td><code>p</code></td>
+<td>99</td>
+<td>—</td>
+<td>295 ms, 53,466 visits (coefficient repeated at term 98: refused, level by level)</td>
+</tr>
+<tr>
+<td><code>g</code></td>
+<td>16</td>
+<td>491 ms, 648,607 visits</td>
+<td>0.32 ms, 225 visits</td>
+</tr>
+<tr>
+<td>balanced sum</td>
+<td>16</td>
+<td>0.73 ms, 783 visits</td>
+<td>0.013 ms, 17 visits</td>
+</tr>
+<tr>
+<td><code>negsum</code></td>
+<td>16</td>
+<td>22,830 visits, 29.6 MB</td>
+<td>19,612 visits, 18.7 MB</td>
+</tr>
+<tr>
+<td><code>H</code>, <code>n</code>, <code>z</code>, <code>F</code>, product chains, Horner</td>
+<td>8–16</td>
+<td>—</td>
+<td>same visits as A</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Depth.</strong> On a 256 KiB thread with <code>MaxDepth</code>/<code>MaxNodes</code> disabled, C simplifies accepted chains of 100,000 terms of every
+grouping in about 200 ms; A throws <code>InsufficientExecutionStackException</code> from 512 terms on a left sum and exceeds the time
+limit on a left difference of 64 terms. A refused deep chain is still a controlled stack refusal (security test).</p>
+<p><strong>Acceptance</strong> (differential corpus, default policy, both passes and the comparer simplifications included): every chain
+offered to the rule is accepted, since the admission runs before the offer. 257,220 chains were simplified at once;
+55.2 % of the 118,008 cases contain at least one (<code>double</code> 48.3 %, <code>int</code> 67.3 %, <code>long</code> 86.1 %, <code>float</code> 80.9 %, <code>uint</code>
+86.0 %, <code>decimal</code> 0 %, the type is not crossed).</p>
+<p><strong>Residual risks.</strong></p>
+<ul>
+<li>Admission is all or nothing per root: a long chain with one non-linear term (the <code>p</code> family from term 98) keeps the level
+by level cost, even on its linear part. Its linear sub-chains below the offending term are still accepted.</li>
+<li>The admission walk is repeated for every sub-chain of a refused chain (allocations above).</li>
+<li>A future change of a rule or of the canonical order must keep the proof of §3 valid; the differential corpus and the
+exhaustive grouping test are the guard.</li>
+</ul>
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/docs/expressions/SimplifierFlatten.md/#L1" class="edit-link">Edit this page</a>
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

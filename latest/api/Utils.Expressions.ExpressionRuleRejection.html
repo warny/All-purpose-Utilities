@@ -226,6 +226,13 @@ Enum ExpressionRuleRejection  <a class="header-action link-secondary" title="Vie
   <h2 id="fields">Fields
 </h2>
   <dl class="parameters">
+    <dt id="Utils_Expressions_ExpressionRuleRejection_ChainNotAdmitted"><code>ChainNotAdmitted = 4</code></dt>
+  
+  <dd><p>The transformer did not admit the chain to its <a class="xref" href="Utils.Expressions.FlattenAttribute.html">FlattenAttribute</a> rules: the chain was not extracted, no
+flatten rule ran, and its root is transformed as without flatten rules (the chains below it are offered in turn).
+<a class="xref" href="Utils.Mathematics.Expressions.ExpressionSimplifier.html">ExpressionSimplifier</a> reports it for every additive chain that is not a
+linear chain.</p>
+</dd>
     <dt id="Utils_Expressions_ExpressionRuleRejection_Declined"><code>Declined = 2</code></dt>
   
   <dd><p>The rule ran and returned <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>: it declined, and the next candidate is tried.</p>
