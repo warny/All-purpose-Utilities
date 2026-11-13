@@ -248,3 +248,71 @@ description): two tracing tests, one comparer diagnostic test, and the budget te
 the S5 families `g` and on a left sum of 100 parameters to exhaust a budget. `S5A12` and `S5A08` of the deep-audit tests now
 pin the level by level growth on a derived simplifier, respectively a lower budget, and the new behavior of the built-in
 type.
+
+## 8. Measures
+
+Release, .NET 9, x64, affinity `0x14`, high priority. A = `master` `a9ec71ac`, B = a copy of the A binaries (A/A
+control), C = this branch; BenchmarkDotNet in-process, 8 warm-up and 20 measured iterations, one process per variant and
+round, three rounds in rotated order (A B C, B C A, C A B). Figures: median of the three round means.
+
+**Noise.** The A/A control is the limit of what can be read: B differs from A by −0.8 % to −37 % (median), and by up to
+±45 % within one round (round 1, where A ran last, was about 30 % slower for every case). Time differences below that
+band are not significant; allocations are deterministic and are.
+
+| Case (`n` terms) | Linear? | A time | B vs A | C vs A | A alloc | C alloc |
+|---|---|---|---|---|---|---|
+| `sumL` 16 (left sum of parameters) | yes | 2.14 ms | −7.0 % | **−99.7 %** | 2,497 KB | 11 KB |
+| `sumL` 64 | yes | 419 ms | +1.2 % | **−99.99 %** | 433,883 KB | 40 KB |
+| `sumR` 64 (right sum) | yes | 26.0 ms | −4.7 % | **−99.9 %** | 26,431 KB | 38 KB |
+| `sumB` 64 (balanced sum) | yes | 9.08 ms | −3.5 % | **−99.7 %** | 9,745 KB | 39 KB |
+| `sumLbound` 16 (lambda-bound) | yes | 2.13 ms | 0.0 % | **−99.6 %** | 2,498 KB | 12 KB |
+| `subL` 12 (left difference) | yes | 33.2 ms | +4.0 % | **−99.99 %** | 24,545 KB | 10 KB |
+| `p` 12 (S5 family `p`) | yes | 3.97 ms | −6.7 % | **−99.4 %** | 2,592 KB | 33 KB |
+| `lin` 32 (parameters × coefficients) | yes | 93.1 ms | −13.8 % | **−99.9 %** | 58,254 KB | 105 KB |
+| `g` 12 (S5 family `g`) | yes | 13.3 ms | −37.3 % | **−99.3 %** | 9,485 KB | 94 KB |
+| `repeatLast` 16 (repeated parameter in the last term) | below the root | 2.21 ms | −7.8 % | **−99.3 %** | 2,496 KB | 30 KB |
+| `negsum` 12 (negated sums) | sub-chains | 4.36 ms | −8.5 % | −42.8 % | 4,036 KB | 2,914 KB |
+| `poly` 6 (powers) | no | 0.367 ms | −0.8 % | −26.4 % (noise) | 254 KB | 257 KB (+1.2 %) |
+| `mul` 16 (product chain) | not additive | 1.25 ms | −7.7 % | −28.0 % (noise) | 827 KB | 827 KB |
+| `calls` 16 (unknown calls) | no | 4.49 ms | −6.0 % | +1.0 % | 3,155 KB | 3,155 KB |
+| `small` 2 | no | 6.3 µs | −4.6 % | +5.4 % | 4.2 KB | 4.2 KB |
+| `subR` 12 (right difference, subtracted groups) | no | 10.1 µs | −1.6 % | −7.6 % | 4.3 KB | 4.2 KB |
+| `H` 12 (refused chain) | no | 44.5 µs | −8.9 % | +2.1 % | 33.6 KB | 37.9 KB (+12.8 %) |
+| `badFirst` 32 (call in the deepest term) | no | 35.6 ms | −5.3 % | +11.6 % | 32,650 KB | 35,334 KB (+8.2 %) |
+
+- **Accepted chains**: −99 % or better in time and allocations; the cost becomes linear in the number of terms (§5).
+- **Refused chains**: same transformation visits, time within the A/A band, allocations +0 to +13 %. The extra allocations
+  are the admission walk (its stack and operand sets) repeated for every sub-chain of a refused chain: when the term that
+  causes the refusal is the deepest one (`badFirst`), each level walks down to it again, which is quadratic in the depth
+  of the chain, like the per-level canonicalizations that the level by level path performs on the same chain anyway.
+
+**Growth** (one process per measure, default limits; `visits` = transformation visits):
+
+| Family | `n` | A | C |
+|---|---|---|---|
+| `subL` | 12 | 25.1 ms, 39,011 visits | 0.010 ms, 13 visits |
+| `subL` | 14 | 189 ms, 263,313 visits | 0.012 ms |
+| `p` | 20 | 20.7 ms, 13,240 visits | 0.16 ms, 81 visits |
+| `p` | 64 | 3,090 ms, refused (`StructuralWork`) | 0.53 ms, 257 visits |
+| `p` | 97 | 12,978 ms, refused (`StructuralWork`) | 1.16 ms, 390 visits |
+| `p` | 99 | — | 295 ms, 53,466 visits (coefficient repeated at term 98: refused, level by level) |
+| `g` | 16 | 491 ms, 648,607 visits | 0.32 ms, 225 visits |
+| balanced sum | 16 | 0.73 ms, 783 visits | 0.013 ms, 17 visits |
+| `negsum` | 16 | 22,830 visits, 29.6 MB | 19,612 visits, 18.7 MB |
+| `H`, `n`, `z`, `F`, product chains, Horner | 8–16 | — | same visits as A |
+
+**Depth.** On a 256 KiB thread with `MaxDepth`/`MaxNodes` disabled, C simplifies accepted chains of 100,000 terms of every
+grouping in about 200 ms; A throws `InsufficientExecutionStackException` from 512 terms on a left sum and exceeds the time
+limit on a left difference of 64 terms. A refused deep chain is still a controlled stack refusal (security test).
+
+**Acceptance** (differential corpus, default policy, both passes and the comparer simplifications included): every chain
+offered to the rule is accepted, since the admission runs before the offer. 257,220 chains were simplified at once;
+55.2 % of the 118,008 cases contain at least one (`double` 48.3 %, `int` 67.3 %, `long` 86.1 %, `float` 80.9 %, `uint`
+86.0 %, `decimal` 0 %, the type is not crossed).
+
+**Residual risks.**
+- Admission is all or nothing per root: a long chain with one non-linear term (the `p` family from term 98) keeps the level
+  by level cost, even on its linear part. Its linear sub-chains below the offending term are still accepted.
+- The admission walk is repeated for every sub-chain of a refused chain (allocations above).
+- A future change of a rule or of the canonical order must keep the proof of §3 valid; the differential corpus and the
+  exhaustive grouping test are the guard.
