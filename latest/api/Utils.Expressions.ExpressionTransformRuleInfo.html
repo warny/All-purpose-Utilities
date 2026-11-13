@@ -6,7 +6,7 @@
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <meta name="title" content="Class ExpressionTransformRuleInfo | omy.Utils Documentation ">
       
-      <meta name="description" content="Identifies one rule of a transformer (a method marked with ) in trace events. This type only holds data.">
+      <meta name="description" content="Identifies one rule of a transformer (a method marked with  or ) in trace events. This type only holds data.">
       <link rel="icon" href="../favicon.ico">
       <link rel="stylesheet" href="../public/docfx.min.css">
       <link rel="stylesheet" href="../public/main.css">
@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Expressions_ExpressionTransformRuleInfo" data-uid="Utils.Expressions.ExpressionTransformRuleInfo" class="text-break">
-Class ExpressionTransformRuleInfo  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTransformRuleInfo.cs/#L16"><i class="bi bi-code-slash"></i></a>
+Class ExpressionTransformRuleInfo  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTransformRuleInfo.cs/#L17"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -97,7 +97,8 @@ Class ExpressionTransformRuleInfo  <a class="header-action link-secondary" title
   <dl><dt>Assembly</dt><dd>Utils.dll</dd></dl>
   </div>
 
-  <div class="markdown summary"><p>Identifies one rule of a transformer (a method marked with <a class="xref" href="Utils.Expressions.ExpressionSignatureAttribute.html">ExpressionSignatureAttribute</a>) in trace events.
+  <div class="markdown summary"><p>Identifies one rule of a transformer (a method marked with <a class="xref" href="Utils.Expressions.ExpressionSignatureAttribute.html">ExpressionSignatureAttribute</a> or
+<a class="xref" href="Utils.Expressions.FlattenAttribute.html">FlattenAttribute</a>) in trace events.
 This type only holds data.</p>
 </div>
   <div class="markdown conceptual"></div>
@@ -249,10 +250,12 @@ type declares several rules of that name.</p>
 
   <h3 id="Utils_Expressions_ExpressionTransformRuleInfo_DeclarationIndex" data-uid="Utils.Expressions.ExpressionTransformRuleInfo.DeclarationIndex">
   DeclarationIndex
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTransformRuleInfo.cs/#L51"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTransformRuleInfo.cs/#L64"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Gets the position of the rule in the declaration order of the plan (the order in which candidates are tried).</p>
+  <div class="markdown level1 summary"><p>Gets the position of the rule in the declaration order of the plan (the order in which candidates are tried). The
+<a class="xref" href="Utils.Expressions.FlattenAttribute.html">FlattenAttribute</a> rules are numbered separately, in their own declaration order, since they are tried at a
+different point (before the chain is traversed).</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -281,7 +284,7 @@ type declares several rules of that name.</p>
 
   <h3 id="Utils_Expressions_ExpressionTransformRuleInfo_DeclaredNodeType" data-uid="Utils.Expressions.ExpressionTransformRuleInfo.DeclaredNodeType">
   DeclaredNodeType
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTransformRuleInfo.cs/#L48"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTransformRuleInfo.cs/#L57"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the node type declared by the rule's signature attribute, or <code>(ExpressionType)(-1)</code> for a rule declared on every node type.</p>
@@ -313,7 +316,7 @@ type declares several rules of that name.</p>
 
   <h3 id="Utils_Expressions_ExpressionTransformRuleInfo_DisplayName" data-uid="Utils.Expressions.ExpressionTransformRuleInfo.DisplayName">
   DisplayName
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTransformRuleInfo.cs/#L54"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTransformRuleInfo.cs/#L73"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the short name of the rule: the method name, with its parameter types when the name is overloaded.</p>
@@ -341,11 +344,44 @@ type declares several rules of that name.</p>
 
 
 
+  <a id="Utils_Expressions_ExpressionTransformRuleInfo_FlattenedNodeTypes_" data-uid="Utils.Expressions.ExpressionTransformRuleInfo.FlattenedNodeTypes*"></a>
+
+  <h3 id="Utils_Expressions_ExpressionTransformRuleInfo_FlattenedNodeTypes" data-uid="Utils.Expressions.ExpressionTransformRuleInfo.FlattenedNodeTypes">
+  FlattenedNodeTypes
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTransformRuleInfo.cs/#L70"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets, for a <a class="xref" href="Utils.Expressions.FlattenAttribute.html">FlattenAttribute</a> rule, the operators it declares (its <a class="xref" href="Utils.Expressions.ExpressionTransformRuleInfo.html#Utils_Expressions_ExpressionTransformRuleInfo_DeclaredNodeType">DeclaredNodeType</a> is the first
+one); empty for a rule marked with <a class="xref" href="Utils.Expressions.ExpressionSignatureAttribute.html">ExpressionSignatureAttribute</a>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public IReadOnlyList&lt;ExpressionType&gt; FlattenedNodeTypes { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlylist-1">IReadOnlyList</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expressiontype">ExpressionType</a>&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
   <a id="Utils_Expressions_ExpressionTransformRuleInfo_Id_" data-uid="Utils.Expressions.ExpressionTransformRuleInfo.Id*"></a>
 
   <h3 id="Utils_Expressions_ExpressionTransformRuleInfo_Id" data-uid="Utils.Expressions.ExpressionTransformRuleInfo.Id">
   Id
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTransformRuleInfo.cs/#L57"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTransformRuleInfo.cs/#L76"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the stable identifier of the rule: declaring type, method name and parameter types.</p>
@@ -377,7 +413,7 @@ type declares several rules of that name.</p>
 
   <h3 id="Utils_Expressions_ExpressionTransformRuleInfo_Method" data-uid="Utils.Expressions.ExpressionTransformRuleInfo.Method">
   Method
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTransformRuleInfo.cs/#L39"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTransformRuleInfo.cs/#L48"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the rule method.</p>
@@ -409,7 +445,7 @@ type declares several rules of that name.</p>
 
   <h3 id="Utils_Expressions_ExpressionTransformRuleInfo_Name" data-uid="Utils.Expressions.ExpressionTransformRuleInfo.Name">
   Name
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTransformRuleInfo.cs/#L42"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTransformRuleInfo.cs/#L51"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the name of the rule method.</p>
@@ -441,7 +477,7 @@ type declares several rules of that name.</p>
 
   <h3 id="Utils_Expressions_ExpressionTransformRuleInfo_TransformerType" data-uid="Utils.Expressions.ExpressionTransformRuleInfo.TransformerType">
   TransformerType
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTransformRuleInfo.cs/#L45"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTransformRuleInfo.cs/#L54"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the concrete transformer type whose dispatch plan holds the rule (the method may be declared by a base type).</p>
@@ -477,7 +513,7 @@ type declares several rules of that name.</p>
 
   <h3 id="Utils_Expressions_ExpressionTransformRuleInfo_ToString" data-uid="Utils.Expressions.ExpressionTransformRuleInfo.ToString">
   ToString()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTransformRuleInfo.cs/#L61"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTransformRuleInfo.cs/#L80"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns <a class="xref" href="Utils.Expressions.ExpressionTransformRuleInfo.html#Utils_Expressions_ExpressionTransformRuleInfo_Id">Id</a>.</p>
@@ -510,7 +546,7 @@ type declares several rules of that name.</p>
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTransformRuleInfo.cs/#L16" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionTransformRuleInfo.cs/#L17" class="edit-link">Edit this page</a>
         </div>
 
 

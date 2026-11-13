@@ -2277,7 +2277,7 @@
       "Uid": null,
       "IsMRef": true,
       "Title": "Utils.Expressions.ExpressionTransformRuleInfo",
-      "Summary": "<p sourcefile=\"api/Utils.Expressions.ExpressionTransformRuleInfo.yml\" sourcestartlinenumber=\"1\">Identifies one rule of a transformer (a method marked with <xref href=\"Utils.Expressions.ExpressionSignatureAttribute\" data-throw-if-not-resolved=\"false\"></xref>) in trace events.\nThis type only holds data.</p>\n"
+      "Summary": "<p sourcefile=\"api/Utils.Expressions.ExpressionTransformRuleInfo.yml\" sourcestartlinenumber=\"1\">Identifies one rule of a transformer (a method marked with <xref href=\"Utils.Expressions.ExpressionSignatureAttribute\" data-throw-if-not-resolved=\"false\"></xref> or\n<xref href=\"Utils.Expressions.FlattenAttribute\" data-throw-if-not-resolved=\"false\"></xref>) in trace events.\nThis type only holds data.</p>\n"
     },
     {
       "type": "ManagedReference",
@@ -2348,6 +2348,34 @@
       "IsMRef": true,
       "Title": "Utils.Expressions.FindTypeException",
       "Summary": "<p sourcefile=\"api/Utils.Expressions.FindTypeException.yml\" sourcestartlinenumber=\"1\">Thrown when a type cannot be found during a type resolution process.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Expressions.FlattenAttribute.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Expressions.FlattenAttribute.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Expressions.FlattenAttribute",
+      "Summary": "<p sourcefile=\"api/Utils.Expressions.FlattenAttribute.yml\" sourcestartlinenumber=\"1\">Marks a transformation rule of an <xref href=\"Utils.Expressions.ExpressionTransformer\" data-throw-if-not-resolved=\"false\"></xref> that receives a whole arithmetic chain at once, as an\nordered array of <xref href=\"Utils.Expressions.FlattenedTerm\" data-throw-if-not-resolved=\"false\"></xref>, instead of being called once per binary operator. This type only holds data.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Expressions.FlattenedTerm.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Expressions.FlattenedTerm.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Expressions.FlattenedTerm",
+      "Summary": "<p sourcefile=\"api/Utils.Expressions.FlattenedTerm.yml\" sourcestartlinenumber=\"1\">One operand of an arithmetic chain flattened for a <xref href=\"Utils.Expressions.FlattenAttribute\" data-throw-if-not-resolved=\"false\"></xref> rule. This type only holds data.</p>\n"
     },
     {
       "type": "ManagedReference",
@@ -16750,6 +16778,16 @@
       "output": {
         ".html": {
           "relative_path": "docs/expressions/CompiledBehavior-Study.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/expressions/FlattenArchitecture.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/expressions/FlattenArchitecture.html"
         }
       },
       "version": ""

@@ -236,7 +236,8 @@ same problem. This type only holds data.</p>
     </dl>
     <dl class="jumplist">
       <dt><a class="xref" href="Utils.Expressions.ExpressionTransformRuleInfo.html">ExpressionTransformRuleInfo</a></dt>
-      <dd><p>Identifies one rule of a transformer (a method marked with <a class="xref" href="Utils.Expressions.ExpressionSignatureAttribute.html">ExpressionSignatureAttribute</a>) in trace events.
+      <dd><p>Identifies one rule of a transformer (a method marked with <a class="xref" href="Utils.Expressions.ExpressionSignatureAttribute.html">ExpressionSignatureAttribute</a> or
+<a class="xref" href="Utils.Expressions.FlattenAttribute.html">FlattenAttribute</a>) in trace events.
 This type only holds data.</p>
 </dd>
     </dl>
@@ -261,6 +262,12 @@ Subclasses may override the transformation logic for specific expression signatu
     <dl class="jumplist">
       <dt><a class="xref" href="Utils.Expressions.FindTypeException.html">FindTypeException</a></dt>
       <dd><p>Thrown when a type cannot be found during a type resolution process.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.FlattenAttribute.html">FlattenAttribute</a></dt>
+      <dd><p>Marks a transformation rule of an <a class="xref" href="Utils.Expressions.ExpressionTransformer.html">ExpressionTransformer</a> that receives a whole arithmetic chain at once, as an
+ordered array of <a class="xref" href="Utils.Expressions.FlattenedTerm.html">FlattenedTerm</a>, instead of being called once per binary operator. This type only holds data.</p>
 </dd>
     </dl>
     <dl class="jumplist">
@@ -346,6 +353,11 @@ guarantees they give.</p>
     <dl class="jumplist">
       <dt><a class="xref" href="Utils.Expressions.ExpressionTransformEvent.html">ExpressionTransformEvent</a></dt>
       <dd><p>One event of a traced expression transformation (see <a class="xref" href="Utils.Expressions.IExpressionTransformTracer.html">IExpressionTransformTracer</a>). This type only holds data.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.FlattenedTerm.html">FlattenedTerm</a></dt>
+      <dd><p>One operand of an arithmetic chain flattened for a <a class="xref" href="Utils.Expressions.FlattenAttribute.html">FlattenAttribute</a> rule. This type only holds data.</p>
 </dd>
     </dl>
     <h3 id="interfaces">

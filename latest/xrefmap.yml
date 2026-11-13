@@ -13932,6 +13932,12 @@ references:
   commentId: T:Utils.Expressions.ExpressionTransformEventKind
   fullName: Utils.Expressions.ExpressionTransformEventKind
   nameWithType: ExpressionTransformEventKind
+- uid: Utils.Expressions.ExpressionTransformEventKind.ChainFlattened
+  name: ChainFlattened
+  href: api/Utils.Expressions.ExpressionTransformEventKind.html#Utils_Expressions_ExpressionTransformEventKind_ChainFlattened
+  commentId: F:Utils.Expressions.ExpressionTransformEventKind.ChainFlattened
+  fullName: Utils.Expressions.ExpressionTransformEventKind.ChainFlattened
+  nameWithType: ExpressionTransformEventKind.ChainFlattened
 - uid: Utils.Expressions.ExpressionTransformEventKind.Finalize
   name: Finalize
   href: api/Utils.Expressions.ExpressionTransformEventKind.html#Utils_Expressions_ExpressionTransformEventKind_Finalize
@@ -14079,6 +14085,19 @@ references:
   isSpec: "True"
   fullName: Utils.Expressions.ExpressionTransformRuleInfo.DisplayName
   nameWithType: ExpressionTransformRuleInfo.DisplayName
+- uid: Utils.Expressions.ExpressionTransformRuleInfo.FlattenedNodeTypes
+  name: FlattenedNodeTypes
+  href: api/Utils.Expressions.ExpressionTransformRuleInfo.html#Utils_Expressions_ExpressionTransformRuleInfo_FlattenedNodeTypes
+  commentId: P:Utils.Expressions.ExpressionTransformRuleInfo.FlattenedNodeTypes
+  fullName: Utils.Expressions.ExpressionTransformRuleInfo.FlattenedNodeTypes
+  nameWithType: ExpressionTransformRuleInfo.FlattenedNodeTypes
+- uid: Utils.Expressions.ExpressionTransformRuleInfo.FlattenedNodeTypes*
+  name: FlattenedNodeTypes
+  href: api/Utils.Expressions.ExpressionTransformRuleInfo.html#Utils_Expressions_ExpressionTransformRuleInfo_FlattenedNodeTypes_
+  commentId: Overload:Utils.Expressions.ExpressionTransformRuleInfo.FlattenedNodeTypes
+  isSpec: "True"
+  fullName: Utils.Expressions.ExpressionTransformRuleInfo.FlattenedNodeTypes
+  nameWithType: ExpressionTransformRuleInfo.FlattenedNodeTypes
 - uid: Utils.Expressions.ExpressionTransformRuleInfo.Id
   name: Id
   href: api/Utils.Expressions.ExpressionTransformRuleInfo.html#Utils_Expressions_ExpressionTransformRuleInfo_Id
@@ -14255,6 +14274,22 @@ references:
   isSpec: "True"
   fullName: Utils.Expressions.ExpressionTransformer.PrepareExpression
   nameWithType: ExpressionTransformer.PrepareExpression
+- uid: Utils.Expressions.ExpressionTransformer.RebuildFlattenedChain(System.Linq.Expressions.Expression,System.Collections.Generic.IReadOnlyList{System.Linq.Expressions.Expression})
+  name: RebuildFlattenedChain(Expression, IReadOnlyList<Expression>)
+  href: api/Utils.Expressions.ExpressionTransformer.html#Utils_Expressions_ExpressionTransformer_RebuildFlattenedChain_System_Linq_Expressions_Expression_System_Collections_Generic_IReadOnlyList_System_Linq_Expressions_Expression__
+  commentId: M:Utils.Expressions.ExpressionTransformer.RebuildFlattenedChain(System.Linq.Expressions.Expression,System.Collections.Generic.IReadOnlyList{System.Linq.Expressions.Expression})
+  name.vb: RebuildFlattenedChain(Expression, IReadOnlyList(Of Expression))
+  fullName: Utils.Expressions.ExpressionTransformer.RebuildFlattenedChain(System.Linq.Expressions.Expression, System.Collections.Generic.IReadOnlyList<System.Linq.Expressions.Expression>)
+  fullName.vb: Utils.Expressions.ExpressionTransformer.RebuildFlattenedChain(System.Linq.Expressions.Expression, System.Collections.Generic.IReadOnlyList(Of System.Linq.Expressions.Expression))
+  nameWithType: ExpressionTransformer.RebuildFlattenedChain(Expression, IReadOnlyList<Expression>)
+  nameWithType.vb: ExpressionTransformer.RebuildFlattenedChain(Expression, IReadOnlyList(Of Expression))
+- uid: Utils.Expressions.ExpressionTransformer.RebuildFlattenedChain*
+  name: RebuildFlattenedChain
+  href: api/Utils.Expressions.ExpressionTransformer.html#Utils_Expressions_ExpressionTransformer_RebuildFlattenedChain_
+  commentId: Overload:Utils.Expressions.ExpressionTransformer.RebuildFlattenedChain
+  isSpec: "True"
+  fullName: Utils.Expressions.ExpressionTransformer.RebuildFlattenedChain
+  nameWithType: ExpressionTransformer.RebuildFlattenedChain
 - uid: Utils.Expressions.ExpressionTransformer.ReplaceArguments(System.Linq.Expressions.Expression,System.Linq.Expressions.ParameterExpression[],System.Linq.Expressions.Expression[])
   name: ReplaceArguments(Expression, ParameterExpression[], Expression[])
   href: api/Utils.Expressions.ExpressionTransformer.html#Utils_Expressions_ExpressionTransformer_ReplaceArguments_System_Linq_Expressions_Expression_System_Linq_Expressions_ParameterExpression___System_Linq_Expressions_Expression___
@@ -14428,6 +14463,108 @@ references:
   isSpec: "True"
   fullName: Utils.Expressions.FindTypeException.TypeName
   nameWithType: FindTypeException.TypeName
+- uid: Utils.Expressions.FlattenAttribute
+  name: FlattenAttribute
+  href: api/Utils.Expressions.FlattenAttribute.html
+  commentId: T:Utils.Expressions.FlattenAttribute
+  fullName: Utils.Expressions.FlattenAttribute
+  nameWithType: FlattenAttribute
+- uid: Utils.Expressions.FlattenAttribute.#ctor(System.Linq.Expressions.ExpressionType[])
+  name: FlattenAttribute(params ExpressionType[])
+  href: api/Utils.Expressions.FlattenAttribute.html#Utils_Expressions_FlattenAttribute__ctor_System_Linq_Expressions_ExpressionType___
+  commentId: M:Utils.Expressions.FlattenAttribute.#ctor(System.Linq.Expressions.ExpressionType[])
+  name.vb: New(ParamArray ExpressionType())
+  fullName: Utils.Expressions.FlattenAttribute.FlattenAttribute(params System.Linq.Expressions.ExpressionType[])
+  fullName.vb: Utils.Expressions.FlattenAttribute.New(ParamArray System.Linq.Expressions.ExpressionType())
+  nameWithType: FlattenAttribute.FlattenAttribute(params ExpressionType[])
+  nameWithType.vb: FlattenAttribute.New(ParamArray ExpressionType())
+- uid: Utils.Expressions.FlattenAttribute.#ctor*
+  name: FlattenAttribute
+  href: api/Utils.Expressions.FlattenAttribute.html#Utils_Expressions_FlattenAttribute__ctor_
+  commentId: Overload:Utils.Expressions.FlattenAttribute.#ctor
+  isSpec: "True"
+  name.vb: New
+  fullName: Utils.Expressions.FlattenAttribute.FlattenAttribute
+  fullName.vb: Utils.Expressions.FlattenAttribute.New
+  nameWithType: FlattenAttribute.FlattenAttribute
+  nameWithType.vb: FlattenAttribute.New
+- uid: Utils.Expressions.FlattenAttribute.Operations
+  name: Operations
+  href: api/Utils.Expressions.FlattenAttribute.html#Utils_Expressions_FlattenAttribute_Operations
+  commentId: P:Utils.Expressions.FlattenAttribute.Operations
+  fullName: Utils.Expressions.FlattenAttribute.Operations
+  nameWithType: FlattenAttribute.Operations
+- uid: Utils.Expressions.FlattenAttribute.Operations*
+  name: Operations
+  href: api/Utils.Expressions.FlattenAttribute.html#Utils_Expressions_FlattenAttribute_Operations_
+  commentId: Overload:Utils.Expressions.FlattenAttribute.Operations
+  isSpec: "True"
+  fullName: Utils.Expressions.FlattenAttribute.Operations
+  nameWithType: FlattenAttribute.Operations
+- uid: Utils.Expressions.FlattenedTerm
+  name: FlattenedTerm
+  href: api/Utils.Expressions.FlattenedTerm.html
+  commentId: T:Utils.Expressions.FlattenedTerm
+  fullName: Utils.Expressions.FlattenedTerm
+  nameWithType: FlattenedTerm
+- uid: Utils.Expressions.FlattenedTerm.#ctor(System.Linq.Expressions.ExpressionType,System.Linq.Expressions.Expression,System.Int32)
+  name: FlattenedTerm(ExpressionType, Expression, int)
+  href: api/Utils.Expressions.FlattenedTerm.html#Utils_Expressions_FlattenedTerm__ctor_System_Linq_Expressions_ExpressionType_System_Linq_Expressions_Expression_System_Int32_
+  commentId: M:Utils.Expressions.FlattenedTerm.#ctor(System.Linq.Expressions.ExpressionType,System.Linq.Expressions.Expression,System.Int32)
+  name.vb: New(ExpressionType, Expression, Integer)
+  fullName: Utils.Expressions.FlattenedTerm.FlattenedTerm(System.Linq.Expressions.ExpressionType, System.Linq.Expressions.Expression, int)
+  fullName.vb: Utils.Expressions.FlattenedTerm.New(System.Linq.Expressions.ExpressionType, System.Linq.Expressions.Expression, Integer)
+  nameWithType: FlattenedTerm.FlattenedTerm(ExpressionType, Expression, int)
+  nameWithType.vb: FlattenedTerm.New(ExpressionType, Expression, Integer)
+- uid: Utils.Expressions.FlattenedTerm.#ctor*
+  name: FlattenedTerm
+  href: api/Utils.Expressions.FlattenedTerm.html#Utils_Expressions_FlattenedTerm__ctor_
+  commentId: Overload:Utils.Expressions.FlattenedTerm.#ctor
+  isSpec: "True"
+  name.vb: New
+  fullName: Utils.Expressions.FlattenedTerm.FlattenedTerm
+  fullName.vb: Utils.Expressions.FlattenedTerm.New
+  nameWithType: FlattenedTerm.FlattenedTerm
+  nameWithType.vb: FlattenedTerm.New
+- uid: Utils.Expressions.FlattenedTerm.Operand
+  name: Operand
+  href: api/Utils.Expressions.FlattenedTerm.html#Utils_Expressions_FlattenedTerm_Operand
+  commentId: P:Utils.Expressions.FlattenedTerm.Operand
+  fullName: Utils.Expressions.FlattenedTerm.Operand
+  nameWithType: FlattenedTerm.Operand
+- uid: Utils.Expressions.FlattenedTerm.Operand*
+  name: Operand
+  href: api/Utils.Expressions.FlattenedTerm.html#Utils_Expressions_FlattenedTerm_Operand_
+  commentId: Overload:Utils.Expressions.FlattenedTerm.Operand
+  isSpec: "True"
+  fullName: Utils.Expressions.FlattenedTerm.Operand
+  nameWithType: FlattenedTerm.Operand
+- uid: Utils.Expressions.FlattenedTerm.Operation
+  name: Operation
+  href: api/Utils.Expressions.FlattenedTerm.html#Utils_Expressions_FlattenedTerm_Operation
+  commentId: P:Utils.Expressions.FlattenedTerm.Operation
+  fullName: Utils.Expressions.FlattenedTerm.Operation
+  nameWithType: FlattenedTerm.Operation
+- uid: Utils.Expressions.FlattenedTerm.Operation*
+  name: Operation
+  href: api/Utils.Expressions.FlattenedTerm.html#Utils_Expressions_FlattenedTerm_Operation_
+  commentId: Overload:Utils.Expressions.FlattenedTerm.Operation
+  isSpec: "True"
+  fullName: Utils.Expressions.FlattenedTerm.Operation
+  nameWithType: FlattenedTerm.Operation
+- uid: Utils.Expressions.FlattenedTerm.SourceIndex
+  name: SourceIndex
+  href: api/Utils.Expressions.FlattenedTerm.html#Utils_Expressions_FlattenedTerm_SourceIndex
+  commentId: P:Utils.Expressions.FlattenedTerm.SourceIndex
+  fullName: Utils.Expressions.FlattenedTerm.SourceIndex
+  nameWithType: FlattenedTerm.SourceIndex
+- uid: Utils.Expressions.FlattenedTerm.SourceIndex*
+  name: SourceIndex
+  href: api/Utils.Expressions.FlattenedTerm.html#Utils_Expressions_FlattenedTerm_SourceIndex_
+  commentId: Overload:Utils.Expressions.FlattenedTerm.SourceIndex
+  isSpec: "True"
+  fullName: Utils.Expressions.FlattenedTerm.SourceIndex
+  nameWithType: FlattenedTerm.SourceIndex
 - uid: Utils.Expressions.FormattedPart
   name: FormattedPart
   href: api/Utils.Expressions.FormattedPart.html
