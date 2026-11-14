@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed — `omy.Utils` (expression simplifier: refused additive chains are no longer walked again)
+- The admission of the flatten rule of `ExpressionSimplifier` records, for the running operation, the nodes below a refused
+  chain that contain the cause of the refusal (a refusal is inherited by every chain that contains its cause), so the level
+  by level fallback, which offers each of them in turn, refuses them by one lookup instead of walking down to the cause
+  again: on `sin(x0) + x1 + ... + x63`, 679,056 admission visits become 41,727 and no node is examined twice. **No
+  admission decision changes**, so results, user-code calls and exceptions are unchanged; the table is dropped with the
+  outermost operation. The operand sets of the walk keep their first entries inline (a chain refused within a few terms
+  allocates nothing: −11.9 % allocations on `H 64`). Measured: −7 to −23 % on chains refused deep down; admitted short
+  chains up to 0.5–2 µs slower (fixed cost per term, then reduced). See `docs/expressions/SimplifierFlatten.md` §9.
+
 ### Changed — `omy.Utils` (expression simplifier: linear sums canonicalized at once)
 - `ExpressionSimplifier` (the built-in type, under every policy) canonicalizes a *linear* additive chain once, from the
   terms of the whole chain, instead of once per level: a sum or difference of distinct parameters, finite non-zero
