@@ -83,11 +83,160 @@ public partial class ExpressionSimplifier
     /// chain is iterative, stops at the first operand that is not linear, and reads framework operators and leaves only.
     /// Deciding here, before the extraction, also keeps a chain that is not linear from being extracted at all: a shared
     /// sub-chain, which holds a parameter twice, is refused when the second occurrence is met.
+    /// <para>
+    /// <b>Known refusals (mission C1).</b> A refused chain is transformed level by level, and each crossed node below its
+    /// root is offered in turn as the root of a chain of its own: when the cause of the refusal lies deep in a long chain,
+    /// every level walked down to it again (quadratic in the depth). A refusal is inherited by every chain that contains its
+    /// cause (<see cref="IsLinearChain"/>), so the walk that finds it records, in the operation's table
+    /// (<see cref="ExpressionResourceBudget.Session.FlattenRefusals"/>), the crossed nodes below the root that contain the
+    /// cause; such a node, offered later, is refused by one lookup instead of a walk. Nothing else is recorded: an admitted
+    /// chain says nothing about a larger one, and a node that does not contain the cause is walked as before. The table
+    /// lives as long as the outermost operation of the thread, like the effect table.
+    /// </para>
     /// </remarks>
     internal override ExpressionRuleRejection FlattenAdmission(Expression root)
     {
         if (GetType() != typeof(ExpressionSimplifier)) return base.FlattenAdmission(root);
-        return root is BinaryExpression binary && IsLinearChain(binary) ? ExpressionRuleRejection.None : ExpressionRuleRejection.ChainNotAdmitted;
+        if (root is not BinaryExpression binary) return ExpressionRuleRejection.ChainNotAdmitted;
+
+        FlattenAdmissionStatistics? statistics = t_admissionStatistics;
+        if (statistics is not null) statistics.Admissions++;
+        ExpressionResourceBudget.Session? session = ExpressionResourceBudget.ActiveSession;
+        if (session?.FlattenRefusals is { } refusals && refusals.Contains(binary))
+        {
+            // The lookup replaces a walk of at least one node: it is counted as one.
+            ExpressionResourceBudget.ConsumeStructuralVisit();
+            if (statistics is not null)
+            {
+                statistics.KnownRefusals++;
+                statistics.Causes[(int)FlattenRefusalCause.KnownRefusal]++;
+            }
+
+            return ExpressionRuleRejection.ChainNotAdmitted;
+        }
+
+        bool linear = IsLinearChain(binary, statistics, out ChainRefusal refusal);
+        if (statistics is not null)
+        {
+            if (linear) statistics.Accepted++;
+            else statistics.Causes[(int)refusal.Cause]++;
+        }
+
+        if (!linear && refusal.Depth > 0 && session is not null) RecordRefusedSpine(binary, refusal, session, statistics);
+        return linear ? ExpressionRuleRejection.None : ExpressionRuleRejection.ChainNotAdmitted;
+    }
+
+    /// <summary>
+    /// Records as refused the crossed nodes of the spine of <paramref name="root"/> (see <see cref="IsLinearChain"/>) whose
+    /// chain contains the cause of <paramref name="refusal"/>: every spine node from index <c>1</c> down to the smallest
+    /// spine index involved in the refusal, so that each of them, offered later as a root, is refused by one lookup.
+    /// </summary>
+    /// <param name="root">The refused root.</param>
+    /// <param name="refusal">The refusal reported by the walk; its depth is at least one.</param>
+    /// <param name="session">The session of the running operation, which owns the table.</param>
+    /// <param name="statistics">The opt-in counters of the thread, or <see langword="null"/>.</param>
+    /// <remarks>
+    /// <para>
+    /// The pass follows the spine from the root, with one structural visit per node, and stops at the first of: the spine
+    /// index reported by the walk (the refusing node for a local cause or a repetition, the first constant for a third one);
+    /// the first node that holds an earlier occurrence of the repeated key (<see cref="HoldsOccurrence"/>; the node at index
+    /// <c>i</c> is recorded before its own terms are tested, since an occurrence at an index at least <c>i</c> lies in its
+    /// chain); the first node with two crossed operands, whose chain holds everything the walk visited afterwards. A node
+    /// with a single crossed operand leads to it, as in the walk.
+    /// </para>
+    /// <para>
+    /// Finding the earlier occurrence here, only on a refusal, keeps the sets of the walk free of any bookkeeping (an
+    /// admitted chain allocates exactly what it did before). Only spine nodes and the linear terms the walk already accepted
+    /// are read, by type tests and framework properties. Every recorded node is a proven refusal, so an exception (a budget
+    /// refusal) in the middle of the pass leaves a correct table.
+    /// </para>
+    /// </remarks>
+    private void RecordRefusedSpine(BinaryExpression root, in ChainRefusal refusal, ExpressionResourceBudget.Session session, FlattenAdmissionStatistics? statistics)
+    {
+        if (refusal.Key is not null && HoldsOccurrence(root, refusal)) return;
+
+        ExpressionNodeSet refusals = session.FlattenRefusals ??= new ExpressionNodeSet();
+        BinaryExpression node = root;
+        for (int index = 1; index <= refusal.Depth; index++)
+        {
+            BinaryExpression? left = AsCrossedAdditiveNode(node.Left);
+            BinaryExpression? right = AsCrossedAdditiveNode(node.Right);
+            if (left is not null && right is not null) return;
+
+            ExpressionResourceBudget.ConsumeStructuralVisit();
+            node = (left ?? right)!;
+            bool added = refusals.Add(node);
+            if (statistics is not null)
+            {
+                statistics.RecordingVisits++;
+                if (added) statistics.RecordedRefusals++;
+            }
+
+            if (refusal.Key is not null && HoldsOccurrence(node, refusal)) return;
+        }
+    }
+
+    /// <summary>
+    /// Whether a term of <paramref name="node"/> (an operand that is not crossed) holds an occurrence of the key of a
+    /// repetition: the parameter, as a term or as a factor; the coefficient value; or, for a coefficient equal to a constant,
+    /// that value as a coefficient or as a constant term.
+    /// </summary>
+    /// <param name="node">A spine node whose terms the walk accepted as linear.</param>
+    /// <param name="refusal">A refusal by repetition, with its key.</param>
+    /// <returns><see langword="true"/> when one of its terms holds the key.</returns>
+    private bool HoldsOccurrence(BinaryExpression node, in ChainRefusal refusal)
+        => (AsCrossedAdditiveNode(node.Left) is null && TermHolds(node.Left, refusal))
+            || (AsCrossedAdditiveNode(node.Right) is null && TermHolds(node.Right, refusal));
+
+    /// <summary>Whether the linear term <paramref name="term"/> holds the key of <paramref name="refusal"/> (see <see cref="HoldsOccurrence"/>).</summary>
+    /// <param name="term">A term accepted by <see cref="IsLinearTerm"/>.</param>
+    /// <param name="refusal">A refusal by repetition, with its key.</param>
+    /// <returns><see langword="true"/> when the term holds the key.</returns>
+    /// <remarks>Keys are compared as the sets of the walk compare them (<see cref="object.Equals(object?, object?)"/>).</remarks>
+    private static bool TermHolds(Expression term, in ChainRefusal refusal)
+    {
+        object key = refusal.Key!;
+        return (refusal.Cause, term) switch
+        {
+            (FlattenRefusalCause.RepeatedParameter, ParameterExpression parameter) => ReferenceEquals(parameter, key),
+            (FlattenRefusalCause.RepeatedParameter, BinaryExpression product) => ReferenceEquals(product.Left, key) || ReferenceEquals(product.Right, key),
+            (FlattenRefusalCause.RepeatedCoefficient, BinaryExpression product) => FactorHolds(product.Left, key) || FactorHolds(product.Right, key),
+            (FlattenRefusalCause.CoefficientEqualsConstant, ConstantExpression constant) => Equals(constant.Value, key),
+            (FlattenRefusalCause.CoefficientEqualsConstant, BinaryExpression product) => FactorHolds(product.Left, key) || FactorHolds(product.Right, key),
+            _ => false,
+        };
+    }
+
+    /// <summary>Whether a factor of a linear product is a constant coefficient of value <paramref name="key"/>.</summary>
+    /// <param name="factor">A parameter or a constant.</param>
+    /// <param name="key">A boxed primitive value.</param>
+    /// <returns><see langword="true"/> for a constant of that value.</returns>
+    private static bool FactorHolds(Expression factor, object key) => factor is ConstantExpression constant && Equals(constant.Value, key);
+
+    /// <summary>
+    /// Why <see cref="IsLinearChain"/> refused a chain, and where: data only.
+    /// </summary>
+    /// <param name="Cause">The cause.</param>
+    /// <param name="Depth">
+    /// The spine index of the deepest node known to contain the cause: the refusing node for a local cause, the first
+    /// constant for a third one, and for a repetition the refusing node, an upper bound of the earlier occurrence; <c>0</c>
+    /// when only the root is known to be refused.
+    /// </param>
+    /// <param name="Key">The repeated key (a parameter or a boxed coefficient value) for a repetition, otherwise <see langword="null"/>.</param>
+    private readonly record struct ChainRefusal(FlattenRefusalCause Cause, int Depth, object? Key);
+
+    /// <summary>The opt-in admission counters of this thread (<see cref="AdmissionStatistics"/>).</summary>
+    [ThreadStatic]
+    private static FlattenAdmissionStatistics? t_admissionStatistics;
+
+    /// <summary>
+    /// Gets or sets the admission counters of this thread: audits and benchmarks only. While <see langword="null"/> (the
+    /// default), the admission reads this field once per chain root and records nothing.
+    /// </summary>
+    internal static FlattenAdmissionStatistics? AdmissionStatistics
+    {
+        get => t_admissionStatistics;
+        set => t_admissionStatistics = value;
     }
 
     /// <summary>
@@ -95,6 +244,11 @@ public partial class ExpressionSimplifier
     /// level treatment provably ends with the canonicalization of all the terms:
     /// </summary>
     /// <param name="root">The raw root of the chain: a crossed <c>Add</c> or <c>Subtract</c> node.</param>
+    /// <param name="statistics">The opt-in counters of the thread, or <see langword="null"/>.</param>
+    /// <param name="refusal">
+    /// Receives, for a refused chain, its cause and where it lies on the spine (see the remarks); the default value for an
+    /// admitted chain.
+    /// </param>
     /// <returns><see langword="true"/> for a linear chain.</returns>
     /// <remarks>
     /// <list type="bullet">
@@ -121,40 +275,106 @@ public partial class ExpressionSimplifier
     /// distinct nodes even on a shared DAG: a shared sub-chain holds a parameter, refused at its second occurrence, or
     /// constants only, refused at its first node with two constant operands. The sets hold
     /// <see cref="ParameterExpression"/> references and boxed primitive values only, so no user
-    /// <see cref="object.Equals(object?)"/> or <see cref="object.GetHashCode"/> runs.
+    /// <see cref="object.Equals(object?)"/> or <see cref="object.GetHashCode"/> runs; the first four entries of each are kept
+    /// inline, so a chain refused within its first few terms allocates nothing.
+    /// </para>
+    /// <para>
+    /// <b>Inherited refusals (mission C1).</b> Every reason of a refusal is inherited by every chain that contains it: a
+    /// <em>local</em> reason (the type, an operator, a term, a constant pair, a subtracted group) belongs to one crossed node,
+    /// which a larger chain crosses the same way (the operands of an intrinsic operator have its type); a <em>global</em>
+    /// reason (a repeated parameter or coefficient, a coefficient equal to a constant, a third constant) involves terms that a
+    /// larger chain holds too, and the sets only grow. The walk therefore reports where the cause lies. The <em>spine</em> of
+    /// the chain is the path the walk follows from the root while every node has a single crossed operand, up to the first
+    /// node with two (whose subtree holds everything the walk visits afterwards); the spine index of a node is its position
+    /// on that path, and every node visited past the first branching node gets the index of that node. A spine node at index
+    /// <c>i</c> contains every operand met at an index at least <c>i</c>, so the spine nodes down to the smallest index
+    /// involved in a refusal have a chain that contains its cause: the index of the refusing node for a local reason, of the
+    /// first constant for a third one, of the earlier occurrence for a repetition (which <see cref="RecordRefusedSpine"/>
+    /// finds, the walk reporting the repeated key and the index of the refusing node).
     /// </para>
     /// </remarks>
-    private bool IsLinearChain(BinaryExpression root)
+    private bool IsLinearChain(BinaryExpression root, FlattenAdmissionStatistics? statistics, out ChainRefusal refusal)
     {
         Type type = root.Type;
-        if (!IsFlattenedChainType(type)) return false;
+        if (!IsFlattenedChainType(type))
+        {
+            refusal = new ChainRefusal(FlattenRefusalCause.ChainType, 0, null);
+            return false;
+        }
 
-        LinearChainOperands? operands = null;
+        if (statistics is not null) statistics.Walks++;
+        var operands = new LinearChainOperands();
         Stack<BinaryExpression>? pending = null;
         BinaryExpression? node = root;
+        int depth = 0;
+        bool onSpine = true;
         while (node is not null)
         {
             ExpressionResourceBudget.ConsumeStructuralVisit();
+            if (statistics is not null)
+            {
+                statistics.NodesExamined++;
+                statistics.DistinctNodes?.Add(node);
+            }
+
             BinaryExpression? left = AsCrossedAdditiveNode(node.Left);
             BinaryExpression? right = AsCrossedAdditiveNode(node.Right);
-            if (right is not null && node.NodeType == ExpressionType.Subtract) return false;
-            if (node.Left is ConstantExpression && node.Right is ConstantExpression) return false;
+            if (right is not null && node.NodeType == ExpressionType.Subtract)
+            {
+                refusal = new ChainRefusal(FlattenRefusalCause.SubtractedGroup, depth, null);
+                return false;
+            }
+
+            if (node.Left is ConstantExpression && node.Right is ConstantExpression)
+            {
+                refusal = new ChainRefusal(FlattenRefusalCause.ConstantPair, depth, null);
+                return false;
+            }
 
             // The terms first, by type tests: the operator of the node is classified (which makes the framework read the
             // types of its operands) only once both operands are known to be framework nodes.
-            if (left is null && !IsLinearTerm(node.Left, type)) return false;
-            if (right is null && !IsLinearTerm(node.Right, type)) return false;
-            if (!IsOrdinaryBinaryArithmetic(node)) return false;
-            if (left is null && !(operands ??= new LinearChainOperands()).Add(node.Left)) return false;
-            if (right is null && !(operands ??= new LinearChainOperands()).Add(node.Right)) return false;
+            if (left is null && !IsLinearTerm(node.Left, type))
+            {
+                refusal = new ChainRefusal(NonLinearTermCause(node.Left), depth, null);
+                return false;
+            }
 
-            // A left-associated chain, the common shape, never allocates the stack.
-            if (left is not null && right is not null) (pending ??= new Stack<BinaryExpression>()).Push(right);
+            if (right is null && !IsLinearTerm(node.Right, type))
+            {
+                refusal = new ChainRefusal(NonLinearTermCause(node.Right), depth, null);
+                return false;
+            }
+
+            if (!IsOrdinaryBinaryArithmetic(node))
+            {
+                refusal = new ChainRefusal(FlattenRefusalCause.Operator, depth, null);
+                return false;
+            }
+
+            if (left is null && !operands.Add(node.Left, depth, out refusal)) return false;
+            if (right is null && !operands.Add(node.Right, depth, out refusal)) return false;
+
+            // A left-associated chain, the common shape, never allocates the stack. The spine ends at the first node with two
+            // crossed operands: everything the walk visits afterwards belongs to that node.
+            if (left is not null && right is not null)
+            {
+                onSpine = false;
+                (pending ??= new Stack<BinaryExpression>()).Push(right);
+            }
+
             node = left ?? right ?? (pending is { Count: > 0 } ? pending.Pop() : null);
+            if (onSpine) depth++;
         }
 
-        return operands is not null;
+        refusal = default;
+        return operands.HasOperands;
     }
+
+    /// <summary>Classifies a term refused by <see cref="IsLinearTerm"/>, by type tests only (an extension node is never read).</summary>
+    /// <param name="term">The refused term.</param>
+    /// <returns><see cref="FlattenRefusalCause.CallTerm"/> for a call or an invocation, otherwise <see cref="FlattenRefusalCause.NonLinearTerm"/>.</returns>
+    private static FlattenRefusalCause NonLinearTermCause(Expression term)
+        => term is MethodCallExpression or InvocationExpression ? FlattenRefusalCause.CallTerm : FlattenRefusalCause.NonLinearTerm;
 
     /// <summary>
     /// Returns <paramref name="node"/> when the chains of <see cref="FlattenAdditiveChain"/> cross it, as the extraction
@@ -241,52 +461,167 @@ public partial class ExpressionSimplifier
     /// The parameters, constant coefficients and constant terms of a chain whose every term is a linear term
     /// (<see cref="IsLinearTerm"/>), recorded to check that the chain repeats nothing a rule could match: no parameter
     /// occurs twice, no coefficient value occurs twice, no coefficient equals a constant term, and the chain holds at most
-    /// two constant terms.
+    /// two constant terms. A mutable value: it lives in the walk's frame and is only used through that local.
     /// </summary>
-    private sealed class LinearChainOperands
+    private struct LinearChainOperands
     {
-        /// <summary>The parameters met, as terms or as factors.</summary>
-        private readonly HashSet<ParameterExpression> _parameters = [];
+        /// <summary>The parameters met, as terms or as factors (compared by reference, as a parameter has no other equality).</summary>
+        private SmallOperandSet _parameters;
 
-        /// <summary>The values of the constant coefficients met; created on first use.</summary>
-        private HashSet<object>? _coefficients;
+        /// <summary>The values of the constant coefficients met (boxed primitives, compared by value).</summary>
+        private SmallOperandSet _coefficients;
 
-        /// <summary>The values of the constant terms met; created on first use.</summary>
-        private HashSet<object>? _constants;
+        /// <summary>The values of the constant terms met (boxed primitives, compared by value).</summary>
+        private SmallOperandSet _constants;
 
         /// <summary>The number of constant terms met.</summary>
         private int _constantCount;
 
+        /// <summary>The spine index of the node that holds the first constant term met.</summary>
+        private int _firstConstantDepth;
+
+        /// <summary>Whether a term was recorded.</summary>
+        private bool _recorded;
+
+        /// <summary>Gets whether at least one term was recorded.</summary>
+        public readonly bool HasOperands => _recorded;
+
         /// <summary>Records a linear term.</summary>
         /// <param name="term">A term accepted by <see cref="IsLinearTerm"/>.</param>
-        /// <returns>
-        /// <see langword="false"/> when the term repeats a parameter or a coefficient, makes a coefficient equal to a constant
-        /// term, or is the third constant term of the chain.
-        /// </returns>
-        public bool Add(Expression term)
+        /// <param name="depth">The spine index of the node that holds the term.</param>
+        /// <param name="refusal">
+        /// Receives, when the term repeats a parameter or a coefficient, makes a coefficient equal to a constant term, or is
+        /// the third constant term of the chain, the cause, the spine index to report and the repeated key (see
+        /// <see cref="ChainRefusal"/>); otherwise the default value.
+        /// </param>
+        /// <returns><see langword="true"/> when the term is accepted.</returns>
+        public bool Add(Expression term, int depth, out ChainRefusal refusal)
         {
+            _recorded = true;
             switch (term)
             {
                 case ParameterExpression parameter:
-                    return _parameters.Add(parameter);
+                    return AddParameter(parameter, depth, out refusal);
                 case ConstantExpression constant:
-                    if (++_constantCount > 2) return false;
-                    (_constants ??= []).Add(constant.Value!);
-                    return _coefficients is null || !_coefficients.Contains(constant.Value!);
+                    if (++_constantCount > 2)
+                    {
+                        refusal = new ChainRefusal(FlattenRefusalCause.TooManyConstants, _firstConstantDepth, null);
+                        return false;
+                    }
+
+                    if (_constantCount == 1) _firstConstantDepth = depth;
+                    object value = constant.Value!;
+                    _constants.Add(value);
+                    return Accept(!_coefficients.Contains(value), FlattenRefusalCause.CoefficientEqualsConstant, depth, value, out refusal);
                 default:
                     var product = (BinaryExpression)term;
-                    return AddFactor(product.Left) && AddFactor(product.Right);
+                    return AddFactor(product.Left, depth, out refusal) && AddFactor(product.Right, depth, out refusal);
             }
         }
 
         /// <summary>Records a factor of a product term: a parameter of the chain, or a constant coefficient.</summary>
         /// <param name="factor">A parameter or a constant.</param>
-        /// <returns><see langword="false"/> when the parameter or the coefficient value was already met, or when the coefficient equals a constant term.</returns>
-        private bool AddFactor(Expression factor)
+        /// <param name="depth">The spine index of the node that holds the product.</param>
+        /// <param name="refusal">Receives the refusal when the parameter or the coefficient value was already met, or when the coefficient equals a constant term.</param>
+        /// <returns><see langword="true"/> when the factor is accepted.</returns>
+        private bool AddFactor(Expression factor, int depth, out ChainRefusal refusal)
         {
-            if (factor is ParameterExpression parameter) return _parameters.Add(parameter);
+            if (factor is ParameterExpression parameter) return AddParameter(parameter, depth, out refusal);
             object value = ((ConstantExpression)factor).Value!;
-            return (_coefficients ??= []).Add(value) && (_constants is null || !_constants.Contains(value));
+            return Accept(_coefficients.Add(value), FlattenRefusalCause.RepeatedCoefficient, depth, value, out refusal)
+                && Accept(!_constants.Contains(value), FlattenRefusalCause.CoefficientEqualsConstant, depth, value, out refusal);
+        }
+
+        /// <summary>Records a parameter, as a term or as a factor.</summary>
+        /// <param name="parameter">The parameter.</param>
+        /// <param name="depth">The spine index of the node that holds it.</param>
+        /// <param name="refusal">Receives the refusal when the parameter was already met.</param>
+        /// <returns><see langword="true"/> when the parameter is new.</returns>
+        private bool AddParameter(ParameterExpression parameter, int depth, out ChainRefusal refusal)
+            => Accept(_parameters.Add(parameter), FlattenRefusalCause.RepeatedParameter, depth, parameter, out refusal);
+
+        /// <summary>Builds the outcome of one check of a repetition.</summary>
+        /// <param name="accepted">Whether the check passed.</param>
+        /// <param name="cause">The cause reported when it did not.</param>
+        /// <param name="depth">The spine index of the refusing node.</param>
+        /// <param name="key">The repeated key.</param>
+        /// <param name="refusal">Receives the refusal, or the default value.</param>
+        /// <returns><paramref name="accepted"/>.</returns>
+        private static bool Accept(bool accepted, FlattenRefusalCause cause, int depth, object key, out ChainRefusal refusal)
+        {
+            refusal = accepted ? default : new ChainRefusal(cause, depth, key);
+            return accepted;
+        }
+    }
+
+    /// <summary>
+    /// A small set of operand keys (<see cref="LinearChainOperands"/>): the first four keys are kept inline, the others in a
+    /// set created on first use, so that a chain refused within its first few terms allocates nothing. Keys are compared with
+    /// <see cref="object.Equals(object?, object?)"/>, as the default comparer of the set does: by reference for a
+    /// <see cref="ParameterExpression"/> (a framework class that does not override it), by value for a boxed primitive. A
+    /// mutable value, used through its field only.
+    /// </summary>
+    private struct SmallOperandSet
+    {
+        /// <summary>The number of inline keys.</summary>
+        private const int InlineCapacity = 4;
+
+        /// <summary>The inline keys.</summary>
+        private object? _key0, _key1, _key2, _key3;
+
+        /// <summary>The number of inline keys in use.</summary>
+        private int _count;
+
+        /// <summary>The keys past the inline ones; <see langword="null"/> until needed.</summary>
+        private HashSet<object>? _overflow;
+
+        /// <summary>Adds <paramref name="key"/> unless it is already present.</summary>
+        /// <param name="key">The key.</param>
+        /// <returns><see langword="true"/> when the key was not present.</returns>
+        public bool Add(object key)
+        {
+            if (InlineContains(key)) return false;
+            switch (_count)
+            {
+                case 0: _key0 = key; break;
+                case 1: _key1 = key; break;
+                case 2: _key2 = key; break;
+                case 3: _key3 = key; break;
+                // One lookup of the overflow set, as the set of the historical walk did.
+                default: return (_overflow ??= []).Add(key);
+            }
+
+            _count++;
+            return true;
+        }
+
+        /// <summary>Determines whether <paramref name="key"/> is present.</summary>
+        /// <param name="key">The key.</param>
+        /// <returns><see langword="true"/> when the key is present.</returns>
+        public readonly bool Contains(object key) => InlineContains(key) || (_overflow is not null && _overflow.Contains(key));
+
+        /// <summary>Determines whether <paramref name="key"/> is one of the inline keys.</summary>
+        /// <param name="key">The key.</param>
+        /// <returns><see langword="true"/> when an inline key equals it.</returns>
+        /// <remarks>
+        /// A parameter is compared by reference without a call: <see cref="object.Equals(object?, object?)"/> would end in
+        /// the virtual <see cref="object.Equals(object?)"/>, whose cost, for every term of a long chain, showed in the
+        /// benchmarks. It is the same comparison, since <see cref="ParameterExpression"/> does not override it.
+        /// </remarks>
+        private readonly bool InlineContains(object key)
+        {
+            if (key is ParameterExpression)
+            {
+                return (_count > 0 && ReferenceEquals(_key0, key))
+                    || (_count > 1 && ReferenceEquals(_key1, key))
+                    || (_count > 2 && ReferenceEquals(_key2, key))
+                    || (_count > 3 && ReferenceEquals(_key3, key));
+            }
+
+            return (_count > 0 && Equals(_key0, key))
+                || (_count > 1 && Equals(_key1, key))
+                || (_count > 2 && Equals(_key2, key))
+                || (_count > 3 && Equals(_key3, key));
         }
     }
 }

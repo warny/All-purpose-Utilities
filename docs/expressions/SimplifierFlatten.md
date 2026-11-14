@@ -313,6 +313,198 @@ offered to the rule is accepted, since the admission runs before the offer. 257,
 **Residual risks.**
 - Admission is all or nothing per root: a long chain with one non-linear term (the `p` family from term 98) keeps the level
   by level cost, even on its linear part. Its linear sub-chains below the offending term are still accepted.
-- The admission walk is repeated for every sub-chain of a refused chain (allocations above).
+- The admission walk is repeated for every sub-chain of a refused chain (allocations above). Addressed by mission C1 (§9).
 - A future change of a rule or of the canonical order must keep the proof of §3 valid; the differential corpus and the
   exhaustive grouping test are the guard.
+
+## 9. Refused chains: known refusals (mission C1)
+
+Status: optimization of the admission only. **No admission decision changes**, so no result, user-code call or exception
+changes; only the work spent on refused chains decreases.
+
+### 9.1 C0 characterization
+
+A refused root is transformed level by level (§3.4), and every crossed node below it is offered in turn to the admission as
+the root of a chain of its own. Each offer walked its chain from its own root, so when the cause of the refusal lies deep
+(a call at the bottom of a left chain, a repetition between the last term and a deep one), each level walked down to the
+cause again: `n²/2` node visits, and the operand sets rebuilt as many times. The opt-in counters of the admission
+(`ExpressionSimplifier.AdmissionStatistics`, a `FlattenAdmissionStatistics` installed by an audit) measured it on
+`master` `e47fb957` (C0 commit: the same walk, counters only), one whole simplification per case, `n = 64`:
+
+| Family | Admissions | Walks | Nodes examined | of which re-examined | Cause |
+|---|---:|---:|---:|---:|---|
+| `sumL`, `sumR`, `sumB`, `subL`, `lin` | 1 | 1 | 63–64 | 0 | (admitted) |
+| `repeatLast`, `repeatLastR`, `coefRepeatL` | 3 | 3 | 187 | 62 | repeated parameter / coefficient next to the root |
+| `H` | 63 | 63 | 125 | 62 | repeated parameter, two nodes deep |
+| `badFirst` (`sin(x0) + x1 + ... `) | 41,727 | 41,727 | 679,056 | 637,329 | call term (the comparisons offer new chains) |
+| `sinMidL` | 36,242 | 36,242 | 631,254 | 594,952 | call term |
+| `sinLastR` (right, call deepest) | 2,016 | 2,016 | 43,680 | 41,664 | call term |
+| `obsFirstL` (unknown call deepest, left) | 63 | 63 | 2,016 | 1,953 | call term |
+| `obsMidL` | 33 | 33 | 559 | 496 | call term |
+| `obsMidB` (balanced) | 11 | 11 | 109 | 46 | call term |
+| `calls` | 41,727 | 41,727 | 41,727 | 0 | call term at each root (refused at the first node) |
+
+Causes, as classified by the walk (`FlattenRefusalCause`):
+
+| Cause | Kind | Inherited by |
+|---|---|---|
+| chain type, operator not ordinary, term not linear (call or other), pair of constants, subtracted group | local: one crossed node or one term | every chain that crosses that node |
+| repeated parameter, repeated coefficient, coefficient equal to a constant, third constant | global: two or three terms | every chain that holds those terms |
+
+Effect boundaries (observable calls) are calls refused as terms: the walk never analyzes effects.
+
+### 9.2 Strategies studied
+
+- **A. Propagating proven refusals** (retained). Every cause of a refusal is inherited by every chain that contains it: a
+  local cause belongs to a crossed node that a larger chain crosses the same way (an intrinsic operator has the type of its
+  operands); a global cause involves terms that a larger chain holds too, and the sets only grow. The converse is false:
+  an admitted chain says nothing about a larger one (`a + b` and `c + a` are admitted, `(a + b) + (c + a)` is not), so
+  nothing is inferred from an admission.
+- **B. Bottom-up summaries.** Composing per-node summaries (types, parameters, coefficients, constants) would decide every
+  sub-chain from one pass, but the offers come top-down (the root first), the summaries either copy their sets (quadratic
+  memory) or share them (a mutable structure behind a recorded decision), and the admitted case would pay for summaries it
+  never reads. Not retained.
+- **C. An operation-local cache of decisions.** Caching every decision by node is not needed: an admitted root is extracted
+  and its nodes are never offered again (except through a shared DAG), so only refusals are re-asked; A is that cache
+  restricted to proven refusals, filled by the walk that proves them.
+
+### 9.3 Mechanism
+
+- The walk (`IsLinearChain`) is unchanged in its decisions and order. It now reports where the cause lies on the **spine**:
+  the path it follows from the root while every node has a single crossed operand, up to the first node with two (whose
+  subtree holds everything visited afterwards). A spine node at index `i` contains every operand met at an index at least
+  `i`; the walk reports the index of the refusing node (local cause), of the first constant (third constant), or the
+  refusing node and the repeated key (repetition).
+- On a refusal, `RecordRefusedSpine` follows the spine again and records, in the table of the operation
+  (`ExpressionResourceBudget.Session.FlattenRefusals`, an `ExpressionNodeSet`), the spine nodes from index 1 down to the
+  smallest index involved: for a repetition, down to the first node that holds an earlier occurrence of the key (each node
+  is recorded before its own terms are tested). The root itself is not recorded (it is being decided), nor anything below
+  the first node with two crossed operands.
+- An offered root found in the table is refused by one lookup, counted as one structural visit.
+- The operand sets keep their first four entries inline (`SmallOperandSet`), so a chain refused within its first few terms
+  allocates nothing (the `H` family).
+
+**Invariants.**
+- Only proven refusals are recorded: every recorded node contains the cause. Decisions are a function of the immutable
+  node alone (framework operator nodes, runtime types by reference, boxed primitives, parameter references), so an entry is
+  valid in any context of the operation: another instance, a nested operation (a comparison), a DAG occurrence.
+- Lifetime: the outermost operation of the thread. The outermost `Exit` drops the table (in `finally`, so after an
+  exception too); a nested operation shares it; another thread has its own session. No global state.
+- The table is filled and read by the exact built-in type only (a derived simplifier keeps the effect gate).
+- No user code: the recording pass reads crossed framework nodes and the linear terms the walk accepted, by type tests;
+  keys are compared as the sets compare them (reference for a parameter, value for a boxed primitive). An entry is a node
+  reference in an open-addressing table, so no `Equals`/`GetHashCode` of a node ever runs.
+- Budgets: the walk counts one structural visit per node as before, the recording pass one per recorded node, each lookup
+  one. A budget refusal in the middle of the recording pass leaves a correct table (every entry already proven).
+
+### 9.4 Complexity
+
+| | Before C1 | C1 |
+|---|---|---|
+| Refused left or right chain, cause at depth `d` | `Σ` walks of every level down to the cause: `O(d²)` visits and set insertions | one walk (`d`), one recording pass (`d`), one lookup per level |
+| Repetition at depth `d` with earlier occurrence at `e` | `O(d · e)` | one walk, recording down to `e`, the levels below `e` walked once each as before |
+| Refused balanced chain | `O(n log n)` | unchanged (nothing is recorded past the first branching node) |
+| Admitted chain | one walk | one walk (no recording, no extra allocation) |
+
+Measured (same counters, C1 `0c3988da`, `n = 64`): `badFirst` 679,056 → 41,727 nodes examined (walks 41,727 → 1,954,
+39,773 lookups), no node examined twice; `sinMidL` 631,254 → 36,302; `sinLastR` 43,680 → 2,016; `obsFirstL` and
+`obsLastR` 2,016 → 63 (one walk); `obsMidL` 559 → 63; `sinMidB` (balanced) 6,397 → 817; `H` unchanged (125: its cause
+is two nodes deep), allocations 211,896 → 186,696 bytes (−11.9 %, the inline sets); admitted chains: same walks, same
+allocations (`sumL 64`: 41,304 → 41,256 bytes). On the `p` family past its repeated coefficient (`n = 99`, 100), the
+admission is a negligible part of the cost (14,454 → 14,357 nodes examined; the level by level treatment of the levels above
+term 98 dominates, 0.3 s and 197 MB for `n = 99` either way): C1 does not change the residual limit of §8.
+
+### 9.5 Accounting changes
+
+- Structural visits: a refused root counts its walk as before, plus one visit per node its recording pass records; a
+  recorded node, offered later, counts one visit instead of its walk. Totals therefore decrease on deep refusals and are
+  unchanged on admitted chains and on causes next to the root. Transformation visits are unchanged (the admission does not
+  transform anything).
+- Traces: unchanged (a recorded refusal reports the same `ChainNotAdmitted` rejection).
+
+### 9.6 Validation
+
+Reference: `master` `e47fb957` in a separate worktree, same machine and runtime.
+
+- **Differential corpus** (the PR B harness, extended with a targeted corpus of mission C: a foreign term — `Math.Sin`, an
+  observable call, an opaque carrier of a logged constant, a negation, a zero, a square, a group product — at the start, the
+  middle or the end; deep repetitions of a parameter, a coefficient, a coefficient equal to a constant; two and three
+  constants; shared sub-trees; left, right, balanced and random groupings with both operators, free and lambda-bound):
+  487,008 cases under the default policy, 108,008 targeted cases, 138,008 cases under each of the trust, aggressive,
+  no-exception-preserved and permissive policies and with a derived simplifier: **0 difference** (results of both passes,
+  exceptions, ordered log of the user `Equals`/`GetHashCode` calls, effectful calls).
+- **S5 campaigns** (`terminate`, `converge`, `canon`, `comparer`, `diff`, `effects`, `s3`; 1,000 seeds, 1,000 nested
+  compositions): byte-identical to `master` (only `environment.txt` differs).
+- **Tests.** `ExpressionSimplifierFlattenAdmissionTests` checks every admission decision against a recursive
+  transcription of the definition on more than 500 trees (the targeted families of the brief in the three groupings,
+  repetitions, shared DAGs, 400 seeded random chains), with the nodes offered top-down in one operation (the table filled
+  as the fallback fills it), bottom-up, and one by one; every recorded node is checked to be a refused chain of the tree.
+  Other tests pin the walk counts (a deep cause is walked once), the recording of repetitions, the lifetime of the table,
+  the opt-in counters, and that a derived simplifier ignores the table. Security tests: the visits are counted and a budget
+  refusal in the middle of the recording pass leaves a correct table; a 100,000-term refused chain is recorded on a
+  256 KiB stack; hostile nodes (armed extension node, impersonating operator method, constant with counting equality
+  members) are never read; tables are isolated between threads.
+- **Suites**: Unit, Security, Functional and the ETC Debug job pass.
+- **Mutations** (one at a time, then removed): a refusal recorded one node too deep, the table kept beyond the operation, a
+  repeated parameter or coefficient accepted, the earlier occurrence of a repetition ignored, the lookup not counted, the
+  inline set ignoring its overflow, the third constant reported at the refusing node, the table consulted by a derived
+  simplifier, the root recorded before the walk decides: each makes at least one test fail. Removing the freezing of the
+  spine index past a branching node, or the stop of the recording pass at a branching node, is not detected alone: each
+  protection is sufficient for the other's case; removing both is detected by four tests.
+
+### 9.7 Benchmarks
+
+BenchmarkDotNet 0.14 (in-process emit toolchain, 8 warmup and 20 measured iterations of about 500 ms each, memory
+diagnoser), .NET 9, i7-12700KF pinned to two performance cores (affinity `0x14`, high priority). Variants, each frozen
+in its own folder and run in its own process: **A** `master` `e47fb957`, **B** a copy of the A binaries (A/A control),
+**C** C1 at `ba1adeb6`. Three rounds, the order of the variants rotated between rounds; the figure is the median of the
+three round means, the bracket gives the delta of each round against A. Allocations are deterministic.
+
+| Case | A | B (A/A) | C (C1) | Allocations A → C |
+|---|---|---|---|---|
+| `obsFirstL 128` | 1,280 µs | +2.8 % | **−20.1 %** (−20/−23/−18) | 2,073,190 → 1,588,961 B |
+| `obsFirstL 32` | 90.3 µs | +1.3 % | **−16.8 %** (−16/−19/−15) | 134,502 → 105,687 B |
+| `obsLastR 64` | 349 µs | +2.7 % | **−22.7 %** (−22/−24/−23) | 530,268 → 407,327 B |
+| `obsMidL 64` | 227 µs | +1.1 % | **−7.0 %** (−7/−8/−5) | 352,809 → 322,345 B |
+| `sinLastR 32` | 3.26 ms | +0.4 % | −4.6 % (0/−6/−7) | 4,367,288 → 4,050,156 B |
+| `sinMidL 32` | 24.6 ms | +0.3 % | −2.0 % (−2/+3/−4) | 32,632,279 → 30,434,806 B |
+| `badFirst 32` | 27.6 ms | +0.7 % | −0.8 % (0/−4/+1) | 36,181,944 → 33,899,090 B |
+| `H 64` | 182 µs | −0.6 % | −2.2 % (−4/−2/−2) | 211,948 → 186,737 B |
+| `p 97` | 189 µs | −1.4 % | +1.4 % | 263,680 → 263,629 B |
+| `calls 16`, `mul 16`, `poly 6` | 3.29 ms, 891 µs, 273 µs | +0.7 %, −1.5 %, +0.2 % | −0.2 %, 0.0 %, +2.6 % | unchanged |
+| `sumL 16` | 5.01 µs | −1.6 % | **+13.4 %** (+10/+14/+13) | 11,244 → 11,192 B |
+| `sumL 64` | 21.0 µs | −2.6 % | **+10.1 %** (+5/+14/+9) | 41,308 → 41,257 B |
+| `sumB 64` | 21.1 µs | −1.2 % | **+12.0 %** (+8/+29/+12) | 39,619 → 39,567 B |
+| `sumR 64` | 21.5 µs | −3.6 % | +7.1 % (+7/+11/+7) | 39,291 → 39,240 B |
+| `subL 12` | 4.47 µs | −0.7 % | **+13.4 %** (+9/+47/+15) | 10,465 → 10,414 B |
+| `repeatLast 16` | 16.3 µs | −3.4 % | +9.0 % (+14/+6/+8) | 31,171 → 31,027 B |
+| `small 2` | 4.56 µs | +1.5 % | +5.4 % (+5/+8/+4) | unchanged |
+
+The A/A control stays within ±3.6 %. Reading:
+
+- **Deep refusals** (`obs*`, `n` from 32): a gain of 7 to 23 % in every round, well outside the control band, with the
+  allocations; on `sin*` and `badFirst` the time is dominated by the level by level treatment (§9.8) and the gain is in
+  the control band, while allocations drop by 6 to 8 %.
+- **Admitted short chains** (`sumL`, `sumB`, `sumR`, `subL`, `repeatLast`): **a slowdown of 7 to 13 %** in every round, that
+  is 0.5 to 2 µs per simplification, outside the control band. The admission of such a chain is one walk of a few dozen
+  nodes, so the slowdown is a fixed cost of the walk per term (about 40 ns), not a growth. The likely cause, the inline
+  sets comparing every parameter through the virtual `object.Equals` and probing the overflow set twice, was removed after
+  this campaign (parameters compared by reference, one probe, same comparisons); a short re-measure could not confirm it,
+  the machine having been loaded during it (sustained 30 to 40 % shifts on cases C1 does not touch), and the campaign was
+  not repeated. The figures above for admitted chains are therefore measures taken before that fix, not a bound
+demonstrated for the current code.
+- The control compares identical binaries, so it does not capture the effect of a different build (code layout); a few
+  percent on microsecond cases (`small 2`, `poly 6`) are within what such an effect can produce.
+
+### 9.8 Residual limits
+
+- A cause next to the root records nothing (`H`, `repeatLast`): the levels below still walk their own chain, which stops at
+  their own cause within two nodes, or admits them.
+- Nothing is recorded past the first node with two crossed operands: a refused balanced chain keeps its `O(n log n)`
+  walks (`obsMidB`).
+- Chains built by the rules or by the comparisons are fresh nodes: their admissions are walked (`badFirst`: 1,954 walks
+  for 41,727 admissions), each once.
+- The level by level cost of a refused chain is unchanged: C1 removes the redundant admission work, not the historical
+  treatment (`p` from 99 terms, `badFirst`).
+- Admitted short chains measured 7 to 13 % slower in time (0.5 to 2 µs, same allocations) before the inline-set fix of
+  §9.7, which was not re-measured under clean conditions.
