@@ -299,16 +299,16 @@ public class ExpressionSimplifierFlattenResourceTests
         Assert.AreEqual(0, ExpressionResourceBudget.OperationDepth);
     }
 
-    /// <summary>A function unknown to the effect analysis, which counts nothing (safe to call from several threads).</summary>
-    /// <returns>Always one.</returns>
-    public static double Constant() => 1;
 
-    /// <summary>Builds <c>Constant() + x1 + ... + x(n-1)</c>, left-associated, iteratively: every level holds the call.</summary>
+    /// <summary>
+    /// Builds <c>-x0 + x1 + ... + x(n-1)</c>, left-associated, iteratively: every level holds the negation, a term that is not
+    /// linear.
+    /// </summary>
     /// <param name="terms">The number of terms.</param>
     /// <returns>The chain.</returns>
-    private static BinaryExpression CallFirstChain(int terms)
+    private static BinaryExpression NegationFirstChain(int terms)
     {
-        Expression e = Expression.Call(typeof(ExpressionSimplifierFlattenResourceTests).GetMethod(nameof(Constant))!);
+        Expression e = Expression.Negate(Expression.Parameter(typeof(double), "x0"));
         for (int i = 1; i < terms; i++) e = Expression.Add(e, Expression.Parameter(typeof(double), "x" + i));
         return (BinaryExpression)e;
     }
@@ -337,7 +337,7 @@ public class ExpressionSimplifierFlattenResourceTests
     public void KnownRefusals_AreCounted_AndARefusalLeavesACorrectTable()
     {
         const int Terms = 64;
-        BinaryExpression chain = CallFirstChain(Terms);
+        BinaryExpression chain = NegationFirstChain(Terms);
         List<BinaryExpression> spine = LeftSpine(chain);
         var simplifier = new ExpressionSimplifier(NoLimits);
 
@@ -390,7 +390,7 @@ public class ExpressionSimplifierFlattenResourceTests
     public void DeepRefusedChain_IsRecorded_OnASmallStack()
     {
         const int Terms = 100_000;
-        BinaryExpression chain = CallFirstChain(Terms);
+        BinaryExpression chain = NegationFirstChain(Terms);
         List<BinaryExpression> spine = LeftSpine(chain);
         RunOnThread(() =>
         {
@@ -452,7 +452,7 @@ public class ExpressionSimplifierFlattenResourceTests
         for (int i = 1; i < 30; i++)
         {
             withConstant = Expression.Add(withConstant, i == 10
-                ? Expression.Call(typeof(ExpressionSimplifierFlattenResourceTests).GetMethod(nameof(Carrier))!, Expression.Constant(value, typeof(object)))
+                ? Expression.Negate(Expression.Call(typeof(ExpressionSimplifierFlattenResourceTests).GetMethod(nameof(Carrier))!, Expression.Constant(value, typeof(object))))
                 : x[i]);
         }
 
@@ -492,7 +492,7 @@ public class ExpressionSimplifierFlattenResourceTests
     [TestMethod]
     public void KnownRefusals_AreIsolatedBetweenThreads()
     {
-        BinaryExpression[] chains = [CallFirstChain(48), CallFirstChain(64), (BinaryExpression)Expression.Add(LinearChain(40, 0), Expression.Parameter(typeof(double), "y"))];
+        BinaryExpression[] chains = [NegationFirstChain(48), NegationFirstChain(64), (BinaryExpression)Expression.Add(LinearChain(40, 0), Expression.Parameter(typeof(double), "y"))];
         var simplifier = new ExpressionSimplifier();
         string[] expected = [.. chains.Select(chain => simplifier.Simplify(chain).ToString())];
         var failures = new System.Collections.Concurrent.ConcurrentQueue<string>();

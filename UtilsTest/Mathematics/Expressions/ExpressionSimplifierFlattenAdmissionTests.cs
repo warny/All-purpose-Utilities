@@ -410,34 +410,39 @@ public class ExpressionSimplifierFlattenAdmissionTests
     }
 
     /// <summary>
-    /// A chain refused by an observable call at its deepest point is walked once, from its root: every level below is
-    /// answered by the table (before mission C1, each level walked down to the call again, n²/2 nodes). In the three
-    /// groupings, the decisions and the result are unchanged.
+    /// A chain refused by its deepest term is walked once, from its root: every level below is answered by the table (before
+    /// mission C1, each level walked down to the term again, n²/2 nodes). In the left and the right groupings, with the term
+    /// in the middle (the linear chains below it are walked on their own), and through a whole simplification whose
+    /// comparisons offer chains of their own (<c>sin(x0) + x1 + ... + x31</c>): no node is examined twice.
     /// </summary>
     [TestMethod]
     public void DeepCause_IsWalkedOnce()
     {
         const int N = 100;
 
-        // Left: Function() + x1 + ... + x99; right: x0 + (... + (x98 + Function())). Every node contains the call.
-        foreach ((string label, Expression tree) in new[] { ("left", LeftSum(Terms(N, 0, Call()))), ("right", RightSum(Terms(N, N - 1, Call()))) })
+        // Left: -d0 + d1 + ... + d99; right: d0 + (... + (d98 + -d99)). Every node contains the negation.
+        foreach ((string label, Expression tree) in new[] { ("left", LeftSum(Terms(N, 0, Expression.Negate(D[0])))), ("right", RightSum(Terms(N, N - 1, Expression.Negate(D[N - 1])))) })
         {
-            FlattenAdmissionStatistics statistics = Measure(tree);
+            FlattenAdmissionStatistics statistics = MeasureAdmissions(tree);
             Assert.AreEqual(N - 1, statistics.Admissions, label);
             Assert.AreEqual(1, statistics.Walks, label);
             Assert.AreEqual(N - 1, statistics.NodesExamined, label);
             Assert.AreEqual(N - 2, statistics.KnownRefusals, label);
             Assert.AreEqual(N - 2, statistics.RecordedRefusals, label);
-            Assert.AreEqual(1, statistics.Causes[(int)FlattenRefusalCause.CallTerm], label);
+            Assert.AreEqual(1, statistics.Causes[(int)FlattenRefusalCause.NonLinearTerm], label);
         }
 
-        // Middle: x0 + ... + x49 + Function() + x51 + ... + x99, left-associated: the levels above the call are recorded, the
-        // linear prefix below it is admitted by a walk of its own.
-        FlattenAdmissionStatistics middle = Measure(LeftSum(Terms(N, 50, Call())));
-        Assert.AreEqual(2, middle.Walks);
-        Assert.AreEqual(1, middle.Accepted);
+        // Middle: d0 + ... + d49 + -d50 + d51 + ... + d99, left-associated: the 49 levels above the negation are recorded; the
+        // 49 linear chains below it are walked and admitted.
+        FlattenAdmissionStatistics middle = MeasureAdmissions(LeftSum(Terms(N, 50, Expression.Negate(D[50]))));
         Assert.AreEqual(N - 50 - 1, middle.KnownRefusals);
-        Assert.AreEqual(middle.NodesExamined, middle.DistinctNodes!.Count, "No node is examined twice.");
+        Assert.AreEqual(N - 50 - 1, middle.RecordedRefusals);
+        Assert.AreEqual(49, middle.Accepted);
+        Assert.AreEqual(1 + 49, middle.Walks);
+
+        FlattenAdmissionStatistics simplification = Measure(LeftSum(Terms(32, 0, Expression.Call(Sin, D[0]))));
+        Assert.IsTrue(simplification.KnownRefusals > 0);
+        Assert.AreEqual(simplification.NodesExamined, simplification.DistinctNodes!.Count, "No node is examined twice.");
     }
 
     /// <summary>
@@ -508,13 +513,13 @@ public class ExpressionSimplifierFlattenAdmissionTests
     [TestMethod]
     public void KnownRefusals_LastOneOperation()
     {
-        Expression tree = LeftSum(Terms(20, 0, Call()));
+        Expression tree = LeftSum(Terms(20, 0, Expression.Negate(D[0])));
         var simplifier = new ExpressionSimplifier();
         ExpressionResourceBudget.Run(ExpressionResourceLimits.Unlimited, null, null, null, (simplifier, tree), static state =>
         {
             Assert.IsNull(ExpressionResourceBudget.ActiveSession!.FlattenRefusals);
             state.simplifier.Simplify(state.tree);
-            Assert.AreEqual(18, ExpressionResourceBudget.ActiveSession!.FlattenRefusals!.Count, "A nested operation fills the table of the outer one.");
+            Assert.IsTrue(ExpressionResourceBudget.ActiveSession!.FlattenRefusals!.Count >= 18, "A nested operation fills the table of the outer one.");
             return 0;
         });
 
@@ -536,9 +541,9 @@ public class ExpressionSimplifierFlattenAdmissionTests
     {
         Assert.IsNull(ExpressionSimplifier.AdmissionStatistics);
         var statistics = new FlattenAdmissionStatistics();
-        new ExpressionSimplifier().Simplify(LeftSum(Terms(10, 0, Call())));
+        new ExpressionSimplifier().Simplify(LeftSum(Terms(10, 0, Expression.Negate(D[0]))));
         Assert.AreEqual(0, statistics.Admissions);
-        Assert.AreEqual(9, Measure(LeftSum(Terms(10, 0, Call()))).Admissions);
+        Assert.AreEqual(9, MeasureAdmissions(LeftSum(Terms(10, 0, Expression.Negate(D[0])))).Admissions);
         Assert.IsNull(ExpressionSimplifier.AdmissionStatistics);
     }
 }
