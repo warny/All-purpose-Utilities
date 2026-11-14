@@ -375,6 +375,14 @@ internal static class ExpressionResourceBudget
         /// </summary>
         public ExpressionEffectTable? EffectCache;
 
+        /// <summary>
+        /// The crossed nodes whose additive chain the built-in simplifier's flatten admission proved refused during the running
+        /// operation chain, by node reference (Flatten mission C1, <c>ExpressionSimplifier.FlattenAdmission</c>). The decision is
+        /// a function of the immutable node alone, so an entry stays valid for the whole chain; the outermost exit drops the
+        /// table.
+        /// </summary>
+        public ExpressionNodeSet? FlattenRefusals;
+
         /// <summary>The running effect-analysis strategy (<c>ExpressionEffectAnalysis.EffectMode*</c>); restored by the analysis itself.</summary>
         public int EffectMode;
 
@@ -473,6 +481,7 @@ internal static class ExpressionResourceBudget
             {
                 Trace = null;
                 EffectCache = null;
+                FlattenRefusals = null;
                 EffectMode = 0;
                 TransformVisits = 0;
                 StructuralVisits = 0;

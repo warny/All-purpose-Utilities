@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -296,6 +297,213 @@ public class ExpressionSimplifierFlattenResourceTests
         ExpressionResourceLimitException exception = Assert.ThrowsExactly<ExpressionResourceLimitException>(() => simplifier.Simplify(dag));
         Assert.AreEqual(ExpressionResourceLimitKind.Work, exception.Kind);
         Assert.AreEqual(0, ExpressionResourceBudget.OperationDepth);
+    }
+
+    /// <summary>A function unknown to the effect analysis, which counts nothing (safe to call from several threads).</summary>
+    /// <returns>Always one.</returns>
+    public static double Constant() => 1;
+
+    /// <summary>Builds <c>Constant() + x1 + ... + x(n-1)</c>, left-associated, iteratively: every level holds the call.</summary>
+    /// <param name="terms">The number of terms.</param>
+    /// <returns>The chain.</returns>
+    private static BinaryExpression CallFirstChain(int terms)
+    {
+        Expression e = Expression.Call(typeof(ExpressionSimplifierFlattenResourceTests).GetMethod(nameof(Constant))!);
+        for (int i = 1; i < terms; i++) e = Expression.Add(e, Expression.Parameter(typeof(double), "x" + i));
+        return (BinaryExpression)e;
+    }
+
+    /// <summary>Returns the left spine of a left-associated chain, root first, iteratively.</summary>
+    /// <param name="chain">The chain.</param>
+    /// <returns>Its crossed nodes.</returns>
+    private static List<BinaryExpression> LeftSpine(Expression chain)
+    {
+        var spine = new List<BinaryExpression>();
+        while (chain is BinaryExpression { NodeType: ExpressionType.Add or ExpressionType.Subtract } binary)
+        {
+            spine.Add(binary);
+            chain = binary.Left;
+        }
+
+        return spine;
+    }
+
+    /// <summary>
+    /// The known refusals of the admission (Flatten mission C1) are counted work: the root walk, one visit per recorded node,
+    /// one per later lookup. A structural budget just below that count refuses inside the recording pass, the operation
+    /// closes, the nodes recorded before the refusal are proven refusals, and the next operation starts without any table.
+    /// </summary>
+    [TestMethod]
+    public void KnownRefusals_AreCounted_AndARefusalLeavesACorrectTable()
+    {
+        const int Terms = 64;
+        BinaryExpression chain = CallFirstChain(Terms);
+        List<BinaryExpression> spine = LeftSpine(chain);
+        var simplifier = new ExpressionSimplifier(NoLimits);
+
+        long structural = ExpressionResourceBudget.Run(NoLimits, null, null, null, (simplifier, spine), static state =>
+        {
+            foreach (BinaryExpression node in state.spine) Assert.AreEqual(ExpressionRuleRejection.ChainNotAdmitted, state.simplifier.FlattenAdmission(node));
+            return ExpressionResourceBudget.StructuralVisits;
+        });
+        Assert.AreEqual((Terms - 1) + (Terms - 2) + (Terms - 2), structural, "Root walk, recording pass, one visit per lookup.");
+
+        // A nested operation whose budget runs out in the middle of the recording pass: the outer operation keeps the table.
+        ExpressionResourceBudget.Run(NoLimits, null, null, null, (simplifier, spine), static state =>
+        {
+            ExpressionResourceLimits tight = NoLimits with { MaxStructuralVisits = (Terms - 1) + 10 };
+            ExpressionResourceLimitException exception = Assert.ThrowsExactly<ExpressionResourceLimitException>(
+                () => ExpressionResourceBudget.Run(tight, null, null, null, state, static inner => inner.simplifier.FlattenAdmission(inner.spine[0])));
+            Assert.AreEqual(ExpressionResourceLimitKind.StructuralWork, exception.Kind);
+
+            ExpressionNodeSet table = ExpressionResourceBudget.ActiveSession!.FlattenRefusals!;
+            Assert.IsTrue(table.Count is > 0 and <= 10, $"{table.Count} recorded nodes");
+            for (int i = 1; i < state.spine.Count; i++)
+            {
+                Assert.AreEqual(i <= table.Count, table.Contains(state.spine[i]), $"spine node {i}");
+            }
+
+            return 0;
+        });
+
+        Assert.AreEqual(0, ExpressionResourceBudget.OperationDepth);
+        ExpressionResourceBudget.Run(NoLimits, null, null, null, 0, static _ =>
+        {
+            Assert.IsNull(ExpressionResourceBudget.ActiveSession!.FlattenRefusals);
+            return 0;
+        });
+
+        // The whole simplification is still refused just above its structural budget, and the instance works again.
+        (_, long simplification) = Count(new ExpressionSimplifier(NoLimits), chain);
+        Assert.IsNotNull(new ExpressionSimplifier(NoLimits with { MaxStructuralVisits = simplification }).Simplify(chain));
+        var limited = new ExpressionSimplifier(NoLimits with { MaxStructuralVisits = simplification - 1 });
+        Assert.AreEqual(ExpressionResourceLimitKind.StructuralWork, Assert.ThrowsExactly<ExpressionResourceLimitException>(() => limited.Simplify(chain)).Kind);
+        Assert.AreEqual(0, ExpressionResourceBudget.OperationDepth);
+        Assert.AreEqual(8, CountGroups(limited.Simplify(LinearChain(8, 2))));
+    }
+
+    /// <summary>
+    /// The walk and the recording pass are iterative: on a 256 KiB thread, the admission of a 100,000-term chain refused by
+    /// its deepest term records the whole spine, and every node below the root is then refused by one lookup.
+    /// </summary>
+    [TestMethod]
+    public void DeepRefusedChain_IsRecorded_OnASmallStack()
+    {
+        const int Terms = 100_000;
+        BinaryExpression chain = CallFirstChain(Terms);
+        List<BinaryExpression> spine = LeftSpine(chain);
+        RunOnThread(() =>
+        {
+            var simplifier = new ExpressionSimplifier(NoLimits);
+            long structural = ExpressionResourceBudget.Run(NoLimits, null, null, null, (simplifier, spine), static state =>
+            {
+                foreach (BinaryExpression node in state.spine) Assert.AreEqual(ExpressionRuleRejection.ChainNotAdmitted, state.simplifier.FlattenAdmission(node));
+                return ExpressionResourceBudget.StructuralVisits;
+            });
+            Assert.AreEqual((Terms - 1) + 2L * (Terms - 2), structural);
+            Assert.AreEqual(0, ExpressionResourceBudget.OperationDepth);
+        }, SmallStack, Timeout);
+    }
+
+    /// <summary>A value whose equality members count their calls: user code the admission must never run.</summary>
+    private sealed class CountingValue
+    {
+        /// <summary>Gets the number of calls of <see cref="Equals(object?)"/> and <see cref="GetHashCode"/>.</summary>
+        public int Calls { get; private set; }
+
+        /// <inheritdoc/>
+        public override bool Equals(object? obj)
+        {
+            Calls++;
+            return ReferenceEquals(this, obj);
+        }
+
+        /// <inheritdoc/>
+        public override int GetHashCode()
+        {
+            Calls++;
+            return 1;
+        }
+    }
+
+    /// <summary>Turns a <see cref="CountingValue"/> into a number.</summary>
+    /// <param name="value">The value.</param>
+    /// <returns>Always two.</returns>
+    public static double Carrier(object value) => 2;
+
+    /// <summary>
+    /// The walk and the recording pass of a refusal never read a hostile node: an armed extension node at the bottom of a
+    /// long chain, an operator carrying an impersonating method in its middle, and a constant whose equality members count
+    /// their calls, each refuse the chain and the levels above them, without any member call.
+    /// </summary>
+    [TestMethod]
+    public void Recording_NeverReadsHostileNodes()
+    {
+        var extension = new ArmedExtension();
+        var operatorMethod = new ImpersonatingMethod(typeof(ExpressionSimplifierFlattenResourceTests).GetMethod(nameof(Plus))!);
+        var value = new CountingValue();
+        ParameterExpression[] x = [.. Enumerable.Range(0, 40).Select(static i => Expression.Parameter(typeof(double), "x" + i))];
+
+        Expression withExtension = extension;
+        for (int i = 0; i < 30; i++) withExtension = Expression.Add(withExtension, x[i]);
+        Expression withOperator = x[0];
+        for (int i = 1; i < 30; i++) withOperator = Expression.Add(withOperator, i == 15 ? Expression.Add(x[i], x[i + 10], operatorMethod) : x[i]);
+        Expression withConstant = x[0];
+        for (int i = 1; i < 30; i++)
+        {
+            withConstant = Expression.Add(withConstant, i == 10
+                ? Expression.Call(typeof(ExpressionSimplifierFlattenResourceTests).GetMethod(nameof(Carrier))!, Expression.Constant(value, typeof(object)))
+                : x[i]);
+        }
+
+        var simplifier = new ExpressionSimplifier();
+        extension.Armed = true;
+        operatorMethod.Trap.Reset();
+        operatorMethod.Trap.Armed = true;
+        try
+        {
+            foreach (Expression chain in new[] { withExtension, withOperator, withConstant })
+            {
+                List<BinaryExpression> spine = LeftSpine(chain);
+                int recorded = ExpressionResourceBudget.Run(NoLimits, null, null, null, (simplifier, spine), static state =>
+                {
+                    Assert.AreEqual(ExpressionRuleRejection.ChainNotAdmitted, state.simplifier.FlattenAdmission(state.spine[0]));
+                    return ExpressionResourceBudget.ActiveSession!.FlattenRefusals?.Count ?? 0;
+                });
+                Assert.IsTrue(recorded > 0);
+            }
+        }
+        finally
+        {
+            // See ExpressionFlattenResourceTests: an armed impersonating method must not stay in the framework's caches.
+            operatorMethod.Trap.Armed = false;
+            extension.Armed = false;
+        }
+
+        Assert.AreEqual(0, extension.Calls);
+        Assert.AreEqual(0, operatorMethod.Trap.ArmedCalls + operatorMethod.Trap.TypeReads);
+        Assert.AreEqual(0, value.Calls);
+    }
+
+    /// <summary>
+    /// The tables belong to the session of each thread: one simplifier instance used by several threads at once on chains
+    /// refused deep inside gives, on every thread, the result of a sequential simplification.
+    /// </summary>
+    [TestMethod]
+    public void KnownRefusals_AreIsolatedBetweenThreads()
+    {
+        BinaryExpression[] chains = [CallFirstChain(48), CallFirstChain(64), (BinaryExpression)Expression.Add(LinearChain(40, 0), Expression.Parameter(typeof(double), "y"))];
+        var simplifier = new ExpressionSimplifier();
+        string[] expected = [.. chains.Select(chain => simplifier.Simplify(chain).ToString())];
+        var failures = new System.Collections.Concurrent.ConcurrentQueue<string>();
+        System.Threading.Tasks.Parallel.For(0, 64, new System.Threading.Tasks.ParallelOptions { MaxDegreeOfParallelism = 8 }, iteration =>
+        {
+            int index = iteration % chains.Length;
+            string actual = simplifier.Simplify(chains[index]).ToString();
+            if (actual != expected[index]) failures.Enqueue($"{iteration}: {actual}");
+        });
+
+        Assert.IsTrue(failures.IsEmpty, string.Join(Environment.NewLine, failures));
     }
 
     /// <summary>A function unknown to the effect analysis.</summary>
