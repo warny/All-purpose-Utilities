@@ -22,7 +22,8 @@ All notable changes to this project will be documented in this file.
   admission decision changes**, so results, user-code calls and exceptions are unchanged; the table is dropped with the
   outermost operation. The operand sets of the walk keep their first entries inline (a chain refused within a few terms
   allocates nothing: −11.9 % allocations on `H 64`). Measured: −7 to −23 % on chains refused deep down; admitted short
-  chains up to 0.5–2 µs slower (fixed cost per term, then reduced). See `docs/expressions/SimplifierFlatten.md` §9.
+  chains up to 0.5–2 µs slower (a fixed cost per term, measured before a fix of its likely cause and not re-measured).
+  See `docs/expressions/SimplifierFlatten.md` §9.
 
 ### Changed — `omy.Utils` (expression simplifier: linear sums canonicalized at once)
 - `ExpressionSimplifier` (the built-in type, under every policy) canonicalizes a *linear* additive chain once, from the
