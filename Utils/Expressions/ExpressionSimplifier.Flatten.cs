@@ -53,10 +53,21 @@ public partial class ExpressionSimplifier
     /// <b>Policies.</b> The operands of a linear chain are inert, so the effect gate admits every rule on it under every
     /// <see cref="Options"/> and the result does not depend on the policy.
     /// </para>
+    /// <para>
+    /// <b>Anchored chains (mission C2).</b> The admission also accepts, under the historical admission only, a chain whose
+    /// terms are linear but one, the <em>anchor</em>, a call that is not inert (<see cref="IsAnchorTerm"/>), held by a node of
+    /// the spine: every crossed node from the root down to it contains it. Such a chain goes to
+    /// <see cref="FlattenAnchoredChain"/>; a linear chain holds no anchor.
+    /// </para>
     /// </remarks>
     [Flatten(ExpressionType.Add, ExpressionType.Subtract)]
     private Expression? FlattenAdditiveChain(Expression source, FlattenedTerm[] terms)
     {
+        foreach (FlattenedTerm term in terms)
+        {
+            if (!IsLinearTerm(term.Operand, source.Type)) return FlattenAnchoredChain((BinaryExpression)source);
+        }
+
         var signedTerms = new List<(Expression Term, bool IsNegative)>(terms.Length);
         foreach (FlattenedTerm term in terms)
         {
@@ -67,19 +78,170 @@ public partial class ExpressionSimplifier
     }
 
     /// <summary>
-    /// Admits to <see cref="FlattenAdditiveChain"/> the linear chains only (<see cref="IsLinearChain"/>), for the built-in
-    /// simplifier; a derived simplifier, whose plan does not hold that rule, keeps the effect gate for its own flatten rules.
+    /// Simplifies an <em>anchored chain</em> admitted by <see cref="FlattenAdmission"/> (Flatten mission C2): the crossed nodes
+    /// from the root down to the node that holds the anchor (the <em>segment</em>) are simplified at once, from the operands of
+    /// the segment in source order; the other operand of the anchor's node, when it is crossed, is a linear chain prepared as
+    /// a unit, as the level by level treatment prepares it.
+    /// </summary>
+    /// <param name="root">The raw root of the chain.</param>
+    /// <returns>The result the level by level treatment gives for <paramref name="root"/>.</returns>
+    /// <remarks>
+    /// <para>
+    /// <b>Why it is the level by level result.</b> Every node of the segment contains the anchor, so, once its operands are
+    /// prepared, one of them holds the prepared anchor. When that form is not inert, the effect gate
+    /// (<see cref="AllowsRules"/>) refuses every rule of every node of the segment, and the historical admission runs no
+    /// audited rule outside it, so each level is only its finalization, <see cref="CanonicalizeAdditiveExpression"/> of its
+    /// two prepared operands. Those canonicalizations compose (docs/expressions/SimplifierFlatten.md §10): the anchor, and
+    /// with it every term reading mutable state when the anchor is observable, is pinned and keeps its source order; the
+    /// other terms are distinct linear terms, whose stable sorts compose as on a linear chain, with at most two constants,
+    /// aggregated once. The result is therefore <see cref="CanonicalizeAdditiveTerms"/> of the collected operands of the
+    /// segment, in source order. The <c>NaN</c> fold of each intermediate result changes nothing: no operand of a level is a
+    /// <c>NaN</c> constant.
+    /// </para>
+    /// <para>
+    /// <b>Order and user code.</b> The operands are prepared once each, in source order, as the levels prepare them; the
+    /// levels only interleave their canonicalizations, which run no user code here (the anchor is pinned, so never keyed,
+    /// grouped or compared; the effect analysis and the rebuilt nodes read only runtime reflection objects), and the
+    /// preparation of a linear term runs none either: the observable order of evaluations and of user code is the level by
+    /// level one.
+    /// </para>
+    /// <para>
+    /// <b>Fallback.</b> When the prepared anchor turns out to be inert, additive, or no longer a call of a runtime method
+    /// (a rule rewrote it), the levels are run one by one on the prepared operands, from the anchor's node up, through the
+    /// prepared-operand entry of the engine, each child result going through the <c>NaN</c> fold as its parent's preparation
+    /// does: exactly the historical treatment, without preparing anything twice.
+    /// </para>
+    /// <para>
+    /// <b>Budgets.</b> The walk that collects the segment counts one structural visit per node, like every structural walk
+    /// of the engine; a refusal in the middle of it leaves nothing behind (only local lists are built).
+    /// </para>
+    /// </remarks>
+    private Expression FlattenAnchoredChain(BinaryExpression root)
+    {
+        Type type = root.Type;
+        var nodes = new List<BinaryExpression>();
+        var operands = new List<(Expression Operand, bool IsNegative, int Node)>();
+        var suffix = new List<(Expression Operand, bool IsNegative, int Node)>();
+        BinaryExpression node = root;
+        while (true)
+        {
+            // A walk of its own (the admission and the extraction counted theirs): one structural visit per segment node.
+            ExpressionResourceBudget.ConsumeStructuralVisit();
+            int index = nodes.Count;
+            nodes.Add(node);
+            bool negativeRight = node.NodeType == ExpressionType.Subtract;
+            BinaryExpression? left = AsCrossedAdditiveNode(node.Left);
+            BinaryExpression? right = AsCrossedAdditiveNode(node.Right);
+            if ((left is null && !IsLinearTerm(node.Left, type)) || (right is null && !IsLinearTerm(node.Right, type)))
+            {
+                // The anchor's node: both operands, in their order (a crossed one is a linear chain, prepared as a unit).
+                operands.Add((node.Left, false, index));
+                operands.Add((node.Right, negativeRight, index));
+                break;
+            }
+
+            // A spine node: its term comes before the deeper operands when the spine goes right, after them when it goes left.
+            if (left is not null)
+            {
+                suffix.Add((node.Right, negativeRight, index));
+                node = left;
+            }
+            else
+            {
+                operands.Add((node.Left, false, index));
+                node = right!;
+            }
+        }
+
+        for (int i = suffix.Count - 1; i >= 0; i--) operands.Add(suffix[i]);
+
+        var prepared = new Expression[operands.Count];
+        for (int i = 0; i < prepared.Length; i++) prepared[i] = PrepareExpression(operands[i].Operand);
+
+        FlattenAdmissionStatistics? statistics = t_admissionStatistics;
+        int anchor = operands.FindIndex(operand => operand.Node == nodes.Count - 1 && IsAnchorTerm(operand.Operand));
+        Expression preparedAnchor = prepared[anchor];
+        if (statistics is not { ForceAnchoredFallback: true }
+            && preparedAnchor is MethodCallExpression { Method: var method }
+            && ExpressionReflectionProvenance.IsRuntime(method)
+            && !ExpressionEffectAnalysis.IsInert(ExpressionEffectAnalysis.Analyze(preparedAnchor)))
+        {
+            if (statistics is not null) statistics.AnchoredCanonicalizations++;
+            var signedTerms = new List<(Expression Term, bool IsNegative)>(prepared.Length);
+            for (int i = 0; i < prepared.Length; i++) CollectAdditiveTerms(signedTerms, prepared[i], operands[i].IsNegative);
+            return CanonicalizeAdditiveTerms(signedTerms, type);
+        }
+
+        if (statistics is not null) statistics.AnchoredFallbacks++;
+        return TransformSegmentLevelByLevel(nodes, operands, prepared);
+    }
+
+    /// <summary>
+    /// The fallback of <see cref="FlattenAnchoredChain"/>: runs the nodes of the segment one by one on their prepared
+    /// operands, from the anchor's node up to the root, as the level by level treatment runs them once their operands are
+    /// prepared (<see cref="ExpressionTransformer.TransformCoreWithPreparedOperands"/>, then the <c>NaN</c> fold that the
+    /// parent's <see cref="PrepareExpression"/> applies to each child result).
+    /// </summary>
+    /// <param name="nodes">The nodes of the segment, root first; the last one holds the anchor.</param>
+    /// <param name="operands">The operands of the segment in source order, with the index of the node that holds each.</param>
+    /// <param name="prepared">The prepared operands, in the same order.</param>
+    /// <returns>The result of the root.</returns>
+    private Expression TransformSegmentLevelByLevel(List<BinaryExpression> nodes, List<(Expression Operand, bool IsNegative, int Node)> operands, Expression[] prepared)
+    {
+        // Every node but the anchor's holds one prepared operand; the anchor's node holds two, in source order.
+        var held = new Expression?[nodes.Count];
+        Expression? anchorLeft = null, anchorRight = null;
+        for (int i = 0; i < operands.Count; i++)
+        {
+            int index = operands[i].Node;
+            if (index < nodes.Count - 1) held[index] = prepared[i];
+            else if (anchorLeft is null) anchorLeft = prepared[i];
+            else anchorRight = prepared[i];
+        }
+
+        Expression result = TransformCoreWithPreparedOperands(nodes[^1], anchorLeft!, anchorRight!);
+        for (int index = nodes.Count - 2; index >= 0; index--)
+        {
+            Expression child = FoldNaNOperand(result);
+            BinaryExpression node = nodes[index];
+            result = ReferenceEquals(node.Left, nodes[index + 1])
+                ? TransformCoreWithPreparedOperands(node, child, held[index]!)
+                : TransformCoreWithPreparedOperands(node, held[index]!, child);
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Whether <paramref name="term"/> may be the anchor of an anchored chain (Flatten mission C2): a static call of a runtime
+    /// method whose execution is not inert for the effect analysis (an unknown method, or a function of the allow-list that
+    /// may throw). By type tests and runtime reflection only: the provenance of the method is checked before any of its
+    /// members is read (S5 A-10), so a custom reflection object is never an anchor, and the type of such a call is never user
+    /// code. Its arguments are not read: they are prepared with the call.
+    /// </summary>
+    /// <param name="term">A term of a chain that is not linear.</param>
+    /// <returns><see langword="true"/> for an anchor.</returns>
+    private static bool IsAnchorTerm(Expression term)
+        => term is MethodCallExpression { Object: null } call
+            && ExpressionReflectionProvenance.IsRuntime(call.Method)
+            && !ExpressionEffectAnalysis.IsInert(ExpressionEffectAnalysis.MethodEffects(call.Method));
+
+    /// <summary>
+    /// Admits to <see cref="FlattenAdditiveChain"/> the linear chains (<see cref="IsLinearChain"/>) and, under the historical
+    /// admission, the anchored chains (Flatten mission C2), for the built-in simplifier; a derived simplifier, whose plan does
+    /// not hold that rule, keeps the effect gate for its own flatten rules.
     /// </summary>
     /// <param name="root">The raw root of a chain.</param>
     /// <returns>
-    /// <see cref="ExpressionRuleRejection.None"/> for a linear chain, <see cref="ExpressionRuleRejection.ChainNotAdmitted"/>
+    /// <see cref="ExpressionRuleRejection.None"/> for an admitted chain, <see cref="ExpressionRuleRejection.ChainNotAdmitted"/>
     /// for any other chain of the built-in type; the answer of the effect gate for a derived simplifier.
     /// </returns>
     /// <remarks>
     /// The effect gate is not asked for the built-in type: a linear chain only holds parameters, primitive constants and
     /// ordinary products of them under ordinary operators of a type that cannot throw, a subset of what
-    /// <see cref="ExpressionEffectAnalysis.HasInertOperands"/> proves inert. The gate would analyze the operands of the root
-    /// recursively (one more walk per chain, and a chain depth bounded by the execution stack), whereas the test of a linear
+    /// <see cref="ExpressionEffectAnalysis.HasInertOperands"/> proves inert, and an anchored chain is treated exactly as the
+    /// gate refusing every one of its levels would treat it (<see cref="FlattenAnchoredChain"/>). The gate would analyze the
+    /// operands of the root recursively (one more walk per chain, and a chain depth bounded by the execution stack), whereas the test of a linear
     /// chain is iterative, stops at the first operand that is not linear, and reads framework operators and leaves only.
     /// Deciding here, before the extraction, also keeps a chain that is not linear from being extracted at all: a shared
     /// sub-chain, which holds a parameter twice, is refused when the second occurrence is met.
@@ -115,15 +277,63 @@ public partial class ExpressionSimplifier
             return ExpressionRuleRejection.ChainNotAdmitted;
         }
 
-        bool linear = IsLinearChain(binary, statistics, out ChainRefusal refusal);
-        if (statistics is not null)
+        // An anchored chain is refused under an explicit policy (its audited rules may run outside the gate), and so is every
+        // spine node down to its anchor, which the table of such refusals records for the instances of such a policy.
+        if (!_usesHistoricalAdmission && session?.FlattenAnchoredRefusals is { } anchoredRefusals && anchoredRefusals.Contains(binary))
         {
-            if (linear) statistics.Accepted++;
-            else statistics.Causes[(int)refusal.Cause]++;
+            ExpressionResourceBudget.ConsumeStructuralVisit();
+            if (statistics is not null)
+            {
+                statistics.KnownRefusals++;
+                statistics.Causes[(int)FlattenRefusalCause.KnownRefusal]++;
+            }
+
+            return ExpressionRuleRejection.ChainNotAdmitted;
         }
 
-        if (!linear && refusal.Depth > 0 && session is not null) RecordRefusedSpine(binary, refusal, session, statistics);
-        return linear ? ExpressionRuleRejection.None : ExpressionRuleRejection.ChainNotAdmitted;
+        bool admissible = IsLinearChain(binary, statistics, out ChainRefusal refusal, out int anchorDepth);
+        if (admissible && anchorDepth >= 0 && !_usesHistoricalAdmission)
+        {
+            if (statistics is not null) statistics.Causes[(int)FlattenRefusalCause.AnchoredUnderPolicy]++;
+            if (anchorDepth > 0 && session is not null) RecordAnchoredSpine(binary, anchorDepth, session, statistics);
+            return ExpressionRuleRejection.ChainNotAdmitted;
+        }
+
+        if (statistics is not null)
+        {
+            if (!admissible) statistics.Causes[(int)refusal.Cause]++;
+            else if (anchorDepth >= 0) statistics.Anchored++;
+            else statistics.Accepted++;
+        }
+
+        if (!admissible && refusal.Depth > 0 && session is not null) RecordRefusedSpine(binary, refusal, session, statistics);
+        return admissible ? ExpressionRuleRejection.None : ExpressionRuleRejection.ChainNotAdmitted;
+    }
+
+    /// <summary>
+    /// Records, for the instances of an explicit policy, the spine nodes of an anchored chain from index <c>1</c> down to its
+    /// anchor's node (<paramref name="depth"/>): each of them roots an anchored chain too (its terms are terms of the root and
+    /// its anchor lies on its spine), which such an instance refuses.
+    /// </summary>
+    /// <param name="root">The anchored root, refused under the policy.</param>
+    /// <param name="depth">The spine index of the anchor's node (at least one).</param>
+    /// <param name="session">The session of the running operation, which owns the table.</param>
+    /// <param name="statistics">The opt-in counters of the thread, or <see langword="null"/>.</param>
+    private void RecordAnchoredSpine(BinaryExpression root, int depth, ExpressionResourceBudget.Session session, FlattenAdmissionStatistics? statistics)
+    {
+        ExpressionNodeSet refusals = session.FlattenAnchoredRefusals ??= new ExpressionNodeSet();
+        BinaryExpression node = root;
+        for (int index = 1; index <= depth; index++)
+        {
+            ExpressionResourceBudget.ConsumeStructuralVisit();
+            node = AsCrossedAdditiveNode(node.Left) ?? AsCrossedAdditiveNode(node.Right)!;
+            bool added = refusals.Add(node);
+            if (statistics is not null)
+            {
+                statistics.RecordingVisits++;
+                if (added) statistics.RecordedRefusals++;
+            }
+        }
     }
 
     /// <summary>
@@ -241,7 +451,9 @@ public partial class ExpressionSimplifier
 
     /// <summary>
     /// Whether the additive chain rooted at <paramref name="root"/> is a linear chain, the family on which the level by
-    /// level treatment provably ends with the canonicalization of all the terms:
+    /// level treatment provably ends with the canonicalization of all the terms, or an anchored chain (Flatten mission C2):
+    /// the same conditions over every term but one, the anchor (<see cref="TryAnchor"/>), reported by
+    /// <paramref name="anchorDepth"/>. The conditions of a linear chain:
     /// </summary>
     /// <param name="root">The raw root of the chain: a crossed <c>Add</c> or <c>Subtract</c> node.</param>
     /// <param name="statistics">The opt-in counters of the thread, or <see langword="null"/>.</param>
@@ -249,7 +461,8 @@ public partial class ExpressionSimplifier
     /// Receives, for a refused chain, its cause and where it lies on the spine (see the remarks); the default value for an
     /// admitted chain.
     /// </param>
-    /// <returns><see langword="true"/> for a linear chain.</returns>
+    /// <param name="anchorDepth">Receives the spine index of the anchor's node for an anchored chain; <c>-1</c> otherwise.</param>
+    /// <returns><see langword="true"/> for a linear or an anchored chain.</returns>
     /// <remarks>
     /// <list type="bullet">
     /// <item>the chain has one of the types of <see cref="IsFlattenedChainType"/> and every crossed node is an ordinary
@@ -293,8 +506,9 @@ public partial class ExpressionSimplifier
     /// finds, the walk reporting the repeated key and the index of the refusing node).
     /// </para>
     /// </remarks>
-    private bool IsLinearChain(BinaryExpression root, FlattenAdmissionStatistics? statistics, out ChainRefusal refusal)
+    private bool IsLinearChain(BinaryExpression root, FlattenAdmissionStatistics? statistics, out ChainRefusal refusal, out int anchorDepth)
     {
+        anchorDepth = -1;
         Type type = root.Type;
         if (!IsFlattenedChainType(type))
         {
@@ -333,17 +547,10 @@ public partial class ExpressionSimplifier
 
             // The terms first, by type tests: the operator of the node is classified (which makes the framework read the
             // types of its operands) only once both operands are known to be framework nodes.
-            if (left is null && !IsLinearTerm(node.Left, type))
-            {
-                refusal = new ChainRefusal(NonLinearTermCause(node.Left), depth, null);
-                return false;
-            }
-
-            if (right is null && !IsLinearTerm(node.Right, type))
-            {
-                refusal = new ChainRefusal(NonLinearTermCause(node.Right), depth, null);
-                return false;
-            }
+            bool leftAnchor = left is null && !IsLinearTerm(node.Left, type);
+            if (leftAnchor && !TryAnchor(node.Left, depth, onSpine, ref anchorDepth, out refusal)) return false;
+            bool rightAnchor = right is null && !IsLinearTerm(node.Right, type);
+            if (rightAnchor && !TryAnchor(node.Right, depth, onSpine, ref anchorDepth, out refusal)) return false;
 
             if (!IsOrdinaryBinaryArithmetic(node))
             {
@@ -351,8 +558,8 @@ public partial class ExpressionSimplifier
                 return false;
             }
 
-            if (left is null && !operands.Add(node.Left, depth, out refusal)) return false;
-            if (right is null && !operands.Add(node.Right, depth, out refusal)) return false;
+            if (left is null && !leftAnchor && !operands.Add(node.Left, depth, out refusal)) return false;
+            if (right is null && !rightAnchor && !operands.Add(node.Right, depth, out refusal)) return false;
 
             // A left-associated chain, the common shape, never allocates the stack. The spine ends at the first node with two
             // crossed operands: everything the walk visits afterwards belongs to that node.
@@ -368,6 +575,36 @@ public partial class ExpressionSimplifier
 
         refusal = default;
         return operands.HasOperands;
+    }
+
+    /// <summary>
+    /// Accepts <paramref name="term"/>, a term that is not linear, as the anchor of the chain (Flatten mission C2) when it is
+    /// an anchor term (<see cref="IsAnchorTerm"/>), the chain has none yet and its node lies on the spine; otherwise reports
+    /// the refusal and its spine index.
+    /// </summary>
+    /// <param name="term">The term.</param>
+    /// <param name="depth">The spine index of the node that holds it.</param>
+    /// <param name="onSpine">Whether that node lies on the spine (no node above it has two crossed operands).</param>
+    /// <param name="anchorDepth">The spine index of the anchor's node, <c>-1</c> while there is none; set when the term is accepted.</param>
+    /// <param name="refusal">Receives the refusal, or the default value.</param>
+    /// <returns><see langword="true"/> when the term becomes the anchor.</returns>
+    /// <remarks>
+    /// A refusal is inherited as the other local causes are: a term that is not an anchor term, or an anchor term below the
+    /// first node with two crossed operands, refuses every chain that contains it (its spine index); a second anchor term on
+    /// the spine refuses the chains that contain both anchors, the spine nodes down to the first one's.
+    /// </remarks>
+    private static bool TryAnchor(Expression term, int depth, bool onSpine, ref int anchorDepth, out ChainRefusal refusal)
+    {
+        bool anchorTerm = IsAnchorTerm(term);
+        if (anchorTerm && onSpine && anchorDepth < 0)
+        {
+            anchorDepth = depth;
+            refusal = default;
+            return true;
+        }
+
+        refusal = new ChainRefusal(NonLinearTermCause(term), anchorTerm && onSpine ? anchorDepth : depth, null);
+        return false;
     }
 
     /// <summary>Classifies a term refused by <see cref="IsLinearTerm"/>, by type tests only (an extension node is never read).</summary>

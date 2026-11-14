@@ -88,13 +88,16 @@ public class ExpressionSimplifierFlattenAdmissionTests
                 || binary.Type == typeof(uint) || binary.Type == typeof(ulong) || binary.Type == typeof(short) || binary.Type == typeof(ushort));
 
     /// <summary>
-    /// The linear-chain definition of PR B (§3), transcribed recursively: the type, ordinary crossed nodes, no subtracted
-    /// group, no pair of constants, linear terms only, no repeated parameter or coefficient, no coefficient equal to a
-    /// constant term, at most two constant terms.
+    /// The admission definition, transcribed recursively. A linear chain (PR B, §3): the type, ordinary crossed nodes, no
+    /// subtracted group, no pair of constants, linear terms only, no repeated parameter or coefficient, no coefficient equal
+    /// to a constant term, at most two constant terms. Under the historical admission, an anchored chain too (mission C2,
+    /// §10): the same conditions, except that exactly one term is a static call of a runtime method that is not inert, held
+    /// by a node of the spine (every node above it has a single crossed operand), and is left out of the repetition sets.
     /// </summary>
     /// <param name="root">A crossed root.</param>
-    /// <returns><see langword="true"/> for a linear chain.</returns>
-    private static bool ReferenceIsLinear(BinaryExpression root)
+    /// <param name="historical">Whether the instance uses the historical admission (which admits anchored chains).</param>
+    /// <returns><see langword="true"/> for an admitted chain.</returns>
+    private static bool ReferenceIsAdmissible(BinaryExpression root, bool historical = true)
     {
         Type type = root.Type;
         if (type != typeof(double) && type != typeof(int) && type != typeof(long) && type != typeof(float) && type != typeof(uint) && type != typeof(ulong)) return false;
@@ -108,9 +111,40 @@ public class ExpressionSimplifierFlattenAdmissionTests
             if (node.Left is ConstantExpression && node.Right is ConstantExpression) return false;
         }
 
-        if (!terms.All(term => IsReferenceLinearTerm(term, type))) return false;
         if (!nodes.All(ExpressionSimplifier.IsOrdinaryBinaryArithmetic)) return false;
+        List<Expression> others = [.. terms.Where(term => IsReferenceLinearTerm(term, type))];
+        if (others.Count == terms.Count) return HasDistinctOperands(others);
 
+        Expression? anchor = terms.Count - others.Count == 1 ? terms.Single(term => !IsReferenceLinearTerm(term, type)) : null;
+        return historical
+            && anchor is MethodCallExpression { Object: null } call
+            && ExpressionReflectionProvenance.IsRuntime(call.Method)
+            && !ExpressionEffectAnalysis.IsInert(ExpressionEffectAnalysis.MethodEffects(call.Method))
+            && IsOnSpine(root, anchor)
+            && HasDistinctOperands(others);
+    }
+
+    /// <summary>Whether the node that holds <paramref name="term"/> is reached from the root through nodes with a single crossed operand.</summary>
+    /// <param name="root">The root.</param>
+    /// <param name="term">A term of the chain.</param>
+    /// <returns><see langword="true"/> when the term's node lies on the spine.</returns>
+    private static bool IsOnSpine(BinaryExpression root, Expression term)
+    {
+        BinaryExpression node = root;
+        while (true)
+        {
+            if (ReferenceEquals(node.Left, term) || ReferenceEquals(node.Right, term)) return true;
+            bool left = IsCrossed(node.Left), right = IsCrossed(node.Right);
+            if (left == right) return false;
+            node = (BinaryExpression)(left ? node.Left : node.Right);
+        }
+    }
+
+    /// <summary>The repetition conditions of a linear chain over its linear terms.</summary>
+    /// <param name="terms">The linear terms.</param>
+    /// <returns><see langword="true"/> when nothing is repeated and there are at most two constants.</returns>
+    private static bool HasDistinctOperands(List<Expression> terms)
+    {
         var parameters = new List<ParameterExpression>();
         var coefficients = new List<object>();
         var constants = new List<object>();
@@ -135,12 +169,12 @@ public class ExpressionSimplifierFlattenAdmissionTests
             }
         }
 
-        return parameters.Distinct().Count() == parameters.Count
+        return terms.Count > 0
+            && parameters.Distinct().Count() == parameters.Count
             && coefficients.Distinct().Count() == coefficients.Count
             && !coefficients.Intersect(constants).Any()
             && constants.Count <= 2;
     }
-
     /// <summary>Collects the crossed nodes and the terms of the chain rooted at <paramref name="node"/>.</summary>
     /// <param name="node">A crossed node.</param>
     /// <param name="nodes">Receives the crossed nodes.</param>
@@ -238,29 +272,50 @@ public class ExpressionSimplifierFlattenAdmissionTests
     private static int CheckWithinOneOperation(string label, Expression tree, IReadOnlyList<BinaryExpression> order)
     {
         var simplifier = new ExpressionSimplifier();
-        return ExpressionResourceBudget.Run(ExpressionResourceLimits.Unlimited, null, null, null, (simplifier, label, tree, order), static state =>
+        var policySimplifier = new ExpressionSimplifier { Options = new ExpressionSimplifierOptions { TrustPolicy = ExpressionTrustPolicy.TrustDeclarations } };
+        return ExpressionResourceBudget.Run(ExpressionResourceLimits.Unlimited, null, null, null, (simplifier, policySimplifier, label, tree, order), static state =>
         {
-            foreach (BinaryExpression node in state.order)
+            // Both instances share the operation, hence its tables: the historical one and one of an explicit policy, which
+            // refuses the anchored chains (mission C2), interleaved.
+            for (int i = 0; i < state.order.Count; i++)
             {
-                bool expected = ReferenceIsLinear(node);
-                Assert.AreEqual(expected ? ExpressionRuleRejection.None : ExpressionRuleRejection.ChainNotAdmitted, state.simplifier.FlattenAdmission(node), $"{state.label}: {node}");
+                BinaryExpression node = state.order[i];
+                bool policyFirst = i % 2 == 1;
+                if (policyFirst) AssertPolicyDecision(state.policySimplifier, node, state.label);
+                Assert.AreEqual(ReferenceIsAdmissible(node) ? ExpressionRuleRejection.None : ExpressionRuleRejection.ChainNotAdmitted, state.simplifier.FlattenAdmission(node), $"{state.label}: {node}");
+                if (!policyFirst) AssertPolicyDecision(state.policySimplifier, node, state.label);
             }
 
             ExpressionNodeSet? table = ExpressionResourceBudget.ActiveSession!.FlattenRefusals;
-            int recorded = 0;
+            ExpressionNodeSet? anchoredTable = ExpressionResourceBudget.ActiveSession!.FlattenAnchoredRefusals;
+            int recorded = 0, recordedAnchored = 0;
             foreach (BinaryExpression node in AdditiveNodes(state.tree))
             {
                 if (table is not null && table.Contains(node))
                 {
                     recorded++;
-                    Assert.IsFalse(ReferenceIsLinear(node), $"{state.label}: a recorded node must be refused: {node}");
+                    Assert.IsFalse(ReferenceIsAdmissible(node), $"{state.label}: a recorded node must be refused: {node}");
+                }
+
+                if (anchoredTable is not null && anchoredTable.Contains(node))
+                {
+                    recordedAnchored++;
+                    Assert.IsFalse(ReferenceIsAdmissible(node, historical: false), $"{state.label}: a node recorded for the policies must be refused under them: {node}");
                 }
             }
 
             Assert.AreEqual(table?.Count ?? 0, recorded, state.label + ": every recorded node belongs to the tree");
-            return recorded;
+            Assert.AreEqual(anchoredTable?.Count ?? 0, recordedAnchored, state.label + ": every node recorded for the policies belongs to the tree");
+            return recorded + recordedAnchored;
         });
     }
+
+    /// <summary>Asserts the decision of an instance of an explicit policy: linear chains only.</summary>
+    /// <param name="simplifier">The instance.</param>
+    /// <param name="node">The offered node.</param>
+    /// <param name="label">The case.</param>
+    private static void AssertPolicyDecision(ExpressionSimplifier simplifier, BinaryExpression node, string label)
+        => Assert.AreEqual(ReferenceIsAdmissible(node, historical: false) ? ExpressionRuleRejection.None : ExpressionRuleRejection.ChainNotAdmitted, simplifier.FlattenAdmission(node), $"{label} (policy): {node}");
 
     /// <summary>The trees of the targeted families of the brief, in every grouping, plus seeded random chains and shared DAGs.</summary>
     /// <returns>The labelled trees.</returns>
@@ -366,7 +421,7 @@ public class ExpressionSimplifierFlattenAdmissionTests
             var simplifier = new ExpressionSimplifier();
             foreach (BinaryExpression node in nodes)
             {
-                Assert.AreEqual(ReferenceIsLinear(node) ? ExpressionRuleRejection.None : ExpressionRuleRejection.ChainNotAdmitted, simplifier.FlattenAdmission(node), $"{label} (alone): {node}");
+                Assert.AreEqual(ReferenceIsAdmissible(node) ? ExpressionRuleRejection.None : ExpressionRuleRejection.ChainNotAdmitted, simplifier.FlattenAdmission(node), $"{label} (alone): {node}");
             }
 
             cases++;

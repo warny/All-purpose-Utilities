@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed — `omy.Utils` (expression simplifier: additive chains holding one effectful call simplified at once)
+- Under the default policy, `ExpressionSimplifier` canonicalizes at once an *anchored* chain: a linear chain (distinct
+  parameters, distinct coefficients, at most two constants) plus exactly one static call of a runtime method that is not
+  inert for the effect analysis (an unknown method, or an allow-list function that may throw), held on the spine of the
+  chain. The effect gate refuses every rule at every level of such a chain, so each level is only its canonicalization,
+  and they compose into one: **the result, the order of user code and the exceptions are the level by level ones**; every
+  operand is prepared once and the call stays pinned in place. `F() + x1 + ... + x127`: 1,280 µs → 25 µs, 2.07 MB →
+  48 KB. Inert calls (`Math.Sin`), several calls, explicit policies and derived simplifiers keep the level by level
+  treatment. See `docs/expressions/SimplifierFlatten.md` §10.
+
 ### Changed — `omy.Utils` (expression simplifier: refused additive chains are no longer walked again)
 - The admission of the flatten rule of `ExpressionSimplifier` records, for the running operation, the nodes below a refused
   chain that contain the cause of the refusal (a refusal is inherited by every chain that contains its cause), so the level

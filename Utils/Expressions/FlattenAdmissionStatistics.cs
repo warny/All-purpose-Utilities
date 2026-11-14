@@ -44,6 +44,12 @@ internal enum FlattenRefusalCause
     /// <summary>Global: the chain holds a third constant term.</summary>
     TooManyConstants,
 
+    /// <summary>
+    /// An anchored chain (Flatten mission C2), refused by an instance of an explicit policy, whose audited rules may run
+    /// outside the effect gate.
+    /// </summary>
+    AnchoredUnderPolicy,
+
     /// <summary>The root was recorded as refused by the walk of an enclosing chain of the same operation.</summary>
     KnownRefusal,
 }
@@ -58,8 +64,17 @@ internal sealed class FlattenAdmissionStatistics
     /// <summary>The number of chain roots offered to the admission of the built-in type.</summary>
     public long Admissions;
 
-    /// <summary>The number of chain roots admitted.</summary>
+    /// <summary>The number of linear chain roots admitted.</summary>
     public long Accepted;
+
+    /// <summary>The number of anchored chain roots admitted (Flatten mission C2).</summary>
+    public long Anchored;
+
+    /// <summary>The number of anchored chains simplified by one canonicalization.</summary>
+    public long AnchoredCanonicalizations;
+
+    /// <summary>The number of anchored chains whose prepared anchor sent them to the level by level fallback.</summary>
+    public long AnchoredFallbacks;
 
     /// <summary>The number of walks of a chain (admissions not answered by the table of known refusals).</summary>
     public long Walks;
@@ -84,4 +99,10 @@ internal sealed class FlattenAdmissionStatistics
     /// <see cref="NodesExamined"/> minus its count is the number of repeated examinations.
     /// </summary>
     public HashSet<Expression>? DistinctNodes;
+
+    /// <summary>
+    /// Audits only: when <see langword="true"/>, every anchored chain takes the level by level fallback of the flatten rule,
+    /// whatever its prepared anchor, so that the fallback can be compared with the historical treatment on any chain.
+    /// </summary>
+    public bool ForceAnchoredFallback;
 }

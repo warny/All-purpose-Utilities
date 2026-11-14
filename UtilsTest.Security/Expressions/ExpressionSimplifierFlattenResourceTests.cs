@@ -506,6 +506,156 @@ public class ExpressionSimplifierFlattenResourceTests
         Assert.IsTrue(failures.IsEmpty, string.Join(Environment.NewLine, failures));
     }
 
+    /// <summary>A function unknown to the effect analysis, which counts nothing (safe to call from several threads).</summary>
+    /// <returns>Always one.</returns>
+    public static double Anchor() => 1;
+
+    /// <summary>A function unknown to the effect analysis with one argument.</summary>
+    /// <param name="value">The argument.</param>
+    /// <returns>The argument.</returns>
+    public static double AnchorOf(double value) => value;
+
+    /// <summary>
+    /// Builds an anchored chain (Flatten mission C2) iteratively: <c>Anchor() + x1 + ... + x(n-1)</c> left-associated, or
+    /// <c>x0 + (x1 + ... + (x(n-2) + Anchor()))</c> right-associated.
+    /// </summary>
+    /// <param name="terms">The number of terms.</param>
+    /// <param name="right">Whether the chain is right-associated.</param>
+    /// <returns>The chain.</returns>
+    private static Expression AnchoredChain(int terms, bool right)
+    {
+        Expression e = Expression.Call(typeof(ExpressionSimplifierFlattenResourceTests).GetMethod(nameof(Anchor))!);
+        for (int i = 1; i < terms; i++)
+        {
+            ParameterExpression x = Expression.Parameter(typeof(double), "x" + i);
+            e = right ? Expression.Add(x, e) : Expression.Add(e, x);
+        }
+
+        return e;
+    }
+
+    /// <summary>
+    /// The work of an anchored chain is counted as that of a linear chain: one transformation visit for the chain and one per
+    /// operand (the anchor is a call without arguments); each budget refuses it just above its limit, no operation stays
+    /// open, and the instance works again.
+    /// </summary>
+    [TestMethod]
+    public void AnchoredChain_IsCounted_AndRefusedJustAboveEachLimit()
+    {
+        Expression chain = AnchoredChain(64, right: false);
+        (long transform, long structural) = Count(new ExpressionSimplifier(NoLimits), chain);
+        Assert.AreEqual(65, transform);
+
+        Assert.IsNotNull(new ExpressionSimplifier(NoLimits with { MaxTransformVisits = transform }).Simplify(chain));
+        var workLimited = new ExpressionSimplifier(NoLimits with { MaxTransformVisits = transform - 1 });
+        Assert.AreEqual(ExpressionResourceLimitKind.Work, Assert.ThrowsExactly<ExpressionResourceLimitException>(() => workLimited.Simplify(chain)).Kind);
+        Assert.AreEqual(0, ExpressionResourceBudget.OperationDepth);
+        Assert.AreEqual(8, CountGroups(workLimited.Simplify(AnchoredChain(8, right: false))), "The refused instance works again.");
+
+        Assert.IsNotNull(new ExpressionSimplifier(NoLimits with { MaxStructuralVisits = structural }).Simplify(chain));
+        var structureLimited = new ExpressionSimplifier(NoLimits with { MaxStructuralVisits = structural - 1 });
+        Assert.AreEqual(ExpressionResourceLimitKind.StructuralWork, Assert.ThrowsExactly<ExpressionResourceLimitException>(() => structureLimited.Simplify(chain)).Kind);
+        Assert.AreEqual(0, ExpressionResourceBudget.OperationDepth);
+    }
+
+    /// <summary>
+    /// The walk by which the anchored rule collects its segment is counted, one structural visit per node: an anchored chain
+    /// of <c>n</c> terms costs <c>4n - 3</c> structural visits in either grouping, <c>n - 1</c> of them for that walk (it cost
+    /// <c>3n - 2</c> while the walk was not counted). The structural budget refuses the chain just below that count and in
+    /// the middle of the walk, with the right kind, leaves no operation open, and the same instance works again.
+    /// </summary>
+    [TestMethod]
+    public void AnchoredChain_CountsTheWalkOfItsSegment()
+    {
+        foreach (bool right in new[] { false, true })
+        {
+            foreach (int n in new[] { 8, 16, 64 })
+            {
+                Expression chain = AnchoredChain(n, right);
+                string label = (right ? "right " : "left ") + n;
+                Assert.AreEqual(4L * n - 3, Count(new ExpressionSimplifier(NoLimits), chain).Structural, label);
+
+                Assert.AreEqual(n, CountGroups(new ExpressionSimplifier(NoLimits with { MaxStructuralVisits = 4L * n - 3 }).Simplify(chain)), label);
+                foreach (long limit in new[] { 4L * n - 4, 2L * n - 2 + n / 2 })
+                {
+                    var limited = new ExpressionSimplifier(NoLimits with { MaxStructuralVisits = limit });
+                    Assert.AreEqual(ExpressionResourceLimitKind.StructuralWork, Assert.ThrowsExactly<ExpressionResourceLimitException>(() => limited.Simplify(chain)).Kind, label);
+                    Assert.AreEqual(0, ExpressionResourceBudget.OperationDepth, label);
+                    Assert.AreEqual(3, CountGroups(limited.Simplify(AnchoredChain(3, right))), "The refused instance works again: " + label);
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// On a 256 KiB thread and without limits, an anchored chain of 100,000 terms, left- or right-associated, is simplified
+    /// at once (the level by level treatment of the same chain is a controlled stack refusal); under an explicit policy it is
+    /// refused, and every level below it is answered by the table of that policy, still on the small stack.
+    /// </summary>
+    [TestMethod]
+    public void AnchoredDeepChain_IsSimplified_OnASmallStack()
+    {
+        const int Terms = 100_000;
+        foreach (bool right in new[] { false, true })
+        {
+            Expression chain = AnchoredChain(Terms, right);
+            RunOnThread(() =>
+            {
+                Assert.AreEqual(Terms, CountGroups(new ExpressionSimplifier(NoLimits).Simplify(chain)), right ? "right" : "left");
+                Assert.AreEqual(ExpressionResourceLimitKind.Stack, Assert.ThrowsExactly<ExpressionResourceLimitException>(() => new LevelByLevelSimplifier(NoLimits).Simplify(chain)).Kind);
+
+                var policy = new ExpressionSimplifier(NoLimits) { Options = new ExpressionSimplifierOptions { TrustPolicy = ExpressionTrustPolicy.TrustDeclarations } };
+                long structural = ExpressionResourceBudget.Run(NoLimits, null, null, null, (policy, chain), static state =>
+                {
+                    Expression node = state.chain;
+                    while (node is BinaryExpression { NodeType: ExpressionType.Add } add)
+                    {
+                        Assert.AreEqual(ExpressionRuleRejection.ChainNotAdmitted, state.policy.FlattenAdmission(add));
+                        node = add.Left is BinaryExpression ? add.Left : add.Right;
+                    }
+
+                    return ExpressionResourceBudget.StructuralVisits;
+                });
+                Assert.AreEqual((Terms - 1) + 2L * (Terms - 2), structural, "Root walk, recording pass, one visit per lookup.");
+                Assert.AreEqual(0, ExpressionResourceBudget.OperationDepth);
+            }, SmallStack, Timeout);
+        }
+    }
+
+    /// <summary>
+    /// An anchor is recognized by type tests and runtime reflection only: a call carrying an impersonating method is not an
+    /// anchor and is never inspected, and an armed extension node passed to the anchor is never read by the admission, which
+    /// does not look at the arguments of the anchor (they are prepared with the call, as level by level).
+    /// </summary>
+    [TestMethod]
+    public void Anchors_NeverReadHostileObjects()
+    {
+        ParameterExpression a = Expression.Parameter(typeof(double), "a"), b = Expression.Parameter(typeof(double), "b"), c = Expression.Parameter(typeof(double), "c");
+        var extension = new ArmedExtension();
+        var method = new ImpersonatingMethod(typeof(ExpressionSimplifierFlattenResourceTests).GetMethod(nameof(Plus))!);
+        Expression impersonated = Expression.Add(Expression.Add(Expression.Call(method, a, b), c), Expression.Constant(2.0));
+        Expression withExtension = Expression.Add(Expression.Add(Expression.Call(typeof(ExpressionSimplifierFlattenResourceTests).GetMethod(nameof(AnchorOf))!, extension), a), b);
+        var simplifier = new ExpressionSimplifier();
+
+        extension.Armed = true;
+        method.Trap.Reset();
+        method.Trap.Armed = true;
+        try
+        {
+            Assert.AreEqual(ExpressionRuleRejection.ChainNotAdmitted, simplifier.FlattenAdmission(impersonated));
+            Assert.AreEqual(ExpressionRuleRejection.None, simplifier.FlattenAdmission(withExtension));
+        }
+        finally
+        {
+            // See ExpressionFlattenResourceTests: an armed impersonating method must not stay in the framework's caches.
+            method.Trap.Armed = false;
+            extension.Armed = false;
+        }
+
+        Assert.AreEqual(0, extension.Calls);
+        Assert.AreEqual(0, method.Trap.ArmedCalls + method.Trap.TypeReads);
+    }
+
     /// <summary>A function unknown to the effect analysis.</summary>
     /// <returns>The number of calls so far.</returns>
     public static double Unknown() => ++s_unknownCalls;
