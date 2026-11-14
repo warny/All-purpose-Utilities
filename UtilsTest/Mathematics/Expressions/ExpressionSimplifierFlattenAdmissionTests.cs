@@ -299,7 +299,11 @@ public class ExpressionSimplifierFlattenAdmissionTests
 
         // A coefficient equal to a constant deep in the chain, and three constants.
         yield return ("coefficient = constant", LeftSum([C(7), .. D.Skip(1).Take(20), Expression.Multiply(C(7), D[30]), D[31]]));
-        yield return ("third constant", LeftSum([D[0], C(1), D[1], C(2), D[2], D[3], C(3), D[4]]));
+        // A constant equal to the fifth coefficient met by the walk (past the inline entries of the set), and five coefficients
+        // then a repeated one.
+        yield return ("constant = fifth coefficient", LeftSum([C(2), D[0], .. Enumerable.Range(1, 5).Select(static i => (Expression)Expression.Multiply(C(i + 1.0), D[i]))]));
+        yield return ("sixth coefficient repeated", LeftSum([Expression.Multiply(C(2), D[9]), .. Enumerable.Range(1, 5).Select(static i => (Expression)Expression.Multiply(C(i + 1.0), D[i]))]));
+        yield return ("third constant",LeftSum([D[0], C(1), D[1], C(2), D[2], D[3], C(3), D[4]]));
         yield return ("a - (b + c)", Expression.Subtract(D[0], Expression.Add(D[1], D[2])));
         yield return ("(a + 1) + (2 + b)", Expression.Add(Expression.Add(D[0], C(1)), Expression.Add(C(2), D[1])));
         yield return ("deep subtracted group", LeftSum([.. D.Take(10), Expression.Subtract(D[10], Expression.Add(D[11], D[12])), .. D.Skip(13).Take(10)]));
@@ -504,6 +508,10 @@ public class ExpressionSimplifierFlattenAdmissionTests
         FlattenAdmissionStatistics constant = MeasureAdmissions(LeftSum([C(2), .. D.Skip(1).Take(2), Expression.Multiply(C(2), D[3]), .. D.Skip(4).Take(30)]));
         Assert.AreEqual(1, constant.Causes[(int)FlattenRefusalCause.CoefficientEqualsConstant]);
         Assert.AreEqual(30, constant.RecordedRefusals);
+
+        // The coefficient equal to the constant is the fifth one the walk meets, past the inline entries of its set.
+        FlattenAdmissionStatistics fifth = MeasureAdmissions(LeftSum([C(2), D[0], .. Enumerable.Range(1, 5).Select(static i => (Expression)Expression.Multiply(C(i + 1.0), D[i]))]));
+        Assert.AreEqual(1, fifth.Causes[(int)FlattenRefusalCause.CoefficientEqualsConstant]);
     }
 
     /// <summary>
