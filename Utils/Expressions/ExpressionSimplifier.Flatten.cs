@@ -811,13 +811,14 @@ public partial class ExpressionSimplifier
         /// <returns><see langword="true"/> when the key was not present.</returns>
         public bool Add(object key)
         {
-            if (Contains(key)) return false;
+            if (InlineContains(key)) return false;
             switch (_count)
             {
                 case 0: _key0 = key; break;
                 case 1: _key1 = key; break;
                 case 2: _key2 = key; break;
                 case 3: _key3 = key; break;
+                // One lookup of the overflow set, as the set of the historical walk did.
                 default: return (_overflow ??= []).Add(key);
             }
 
@@ -828,11 +829,30 @@ public partial class ExpressionSimplifier
         /// <summary>Determines whether <paramref name="key"/> is present.</summary>
         /// <param name="key">The key.</param>
         /// <returns><see langword="true"/> when the key is present.</returns>
-        public readonly bool Contains(object key)
-            => (_count > 0 && Equals(_key0, key))
+        public readonly bool Contains(object key) => InlineContains(key) || (_overflow is not null && _overflow.Contains(key));
+
+        /// <summary>Determines whether <paramref name="key"/> is one of the inline keys.</summary>
+        /// <param name="key">The key.</param>
+        /// <returns><see langword="true"/> when an inline key equals it.</returns>
+        /// <remarks>
+        /// A parameter is compared by reference without a call: <see cref="object.Equals(object?, object?)"/> would end in
+        /// the virtual <see cref="object.Equals(object?)"/>, whose cost, for every term of a long chain, showed in the
+        /// benchmarks. It is the same comparison, since <see cref="ParameterExpression"/> does not override it.
+        /// </remarks>
+        private readonly bool InlineContains(object key)
+        {
+            if (key is ParameterExpression)
+            {
+                return (_count > 0 && ReferenceEquals(_key0, key))
+                    || (_count > 1 && ReferenceEquals(_key1, key))
+                    || (_count > 2 && ReferenceEquals(_key2, key))
+                    || (_count > 3 && ReferenceEquals(_key3, key));
+            }
+
+            return (_count > 0 && Equals(_key0, key))
                 || (_count > 1 && Equals(_key1, key))
                 || (_count > 2 && Equals(_key2, key))
-                || (_count > 3 && Equals(_key3, key))
-                || (_count == InlineCapacity && _overflow is not null && _overflow.Contains(key));
+                || (_count > 3 && Equals(_key3, key));
+        }
     }
 }
