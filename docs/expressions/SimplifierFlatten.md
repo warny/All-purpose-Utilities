@@ -623,7 +623,9 @@ Reference: `master` `e47fb957`, same harnesses as §9.6.
   fallback, every policy; other chains holding calls keep their treatment; every user call runs once, in source order;
   an anchored chain is walked once. The admission oracle of §9.6 now transcribes the anchored definition too, with an
   instance under a policy interleaved in each operation. Security tests: visits are counted and the rule is refused just
-  above each limit (65 transformation visits for 64 terms); a 100,000-term anchored chain, left and right, is simplified
+  above each limit (65 transformation visits for 64 terms); the walk by which the rule collects its segment is counted
+  (`4n - 3` structural visits for `n` terms, refused just below and in the middle of that walk, state restored); a
+  100,000-term anchored chain, left and right, is simplified
   on a small stack (the level by level treatment is refused by the stack guard there); hostile objects are never read by
   the anchor test.
 - **Two PR B tests changed premise.** `a + opaque()` and `a + unknown()` were examples of refused chains; they are

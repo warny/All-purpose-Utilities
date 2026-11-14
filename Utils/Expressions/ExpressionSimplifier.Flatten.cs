@@ -111,6 +111,10 @@ public partial class ExpressionSimplifier
     /// prepared-operand entry of the engine, each child result going through the <c>NaN</c> fold as its parent's preparation
     /// does: exactly the historical treatment, without preparing anything twice.
     /// </para>
+    /// <para>
+    /// <b>Budgets.</b> The walk that collects the segment counts one structural visit per node, like every structural walk
+    /// of the engine; a refusal in the middle of it leaves nothing behind (only local lists are built).
+    /// </para>
     /// </remarks>
     private Expression FlattenAnchoredChain(BinaryExpression root)
     {
@@ -121,6 +125,8 @@ public partial class ExpressionSimplifier
         BinaryExpression node = root;
         while (true)
         {
+            // A walk of its own (the admission and the extraction counted theirs): one structural visit per segment node.
+            ExpressionResourceBudget.ConsumeStructuralVisit();
             int index = nodes.Count;
             nodes.Add(node);
             bool negativeRight = node.NodeType == ExpressionType.Subtract;

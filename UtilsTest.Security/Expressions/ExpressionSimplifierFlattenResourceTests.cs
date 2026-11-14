@@ -559,6 +559,35 @@ public class ExpressionSimplifierFlattenResourceTests
     }
 
     /// <summary>
+    /// The walk by which the anchored rule collects its segment is counted, one structural visit per node: an anchored chain
+    /// of <c>n</c> terms costs <c>4n - 3</c> structural visits in either grouping, <c>n - 1</c> of them for that walk (it cost
+    /// <c>3n - 2</c> while the walk was not counted). The structural budget refuses the chain just below that count and in
+    /// the middle of the walk, with the right kind, leaves no operation open, and the same instance works again.
+    /// </summary>
+    [TestMethod]
+    public void AnchoredChain_CountsTheWalkOfItsSegment()
+    {
+        foreach (bool right in new[] { false, true })
+        {
+            foreach (int n in new[] { 8, 16, 64 })
+            {
+                Expression chain = AnchoredChain(n, right);
+                string label = (right ? "right " : "left ") + n;
+                Assert.AreEqual(4L * n - 3, Count(new ExpressionSimplifier(NoLimits), chain).Structural, label);
+
+                Assert.AreEqual(n, CountGroups(new ExpressionSimplifier(NoLimits with { MaxStructuralVisits = 4L * n - 3 }).Simplify(chain)), label);
+                foreach (long limit in new[] { 4L * n - 4, 2L * n - 2 + n / 2 })
+                {
+                    var limited = new ExpressionSimplifier(NoLimits with { MaxStructuralVisits = limit });
+                    Assert.AreEqual(ExpressionResourceLimitKind.StructuralWork, Assert.ThrowsExactly<ExpressionResourceLimitException>(() => limited.Simplify(chain)).Kind, label);
+                    Assert.AreEqual(0, ExpressionResourceBudget.OperationDepth, label);
+                    Assert.AreEqual(3, CountGroups(limited.Simplify(AnchoredChain(3, right))), "The refused instance works again: " + label);
+                }
+            }
+        }
+    }
+
+    /// <summary>
     /// On a 256 KiB thread and without limits, an anchored chain of 100,000 terms, left- or right-associated, is simplified
     /// at once (the level by level treatment of the same chain is a controlled stack refusal); under an explicit policy it is
     /// refused, and every level below it is answered by the table of that policy, still on the small stack.
