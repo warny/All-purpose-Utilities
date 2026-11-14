@@ -507,3 +507,159 @@ The A/A control stays within ±3.6 %. Reading:
   treatment (`p` from 99 terms, `badFirst`).
 - Admitted short chains measured 7 to 13 % slower in time (0.5 to 2 µs, same allocations) before the inline-set fix of
   §9.7, which was not re-measured under clean conditions.
+
+## 10. Mixed chains: anchored chains (mission C2)
+
+Status: first treatment of chains that are not linear. Restricted to one family whose level by level result is proven to be
+one canonicalization; every other mixed chain keeps the level by level treatment (with the known refusals of §9).
+
+### 10.1 C2 audit: which segments can be treated at once
+
+A refused chain is processed level by level: each level prepares its two operands (the lower level's result and a term),
+then runs its rules and its finalization on the prepared node. A treatment of several levels at once must reproduce what
+those rules would have done with the operands they would have seen. The categories of segments:
+
+1. **A sub-tree that is itself an admitted chain** (a linear sub-chain below a refused node): already treated at once by
+   PR B when the fallback offers it (§3.4). Nothing new to gain.
+2. **A path of nodes of the spine** (the levels from the root down to the node that holds a non-linear term): the
+   candidates of this mission. Their result depends on the rules that run at each level.
+3. **A run of terms that is not a sub-tree** (`x2 + x3` inside `((x1 + x2) + x3) + F()`): never a unit of the level by level
+   treatment; regrouping it would reassociate the source. Not treated.
+4. **A segment separated by an operation with effects**: the effect gate refuses every rule of a node whose prepared
+   operands are not inert; this is what makes category 2 tractable (below).
+5. **A segment where a factorization may apply** (`2*x + 2*y`, `x - x`, `a + (-a)`): the factoring and negation rules
+   change the structure the parent sees; such a segment keeps the level by level treatment.
+6. **A segment whose canonicalization depends on its neighbours** (pinned terms reading mutable state, constants summed
+   per level, ties of the stable sort): composable only under the conditions of §10.2.
+
+**Approach A, maximal admitted sub-trees**: already obtained by PR B (category 1); nothing new. **Approach C, incremental
+summaries** of the canonical result along the path: it would have to reproduce the rules of every level, including the
+comparisons of the factoring rules, whose user code (the simplifications of the comparer, custom `Equals`) runs once per
+level and per comparison; a summary that skips them changes the user code, one that runs them is the level by level
+treatment. Not retained. **Approach B, segments of a path** (retained) for the segments on which no rule can run at any
+level: those where the effect gate refuses every rule.
+
+### 10.2 Anchored chains
+
+A chain rooted at an ordinary `Add` or `Subtract` node is **anchored** when it satisfies every condition of a linear chain
+(§3) except that exactly one term, the **anchor**, is not linear, and:
+
+1. the anchor is a static call of a runtime method (`ExpressionReflectionProvenance.IsRuntime`) whose execution is not
+   inert for the effect analysis (`ExpressionEffectAnalysis.MethodEffects`: an unknown method, which is observable, or a
+   function of the allow-list that may throw, such as `double.Clamp`); `Math.Sin` and the other total functions are inert
+   and are not anchors (their rules may apply level by level);
+2. the anchor is held by a node of the spine: every node above it has a single crossed operand (`F() + x1 + ... + xN` in
+   a left grouping, `x0 + (... + (xN + F()))` in a right one, any comb of the two); the other operand of the anchor's node
+   may be a crossed linear chain (`x0 + ... + x50 + F() + x51 + ... + xN`), prepared as a unit;
+3. the instance uses the historical admission (`ExpressionSimplifierOptions.Default`): under an explicit policy the audited
+   rules may run outside the gate, so the chain keeps the level by level treatment there.
+
+The repetition conditions of §3 apply to the other terms (the anchor is left out of the sets). The test is the walk of §9,
+which accepts the anchor when it meets it on the spine; its refusals keep the inheritance of §9.2 (a second anchor refuses
+the chains that hold both, an anchor below a branching node every chain above it), so the known refusals stay correct.
+
+### 10.3 Why one canonicalization is the level by level result
+
+Let the **segment** be the nodes from the root down to the anchor's node, and its **operands** the terms of those nodes and
+the other operand of the anchor's node, in source order.
+
+1. **No rule runs at any level.** Every node of the segment contains the anchor. Its prepared operands hold the prepared
+   anchor (the anchor's node directly, every node above it through the canonical result of the level below, which keeps
+   every pinned term). When the prepared anchor is not inert, `AllowsRules` (`HasInertOperands`) refuses the node, and
+   the historical admission admits no audited rule outside the gate (`AllowsAuditedRulesOutsideGate` is false): every level
+   is its finalization, `CanonicalizeAdditiveExpression` of its two prepared operands (the nodes are ordinary, so
+   `CanCanonicalizeCommutativeBinary` and `CanonicalizesOperator` hold).
+2. **The canonicalizations compose.** In `CanonicalizeAdditiveTerms`, the anchor is pinned (not inert); when it is observable,
+   every term reading mutable state is pinned too (parameters, products), the constants being the only kept terms; when it
+   only may throw, the kept terms are the linear ones. Pinned terms keep their collection order and are appended after the
+   kept groups, so each level collects the pinned terms of the level below in source order, followed by its own term: the
+   pinned list of the root is the source order. The kept terms are distinct linear terms (no repetition, coefficient
+   distinct from the constants), so, as on a linear chain (§3.3), every group holds one term, nothing cancels, the stable
+   sorts compose, and at most two constants are aggregated once, in source order. A `0 - t` group is collected back as a
+   zero (dropped) and `t` with its sign.
+3. **The fold of `NaN` changes nothing**: no level has a `NaN` constant operand (the constants are finite).
+
+Hence the result is `CanonicalizeAdditiveTerms` of the collected prepared operands of the segment, in source order, which
+`FlattenAnchoredChain` returns.
+
+**Preparation, order, user code.** The operands are prepared once each with `PrepareExpression`, in source order; the
+anchor is prepared as a call, its arguments with it, exactly as its node prepares it. The levels only interleave their
+canonicalizations, which run no user code here: the anchor is pinned, so it is never keyed, grouped or compared; the
+effect analysis reads it by type tests and runtime reflection; the rebuilt nodes read its type, the return type of a
+runtime method. Preparing a linear term runs no user code either (§3.1). So the observable order of user code and of
+exceptions is the level by level one.
+
+**Fallback.** The proof needs the prepared anchor to be a call of a runtime method that is not inert. The admission only
+knows the raw call; if a rule rewrote it (none of the current rules does for an anchor: the probe of the audit found no
+case), the rule runs the levels one by one on the prepared operands, from the anchor's node up
+(`TransformCoreWithPreparedOperands`, then the `NaN` fold of each child result, as its parent's `PrepareExpression` does):
+the historical treatment, without preparing anything twice. The audit counters can force this path
+(`FlattenAdmissionStatistics.ForceAnchoredFallback`); the tests compare it with the level by level treatment on every
+anchored case.
+
+### 10.4 What is not treated
+
+- A chain whose non-linear term is inert (`sin(x0) + x1 + ...`, the `badFirst` family): its factoring rules run at every
+  level; skipping them requires proving that all their comparisons fail and run no user code. It keeps the level by level
+  treatment (and the known refusals of §9).
+- Two anchors, an anchor below a node with two crossed operands, a subtracted group, a negated call, a member access or a
+  property getter (`MutableGetter()` when it is a property), a call of an instance method, a custom reflection object,
+  any repetition among the other terms, a third constant.
+- Every chain under an explicit policy (the anchored chains are refused there, and their levels are recorded in a table of
+  their own, `FlattenAnchoredRefusals`, consulted by the instances of such a policy only).
+- Derived simplifiers (the rule is private).
+
+### 10.5 Validation
+
+Reference: `master` `e47fb957`, same harnesses as §9.6.
+
+- **Differential corpus**: the corpora of §9.6 (487,008 default cases, 108,008 targeted cases holding observable calls,
+  carriers and throwing allow-list functions at the start, the middle and the end, 138,008 cases under each policy and
+  with a derived simplifier): **0 difference** (results, exceptions, ordered user-code log, effectful calls).
+- **S5 campaigns** (`terminate`, `converge`, `canon`, `comparer`, `diff`, `effects`, `s3`, 1,000 seeds): byte-identical
+  to `master`.
+- **Tests.** `ExpressionSimplifierFlattenAnchoredTests` compares every anchored case with the level by level treatment
+  (`LevelByLevelSimplifier`): the anchor at every position, the three groupings and seeded random combs, the forced
+  fallback, every policy; other chains holding calls keep their treatment; every user call runs once, in source order;
+  an anchored chain is walked once. The admission oracle of §9.6 now transcribes the anchored definition too, with an
+  instance under a policy interleaved in each operation. Security tests: visits are counted and the rule is refused just
+  above each limit (65 transformation visits for 64 terms); a 100,000-term anchored chain, left and right, is simplified
+  on a small stack (the level by level treatment is refused by the stack guard there); hostile objects are never read by
+  the anchor test.
+- **Two PR B tests changed premise.** `a + opaque()` and `a + unknown()` were examples of refused chains; they are
+  anchored chains now. They moved to `CallChains_AreAnchored_AndKeepTheLevelByLevelResult`, which checks that their result
+  is still the level by level one, and `ObservableEvaluations_AreNeitherDroppedNorMoved` allows the treatment of one call
+  under the default policy only, still checking that no evaluation is dropped or moved.
+- **Suites**: Unit 14,606/14,607, ETC Debug 343/344, Security 378/381 (the non-executed ones are skipped by design),
+  Functional 380/383: two architecture-scan tests fail the same way on a `master` worktree (environment), one named-pipe
+  test is a known flake and passes when rerun.
+- **Mutations** N1–N13, one at a time: ten are detected. Three survive and are equivalent: preparing the operands in
+  another order (only the anchor runs user code, so the order is not observable), dropping the `NaN` fold of the fallback
+  (no operand can be `NaN`), and dropping the check that the prepared anchor is still not inert (no rule of the simplifier
+  turns an anchor into an inert node; the forced fallback covers that path).
+
+### 10.6 Benchmarks
+
+Same campaign as §9.7, with a fourth variant **D**, C2 at `df0e274b` (before the inline-set fix of §9.7, like C).
+
+| Case | A | C (C1) | D (C2) | D vs C | Allocations A → D |
+|---|---|---|---|---|---|
+| `obsFirstL 128` | 1,280 µs | −20.1 % | **−98.0 %** (−98/−98/−98) | −97.5 % | 2,073,190 → 48,374 B |
+| `obsLastR 64` | 349 µs | −22.7 % | **−95.9 %** (−96/−96/−96) | −94.7 % | 530,268 → 20,122 B |
+| `obsFirstL 32` | 90.3 µs | −16.8 % | **−91.1 %** (−91/−91/−91) | −89.3 % | 134,502 → 12,257 B |
+| `obsMidL 64` | 227 µs | −7.0 % | **−89.5 %** (−90/−89/−89) | −88.7 % | 352,809 → 44,155 B |
+| `obsMidB 64` (balanced, not anchored) | 39.4 µs | +8.2 % | +11.7 % | +3.2 % | 68,116 → 67,482 B |
+| other cases | | | | −2.7 to +4.7 % | as C |
+
+The deterministic growth harness gives the same picture: `obsFirstL 128` 4,790 µs and 1.59 MB with C1, 31.9 µs and 48 KB
+with C2; `obsMidL` 3,635 → 46 µs; `obsLastR` 8,654 → 31.5 µs. The other cases stay at the C1 level (D vs C within the
+±3.6 % control band but for a few microsecond cases, up to +4.7 %, within what a different build can produce, §9.7).
+
+### 10.7 Residual limits
+
+- One anchor only, on the spine, under the default policy; inert non-linear terms (`Math.Sin`) keep the level by level
+  treatment, so `badFirst` and `sinMidL` are unchanged by C2.
+- A balanced chain with an anchor below its first branching node (`obsMidB`) is not treated.
+- **Pre-existing, out of scope:** an armed extension node as an argument of a call throws when the call is prepared
+  (`Expression.Call` validates its arguments, which reads them). This happens level by level on `master` too, so C2 neither
+  causes nor fixes it; it is a gap of the ETC R4 protection, reported separately.
