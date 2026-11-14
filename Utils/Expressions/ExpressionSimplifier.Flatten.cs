@@ -87,7 +87,32 @@ public partial class ExpressionSimplifier
     internal override ExpressionRuleRejection FlattenAdmission(Expression root)
     {
         if (GetType() != typeof(ExpressionSimplifier)) return base.FlattenAdmission(root);
-        return root is BinaryExpression binary && IsLinearChain(binary) ? ExpressionRuleRejection.None : ExpressionRuleRejection.ChainNotAdmitted;
+        if (root is not BinaryExpression binary) return ExpressionRuleRejection.ChainNotAdmitted;
+
+        FlattenAdmissionStatistics? statistics = t_admissionStatistics;
+        bool linear = IsLinearChain(binary, statistics, out FlattenRefusalCause cause);
+        if (statistics is not null)
+        {
+            statistics.Admissions++;
+            if (linear) statistics.Accepted++;
+            else statistics.Causes[(int)cause]++;
+        }
+
+        return linear ? ExpressionRuleRejection.None : ExpressionRuleRejection.ChainNotAdmitted;
+    }
+
+    /// <summary>The opt-in admission counters of this thread (<see cref="AdmissionStatistics"/>).</summary>
+    [ThreadStatic]
+    private static FlattenAdmissionStatistics? t_admissionStatistics;
+
+    /// <summary>
+    /// Gets or sets the admission counters of this thread: audits and benchmarks only. While <see langword="null"/> (the
+    /// default), the admission reads this field once per chain root and records nothing.
+    /// </summary>
+    internal static FlattenAdmissionStatistics? AdmissionStatistics
+    {
+        get => t_admissionStatistics;
+        set => t_admissionStatistics = value;
     }
 
     /// <summary>
@@ -95,6 +120,8 @@ public partial class ExpressionSimplifier
     /// level treatment provably ends with the canonicalization of all the terms:
     /// </summary>
     /// <param name="root">The raw root of the chain: a crossed <c>Add</c> or <c>Subtract</c> node.</param>
+    /// <param name="statistics">The opt-in counters of the thread, or <see langword="null"/>.</param>
+    /// <param name="cause">Receives why the chain is refused, or <see cref="FlattenRefusalCause.None"/>.</param>
     /// <returns><see langword="true"/> for a linear chain.</returns>
     /// <remarks>
     /// <list type="bullet">
@@ -124,37 +151,79 @@ public partial class ExpressionSimplifier
     /// <see cref="object.Equals(object?)"/> or <see cref="object.GetHashCode"/> runs.
     /// </para>
     /// </remarks>
-    private bool IsLinearChain(BinaryExpression root)
+    private bool IsLinearChain(BinaryExpression root, FlattenAdmissionStatistics? statistics, out FlattenRefusalCause cause)
     {
         Type type = root.Type;
-        if (!IsFlattenedChainType(type)) return false;
+        if (!IsFlattenedChainType(type))
+        {
+            cause = FlattenRefusalCause.ChainType;
+            return false;
+        }
 
+        if (statistics is not null) statistics.Walks++;
         LinearChainOperands? operands = null;
         Stack<BinaryExpression>? pending = null;
         BinaryExpression? node = root;
         while (node is not null)
         {
             ExpressionResourceBudget.ConsumeStructuralVisit();
+            if (statistics is not null)
+            {
+                statistics.NodesExamined++;
+                statistics.DistinctNodes?.Add(node);
+            }
+
             BinaryExpression? left = AsCrossedAdditiveNode(node.Left);
             BinaryExpression? right = AsCrossedAdditiveNode(node.Right);
-            if (right is not null && node.NodeType == ExpressionType.Subtract) return false;
-            if (node.Left is ConstantExpression && node.Right is ConstantExpression) return false;
+            if (right is not null && node.NodeType == ExpressionType.Subtract)
+            {
+                cause = FlattenRefusalCause.SubtractedGroup;
+                return false;
+            }
+
+            if (node.Left is ConstantExpression && node.Right is ConstantExpression)
+            {
+                cause = FlattenRefusalCause.ConstantPair;
+                return false;
+            }
 
             // The terms first, by type tests: the operator of the node is classified (which makes the framework read the
             // types of its operands) only once both operands are known to be framework nodes.
-            if (left is null && !IsLinearTerm(node.Left, type)) return false;
-            if (right is null && !IsLinearTerm(node.Right, type)) return false;
-            if (!IsOrdinaryBinaryArithmetic(node)) return false;
-            if (left is null && !(operands ??= new LinearChainOperands()).Add(node.Left)) return false;
-            if (right is null && !(operands ??= new LinearChainOperands()).Add(node.Right)) return false;
+            if (left is null && !IsLinearTerm(node.Left, type))
+            {
+                cause = NonLinearTermCause(node.Left);
+                return false;
+            }
+
+            if (right is null && !IsLinearTerm(node.Right, type))
+            {
+                cause = NonLinearTermCause(node.Right);
+                return false;
+            }
+
+            if (!IsOrdinaryBinaryArithmetic(node))
+            {
+                cause = FlattenRefusalCause.Operator;
+                return false;
+            }
+
+            if (left is null && (cause = (operands ??= new LinearChainOperands()).Add(node.Left)) != FlattenRefusalCause.None) return false;
+            if (right is null && (cause = (operands ??= new LinearChainOperands()).Add(node.Right)) != FlattenRefusalCause.None) return false;
 
             // A left-associated chain, the common shape, never allocates the stack.
             if (left is not null && right is not null) (pending ??= new Stack<BinaryExpression>()).Push(right);
             node = left ?? right ?? (pending is { Count: > 0 } ? pending.Pop() : null);
         }
 
+        cause = FlattenRefusalCause.None;
         return operands is not null;
     }
+
+    /// <summary>Classifies a term refused by <see cref="IsLinearTerm"/>, by type tests only (an extension node is never read).</summary>
+    /// <param name="term">The refused term.</param>
+    /// <returns><see cref="FlattenRefusalCause.CallTerm"/> for a call or an invocation, otherwise <see cref="FlattenRefusalCause.NonLinearTerm"/>.</returns>
+    private static FlattenRefusalCause NonLinearTermCause(Expression term)
+        => term is MethodCallExpression or InvocationExpression ? FlattenRefusalCause.CallTerm : FlattenRefusalCause.NonLinearTerm;
 
     /// <summary>
     /// Returns <paramref name="node"/> when the chains of <see cref="FlattenAdditiveChain"/> cross it, as the extraction
@@ -260,33 +329,35 @@ public partial class ExpressionSimplifier
         /// <summary>Records a linear term.</summary>
         /// <param name="term">A term accepted by <see cref="IsLinearTerm"/>.</param>
         /// <returns>
-        /// <see langword="false"/> when the term repeats a parameter or a coefficient, makes a coefficient equal to a constant
-        /// term, or is the third constant term of the chain.
+        /// <see cref="FlattenRefusalCause.None"/>, or the cause when the term repeats a parameter or a coefficient, makes a
+        /// coefficient equal to a constant term, or is the third constant term of the chain.
         /// </returns>
-        public bool Add(Expression term)
+        public FlattenRefusalCause Add(Expression term)
         {
             switch (term)
             {
                 case ParameterExpression parameter:
-                    return _parameters.Add(parameter);
+                    return _parameters.Add(parameter) ? FlattenRefusalCause.None : FlattenRefusalCause.RepeatedParameter;
                 case ConstantExpression constant:
-                    if (++_constantCount > 2) return false;
+                    if (++_constantCount > 2) return FlattenRefusalCause.TooManyConstants;
                     (_constants ??= []).Add(constant.Value!);
-                    return _coefficients is null || !_coefficients.Contains(constant.Value!);
+                    return _coefficients is null || !_coefficients.Contains(constant.Value!) ? FlattenRefusalCause.None : FlattenRefusalCause.CoefficientEqualsConstant;
                 default:
                     var product = (BinaryExpression)term;
-                    return AddFactor(product.Left) && AddFactor(product.Right);
+                    FlattenRefusalCause cause = AddFactor(product.Left);
+                    return cause != FlattenRefusalCause.None ? cause : AddFactor(product.Right);
             }
         }
 
         /// <summary>Records a factor of a product term: a parameter of the chain, or a constant coefficient.</summary>
         /// <param name="factor">A parameter or a constant.</param>
-        /// <returns><see langword="false"/> when the parameter or the coefficient value was already met, or when the coefficient equals a constant term.</returns>
-        private bool AddFactor(Expression factor)
+        /// <returns><see cref="FlattenRefusalCause.None"/>, or the cause when the parameter or the coefficient value was already met, or when the coefficient equals a constant term.</returns>
+        private FlattenRefusalCause AddFactor(Expression factor)
         {
-            if (factor is ParameterExpression parameter) return _parameters.Add(parameter);
+            if (factor is ParameterExpression parameter) return _parameters.Add(parameter) ? FlattenRefusalCause.None : FlattenRefusalCause.RepeatedParameter;
             object value = ((ConstantExpression)factor).Value!;
-            return (_coefficients ??= []).Add(value) && (_constants is null || !_constants.Contains(value));
+            if (!(_coefficients ??= []).Add(value)) return FlattenRefusalCause.RepeatedCoefficient;
+            return _constants is null || !_constants.Contains(value) ? FlattenRefusalCause.None : FlattenRefusalCause.CoefficientEqualsConstant;
         }
     }
 }
