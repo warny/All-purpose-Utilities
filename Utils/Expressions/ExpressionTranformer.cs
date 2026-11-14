@@ -1337,7 +1337,7 @@ public abstract partial class ExpressionTransformer
     /// <summary>
     /// Prepares a <see cref="MethodCallExpression"/> by preparing the instance receiver (if any) and
     /// every argument, then rebuilding the call inline (rather than through <see cref="CopyExpression"/>)
-    /// so the prepared receiver is preserved.
+    /// so the prepared receiver is preserved; an unchanged call holding an opaque child is kept (see <see cref="RebuildMethodCall"/>).
     /// </summary>
     /// <param name="mce">The method-call expression to prepare.</param>
     /// <returns>The resulting <see cref="TransformContext"/>.</returns>
@@ -1362,11 +1362,71 @@ public abstract partial class ExpressionTransformer
             expressionParameters[i] = PrepareExpression(mce.Arguments[i]);
         }
 
-        MethodCallExpression copied = transformedObject is null
-            ? Expression.Call(mce.Method, expressionParameters)
-            : Expression.Call(transformedObject, mce.Method, expressionParameters);
+        MethodCallExpression copied = RebuildMethodCall(mce, transformedObject, expressionParameters);
 
         return new TransformContext(copied, expressionParameters);
+    }
+
+    /// <summary>
+    /// Rebuilds a <see cref="MethodCallExpression"/> on <paramref name="receiver"/> and <paramref name="arguments"/> with the same
+    /// <see cref="MethodCallExpression.Method"/>, through the framework factory, except for an unchanged call holding an opaque
+    /// child, which is returned itself (see <see cref="KeepsUnchangedOpaqueParent"/>).
+    /// </summary>
+    /// <param name="original">The call being rebuilt.</param>
+    /// <param name="receiver">Its (prepared, copied or substituted) receiver, <see langword="null"/> for a static method.</param>
+    /// <param name="arguments">Its (prepared, copied or substituted) arguments.</param>
+    /// <returns>The rebuilt call, or <paramref name="original"/> for an unchanged call holding an opaque child.</returns>
+    /// <exception cref="ArgumentException">The receiver or an argument does not fit the method (raised by the framework factory).</exception>
+    private static MethodCallExpression RebuildMethodCall(MethodCallExpression original, Expression? receiver, Expression[] arguments)
+    {
+        if (KeepsUnchangedOpaqueParent(original.Object, original, receiver, arguments)) return original;
+
+        return receiver is null
+            ? Expression.Call(original.Method, arguments)
+            : Expression.Call(receiver, original.Method, arguments);
+    }
+
+    /// <summary>
+    /// Whether a call or an invocation must be kept as is instead of rebuilt (ETC R4): its first child (receiver or invoked
+    /// expression) and its arguments are the very instances it already holds, and one of them is an opaque extension node.
+    /// </summary>
+    /// <param name="originalFirst">The receiver or invoked expression of the node (<see langword="null"/> for a static call).</param>
+    /// <param name="originalArguments">The node itself, read through <see cref="IArgumentProvider"/> (no argument collection is built).</param>
+    /// <param name="first">The (prepared, copied or substituted) receiver or invoked expression.</param>
+    /// <param name="arguments">The (prepared, copied or substituted) arguments.</param>
+    /// <returns><see langword="true"/> to keep the node.</returns>
+    /// <remarks>
+    /// <para>
+    /// The framework factories validate every direct child of the node they build, reading its <see cref="Expression.NodeType"/>
+    /// and <see cref="Expression.Type"/>, an extension node's included. Rebuilding an unchanged node only to validate it again
+    /// would read these virtual getters for nothing, so such a node is kept. An extension node deeper in the tree is not read by
+    /// the rebuild of this node (its direct children are framework nodes), so only the direct children matter.
+    /// </para>
+    /// <para>
+    /// Every other node keeps its historical rebuild, hence its historical identity: a node over ordinary children is rebuilt
+    /// even when nothing changed (a derived simplifier's <c>base.FinalizeExpression</c> keeps returning a distinct copy, PR
+    /// #582), and a node whose child really changed is rebuilt with that change, an opaque child validated by the factory as
+    /// when the source tree was built (no public factory builds the node without it). The decision reads no member of a child:
+    /// opacity is a chain of type tests (<see cref="ExpressionOpacity.IsOpaque"/>) and the comparison is by reference.
+    /// </para>
+    /// </remarks>
+    private static bool KeepsUnchangedOpaqueParent(Expression? originalFirst, IArgumentProvider originalArguments, Expression? first, Expression[] arguments)
+    {
+        // The opacity scan comes first, so an ordinary node reads nothing of its original before its historical rebuild.
+        bool opaque = first is not null && ExpressionOpacity.IsOpaque(first);
+        for (int i = 0; !opaque && i < arguments.Length; i++)
+        {
+            opaque = arguments[i] is not null && ExpressionOpacity.IsOpaque(arguments[i]);
+        }
+
+        if (!opaque || !ReferenceEquals(first, originalFirst) || arguments.Length != originalArguments.ArgumentCount) return false;
+
+        for (int i = 0; i < arguments.Length; i++)
+        {
+            if (!ReferenceEquals(arguments[i], originalArguments.GetArgument(i))) return false;
+        }
+
+        return true;
     }
 
     /// <summary>
@@ -1402,7 +1462,8 @@ public abstract partial class ExpressionTransformer
 
     /// <summary>
     /// Prepares an <see cref="InvocationExpression"/> by preparing the invoked target expression and
-    /// every argument, then rebuilding the node via <see cref="Expression.Invoke(Expression, Expression[])"/>.
+    /// every argument, then rebuilding the node via <see cref="RebuildInvocationExpression"/> (an unchanged invocation holding an
+    /// opaque child is kept).
     /// </summary>
     /// <param name="ie">The invocation expression to prepare.</param>
     /// <returns>The resulting <see cref="TransformContext"/>.</returns>
@@ -1422,9 +1483,26 @@ public abstract partial class ExpressionTransformer
             expressionParameters[i] = PrepareExpression(ie.Arguments[i]);
         }
 
-        InvocationExpression copied = Expression.Invoke(invokedExpression, expressionParameters);
+        InvocationExpression copied = RebuildInvocationExpression(ie, invokedExpression, expressionParameters);
 
         return new TransformContext(copied, expressionParameters);
+    }
+
+    /// <summary>
+    /// Rebuilds an <see cref="InvocationExpression"/> on <paramref name="invokedExpression"/> and <paramref name="arguments"/>
+    /// through the framework factory, except for an unchanged invocation holding an opaque child, which is returned itself (see
+    /// <see cref="KeepsUnchangedOpaqueParent"/>).
+    /// </summary>
+    /// <param name="original">The invocation being rebuilt.</param>
+    /// <param name="invokedExpression">Its (prepared, copied or substituted) invoked expression.</param>
+    /// <param name="arguments">Its (prepared, copied or substituted) arguments.</param>
+    /// <returns>The rebuilt invocation, or <paramref name="original"/> for an unchanged invocation holding an opaque child.</returns>
+    /// <exception cref="ArgumentException">An argument does not fit the delegate (raised by the framework factory).</exception>
+    private static InvocationExpression RebuildInvocationExpression(InvocationExpression original, Expression invokedExpression, Expression[] arguments)
+    {
+        if (KeepsUnchangedOpaqueParent(original.Expression, original, invokedExpression, arguments)) return original;
+
+        return Expression.Invoke(invokedExpression, arguments);
     }
 
     /// <summary>
@@ -2726,7 +2804,7 @@ public abstract partial class ExpressionTransformer
                         arguments[i] = Substitute(ie.Arguments[i], oldParameters, newParameters, scope);
                     }
 
-                    return Expression.Invoke(invokedExpression, arguments);
+                    return RebuildInvocationExpression(ie, invokedExpression, arguments);
                 }
             case MethodCallExpression mce:
                 {
@@ -2743,9 +2821,7 @@ public abstract partial class ExpressionTransformer
                         arguments[i] = Substitute(mce.Arguments[i], oldParameters, newParameters, scope);
                     }
 
-                    return replacedObject is null
-                        ? Expression.Call(mce.Method, arguments)
-                        : Expression.Call(replacedObject, mce.Method, arguments);
+                    return RebuildMethodCall(mce, replacedObject, arguments);
                 }
             case ConditionalExpression ce:
                 return Expression.Condition(
@@ -3544,7 +3620,7 @@ public abstract partial class ExpressionTransformer
             ExpressionType.ExclusiveOr => Expression.ExclusiveOr(parameters[0], parameters[1]),
             ExpressionType.GreaterThan => Expression.GreaterThan(parameters[0], parameters[1]),
             ExpressionType.GreaterThanOrEqual => Expression.GreaterThanOrEqual(parameters[0], parameters[1]),
-            ExpressionType.Invoke => Expression.Invoke(((InvocationExpression)e).Expression, parameters),
+            ExpressionType.Invoke => RebuildInvocationExpression((InvocationExpression)e, ((InvocationExpression)e).Expression, parameters),
             ExpressionType.Lambda => CopyLambdaExpression((LambdaExpression)e, parameters),
             ExpressionType.LeftShift => Expression.LeftShift(parameters[0], parameters[1]),
             ExpressionType.LessThan => Expression.LessThan(parameters[0], parameters[1]),
@@ -3624,13 +3700,12 @@ public abstract partial class ExpressionTransformer
     /// </summary>
     /// <param name="original">The original method-call expression being copied.</param>
     /// <param name="arguments">The (already prepared) argument sub-expressions.</param>
-    /// <returns>A method-call expression with the same method and instance and the supplied arguments.</returns>
+    /// <returns>
+    /// A method-call expression with the same method and instance and the supplied arguments; <paramref name="original"/> itself
+    /// when every argument is the instance it already holds and one of them is opaque (ETC R4, see <see cref="RebuildMethodCall"/>).
+    /// </returns>
     private static Expression CopyMethodCall(MethodCallExpression original, Expression[] arguments)
-    {
-        return original.Object is null
-            ? Expression.Call(original.Method, arguments)
-            : Expression.Call(original.Object, original.Method, arguments);
-    }
+        => RebuildMethodCall(original, original.Object, arguments);
 
     /// <summary>
     /// Arity contract of <see cref="CopyExpression"/> for the families it rebuilds faithfully since ETC R1a (C-02):
