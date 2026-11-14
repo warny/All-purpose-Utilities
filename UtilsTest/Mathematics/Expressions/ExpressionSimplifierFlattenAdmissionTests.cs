@@ -543,6 +543,27 @@ public class ExpressionSimplifierFlattenAdmissionTests
         Assert.AreEqual(first.KnownRefusals, second.KnownRefusals);
     }
 
+    /// <summary>
+    /// The table is read by the built-in type only: in an operation where the built-in simplifier recorded the levels of a
+    /// refused chain, a derived simplifier still answers with the effect gate (the operands of <c>-d0 + d1 + d2</c> are
+    /// inert, so the gate admits each level), never with a recorded refusal.
+    /// </summary>
+    [TestMethod]
+    public void DerivedSimplifiers_IgnoreTheTable()
+    {
+        var builtIn = new ExpressionSimplifier();
+        var derived = new LevelByLevelSimplifier();
+        Expression tree = LeftSum(Terms(8, 0, Expression.Negate(D[0])));
+        ExpressionResourceBudget.Run(ExpressionResourceLimits.Unlimited, null, null, null, (builtIn, derived, tree), static state =>
+        {
+            List<BinaryExpression> nodes = AdditiveNodes(state.tree);
+            Assert.AreEqual(ExpressionRuleRejection.ChainNotAdmitted, state.builtIn.FlattenAdmission(nodes[0]));
+            Assert.IsTrue(ExpressionResourceBudget.ActiveSession!.FlattenRefusals!.Contains(nodes[1]));
+            foreach (BinaryExpression node in nodes) Assert.AreEqual(ExpressionRuleRejection.None, state.derived.FlattenAdmission(node), node.ToString());
+            return 0;
+        });
+    }
+
     /// <summary>The counters are opt-in: none is installed by default, and the admission records nothing then.</summary>
     [TestMethod]
     public void AdmissionStatistics_AreOptIn()
