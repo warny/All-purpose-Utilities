@@ -491,7 +491,8 @@ The A/A control stays within ±3.6 %. Reading:
   sets comparing every parameter through the virtual `object.Equals` and probing the overflow set twice, was removed after
   this campaign (parameters compared by reference, one probe, same comparisons); a short re-measure could not confirm it,
   the machine having been loaded during it (sustained 30 to 40 % shifts on cases C1 does not touch), and the campaign was
-  not repeated. The residual cost on admitted chains is therefore stated as measured above, as an upper bound.
+  not repeated. The figures above for admitted chains are therefore measures taken before that fix, not a bound
+demonstrated for the current code.
 - The control compares identical binaries, so it does not capture the effect of a different build (code layout); a few
   percent on microsecond cases (`small 2`, `poly 6`) are within what such an effect can produce.
 
