@@ -374,13 +374,38 @@ public class ExpressionSimplifierFlattenTests
             ("a + b/c", Add(D[0], Expression.Divide(D[1], D[2]))),
             ("a + (b + c)*d", Add(D[0], Mul(Add(D[1], D[2]), D[3]))),
             ("a + 2*(3*b)", Add(D[0], Mul(C(2.0), Mul(C(3.0), D[1])))),
-            ("a + opaque", Add(D[0], Opaque(1))),
-            ("a + unknown()", Add(D[0], Expression.Call(typeof(ExpressionSimplifierFlattenTests).GetMethod(nameof(Unknown))!))),
             ("a + (b +checked c)", Add(D[0], Expression.AddChecked(D[1], D[2]))),
             ("a + (double)i", Add(D[0], Expression.Convert(I[0], typeof(double)))),
         };
 
         foreach ((string label, Expression source) in cases) AssertDeclined(label, source);
+    }
+
+    /// <summary>
+    /// A linear chain with one call that is not inert (Flatten mission C2): before C2 these two cases of
+    /// <see cref="OtherChains_AreDeclined_AndKeepTheLevelByLevelResult"/> were declined; they are now anchored chains, accepted
+    /// at the root under the default policy, and still give the level by level result, with the same user code.
+    /// </summary>
+    [TestMethod]
+    public void CallChains_AreAnchored_AndKeepTheLevelByLevelResult()
+    {
+        var cases = new (string Label, Expression Source)[]
+        {
+            ("a + opaque", Add(D[0], Opaque(1))),
+            ("a + unknown()", Add(D[0], Expression.Call(typeof(ExpressionSimplifierFlattenTests).GetMethod(nameof(Unknown))!))),
+        };
+
+        foreach ((string label, Expression source) in cases)
+        {
+            LoggedValue.Log.Clear();
+            string expected = Dump(new LevelByLevelSimplifier().Simplify(source));
+            string[] expectedLog = [.. LoggedValue.Log];
+            LoggedValue.Log.Clear();
+            (Expression result, ExpressionTransformEvent[] events) = Traced(new ExpressionSimplifier(), source);
+            Assert.IsTrue(AcceptedAt(events, source), label + ": the chain must be accepted");
+            Assert.AreEqual(expected, Dump(result), label);
+            CollectionAssert.AreEqual(expectedLog, LoggedValue.Log.ToArray(), label);
+        }
     }
 
     /// <summary>
@@ -783,11 +808,16 @@ public class ExpressionSimplifierFlattenTests
 
         foreach (Expression source in sources)
         {
-            foreach (ExpressionSimplifierOptions policy in Policies)
+            for (int p = 0; p < Policies.Length; p++)
             {
+                ExpressionSimplifierOptions policy = Policies[p];
                 (Expression result, ExpressionTransformEvent[] events) = Traced(new ExpressionSimplifier { Options = policy }, source);
-                Assert.IsFalse(events.Any(e => e.Kind == ExpressionTransformEventKind.RuleApplied && e.Rule!.Name == FlattenRule && Dump(e.Input).Contains(nameof(Unknown), StringComparison.Ordinal)),
-                    "No chain holding an unknown call is accepted.");
+
+                // Flatten mission C2: under the default policy (the first one), a chain may hold one unknown call, its anchor;
+                // under every other policy, no chain holding an unknown call is accepted.
+                Assert.IsFalse(events.Any(e => e.Kind == ExpressionTransformEventKind.RuleApplied && e.Rule!.Name == FlattenRule
+                        && Dump(e.Input).Split(nameof(Unknown)).Length - 1 is int calls && calls > (p == 0 ? 1 : 0)),
+                    "No chain holding more unknown calls than its anchor is accepted.");
                 Assert.AreEqual(Dump(new LevelByLevelSimplifier { Options = policy }.Simplify(source)), Dump(result), Dump(source) + " under " + policy);
                 int sourceCalls = Dump(source).Split(nameof(Unknown)).Length - 1, resultCalls = Dump(result).Split(nameof(Unknown)).Length - 1;
                 Assert.AreEqual(sourceCalls, resultCalls, Dump(source) + " under " + policy);

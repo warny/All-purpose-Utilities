@@ -383,6 +383,13 @@ internal static class ExpressionResourceBudget
         /// </summary>
         public ExpressionNodeSet? FlattenRefusals;
 
+        /// <summary>
+        /// The crossed nodes rooting an anchored chain (Flatten mission C2) that an instance of an explicit policy refused, with
+        /// the spine nodes down to its anchor: refused by every instance of such a policy, consulted by those instances only.
+        /// Same lifetime as <see cref="FlattenRefusals"/>.
+        /// </summary>
+        public ExpressionNodeSet? FlattenAnchoredRefusals;
+
         /// <summary>The running effect-analysis strategy (<c>ExpressionEffectAnalysis.EffectMode*</c>); restored by the analysis itself.</summary>
         public int EffectMode;
 
@@ -482,6 +489,7 @@ internal static class ExpressionResourceBudget
                 Trace = null;
                 EffectCache = null;
                 FlattenRefusals = null;
+                FlattenAnchoredRefusals = null;
                 EffectMode = 0;
                 TransformVisits = 0;
                 StructuralVisits = 0;
