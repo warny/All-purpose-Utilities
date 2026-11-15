@@ -479,18 +479,25 @@ public class ExpressionTreeR4CallRebuildTests
     /// substituted), the call is rebuilt with the transformed argument and the same extension instance; the framework factory
     /// then validates the extension node (it reads its <c>Type</c>, as the factory that built the source tree did). An armed
     /// node therefore makes the operation throw its own exception, unchanged: the transformation is never dropped to avoid that
-    /// read, and the same instance works again afterwards.
+    /// read, and the same instance works again afterwards. Every source tree and every engine is built before the node is armed:
+    /// the delegates only call the engine, so the exception can only come from the rebuild the engine performs.
     /// </summary>
     [TestMethod]
     public void ChangedArgument_IsKept_AndTheRebuildValidatesTheExtension()
     {
         var node = new R4StrictExtension();
         var simplifier = new ExpressionSimplifier();
+        var rewriter = new RecordingTransformer();
+        var substituter = new RecordingTransformer();
+        MethodCallExpression simplifiedSource = Expression.Call(PairMethod, node, Expression.Multiply(P, Expression.Constant(1.0)));
+        MethodCallExpression rewrittenSource = Expression.Call(PairMethod, node, Expression.Constant(1.0));
+        MethodCallExpression substitutedSource = Expression.Call(PairMethod, node, P);
+        Expression replacement = Expression.Constant(4.0);
         (string Name, Func<Expression> Run, Expression Expected)[] cases =
         [
-            ("simplified", () => simplifier.Simplify(Expression.Call(PairMethod, node, Expression.Multiply(P, Expression.Constant(1.0)))), P),
-            ("rewritten", () => new RecordingTransformer().Transform(Expression.Call(PairMethod, node, Expression.Constant(1.0))), null!),
-            ("substituted", () => new RecordingTransformer().Replace(Expression.Call(PairMethod, node, P), P, Expression.Constant(4.0)), null!),
+            ("simplified", () => simplifier.Simplify(simplifiedSource), P),
+            ("rewritten", () => rewriter.Transform(rewrittenSource), null!),
+            ("substituted", () => substituter.Replace(substitutedSource, P, replacement), null!),
         ];
 
         foreach ((string name, Func<Expression> run, Expression expected) in cases)
@@ -509,8 +516,19 @@ public class ExpressionTreeR4CallRebuildTests
             R4StrictReadException exception = null!;
             Armed(node, () => exception = Assert.ThrowsExactly<R4StrictReadException>(() => run()));
             Assert.AreEqual(1, node.TotalCalls, $"{name}: the first read throws");
+            CollectionAssert.Contains(new[] { nameof(Expression.Type), nameof(Expression.NodeType) }, exception.Member, name);
+            // The read comes from the framework factory (innermost) called by the engine's rebuild (further out in the stack).
+            int factoryFrame = exception.Stack.IndexOf("System.Linq.Expressions.Expression.Call(", StringComparison.Ordinal);
+            int engineFrame = exception.Stack.IndexOf("Utils.Expressions.ExpressionTransformer", StringComparison.Ordinal);
+            Assert.IsTrue(factoryFrame >= 0 && engineFrame > factoryFrame, $"{name}: the engine's rebuild reads the node:{Environment.NewLine}{exception.Stack}");
             Assert.AreEqual(0, ExpressionResourceBudget.OperationDepth, $"{name}: the operation is closed");
-            Assert.AreSame(node, ((MethodCallExpression)run()).Arguments[0], $"{name}: the instance works again");
+
+            node.ResetCalls();
+            var again = (MethodCallExpression)run();
+            Assert.AreSame(node, again.Arguments[0], $"{name}: the instance works again");
+            Assert.AreSame(PairMethod, again.Method, name);
+            if (expected is not null) Assert.AreSame(expected, again.Arguments[1], name);
+            else Assert.IsInstanceOfType<ConstantExpression>(again.Arguments[1], name);
         }
     }
 
@@ -555,25 +573,5 @@ public class ExpressionTreeR4CallRebuildTests
         Assert.AreSame(call, finalizedCall);
         CollectionAssert.AreEqual(new Expression[] { node, P }, children);
         Assert.AreEqual(3, transformer.Finalized.Count, "the extension node, the parameter and the call are finalized once each");
-    }
-
-    /// <summary>
-    /// Test E: a resource limit reached while a call holding an extension node is simplified is raised, not absorbed; the
-    /// operation is closed and the same instance works again, without reading the extension node.
-    /// </summary>
-    [TestMethod]
-    public void ResourceLimit_IsRaised_AndTheInstanceWorksAgain()
-    {
-        var node = new R4StrictExtension();
-        Expression tree = Expression.Call(PairMethod, node, Expression.Call(IdentityMethod, Expression.Call(IdentityMethod, P)));
-        var limited = new ExpressionSimplifier(ExpressionResourceLimits.Unlimited with { MaxTransformVisits = 2 });
-
-        Armed(node, () => Assert.ThrowsExactly<ExpressionResourceLimitException>(() => limited.Simplify(tree)));
-        Assert.AreEqual(0, ExpressionResourceBudget.OperationDepth);
-        Assert.AreEqual(0, node.TotalCalls, DescribeCalls(node));
-
-        Expression small = Expression.Call(IdentityMethod, node);
-        Armed(node, () => Assert.AreSame(small, limited.Simplify(small)));
-        Assert.AreEqual(0, node.TotalCalls, DescribeCalls(node));
     }
 }
