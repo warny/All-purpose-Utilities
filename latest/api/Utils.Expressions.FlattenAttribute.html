@@ -6,7 +6,7 @@
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <meta name="title" content="Class FlattenAttribute | omy.Utils Documentation ">
       
-      <meta name="description" content="Marks a transformation rule of an  that receives a whole arithmetic chain at once, as an ordered array of , instead of being called once per binary operator. This type only holds data.">
+      <meta name="description" content="Marks a transformation rule of an  that receives a whole chain of operators at once, as an ordered array of , instead of being called once per operator node. This type only holds data.">
       <link rel="icon" href="../favicon.ico">
       <link rel="stylesheet" href="../public/docfx.min.css">
       <link rel="stylesheet" href="../public/main.css">
@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Expressions_FlattenAttribute" data-uid="Utils.Expressions.FlattenAttribute" class="text-break">
-Class FlattenAttribute  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/FlattenAttribute.cs/#L33"><i class="bi bi-code-slash"></i></a>
+Class FlattenAttribute  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/FlattenAttribute.cs/#L52"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -97,8 +97,8 @@ Class FlattenAttribute  <a class="header-action link-secondary" title="View sour
   <dl><dt>Assembly</dt><dd>Utils.dll</dd></dl>
   </div>
 
-  <div class="markdown summary"><p>Marks a transformation rule of an <a class="xref" href="Utils.Expressions.ExpressionTransformer.html">ExpressionTransformer</a> that receives a whole arithmetic chain at once, as an
-ordered array of <a class="xref" href="Utils.Expressions.FlattenedTerm.html">FlattenedTerm</a>, instead of being called once per binary operator. This type only holds data.</p>
+  <div class="markdown summary"><p>Marks a transformation rule of an <a class="xref" href="Utils.Expressions.ExpressionTransformer.html">ExpressionTransformer</a> that receives a whole chain of operators at once, as
+an ordered array of <a class="xref" href="Utils.Expressions.FlattenedTerm.html">FlattenedTerm</a>, instead of being called once per operator node. This type only holds data.</p>
 </div>
   <div class="markdown conceptual"></div>
 
@@ -345,11 +345,29 @@ public sealed class FlattenAttribute : Attribute</code></pre>
 
   <h2 id="Utils_Expressions_FlattenAttribute_remarks">Remarks</h2>
   <div class="markdown level0 remarks"><p>
-Two families of operators can be flattened: the additive family (<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expressiontype#system-linq-expressions-expressiontype-add">Add</a>,
-<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expressiontype#system-linq-expressions-expressiontype-subtract">Subtract</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expressiontype#system-linq-expressions-expressiontype-negate">Negate</a>) and the multiplicative family
-(<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expressiontype#system-linq-expressions-expressiontype-multiply">Multiply</a>, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expressiontype#system-linq-expressions-expressiontype-divide">Divide</a>). The declared operators are the ones the chain
-may cross; any other node (and any operator node the transformer does not consider an ordinary intrinsic operator, such as
-a user-defined, lifted or checked operator) is an operand of the chain.
+The attribute declares one or several <em>couples</em>: a <em>direct</em> binary operation, which passes the context of the
+chain unchanged to both operands, and an optional <em>inverse</em> binary operation, which passes it unchanged to its left
+operand and inverts it for its right operand. Unary operators, which invert the context of their operand, are attached to
+the couples either by the simplified constructor (one operator, bound to <a class="xref" href="Utils.Expressions.UnaryOperatorBinding.html#Utils_Expressions_UnaryOperatorBinding_FirstGroup">FirstGroup</a>) or
+by <a class="xref" href="Utils.Expressions.FlattenUnaryAttribute.html">FlattenUnaryAttribute</a>. The context has two values; two inversions cancel out. Each operand of the chain is a
+term whose operation is the direct operation of the couple when the context reaching it is the initial one, its inverse
+operation otherwise. The engine applies these declarations and nothing else: it gives no meaning to the operators.
+</p>
+<p>
+<code>[Flatten(ExpressionType.Add, ExpressionType.Subtract, ExpressionType.Negate)]</code> gives <code>+a -b +c</code> for
+<code>a - (b - c)</code>, <code>-a -b</code> for <code>-(a + b)</code> and <code>-x</code> for <code>-x</code>;
+<code>[Flatten(ExpressionType.Multiply, ExpressionType.Divide)]</code> gives <code>*a /b *c</code> for <code>a / (b / c)</code>. The array
+form declares several couples, associated by index, each of which is a chain of its own: their terms are never mixed, and an
+operator of one couple is an operand of a chain of another.
+</p>
+<p>
+The declared operators are the ones the chain may cross. Any other node, and any declared operator node the transformer does
+not accept to cross (by default a user-defined, <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/floating-point-numeric-types">decimal</a> or lifted operator), is an operand of the chain.
+Every declaration is validated once, when the dispatch plan of the transformer type is built: the direct and inverse
+operations must be node types of <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.binaryexpression">BinaryExpression</a>, the unary operators node types of
+<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.unaryexpression">UnaryExpression</a> (and need an inverse operation), no operator may be declared twice, two rules that share an
+operator must declare the same couple with the same unary operators and bindings, and no unary operator may root the chains
+of several couples.
 </p>
 <p>
 A rule has one of two signatures, checked once when the transformer's dispatch plan is built:
@@ -360,7 +378,8 @@ when every candidate declines, the transformer processes the chain node by node 
 See <code>docs/expressions/FlattenArchitecture.md</code> for the priority, fallback and budget rules.
 </p>
 <p>
-The attribute is a request for a representation, not a permission: it never allows a rule to drop, repeat, merge or move an
+The attribute is a request for a representation, not a permission: declaring an inversion establishes neither
+associativity, commutativity nor the existence of an inverse, and never allows a rule to drop, repeat, merge or move an
 evaluation. Those decisions remain the rule's own responsibility.
 </p>
 </div>
@@ -372,23 +391,136 @@ evaluation. Those decisions remain the rule's own responsibility.
 
   <a id="Utils_Expressions_FlattenAttribute__ctor_" data-uid="Utils.Expressions.FlattenAttribute.#ctor*"></a>
 
-  <h3 id="Utils_Expressions_FlattenAttribute__ctor_System_Linq_Expressions_ExpressionType___" data-uid="Utils.Expressions.FlattenAttribute.#ctor(System.Linq.Expressions.ExpressionType[])">
-  FlattenAttribute(params ExpressionType[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/FlattenAttribute.cs/#L38"><i class="bi bi-code-slash"></i></a>
+  <h3 id="Utils_Expressions_FlattenAttribute__ctor_System_Linq_Expressions_ExpressionType_" data-uid="Utils.Expressions.FlattenAttribute.#ctor(System.Linq.Expressions.ExpressionType)">
+  FlattenAttribute(ExpressionType)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/FlattenAttribute.cs/#L57"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Initializes the attribute with the operators the chain may cross.</p>
+  <div class="markdown level1 summary"><p>Declares a couple made of a direct operation only: every term carries <code class="paramref">direct</code>.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public FlattenAttribute(params ExpressionType[] operations)</code></pre>
+    <pre><code class="lang-csharp hljs">public FlattenAttribute(ExpressionType direct)</code></pre>
   </div>
 
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
-    <dt><code>operations</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expressiontype">ExpressionType</a>[]</dt>
-    <dd><p>The operators of one family (see the type remarks); validated when the dispatch plan is built.</p>
+    <dt><code>direct</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expressiontype">ExpressionType</a></dt>
+    <dd><p>The binary operation that passes the context to both operands.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Expressions_FlattenAttribute__ctor_" data-uid="Utils.Expressions.FlattenAttribute.#ctor*"></a>
+
+  <h3 id="Utils_Expressions_FlattenAttribute__ctor_System_Linq_Expressions_ExpressionType_System_Linq_Expressions_ExpressionType_" data-uid="Utils.Expressions.FlattenAttribute.#ctor(System.Linq.Expressions.ExpressionType,System.Linq.Expressions.ExpressionType)">
+  FlattenAttribute(ExpressionType, ExpressionType)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/FlattenAttribute.cs/#L65"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Declares a couple made of a direct operation and its inverse.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public FlattenAttribute(ExpressionType direct, ExpressionType inverse)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>direct</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expressiontype">ExpressionType</a></dt>
+    <dd><p>The binary operation that passes the context to both operands.</p>
+</dd>
+    <dt><code>inverse</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expressiontype">ExpressionType</a></dt>
+    <dd><p>The binary operation that passes the context to its left operand and inverts it for its right one.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Expressions_FlattenAttribute__ctor_" data-uid="Utils.Expressions.FlattenAttribute.#ctor*"></a>
+
+  <h3 id="Utils_Expressions_FlattenAttribute__ctor_System_Linq_Expressions_ExpressionType_System_Linq_Expressions_ExpressionType_System_Linq_Expressions_ExpressionType_" data-uid="Utils.Expressions.FlattenAttribute.#ctor(System.Linq.Expressions.ExpressionType,System.Linq.Expressions.ExpressionType,System.Linq.Expressions.ExpressionType)">
+  FlattenAttribute(ExpressionType, ExpressionType, ExpressionType)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/FlattenAttribute.cs/#L77"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Declares a couple made of a direct operation and its inverse, and one unary operator bound to it
+(<a class="xref" href="Utils.Expressions.UnaryOperatorBinding.html#Utils_Expressions_UnaryOperatorBinding_FirstGroup">FirstGroup</a>).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public FlattenAttribute(ExpressionType direct, ExpressionType inverse, ExpressionType unaryOperator)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>direct</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expressiontype">ExpressionType</a></dt>
+    <dd><p>The binary operation that passes the context to both operands.</p>
+</dd>
+    <dt><code>inverse</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expressiontype">ExpressionType</a></dt>
+    <dd><p>The binary operation that passes the context to its left operand and inverts it for its right one.</p>
+</dd>
+    <dt><code>unaryOperator</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expressiontype">ExpressionType</a></dt>
+    <dd><p>The unary operation that inverts the context of its operand.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Expressions_FlattenAttribute__ctor_" data-uid="Utils.Expressions.FlattenAttribute.#ctor*"></a>
+
+  <h3 id="Utils_Expressions_FlattenAttribute__ctor_System_Linq_Expressions_ExpressionType___System_Linq_Expressions_ExpressionType___" data-uid="Utils.Expressions.FlattenAttribute.#ctor(System.Linq.Expressions.ExpressionType[],System.Linq.Expressions.ExpressionType[])">
+  FlattenAttribute(ExpressionType[], ExpressionType[])
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/FlattenAttribute.cs/#L90"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Declares several independent couples, <code>(direct[i], inverse[i])</code> for each index <code>i</code>. Their unary operators are
+declared with <a class="xref" href="Utils.Expressions.FlattenUnaryAttribute.html">FlattenUnaryAttribute</a>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public FlattenAttribute(ExpressionType[] direct, ExpressionType[] inverse)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>direct</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expressiontype">ExpressionType</a>[]</dt>
+    <dd><p>The direct operation of each couple.</p>
+</dd>
+    <dt><code>inverse</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expressiontype">ExpressionType</a>[]</dt>
+    <dd><p>The inverse operation of each couple, at the same index as its direct operation; empty for direct operations alone.</p>
 </dd>
   </dl>
 
@@ -407,14 +539,79 @@ evaluation. Those decisions remain the rule's own responsibility.
 </h2>
 
 
+  <a id="Utils_Expressions_FlattenAttribute_DirectOperations_" data-uid="Utils.Expressions.FlattenAttribute.DirectOperations*"></a>
+
+  <h3 id="Utils_Expressions_FlattenAttribute_DirectOperations" data-uid="Utils.Expressions.FlattenAttribute.DirectOperations">
+  DirectOperations
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/FlattenAttribute.cs/#L108"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the direct operation of each couple, in declaration order.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public IReadOnlyList&lt;ExpressionType&gt; DirectOperations { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlylist-1">IReadOnlyList</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expressiontype">ExpressionType</a>&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
+  <a id="Utils_Expressions_FlattenAttribute_InverseOperations_" data-uid="Utils.Expressions.FlattenAttribute.InverseOperations*"></a>
+
+  <h3 id="Utils_Expressions_FlattenAttribute_InverseOperations" data-uid="Utils.Expressions.FlattenAttribute.InverseOperations">
+  InverseOperations
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/FlattenAttribute.cs/#L111"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the inverse operation of each couple, at the index of its direct operation; empty for direct operations alone.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public IReadOnlyList&lt;ExpressionType&gt; InverseOperations { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlylist-1">IReadOnlyList</a>&lt;<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expressiontype">ExpressionType</a>&gt;</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
   <a id="Utils_Expressions_FlattenAttribute_Operations_" data-uid="Utils.Expressions.FlattenAttribute.Operations*"></a>
 
   <h3 id="Utils_Expressions_FlattenAttribute_Operations" data-uid="Utils.Expressions.FlattenAttribute.Operations">
   Operations
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/FlattenAttribute.cs/#L45"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/FlattenAttribute.cs/#L123"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Gets the operators the chain may cross, in declaration order.</p>
+  <div class="markdown level1 summary"><p>Gets the operators of this attribute: the direct then the inverse operation of each couple, in index order, then
+<a class="xref" href="Utils.Expressions.FlattenAttribute.html#Utils_Expressions_FlattenAttribute_UnaryOperator">UnaryOperator</a> when there is one.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -439,11 +636,44 @@ evaluation. Those decisions remain the rule's own responsibility.
 
 
 
+  <a id="Utils_Expressions_FlattenAttribute_UnaryOperator_" data-uid="Utils.Expressions.FlattenAttribute.UnaryOperator*"></a>
+
+  <h3 id="Utils_Expressions_FlattenAttribute_UnaryOperator" data-uid="Utils.Expressions.FlattenAttribute.UnaryOperator">
+  UnaryOperator
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/FlattenAttribute.cs/#L117"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the unary operator of the simplified constructor, bound to <a class="xref" href="Utils.Expressions.UnaryOperatorBinding.html#Utils_Expressions_UnaryOperatorBinding_FirstGroup">FirstGroup</a>, or
+<a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ExpressionType? UnaryOperator { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expressiontype">ExpressionType</a>?</dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
 
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/FlattenAttribute.cs/#L33" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/FlattenAttribute.cs/#L52" class="edit-link">Edit this page</a>
         </div>
 
 

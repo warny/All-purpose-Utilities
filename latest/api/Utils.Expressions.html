@@ -266,8 +266,15 @@ Subclasses may override the transformation logic for specific expression signatu
     </dl>
     <dl class="jumplist">
       <dt><a class="xref" href="Utils.Expressions.FlattenAttribute.html">FlattenAttribute</a></dt>
-      <dd><p>Marks a transformation rule of an <a class="xref" href="Utils.Expressions.ExpressionTransformer.html">ExpressionTransformer</a> that receives a whole arithmetic chain at once, as an
-ordered array of <a class="xref" href="Utils.Expressions.FlattenedTerm.html">FlattenedTerm</a>, instead of being called once per binary operator. This type only holds data.</p>
+      <dd><p>Marks a transformation rule of an <a class="xref" href="Utils.Expressions.ExpressionTransformer.html">ExpressionTransformer</a> that receives a whole chain of operators at once, as
+an ordered array of <a class="xref" href="Utils.Expressions.FlattenedTerm.html">FlattenedTerm</a>, instead of being called once per operator node. This type only holds data.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.FlattenUnaryAttribute.html">FlattenUnaryAttribute</a></dt>
+      <dd><p>Declares one unary operator of the <a class="xref" href="Utils.Expressions.FlattenAttribute.html">FlattenAttribute</a> rule it marks, and how that operator is attached to the
+couples of the declaration (see <a class="xref" href="Utils.Expressions.UnaryOperatorBinding.html">UnaryOperatorBinding</a>). The operator inverts the context of its operand. This
+type only holds data.</p>
 </dd>
     </dl>
     <dl class="jumplist">
@@ -357,7 +364,7 @@ guarantees they give.</p>
     </dl>
     <dl class="jumplist">
       <dt><a class="xref" href="Utils.Expressions.FlattenedTerm.html">FlattenedTerm</a></dt>
-      <dd><p>One operand of an arithmetic chain flattened for a <a class="xref" href="Utils.Expressions.FlattenAttribute.html">FlattenAttribute</a> rule. This type only holds data.</p>
+      <dd><p>One operand of a chain flattened for a <a class="xref" href="Utils.Expressions.FlattenAttribute.html">FlattenAttribute</a> rule. This type only holds data.</p>
 </dd>
     </dl>
     <h3 id="interfaces">
@@ -474,6 +481,13 @@ to the other observable events of the evaluation. Used by <a class="xref" href="
       <dd><p>How far a simplification policy may rely on the classification of <a class="xref" href="Utils.Expressions.ExpressionBehaviorAnalysis.html">ExpressionBehaviorAnalysis</a> (S5 P18
 Architecture A, exposed by Architecture B as <a class="xref" href="Utils.Expressions.ExpressionSimplifierOptions.html#Utils_Expressions_ExpressionSimplifierOptions_TrustPolicy">TrustPolicy</a>). Not consumed by any rule
 yet: the simplifier keeps the strict gate of <span class="xref">Utils.Expressions.ExpressionEffectAnalysis</span>.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.UnaryOperatorBinding.html">UnaryOperatorBinding</a></dt>
+      <dd><p>How a unary operator declared for a flatten rule (see <a class="xref" href="Utils.Expressions.FlattenAttribute.html">FlattenAttribute</a> and
+<a class="xref" href="Utils.Expressions.FlattenUnaryAttribute.html">FlattenUnaryAttribute</a>) is attached to the couples of its declaration. In both modes the operator inverts the
+context of its operand; the binding only decides which chains cross it and which chain it roots.</p>
 </dd>
     </dl>
 

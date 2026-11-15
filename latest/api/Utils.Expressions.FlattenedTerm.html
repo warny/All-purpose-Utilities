@@ -6,7 +6,7 @@
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <meta name="title" content="Struct FlattenedTerm | omy.Utils Documentation ">
       
-      <meta name="description" content="One operand of an arithmetic chain flattened for a  rule. This type only holds data.">
+      <meta name="description" content="One operand of a chain flattened for a  rule. This type only holds data.">
       <link rel="icon" href="../favicon.ico">
       <link rel="stylesheet" href="../public/docfx.min.css">
       <link rel="stylesheet" href="../public/main.css">
@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Expressions_FlattenedTerm" data-uid="Utils.Expressions.FlattenedTerm" class="text-break">
-Struct FlattenedTerm  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/FlattenedTerm.cs/#L21"><i class="bi bi-code-slash"></i></a>
+Struct FlattenedTerm  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/FlattenedTerm.cs/#L22"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -97,7 +97,7 @@ Struct FlattenedTerm  <a class="header-action link-secondary" title="View source
   <dl><dt>Assembly</dt><dd>Utils.dll</dd></dl>
   </div>
 
-  <div class="markdown summary"><p>One operand of an arithmetic chain flattened for a <a class="xref" href="Utils.Expressions.FlattenAttribute.html">FlattenAttribute</a> rule. This type only holds data.</p>
+  <div class="markdown summary"><p>One operand of a chain flattened for a <a class="xref" href="Utils.Expressions.FlattenAttribute.html">FlattenAttribute</a> rule. This type only holds data.</p>
 </div>
   <div class="markdown conceptual"></div>
 
@@ -232,7 +232,7 @@ Struct FlattenedTerm  <a class="header-action link-secondary" title="View source
 
 
   <h2 id="Utils_Expressions_FlattenedTerm_remarks">Remarks</h2>
-  <div class="markdown level0 remarks"><p>The operations describe the chain symbolically. For a multiplicative chain they do not establish that a different grouping
+  <div class="markdown level0 remarks"><p>The operations describe the chain symbolically, from the declarations alone. They do not establish that a different grouping
 evaluates to the same value in .NET (integer truncation, rounding, overflow): <code>(a / b) * c</code> and <code>a / (b / c)</code>
 give the same terms. A rule that reassociates must prove that the new grouping is valid for the operand types.</p>
 </div>
@@ -246,10 +246,10 @@ give the same terms. A rule that reassociates must prove that the new grouping i
 
   <h3 id="Utils_Expressions_FlattenedTerm__ctor_System_Linq_Expressions_ExpressionType_System_Linq_Expressions_Expression_System_Int32_" data-uid="Utils.Expressions.FlattenedTerm.#ctor(System.Linq.Expressions.ExpressionType,System.Linq.Expressions.Expression,System.Int32)">
   FlattenedTerm(ExpressionType, Expression, int)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/FlattenedTerm.cs/#L21"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/FlattenedTerm.cs/#L22"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>One operand of an arithmetic chain flattened for a <a class="xref" href="Utils.Expressions.FlattenAttribute.html">FlattenAttribute</a> rule. This type only holds data.</p>
+  <div class="markdown level1 summary"><p>One operand of a chain flattened for a <a class="xref" href="Utils.Expressions.FlattenAttribute.html">FlattenAttribute</a> rule. This type only holds data.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -260,10 +260,11 @@ give the same terms. A rule that reassociates must prove that the new grouping i
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>Operation</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expressiontype">ExpressionType</a></dt>
-    <dd><p>The operation applied to <code class="paramref">Operand</code> in the chain, after the signs and inversions of the crossed operators are
-propagated: <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expressiontype#system-linq-expressions-expressiontype-add">Add</a> or <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expressiontype#system-linq-expressions-expressiontype-subtract">Subtract</a> for an additive chain,
-<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expressiontype#system-linq-expressions-expressiontype-multiply">Multiply</a> or <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expressiontype#system-linq-expressions-expressiontype-divide">Divide</a> for a multiplicative one. The first operand
-carries an explicit operation too (<code>-(a + b)</code> gives <code>Subtract a</code>, <code>Subtract b</code>).</p>
+    <dd><p>The operation applied to <code class="paramref">Operand</code> in the chain, after the context of the crossed operators is propagated:
+the direct operation the rule declares for the chain's couple when the context reaching the operand is the initial one, its
+inverse operation when it is inverted (<code>[Flatten(Add, Subtract, Negate)]</code> gives <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expressiontype#system-linq-expressions-expressiontype-add">Add</a> or
+<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expressiontype#system-linq-expressions-expressiontype-subtract">Subtract</a>). The first operand carries an explicit operation too (<code>-(a + b)</code> gives
+<code>Subtract a</code>, <code>Subtract b</code>).</p>
 </dd>
     <dt><code>Operand</code> <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></dt>
     <dd><p>The raw, untransformed operand, as it appears in the source tree (shared nodes keep every occurrence).</p>
@@ -281,7 +282,7 @@ carries an explicit operation too (<code>-(a + b)</code> gives <code>Subtract a<
 
 
   <h4 class="section" id="Utils_Expressions_FlattenedTerm__ctor_System_Linq_Expressions_ExpressionType_System_Linq_Expressions_Expression_System_Int32__remarks">Remarks</h4>
-  <div class="markdown level1 remarks"><p>The operations describe the chain symbolically. For a multiplicative chain they do not establish that a different grouping
+  <div class="markdown level1 remarks"><p>The operations describe the chain symbolically, from the declarations alone. They do not establish that a different grouping
 evaluates to the same value in .NET (integer truncation, rounding, overflow): <code>(a / b) * c</code> and <code>a / (b / c)</code>
 give the same terms. A rule that reassociates must prove that the new grouping is valid for the operand types.</p>
 </div>
@@ -297,7 +298,7 @@ give the same terms. A rule that reassociates must prove that the new grouping i
 
   <h3 id="Utils_Expressions_FlattenedTerm_Operand" data-uid="Utils.Expressions.FlattenedTerm.Operand">
   Operand
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/FlattenedTerm.cs/#L21"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/FlattenedTerm.cs/#L22"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>The raw, untransformed operand, as it appears in the source tree (shared nodes keep every occurrence).</p>
@@ -329,13 +330,14 @@ give the same terms. A rule that reassociates must prove that the new grouping i
 
   <h3 id="Utils_Expressions_FlattenedTerm_Operation" data-uid="Utils.Expressions.FlattenedTerm.Operation">
   Operation
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/FlattenedTerm.cs/#L21"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/FlattenedTerm.cs/#L22"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>The operation applied to <code class="paramref">Operand</code> in the chain, after the signs and inversions of the crossed operators are
-propagated: <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expressiontype#system-linq-expressions-expressiontype-add">Add</a> or <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expressiontype#system-linq-expressions-expressiontype-subtract">Subtract</a> for an additive chain,
-<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expressiontype#system-linq-expressions-expressiontype-multiply">Multiply</a> or <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expressiontype#system-linq-expressions-expressiontype-divide">Divide</a> for a multiplicative one. The first operand
-carries an explicit operation too (<code>-(a + b)</code> gives <code>Subtract a</code>, <code>Subtract b</code>).</p>
+  <div class="markdown level1 summary"><p>The operation applied to <code class="paramref">Operand</code> in the chain, after the context of the crossed operators is propagated:
+the direct operation the rule declares for the chain's couple when the context reaching the operand is the initial one, its
+inverse operation when it is inverted (<code>[Flatten(Add, Subtract, Negate)]</code> gives <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expressiontype#system-linq-expressions-expressiontype-add">Add</a> or
+<a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expressiontype#system-linq-expressions-expressiontype-subtract">Subtract</a>). The first operand carries an explicit operation too (<code>-(a + b)</code> gives
+<code>Subtract a</code>, <code>Subtract b</code>).</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -364,7 +366,7 @@ carries an explicit operation too (<code>-(a + b)</code> gives <code>Subtract a<
 
   <h3 id="Utils_Expressions_FlattenedTerm_SourceIndex" data-uid="Utils.Expressions.FlattenedTerm.SourceIndex">
   SourceIndex
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/FlattenedTerm.cs/#L21"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/FlattenedTerm.cs/#L22"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>The position of the operand in the chain, from left to right in the source tree, starting at 0.</p>
@@ -396,7 +398,7 @@ carries an explicit operation too (<code>-(a + b)</code> gives <code>Subtract a<
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/FlattenedTerm.cs/#L21" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/FlattenedTerm.cs/#L22" class="edit-link">Edit this page</a>
         </div>
 
 

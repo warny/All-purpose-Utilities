@@ -14475,15 +14475,42 @@ references:
   commentId: T:Utils.Expressions.FlattenAttribute
   fullName: Utils.Expressions.FlattenAttribute
   nameWithType: FlattenAttribute
-- uid: Utils.Expressions.FlattenAttribute.#ctor(System.Linq.Expressions.ExpressionType[])
-  name: FlattenAttribute(params ExpressionType[])
-  href: api/Utils.Expressions.FlattenAttribute.html#Utils_Expressions_FlattenAttribute__ctor_System_Linq_Expressions_ExpressionType___
-  commentId: M:Utils.Expressions.FlattenAttribute.#ctor(System.Linq.Expressions.ExpressionType[])
-  name.vb: New(ParamArray ExpressionType())
-  fullName: Utils.Expressions.FlattenAttribute.FlattenAttribute(params System.Linq.Expressions.ExpressionType[])
-  fullName.vb: Utils.Expressions.FlattenAttribute.New(ParamArray System.Linq.Expressions.ExpressionType())
-  nameWithType: FlattenAttribute.FlattenAttribute(params ExpressionType[])
-  nameWithType.vb: FlattenAttribute.New(ParamArray ExpressionType())
+- uid: Utils.Expressions.FlattenAttribute.#ctor(System.Linq.Expressions.ExpressionType)
+  name: FlattenAttribute(ExpressionType)
+  href: api/Utils.Expressions.FlattenAttribute.html#Utils_Expressions_FlattenAttribute__ctor_System_Linq_Expressions_ExpressionType_
+  commentId: M:Utils.Expressions.FlattenAttribute.#ctor(System.Linq.Expressions.ExpressionType)
+  name.vb: New(ExpressionType)
+  fullName: Utils.Expressions.FlattenAttribute.FlattenAttribute(System.Linq.Expressions.ExpressionType)
+  fullName.vb: Utils.Expressions.FlattenAttribute.New(System.Linq.Expressions.ExpressionType)
+  nameWithType: FlattenAttribute.FlattenAttribute(ExpressionType)
+  nameWithType.vb: FlattenAttribute.New(ExpressionType)
+- uid: Utils.Expressions.FlattenAttribute.#ctor(System.Linq.Expressions.ExpressionType,System.Linq.Expressions.ExpressionType)
+  name: FlattenAttribute(ExpressionType, ExpressionType)
+  href: api/Utils.Expressions.FlattenAttribute.html#Utils_Expressions_FlattenAttribute__ctor_System_Linq_Expressions_ExpressionType_System_Linq_Expressions_ExpressionType_
+  commentId: M:Utils.Expressions.FlattenAttribute.#ctor(System.Linq.Expressions.ExpressionType,System.Linq.Expressions.ExpressionType)
+  name.vb: New(ExpressionType, ExpressionType)
+  fullName: Utils.Expressions.FlattenAttribute.FlattenAttribute(System.Linq.Expressions.ExpressionType, System.Linq.Expressions.ExpressionType)
+  fullName.vb: Utils.Expressions.FlattenAttribute.New(System.Linq.Expressions.ExpressionType, System.Linq.Expressions.ExpressionType)
+  nameWithType: FlattenAttribute.FlattenAttribute(ExpressionType, ExpressionType)
+  nameWithType.vb: FlattenAttribute.New(ExpressionType, ExpressionType)
+- uid: Utils.Expressions.FlattenAttribute.#ctor(System.Linq.Expressions.ExpressionType,System.Linq.Expressions.ExpressionType,System.Linq.Expressions.ExpressionType)
+  name: FlattenAttribute(ExpressionType, ExpressionType, ExpressionType)
+  href: api/Utils.Expressions.FlattenAttribute.html#Utils_Expressions_FlattenAttribute__ctor_System_Linq_Expressions_ExpressionType_System_Linq_Expressions_ExpressionType_System_Linq_Expressions_ExpressionType_
+  commentId: M:Utils.Expressions.FlattenAttribute.#ctor(System.Linq.Expressions.ExpressionType,System.Linq.Expressions.ExpressionType,System.Linq.Expressions.ExpressionType)
+  name.vb: New(ExpressionType, ExpressionType, ExpressionType)
+  fullName: Utils.Expressions.FlattenAttribute.FlattenAttribute(System.Linq.Expressions.ExpressionType, System.Linq.Expressions.ExpressionType, System.Linq.Expressions.ExpressionType)
+  fullName.vb: Utils.Expressions.FlattenAttribute.New(System.Linq.Expressions.ExpressionType, System.Linq.Expressions.ExpressionType, System.Linq.Expressions.ExpressionType)
+  nameWithType: FlattenAttribute.FlattenAttribute(ExpressionType, ExpressionType, ExpressionType)
+  nameWithType.vb: FlattenAttribute.New(ExpressionType, ExpressionType, ExpressionType)
+- uid: Utils.Expressions.FlattenAttribute.#ctor(System.Linq.Expressions.ExpressionType[],System.Linq.Expressions.ExpressionType[])
+  name: FlattenAttribute(ExpressionType[], ExpressionType[])
+  href: api/Utils.Expressions.FlattenAttribute.html#Utils_Expressions_FlattenAttribute__ctor_System_Linq_Expressions_ExpressionType___System_Linq_Expressions_ExpressionType___
+  commentId: M:Utils.Expressions.FlattenAttribute.#ctor(System.Linq.Expressions.ExpressionType[],System.Linq.Expressions.ExpressionType[])
+  name.vb: New(ExpressionType(), ExpressionType())
+  fullName: Utils.Expressions.FlattenAttribute.FlattenAttribute(System.Linq.Expressions.ExpressionType[], System.Linq.Expressions.ExpressionType[])
+  fullName.vb: Utils.Expressions.FlattenAttribute.New(System.Linq.Expressions.ExpressionType(), System.Linq.Expressions.ExpressionType())
+  nameWithType: FlattenAttribute.FlattenAttribute(ExpressionType[], ExpressionType[])
+  nameWithType.vb: FlattenAttribute.New(ExpressionType(), ExpressionType())
 - uid: Utils.Expressions.FlattenAttribute.#ctor*
   name: FlattenAttribute
   href: api/Utils.Expressions.FlattenAttribute.html#Utils_Expressions_FlattenAttribute__ctor_
@@ -14494,6 +14521,32 @@ references:
   fullName.vb: Utils.Expressions.FlattenAttribute.New
   nameWithType: FlattenAttribute.FlattenAttribute
   nameWithType.vb: FlattenAttribute.New
+- uid: Utils.Expressions.FlattenAttribute.DirectOperations
+  name: DirectOperations
+  href: api/Utils.Expressions.FlattenAttribute.html#Utils_Expressions_FlattenAttribute_DirectOperations
+  commentId: P:Utils.Expressions.FlattenAttribute.DirectOperations
+  fullName: Utils.Expressions.FlattenAttribute.DirectOperations
+  nameWithType: FlattenAttribute.DirectOperations
+- uid: Utils.Expressions.FlattenAttribute.DirectOperations*
+  name: DirectOperations
+  href: api/Utils.Expressions.FlattenAttribute.html#Utils_Expressions_FlattenAttribute_DirectOperations_
+  commentId: Overload:Utils.Expressions.FlattenAttribute.DirectOperations
+  isSpec: "True"
+  fullName: Utils.Expressions.FlattenAttribute.DirectOperations
+  nameWithType: FlattenAttribute.DirectOperations
+- uid: Utils.Expressions.FlattenAttribute.InverseOperations
+  name: InverseOperations
+  href: api/Utils.Expressions.FlattenAttribute.html#Utils_Expressions_FlattenAttribute_InverseOperations
+  commentId: P:Utils.Expressions.FlattenAttribute.InverseOperations
+  fullName: Utils.Expressions.FlattenAttribute.InverseOperations
+  nameWithType: FlattenAttribute.InverseOperations
+- uid: Utils.Expressions.FlattenAttribute.InverseOperations*
+  name: InverseOperations
+  href: api/Utils.Expressions.FlattenAttribute.html#Utils_Expressions_FlattenAttribute_InverseOperations_
+  commentId: Overload:Utils.Expressions.FlattenAttribute.InverseOperations
+  isSpec: "True"
+  fullName: Utils.Expressions.FlattenAttribute.InverseOperations
+  nameWithType: FlattenAttribute.InverseOperations
 - uid: Utils.Expressions.FlattenAttribute.Operations
   name: Operations
   href: api/Utils.Expressions.FlattenAttribute.html#Utils_Expressions_FlattenAttribute_Operations
@@ -14507,6 +14560,70 @@ references:
   isSpec: "True"
   fullName: Utils.Expressions.FlattenAttribute.Operations
   nameWithType: FlattenAttribute.Operations
+- uid: Utils.Expressions.FlattenAttribute.UnaryOperator
+  name: UnaryOperator
+  href: api/Utils.Expressions.FlattenAttribute.html#Utils_Expressions_FlattenAttribute_UnaryOperator
+  commentId: P:Utils.Expressions.FlattenAttribute.UnaryOperator
+  fullName: Utils.Expressions.FlattenAttribute.UnaryOperator
+  nameWithType: FlattenAttribute.UnaryOperator
+- uid: Utils.Expressions.FlattenAttribute.UnaryOperator*
+  name: UnaryOperator
+  href: api/Utils.Expressions.FlattenAttribute.html#Utils_Expressions_FlattenAttribute_UnaryOperator_
+  commentId: Overload:Utils.Expressions.FlattenAttribute.UnaryOperator
+  isSpec: "True"
+  fullName: Utils.Expressions.FlattenAttribute.UnaryOperator
+  nameWithType: FlattenAttribute.UnaryOperator
+- uid: Utils.Expressions.FlattenUnaryAttribute
+  name: FlattenUnaryAttribute
+  href: api/Utils.Expressions.FlattenUnaryAttribute.html
+  commentId: T:Utils.Expressions.FlattenUnaryAttribute
+  fullName: Utils.Expressions.FlattenUnaryAttribute
+  nameWithType: FlattenUnaryAttribute
+- uid: Utils.Expressions.FlattenUnaryAttribute.#ctor(System.Linq.Expressions.ExpressionType,Utils.Expressions.UnaryOperatorBinding)
+  name: FlattenUnaryAttribute(ExpressionType, UnaryOperatorBinding)
+  href: api/Utils.Expressions.FlattenUnaryAttribute.html#Utils_Expressions_FlattenUnaryAttribute__ctor_System_Linq_Expressions_ExpressionType_Utils_Expressions_UnaryOperatorBinding_
+  commentId: M:Utils.Expressions.FlattenUnaryAttribute.#ctor(System.Linq.Expressions.ExpressionType,Utils.Expressions.UnaryOperatorBinding)
+  name.vb: New(ExpressionType, UnaryOperatorBinding)
+  fullName: Utils.Expressions.FlattenUnaryAttribute.FlattenUnaryAttribute(System.Linq.Expressions.ExpressionType, Utils.Expressions.UnaryOperatorBinding)
+  fullName.vb: Utils.Expressions.FlattenUnaryAttribute.New(System.Linq.Expressions.ExpressionType, Utils.Expressions.UnaryOperatorBinding)
+  nameWithType: FlattenUnaryAttribute.FlattenUnaryAttribute(ExpressionType, UnaryOperatorBinding)
+  nameWithType.vb: FlattenUnaryAttribute.New(ExpressionType, UnaryOperatorBinding)
+- uid: Utils.Expressions.FlattenUnaryAttribute.#ctor*
+  name: FlattenUnaryAttribute
+  href: api/Utils.Expressions.FlattenUnaryAttribute.html#Utils_Expressions_FlattenUnaryAttribute__ctor_
+  commentId: Overload:Utils.Expressions.FlattenUnaryAttribute.#ctor
+  isSpec: "True"
+  name.vb: New
+  fullName: Utils.Expressions.FlattenUnaryAttribute.FlattenUnaryAttribute
+  fullName.vb: Utils.Expressions.FlattenUnaryAttribute.New
+  nameWithType: FlattenUnaryAttribute.FlattenUnaryAttribute
+  nameWithType.vb: FlattenUnaryAttribute.New
+- uid: Utils.Expressions.FlattenUnaryAttribute.Binding
+  name: Binding
+  href: api/Utils.Expressions.FlattenUnaryAttribute.html#Utils_Expressions_FlattenUnaryAttribute_Binding
+  commentId: P:Utils.Expressions.FlattenUnaryAttribute.Binding
+  fullName: Utils.Expressions.FlattenUnaryAttribute.Binding
+  nameWithType: FlattenUnaryAttribute.Binding
+- uid: Utils.Expressions.FlattenUnaryAttribute.Binding*
+  name: Binding
+  href: api/Utils.Expressions.FlattenUnaryAttribute.html#Utils_Expressions_FlattenUnaryAttribute_Binding_
+  commentId: Overload:Utils.Expressions.FlattenUnaryAttribute.Binding
+  isSpec: "True"
+  fullName: Utils.Expressions.FlattenUnaryAttribute.Binding
+  nameWithType: FlattenUnaryAttribute.Binding
+- uid: Utils.Expressions.FlattenUnaryAttribute.Operation
+  name: Operation
+  href: api/Utils.Expressions.FlattenUnaryAttribute.html#Utils_Expressions_FlattenUnaryAttribute_Operation
+  commentId: P:Utils.Expressions.FlattenUnaryAttribute.Operation
+  fullName: Utils.Expressions.FlattenUnaryAttribute.Operation
+  nameWithType: FlattenUnaryAttribute.Operation
+- uid: Utils.Expressions.FlattenUnaryAttribute.Operation*
+  name: Operation
+  href: api/Utils.Expressions.FlattenUnaryAttribute.html#Utils_Expressions_FlattenUnaryAttribute_Operation_
+  commentId: Overload:Utils.Expressions.FlattenUnaryAttribute.Operation
+  isSpec: "True"
+  fullName: Utils.Expressions.FlattenUnaryAttribute.Operation
+  nameWithType: FlattenUnaryAttribute.Operation
 - uid: Utils.Expressions.FlattenedTerm
   name: FlattenedTerm
   href: api/Utils.Expressions.FlattenedTerm.html
@@ -15852,6 +15969,24 @@ references:
   isSpec: "True"
   fullName: Utils.Expressions.ReturnTypeAttribute.ReturnType
   nameWithType: ReturnTypeAttribute.ReturnType
+- uid: Utils.Expressions.UnaryOperatorBinding
+  name: UnaryOperatorBinding
+  href: api/Utils.Expressions.UnaryOperatorBinding.html
+  commentId: T:Utils.Expressions.UnaryOperatorBinding
+  fullName: Utils.Expressions.UnaryOperatorBinding
+  nameWithType: UnaryOperatorBinding
+- uid: Utils.Expressions.UnaryOperatorBinding.FirstGroup
+  name: FirstGroup
+  href: api/Utils.Expressions.UnaryOperatorBinding.html#Utils_Expressions_UnaryOperatorBinding_FirstGroup
+  commentId: F:Utils.Expressions.UnaryOperatorBinding.FirstGroup
+  fullName: Utils.Expressions.UnaryOperatorBinding.FirstGroup
+  nameWithType: UnaryOperatorBinding.FirstGroup
+- uid: Utils.Expressions.UnaryOperatorBinding.OperandGroup
+  name: OperandGroup
+  href: api/Utils.Expressions.UnaryOperatorBinding.html#Utils_Expressions_UnaryOperatorBinding_OperandGroup
+  commentId: F:Utils.Expressions.UnaryOperatorBinding.OperandGroup
+  fullName: Utils.Expressions.UnaryOperatorBinding.OperandGroup
+  nameWithType: UnaryOperatorBinding.OperandGroup
 - uid: Utils.Expressions.VBSyntax.Runtime
   name: Utils.Expressions.VBSyntax.Runtime
   href: api/Utils.Expressions.VBSyntax.Runtime.html
