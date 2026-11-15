@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed — `omy.Utils` (expression engine: declarative flatten configuration)
+- The flatten engine no longer knows any operator: a declaration states couples (a direct binary operation, which passes
+  a two-valued context unchanged to both operands, and an optional inverse one, which inverts it for its right operand) and
+  unary operators (which invert it), and each term carries the direct or inverse operation of its couple. The additive
+  and multiplicative families, their five fixed slots and their hard-coded inversions are removed; any binary or unary
+  node type can be declared, and the developer is responsible for its meaning. **The results of the existing
+  declarations are unchanged** (`a - (b - c)` → `+a -b +c`, `-(a - (b - c))` → `-a +b -c`, `a / (b / c)` → `*a /b *c`,
+  `(a * b) / (c * d)` → `*a *b /c /d`), as are those of `ExpressionSimplifier`.
+- `FlattenAttribute(params ExpressionType[])` (unreleased) is replaced by `Flatten(direct)`, `Flatten(direct, inverse)`,
+  `Flatten(direct, inverse, unaryOperator)` and `Flatten(direct[], inverse[])`, whose couples, associated by index, are
+  independent chains. New `FlattenUnaryAttribute(operation, UnaryOperatorBinding)`, repeatable: `FirstGroup` binds the
+  operator to the first couple (`-x` roots a chain, the historical behavior of the simplified constructor),
+  `OperandGroup` to the couple its operand alone identifies (`-(a * b)` → `/a /b`, `a * -x` → `*a *(-x)`), never merging
+  two couples. The unary operators belong to the effective `[Flatten]` declaration (never merged across overrides).
+  Inconsistent or ambiguous declarations fail the construction of the transformer with a message naming the rule. See
+  `docs/expressions/FlattenArchitecture.md` §2.
+
 ### Fixed — `omy.Utils` (expression engine: unchanged calls holding an extension node, ETC R4)
 - A method call or an invocation whose children are all unchanged and one of whose direct children is an extension node
   (a user subclass of `Expression`) is no longer rebuilt by the transformers (preparation, `CopyExpression`, substitution):
@@ -48,7 +65,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added — `omy.Utils` (expression engine: flatten rules)
 - `ExpressionTransformer` rules can receive a whole arithmetic chain at once: a method marked with the new
-  `FlattenAttribute` (`[Flatten(ExpressionType.Add, ExpressionType.Subtract, ExpressionType.Negate)]` or
+  `FlattenAttribute` (for example `[Flatten(ExpressionType.Add, ExpressionType.Subtract, ExpressionType.Negate)]` or
   `[Flatten(ExpressionType.Multiply, ExpressionType.Divide)]`) receives the chain as a `FlattenedTerm[]` (operation,
   raw operand, source index), optionally preceded by the source node, before the chain is traversed. The extraction is
   iterative and counted in the resource budgets; a `null` result falls back to the historical node-by-node processing.

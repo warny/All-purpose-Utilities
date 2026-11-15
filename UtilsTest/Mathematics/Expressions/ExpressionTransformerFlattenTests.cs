@@ -444,7 +444,7 @@ public class ExpressionTransformerFlattenTests
         /// <param name="source">The root.</param>
         /// <param name="terms">The terms.</param>
         /// <returns>A constant holding the rendering.</returns>
-        [Flatten(ExpressionType.Subtract, ExpressionType.Add)]
+        [Flatten(ExpressionType.Add, ExpressionType.Subtract)]
         private Expression? Second(Expression source, FlattenedTerm[] terms)
         {
             Calls.Add("second " + Render(terms));
@@ -454,7 +454,7 @@ public class ExpressionTransformerFlattenTests
 
     /// <summary>
     /// Several rules of a group are tried in declaration order; a declining rule's mutations of its array never reach the
-    /// next rule, which receives the pristine terms (operator sets compare as sets, whatever their declaration order).
+    /// next rule, which receives the pristine terms.
     /// </summary>
     [TestMethod]
     public void SeveralRules_AreTriedInOrder_WithAPristineCopyEach()
@@ -714,25 +714,25 @@ public class ExpressionTransformerFlattenTests
     {
         /// <summary>The invalid rule of this probe.</summary>
         /// <returns><see langword="null"/>.</returns>
-        [Flatten]
+        [Flatten([], [])]
         private Expression? R(FlattenedTerm[] terms) => null;
     }
 
-    /// <summary>An operator that cannot be flattened.</summary>
-    private sealed class PowerOperator : FlattenProbe
+    /// <summary>A node type that is neither binary nor unary.</summary>
+    private sealed class CallOperator : FlattenProbe
     {
         /// <summary>The invalid rule of this probe.</summary>
         /// <returns><see langword="null"/>.</returns>
-        [Flatten(ExpressionType.Power)]
+        [Flatten(ExpressionType.Call)]
         private Expression? R(FlattenedTerm[] terms) => null;
     }
 
-    /// <summary>Both families in one rule.</summary>
-    private sealed class MixedFamilies : FlattenProbe
+    /// <summary>The same operator as direct and inverse operation.</summary>
+    private sealed class DuplicateOperator : FlattenProbe
     {
         /// <summary>The invalid rule of this probe.</summary>
         /// <returns><see langword="null"/>.</returns>
-        [Flatten(ExpressionType.Add, ExpressionType.Multiply)]
+        [Flatten(ExpressionType.Add, ExpressionType.Add)]
         private Expression? R(FlattenedTerm[] terms) => null;
     }
 
@@ -828,8 +828,8 @@ public class ExpressionTransformerFlattenTests
         (Func<object> Create, string Reason)[] cases =
         [
             (() => new NoOperator(), "declares no operator"),
-            (() => new PowerOperator(), "'Power' cannot be flattened"),
-            (() => new MixedFamilies(), "mixes additive"),
+            (() => new CallOperator(), "'Call' is not the node type of a BinaryExpression"),
+            (() => new DuplicateOperator(), "'Add' is declared more than once"),
             (() => new OverlappingSets(), "overlap"),
             (() => new WrongParameters(), "its parameters must be"),
             (() => new NarrowSource(), "its parameters must be"),

@@ -334,35 +334,28 @@ public abstract partial class ExpressionTransformer
             _rulesByNodeType = rulesByNodeType;
             _allRules = allRules;
             HasFlattenRules = flattenGroups.Length > 0;
-            _flattenGroupsByOperator = new FlattenGroup?[FlattenOperatorCount];
-            foreach (FlattenGroup group in flattenGroups)
-            {
-                foreach (ExpressionType operation in group.Operations)
-                {
-                    _flattenGroupsByOperator[FlattenOperatorIndex(operation)] = group;
-                }
-            }
+            _flattenOperators = BuildFlattenOperatorIndex(flattenGroups);
         }
 
         /// <summary>
-        /// The flatten group whose operators include each flattenable operator, indexed by <see cref="FlattenOperatorIndex"/>;
-        /// at most one group per operator (validated by <see cref="BuildFlattenGroups"/>).
+        /// The descriptor of each declared flatten operator, indexed by node type value (see
+        /// <see cref="BuildFlattenOperatorIndex"/>); empty when the transformer declares no flatten rule.
         /// </summary>
-        private readonly FlattenGroup?[] _flattenGroupsByOperator;
+        private readonly FlattenOperator?[] _flattenOperators;
 
         /// <summary>Gets whether the transformer declares at least one <see cref="FlattenAttribute"/> rule.</summary>
         public bool HasFlattenRules { get; }
 
         /// <summary>
-        /// Returns the flatten group a chain rooted at a node of <paramref name="nodeType"/> belongs to, or
-        /// <see langword="null"/> when no flatten rule declares that operator.
+        /// Returns the descriptor of the flatten operator <paramref name="nodeType"/>, or <see langword="null"/> when no flatten
+        /// rule declares it.
         /// </summary>
         /// <param name="nodeType">The node type of a framework <see cref="BinaryExpression"/> or <see cref="UnaryExpression"/>.</param>
-        /// <returns>The group, or <see langword="null"/>.</returns>
-        public FlattenGroup? GetFlattenGroup(ExpressionType nodeType)
+        /// <returns>The descriptor, or <see langword="null"/>.</returns>
+        public FlattenOperator? GetFlattenOperator(ExpressionType nodeType)
         {
-            int index = FlattenOperatorIndex(nodeType);
-            return index < 0 ? null : _flattenGroupsByOperator[index];
+            int index = (int)nodeType;
+            return (uint)index < (uint)_flattenOperators.Length ? _flattenOperators[index] : null;
         }
 
         /// <summary>
@@ -486,13 +479,15 @@ public abstract partial class ExpressionTransformer
                 continue;
             }
 
+            if (method.IsDefined(typeof(FlattenUnaryAttribute), inherit: true)) throw InvalidFlattenRule(transformerType, method, OrphanFlattenUnaryReason);
             if (signature is not null) rules.Add(BuildRule(method, signature));
         }
 
         ThrowOnStaticFlattenRule(transformerType);
         FlattenGroup[] flattenGroups = [];
         TransformRule[] flattenRules = [];
-        if (flattenMethods is not null) flattenGroups = BuildFlattenGroups(transformerType, flattenMethods, out flattenRules);
+        IReadOnlyList<ExpressionType>[] flattenOperations = [];
+        if (flattenMethods is not null) flattenGroups = BuildFlattenGroups(transformerType, flattenMethods, out flattenRules, out flattenOperations);
 
         // The trace identity of each rule (an overloaded method name is completed with the parameter types). Flatten rules
         // count in the overload detection and are numbered in their own sequence (see ExpressionTransformRuleInfo).
@@ -506,7 +501,7 @@ public abstract partial class ExpressionTransformer
             rule.Info = new ExpressionTransformRuleInfo(rule.Method, transformerType, rule.Signature!.ExpressionType, i, nameCounts[rule.Method.Name] > 1);
         }
 
-        AssignFlattenRuleInfos(transformerType, flattenRules, nameCounts);
+        AssignFlattenRuleInfos(transformerType, flattenRules, flattenOperations, nameCounts);
 
         var rulesByNodeType = new Dictionary<ExpressionType, List<TransformRule>>();
         foreach (ExpressionType nodeType in _allExpressionTypes)

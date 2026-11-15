@@ -15,30 +15,129 @@ A *flatten rule* asks for the whole chain at once, as an ordered array of operan
 mechanism is opt-in per transformer type, uses the existing rule plan (no second rule engine), and is available to any
 transformer, including user-defined ones.
 
-## 2. `FlattenAttribute`
+## 2. Declarations
 
 ```csharp
+// Simplified forms: one couple, at most one unary operator, bound to the couple (FirstGroup).
 [Flatten(ExpressionType.Add, ExpressionType.Subtract, ExpressionType.Negate)]
 protected Expression? Additions(FlattenedTerm[] terms) { … }
 
 [Flatten(ExpressionType.Multiply, ExpressionType.Divide)]
 protected Expression? Multiplications(Expression source, FlattenedTerm[] terms) { … }
+
+// Advanced form: couples associated by index, unary operators declared one by one with their binding.
+[Flatten([ExpressionType.Add, ExpressionType.Multiply], [ExpressionType.Subtract, ExpressionType.Divide])]
+[FlattenUnary(ExpressionType.Negate, UnaryOperatorBinding.OperandGroup)]
+protected Expression? Both(FlattenedTerm[] terms) { … }
 ```
 
-- The declared operators are the ones the chain may **cross**. Two families exist: additive (`Add`, `Subtract`, `Negate`)
-  and multiplicative (`Multiply`, `Divide`). A rule declares operators of one family, possibly a subset (`[Flatten(Add)]`:
-  a subtraction is then an operand).
+### 2.1 The model
+
+The engine knows no operator. A declaration states, for a chain, a **context with two values** (initial or inverted) and how
+each declared operator passes it to its operands:
+
+| Role | Operands | Context passed |
+|---|---|---|
+| direct binary operation | left, right | unchanged, unchanged |
+| inverse binary operation | left, right | unchanged, **inverted** |
+| unary operator | operand | **inverted** |
+
+Two inversions cancel out. Every operand of the chain becomes a term whose operation is the direct operation of the couple
+when the context reaching it is the initial one, its inverse operation otherwise. Nothing else is applied: no
+associativity, commutativity, neutral element or reordering is assumed (part A, the structural extraction); what a
+declaration means mathematically, and whether a rewriting is valid, belongs to the rules that receive the chain (part B).
+
+Constructors of `FlattenAttribute`:
+
+| Constructor | Declares |
+|---|---|
+| `Flatten(direct)` | one couple without inverse: every term carries `direct` |
+| `Flatten(direct, inverse)` | one couple |
+| `Flatten(direct, inverse, unaryOperator)` | one couple and one unary operator bound with `FirstGroup` |
+| `Flatten(direct[], inverse[])` | the couples `(direct[i], inverse[i])`; `inverse` may be empty (direct operations alone) |
+
+`FlattenUnaryAttribute(operation, binding)` is repeatable and completes any form; `[Flatten(Add, Subtract)]` with
+`[FlattenUnary(Negate, FirstGroup)]` is the same declaration as `[Flatten(Add, Subtract, Negate)]`. The former `params`
+constructor (`Flatten(params ExpressionType[])`, never released) is removed: kept beside the new ones, `[Flatten(Subtract,
+Add)]` would have silently bound to the two-argument overload and changed meaning.
+
+### 2.2 Couples and unary bindings
+
+The couples of a declaration are **independent chains**: their terms are never mixed, and a node of one couple is an operand
+of a chain of another, offered as a chain of its own when the traversal reaches it. Each unary operator has its own binding
+(`UnaryOperatorBinding`):
+
+- **`FirstGroup`**: the operator belongs to the first couple of the declaration. It roots a chain of that couple whatever its
+  operand (`-x` gives `[Subtract x]` with `[Flatten(Add, Subtract, Negate)]`, the historical result), is crossed by that
+  couple's chains only, and is an operand of the chains of the other couples.
+- **`OperandGroup`**: the operator belongs to the couple its **operand alone** identifies: a crossed binary operator of a
+  couple, a `FirstGroup` operator (its couple), or another `OperandGroup` operator whose own operand is decided the same way.
+  An operand that identifies no couple (a leaf, a call, an undeclared operator) attaches the operator to none: it roots no
+  chain (historical behavior) and is an operand of any chain that reaches it.
+
+With `[Flatten([Add, Multiply], [Subtract, Divide])]` and `[FlattenUnary(Negate, OperandGroup)]`:
+
+| Source | Chains offered |
+|---|---|
+| `-(a * b)` | `/a /b` |
+| `-(a + b)` | `-a -b` |
+| `a * -(b / c)` | `*a /b *c` |
+| `a * -x` | `*a *(-x)` (not `*a /x`) |
+| `a * -(b + c)` | `*a *(-(b + c))`, then `-b -c` (never merged) |
+| `-x`, `-(-x)` | none |
+
+The group of a node is a function of its subtree and of the declarations only, so the dispatch is deterministic; the walk
+down a prefix of `OperandGroup` operators is iterative and counted (§15).
+
+### 2.3 Validation
+
+Everything is validated once, when the dispatch plan of the transformer type is built (its first construction). An invalid
+rule makes the constructor throw `InvalidOperationException` naming the rule:
+
+- no couple; direct and inverse arrays of different lengths;
+- a direct or inverse operation that is not a node type of `BinaryExpression`, a unary operator that is not a node type of
+  `UnaryExpression`, an unknown binding, a unary operator without an inverse operation;
+- an operator declared twice by one rule (in two couples, or by the simplified constructor and by `FlattenUnary`);
+- two rules sharing an operator of a couple without declaring the same couple, with the same unary operators and bindings;
+- a dispatch that would be ambiguous: a unary operator bound with `FirstGroup` to one couple and declared for any other
+  couple (with either binding). A unary operator bound with `OperandGroup` may be shared by several couples and
+  configurations, since its operand attaches each node to one couple: an operator does not intrinsically belong to one
+  family;
+- a `FlattenUnaryAttribute` on a method declaration that carries no `FlattenAttribute`, a static or generic method, a wrong
+  parameter list or return type, a method that also carries an `ExpressionSignatureAttribute`, a parameter carrying one.
+
+The shapes accepted are exactly those of the framework nodes (binary or unary); the developer is responsible for the
+algebraic meaning of what they declare.
+
+**Inheritance.** `FlattenAttribute` is inherited by overrides. The `FlattenUnaryAttribute`s belong to the method declaration
+that carries the effective (most derived) `FlattenAttribute`: an override that declares nothing keeps the whole
+configuration of its base, an override that declares a new `FlattenAttribute` replaces it entirely (the unary operators of
+the overridden declaration are never merged), and an override that declares only `FlattenUnaryAttribute`s is rejected.
+Reflection exposes only the base definition of an override, so the override levels are found by walking the base types,
+once, when the plan is built.
+
+### 2.4 Knowledge removed from the engine
+
+| Before | Now |
+|---|---|
+| `FlattenFamily`, `FamilyOf`, `FlattenGroup.IsAdditive` | none: a group is a declared couple |
+| `FlattenOperatorCount`, `FlattenOperatorIndex` (five fixed slots) | an index by node type value, built from the declarations |
+| validation of the two families (`Add`/`Subtract`/`Negate`, `Multiply`/`Divide`) | validation of the node shapes (binary/unary) only |
+| `Extract`: `Subtract`/`Divide` invert their right operand, `Negate` inverts | each crossed node applies its descriptor (arity, inverted operands) |
+| term operations `Add`/`Subtract`/`Multiply`/`Divide` chosen by family | the direct or inverse operation of the couple |
+| `IsCrossedByChain`, the root test and `RebuildFlattenedChainCore` by family | one function, the group of a node (§2.2) |
+
+What remains in the engine is the table of the framework node shapes (which node types are those of `BinaryExpression` or
+`UnaryExpression`, used to validate the declarations), and `CanFlattenThrough` (§10), a structural condition that reads no
+node type. The built-in simplifier keeps its own `Add`/`Subtract` checks: they are business rules of part B.
+
+### 2.5 Rules
+
 - Two signatures: `(FlattenedTerm[] terms)` and `(Expression source, FlattenedTerm[] terms)`; the return type is
   assignable to `Expression`. `source` is the original, untransformed root of the chain.
 - A non-`null` result is the result of the root node. `null` declines (§13).
-- The attribute is `sealed`, inherited by overrides, and is a request for a representation, **not a permission**: it never
-  allows a rule to drop, repeat, merge or move an evaluation.
-
-Everything is validated once, when the dispatch plan of the transformer type is built (its first construction). An invalid
-rule makes the constructor throw `InvalidOperationException` naming the rule: no operator, an operator outside the two
-families, both families in one rule, a static or generic method, a wrong parameter list or return type, a method that also
-carries an `ExpressionSignatureAttribute`, a parameter carrying one, or two rules whose operator sets overlap without being
-equal.
+- The attributes are `sealed` and are a request for a representation, **not a permission**: they never allow a rule to drop,
+  repeat, merge or move an evaluation.
 
 ## 3. `FlattenedTerm`
 
@@ -48,8 +147,8 @@ public readonly record struct FlattenedTerm(ExpressionType Operation, Expression
 
 - `Operand` is the **raw** operand: the very node of the source tree, not prepared and not transformed. A shared node
   appears once per occurrence.
-- `Operation` is `Add`/`Subtract` (additive chain) or `Multiply`/`Divide` (multiplicative chain), after the signs and
-  inversions of the crossed operators are propagated. The first operand has an explicit operation too.
+- `Operation` is the direct or the inverse operation of the chain's couple, after the context of the crossed operators is
+  propagated (§2.1). The first operand has an explicit operation too.
 - `SourceIndex` is the position of the operand in the source, left to right, from 0.
 
 Each rule receives its own copy of the array.
@@ -66,10 +165,12 @@ therefore become a candidate of every node-type bucket, with a single `Expressio
 chain; the trace identity, the audited-rule cache and the bucket index all assume one operator per rule. A separate rule
 kind in the same plan leaves all of that untouched.
 
-Flatten rules are grouped by operator set. Rules that share an operator must declare exactly the same set, so every
-operator belongs to at most one group, a chain has one definition per transformer, and it is extracted once whatever the
-number of rules that receive it. The plan indexes the group by operator (five slots). Nothing reads an attribute after the
-plan is built.
+Flatten rules are grouped by couple: a rule joins the group of each couple it declares. Rules that share an operator of a
+couple must declare the same couple with the same unary operators and bindings, so every binary operator belongs to at most
+one group, a chain has one definition per transformer, and it is extracted once whatever the number of rules that receive
+it. The plan holds one descriptor per declared node type (indexed by its value): its arity, the operands whose context it
+inverts, and its group (or, for an `OperandGroup` operator, the groups that declare it). Nothing reads an attribute after
+the plan is built.
 
 A transformer without flatten rules pays one boolean field read per `TransformCore` call (§19).
 
@@ -77,9 +178,9 @@ A transformer without flatten rules pays one boolean field read per `TransformCo
 
 For a transformer that declares flatten rules, `TransformCore(e)` proceeds as follows.
 
-1. `e` is a **chain root** when it is a framework `BinaryExpression`/`UnaryExpression` whose operator a group declares,
-   that the transformer accepts to cross (§10), and that is not a node of a chain being processed after a refusal (§13).
-   Otherwise the node is processed historically.
+1. `e` is a **chain root** when it belongs to a group (§2.2): a framework `BinaryExpression`/`UnaryExpression` of a declared
+   operator, that the transformer accepts to cross (§10), attached to a couple by its declaration or by its operand, and
+   that is not a node of a chain being processed after a refusal (§13). Otherwise the node is processed historically.
 2. The admission of the chain (`FlattenAdmission`, an engine-internal hook) is asked on the raw root. By default it is the
    effect gate (`AllowsRules`, always open for a user transformer). A transformer of the `Utils` assembly may decide by
    itself which chains its rules treat: the built-in simplifier admits its linear chains only, with an iterative test that
@@ -101,9 +202,11 @@ when the traversal reaches it.
 ## 6. Extraction
 
 `FlattenedChain.Extract` walks the raw tree from the root with an explicit work stack (pre-order, left operand first): no
-recursion on the chain, whatever its depth or shape. A node of a declared operator that the transformer accepts to cross is
-recorded as crossed and its operands are pushed; any other node becomes a term. The walk reads only framework operator
-nodes: an operand is never inspected.
+recursion on the chain, whatever its depth or shape. A node that belongs to the chain's group is recorded as crossed and its
+operands are pushed with the context its descriptor states; any other node becomes a term carrying the operation of the
+context that reaches it. The operand of a crossed `OperandGroup` operator decided its group, so it is crossed without
+walking its prefix again (the extraction stays linear). The walk reads only framework operator nodes: an operand is never
+inspected.
 
 ## 7. Complexity
 
@@ -121,9 +224,17 @@ For a chain of `n` operands made of binary operators (`2n − 1` nodes):
 These bounds cover the infrastructure only. A rule that sorts, compares or re-transforms its terms adds its own cost, and a
 declined chain keeps the historical cost, including its recursion depth.
 
-## 8. Additive semantics
+Deciding the group of an `OperandGroup` operator walks its prefix of such operators down to the first other node: one
+structural visit per node walked. Inside a chain, and in the fallback of a declined chain, each prefix is walked once. A
+prefix that identifies no couple (`-(-(…x))`) roots no chain and is processed historically, and each of its levels walks
+the rest of it again: quadratic in its depth, bounded by the validated depth (`MaxDepth`, so at most about
+`MaxDepth² / 2` = 131,072 structural visits by default) and counted in `MaxStructuralVisits`. No cache is kept. Declarations
+without `OperandGroup` operators walk nothing.
 
-A `Subtract` inverts the sign of its right operand; a `Negate` inverts the sign of its operand; signs compose.
+## 8. Historical additive declaration
+
+With `[Flatten(Add, Subtract, Negate)]`: a `Subtract` inverts the context of its right operand, a `Negate` inverts it for its
+operand, inversions compose.
 
 | Source | Terms |
 |---|---|
@@ -131,10 +242,13 @@ A `Subtract` inverts the sign of its right operand; a `Negate` inverts the sign 
 | `a - (b - c)` | `+a -b +c` |
 | `-(a + b - c)` | `-a -b +c` |
 | `-(-a)` | `+a` |
+| `-(a - (b - c))` | `-a +b -c` |
 
-## 9. Multiplicative semantics
+## 9. Historical multiplicative declaration
 
-A `Divide` inverts its right operand.
+With `[Flatten(Multiply, Divide)]`: a `Divide` inverts the context of its right operand. These results, and those of §8,
+follow from the declarations alone; the same engine gives, for example, `Subtract a`, `Add b`, `Subtract c` for
+`a + (b + c)` with `[Flatten(Subtract, Add)]`.
 
 | Source | Terms |
 |---|---|
@@ -153,8 +267,9 @@ proof; a rule that reassociates must establish validity for the operand types it
 The chain crosses a node only when all of the following hold; otherwise the node is an operand, kept intact.
 
 - It is a framework `BinaryExpression` or `UnaryExpression` (type tests only; an extension node is never read).
-- Its node type is declared by the group. `AddChecked`, `SubtractChecked`, `NegateChecked`, `MultiplyChecked`, `Power` and
-  every other operator have their own node types and cannot be declared.
+- It belongs to the chain's group (§2.2): its node type is declared for that couple, or, for an `OperandGroup` operator, its
+  operand identifies that couple. `AddChecked`, `SubtractChecked`, `NegateChecked`, `MultiplyChecked`, `Power` and every
+  other operator have their own node types: they are crossed only when declared themselves.
 - `CanFlattenThrough(node)` accepts it. The default accepts only an ordinary intrinsic operator: no operator method (so no
   user-defined operator and no `decimal`, whose operators are methods) and a result type that is, by reference, one of
   `double`, `float`, `int`, `uint`, `long`, `ulong`, `short`, `ushort` (so no lifted/nullable operator and no user `Type`
@@ -231,7 +346,8 @@ rejected because it would add state and could change the order of transformation
 
 ## 15. Budgets and stack guards
 
-- Extraction: one structural visit per node examined (`ConsumeStructuralVisit`, which also checks the stack).
+- Extraction: one structural visit per node examined (`ConsumeStructuralVisit`, which also checks the stack), plus one per
+  node of a prefix of `OperandGroup` operators walked to decide a group (§7).
 - A chain given to its rules: one transformation visit, counted before the first rule.
 - `RebuildFlattenedChain`: one more extraction. Called outside an operation, it starts one with the transformer's limits.
 - The fallback counts its historical visits; a declined chain therefore costs the historical traversal plus one
@@ -285,7 +401,12 @@ decision. No event changes for a transformer without flatten rules.
   type sees: the private methods of a base type are not among them).
 - New public API: `FlattenAttribute`, `FlattenedTerm`, `ExpressionTransformer.RebuildFlattenedChain`,
   `ExpressionTransformRuleInfo.FlattenedNodeTypes`, `ExpressionTransformEventKind.ChainFlattened`; since PR B,
-  `ExpressionRuleRejection.ChainNotAdmitted`.
+  `ExpressionRuleRejection.ChainNotAdmitted`; with the declarative model, `FlattenUnaryAttribute` and
+  `UnaryOperatorBinding`, and the constructors of §2.1 replace `FlattenAttribute(params ExpressionType[])` (unreleased).
+- The declarations of the repository keep their results: `[Flatten(Add, Subtract)]` (the simplifier) and
+  `[Flatten(Add, Subtract, Negate)]`, `[Flatten(Multiply, Divide)]` give exactly the terms of §8 and §9.
+- `FlattenedNodeTypes` lists the couples in index order, then the unary operator of the simplified constructor, then the
+  `FlattenUnaryAttribute` operators by node type value (the metadata order of repeated attributes is not specified).
 
 ## 19. Measurements
 

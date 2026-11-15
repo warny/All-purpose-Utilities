@@ -378,21 +378,244 @@ public class ExpressionFlattenResourceTests
     }
 
     /// <summary>
-    /// <see cref="FlattenAttribute"/> is immutable: it keeps a private copy of its operators, so mutating the array given to
-    /// its constructor never changes the declared set, and the published collection is read-only (no mutable alias).
+    /// <see cref="FlattenAttribute"/> is immutable: it keeps private copies of its declarations, so mutating the arrays given
+    /// to its constructor never changes the declared composition, and the published collections are read-only (no mutable
+    /// alias).
     /// </summary>
     [TestMethod]
     public void Attribute_CopiesItsOperators()
     {
-        ExpressionType[] operations = [ExpressionType.Add, ExpressionType.Subtract];
-        var attribute = new FlattenAttribute(operations);
+        ExpressionType[] direct = [ExpressionType.Add, ExpressionType.Multiply];
+        ExpressionType[] inverse = [ExpressionType.Subtract, ExpressionType.Divide];
+        var attribute = new FlattenAttribute(direct, inverse);
 
-        operations[0] = ExpressionType.Power;
+        direct[0] = ExpressionType.Power;
+        inverse[0] = ExpressionType.Power;
 
-        CollectionAssert.AreEqual(new[] { ExpressionType.Add, ExpressionType.Subtract }, attribute.Operations.ToArray());
-        Assert.IsNotInstanceOfType<ExpressionType[]>(attribute.Operations);
-        Assert.ThrowsExactly<NotSupportedException>(() => ((IList<ExpressionType>)attribute.Operations)[0] = ExpressionType.Power);
-        Assert.AreEqual(0, new FlattenAttribute(null!).Operations.Count);
+        CollectionAssert.AreEqual(new[] { ExpressionType.Add, ExpressionType.Multiply }, attribute.DirectOperations.ToArray());
+        CollectionAssert.AreEqual(new[] { ExpressionType.Subtract, ExpressionType.Divide }, attribute.InverseOperations.ToArray());
+        Assert.IsNull(attribute.UnaryOperator);
+        CollectionAssert.AreEqual(
+            new[] { ExpressionType.Add, ExpressionType.Subtract, ExpressionType.Multiply, ExpressionType.Divide },
+            attribute.Operations.ToArray());
+
+        var simplified = new FlattenAttribute(ExpressionType.Add, ExpressionType.Subtract, ExpressionType.Negate);
+        Assert.AreEqual(ExpressionType.Negate, simplified.UnaryOperator);
+        CollectionAssert.AreEqual(new[] { ExpressionType.Add, ExpressionType.Subtract, ExpressionType.Negate }, simplified.Operations.ToArray());
+
+        foreach (IReadOnlyList<ExpressionType> list in new[] { attribute.DirectOperations, attribute.InverseOperations, attribute.Operations, simplified.Operations })
+        {
+            Assert.IsNotInstanceOfType<ExpressionType[]>(list);
+            Assert.ThrowsExactly<NotSupportedException>(() => ((IList<ExpressionType>)list)[0] = ExpressionType.Power);
+        }
+
+        var empty = new FlattenAttribute(null!, null!);
+        Assert.AreEqual(0, empty.Operations.Count + empty.DirectOperations.Count + empty.InverseOperations.Count);
+        Assert.IsNull(empty.UnaryOperator);
+
+        var unary = new FlattenUnaryAttribute(ExpressionType.Negate, UnaryOperatorBinding.OperandGroup);
+        Assert.AreEqual(ExpressionType.Negate, unary.Operation);
+        Assert.AreEqual(UnaryOperatorBinding.OperandGroup, unary.Binding);
+    }
+
+    /// <summary>
+    /// A transformer whose only flatten rule declares a composition unrelated to the historical ones, on integers: bitwise
+    /// <c>And</c> as the direct operation, <c>Or</c> as its inverse and <c>OnesComplement</c> as a unary inverter.
+    /// </summary>
+    private sealed class BitwiseProbe : ExpressionTransformer
+    {
+        /// <summary>Initializes the probe.</summary>
+        /// <param name="limits">The resource limits.</param>
+        public BitwiseProbe(ExpressionResourceLimits limits)
+            : base(limits)
+        {
+        }
+
+        /// <summary>Gets or sets the result of the flatten rule.</summary>
+        public Func<FlattenedTerm[], Expression?> Rule { get; set; } = static _ => null;
+
+        /// <summary>Gets the terms of each chain the rule received.</summary>
+        public List<FlattenedTerm[]> Received { get; } = [];
+
+        /// <inheritdoc/>
+        public override Expression Transform(Expression expression) => TransformCore(expression);
+
+        /// <inheritdoc/>
+        protected override Expression PrepareExpression(Expression e) => TransformCore(e);
+
+        /// <inheritdoc/>
+        protected override Expression FinalizeExpression(Expression e, Expression[] parameters) => CopyExpression(e, parameters);
+
+        /// <summary>The bitwise flatten rule.</summary>
+        /// <param name="terms">The terms.</param>
+        /// <returns>The configured result.</returns>
+        [Flatten(ExpressionType.And, ExpressionType.Or, ExpressionType.OnesComplement)]
+        private Expression? Bitwise(FlattenedTerm[] terms)
+        {
+            Received.Add(terms);
+            return Rule(terms);
+        }
+    }
+
+    /// <summary>An integer parameter.</summary>
+    private static readonly ParameterExpression I = Expression.Parameter(typeof(int), "i");
+
+    /// <summary>A second integer parameter.</summary>
+    private static readonly ParameterExpression J = Expression.Parameter(typeof(int), "j");
+
+    /// <summary>
+    /// A declared composition other than the historical ones has the same guarantees: its extraction counts exactly one
+    /// structural visit per node, is refused just above the structural limit before its rule runs, extracts and accepts a chain
+    /// of 100,000 operands (with complements) on a 256 KiB stack, and never reads an armed extension operand.
+    /// </summary>
+    [TestMethod]
+    public void DeclaredComposition_KeepsBudgetsStackAndExtensionGuarantees()
+    {
+        Expression chain = I;
+        for (int i = 1; i < 64; i++) chain = i % 2 == 0 ? Expression.And(chain, J) : Expression.Or(J, chain);
+
+        (_, long historical) = Count(new RecursiveTransformer(NoLimits), chain);
+        (_, long structural) = Count(new BitwiseProbe(NoLimits) { Rule = static _ => Expression.Constant(0) }, chain);
+        Assert.AreEqual(2L * 64 - 1, structural - historical);
+
+        var tooSmall = new BitwiseProbe(NoLimits with { MaxStructuralVisits = structural - 1 }) { Rule = static _ => Expression.Constant(0) };
+        Assert.AreEqual(ExpressionResourceLimitKind.StructuralWork, Assert.ThrowsExactly<ExpressionResourceLimitException>(() => tooSmall.Transform(chain)).Kind);
+        Assert.AreEqual(0, tooSmall.Received.Count);
+
+        const int Operands = 100_000;
+        Expression deep = I;
+        for (int i = 1; i < Operands; i++) deep = Expression.Or(Expression.OnesComplement(deep), J);
+        RunOnThread(() =>
+        {
+            var probe = new BitwiseProbe(NoLimits) { Rule = static _ => Expression.Constant(0) };
+            Assert.IsInstanceOfType<ConstantExpression>(probe.Transform(deep));
+            Assert.AreEqual(Operands, probe.Received.Single().Length);
+        }, SmallStack, Timeout);
+
+        var extension = new IntegerExtension();
+        Expression withExtension = Expression.And(I, Expression.OnesComplement(Expression.Or(extension, J)));
+        extension.Armed = true;
+        var reader = new BitwiseProbe(NoLimits) { Rule = static _ => Expression.Constant(0) };
+        reader.Transform(withExtension);
+        Assert.AreSame(extension, reader.Received.Single()[1].Operand);
+        Assert.AreEqual(ExpressionType.Or, reader.Received[0][1].Operation);
+        Assert.AreEqual(0, extension.Calls);
+    }
+
+    /// <summary>An integer extension node whose every member throws once armed.</summary>
+    private sealed class IntegerExtension : Expression
+    {
+        /// <summary>Gets or sets whether the members throw.</summary>
+        public bool Armed { get; set; }
+
+        /// <summary>Gets the number of calls made while armed.</summary>
+        public int Calls { get; private set; }
+
+        /// <summary>Counts a call and throws when armed.</summary>
+        /// <typeparam name="T">The value type.</typeparam>
+        /// <param name="value">The value returned while not armed.</param>
+        /// <returns><paramref name="value"/>.</returns>
+        private T Hit<T>(T value)
+        {
+            if (!Armed) return value;
+            Calls++;
+            throw new InvalidOperationException("A member of an extension node was called.");
+        }
+
+        /// <inheritdoc/>
+        public override ExpressionType NodeType => Hit(ExpressionType.Extension);
+
+        /// <inheritdoc/>
+        public override Type Type => Hit(typeof(int));
+
+        /// <inheritdoc/>
+        public override bool CanReduce => Hit(false);
+
+        /// <inheritdoc/>
+        public override string ToString() => Hit("extension");
+    }
+
+    /// <summary>
+    /// A transformer whose rule declares two couples and <c>Negate</c> bound to the couple of its operand. Over a leaf, a deep
+    /// stack of negations identifies no couple, roots no chain and is processed by the historical traversal, which ends with
+    /// the controlled stack refusal on a 256 KiB thread and leaves no operation open; under a product, the same stack is one
+    /// operand. Over a product, the stack belongs to the multiplicative couple and is crossed iteratively.
+    /// </summary>
+    private sealed class OperandGroupProbe : ExpressionTransformer
+    {
+        /// <summary>Initializes the probe.</summary>
+        /// <param name="limits">The resource limits.</param>
+        public OperandGroupProbe(ExpressionResourceLimits limits)
+            : base(limits)
+        {
+        }
+
+        /// <summary>Gets the number of terms of each chain the rule received.</summary>
+        public List<int> Received { get; } = [];
+
+        /// <inheritdoc/>
+        public override Expression Transform(Expression expression) => TransformCore(expression);
+
+        /// <inheritdoc/>
+        protected override Expression PrepareExpression(Expression e) => TransformCore(e);
+
+        /// <inheritdoc/>
+        protected override Expression FinalizeExpression(Expression e, Expression[] parameters) => CopyExpression(e, parameters);
+
+        /// <summary>Accepts every chain.</summary>
+        /// <param name="terms">The terms.</param>
+        /// <returns>A constant.</returns>
+        [Flatten([ExpressionType.Add, ExpressionType.Multiply], [ExpressionType.Subtract, ExpressionType.Divide])]
+        [FlattenUnary(ExpressionType.Negate, UnaryOperatorBinding.OperandGroup)]
+        private Expression? Compositions(FlattenedTerm[] terms)
+        {
+            Received.Add(terms.Length);
+            return Expression.Constant(0.0);
+        }
+    }
+
+    /// <summary>See <see cref="OperandGroupProbe"/>.</summary>
+    [TestMethod]
+    public void OperandGroup_DeepNegations_AreAControlledRefusalAlone_AndCrossedOverAChain()
+    {
+        const int Depth = 100_000;
+        Expression negations = Chain(Depth, static e => Expression.Negate(e));
+        Expression negatedProduct = Expression.Multiply(Q, Q);
+        for (int i = 0; i < Depth; i++) negatedProduct = Expression.Negate(negatedProduct);
+        RunOnThread(() =>
+        {
+            var alone = new OperandGroupProbe(NoLimits);
+            Assert.AreEqual(ExpressionResourceLimitKind.Stack, Assert.ThrowsExactly<ExpressionResourceLimitException>(() => alone.Transform(negations)).Kind);
+            Assert.AreEqual(0, ExpressionResourceBudget.OperationDepth);
+            Assert.AreEqual(0, alone.Received.Count);
+
+            var product = new OperandGroupProbe(NoLimits);
+            Assert.IsInstanceOfType<ConstantExpression>(product.Transform(Expression.Multiply(Q, negations)));
+            CollectionAssert.AreEqual(new[] { 2 }, product.Received);
+
+            var over = new OperandGroupProbe(NoLimits);
+            Assert.IsInstanceOfType<ConstantExpression>(over.Transform(negatedProduct));
+            CollectionAssert.AreEqual(new[] { 2 }, over.Received);
+        }, SmallStack, Timeout);
+    }
+
+    /// <summary>
+    /// The prefix of <see cref="UnaryOperatorBinding.OperandGroup"/> operators walked to decide the group of a node is counted
+    /// in the structural budget: under the default limits, a stack of negations as deep as the validated depth allows stays
+    /// far below the structural limit, and a structural limit below the walk refuses it before any rule runs.
+    /// </summary>
+    [TestMethod]
+    public void OperandGroup_PrefixWalk_IsCountedAndBounded()
+    {
+        Expression negations = Chain(ExpressionResourceLimits.DefaultMaxDepth - 2, static e => Expression.Negate(e));
+        (_, long historical) = Count(new RecursiveTransformer(NoLimits), negations);
+        (_, long structural) = Count(new OperandGroupProbe(NoLimits), negations);
+        Assert.IsTrue(structural - historical <= (long)ExpressionResourceLimits.DefaultMaxDepth * ExpressionResourceLimits.DefaultMaxDepth / 2, $"{structural - historical}");
+        Assert.IsTrue(structural < ExpressionResourceLimits.DefaultMaxStructuralVisits / 10, $"{structural}");
+
+        var tooSmall = new OperandGroupProbe(NoLimits with { MaxStructuralVisits = historical + 10 });
+        Assert.AreEqual(ExpressionResourceLimitKind.StructuralWork, Assert.ThrowsExactly<ExpressionResourceLimitException>(() => tooSmall.Transform(Expression.Multiply(Q, negations))).Kind);
+        Assert.AreEqual(0, tooSmall.Received.Count);
     }
 
     /// <summary>
