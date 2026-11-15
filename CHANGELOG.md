@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed — `omy.Utils` (expression engine: unchanged calls holding an extension node, ETC R4)
+- A method call or an invocation whose children are all unchanged and one of whose direct children is an extension node
+  (a user subclass of `Expression`) is no longer rebuilt by the transformers (preparation, `CopyExpression`, substitution):
+  the rebuild only made `Expression.Call`/`Expression.Invoke` validate that node again, reading its virtual `NodeType` and
+  `Type`, so a node forbidding these reads once the tree is built made `ExpressionSimplifier.Simplify` throw. Ordinary
+  calls and invocations keep their historical rebuild and identities (a derived simplifier's `base.FinalizeExpression`
+  still returns a distinct copy). A call whose receiver or another argument changed is still rebuilt, and the framework
+  factory still validates the extension node; the other families (unary, binary, conditional, …) are unchanged.
+
 ### Changed — `omy.Utils` (expression simplifier: additive chains holding one effectful call simplified at once)
 - Under the default policy, `ExpressionSimplifier` canonicalizes at once an *anchored* chain: a linear chain (distinct
   parameters, distinct coefficients, at most two constants) plus exactly one static call of a runtime method that is not

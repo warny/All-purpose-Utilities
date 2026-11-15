@@ -24,6 +24,13 @@ namespace Utils.Expressions;
 /// and <see cref="Expression.NodeType"/>, exactly as the factory that built the source tree did; that read belongs to the
 /// framework, not to the engine.
 /// </para>
+/// <para>
+/// A method call or an invocation whose children are all unchanged and one of whose direct children is opaque is not rebuilt
+/// at all (preparation, <c>CopyExpression</c> and substitution keep the node itself), so the factory does not validate the
+/// opaque child for nothing. The other families (unary, binary, conditional, …) still rebuild an unchanged parent of an opaque
+/// node through their factory, and so does a call or an invocation whose other child changed: those rebuilds still read the
+/// opaque child's getters.
+/// </para>
 /// </remarks>
 internal static class ExpressionOpacity
 {
