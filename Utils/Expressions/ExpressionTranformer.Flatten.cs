@@ -14,85 +14,166 @@ namespace Utils.Expressions;
 /// </summary>
 public abstract partial class ExpressionTransformer
 {
-    /// <summary>The number of operators a chain can cross (<see cref="FlattenOperatorIndex"/>).</summary>
-    private const int FlattenOperatorCount = 5;
-
     /// <summary>
-    /// Maps a flattenable operator to its slot in <see cref="TransformPlan"/>'s flatten index: <see cref="ExpressionType.Add"/>,
-    /// <see cref="ExpressionType.Subtract"/>, <see cref="ExpressionType.Negate"/>, <see cref="ExpressionType.Multiply"/>,
-    /// <see cref="ExpressionType.Divide"/>; <c>-1</c> for any other node type.
+    /// Gets the number of operands of the framework node that carries <paramref name="nodeType"/>: 2 for the node types of
+    /// <see cref="BinaryExpression"/>, 1 for those of <see cref="UnaryExpression"/>, 0 for every other one. This is the shape
+    /// of the .NET nodes, used to validate the declarations; it gives no role to any operator.
     /// </summary>
-    /// <param name="nodeType">The node type.</param>
-    /// <returns>The slot, or <c>-1</c>.</returns>
-    private static int FlattenOperatorIndex(ExpressionType nodeType) => nodeType switch
+    /// <param name="nodeType">A declared node type.</param>
+    /// <returns>The number of operands, or 0.</returns>
+    private static int FlattenNodeArity(ExpressionType nodeType) => nodeType switch
     {
-        ExpressionType.Add => 0,
-        ExpressionType.Subtract => 1,
-        ExpressionType.Negate => 2,
-        ExpressionType.Multiply => 3,
-        ExpressionType.Divide => 4,
-        _ => -1,
+        ExpressionType.Add or ExpressionType.AddChecked or ExpressionType.And or ExpressionType.AndAlso
+            or ExpressionType.ArrayIndex or ExpressionType.Coalesce or ExpressionType.Divide or ExpressionType.Equal
+            or ExpressionType.ExclusiveOr or ExpressionType.GreaterThan or ExpressionType.GreaterThanOrEqual
+            or ExpressionType.LeftShift or ExpressionType.LessThan or ExpressionType.LessThanOrEqual or ExpressionType.Modulo
+            or ExpressionType.Multiply or ExpressionType.MultiplyChecked or ExpressionType.NotEqual or ExpressionType.Or
+            or ExpressionType.OrElse or ExpressionType.Power or ExpressionType.RightShift or ExpressionType.Subtract
+            or ExpressionType.SubtractChecked or ExpressionType.Assign or ExpressionType.AddAssign
+            or ExpressionType.AndAssign or ExpressionType.DivideAssign or ExpressionType.ExclusiveOrAssign
+            or ExpressionType.LeftShiftAssign or ExpressionType.ModuloAssign or ExpressionType.MultiplyAssign
+            or ExpressionType.OrAssign or ExpressionType.PowerAssign or ExpressionType.RightShiftAssign
+            or ExpressionType.SubtractAssign or ExpressionType.AddAssignChecked or ExpressionType.MultiplyAssignChecked
+            or ExpressionType.SubtractAssignChecked => 2,
+        ExpressionType.ArrayLength or ExpressionType.Convert or ExpressionType.ConvertChecked or ExpressionType.Negate
+            or ExpressionType.NegateChecked or ExpressionType.Not or ExpressionType.Quote or ExpressionType.TypeAs
+            or ExpressionType.UnaryPlus or ExpressionType.Decrement or ExpressionType.Increment or ExpressionType.IsFalse
+            or ExpressionType.IsTrue or ExpressionType.Throw or ExpressionType.Unbox or ExpressionType.OnesComplement
+            or ExpressionType.PreIncrementAssign or ExpressionType.PreDecrementAssign or ExpressionType.PostIncrementAssign
+            or ExpressionType.PostDecrementAssign => 1,
+        _ => 0,
     };
 
-    /// <summary>Gets the family of a flattenable operator.</summary>
-    /// <param name="nodeType">An operator for which <see cref="FlattenOperatorIndex"/> is not negative.</param>
-    /// <returns>The family of the operator.</returns>
-    private static FlattenFamily FamilyOf(ExpressionType nodeType)
-        => nodeType is ExpressionType.Multiply or ExpressionType.Divide ? FlattenFamily.Multiplicative : FlattenFamily.Additive;
-
-    /// <summary>The two families of operators a chain can cross.</summary>
-    private enum FlattenFamily
-    {
-        /// <summary><see cref="ExpressionType.Add"/>, <see cref="ExpressionType.Subtract"/>, <see cref="ExpressionType.Negate"/>.</summary>
-        Additive,
-
-        /// <summary><see cref="ExpressionType.Multiply"/>, <see cref="ExpressionType.Divide"/>.</summary>
-        Multiplicative,
-    }
-
     /// <summary>
-    /// The flatten rules that declare one same set of operators, in declaration order. Every operator belongs to at most one
-    /// group, so a chain is extracted once whatever the number of rules that receive it. Immutable once the plan is built.
+    /// One couple declared by flatten rules, and the rules that declare it, in declaration order: a direct operation, an
+    /// optional inverse operation, and the unary operators attached to it, bound to the couple itself
+    /// (<see cref="UnaryOperatorBinding.FirstGroup"/>) or through their operand (<see cref="UnaryOperatorBinding.OperandGroup"/>).
+    /// A binary operator belongs to at most one group, so a chain is extracted once whatever the number of rules that receive
+    /// it. Immutable once the plan is built.
     /// </summary>
     private sealed class FlattenGroup
     {
         /// <summary>Initializes a group.</summary>
-        /// <param name="family">The family of the operators.</param>
-        /// <param name="operations">The distinct operators of the group, in the order of the first rule's declaration.</param>
-        /// <param name="mask">The bit set of the operators (bit <see cref="FlattenOperatorIndex"/>).</param>
+        /// <param name="direct">The direct operation.</param>
+        /// <param name="inverse">The inverse operation, or <see langword="null"/>.</param>
+        /// <param name="ownUnaries">The unary operators bound to the couple itself.</param>
+        /// <param name="operandUnaries">The unary operators bound to the couple through their operand.</param>
         /// <param name="rules">The rules, in declaration order.</param>
-        public FlattenGroup(FlattenFamily family, ExpressionType[] operations, int mask, TransformRule[] rules)
+        public FlattenGroup(ExpressionType direct, ExpressionType? inverse, ExpressionType[] ownUnaries, ExpressionType[] operandUnaries, TransformRule[] rules)
         {
-            Family = family;
-            Operations = operations;
-            Mask = mask;
+            Direct = direct;
+            Inverse = inverse;
+            OwnUnaries = ownUnaries;
+            OperandUnaries = operandUnaries;
             Rules = rules;
         }
 
-        /// <summary>Gets the family of the operators.</summary>
-        public FlattenFamily Family { get; }
+        /// <summary>Gets the direct operation: the operation of a term reached by the initial context.</summary>
+        public ExpressionType Direct { get; }
 
-        /// <summary>Gets the distinct operators of the group.</summary>
-        public ExpressionType[] Operations { get; }
+        /// <summary>Gets the inverse operation (the operation of a term reached by the inverted context), or <see langword="null"/>.</summary>
+        public ExpressionType? Inverse { get; }
 
-        /// <summary>Gets the bit set of the operators.</summary>
-        public int Mask { get; }
+        /// <summary>Gets the unary operators bound to the couple itself (<see cref="UnaryOperatorBinding.FirstGroup"/>).</summary>
+        public ExpressionType[] OwnUnaries { get; }
+
+        /// <summary>Gets the unary operators bound to the couple through their operand (<see cref="UnaryOperatorBinding.OperandGroup"/>).</summary>
+        public ExpressionType[] OperandUnaries { get; }
 
         /// <summary>Gets the rules of the group, in declaration order.</summary>
         public TransformRule[] Rules { get; }
 
-        /// <summary>Gets whether the operators are the additive ones.</summary>
-        public bool IsAdditive => Family == FlattenFamily.Additive;
+        /// <summary>Gets the operation of a term reached by the given context.</summary>
+        /// <param name="inverted">Whether the context is inverted; only possible when the group has an inverse operation.</param>
+        /// <returns>The operation of the term.</returns>
+        public ExpressionType OperationOf(bool inverted) => inverted ? Inverse!.Value : Direct;
     }
 
-    /// <summary>Whether the operator bit set <paramref name="mask"/> declares <paramref name="nodeType"/>.</summary>
-    /// <param name="mask">A bit set of operators (bit <see cref="FlattenOperatorIndex"/>).</param>
-    /// <param name="nodeType">The node type of a framework binary or unary node.</param>
-    /// <returns><see langword="true"/> when the operator is declared.</returns>
-    private static bool MaskDeclares(int mask, ExpressionType nodeType)
+    /// <summary>
+    /// The declared behavior of one operator node type: its number of operands, how it propagates the context to each of them,
+    /// and the group its nodes belong to. A binary operator, and a unary operator bound with
+    /// <see cref="UnaryOperatorBinding.FirstGroup"/>, belong to one group by themselves; a unary operator bound with
+    /// <see cref="UnaryOperatorBinding.OperandGroup"/> belongs to the group of its operand, among the groups that declare it.
+    /// Immutable once the plan is built.
+    /// </summary>
+    private sealed class FlattenOperator
     {
-        int index = FlattenOperatorIndex(nodeType);
-        return index >= 0 && (mask & (1 << index)) != 0;
+        /// <summary>Initializes a descriptor.</summary>
+        /// <param name="arity">The number of operands: 1 or 2.</param>
+        /// <param name="invertedOperands">The operands whose context is inverted, as a bit set (bit <c>i</c> for operand <c>i</c>).</param>
+        /// <param name="group">The group of the operator by itself, or <see langword="null"/> when its operand decides it.</param>
+        /// <param name="operandGroups">The groups that declare it through its operand; empty when <paramref name="group"/> is set.</param>
+        public FlattenOperator(int arity, int invertedOperands, FlattenGroup? group, FlattenGroup[] operandGroups)
+        {
+            Arity = arity;
+            InvertedOperands = invertedOperands;
+            Group = group;
+            OperandGroups = operandGroups;
+        }
+
+        /// <summary>Gets the number of operands: 1 or 2.</summary>
+        public int Arity { get; }
+
+        /// <summary>Gets the operands whose context is inverted, as a bit set.</summary>
+        public int InvertedOperands { get; }
+
+        /// <summary>Gets the group the operator belongs to by itself, or <see langword="null"/> when its operand decides it.</summary>
+        public FlattenGroup? Group { get; }
+
+        /// <summary>Gets the groups that declare the operator through its operand (<see cref="UnaryOperatorBinding.OperandGroup"/>).</summary>
+        public FlattenGroup[] OperandGroups { get; }
+
+        /// <summary>Gets the context of operand <paramref name="operand"/> from the context of the node.</summary>
+        /// <param name="inverted">Whether the context of the node is inverted.</param>
+        /// <param name="operand">The index of the operand.</param>
+        /// <returns>Whether the context of the operand is inverted.</returns>
+        public bool OperandContext(bool inverted, int operand) => inverted ^ (((InvertedOperands >> operand) & 1) != 0);
+
+        /// <summary>Whether <paramref name="group"/> declares the operator through its operand.</summary>
+        /// <param name="group">A group of the plan.</param>
+        /// <returns><see langword="true"/> when the operator joins <paramref name="group"/> when its operand belongs to it.</returns>
+        public bool AcceptsOperandGroup(FlattenGroup group)
+        {
+            foreach (FlattenGroup candidate in OperandGroups)
+            {
+                if (ReferenceEquals(candidate, group)) return true;
+            }
+
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Builds the operator index of <see cref="TransformPlan"/> from the validated groups: the direct operation passes the
+    /// context to both operands, the inverse operation inverts it for its right operand, a unary operator inverts it for its
+    /// operand.
+    /// </summary>
+    /// <param name="groups">The validated groups (a unary operator bound to its group by itself belongs to that group only).</param>
+    /// <returns>The descriptor of each declared operator, indexed by node type value; empty without groups.</returns>
+    private static FlattenOperator?[] BuildFlattenOperatorIndex(FlattenGroup[] groups)
+    {
+        if (groups.Length == 0) return [];
+
+        var index = new FlattenOperator?[(int)_allExpressionTypes.Max() + 1];
+        var operandGroups = new Dictionary<ExpressionType, List<FlattenGroup>>();
+        foreach (FlattenGroup group in groups)
+        {
+            index[(int)group.Direct] = new FlattenOperator(2, 0b00, group, []);
+            if (group.Inverse is ExpressionType inverse) index[(int)inverse] = new FlattenOperator(2, 0b10, group, []);
+            foreach (ExpressionType unary in group.OwnUnaries) index[(int)unary] = new FlattenOperator(1, 0b1, group, []);
+            foreach (ExpressionType unary in group.OperandUnaries)
+            {
+                if (!operandGroups.TryGetValue(unary, out List<FlattenGroup>? owners)) operandGroups.Add(unary, owners = []);
+                owners.Add(group);
+            }
+        }
+
+        foreach ((ExpressionType unary, List<FlattenGroup> owners) in operandGroups)
+        {
+            index[(int)unary] = new FlattenOperator(1, 0b1, null, [.. owners]);
+        }
+
+        return index;
     }
 
     /// <summary>Creates the exception reported for an invalid <see cref="FlattenAttribute"/> rule, when the plan is built.</summary>
@@ -104,112 +185,238 @@ public abstract partial class ExpressionTransformer
         => new($"The [Flatten] rule '{method.DeclaringType?.FullName}.{method.Name}' of transformer '{transformerType.FullName}' is invalid: {reason}.");
 
     /// <summary>
-    /// Rejects a static method marked with <see cref="FlattenAttribute"/>: the plan only holds instance rules, so such a method
-    /// would otherwise be silently ignored.
+    /// Rejects a static method marked with <see cref="FlattenAttribute"/> or <see cref="FlattenUnaryAttribute"/>: the plan only
+    /// holds instance rules, so such a method would otherwise be silently ignored.
     /// </summary>
     /// <param name="transformerType">The transformer type whose plan is being built.</param>
-    /// <exception cref="InvalidOperationException">A static method is marked with <see cref="FlattenAttribute"/>.</exception>
+    /// <exception cref="InvalidOperationException">A static method is marked with a flatten attribute.</exception>
     private static void ThrowOnStaticFlattenRule(Type transformerType)
     {
         foreach (MethodInfo method in transformerType.GetMethods(Public | NonPublic | Static | FlattenHierarchy))
         {
-            if (method.IsDefined(typeof(FlattenAttribute), inherit: true))
+            if (method.IsDefined(typeof(FlattenAttribute), inherit: true) || method.IsDefined(typeof(FlattenUnaryAttribute), inherit: true))
             {
                 throw InvalidFlattenRule(transformerType, method, "a flatten rule must be an instance method");
             }
         }
     }
 
+    /// <summary>The reason given for a <see cref="FlattenUnaryAttribute"/> on a method declaration without a <see cref="FlattenAttribute"/>.</summary>
+    private const string OrphanFlattenUnaryReason = "it is marked with FlattenUnaryAttribute without a FlattenAttribute on the same declaration";
+
+    /// <summary>One unary operator of a flatten declaration and its binding. Data only.</summary>
+    /// <param name="Operation">The node type of the unary operator.</param>
+    /// <param name="Binding">How it is attached to the couples of the declaration.</param>
+    private readonly record struct FlattenUnaryDeclaration(ExpressionType Operation, UnaryOperatorBinding Binding);
+
     /// <summary>
-    /// Validates the <see cref="FlattenAttribute"/> rules of a transformer type and groups them by operator set (see
-    /// <see cref="FlattenGroup"/>). Every check runs once, here, so an invalid rule fails the construction of the transformer
-    /// instead of an invocation.
+    /// Reads the unary operators of the effective <see cref="FlattenAttribute"/> of <paramref name="method"/>: the operator of
+    /// its simplified constructor, then the <see cref="FlattenUnaryAttribute"/> of the same method declaration, ordered by node
+    /// type value (the metadata order of repeated attributes is not specified). The override levels are walked from the most
+    /// derived one: the first that declares a <see cref="FlattenAttribute"/> is the effective declaration, and the unary
+    /// operators of other levels are never merged into it. A level that declares unary operators without a
+    /// <see cref="FlattenAttribute"/> is rejected.
+    /// </summary>
+    /// <param name="transformerType">The transformer type whose plan is being built.</param>
+    /// <param name="method">The rule method, as returned by <c>GetMethods</c> (its most derived override).</param>
+    /// <param name="attribute">The effective attribute of <paramref name="method"/>.</param>
+    /// <returns>The unary operators of the effective declaration.</returns>
+    /// <exception cref="InvalidOperationException">A level declares unary operators without a <see cref="FlattenAttribute"/>.</exception>
+    private static FlattenUnaryDeclaration[] ReadFlattenUnaries(Type transformerType, MethodInfo method, FlattenAttribute attribute)
+    {
+        FlattenUnaryAttribute[]? effective = null;
+        for (MethodInfo? level = method; level is not null; level = ParentOverride(level))
+        {
+            FlattenUnaryAttribute[] unaries = [.. level.GetCustomAttributes<FlattenUnaryAttribute>(inherit: false)];
+            if (level.IsDefined(typeof(FlattenAttribute), inherit: false))
+            {
+                effective ??= unaries;
+            }
+            else if (unaries.Length != 0)
+            {
+                throw InvalidFlattenRule(transformerType, level, OrphanFlattenUnaryReason);
+            }
+        }
+
+        var declarations = new List<FlattenUnaryDeclaration>();
+        if (attribute.UnaryOperator is ExpressionType simplified) declarations.Add(new FlattenUnaryDeclaration(simplified, UnaryOperatorBinding.FirstGroup));
+        declarations.AddRange((effective ?? []).Select(static unary => new FlattenUnaryDeclaration(unary.Operation, unary.Binding)).OrderBy(static unary => (int)unary.Operation));
+        return [.. declarations];
+    }
+
+    /// <summary>
+    /// Gets the method <paramref name="method"/> directly overrides: the nearest declaration of a base type with the same name,
+    /// the same parameter types and the same base definition. Reflection only exposes the base definition, so the levels in
+    /// between are found by walking the base types.
+    /// </summary>
+    /// <param name="method">An instance method.</param>
+    /// <returns>The overridden method, or <see langword="null"/> when <paramref name="method"/> overrides nothing.</returns>
+    private static MethodInfo? ParentOverride(MethodInfo method)
+    {
+        if (!method.IsVirtual) return null;
+
+        MethodInfo definition = method.GetBaseDefinition();
+        if (definition.HasSameMetadataDefinitionAs(method)) return null;
+
+        Type[] parameterTypes = [.. method.GetParameters().Select(static parameter => parameter.ParameterType)];
+        for (Type? type = method.DeclaringType?.BaseType; type is not null; type = type.BaseType)
+        {
+            MethodInfo? candidate = type.GetMethod(method.Name, DeclaredOnly | Public | NonPublic | Instance, null, parameterTypes, null);
+            if (candidate is not null && candidate.IsVirtual && candidate.GetBaseDefinition().HasSameMetadataDefinitionAs(definition)) return candidate;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Validates the <see cref="FlattenAttribute"/> rules of a transformer type and groups them by composition (see
+    /// <see cref="FlattenGroup"/>): a rule joins the group of each couple it declares. Every check runs once, here, so an
+    /// invalid rule fails the construction of the transformer instead of an invocation.
     /// </summary>
     /// <param name="transformerType">The transformer type whose plan is being built.</param>
     /// <param name="methods">The instance methods marked with <see cref="FlattenAttribute"/>, in <c>GetMethods</c> order.</param>
     /// <param name="rules">The rules built for <paramref name="methods"/>, in the same order.</param>
+    /// <param name="operations">The declared operators of each rule, in the same order (its trace identity).</param>
     /// <returns>The groups, in the order of their first rule.</returns>
-    /// <exception cref="InvalidOperationException">A rule is invalid, or two rules declare overlapping but different operator sets.</exception>
-    private static FlattenGroup[] BuildFlattenGroups(Type transformerType, List<MethodInfo> methods, out TransformRule[] rules)
+    /// <exception cref="InvalidOperationException">
+    /// A rule is invalid, two rules share an operator without declaring the same couple, or a unary operator could root the
+    /// chains of several couples.
+    /// </exception>
+    private static FlattenGroup[] BuildFlattenGroups(Type transformerType, List<MethodInfo> methods, out TransformRule[] rules, out IReadOnlyList<ExpressionType>[] operations)
     {
         rules = new TransformRule[methods.Count];
-        var groupRules = new List<List<TransformRule>>();
-        var groupOperations = new List<ExpressionType[]>();
-        var groupMasks = new List<int>();
+        operations = new IReadOnlyList<ExpressionType>[methods.Count];
+        var groups = new List<(ExpressionType Direct, ExpressionType? Inverse, ExpressionType[] Own, ExpressionType[] Operand, List<TransformRule> Rules)>();
+        var binaryOwners = new HashSet<ExpressionType>();
+        // For each unary operator: whether a group holds it by itself (it then roots that group's chains whatever its operand).
+        var unaryOwners = new Dictionary<ExpressionType, bool>();
 
         for (int i = 0; i < methods.Count; i++)
         {
             MethodInfo method = methods[i];
             FlattenAttribute attribute = method.GetCustomAttributes<FlattenAttribute>(inherit: true).First();
-            (ExpressionType[] operations, int mask) = ValidateFlattenOperations(transformerType, method, attribute);
+            FlattenUnaryDeclaration[] unaries = ReadFlattenUnaries(transformerType, method, attribute);
+            ValidateFlattenDeclaration(transformerType, method, attribute, unaries);
             TransformRule rule = BuildFlattenRule(transformerType, method);
             rules[i] = rule;
+            operations[i] = attribute.Operations
+                .Concat(unaries.Where(unary => unary.Operation != attribute.UnaryOperator).Select(static unary => unary.Operation))
+                .ToList()
+                .AsReadOnly();
 
-            int group = groupMasks.IndexOf(mask);
-            if (group < 0)
+            ExpressionType[] own = [.. unaries.Where(static unary => unary.Binding == UnaryOperatorBinding.FirstGroup).Select(static unary => unary.Operation)];
+            ExpressionType[] operand = [.. unaries.Where(static unary => unary.Binding == UnaryOperatorBinding.OperandGroup).Select(static unary => unary.Operation)];
+            for (int couple = 0; couple < attribute.DirectOperations.Count; couple++)
             {
-                foreach (int existing in groupMasks)
+                ExpressionType direct = attribute.DirectOperations[couple];
+                ExpressionType? inverse = attribute.InverseOperations.Count == 0 ? null : attribute.InverseOperations[couple];
+                ExpressionType[] coupleOwn = couple == 0 ? own : [];
+                int group = groups.FindIndex(g => g.Direct == direct && g.Inverse == inverse && SameSet(g.Own, coupleOwn) && SameSet(g.Operand, operand));
+                if (group < 0)
                 {
-                    if ((existing & mask) != 0)
+                    if (binaryOwners.Contains(direct) || (inverse is ExpressionType declared && binaryOwners.Contains(declared)))
                     {
-                        throw InvalidFlattenRule(transformerType, method, "its operators overlap those of another flatten rule without being the same set; rules sharing an operator must declare exactly the same operators");
+                        throw InvalidFlattenRule(transformerType, method, "its operators overlap those of another flatten rule without declaring the same couple; rules sharing a binary operator must declare the same direct operation, inverse operation, and unary operators with the same bindings");
                     }
+
+                    // A new group: a unary operator it holds by itself must belong to no other group, and an operator another
+                    // group holds by itself cannot join it through its operand (either way the root of -x would be ambiguous).
+                    foreach (ExpressionType unary in coupleOwn)
+                    {
+                        if (unaryOwners.ContainsKey(unary)) throw AmbiguousFlattenUnary(transformerType, method, unary);
+                        unaryOwners.Add(unary, true);
+                    }
+
+                    foreach (ExpressionType unary in operand)
+                    {
+                        if (unaryOwners.TryGetValue(unary, out bool heldByItself) && heldByItself) throw AmbiguousFlattenUnary(transformerType, method, unary);
+                        unaryOwners[unary] = false;
+                    }
+
+                    groups.Add((direct, inverse, coupleOwn, operand, []));
+                    group = groups.Count - 1;
+                    binaryOwners.Add(direct);
+                    if (inverse is ExpressionType owned) binaryOwners.Add(owned);
                 }
 
-                groupMasks.Add(mask);
-                groupOperations.Add(operations);
-                groupRules.Add([]);
-                group = groupMasks.Count - 1;
+                groups[group].Rules.Add(rule);
             }
-
-            groupRules[group].Add(rule);
         }
 
-        var groups = new FlattenGroup[groupMasks.Count];
-        for (int i = 0; i < groups.Length; i++)
-        {
-            groups[i] = new FlattenGroup(FamilyOf(groupOperations[i][0]), groupOperations[i], groupMasks[i], groupRules[i].ToArray());
-        }
-
-        return groups;
+        return [.. groups.Select(static g => new FlattenGroup(g.Direct, g.Inverse, g.Own, g.Operand, [.. g.Rules]))];
     }
 
-    /// <summary>Validates the operators declared by a flatten rule.</summary>
+    /// <summary>Creates the exception reported for a unary operator whose dispatch would be ambiguous.</summary>
+    /// <param name="transformerType">The transformer type whose plan is being built.</param>
+    /// <param name="method">The rule that introduces the ambiguity.</param>
+    /// <param name="unary">The unary operator.</param>
+    /// <returns>The exception to throw.</returns>
+    private static InvalidOperationException AmbiguousFlattenUnary(Type transformerType, MethodInfo method, ExpressionType unary)
+        => InvalidFlattenRule(transformerType, method, $"'{unary}' could root the chains of several couples; a unary operator bound with FirstGroup cannot be declared for another couple (only operators bound with OperandGroup, which their operand attaches to one couple, may be shared)");
+
+    /// <summary>Whether two arrays of distinct operators hold the same operators, whatever their order.</summary>
+    /// <param name="left">The first array.</param>
+    /// <param name="right">The second array.</param>
+    /// <returns><see langword="true"/> when the sets are equal.</returns>
+    private static bool SameSet(ExpressionType[] left, ExpressionType[] right)
+        => left.Length == right.Length && left.All(right.Contains);
+
+    /// <summary>
+    /// Validates the configuration declared by a flatten rule: at least one couple, couples of matching lengths, binary node
+    /// types for the direct and inverse operations, unary node types and known bindings for the unary operators (which need an
+    /// inverse operation), and no operator declared twice.
+    /// </summary>
     /// <param name="transformerType">The transformer type whose plan is being built.</param>
     /// <param name="method">The rule method.</param>
     /// <param name="attribute">Its attribute.</param>
-    /// <returns>The distinct operators, in declaration order, and their bit set.</returns>
-    /// <exception cref="InvalidOperationException">No operator, an operator that cannot be flattened, or operators of both families.</exception>
-    private static (ExpressionType[] Operations, int Mask) ValidateFlattenOperations(Type transformerType, MethodInfo method, FlattenAttribute attribute)
+    /// <param name="unaries">The unary operators of the declaration (see <see cref="ReadFlattenUnaries"/>).</param>
+    /// <exception cref="InvalidOperationException">The declaration is not consistent.</exception>
+    private static void ValidateFlattenDeclaration(Type transformerType, MethodInfo method, FlattenAttribute attribute, FlattenUnaryDeclaration[] unaries)
     {
-        if (attribute.Operations.Count == 0)
+        if (attribute.DirectOperations.Count == 0)
         {
             throw InvalidFlattenRule(transformerType, method, "it declares no operator");
         }
 
-        var operations = new List<ExpressionType>();
-        int mask = 0;
-        foreach (ExpressionType operation in attribute.Operations)
+        if (attribute.InverseOperations.Count != 0 && attribute.InverseOperations.Count != attribute.DirectOperations.Count)
         {
-            int index = FlattenOperatorIndex(operation);
-            if (index < 0)
-            {
-                throw InvalidFlattenRule(transformerType, method, $"'{operation}' cannot be flattened (only Add, Subtract, Negate, Multiply and Divide can)");
-            }
+            throw InvalidFlattenRule(transformerType, method, $"its {attribute.DirectOperations.Count} direct and {attribute.InverseOperations.Count} inverse operations do not form couples");
+        }
 
-            if (FamilyOf(operation) != FamilyOf(attribute.Operations[0]))
-            {
-                throw InvalidFlattenRule(transformerType, method, "it mixes additive (Add, Subtract, Negate) and multiplicative (Multiply, Divide) operators");
-            }
+        if (attribute.InverseOperations.Count == 0 && unaries.Length != 0)
+        {
+            throw InvalidFlattenRule(transformerType, method, "it declares unary operators without an inverse operation");
+        }
 
-            if ((mask & (1 << index)) == 0)
+        foreach (ExpressionType operation in attribute.DirectOperations.Concat(attribute.InverseOperations))
+        {
+            if (FlattenNodeArity(operation) != 2)
             {
-                mask |= 1 << index;
-                operations.Add(operation);
+                throw InvalidFlattenRule(transformerType, method, $"'{operation}' is not the node type of a BinaryExpression, as a direct or inverse operation must be");
             }
         }
 
-        return (operations.ToArray(), mask);
+        foreach (FlattenUnaryDeclaration unary in unaries)
+        {
+            if (FlattenNodeArity(unary.Operation) != 1)
+            {
+                throw InvalidFlattenRule(transformerType, method, $"'{unary.Operation}' is not the node type of a UnaryExpression, as a unary operator must be");
+            }
+
+            if (unary.Binding is not (UnaryOperatorBinding.FirstGroup or UnaryOperatorBinding.OperandGroup))
+            {
+                throw InvalidFlattenRule(transformerType, method, $"'{unary.Binding}' is not a binding of the unary operator '{unary.Operation}'");
+            }
+        }
+
+        var declared = new HashSet<ExpressionType>();
+        foreach (ExpressionType operation in attribute.DirectOperations.Concat(attribute.InverseOperations).Concat(unaries.Select(static unary => unary.Operation)))
+        {
+            if (!declared.Add(operation))
+            {
+                throw InvalidFlattenRule(transformerType, method, $"'{operation}' is declared more than once");
+            }
+        }
     }
 
     /// <summary>
@@ -264,14 +471,14 @@ public abstract partial class ExpressionTransformer
     /// <summary>Builds the trace identity of every flatten rule, numbered in their own declaration order.</summary>
     /// <param name="transformerType">The transformer type whose plan is being built.</param>
     /// <param name="rules">The flatten rules, in declaration order.</param>
+    /// <param name="operations">The declared operators of each rule, in the same order.</param>
     /// <param name="nameCounts">The number of rules (of both kinds) per method name.</param>
-    private static void AssignFlattenRuleInfos(Type transformerType, TransformRule[] rules, Dictionary<string, int> nameCounts)
+    private static void AssignFlattenRuleInfos(Type transformerType, TransformRule[] rules, IReadOnlyList<ExpressionType>[] operations, Dictionary<string, int> nameCounts)
     {
         for (int i = 0; i < rules.Length; i++)
         {
             TransformRule rule = rules[i];
-            IReadOnlyList<ExpressionType> operations = rule.Method.GetCustomAttributes<FlattenAttribute>(inherit: true).First().Operations;
-            rule.Info = new ExpressionTransformRuleInfo(rule.Method, transformerType, operations[0], i, nameCounts[rule.Method.Name] > 1, operations);
+            rule.Info = new ExpressionTransformRuleInfo(rule.Method, transformerType, operations[i][0], i, nameCounts[rule.Method.Name] > 1, operations[i]);
         }
     }
 
@@ -282,7 +489,7 @@ public abstract partial class ExpressionTransformer
     /// primitive arithmetic types (<see langword="int"/>, <see langword="uint"/>, <see langword="long"/>,
     /// <see langword="ulong"/>, <see langword="short"/>, <see langword="ushort"/>, <see langword="float"/>,
     /// <see langword="double"/>), compared by reference, which excludes the lifted (nullable) operators and any user
-    /// <see cref="Type"/> object. Checked operators have their own node types and are never declared.
+    /// <see cref="Type"/> object. It reads no node type: which operators a chain crosses is decided by the declarations alone.
     /// </summary>
     /// <param name="node">A framework <see cref="BinaryExpression"/> or <see cref="UnaryExpression"/> whose node type the group declares.</param>
     /// <returns><see langword="true"/> when the chain may cross <paramref name="node"/>; otherwise it is an operand of the chain.</returns>
@@ -314,15 +521,71 @@ public abstract partial class ExpressionTransformer
             || ReferenceEquals(type, typeof(ushort));
 
     /// <summary>
-    /// Whether a chain of the operators <paramref name="mask"/> crosses <paramref name="node"/>: a framework binary or unary
-    /// node (type tests first, so an extension node is never read) of a declared operator that <see cref="CanFlattenThrough"/>
-    /// accepts.
+    /// Gets the descriptor of the declared operator <paramref name="node"/> is a node of: a framework
+    /// <see cref="BinaryExpression"/> of a declared binary operator, or a framework <see cref="UnaryExpression"/> with an
+    /// operand of a declared unary one. Type tests come first, so the node type of an extension node is never read.
     /// </summary>
     /// <param name="node">A node of the raw tree.</param>
-    /// <param name="mask">The operator bit set of the chain's group.</param>
-    /// <returns><see langword="true"/> when the chain crosses the node.</returns>
-    internal bool IsCrossedByChain(Expression node, int mask)
-        => node is BinaryExpression or UnaryExpression && MaskDeclares(mask, node.NodeType) && CanFlattenThrough(node);
+    /// <returns>The descriptor, or <see langword="null"/>.</returns>
+    private FlattenOperator? DescribeFlattenOperator(Expression node) => node switch
+    {
+        BinaryExpression binary => _transformPlan.GetFlattenOperator(binary.NodeType) is { Arity: 2 } declared ? declared : null,
+        UnaryExpression { Operand: not null } unary => _transformPlan.GetFlattenOperator(unary.NodeType) is { Arity: 1 } declared ? declared : null,
+        _ => null,
+    };
+
+    /// <summary>
+    /// Gets the group <paramref name="node"/> belongs to, from the declarations alone: none unless it is a node of a declared
+    /// operator (see <see cref="DescribeFlattenOperator"/>) that <see cref="CanFlattenThrough"/> accepts; then the group of a
+    /// binary operator or of a unary operator bound with <see cref="UnaryOperatorBinding.FirstGroup"/>; for a unary operator
+    /// bound with <see cref="UnaryOperatorBinding.OperandGroup"/>, the group of its operand, decided the same way, provided that
+    /// group declares the operator. A chain of a group crosses exactly the nodes that belong to it; a node that belongs to a
+    /// group roots a chain of it.
+    /// </summary>
+    /// <param name="node">A node of the raw tree.</param>
+    /// <param name="declared">The descriptor of <paramref name="node"/>, set whenever the result is not <see langword="null"/>.</param>
+    /// <returns>The group, or <see langword="null"/>.</returns>
+    /// <remarks>
+    /// The prefix of <see cref="UnaryOperatorBinding.OperandGroup"/> operators is walked iteratively, one structural visit per
+    /// operand examined; no other node costs more than its own descriptor.
+    /// </remarks>
+    /// <exception cref="ExpressionResourceLimitException">The structural budget is exhausted.</exception>
+    private FlattenGroup? FlattenGroupOf(Expression node, out FlattenOperator? declared)
+    {
+        declared = DescribeFlattenOperator(node);
+        if (declared is null || !CanFlattenThrough(node)) return null;
+        if (declared.Group is FlattenGroup own) return own;
+
+        // The first node below the prefix of OperandGroup operators decides the group...
+        Expression bottom = ((UnaryExpression)node).Operand;
+        FlattenGroup? group;
+        while (true)
+        {
+            ExpressionResourceBudget.ConsumeStructuralVisit();
+            FlattenOperator? inner = DescribeFlattenOperator(bottom);
+            if (inner is null || !CanFlattenThrough(bottom)) return null;
+            if ((group = inner.Group) is not null) break;
+            bottom = ((UnaryExpression)bottom).Operand;
+        }
+
+        // ...provided every operator of the prefix declares it: otherwise the node belongs to no group.
+        for (Expression current = node; !ReferenceEquals(current, bottom); current = ((UnaryExpression)current).Operand)
+        {
+            if (!DescribeFlattenOperator(current)!.AcceptsOperandGroup(group)) return null;
+        }
+
+        return group;
+    }
+
+    /// <summary>
+    /// Gets the descriptor of <paramref name="node"/> when a chain of <paramref name="group"/> crosses it, that is when the node
+    /// belongs to the group (see <see cref="FlattenGroupOf"/>).
+    /// </summary>
+    /// <param name="node">A node of the raw tree.</param>
+    /// <param name="group">The group of the chain.</param>
+    /// <returns>The descriptor, or <see langword="null"/> when the node is an operand of the chain.</returns>
+    private FlattenOperator? CrossingOperator(Expression node, FlattenGroup group)
+        => ReferenceEquals(FlattenGroupOf(node, out FlattenOperator? declared), group) ? declared : null;
 
     /// <summary>
     /// One node of an extracted chain, in pre-order: a crossed operator node, or an operand. Data only.
@@ -363,51 +626,52 @@ public abstract partial class ExpressionTransformer
 
         /// <summary>
         /// Extracts the chain rooted at <paramref name="root"/> with an explicit work stack (no recursion, whatever the depth of
-        /// the chain), counting one structural visit per node examined. Every occurrence of a shared node is kept.
+        /// the chain), counting one structural visit per node examined. Every occurrence of a shared node is kept. The walk
+        /// only applies the declarations: each crossed node passes to each operand the context its descriptor states, and each
+        /// operand becomes a term carrying the operation of the context that reaches it.
         /// </summary>
         /// <param name="transformer">The transformer, which decides which operator nodes are crossed.</param>
         /// <param name="root">The root of the chain; the caller checked that it is crossed.</param>
-        /// <param name="mask">The operator bit set of the chain's group.</param>
-        /// <param name="additive">Whether the operators are the additive ones (otherwise the multiplicative ones).</param>
+        /// <param name="rootOperator">The descriptor of <paramref name="root"/>.</param>
+        /// <param name="group">The group of the chain.</param>
         /// <param name="keepProvenance">Whether the grouping is recorded, as <see cref="Rebuild"/> requires.</param>
         /// <returns>The extracted chain.</returns>
         /// <exception cref="ExpressionResourceLimitException">The structural budget is exhausted.</exception>
-        internal static FlattenedChain Extract(ExpressionTransformer transformer, Expression root, int mask, bool additive, bool keepProvenance)
+        internal static FlattenedChain Extract(ExpressionTransformer transformer, Expression root, FlattenOperator rootOperator, FlattenGroup group, bool keepProvenance)
         {
             List<ChainEntry>? entries = keepProvenance ? [] : null;
             var terms = new List<FlattenedTerm>();
-            var work = new Stack<(Expression Node, bool Positive)>();
-            work.Push((root, true));
+            // Known: the node is the operand of a crossed OperandGroup operator, whose group was decided by this very operand, so
+            // it belongs to the chain without walking its own prefix again.
+            var work = new Stack<(Expression Node, bool Inverted, bool Known)>();
+            work.Push((root, false, false));
 
             while (work.Count > 0)
             {
-                (Expression node, bool positive) = work.Pop();
+                (Expression node, bool inverted, bool known) = work.Pop();
                 ExpressionResourceBudget.ConsumeStructuralVisit();
 
-                if (!ReferenceEquals(node, root) && !transformer.IsCrossedByChain(node, mask))
+                FlattenOperator? crossed = ReferenceEquals(node, root) ? rootOperator
+                    : known ? transformer.DescribeFlattenOperator(node)
+                    : transformer.CrossingOperator(node, group);
+                if (crossed is null)
                 {
                     entries?.Add(new ChainEntry(node, Crossed: false));
-                    ExpressionType operation = additive
-                        ? positive ? ExpressionType.Add : ExpressionType.Subtract
-                        : positive ? ExpressionType.Multiply : ExpressionType.Divide;
-                    terms.Add(new FlattenedTerm(operation, node, terms.Count));
+                    terms.Add(new FlattenedTerm(group.OperationOf(inverted), node, terms.Count));
                     continue;
                 }
 
                 entries?.Add(new ChainEntry(node, Crossed: true));
-                if (node is UnaryExpression unary)
+                if (crossed.Arity == 1)
                 {
-                    // Negate: the operand's sign is inverted.
-                    work.Push((unary.Operand, !positive));
+                    work.Push((((UnaryExpression)node).Operand, crossed.OperandContext(inverted, 0), crossed.Group is null));
                     continue;
                 }
 
                 // The right operand is pushed first so that the left one is examined first (pre-order, left to right).
-                // Subtract and Divide invert their right operand.
                 BinaryExpression binary = (BinaryExpression)node;
-                bool rightInverted = binary.NodeType is ExpressionType.Subtract or ExpressionType.Divide;
-                work.Push((binary.Right, rightInverted ? !positive : positive));
-                work.Push((binary.Left, positive));
+                work.Push((binary.Right, crossed.OperandContext(inverted, 1), false));
+                work.Push((binary.Left, crossed.OperandContext(inverted, 0), false));
             }
 
             return new FlattenedChain(root, entries, terms.ToArray());
@@ -501,13 +765,12 @@ public abstract partial class ExpressionTransformer
     /// <returns>The rebuilt chain.</returns>
     private Expression RebuildFlattenedChainCore(Expression source, IReadOnlyList<Expression> operands)
     {
-        FlattenGroup? group = source is BinaryExpression or UnaryExpression ? _transformPlan.GetFlattenGroup(source.NodeType) : null;
-        if (group is null || !CanFlattenThrough(source))
+        if (FlattenGroupOf(source, out FlattenOperator? root) is not FlattenGroup group)
         {
             throw new ArgumentException("The expression is not the root of a chain of this transformer's flatten rules.", nameof(source));
         }
 
-        return FlattenedChain.Extract(this, source, group.Mask, group.IsAdditive, keepProvenance: true).Rebuild(operands);
+        return FlattenedChain.Extract(this, source, root!, group, keepProvenance: true).Rebuild(operands);
     }
 
     /// <summary>
@@ -516,8 +779,8 @@ public abstract partial class ExpressionTransformer
     /// </summary>
     /// <param name="Transformer">The transformer whose flatten rules declined the chain.</param>
     /// <param name="Node">The child being prepared, itself crossed by the chain.</param>
-    /// <param name="Mask">The operator bit set of the chain's group.</param>
-    private readonly record struct PendingChainChild(ExpressionTransformer? Transformer, Expression? Node, int Mask);
+    /// <param name="Group">The group of the chain.</param>
+    private readonly record struct PendingChainChild(ExpressionTransformer? Transformer, Expression? Node, FlattenGroup? Group);
 
     /// <summary>
     /// Set by <see cref="PrepareChainChild"/> while a node of a declined chain prepares a child the chain also crosses, and
@@ -563,12 +826,12 @@ public abstract partial class ExpressionTransformer
         if (pending.Node is not null && ReferenceEquals(pending.Node, e) && ReferenceEquals(pending.Transformer, this))
         {
             _pendingChainChild = default;
-            return TransformDeclinedChainNode(e, pending.Mask, trace, out prepared, out boundary);
+            return TransformDeclinedChainNode(e, pending.Group!, trace, out prepared, out boundary);
         }
 
-        // Type tests first: the node type of an extension node is never read (ETC R4).
-        FlattenGroup? group = e is BinaryExpression or UnaryExpression ? _transformPlan.GetFlattenGroup(e.NodeType) : null;
-        if (group is null || !CanFlattenThrough(e))
+        // Type tests first: the node type of an extension node is never read (ETC R4). A node that belongs to no group (an
+        // OperandGroup operator whose operand identifies none, for example) roots no chain.
+        if (FlattenGroupOf(e, out FlattenOperator? root) is not FlattenGroup group)
         {
             return TransformHistorically(e, trace, out prepared, out boundary);
         }
@@ -588,7 +851,7 @@ public abstract partial class ExpressionTransformer
             return TransformHistorically(e, trace, out prepared, out boundary);
         }
 
-        FlattenedChain chain = FlattenedChain.Extract(this, e, group.Mask, group.IsAdditive, keepProvenance: false);
+        FlattenedChain chain = FlattenedChain.Extract(this, e, root!, group, keepProvenance: false);
         if (trace is { Detailed: true }) trace.ChainFlattened(e);
 
         // The node is processed here: one transformation visit, before any rule runs (the historical fallback counts its own).
@@ -615,7 +878,7 @@ public abstract partial class ExpressionTransformer
             trace?.RuleDeclined(rule.Info, e, ExpressionRuleRejection.Declined);
         }
 
-        return TransformDeclinedChainNode(e, group.Mask, trace, out prepared, out boundary);
+        return TransformDeclinedChainNode(e, group, trace, out prepared, out boundary);
     }
 
     /// <summary>
@@ -648,25 +911,27 @@ public abstract partial class ExpressionTransformer
     /// difference is the link left for each child the chain also crosses (<see cref="PrepareChainChild"/>), so that the chain
     /// is never extracted again from one of its own nodes.
     /// </summary>
-    /// <param name="e">A crossed node of the declined chain: a binary operator, or a negation.</param>
-    /// <param name="mask">The operator bit set of the chain's group.</param>
+    /// <param name="e">A crossed node of the declined chain: a binary operator, or a unary one with an operand.</param>
+    /// <param name="group">The group of the chain.</param>
     /// <param name="trace">The tracing state of the operation, or <see langword="null"/>.</param>
     /// <param name="prepared">The node rebuilt by the traversal.</param>
     /// <param name="boundary">Always <see langword="false"/>: a crossed node is never a transformation boundary.</param>
     /// <returns>The result of the node.</returns>
-    private Expression TransformDeclinedChainNode(Expression e, int mask, ExpressionTraceSession? trace, out Expression prepared, out bool boundary)
+    private Expression TransformDeclinedChainNode(Expression e, FlattenGroup group, ExpressionTraceSession? trace, out Expression prepared, out bool boundary)
     {
         TransformContext context;
         if (e is BinaryExpression binary)
         {
-            Expression left = PrepareChainChild(binary.Left, mask);
-            Expression right = PrepareChainChild(binary.Right, mask);
+            Expression left = PrepareChainChild(binary.Left, group);
+            Expression right = PrepareChainChild(binary.Right, group);
             context = new TransformContext(CopyBinaryExpression(binary, left, right));
         }
         else
         {
+            // The operand of a crossed OperandGroup operator decided its group: the chain crosses it too.
             UnaryExpression unary = (UnaryExpression)e;
-            context = new TransformContext(RebuildUnaryExpression(unary, PrepareChainChild(unary.Operand, mask)));
+            bool known = DescribeFlattenOperator(unary)!.Group is null;
+            context = new TransformContext(RebuildUnaryExpression(unary, PrepareChainChild(unary.Operand, group, known)));
         }
 
         prepared = context.Expression;
@@ -679,14 +944,15 @@ public abstract partial class ExpressionTransformer
     /// <see cref="_pendingChainChild"/> is set for the duration of the call and restored afterwards, even on failure.
     /// </summary>
     /// <param name="child">The raw child.</param>
-    /// <param name="mask">The operator bit set of the chain's group.</param>
+    /// <param name="group">The group of the chain.</param>
+    /// <param name="known">Whether the chain is already known to cross <paramref name="child"/>.</param>
     /// <returns>What <see cref="PrepareExpression"/> returns for <paramref name="child"/>.</returns>
-    private Expression PrepareChainChild(Expression child, int mask)
+    private Expression PrepareChainChild(Expression child, FlattenGroup group, bool known = false)
     {
-        if (!IsCrossedByChain(child, mask)) return PrepareExpression(child);
+        if (!known && CrossingOperator(child, group) is null) return PrepareExpression(child);
 
         PendingChainChild previous = _pendingChainChild;
-        _pendingChainChild = new PendingChainChild(this, child, mask);
+        _pendingChainChild = new PendingChainChild(this, child, group);
         try
         {
             return PrepareExpression(child);
