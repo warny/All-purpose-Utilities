@@ -61,11 +61,11 @@ public partial class ExpressionSimplifier
     /// </para>
     /// </remarks>
     [Flatten(ExpressionType.Add, ExpressionType.Subtract)]
-    private Expression? FlattenAdditiveChain(Expression source, FlattenedTerm[] terms)
+    private Expression? FlattenAdditiveChain(Expression source, FlattenedTerm[] terms, FlattenRuleDispatcher dispatcher)
     {
         foreach (FlattenedTerm term in terms)
         {
-            if (!IsLinearTerm(term.Operand, source.Type)) return FlattenAnchoredChain((BinaryExpression)source);
+            if (!IsLinearTerm(term.Operand, source.Type)) return FlattenAnchoredChain((BinaryExpression)source, dispatcher);
         }
 
         var signedTerms = new List<(Expression Term, bool IsNegative)>(terms.Length);
@@ -84,6 +84,7 @@ public partial class ExpressionSimplifier
     /// a unit, as the level by level treatment prepares it.
     /// </summary>
     /// <param name="root">The raw root of the chain.</param>
+    /// <param name="dispatcher">The dispatcher of the chain's group, which runs the additive signature rules of a level.</param>
     /// <returns>The result the level by level treatment gives for <paramref name="root"/>.</returns>
     /// <remarks>
     /// <para>
@@ -116,7 +117,7 @@ public partial class ExpressionSimplifier
     /// of the engine; a refusal in the middle of it leaves nothing behind (only local lists are built).
     /// </para>
     /// </remarks>
-    private Expression FlattenAnchoredChain(BinaryExpression root)
+    private Expression FlattenAnchoredChain(BinaryExpression root, FlattenRuleDispatcher dispatcher)
     {
         Type type = root.Type;
         var nodes = new List<BinaryExpression>();
@@ -173,20 +174,21 @@ public partial class ExpressionSimplifier
         }
 
         if (statistics is not null) statistics.AnchoredFallbacks++;
-        return TransformSegmentLevelByLevel(nodes, operands, prepared);
+        return TransformSegmentLevelByLevel(nodes, operands, prepared, dispatcher);
     }
 
     /// <summary>
     /// The fallback of <see cref="FlattenAnchoredChain"/>: runs the nodes of the segment one by one on their prepared
     /// operands, from the anchor's node up to the root, as the level by level treatment runs them once their operands are
-    /// prepared (<see cref="ExpressionTransformer.TransformCoreWithPreparedOperands"/>, then the <c>NaN</c> fold that the
-    /// parent's <see cref="PrepareExpression"/> applies to each child result).
+    /// prepared (<see cref="TransformLevel"/>, then the <c>NaN</c> fold that the parent's <see cref="PrepareExpression"/>
+    /// applies to each child result).
     /// </summary>
     /// <param name="nodes">The nodes of the segment, root first; the last one holds the anchor.</param>
     /// <param name="operands">The operands of the segment in source order, with the index of the node that holds each.</param>
     /// <param name="prepared">The prepared operands, in the same order.</param>
+    /// <param name="dispatcher">The dispatcher of the chain's group.</param>
     /// <returns>The result of the root.</returns>
-    private Expression TransformSegmentLevelByLevel(List<BinaryExpression> nodes, List<(Expression Operand, bool IsNegative, int Node)> operands, Expression[] prepared)
+    private Expression TransformSegmentLevelByLevel(List<BinaryExpression> nodes, List<(Expression Operand, bool IsNegative, int Node)> operands, Expression[] prepared, FlattenRuleDispatcher dispatcher)
     {
         // Every node but the anchor's holds one prepared operand; the anchor's node holds two, in source order.
         var held = new Expression?[nodes.Count];
@@ -199,17 +201,34 @@ public partial class ExpressionSimplifier
             else anchorRight = prepared[i];
         }
 
-        Expression result = TransformCoreWithPreparedOperands(nodes[^1], anchorLeft!, anchorRight!);
+        Expression result = TransformLevel(dispatcher, nodes[^1], anchorLeft!, anchorRight!);
         for (int index = nodes.Count - 2; index >= 0; index--)
         {
             Expression child = FoldNaNOperand(result);
             BinaryExpression node = nodes[index];
             result = ReferenceEquals(node.Left, nodes[index + 1])
-                ? TransformCoreWithPreparedOperands(node, child, held[index]!)
-                : TransformCoreWithPreparedOperands(node, held[index]!, child);
+                ? TransformLevel(dispatcher, node, child, held[index]!)
+                : TransformLevel(dispatcher, node, held[index]!, child);
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// One level of <see cref="TransformSegmentLevelByLevel"/>: the node rebuilt from its prepared operands as the traversal
+    /// rebuilds it, the additive signature rules through the group's <paramref name="dispatcher"/> (the very candidates, admission
+    /// and invocation of the traversal), then, when none applies, <see cref="FinalizeExpression"/> on the rebuilt node and its
+    /// operands. A rule's result, <see langword="null"/> included, is the result of the level, as in the traversal.
+    /// </summary>
+    /// <param name="dispatcher">The dispatcher of the chain's group.</param>
+    /// <param name="node">The raw node of the level.</param>
+    /// <param name="left">Its prepared left operand.</param>
+    /// <param name="right">Its prepared right operand.</param>
+    /// <returns>The result of the level.</returns>
+    private Expression TransformLevel(FlattenRuleDispatcher dispatcher, BinaryExpression node, Expression left, Expression right)
+    {
+        BinaryExpression rebuilt = CopyBinaryExpression(node, left, right);
+        return dispatcher(rebuilt, out Expression? result) ? result! : FinalizeExpression(rebuilt, [rebuilt.Left, rebuilt.Right]);
     }
 
     /// <summary>

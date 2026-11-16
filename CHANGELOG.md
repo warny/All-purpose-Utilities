@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added — `omy.Utils` (expression engine: flatten rule dispatcher)
+- A `[Flatten]` rule may be declared `Expression? Rule(Expression source, FlattenedTerm[] terms, FlattenRuleDispatcher
+  dispatcher)`. The new delegate `FlattenRuleDispatcher(Expression node, out Expression? result)` applies to a prepared node
+  of an operator of the chain's group the signature rules (`[ExpressionSignature]`) that the group covers: the plan's
+  candidates of that node type, in declaration order, through the same dispatch as the traversal (signature `Match`,
+  parameter constraints, `Single`/`Expression[]`/positional shapes and their `null` results, fast invokers, exception
+  contract, effect gate, budgets, tracing). It prepares nothing, extracts no chain, calls no flatten rule and does not
+  finalize; each call counts one transformation visit. Dispatchers belong to the transformer instance (one per group), never
+  to the shared plan. A single operation (`a + b`) is a chain of two terms, as before.
+- **Declining with a dispatcher.** When every rule of a group that holds a dispatcher rule returns `null`, the chain is
+  finalized node by node **without** the group's signature rules on its own nodes (they ran under the rule's control); its
+  operands are transformed as usual. Groups whose rules use the two existing signatures keep the historical fallback, and
+  a chain refused by the admission keeps the historical path with its rules. Invalid shapes fail the construction of the
+  transformer. See `docs/expressions/FlattenArchitecture.md` §21.
+- `ExpressionSimplifier`: its flatten rule receives the dispatcher, through which the fallback of an anchored chain runs the
+  additive rules of each level (previously through the prepared-operand entry of the engine). **Results, user calls,
+  exceptions and budgets are unchanged** (S5 byte-identical); in a trace, such a level is now a dispatch treatment without
+  a `Finalize` event.
+
 ### Fixed — `omy.Utils` (expression simplifier: `(-t) / u` on signed integers, C3A-01, compatibility entry C-09)
 - **Behavior change.** `ExpressionSimplifier` no longer rewrites `(-t) / u` as `-(t / u)` when the type is `short`, `int` or
   `long`, under every policy and for derived simplifiers. When `t` evaluates to `MinValue`, `-t` wraps to `MinValue`, so the
