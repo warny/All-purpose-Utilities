@@ -6,6 +6,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using static System.Reflection.BindingFlags;
 using Utils.Objects;
 using Utils.Reflection;
@@ -142,7 +143,7 @@ public abstract partial class ExpressionTransformer
     {
         /// <summary>
         /// The method declares no parameters. It can never actually be reached (a rule always needs at
-        /// least the node parameter, and <see cref="TryTransform"/> reads the first logical argument before
+        /// least the node parameter, and <see cref="TryTransform(TransformContext, TransformRule[], ExpressionTraceSession?, out Expression?)"/> reads the first logical argument before
         /// invocation is attempted), preserved only to mirror this pre-existing (unreachable) case.
         /// </summary>
         None,
@@ -161,14 +162,15 @@ public abstract partial class ExpressionTransformer
 
         /// <summary>
         /// A <see cref="FlattenAttribute"/> rule: it receives the flattened chain (<c>FlattenedTerm[]</c>), preceded by the
-        /// source node when it declares two parameters. Never a candidate of the per-node-type buckets.
+        /// source node when it declares two parameters, and followed by its group's <see cref="FlattenRuleDispatcher"/> when it
+        /// declares three. Never a candidate of the per-node-type buckets.
         /// </summary>
         Flattened,
     }
 
     /// <summary>
     /// Precomputed, immutable metadata for a single <see cref="ExpressionSignatureAttribute"/>-annotated
-    /// transform rule method: everything <see cref="TryTransform"/> and
+    /// transform rule method: everything <see cref="TryTransform(TransformContext, TransformRule[], ExpressionTraceSession?, out Expression?)"/> and
     /// <see cref="TryInvokeTransformMethod"/> need without re-reading reflection metadata on the hot path.
     /// </summary>
     private sealed class TransformRule
@@ -334,8 +336,12 @@ public abstract partial class ExpressionTransformer
             _rulesByNodeType = rulesByNodeType;
             _allRules = allRules;
             HasFlattenRules = flattenGroups.Length > 0;
+            FlattenGroupCount = flattenGroups.Length;
             _flattenOperators = BuildFlattenOperatorIndex(flattenGroups);
         }
+
+        /// <summary>Gets the number of flatten groups, the size of each instance's dispatcher table.</summary>
+        public int FlattenGroupCount { get; }
 
         /// <summary>
         /// The descriptor of each declared flatten operator, indexed by node type value (see
@@ -542,6 +548,9 @@ public abstract partial class ExpressionTransformer
         {
             result[bucket.Key] = bucket.Value.ToArray();
         }
+
+        // Each flatten group shares the buckets of the operators it declares: its dispatcher selects from the same arrays.
+        foreach (FlattenGroup group in flattenGroups) group.AttachCoveredRules(result);
 
         return new TransformPlan(result, rules.ToArray(), flattenGroups);
     }
@@ -758,7 +767,7 @@ public abstract partial class ExpressionTransformer
 
     /// <summary>
     /// Readonly context produced by <see cref="PrepareTransform"/> and consumed by
-    /// <see cref="TryTransform"/>/<see cref="TryInvokeTransformMethod"/>. Its own fields cannot be
+    /// <see cref="TryTransform(TransformContext, TransformRule[], ExpressionTraceSession?, out Expression?)"/>/<see cref="TryInvokeTransformMethod"/>. Its own fields cannot be
     /// reassigned, but the array returned by <see cref="MaterializeExpressionParameters"/> is not
     /// protected from mutation. Pure implementation detail of
     /// <see cref="TransformCore(Expression)"/>: never exposed outside this class.
@@ -1121,7 +1130,8 @@ public abstract partial class ExpressionTransformer
     /// This is the single accounting point of the transformation budget: every execution of the engine on a node,
     /// whether it entered through <see cref="TransformCore(Expression)"/> or through a prepared-operand path such as
     /// <see cref="TransformCoreWithPreparedOperands"/>, passes here exactly once, so a future prepared path cannot
-    /// bypass the count.
+    /// bypass the count (the only other counting points are <see cref="TransformPreparedWithoutRules"/> and a
+    /// <see cref="FlattenRuleDispatcher"/> call, each one visit per node).
     /// </remarks>
     private Expression TransformPrepared(TransformContext context, ExpressionTraceSession? trace)
     {
@@ -1146,6 +1156,34 @@ public abstract partial class ExpressionTransformer
             return result!;
         }
 
+        return FinalizePrepared(context, trace);
+    }
+
+    /// <summary>
+    /// <see cref="TransformPrepared"/> without the signature rules: a crossed node of a chain whose flatten rules took over
+    /// the signature rules of their group and declined it (see <see cref="FlattenGroup.TakesOverCoveredRules"/>) is counted and
+    /// finalized only. A method of its own, so that the hot path of every transformer is unchanged.
+    /// </summary>
+    /// <param name="context">The prepared crossed node: a framework binary or unary node, never a boundary nor opaque.</param>
+    /// <param name="trace">The tracing state of the operation, or <see langword="null"/>.</param>
+    /// <returns>The finalized node.</returns>
+    /// <remarks>
+    /// Only reached from <see cref="TransformWithFlatten"/>, which already cleared the admission state of a rule admitted
+    /// outside the effect gate, so <see cref="RuleRunsOutsideGate"/> is never set here.
+    /// </remarks>
+    private Expression TransformPreparedWithoutRules(TransformContext context, ExpressionTraceSession? trace)
+    {
+        ExpressionResourceBudget.ConsumeTransformVisit();
+        return FinalizePrepared(context, trace);
+    }
+
+    /// <summary>The finalization of <see cref="TransformPrepared"/>: <see cref="FinalizeExpression"/> and its trace event.</summary>
+    /// <param name="context">The prepared node and its prepared sub-expressions.</param>
+    /// <param name="trace">The tracing state of the operation, or <see langword="null"/>.</param>
+    /// <returns>The finalized node.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private Expression FinalizePrepared(TransformContext context, ExpressionTraceSession? trace)
+    {
         // An untraversed node (PrepareDefault) is finalized with an empty child list, exactly as before ETC R1a (its opaque
         // context materializes Array.Empty), so every subclass observes the same FinalizeExpression calls;
         // CopyExpression's arity contract (C-02) then keeps it.
@@ -1179,7 +1217,7 @@ public abstract partial class ExpressionTransformer
     /// <summary>
     /// Dispatches to the node-type-specific <c>Prepare*</c> method that prepares/recurses into
     /// sub-expressions via <see cref="PrepareExpression"/>, rebuilds the node where applicable, and
-    /// assembles the expression parameter array later used by <see cref="TryTransform"/>.
+    /// assembles the expression parameter array later used by <see cref="TryTransform(TransformContext, TransformRule[], ExpressionTraceSession?, out Expression?)"/>.
     /// </summary>
     /// <remarks>
     /// ETC R1b (compatibility entry C-03): <see cref="MemberExpression"/>, <see cref="TypeBinaryExpression"/>,
@@ -2213,7 +2251,24 @@ public abstract partial class ExpressionTransformer
     /// <param name="trace">The tracing state of the operation, or <see langword="null"/> when it is not traced.</param>
     /// <param name="result">The result of the rule that applied.</param>
     /// <returns><see langword="true"/> when a rule produced the result.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private bool TryTransform(TransformContext context, ExpressionTraceSession? trace, out Expression? result)
+        => TryTransform(context, _transformPlan.GetCandidates(context.Expression.NodeType), trace, out result);
+
+    /// <summary>
+    /// The dispatch of <see cref="TryTransform(TransformContext, ExpressionTraceSession?, out Expression?)"/> over a given
+    /// selection of candidates: the traversal passes the plan's bucket of the node type, a <see cref="FlattenRuleDispatcher"/>
+    /// the bucket its group covers (see <see cref="FlattenGroup.CandidatesOf"/>). Both are arrays of the plan, in declaration
+    /// order, so the two paths share every condition: signature matching, return and first-parameter checks,
+    /// <see cref="CheckParameter"/>, the invocation shapes and their <see langword="null"/> results, the fast invokers, the
+    /// exception contract, the admission and the trace events.
+    /// </summary>
+    /// <param name="context">The prepared node.</param>
+    /// <param name="candidates">The candidate rules, in declaration order.</param>
+    /// <param name="trace">The tracing state of the operation, or <see langword="null"/> when it is not traced.</param>
+    /// <param name="result">The result of the rule that applied.</param>
+    /// <returns><see langword="true"/> when a rule produced the result.</returns>
+    private bool TryTransform(TransformContext context, TransformRule[] candidates, ExpressionTraceSession? trace, out Expression? result)
     {
         Expression e = context.Expression;
         object[]? materializedInvocationArguments = null;
@@ -2221,7 +2276,7 @@ public abstract partial class ExpressionTransformer
         // 0 not asked yet, 1 every rule may run (the gate allowed it), 2 only the audited rules may run (outside the gate).
         int admission = 0;
 
-        foreach (TransformRule rule in _transformPlan.GetCandidates(e.NodeType))
+        foreach (TransformRule rule in candidates)
         {
             // Outside the gate, a rule that is not audited cannot run: skip it before matching its signature, traced or not (a
             // custom Match is user code, and tracing must not change which user code runs); a detailed trace reports its
@@ -3470,13 +3525,14 @@ public abstract partial class ExpressionTransformer
     /// matters for user-defined operators (<c>Method</c>), <c>Coalesce</c> with a conversion lambda
     /// (<c>Conversion</c>), and lifted nullable operators (<c>IsLiftedToNull</c>). Shared by
     /// <see cref="PrepareBinary"/> (which calls this directly, without going through the params-array
-    /// <see cref="CopyExpression"/> overload) and by <see cref="CopyExpression"/>'s own binary branch.
+    /// <see cref="CopyExpression"/> overload) and by <see cref="CopyExpression"/>'s own binary branch; <c>internal</c> for the
+    /// simplifier's flatten rule, which rebuilds the levels of a segment exactly as the traversal does.
     /// </remarks>
     /// <param name="expression">The original binary expression being copied.</param>
     /// <param name="left">The (already prepared) left operand.</param>
     /// <param name="right">The (already prepared) right operand.</param>
     /// <returns>A binary expression with the same node type and metadata but the supplied operands.</returns>
-    private static BinaryExpression CopyBinaryExpression(BinaryExpression expression, Expression left, Expression right)
+    internal static BinaryExpression CopyBinaryExpression(BinaryExpression expression, Expression left, Expression right)
     {
         return Expression.MakeBinary(
             expression.NodeType,

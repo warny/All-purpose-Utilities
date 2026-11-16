@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Threading;
 using static System.Reflection.BindingFlags;
 
 namespace Utils.Expressions;
@@ -53,19 +54,65 @@ public abstract partial class ExpressionTransformer
     /// </summary>
     private sealed class FlattenGroup
     {
+        /// <summary>
+        /// The signature rules the group covers, per declared operator (see <see cref="CandidatesOf"/>); attached once by
+        /// <see cref="BuildPlan"/>, after the buckets are built.
+        /// </summary>
+        private (ExpressionType Operator, TransformRule[] Candidates)[] _covered = [];
+
         /// <summary>Initializes a group.</summary>
+        /// <param name="index">The position of the group in the plan (the slot of its dispatcher in each instance).</param>
         /// <param name="direct">The direct operation.</param>
         /// <param name="inverse">The inverse operation, or <see langword="null"/>.</param>
         /// <param name="ownUnaries">The unary operators bound to the couple itself.</param>
         /// <param name="operandUnaries">The unary operators bound to the couple through their operand.</param>
         /// <param name="rules">The rules, in declaration order.</param>
-        public FlattenGroup(ExpressionType direct, ExpressionType? inverse, ExpressionType[] ownUnaries, ExpressionType[] operandUnaries, TransformRule[] rules)
+        public FlattenGroup(int index, ExpressionType direct, ExpressionType? inverse, ExpressionType[] ownUnaries, ExpressionType[] operandUnaries, TransformRule[] rules)
         {
+            Index = index;
             Direct = direct;
             Inverse = inverse;
             OwnUnaries = ownUnaries;
             OperandUnaries = operandUnaries;
             Rules = rules;
+            foreach (TransformRule rule in rules) TakesOverCoveredRules |= rule.Parameters.Length == 3;
+        }
+
+        /// <summary>Gets the position of the group in the plan.</summary>
+        public int Index { get; }
+
+        /// <summary>
+        /// Gets whether a rule of the group receives a <see cref="FlattenRuleDispatcher"/>: such a rule takes over the signature
+        /// rules of the group on its chains, so a chain every rule declines is finalized node by node without them (its operands
+        /// are still transformed as usual), instead of running them a second time.
+        /// </summary>
+        public bool TakesOverCoveredRules { get; }
+
+        /// <summary>
+        /// Attaches the signature rules the group covers: for each operator it declares, the plan's bucket of that node type
+        /// itself (the same array, so the same rules, instances and order, wildcard and custom-attribute rules included).
+        /// </summary>
+        /// <param name="buckets">The buckets of the plan, one per real node type.</param>
+        public void AttachCoveredRules(Dictionary<ExpressionType, TransformRule[]> buckets)
+        {
+            var covered = new List<(ExpressionType, TransformRule[])> { (Direct, buckets[Direct]) };
+            if (Inverse is ExpressionType inverse) covered.Add((inverse, buckets[inverse]));
+            foreach (ExpressionType unary in OwnUnaries) covered.Add((unary, buckets[unary]));
+            foreach (ExpressionType unary in OperandUnaries) covered.Add((unary, buckets[unary]));
+            _covered = [.. covered];
+        }
+
+        /// <summary>Gets the signature rules the group covers for <paramref name="nodeType"/>.</summary>
+        /// <param name="nodeType">The node type of a framework binary or unary node.</param>
+        /// <returns>The plan's bucket of <paramref name="nodeType"/>, or <see langword="null"/> when the group does not declare it.</returns>
+        public TransformRule[]? CandidatesOf(ExpressionType nodeType)
+        {
+            foreach ((ExpressionType op, TransformRule[] candidates) in _covered)
+            {
+                if (op == nodeType) return candidates;
+            }
+
+            return null;
         }
 
         /// <summary>Gets the direct operation: the operation of a term reached by the initial context.</summary>
@@ -343,7 +390,7 @@ public abstract partial class ExpressionTransformer
             }
         }
 
-        return [.. groups.Select(static g => new FlattenGroup(g.Direct, g.Inverse, g.Own, g.Operand, [.. g.Rules]))];
+        return [.. groups.Select(static (g, index) => new FlattenGroup(index, g.Direct, g.Inverse, g.Own, g.Operand, [.. g.Rules]))];
     }
 
     /// <summary>Creates the exception reported for a unary operator whose dispatch would be ambiguous.</summary>
@@ -421,12 +468,14 @@ public abstract partial class ExpressionTransformer
 
     /// <summary>
     /// Builds the <see cref="TransformRule"/> of a flatten rule after checking its shape:
-    /// <c>Expression? Rule(FlattenedTerm[])</c> or <c>Expression? Rule(Expression, FlattenedTerm[])</c>.
+    /// <c>Expression? Rule(FlattenedTerm[])</c>, <c>Expression? Rule(Expression, FlattenedTerm[])</c> or
+    /// <c>Expression? Rule(Expression, FlattenedTerm[], FlattenRuleDispatcher)</c>. The number of parameters is the shape: 3
+    /// means the rule receives the dispatcher of its chain's group (see <see cref="FlattenGroup.TakesOverCoveredRules"/>).
     /// </summary>
     /// <param name="transformerType">The transformer type whose plan is being built.</param>
     /// <param name="method">The rule method.</param>
     /// <returns>The rule, of kind <see cref="InvocationKind.Flattened"/>.</returns>
-    /// <exception cref="InvalidOperationException">The method's shape is not one of the two supported signatures.</exception>
+    /// <exception cref="InvalidOperationException">The method's shape is not one of the three supported signatures.</exception>
     private static TransformRule BuildFlattenRule(Type transformerType, MethodInfo method)
     {
         if (method.IsGenericMethodDefinition || method.ContainsGenericParameters)
@@ -444,11 +493,13 @@ public abstract partial class ExpressionTransformer
         {
             1 => parameterInfos[0].ParameterType == typeof(FlattenedTerm[]),
             2 => parameterInfos[0].ParameterType == typeof(Expression) && parameterInfos[1].ParameterType == typeof(FlattenedTerm[]),
+            3 => parameterInfos[0].ParameterType == typeof(Expression) && parameterInfos[1].ParameterType == typeof(FlattenedTerm[])
+                && parameterInfos[2].ParameterType == typeof(FlattenRuleDispatcher),
             _ => false,
         };
         if (!validShape)
         {
-            throw InvalidFlattenRule(transformerType, method, "its parameters must be (FlattenedTerm[] terms) or (Expression source, FlattenedTerm[] terms)");
+            throw InvalidFlattenRule(transformerType, method, "its parameters must be (FlattenedTerm[] terms), (Expression source, FlattenedTerm[] terms) or (Expression source, FlattenedTerm[] terms, FlattenRuleDispatcher dispatcher)");
         }
 
         var parameters = new TransformParameter[parameterInfos.Length];
@@ -780,7 +831,8 @@ public abstract partial class ExpressionTransformer
     /// <param name="Transformer">The transformer whose flatten rules declined the chain.</param>
     /// <param name="Node">The child being prepared, itself crossed by the chain.</param>
     /// <param name="Group">The group of the chain.</param>
-    private readonly record struct PendingChainChild(ExpressionTransformer? Transformer, Expression? Node, FlattenGroup? Group);
+    /// <param name="WithRules">Whether the nodes of the declined chain run the signature rules (see <see cref="FlattenGroup.TakesOverCoveredRules"/>).</param>
+    private readonly record struct PendingChainChild(ExpressionTransformer? Transformer, Expression? Node, FlattenGroup? Group, bool WithRules);
 
     /// <summary>
     /// Set by <see cref="PrepareChainChild"/> while a node of a declined chain prepares a child the chain also crosses, and
@@ -798,7 +850,8 @@ public abstract partial class ExpressionTransformer
     /// root of a chain (a crossed node of a declared operator that does not continue a declined chain), the chain is extracted
     /// from the raw tree and given to the rules of its group, in declaration order; the first non-<see langword="null"/>
     /// result is the result of the node. Otherwise, and when every rule declines, the node is transformed exactly as without
-    /// flatten rules.
+    /// flatten rules, except that a chain of a group whose rules receive its dispatcher is declined without the signature
+    /// rules on its own nodes (<see cref="FlattenGroup.TakesOverCoveredRules"/>).
     /// </summary>
     /// <param name="e">The node to transform.</param>
     /// <param name="trace">The tracing state of the operation, or <see langword="null"/>.</param>
@@ -826,7 +879,7 @@ public abstract partial class ExpressionTransformer
         if (pending.Node is not null && ReferenceEquals(pending.Node, e) && ReferenceEquals(pending.Transformer, this))
         {
             _pendingChainChild = default;
-            return TransformDeclinedChainNode(e, pending.Group!, trace, out prepared, out boundary);
+            return TransformDeclinedChainNode(e, pending.Group!, pending.WithRules, trace, out prepared, out boundary);
         }
 
         // Type tests first: the node type of an extension node is never read (ETC R4). A node that belongs to no group (an
@@ -866,7 +919,7 @@ public abstract partial class ExpressionTransformer
             // Every rule receives its own array: a declining rule that reorders or overwrites it never affects the next one.
             // The last rule can receive the engine's array itself, which nothing reads afterwards.
             FlattenedTerm[] terms = i == rules.Length - 1 ? chain.Terms : (FlattenedTerm[])chain.Terms.Clone();
-            Expression? result = InvokeFlattenRule(rule, e, terms);
+            Expression? result = InvokeFlattenRule(rule, e, terms, group);
             if (result is not null)
             {
                 trace?.RuleApplied(rule.Info, e, result);
@@ -878,7 +931,8 @@ public abstract partial class ExpressionTransformer
             trace?.RuleDeclined(rule.Info, e, ExpressionRuleRejection.Declined);
         }
 
-        return TransformDeclinedChainNode(e, group, trace, out prepared, out boundary);
+        // A group whose rules receive its dispatcher took over its signature rules: the declined chain is finalized without them.
+        return TransformDeclinedChainNode(e, group, !group.TakesOverCoveredRules, trace, out prepared, out boundary);
     }
 
     /// <summary>
@@ -913,17 +967,21 @@ public abstract partial class ExpressionTransformer
     /// </summary>
     /// <param name="e">A crossed node of the declined chain: a binary operator, or a unary one with an operand.</param>
     /// <param name="group">The group of the chain.</param>
+    /// <param name="withRules">
+    /// Whether the signature rules run on the node: <see langword="false"/> when the group's flatten rules took them over
+    /// (<see cref="FlattenGroup.TakesOverCoveredRules"/>), so that the node is only finalized.
+    /// </param>
     /// <param name="trace">The tracing state of the operation, or <see langword="null"/>.</param>
     /// <param name="prepared">The node rebuilt by the traversal.</param>
     /// <param name="boundary">Always <see langword="false"/>: a crossed node is never a transformation boundary.</param>
     /// <returns>The result of the node.</returns>
-    private Expression TransformDeclinedChainNode(Expression e, FlattenGroup group, ExpressionTraceSession? trace, out Expression prepared, out bool boundary)
+    private Expression TransformDeclinedChainNode(Expression e, FlattenGroup group, bool withRules, ExpressionTraceSession? trace, out Expression prepared, out bool boundary)
     {
         TransformContext context;
         if (e is BinaryExpression binary)
         {
-            Expression left = PrepareChainChild(binary.Left, group);
-            Expression right = PrepareChainChild(binary.Right, group);
+            Expression left = PrepareChainChild(binary.Left, group, withRules);
+            Expression right = PrepareChainChild(binary.Right, group, withRules);
             context = new TransformContext(CopyBinaryExpression(binary, left, right));
         }
         else
@@ -931,12 +989,12 @@ public abstract partial class ExpressionTransformer
             // The operand of a crossed OperandGroup operator decided its group: the chain crosses it too.
             UnaryExpression unary = (UnaryExpression)e;
             bool known = DescribeFlattenOperator(unary)!.Group is null;
-            context = new TransformContext(RebuildUnaryExpression(unary, PrepareChainChild(unary.Operand, group, known)));
+            context = new TransformContext(RebuildUnaryExpression(unary, PrepareChainChild(unary.Operand, group, withRules, known)));
         }
 
         prepared = context.Expression;
         boundary = false;
-        return TransformPrepared(context, trace);
+        return withRules ? TransformPrepared(context, trace) : TransformPreparedWithoutRules(context, trace);
     }
 
     /// <summary>
@@ -945,14 +1003,15 @@ public abstract partial class ExpressionTransformer
     /// </summary>
     /// <param name="child">The raw child.</param>
     /// <param name="group">The group of the chain.</param>
+    /// <param name="withRules">Whether the nodes of the declined chain run the signature rules.</param>
     /// <param name="known">Whether the chain is already known to cross <paramref name="child"/>.</param>
     /// <returns>What <see cref="PrepareExpression"/> returns for <paramref name="child"/>.</returns>
-    private Expression PrepareChainChild(Expression child, FlattenGroup group, bool known = false)
+    private Expression PrepareChainChild(Expression child, FlattenGroup group, bool withRules, bool known = false)
     {
         if (!known && CrossingOperator(child, group) is null) return PrepareExpression(child);
 
         PendingChainChild previous = _pendingChainChild;
-        _pendingChainChild = new PendingChainChild(this, child, group);
+        _pendingChainChild = new PendingChainChild(this, child, group, withRules);
         try
         {
             return PrepareExpression(child);
@@ -971,15 +1030,21 @@ public abstract partial class ExpressionTransformer
     /// <param name="rule">The flatten rule.</param>
     /// <param name="source">The root of the chain, for a rule that declares it.</param>
     /// <param name="terms">The rule's own copy of the terms.</param>
+    /// <param name="group">The group of the chain, whose dispatcher a three-parameter rule receives.</param>
     /// <returns>The rule's result; <see langword="null"/> when it declines.</returns>
-    private Expression? InvokeFlattenRule(TransformRule rule, Expression source, FlattenedTerm[] terms)
+    private Expression? InvokeFlattenRule(TransformRule rule, Expression source, FlattenedTerm[] terms, FlattenGroup group)
     {
-        bool withSource = rule.Parameters.Length == 2;
+        int arity = rule.Parameters.Length;
         if (rule.FastInvoker is MethodInvoker invoker)
         {
             try
             {
-                return (Expression?)(withSource ? invoker.Invoke(this, source, terms) : invoker.Invoke(this, terms));
+                return (Expression?)(arity switch
+                {
+                    1 => invoker.Invoke(this, terms),
+                    2 => invoker.Invoke(this, source, terms),
+                    _ => invoker.Invoke(this, source, terms, GetFlattenRuleDispatcher(group)),
+                });
             }
             catch (Exception ex) when (!IsResourceFailure(ex))
             {
@@ -988,6 +1053,138 @@ public abstract partial class ExpressionTransformer
             }
         }
 
-        return (Expression?)InvokeRuleReflectively(rule, withSource ? [source, terms] : [terms]);
+        return (Expression?)InvokeRuleReflectively(rule, arity switch
+        {
+            1 => [terms],
+            2 => [source, terms],
+            _ => [source, terms, GetFlattenRuleDispatcher(group)],
+        });
+    }
+
+    /// <summary>
+    /// The dispatchers of this instance, one slot per flatten group of the plan, created on first use. They are instance state:
+    /// each one is bound to this transformer, which the plan, shared by every instance of the type, never references. The
+    /// table and each slot are published by compare-and-swap, so concurrent first uses keep exactly one delegate per group.
+    /// </summary>
+    private FlattenRuleDispatcher?[]? _flattenDispatchers;
+
+    /// <summary>Gets the dispatcher of <paramref name="group"/> bound to this instance (see <see cref="FlattenRuleDispatcher"/>).</summary>
+    /// <param name="group">A group of this transformer's plan.</param>
+    /// <returns>The dispatcher, created once per instance and group.</returns>
+    private FlattenRuleDispatcher GetFlattenRuleDispatcher(FlattenGroup group)
+    {
+        FlattenRuleDispatcher?[] dispatchers = Volatile.Read(ref _flattenDispatchers)
+            ?? Interlocked.CompareExchange(ref _flattenDispatchers, new FlattenRuleDispatcher?[_transformPlan.FlattenGroupCount], null)
+            ?? _flattenDispatchers!;
+        if (Volatile.Read(ref dispatchers[group.Index]) is { } existing) return existing;
+
+        FlattenRuleDispatcher created = CreateFlattenRuleDispatcher(group);
+        return Interlocked.CompareExchange(ref dispatchers[group.Index], created, null) ?? created;
+    }
+
+    /// <summary>
+    /// Creates the dispatcher of <paramref name="group"/> bound to this instance. A method of its own: the closure over
+    /// <paramref name="group"/> is allocated at the entry of the method that declares the captured parameter, so the cached
+    /// path of <see cref="GetFlattenRuleDispatcher"/> allocates nothing.
+    /// </summary>
+    /// <param name="group">A group of this transformer's plan.</param>
+    /// <returns>A new dispatcher.</returns>
+    private FlattenRuleDispatcher CreateFlattenRuleDispatcher(FlattenGroup group)
+        => (Expression node, out Expression? result) => DispatchCoveredRules(group, node, out result);
+
+    /// <summary>
+    /// The body of a <see cref="FlattenRuleDispatcher"/>: applies to <paramref name="node"/> the signature rules
+    /// <paramref name="group"/> covers for its node type, through the shared dispatch
+    /// (<see cref="TryTransform(TransformContext, TransformRule[], ExpressionTraceSession?, out Expression?)"/>). It prepares
+    /// nothing, extracts no chain, calls no flatten rule and does not finalize.
+    /// </summary>
+    /// <param name="group">The group of the dispatcher.</param>
+    /// <param name="node">A prepared framework binary or unary node of an operator of <paramref name="group"/>.</param>
+    /// <param name="result">The result of the rule that applied.</param>
+    /// <returns><see langword="true"/> when a rule produced <paramref name="result"/>.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="node"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException"><paramref name="node"/> is not a node of an operator of <paramref name="group"/>.</exception>
+    private bool DispatchCoveredRules(FlattenGroup group, Expression node, out Expression? result)
+    {
+        ArgumentNullException.ThrowIfNull(node);
+
+        // Type tests first: the node type of an extension node is never read (ETC R4).
+        TransformRule[]? candidates = node switch
+        {
+            BinaryExpression binary => group.CandidatesOf(binary.NodeType),
+            UnaryExpression unary => group.CandidatesOf(unary.NodeType),
+            _ => null,
+        };
+        if (candidates is null)
+        {
+            throw new ArgumentException("The node is not a binary or unary node of an operator the group of the dispatcher declares.", nameof(node));
+        }
+
+        // A dispatcher kept and called outside an operation starts one with this instance's limits, as RebuildFlattenedChain does.
+        if (!ExpressionResourceBudget.IsActive || (!JoinsRunningOperation && !ReferenceEquals(ExpressionResourceBudget.Owner, this)))
+        {
+            (bool applied, Expression? dispatched) = ExpressionResourceBudget.Run(
+                ResourceLimits,
+                this,
+                node,
+                null,
+                (Transformer: this, Node: node, Candidates: candidates),
+                static state => (state.Transformer.DispatchWithinOperation(state.Node, state.Candidates, out Expression? output), output));
+            result = dispatched;
+            return applied;
+        }
+
+        return DispatchWithinOperation(node, candidates, out result);
+    }
+
+    /// <summary>
+    /// <see cref="DispatchCoveredRules"/> inside an operation: one transformation visit and a stack check, as for a node of the
+    /// traversal; a treatment of its own inside a tracing scope; the admission state of a rule admitted outside the effect gate
+    /// cleared for the duration of the call, as <see cref="TransformPrepared"/> clears it.
+    /// </summary>
+    /// <param name="node">The prepared node.</param>
+    /// <param name="candidates">The signature rules its group covers for its node type.</param>
+    /// <param name="result">The result of the rule that applied.</param>
+    /// <returns><see langword="true"/> when a rule produced <paramref name="result"/>.</returns>
+    private bool DispatchWithinOperation(Expression node, TransformRule[] candidates, out Expression? result)
+    {
+        ExpressionResourceBudget.EnsureStack();
+        if (_ruleRunsOutsideGate)
+        {
+            _ruleRunsOutsideGate = false;
+            try
+            {
+                return DispatchWithinOperation(node, candidates, out result);
+            }
+            finally
+            {
+                _ruleRunsOutsideGate = true;
+            }
+        }
+
+        ExpressionResourceBudget.ConsumeTransformVisit();
+
+        // ETC R4 (C-05): a quote this transformer treats as a boundary runs no rule, whoever hands it over.
+        bool boundary = node is UnaryExpression { NodeType: ExpressionType.Quote } && TreatsQuotesAsBoundaries;
+        TransformContext context = node is BinaryExpression binary ? new TransformContext(binary) : new TransformContext((UnaryExpression)node);
+        if (ExpressionResourceBudget.ActiveTrace is not { } trace)
+        {
+            result = null;
+            return !boundary && TryTransform(context, candidates, null, out result);
+        }
+
+        int frame = trace.EnterTreatment(GetType(), node);
+        try
+        {
+            result = null;
+            bool applied = !boundary && TryTransform(context, candidates, trace, out result);
+            trace.ExitTreatment(frame, node, node, applied ? result : node, boundary);
+            return applied;
+        }
+        catch (Exception exception) when (trace.TreatmentFailed(frame, exception))
+        {
+            // Never reached: the filter only records the failure.
+            throw;
+        }
     }
 }

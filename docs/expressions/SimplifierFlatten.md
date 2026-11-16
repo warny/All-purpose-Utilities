@@ -142,8 +142,10 @@ part of this PR: it changes which terms are canonicalized together, so it needs 
 ## 4. Mechanism
 
 - `[Flatten(ExpressionType.Add, ExpressionType.Subtract)] private Expression? FlattenAdditiveChain(Expression source,
-  FlattenedTerm[] terms)`: prepares each term once, in source order, with `PrepareExpression` (transformation, then `NaN`
-  fold), collects it with `CollectAdditiveTerms`, and returns `CanonicalizeAdditiveTerms`. It never declines.
+  FlattenedTerm[] terms, FlattenRuleDispatcher dispatcher)`: prepares each term once, in source order, with
+  `PrepareExpression` (transformation, then `NaN` fold), collects it with `CollectAdditiveTerms`, and returns
+  `CanonicalizeAdditiveTerms`. It never declines. Since the dispatcher mission it receives the dispatcher of its group, the
+  additive signature rules of the plan, which the anchored fallback uses (§10.3, [FlattenArchitecture.md](FlattenArchitecture.md) §21.6).
 - `FlattenAdmission(root)` (new engine-internal hook, see [FlattenArchitecture.md](FlattenArchitecture.md) §5): the built-in
   simplifier admits the linear chains only. The test is one iterative walk of the crossed nodes that stops at the first
   refusal, reads framework operators and leaves by type tests only (an extension node is never read, an operator method
@@ -592,9 +594,12 @@ exceptions is the level by level one.
 
 **Fallback.** The proof needs the prepared anchor to be a call of a runtime method that is not inert. The admission only
 knows the raw call; if a rule rewrote it (none of the current rules does for an anchor: the probe of the audit found no
-case), the rule runs the levels one by one on the prepared operands, from the anchor's node up
-(`TransformCoreWithPreparedOperands`, then the `NaN` fold of each child result, as its parent's `PrepareExpression` does):
-the historical treatment, without preparing anything twice. The audit counters can force this path
+case), the rule runs the levels one by one on the prepared operands, from the anchor's node up, then the `NaN` fold of
+each child result, as its parent's `PrepareExpression` does: the historical treatment, without preparing anything twice.
+Each level is the node rebuilt from its prepared operands, the additive signature rules through the group's
+`FlattenRuleDispatcher`, then `FinalizeExpression` when none applies (until the dispatcher mission:
+`TransformCoreWithPreparedOperands`, which runs the same candidates, admission and finalization; results and budgets are
+unchanged, a trace shows a dispatch treatment per level, without its `Finalize` event). The audit counters can force this path
 (`FlattenAdmissionStatistics.ForceAnchoredFallback`); the tests compare it with the level by level treatment on every
 anchored case.
 

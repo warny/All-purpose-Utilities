@@ -432,4 +432,43 @@ public class ExpressionSimplifierFlattenAnchoredTests
         Assert.AreEqual(1, policy.Walks);
         Assert.AreEqual(N - 2, policy.KnownRefusals);
     }
+    /// <summary>
+    /// The fallback of an anchored chain runs its levels through the dispatcher of the additive group (the dispatcher
+    /// mission): inside a trace, each level of the segment is a treatment of an additive node requested by the flatten rule,
+    /// from the anchor's node up, and the result is still the level by level one.
+    /// </summary>
+    [TestMethod]
+    public void AnchoredFallback_RunsEachLevelThroughTheDispatcher()
+    {
+        Expression source = Expression.Add(Expression.Add(Expression.Add(Call(nameof(Unknown)), D[1]), D[2]), D[3]);
+        string expected = Dump(new LevelByLevelSimplifier().Simplify(source));
+
+        var collector = new ExpressionTraceCollector();
+        var statistics = new FlattenAdmissionStatistics { ForceAnchoredFallback = true };
+        ExpressionSimplifier.AdmissionStatistics = statistics;
+        Expression result;
+        try
+        {
+            using (ExpressionTransformTracing.Begin(collector, ExpressionTraceDetail.Detailed))
+            {
+                result = new ExpressionSimplifier().Simplify(source);
+            }
+        }
+        finally
+        {
+            ExpressionSimplifier.AdmissionStatistics = null;
+        }
+
+        Assert.AreEqual(1, statistics.AnchoredFallbacks);
+        Assert.AreEqual(expected, Dump(result));
+        ExpressionTransformEvent[] dispatches = [.. collector.GetEvents().Where(static e => e.Kind == ExpressionTransformEventKind.TransformEnter
+            && e.Rule?.Method.Name == "FlattenAdditiveChain" && e.Input is BinaryExpression { NodeType: ExpressionType.Add })];
+        Assert.AreEqual(3, dispatches.Length, "one dispatch per level of the segment");
+        // Each level is rebuilt from its prepared operands: the result of the level below, already finalized (the second level
+        // canonicalizes to Unknown() + (d1 + d2)), and its own prepared term.
+        Assert.AreEqual(
+            "(Unknown() + d1) | ((Unknown() + d1) + d2) | ((Unknown() + (d1 + d2)) + d3)",
+            string.Join(" | ", dispatches.Select(static e => e.Input!.ToString())),
+            "from the anchor's node up, each rebuilt from its prepared operands");
+    }
 }

@@ -36,12 +36,20 @@ namespace Utils.Expressions;
 /// of several couples.
 /// </para>
 /// <para>
-/// A rule has one of two signatures, checked once when the transformer's dispatch plan is built:
-/// <c>Expression? Rule(FlattenedTerm[] terms)</c> or <c>Expression? Rule(Expression source, FlattenedTerm[] terms)</c>, where
-/// <c>source</c> is the original, untransformed root of the chain. The operands are the raw, untransformed sub-expressions:
-/// a rule that accepts the chain is responsible for transforming them. A <see langword="null"/> result declines the chain;
-/// when every candidate declines, the transformer processes the chain node by node exactly as it does without this attribute.
-/// See <c>docs/expressions/FlattenArchitecture.md</c> for the priority, fallback and budget rules.
+/// A rule has one of three signatures, checked once when the transformer's dispatch plan is built:
+/// <c>Expression? Rule(FlattenedTerm[] terms)</c>, <c>Expression? Rule(Expression source, FlattenedTerm[] terms)</c> or
+/// <c>Expression? Rule(Expression source, FlattenedTerm[] terms, FlattenRuleDispatcher dispatcher)</c>, where <c>source</c> is
+/// the original, untransformed root of the chain. A single operation of a declared couple is a chain of two terms. The
+/// operands are the raw, untransformed sub-expressions: a rule that accepts the chain is responsible for transforming them. The
+/// third form also receives a <see cref="FlattenRuleDispatcher"/>, which applies to a node the transformer's signature rules
+/// that the chain's group covers (those of its declared operators), in their declaration order and with their usual
+/// contracts: the rule organizes the work and reuses the elementary rules instead of copying them.
+/// </para>
+/// <para>
+/// A <see langword="null"/> result declines the chain; when every candidate declines, the transformer processes the chain node
+/// by node as it does without this attribute. When a rule of the chain's group receives the dispatcher, that fallback does not
+/// run the signature rules on the chain's own nodes (they are the group's, already under the rule's control); their operands
+/// are transformed as usual. See <c>docs/expressions/FlattenArchitecture.md</c> for the priority, fallback and budget rules.
 /// </para>
 /// <para>
 /// The attribute is a request for a representation, not a permission: declaring an inversion establishes neither

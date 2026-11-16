@@ -2,7 +2,8 @@
 
 Status: infrastructure (PR A), used since PR B by the built-in `ExpressionSimplifier` for its linear additive chains (see
 [SimplifierFlatten.md](SimplifierFlatten.md)). `ExpressionDerivation<T>` and `ExpressionIntegration<T>` declare no flatten
-rule. The measurements of §19 are those of PR A, taken when no shipped transformer declared one.
+rule. The measurements of §19 are those of PR A, taken when no shipped transformer declared one. Since the dispatcher
+mission, a flatten rule may also receive a `FlattenRuleDispatcher` that runs the signature rules its group covers (§21).
 
 ## 1. Motivation
 
@@ -133,9 +134,12 @@ node type. The built-in simplifier keeps its own `Add`/`Subtract` checks: they a
 
 ### 2.5 Rules
 
-- Two signatures: `(FlattenedTerm[] terms)` and `(Expression source, FlattenedTerm[] terms)`; the return type is
-  assignable to `Expression`. `source` is the original, untransformed root of the chain.
-- A non-`null` result is the result of the root node. `null` declines (§13).
+- Three signatures: `(FlattenedTerm[] terms)`, `(Expression source, FlattenedTerm[] terms)` and
+  `(Expression source, FlattenedTerm[] terms, FlattenRuleDispatcher dispatcher)` (§21); the return type is assignable to
+  `Expression`. `source` is the original, untransformed root of the chain. Any other shape, a generic rule, or a constraint
+  on a parameter fails the construction of the transformer.
+- A non-`null` result is the result of the root node. `null` declines (§13; §21.5 for a group whose rules receive the
+  dispatcher).
 - The attributes are `sealed` and are a request for a representation, **not a permission**: they never allow a rule to drop,
   repeat, merge or move an evaluation.
 
@@ -188,8 +192,12 @@ For a transformer that declares flatten rules, `TransformCore(e)` proceeds as fo
    path, and the chains below it are offered when the traversal reaches them.
 3. The chain is extracted (§6) and given to the rules of its group **in declaration order** (the order of
    `Type.GetMethods`, as for signature rules).
-4. The first non-`null` result is the result of `e`: no signature rule and no `FinalizeExpression` runs on the chain.
-5. If every rule declines, the chain is processed historically (§13).
+4. The first non-`null` result is the result of `e`: no signature rule and no `FinalizeExpression` runs on the chain, except
+   those a rule runs itself through its dispatcher (§21) or by calling `TransformCore`.
+5. If every rule declines, the chain is processed historically (§13); for a group whose rules receive the dispatcher, without
+   the signature rules the group covers (§21.5).
+
+A single operation of the group (`a + b`, `a * b`) is a chain of two terms: no minimum depth is required.
 
 So the flatten rules of a chain run **before** every signature rule of every node of the chain, and before any operand is
 prepared. This order is forced by the purpose (signature rules need prepared children) and concerns only transformers that
@@ -339,6 +347,10 @@ Consequences:
 A rule that accepts is responsible for its operands (it calls `TransformCore` on those it wants transformed, in the order it
 chooses). A rule must not call `TransformCore(source)`: the root would be offered to it again.
 
+When the group holds a rule that receives the dispatcher, the same fallback runs **without the signature rules of the crossed
+nodes** (§21.5): those rules are the group's, and they already ran under the rule's control. The positional link carries that
+choice down the chain.
+
 ## 14. Preparation of the operands
 
 None by the infrastructure (decision recorded for this PR): terms are raw. A memoized preparation of the leaves was
@@ -381,6 +393,10 @@ Inside a tracing scope, for a transformer that declares flatten rules:
 one); flatten rules are numbered separately in `DeclarationIndex`. Tracing adds no call to user code and changes no
 decision. No event changes for a transformer without flatten rules.
 
+Each call of a `FlattenRuleDispatcher` is a treatment of its own (`TransformEnter`/`TransformExit`), requested by the running
+flatten rule, holding the rule events of the traversal (`RuleCandidate`, `RuleRejected`, `RuleApplied`); it has no `Finalize`
+event (a dispatch does not finalize). When no rule applies, its exit reports the node unchanged.
+
 ## 17. Security
 
 - Extraction runs no user code: only framework operator nodes are read (`NodeType`, `Method` compared with `null`, `Type`
@@ -402,7 +418,8 @@ decision. No event changes for a transformer without flatten rules.
 - New public API: `FlattenAttribute`, `FlattenedTerm`, `ExpressionTransformer.RebuildFlattenedChain`,
   `ExpressionTransformRuleInfo.FlattenedNodeTypes`, `ExpressionTransformEventKind.ChainFlattened`; since PR B,
   `ExpressionRuleRejection.ChainNotAdmitted`; with the declarative model, `FlattenUnaryAttribute` and
-  `UnaryOperatorBinding`, and the constructors of §2.1 replace `FlattenAttribute(params ExpressionType[])` (unreleased).
+  `UnaryOperatorBinding`, and the constructors of §2.1 replace `FlattenAttribute(params ExpressionType[])` (unreleased);
+  with the dispatcher, the delegate `FlattenRuleDispatcher` and the third rule signature (§21).
 - The declarations of the repository keep their results: `[Flatten(Add, Subtract)]` (the simplifier) and
   `[Flatten(Add, Subtract, Negate)]`, `[Flatten(Multiply, Divide)]` give exactly the terms of §8 and §9.
 - `FlattenedNodeTypes` lists the couples in index order, then the unary operator of the simplified constructor, then the
@@ -499,3 +516,158 @@ attribute test per method) was not measured.
   integration parameter. No general product rule.
 - C3 on the flattened representation, advanced regrouping and automatic factoring are out of scope until the architecture
   is validated.
+
+## 21. Rule dispatcher
+
+A flatten rule declared `Expression? Rule(Expression source, FlattenedTerm[] terms, FlattenRuleDispatcher dispatcher)`
+receives, with its chain, a delegate that applies to one node the **signature rules its group covers**. The rule organizes
+the work (which operands it transforms, in which order, which nodes it rebuilds and hands to the dispatcher); the elementary
+rules stay the `[ExpressionSignature]` methods, with their attributes and contracts.
+
+```csharp
+public delegate bool FlattenRuleDispatcher(Expression node, out Expression? result);
+```
+
+### 21.1 Audit and decisions
+
+| Point of the existing engine | Finding | Decision |
+|---|---|---|
+| `TransformPlan` buckets | for a node type, `GetCandidates` is exactly the ordered list the traversal evaluates, wildcard and custom-attribute rules included (they are in every bucket) | the group's selection **is** those buckets: the same arrays, attached to the group when the plan is built (no second index, no reflection at run time) |
+| `TryTransform` | the loop mixes the candidate source with the shared conditions | split: an overload takes the candidates; the traversal passes `GetCandidates(e.NodeType)`, the dispatcher its group's bucket; one implementation of matching, first-parameter check, `CheckParameter`, the three invocation shapes, fast invokers, exception contract, admission and trace events |
+| `Single`/`ExpressionArray` rules returning `null` | a result in the traversal (the node becomes `null`), unlike a `Positional` `null`, which declines | kept: the delegate returns `bool` and the result separately, so a `null` result is reported as a result |
+| `TransformPlan` shared per type | an instance method cannot be bound in the plan | the dispatchers live in the instance, one slot per group, created on first use and published by compare-and-swap (concurrent first uses keep one delegate) |
+| `TransformDeclinedChainNode` | runs every signature rule of the declined chain's nodes | kept for the old signatures; a group with a dispatcher rule falls back **without** its covered rules (§21.5, user decision) |
+| two-term chains | already extracted (`a + b` is a chain of two terms) | pinned by a test |
+| `FlattenAdmission` | refuses a chain before extraction (simplifier: non-linear chains) | unchanged: a refused chain is not a declined one and keeps the historical path, signature rules included |
+
+### 21.2 Coverage matrix
+
+For each operator a group declares, the dispatcher's candidates are the plan's bucket of that node type:
+
+| Group operator | Candidates | Order |
+|---|---|---|
+| direct operation (`Add`) | `GetCandidates(Add)`: rules declared on `Add`, wildcard rules, rules of custom attributes | declaration order (`GetMethods`) |
+| inverse operation (`Subtract`) | `GetCandidates(Subtract)` | idem |
+| unary operator (`FirstGroup` or `OperandGroup`) | `GetCandidates(Negate)` | idem |
+| any other node | rejected with `ArgumentException` (type tests first: an extension node is never read) | – |
+
+A rule declaring several couples receives, for each chain, the dispatcher of that chain's group: an operator of another
+couple is rejected. Two rules of one group share one selection (one group, one dispatcher per instance). An
+`OperandGroup` unary operator shared by two groups is in both selections (the same bucket). A custom method attribute keeps
+its `Match` calls (it is evaluated for every candidate node, as in the traversal); a custom parameter attribute is still
+constructed on demand by `CheckParameter`, never cached. An override is in the plan once (its own body runs), a hidden
+method and the hiding one are both in it, as in the traversal.
+
+### 21.3 Semantics of a call
+
+- **Input: a prepared node.** The dispatcher prepares nothing, transforms no operand, extracts no chain and calls no flatten
+  rule: the rule hands it a node whose operands it already treated. A node handed twice is dispatched twice.
+- **Output.** `true` and the rule's result when a rule produced one; `false` when no candidate matches, every candidate
+  declines, or the transformer's effect gate refuses the node (`AllowsRules`, then the audited rules outside the gate, as in
+  the traversal). The node is never finalized: the rule decides what to do with it (keep it, call `FinalizeExpression`, …).
+- **Budgets and stack.** One transformation visit and one stack check per call, as for a node of the traversal; a refusal
+  propagates unwrapped, as from any rule.
+- **Re-entry.** A dispatched rule that calls `TransformCore` starts an ordinary transformation, which may root chains of its
+  own. The delegate itself never re-activates the flatten rule.
+- **Boundaries.** A quote the transformer treats as a boundary (ETC R4, C-05) runs no rule, even handed to the dispatcher.
+- **Lifetime.** A dispatcher may be kept: called outside an operation it starts one with the instance's limits.
+- **Concurrency.** Each operation of an instance uses that instance's dispatcher; concurrent operations share it and its
+  state is immutable (the delegate and the group).
+
+### 21.4 Recognition, admission, refusal, decline, fallback
+
+| Situation | Treatment |
+|---|---|
+| the node belongs to no group (§2.2) | historical dispatch |
+| the node roots a chain, but `FlattenAdmission` refuses it | not extracted; historical path **with** the signature rules (a refusal is not a decline: the rules never ran) |
+| a signature rule refuses inside a dispatch (declines, constraint fails, gate) | the next candidate, as in the traversal; `false` when none applies |
+| every flatten rule of the group returns `null` | §21.5 |
+| the rule wants the historical treatment of a sub-expression | it calls `TransformCore` on it (a new transformation) |
+
+### 21.5 Declining a chain of a dispatcher group
+
+When every rule of a group that holds a dispatcher rule returns `null`, the chain is processed as in §13 (children prepared
+in order, nodes rebuilt, `FinalizeExpression`, positional link), **but the signature rules do not run on the crossed nodes of
+the chain**: they are the group's covered rules, which the rule already ran (or chose not to run) through its dispatcher. The
+operands of the chain are prepared as usual, so their own rules run; a sub-chain under an operand is a chain of its own. There
+is no loop: the fallback never offers the declined chain's nodes to the flatten rules again, and the dispatcher never calls
+them. The groups of the old signatures keep §13 unchanged.
+
+### 21.6 Simplifier
+
+`ExpressionSimplifier.FlattenAdditiveChain` receives the dispatcher. The anchored chain's fallback
+(`TransformSegmentLevelByLevel`, used when the prepared anchor turns inert or is rewritten) runs each level of the segment
+through it: the node rebuilt from its prepared operands as the traversal rebuilds it, the additive signature rules through
+the dispatcher, then `FinalizeExpression` when none applies. This is what `TransformCoreWithPreparedOperands` did, through the
+same candidates and admission; the results, user calls, exceptions and budgets are unchanged (S5 byte-identical). The only
+observable difference is in a trace: each level is a dispatch treatment without a `Finalize` event, the finalization being
+called by the rule.
+
+The rule still never declines, so the fallback of §21.5 does not concern it. Linear chains run no signature rule (by
+construction none applies at any level), and chains the admission refuses keep the historical path: they never reach the
+rule, so there is no double treatment to remove in the simplifier. Migrating them to the dispatcher (an iterative
+level-by-level emulation inside the rule) would change the trace structure, the per-node budgets and the known-refusal
+tables of mission C1 for no gain in results; it is left out, as is a multiplicative flatten rule, which would change S5
+results.
+
+### 21.7 Measurements
+
+Harness `DispBench` (kept with the mission data, not in the repository): BenchmarkDotNet 0.14.0, in-process, 8 warmups, 20
+iterations, memory diagnoser, affinity `0x14`, high priority, `master` `3266684f` (*base*) and the branch rotated
+base/branch/base/branch, so that each variant has its own A/A control. Three rounds: round 1 on the first version, round 2
+after the closure fix below, round 3 on the final code while another process loaded the machine at about 80 % (every case
+about 50 % slower, A/A ±4 to ±11 %): round 3 only confirms that no difference exceeds its noise.
+
+**Deterministic counters** (smallest accepted budget by bisection through the public limits, and rule calls), identical on
+base and branch for every common case, and on the final code:
+
+| Case | Transform visits | Structural visits | Rule calls |
+|---|---|---|---|
+| no flatten, `a + b`, six rules decline | 3 | 1 | 6 |
+| no flatten, 16-term sum, six rules decline at each level | 31 | 1 | 90 |
+| simplifier, linear `x0 + … + x11` | 13 | 80 | 1 |
+| simplifier, anchored `F() + x1 + … + x31` | 33 | 125 | 1 |
+| simplifier, refused chain of 8 products | 277 | 2,202 | 112 |
+| simplifier, mixed tree | 38 | 61 | 11 |
+| dispatch of `a + b` (chain + dispatch), first / sixth / no rule applies | 2 | 3 | 1 / 6 / 6 |
+| rule transforming 4 / 64 operands, rebuilding, dispatching the root | 6 / 66 | 14 / 254 | 6 |
+| old-signature rule declining a 16-term sum (historical fallback) | 32 | 31 | 90 |
+
+**Plan construction** (median of 200 builds of the private `BuildPlan`): rule set 44.1 → 44.0 µs, constrained set 46.7 → 45.5
+µs, `ExpressionSimplifier` 456 → 446 µs; dispatching transformers 43–44 µs. Attaching the buckets to the groups is not
+measurable. **First call** in a fresh process (9 alternated launches, anchored chain of 32 terms): 74.8 ms on base, 74.1 ms
+on the branch (median); the first call is JIT-dominated on both.
+
+**Time and allocations** (rounds 1 and 2, quiet machine):
+
+| Path | Base | Branch | Note |
+|---|---|---|---|
+| 1. no flatten, `a + b`, rules decline | 426 ns, 136 B | 443–479 ns, 136 B | within A/A (±2 %) to +4 % |
+| 1. no flatten, first rule applies / sixth | 133 / 399 ns | 143–160 / 412–454 ns | first-rule case +7 to +10 % (about 10 ns) on rounds 1–2, before the hot path was restored (below); round 3 within noise |
+| 1. no flatten, 16-term sum | 6.56 µs, 2,040 B | 6.44–6.81 µs, 2,040 B | ±1 % |
+| 8. no flatten, constrained parameters | 2.02 µs, 992 B | 2.13–2.18 µs, 992 B | +5 to +7 % on rounds 1–2 (same cause); round 3 +3.7 % for an A/A of ±11 % |
+| simplifier: linear 12 / anchored 32 / refused 8 / mixed | 4.43 / 6.36 / 337 / 14.8 µs | −1 to +2 % | allocations identical after the closure fix |
+| 2. dispatch of `a + b`, no rule applies | – | 450 ns, 336 B | the traversal of the same node: 426 ns, 136 B |
+| 5. dispatch, first rule applies | – | 174 ns | traversal: 133 ns (the chain extraction and the flatten rule invocation are the difference) |
+| 6. dispatch, sixth rule applies | – | 459 ns | traversal: 399 ns |
+| 7. dispatch, every rule declines | – | 450 ns | as path 2 |
+| 3. / 4. operands transformed, chain rebuilt, root dispatched: 4 / 64 terms | – | 815 ns / 5.31 µs, 1,064 / 15,464 B | |
+| old-signature fallback, 16-term sum | 7.41 µs (branch build, unchanged path) | | +13 % over the transformer without flatten: extraction plus one rule call, as in §19 |
+| 8. constrained parameters through the dispatcher | – | 2.16 µs, 1,168 B | traversal: 2.02 µs, 992 B |
+
+Two findings, fixed on the branch:
+
+- **A closure allocated on every flatten rule call** (+32 B on every simplifier case of round 1): the lambda that creates a
+  dispatcher captured the `group` parameter, and C# allocates the closure of a captured parameter at the entry of its method,
+  even when the cached delegate is returned. The creation moved to a method of its own: allocations identical to base on
+  every case of round 2.
+- **The hot path of every transformer** carried an extra `withRules` parameter on `TransformPrepared` (rounds 1 and 2: about
+  +10 ns on the smallest cases). `TransformPrepared` is restored to its `master` body, the declined chain of a dispatcher group
+  uses `TransformPreparedWithoutRules`, and the finalization is shared by an inlined helper; the candidate overload of
+  `TryTransform` is reached through an aggressively inlined wrapper. Round 3 shows no difference beyond its noise; a quiet
+  campaign on the final code was not possible in this session.
+
+**Dispatcher invocation.** The rules keep their `MethodInvoker` fast path (no compiled expression was introduced). The
+dispatcher adds one delegate call, a scan of the group's declared operators (at most a handful) and, under tracing, a treatment
+frame; its cost over the traversal of an already prepared node is the extraction and invocation of the flatten rule, about
+40 ns on `a + b`.
