@@ -17,6 +17,9 @@ public partial class ExpressionSimplifier
     /// </summary>
     /// <param name="source">The raw root of the chain: an ordinary <c>Add</c> or <c>Subtract</c> node.</param>
     /// <param name="terms">The raw signed terms of the chain, in source order.</param>
+    /// <param name="dispatcher">
+    /// The dispatcher of the additive group, which runs the additive signature rules on a level of an anchored chain's fallback.
+    /// </param>
     /// <returns>The canonical additive form of the chain; never <see langword="null"/>.</returns>
     /// <remarks>
     /// <para>

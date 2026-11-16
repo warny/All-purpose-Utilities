@@ -143,7 +143,7 @@ public abstract partial class ExpressionTransformer
     {
         /// <summary>
         /// The method declares no parameters. It can never actually be reached (a rule always needs at
-        /// least the node parameter, and <see cref="TryTransform"/> reads the first logical argument before
+        /// least the node parameter, and <see cref="TryTransform(TransformContext, TransformRule[], ExpressionTraceSession?, out Expression?)"/> reads the first logical argument before
         /// invocation is attempted), preserved only to mirror this pre-existing (unreachable) case.
         /// </summary>
         None,
@@ -170,7 +170,7 @@ public abstract partial class ExpressionTransformer
 
     /// <summary>
     /// Precomputed, immutable metadata for a single <see cref="ExpressionSignatureAttribute"/>-annotated
-    /// transform rule method: everything <see cref="TryTransform"/> and
+    /// transform rule method: everything <see cref="TryTransform(TransformContext, TransformRule[], ExpressionTraceSession?, out Expression?)"/> and
     /// <see cref="TryInvokeTransformMethod"/> need without re-reading reflection metadata on the hot path.
     /// </summary>
     private sealed class TransformRule
@@ -767,7 +767,7 @@ public abstract partial class ExpressionTransformer
 
     /// <summary>
     /// Readonly context produced by <see cref="PrepareTransform"/> and consumed by
-    /// <see cref="TryTransform"/>/<see cref="TryInvokeTransformMethod"/>. Its own fields cannot be
+    /// <see cref="TryTransform(TransformContext, TransformRule[], ExpressionTraceSession?, out Expression?)"/>/<see cref="TryInvokeTransformMethod"/>. Its own fields cannot be
     /// reassigned, but the array returned by <see cref="MaterializeExpressionParameters"/> is not
     /// protected from mutation. Pure implementation detail of
     /// <see cref="TransformCore(Expression)"/>: never exposed outside this class.
@@ -1217,7 +1217,7 @@ public abstract partial class ExpressionTransformer
     /// <summary>
     /// Dispatches to the node-type-specific <c>Prepare*</c> method that prepares/recurses into
     /// sub-expressions via <see cref="PrepareExpression"/>, rebuilds the node where applicable, and
-    /// assembles the expression parameter array later used by <see cref="TryTransform"/>.
+    /// assembles the expression parameter array later used by <see cref="TryTransform(TransformContext, TransformRule[], ExpressionTraceSession?, out Expression?)"/>.
     /// </summary>
     /// <remarks>
     /// ETC R1b (compatibility entry C-03): <see cref="MemberExpression"/>, <see cref="TypeBinaryExpression"/>,
