@@ -433,6 +433,38 @@ public class ExpressionSimplifierMetadataTests
         Assert.AreEqual(Dump(simplifier.Simplify(chain)), Dump(new ExpressionSimplifier().Simplify(chain)));
     }
 
+    /// <summary>
+    /// The table grows only for a new node: updating the hash, key or state of a stored node, even at the load-factor
+    /// threshold, keeps its capacity, and the next new node grows it.
+    /// </summary>
+    [TestMethod]
+    public void TableGrowsOnlyForNewNodes()
+    {
+        var table = new ExpressionMetadataTable();
+        int capacity = table.Capacity;
+        Expression[] nodes = [.. Enumerable.Range(0, capacity / 2).Select(static i => (Expression)Expression.Constant((double)i))];
+        foreach (Expression node in nodes) table.SetHash(node, 1);
+        Assert.AreEqual(capacity / 2, table.Count, "At the threshold.");
+
+        var simplifier = new ExpressionSimplifier();
+        ParameterExpression[][] scopes = [];
+        ExpressionCanonicalOrder.KeyNode key = ExpressionCanonicalOrder.BuildKeyFromSnapshot(nodes[0], scopes);
+        foreach (Expression node in nodes)
+        {
+            table.SetHash(node, 2);
+            table.SetKey(node, key, scopes);
+            table.SetState(node, CanonicalizationState.LocallySimplified, simplifier);
+        }
+
+        Assert.AreEqual(capacity, table.Capacity, "Updates of stored nodes never grow the table.");
+        Assert.AreEqual(capacity / 2, table.Count);
+        Assert.IsTrue(table.TryGetValue(nodes[^1], out ExpressionMetadataTable.Entry entry) && entry.HasHash && entry.Hash == 2 && entry.Key is not null);
+
+        table.SetHash(Expression.Constant(-1.0), 3);
+        Assert.AreEqual(capacity * 2, table.Capacity, "A new node past the threshold grows it.");
+        foreach (Expression node in nodes) Assert.IsTrue(table.TryGetValue(node, out _), "Every node survives the growth.");
+    }
+
     /// <summary>The description gathers the hash, the key and the state of a term.</summary>
     [TestMethod]
     public void DescribeTermGathersTheMetadata()

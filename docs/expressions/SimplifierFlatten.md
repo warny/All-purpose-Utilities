@@ -764,7 +764,7 @@ Reference: `master` `adddc636`.
 - **S5 campaigns** (`terminate`, `converge`, `diff`, `effects`, `s3`, `canon`, `comparer`, 1,000 seeds, 1,000
   nested): **byte-identical** to `master` (every result file; only `environment.txt` differs). The `terminate` and
   `converge` files hold every simplified form of the corpus, so no result, exception or rule interaction changed.
-- **Tests** `ExpressionSimplifierMetadataTests` (13): reuse never changes a result (corpus of the C3 target families,
+- **Tests** `ExpressionSimplifierMetadataTests` (14): reuse never changes a result (corpus of the C3 target families,
   sums, products, calls, shared sub-chains, lambdas binding the chain's parameters); a level by level chain keys and hashes
   each term about once instead of once per level; an admitted chain builds each key once and creates no table; the stored
   hash is the raw structural hash, deterministic, equal for equal structures; a forged hash collision never groups two terms;
@@ -773,7 +773,7 @@ Reference: `master` `adddc636`.
   finite, `NaN`, infinite and signed-zero constants, decimals, strings, `null`); a node shared by several lexical contexts;
   instances and policies inside another instance's operation keep their results (a derived simplifier refused by the budget
   alone is refused there too); a nested public call starts with an empty table, costs exactly what it costs alone and leaves
-  the caller's table untouched; a budget refusal leaves no table behind.
+  the caller's table untouched; a budget refusal leaves no table behind; the table grows only for a new node.
 - **Suites** (final code): Unit 14,666/14,667 (1 skipped by design), Security 390/393 (3 skipped by design), Functional
   383/383, ETC Debug (`Coverage`, Debug) 350/351 (1 skipped).
 - **Security pin found during C3a.** `NestedPublicEquals_AppliesItsOwnStructuralBudget_WithoutTheRetainedMemo` failed with a
@@ -797,7 +797,7 @@ owed (C3d).
 | `c3 target` | 592.75 µs | 548.39 µs | -7.5 % | 433,002 B | 412,928 B | -4.6 % |
 | `linear 32` | 11.04 µs | 10.92 µs | -1.1 % | 21,160 B | 21,160 B | +0.0 % |
 | `linear 200` | 69.28 µs | 68.69 µs | -0.9 % | 124,834 B | 124,834 B | +0.0 % |
-| `repeated 16` | 34.29 µs | 37.69 µs | +9.9 % | 33,704 B | 38,648 B | +14.7 % |
+| `repeated 16` | 34.29 µs | 37.69 µs | +9.9 % | 33,704 B | 36,040 B | +6.9 % |
 | `repeated 48` | 102.73 µs | 107.14 µs | +4.3 % | 94,161 B | 104,273 B | +10.7 % |
 | `sin 16x2` | 35,406.45 µs | 36,591.60 µs | +3.3 % | 15,068,664 B | 12,608,184 B | -16.3 % |
 | `coef 24` | 293.35 µs | 320.25 µs | +9.2 % | 189,363 B | 194,784 B | +2.9 % |
@@ -820,9 +820,12 @@ Reading:
 - **Level by level chains gain** where keys were rebuilt at every level: −16 % allocations on `product 24` and
   `sin 16x2`, −4.6 % on the target expression.
 - **Residual cost**: a chain whose only level by level step is its root (`repeated 16/48`, `coef 24`: a repeated parameter
-  refuses the root, the sub-chains are admitted) stores the root's values without any later reader: +10.7 to +14.7 %
-  allocations (≈ 5–10 KB), time within the noise but up to +10 %. These are the repeated chains that C3b is meant to admit,
+  refuses the root, the sub-chains are admitted) stores the root's values without any later reader: +2.9 to +10.7 %
+  allocations (≈ 2–10 KB), time within the noise but up to +10 %. These are the repeated chains that C3b is meant to admit,
   which removes the cost; until then it is the price of the infrastructure.
+- **Review fix.** The first version grew the table before looking the node up, so updating a stored node at the load
+  threshold doubled it; it now grows only for a new node (`TableGrowsOnlyForNewNodes`). The `repeated 16` row was +14.7 %
+  (38,648 B) before the fix; the other allocations did not change.
 - Transformation visits are unchanged (the table never skips a rule or a node); structural visits decrease by the walks
   avoided.
 

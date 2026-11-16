@@ -41,6 +41,9 @@ internal sealed class ExpressionMetadataTable
     /// <summary>Gets the number of stored nodes (focused tests).</summary>
     internal int Count => _count;
 
+    /// <summary>Gets the number of slots (focused tests).</summary>
+    internal int Capacity => _keys.Length;
+
     /// <summary>The metadata stored for one node; every part is optional.</summary>
     internal struct Entry
     {
@@ -154,6 +157,10 @@ internal sealed class ExpressionMetadataTable
     /// <returns>A reference to its entry, valid until the next addition.</returns>
     private ref Entry GetOrAdd(Expression key)
     {
+        // An update of a stored node never grows the table: only a new key counts against the load factor.
+        int found = Find(key);
+        if (found >= 0) return ref _values[found];
+
         // Keeps the load factor at most one half, so probe sequences stay short and always reach an empty slot.
         if ((_count + 1) * 2 > _keys.Length) Grow();
         Expression?[] keys = _keys;
