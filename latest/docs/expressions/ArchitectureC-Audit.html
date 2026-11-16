@@ -1087,6 +1087,12 @@ column goes from 2 to 0 for <code>int</code> and from 1 to 0 for <code>long</cod
 comparer test was added, which passes in the targeted run (8/8); <code>UtilsTest.Security</code> 386 run, 383 passed, 3 ignored
 (pre-existing, platform-gated); <code>UtilsTest.Functional</code> 383 passed; ETC Debug job (<code>UtilsTest.Mathematics.Expressions.Coverage</code>,
 Debug) 351 run, 350 passed, 1 ignored (pre-existing).</p>
+<h3 id="86-flatten-mission-c3-not-stage-c3-of-this-document">8.6 Flatten mission C3 (not stage C3 of this document)</h3>
+<p>The Flatten mission named C3 (global simplification of flattened chains, <a href="SimplifierFlatten.html">SimplifierFlatten.md</a> §11) is
+unrelated to stage C3 of this plan (the negation and reassociation rewrites of §3.2–3.3 under a policy). Its first step, C3a,
+adds no rewrite and asks no permission: it shares the hashes and keys the canonicalizations already compute, for every
+policy alike (they are functions of the node and the lexical scopes), and records states per instance. The policies of
+this document are untouched; the later C3 steps must keep every regrouping they introduce behind the existing permissions.</p>
 
 </article>
 
