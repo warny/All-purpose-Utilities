@@ -364,10 +364,18 @@ for an allocation, a nondeterministic read or a non-preserved exception category
 <td>B/C</td>
 </tr>
 <tr>
-<td><code>MultiplicationWithNegate</code>, <code>DivisionWithNegate</code></td>
-<td><code>t * -u -&gt; -(t * u)</code>, …</td>
+<td><code>MultiplicationWithNegate</code></td>
+<td><code>t * -u -&gt; -(t * u)</code>, <code>-t * u -&gt; -(t * u)</code></td>
 <td>none</td>
-<td>identical (division: signed-integral guard already present)</td>
+<td>identical (modular for the integers, exact for IEEE and <code>decimal</code>)</td>
+<td>none</td>
+<td>A</td>
+</tr>
+<tr>
+<td><code>DivisionWithNegate</code></td>
+<td><code>t / -u -&gt; -(t / u)</code>, <code>-t / u -&gt; -(t / u)</code>, both declined for a signed integral type</td>
+<td>none</td>
+<td>identical where allowed (<code>float</code>, <code>double</code>, <code>decimal</code>); for a signed integral type both directions are wrong at <code>MinValue</code>, so both are guarded: <code>t / -u</code> since C-06, <code>-t / u</code> only since C3A-01 (§8.5; the audit had wrongly reported the guard present on both overloads)</td>
 <td>none</td>
 <td>A</td>
 </tr>
@@ -689,6 +697,12 @@ they need no policy key. A rule that compares under a relaxed policy uses the de
 <td>category A under the default (<code>UsesHistoricalAdmission</code> removed or narrowed), compatibility entry C-08</td>
 <td>changes</td>
 <td>C2, C3</td>
+</tr>
+<tr>
+<td>PR C3A-01</td>
+<td><code>DivisionWithNegate(-t, u)</code> declined for a signed integral type, like its mirror (§8.5), compatibility entry C-09</td>
+<td>changes (bug fix)</td>
+<td>– (independent of the C3a policies)</td>
 </tr>
 </tbody>
 </table>
@@ -1036,6 +1050,43 @@ comparing rule, a per-operation behavior memo keyed with the lexical scope, and 
 <li>S5A-07 (<code>t + 0</code> re-transforms its prepared operand) now also costs about 0.9 µs per <code>F() + 0</code> under a non-default policy.</li>
 <li>C-08: the category A improvements of the default (<code>UsesHistoricalAdmission</code>), with their own compatibility entry.</li>
 </ul>
+<h3 id="85-c3a-01--divisionwithnegate-t-u-on-signed-integers-compatibility-entry-c-09">8.5 C3A-01 — <code>DivisionWithNegate(-t, u)</code> on signed integers (compatibility entry C-09)</h3>
+<p>Correction of §3.2: the matrix stated that both <code>DivisionWithNegate</code> overloads carried the signed-integral guard. Only
+<code>t / (-u)</code> did (C-06); <code>(-t) / u -&gt; -(t / u)</code> was applied to <code>short</code>, <code>int</code> and <code>long</code>. It is a behavior change of the default,
+made independently of the C3a policies, because the historical result was wrong.</p>
+<ul>
+<li><strong>Divergence domain.</strong> Truncating division is odd in each operand, so <code>(-t) / u = -(t / u)</code> holds whenever <code>-t</code> does not
+wrap, i.e. for every <code>t ≠ MinValue</code>. At <code>t = MinValue</code>, <code>-t = MinValue</code> and the two sides are <code>MinValue / u</code> and
+<code>-(MinValue / u)</code>: equal for <code>u = 1</code> (both <code>MinValue</code>), <code>u = -1</code> (both throw <code>OverflowException</code>) and <code>u = 0</code> (both throw
+<code>DivideByZeroException</code>), opposite for every other divisor (<code>int.MinValue</code>, <code>2</code>: <code>-1073741824</code> against <code>1073741824</code>;
+<code>u = MinValue</code>: <code>1</code> against <code>-1</code>). The same holds for any dividend that <em>evaluates</em> to <code>MinValue</code> (S5 seed 633:
+<code>-(3x + 3z)</code> with <code>long</code>). Compiled <code>short</code> code keeps the intermediate negation in 32 bits, so source and rewrite agree
+there; the interpreter (<code>Compile(preferInterpretation: true)</code>) wraps every operation and diverges like <code>int</code>. <code>sbyte</code> has
+no ordinary division or negation node.</li>
+<li><strong>Fix.</strong> <code>|| IsSignedIntegral(e.Type)</code> added to the guard of the overload, as on its mirror. No other rule, Flatten, the
+admission, the policies, the budgets or the ETC R4/A-10 invariants are touched. <code>float</code>, <code>double</code> and <code>decimal</code> keep the
+rewrite (exact: negation never rounds or overflows there; the only difference is the sign of a <code>NaN</code>, outside the IEEE
+contract). A constant divisor <code>0</code> still throws while simplifying (<code>DivideWithZeroOrOne</code>, S5A-04), as before.</li>
+<li><strong>Tests</strong> (<code>ExpressionSimplifierDivisionWithNegateTests</code>, 8): the exact divergence domain of the historical rewrite per type
+and evaluation mode; the rewrite refused for <code>short</code>/<code>int</code>/<code>long</code> under five policies (default, each axis relaxed, all
+relaxed) and for a derived simplifier, the result evaluated like the source, compiled and interpreted, on a grid including
+<code>MinValue</code>, <code>MaxValue</code>, <code>0</code>, <code>±1</code>, <code>±2</code>; constant divisors <code>2</code>, <code>-2</code>, <code>3</code>, <code>MinValue</code>, <code>1</code>, <code>-1</code>, <code>0</code>; the two overloads
+agree on every type; the <code>float</code>/<code>double</code>/<code>decimal</code> rewrite kept and exact (signed zeros, infinities, decimal overflow and
+division by zero); <code>(-t) * u</code>, <code>t / 1</code>, <code>t / -1</code> unchanged; <code>ExpressionComparer.Default</code> no longer equates <code>(-t) / u</code> and
+<code>-(t / u)</code> for signed integers. Before the fix three of them fail (for example <code>short</code> interpreted, <code>(-MinValue) / 2</code>:
+<code>-16384</code> expected, <code>16384</code> returned).</li>
+<li><strong>S5 differential</strong> (<code>terminate</code>, <code>converge</code>, <code>diff</code>, <code>effects</code>, <code>s3</code>, <code>canon</code>, 1,000 seeds, 1,000 nested, default policy,
+against <code>master</code> <code>b6a0f865</code>): every result file byte-identical except <code>diff.jsonl</code> and <code>diff-summary.md</code> (and
+<code>environment.txt</code>). Six seeds of <code>diff</code> differ, all <code>int</code> or <code>long</code>, all through this rule: three (<code>408</code>, <code>625</code>, <code>633</code>)
+were classified <code>extreme</code> on <code>master</code> (the simplified tree returned the opposite quotient at a <code>MinValue</code> input, e.g. seed
+408, <code>(-x) / (z + 10)</code> at <code>x = int.MinValue, z = 2</code>: <code>-178956970</code> against <code>178956970</code>) and are now <code>same</code>; three (<code>247</code>,
+<code>738</code>, <code>849</code>) were already <code>same</code> and only keep <code>(-t) / u</code> instead of <code>-(t / u)</code> in their simplified tree. The <code>extreme</code>
+column goes from 2 to 0 for <code>int</code> and from 1 to 0 for <code>long</code>; nothing else changes.</li>
+</ul>
+<p>Validation (Release unless stated): <code>UtilsTest.Unit</code> 14,636 run, 14,635 passed, 1 ignored (pre-existing), before the
+comparer test was added, which passes in the targeted run (8/8); <code>UtilsTest.Security</code> 386 run, 383 passed, 3 ignored
+(pre-existing, platform-gated); <code>UtilsTest.Functional</code> 383 passed; ETC Debug job (<code>UtilsTest.Mathematics.Expressions.Coverage</code>,
+Debug) 351 run, 350 passed, 1 ignored (pre-existing).</p>
 
 </article>
 

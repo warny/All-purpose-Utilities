@@ -359,6 +359,12 @@ treated as unable to throw: it overflows near <code>decimal.MaxValue</code>. Rew
 <code>(a / 0.5m) - (a / 0.5m)</code> is kept and still throws <code>OverflowException</code> at <code>a = decimal.MaxValue</code> instead of returning <code>0</code>. A
 constant divisor of magnitude 1 or more (<code>a / 2m</code>, <code>a / -1m</code>) is still inert.</li>
 </ul>
+<h2 id="expression-engine-negated-dividend-of-a-signed-integral-division-c3a-01-c-09">Expression engine: negated dividend of a signed integral division (C3A-01, C-09)</h2>
+<p>Behavior change of <code>ExpressionSimplifier</code> (and of <code>ExpressionComparer</code>); no public signature changed. <code>(-t) / u</code> is kept as
+written for <code>short</code>, <code>int</code> and <code>long</code> instead of becoming <code>-(t / u)</code>, which returned the opposite quotient when <code>t</code> evaluates
+to <code>MinValue</code> (<code>int.MinValue / 2</code>: <code>1073741824</code> instead of <code>-1073741824</code>). The mirror <code>t / (-u)</code> was already kept for these
+types (C-06). <code>float</code>, <code>double</code> and <code>decimal</code> still give <code>-(t / u)</code>. The record is in
+<code>docs/expressions/ArchitectureC-Audit.md</code> §8.5.</p>
 <h2 id="expression-engine-injectable-transformation-tracing-additive">Expression engine: injectable transformation tracing (additive)</h2>
 <p>New public API in <code>Utils.Expressions</code>, without behavior change for code that does not use it: <code>ExpressionTransformTracing</code>
 (<code>Begin(tracer, detail)</code> opens a disposable <code>ExpressionTraceScope</code>), <code>IExpressionTransformTracer</code>,
