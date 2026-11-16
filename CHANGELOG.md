@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed — `omy.Utils` (expression engine: shared metadata of simplified terms, mission C3a)
+- `ExpressionSimplifier`: the canonicalizations of sums and products read back, from a table of the running public operation,
+  the raw structural hashes and canonical-order keys an earlier canonicalization of the same operation computed for the same
+  node (keys only under the same lexical scope frames), instead of computing them again at every level of a level by level
+  chain. Only the levels that collected a canonicalized operand store their values; flattened chains, two-term sums and
+  two-factor products only read the table, so simple simplifications allocate exactly what they did. Every public operation,
+  nested ones included, starts with an empty table. **Results, exceptions, user calls and transformation visits are
+  unchanged** (S5 byte-identical); structural visits decrease by the walks avoided. Internal groundwork for mission C3:
+  `SimplifiedExpressionInfo` and `CanonicalizationState` (`Canonical` proven for leaves only). See
+  `docs/expressions/SimplifierFlatten.md` §11.
 ### Added — `omy.Utils` (expression engine: flatten rule dispatcher)
 - A `[Flatten]` rule may be declared `Expression? Rule(Expression source, FlattenedTerm[] terms, FlattenRuleDispatcher
   dispatcher)`. The new delegate `FlattenRuleDispatcher(Expression node, out Expression? result)` applies to a prepared node

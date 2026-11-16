@@ -74,10 +74,13 @@ public partial class ExpressionSimplifier
         var signedTerms = new List<(Expression Term, bool IsNegative)>(terms.Length);
         foreach (FlattenedTerm term in terms)
         {
-            CollectAdditiveTerms(signedTerms, PrepareExpression(term.Operand), term.Operation == ExpressionType.Subtract);
+            // Mission C3a: the prepared term is the end of this instance's treatment of the operand (LocallySimplified).
+            Expression prepared = PrepareExpression(term.Operand);
+            RecordLocallySimplified(prepared);
+            CollectAdditiveTerms(signedTerms, prepared, term.Operation == ExpressionType.Subtract);
         }
 
-        return CanonicalizeAdditiveTerms(signedTerms, source.Type);
+        return CanonicalizeAdditiveTerms(signedTerms, source.Type, recordMetadata: false);
     }
 
     /// <summary>
@@ -160,7 +163,11 @@ public partial class ExpressionSimplifier
         for (int i = suffix.Count - 1; i >= 0; i--) operands.Add(suffix[i]);
 
         var prepared = new Expression[operands.Count];
-        for (int i = 0; i < prepared.Length; i++) prepared[i] = PrepareExpression(operands[i].Operand);
+        for (int i = 0; i < prepared.Length; i++)
+        {
+            prepared[i] = PrepareExpression(operands[i].Operand);
+            RecordLocallySimplified(prepared[i]);
+        }
 
         FlattenAdmissionStatistics? statistics = t_admissionStatistics;
         int anchor = operands.FindIndex(operand => operand.Node == nodes.Count - 1 && IsAnchorTerm(operand.Operand));
@@ -173,7 +180,7 @@ public partial class ExpressionSimplifier
             if (statistics is not null) statistics.AnchoredCanonicalizations++;
             var signedTerms = new List<(Expression Term, bool IsNegative)>(prepared.Length);
             for (int i = 0; i < prepared.Length; i++) CollectAdditiveTerms(signedTerms, prepared[i], operands[i].IsNegative);
-            return CanonicalizeAdditiveTerms(signedTerms, type);
+            return CanonicalizeAdditiveTerms(signedTerms, type, recordMetadata: false);
         }
 
         if (statistics is not null) statistics.AnchoredFallbacks++;

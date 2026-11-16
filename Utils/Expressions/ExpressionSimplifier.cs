@@ -2916,6 +2916,12 @@ namespace Utils.Mathematics.Expressions
         /// list is consumed (updated in place).
         /// </param>
         /// <param name="type">The result type of the ordinary additive chain, hence of every term.</param>
+        /// <param name="recordMetadata">
+        /// Whether the keys and hashes computed for the terms are stored in the operation's metadata table (mission C3a). A
+        /// level of the level by level treatment stores them, since its parent collects the same term instances again; the
+        /// single canonicalization of a flattened chain only reads the table, since no enclosing canonicalization collects its
+        /// terms again, and storing them would only cost allocations. A canonicalization of two terms never stores either.
+        /// </param>
         /// <returns>A deterministic additive expression tree preserving semantics.</returns>
         /// <remarks>
         /// Pinned terms, zero constants, constant aggregation, keys, stable ordering, grouping, cancellation and the
@@ -2923,8 +2929,12 @@ namespace Utils.Mathematics.Expressions
         /// The order of <paramref name="terms"/> matters: the sort is stable, so terms whose keys tie (two free
         /// parameters, for example) keep their collection order.
         /// </remarks>
-        private Expression CanonicalizeAdditiveTerms(List<(Expression Term, bool IsNegative)> terms, Type type)
+        private Expression CanonicalizeAdditiveTerms(List<(Expression Term, bool IsNegative)> terms, Type type, bool recordMetadata = true)
         {
+            // Mission C3a: a canonicalization of two terms has collected no canonicalized operand; it is the first level of a
+            // chain, or a lone sum, and storing its metadata would mostly cost a table no other canonicalization reads.
+            recordMetadata &= terms.Count > 2;
+
             // ETC R1b (C-06): a term whose evaluation is observable is never grouped, cancelled or moved past another one.
             List<(Expression Term, bool IsNegative)>? pinned = SplitPinnedTerms(terms, static term => term.Term);
             terms.RemoveAll(static term => IsOrdinaryZeroConstant(term.Term));
@@ -2959,8 +2969,11 @@ namespace Utils.Mathematics.Expressions
                 // needs post-annotation (IsFunctionLike, CategoryOrder) are copied out here, keeping
                 // AnnotatedAdditiveTerm - copied repeatedly through OrderBy/GroupBy - smaller than carrying
                 // the whole AdditiveGroupClass (with its two now-unused reference-type fields) would.
+                //
+                // Mission C3a: the keys come through the operation's metadata table, so a term (or an argument) that an
+                // earlier canonicalization of the operation already keyed under the same scopes is not keyed again.
                 IReadOnlyList<ExpressionCanonicalOrder.KeyNode>? argumentKeys = group.IsFunctionLike
-                    ? ExpressionCanonicalOrder.BuildKeysFromSnapshot(group.Arguments!, scopes)
+                    ? GetCanonicalKeys(group.Arguments!, scopes, recordMetadata)
                     : null;
 
                 annotatedTerms.Add(new AnnotatedAdditiveTerm(
@@ -2968,7 +2981,7 @@ namespace Utils.Mathematics.Expressions
                     isNegative,
                     group.IsFunctionLike,
                     group.CategoryOrder,
-                    ExpressionCanonicalOrder.BuildKeyFromSnapshot(term, scopes),
+                    GetCanonicalKey(term, scopes, recordMetadata),
                     argumentKeys));
             }
 
@@ -2980,7 +2993,7 @@ namespace Utils.Mathematics.Expressions
 
             var rebuiltTerms = new List<Expression>();
             var signedTerms = new List<(Expression Term, bool IsNegative)>();
-            foreach (var termGroup in orderedTerms.GroupBy(static term => term.Term, AdditiveGroupingEqualityComparer.Instance))
+            foreach (var termGroup in orderedTerms.GroupBy(static term => term.Term, recordMetadata ? AdditiveGroupingEqualityComparer.Instance : AdditiveGroupingEqualityComparer.LookupOnly))
             {
                 signedTerms.Clear();
                 CollectUncancelledTerms(termGroup, signedTerms);
@@ -3266,9 +3279,13 @@ namespace Utils.Mathematics.Expressions
 
             ParameterExpression[][] scopes = CaptureLexicalScopeSnapshot();
 
+            // Mission C3a: the keys of a product of more than two factors (one operand at least was a canonicalized product) are
+            // stored, since an enclosing product collects the same factors again; a product of two factors only reads the table.
+            bool record = factors.Count > 2;
+
             // The key comparisons consume the structural budget: a refusal raised inside the sort is restored (ETC R1a-Security).
             var orderedFactors = ExpressionResourceBudget.ToSortedList(factors
-                .OrderBy(factor => ExpressionCanonicalOrder.BuildKeyFromSnapshot(factor, scopes)));
+                .OrderBy(factor => GetCanonicalKey(factor, scopes, record)));
             if (pinned is not null) orderedFactors.AddRange(pinned);
 
             return BuildRightAssociative(orderedFactors, Expression.Multiply);
@@ -3556,10 +3573,15 @@ namespace Utils.Mathematics.Expressions
         private static bool GroupEquals(Expression x, Expression y)
             => ReferenceEquals(x, y) || ExpressionComparer.StructuralEqualsRaw(x, y);
 
-        /// <summary>Hash mirroring <see cref="GroupEquals"/>, via <see cref="ExpressionComparer.StructuralHashRaw(Expression?)"/>.</summary>
+        /// <summary>
+        /// Hash mirroring <see cref="GroupEquals"/>, via <see cref="ExpressionComparer.StructuralHashRaw(Expression?)"/>, read back
+        /// from the operation's metadata table when an earlier canonicalization already hashed the same node (mission C3a,
+        /// <see cref="GetStructuralHash"/>).
+        /// </summary>
         /// <param name="e">The operand to hash.</param>
+        /// <param name="record">Whether a computed hash is stored in the table.</param>
         /// <returns>A hash code consistent with <see cref="GroupEquals"/>.</returns>
-        private static int GroupHash(Expression e) => ExpressionComparer.StructuralHashRaw(e);
+        private static int GroupHash(Expression e, bool record) => GetStructuralHash(e, record);
 
         /// <summary>
         /// Additive-grouping equality over whole terms, used by <c>GroupBy</c> to cluster the (already
@@ -3588,8 +3610,18 @@ namespace Utils.Mathematics.Expressions
         /// </remarks>
         private sealed class AdditiveGroupingEqualityComparer : IEqualityComparer<Expression>
         {
-            public static readonly AdditiveGroupingEqualityComparer Instance = new();
-            private AdditiveGroupingEqualityComparer() { }
+            /// <summary>The comparer of a level canonicalization: computed hashes are stored in the operation's metadata table.</summary>
+            public static readonly AdditiveGroupingEqualityComparer Instance = new(record: true);
+
+            /// <summary>The comparer of a canonicalization that stores nothing (a flattened chain, two terms): the table is read, never filled (mission C3a).</summary>
+            public static readonly AdditiveGroupingEqualityComparer LookupOnly = new(record: false);
+
+            /// <summary>Whether computed hashes are stored.</summary>
+            private readonly bool _record;
+
+            /// <summary>Initializes a comparer.</summary>
+            /// <param name="record">Whether computed hashes are stored.</param>
+            private AdditiveGroupingEqualityComparer(bool record) => _record = record;
 
             /// <summary>Determines whether <paramref name="x"/> and <paramref name="y"/> belong to the same additive group, per this type's own remarks.</summary>
             /// <param name="x">The first term to compare.</param>
@@ -3635,12 +3667,12 @@ namespace Utils.Mathematics.Expressions
                     hc.Add(g.CategoryOrder);
                     foreach (Expression argument in g.Arguments!)
                     {
-                        hc.Add(GroupHash(argument));
+                        hc.Add(GroupHash(argument, _record));
                     }
                 }
                 else
                 {
-                    hc.Add(GroupHash(g.Opaque!));
+                    hc.Add(GroupHash(g.Opaque!, _record));
                 }
                 return hc.ToHashCode();
             }

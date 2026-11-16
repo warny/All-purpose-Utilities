@@ -1,6 +1,6 @@
 # Flatten rule of `ExpressionSimplifier` (PR B)
 
-Status: first n-ary treatment of the simplifier, restricted to the *linear additive chains*. Built on the infrastructure of
+Status: first n-ary treatment of the simplifier, restricted to the *linear additive chains*; §11 describes the shared metadata of mission C3a. Built on the infrastructure of
 [FlattenArchitecture.md](FlattenArchitecture.md) (PR A, `a9ec71ac`). No multiplicative chain, no division, no C3, no change to
 `ExpressionDerivation<T>` or `ExpressionIntegration<T>`.
 
@@ -671,3 +671,169 @@ with C2; `obsMidL` 3,635 → 46 µs; `obsLastR` 8,654 → 31.5 µs. The other ca
 - **Pre-existing, out of scope:** an armed extension node as an argument of a call throws when the call is prepared
   (`Expression.Call` validates its arguments, which reads them). This happens level by level on `master` too, so C2 neither
   causes nor fixes it; it is a gap of the ETC R4 protection, reported separately.
+
+## 11. Enriched description of simplified terms (mission C3a)
+
+Mission C3 (global simplification of flattened chains; not to be confused with stage C3 of the policy integration of
+[ArchitectureC-Audit.md](ArchitectureC-Audit.md)) needs, for every term of a chain, what the simplifier already knows about it:
+its structural hash, its canonical-order key and whether it may still change. Stage C3a builds that infrastructure **without
+any new simplification**: every result is the one `master` gives.
+
+### 11.1 C3a audit: what each stage knows and recomputes
+
+| Stage | Available | Recomputed today | Can be shared | Cost before | Cost after C3a | Compatibility risk |
+|---|---|---|---|---|---|---|
+| `TransformCore` / `PrepareTransform` / `TransformPrepared` | the prepared node and its prepared children (`TransformContext`) | nothing | the result only (an `Expression`) | one visit per node | unchanged | none: hot path untouched |
+| `PrepareExpression` (simplifier) | the transformed child, after the `NaN` fold | nothing | a state for the instance (`LocallySimplified`) | | unchanged | protected virtual: not modified |
+| `TryTransform` / `TryInvokeTransformMethod` | candidates of the node type | effect gate per node (`HasInertOperands`, effect table for large subtrees) | effects: already shared by `Session.EffectCache` | | unchanged | none |
+| `FinalizeExpression` → `CanonicalizeAdditiveExpression` | the two prepared operands | collects every term of both operands again (`CollectAdditiveTerms`) | the terms are the instances of the operands' own canonicalizations | O(terms) per level | unchanged | none |
+| `CanonicalizeAdditiveTerms`: pinning | terms | `ExpressionEffectAnalysis.Analyze` per term (twice when something is pinned) | effect table (existing) | O(term size) per term per level | unchanged | none |
+| `CanonicalizeAdditiveTerms`: keys | terms, scope snapshot | `BuildKeyFromSnapshot` per term, `BuildKeysFromSnapshot` per function argument, **at every level** | key per (node, scope frames) | O(Σ term size) per level, allocated | **one build per node and scopes** in the operation, for the levels that store (§11.2) | none: same key value |
+| `CanonicalizeAdditiveTerms`: grouping | ordered terms | `StructuralHashRaw` per term (or per argument of a function-like term) by `GroupBy`, **at every level**; `StructuralEqualsRaw` on equal hashes | raw hash per node | O(Σ term size) per level | **one hash per node** in the operation, for the levels that store | none: same hash value |
+| `CanonicalizeMultiplicativeExpression` | factors, scope snapshot | `BuildKeyFromSnapshot` per factor at every level | key per (node, scope frames) | as keys | one build per node and scopes | none |
+| `FlattenAdditiveChain` | raw terms, prepared once each | nothing (one canonicalization per chain) | state of the prepared terms | O(n) | unchanged (+ state record) | none |
+| `FactorEqualityProbe` (factoring rules) | prepared factors | simplification of both factors through the comparer, memoized per operation (P9, P19d) | already memoized | | unchanged | memo caches validated by S5: not touched |
+| `ExpressionComparer.StructuralEqualsRaw` / `StructuralHashRaw` | | full walk each call | hash: root-level reuse only | O(size) | hash reused at the root of a term | none |
+
+The quadratic part of a level by level chain is therefore the keys and hashes of the terms below each level: each level
+collects, keys and hashes all of them again, although they are the very instances the level below already keyed and hashed
+(a one-term group is rebuilt as the term itself, and `0 - t` is collected back to `t`). That is what C3a shares.
+
+### 11.2 Representation
+
+- `ExpressionMetadataTable` (internal, `Utils.Expressions`): an open-addressing table by node reference, modeled on the effect
+  table, held by the resource session (`Session.SimplificationMetadata`) and dropped by the outermost exit. An entry holds
+  the raw hash, the key with the scope snapshot it was built under, and a state with the instance that recorded it.
+- `SimplifiedExpressionInfo` (internal record struct): `Expression`, `StructuralHash`, `Key`, `State`, assembled by
+  `ExpressionSimplifier.DescribeTerm` for the next stages. Effects are not duplicated: the effect table of the session
+  remains their only cache.
+- Accessors used by the canonicalizations: `GetStructuralHash` (the hash of `GroupBy`), `GetCanonicalKey` and
+  `GetCanonicalKeys` (keys of terms, function arguments and factors). Opt-in counters: `SimplificationMetadataStatistics`.
+- **What is stored.** Every canonicalization *reads* the table. Only the canonicalizations whose values an enclosing one
+  will read again *store* theirs: a level of the level by level treatment that already collected a canonicalized operand
+  (more than two terms, or more than two factors). The single canonicalization of a flattened chain (linear or anchored), a
+  two-term sum and a two-factor product store nothing: no enclosing canonicalization collects their terms again, and a
+  first measure that stored everything cost `a + b` 856 bytes (+34 %) and `linear 32` +55 % allocations for no reuse. A
+  state is recorded only in a table the operation already holds, for the same reason. Values that are not stored are
+  computed exactly as before.
+
+Strategies compared: changing the engine signatures (`PrepareExpression`, `TransformCore`) to return an enriched value would
+break every derived transformer and add a parameter to the hot path (measured at about 10 ns per node in the dispatcher
+mission); an enriched `TransformContext` only lives during one node and never reaches the parent's canonicalization; a
+`ConditionalWeakTable` costs a dependent handle per node. A table of the operation, filled where the values are already
+computed and read where they were recomputed, changes no signature and no hot path.
+
+### 11.3 Hash and key: validity and scope
+
+- **Hash.** `StructuralHashRaw` starts from an empty scope stack, identifies free parameters and unsupported nodes by
+  identity and constants by value (safe constants only, no user code), so it is a function of the immutable node alone: a
+  stored hash is valid for the whole operation, for every instance and policy. Equal structure implies equal hash; an equal
+  hash is never taken as equality: the grouping still confirms it with `StructuralEqualsRaw` (pinned by a forged-collision
+  test).
+- **Key.** A key encodes a parameter bound by an enclosing lambda by its position, so it depends on the scope frames. A stored
+  key is reused only under a snapshot made of the very same frame arrays, in the same order; otherwise it is rebuilt (and
+  replaces the entry). The reused key is the instance built before; keys are immutable values, so the order is unchanged.
+- **Budgets.** Computing a value consumes the structural visits of its walk; reusing it consumes none, because no walk
+  happens. A value is stored only once fully computed, so a refusal in the middle of a walk leaves no entry. Transformation
+  visits are unchanged.
+- **Lifetime.** One public operation: a `Simplify` call and the internal work joining it (recursion, rules, comparer
+  probes, the comparer's own simplification). Every public operation, **nested ones included**, starts with an empty table:
+  the session detaches the enclosing table when an operation is entered and restores it on exit, as the comparison memo is
+  detached (S5 P9). A nested public call (user code calling `Simplify` or `ExpressionComparer.Equals` while an operation
+  runs) therefore never reads its caller's entries and its own budget stays exact, which
+  `NestedPublicEquals_AppliesItsOwnStructuralBudget_WithoutTheRetainedMemo` pins (a first version shared the table with
+  nested calls and failed that test). Nothing is global.
+
+### 11.4 Canonicalization states
+
+| State | Meaning | Proven for, in C3a |
+|---|---|---|
+| `Unknown` | nothing is known | every other node |
+| `LocallySimplified` | the engine's treatment of the node by this instance ran to its end (rules and finalization); **not** a fixed point | the prepared terms of a flatten chain (`FlattenAdditiveChain`, anchored chains), recorded with the instance when the operation already holds a table (otherwise `Unknown`, a weaker and still correct answer) |
+| `Canonical` | `S(e) = e` for this instance (structural equality) | parameters and constants, for the built-in type: it has no rule on them, its finalization keeps them and the `NaN` fold only rewrites binary nodes |
+
+A state is the claim of the instance that recorded it: another instance, even of the same policy, and every derived
+simplifier (which may declare rules on leaves) read `Unknown`. Nothing is ever declared `Canonical` because two successive
+hashes are equal. Whether a canonical sum is a fixed point is not proven here: S5 P10 showed that the right-associated
+canonical form is not a fixed point of the subtraction rules, so certifying sums is left to C3d, family by family.
+
+### 11.5 Validation
+
+Reference: `master` `adddc636`.
+
+- **S5 campaigns** (`terminate`, `converge`, `diff`, `effects`, `s3`, `canon`, `comparer`, 1,000 seeds, 1,000
+  nested): **byte-identical** to `master` (every result file; only `environment.txt` differs). The `terminate` and
+  `converge` files hold every simplified form of the corpus, so no result, exception or rule interaction changed.
+- **Tests** `ExpressionSimplifierMetadataTests` (14): reuse never changes a result (corpus of the C3 target families,
+  sums, products, calls, shared sub-chains, lambdas binding the chain's parameters); a level by level chain keys and hashes
+  each term about once instead of once per level; an admitted chain builds each key once and creates no table; the stored
+  hash is the raw structural hash, deterministic, equal for equal structures; a forged hash collision never groups two terms;
+  a key is reused only under the same scope frames and equals a fresh build; states are claims of the recording instance
+  (another instance and a derived simplifier read `Unknown`); leaves are fixed points (`S(e) = e` checked on parameters,
+  finite, `NaN`, infinite and signed-zero constants, decimals, strings, `null`); a node shared by several lexical contexts;
+  instances and policies inside another instance's operation keep their results (a derived simplifier refused by the budget
+  alone is refused there too); a nested public call starts with an empty table, costs exactly what it costs alone and leaves
+  the caller's table untouched; a budget refusal leaves no table behind; the table grows only for a new node.
+- **Suites** (final code): Unit 14,666/14,667 (1 skipped by design), Security 390/393 (3 skipped by design), Functional
+  383/383, ETC Debug (`Coverage`, Debug) 350/351 (1 skipped).
+- **Security pin found during C3a.** `NestedPublicEquals_AppliesItsOwnStructuralBudget_WithoutTheRetainedMemo` failed with a
+  first version that shared the table with nested public calls (the nested comparison reused the caller's hashes and cost less
+  than alone); the table is now detached per public operation (§11.3).
+
+### 11.6 Measures
+
+Targeted harness (Release, `Stopwatch` + `GC.GetAllocatedBytesForCurrentThread`, calibrated ~50 ms rounds, median of 9
+rounds, four interleaved master/branch processes, mean of the two middle medians). Reference: `master` `adddc636`. The machine
+was shared with a model server (CPU load 60–80 % for most rounds, 7 % at the end): **times are indicative** (the A/A spread of
+this machine is up to ±45 %, §9.7); allocations are deterministic and exact. The BenchmarkDotNet campaign on an idle machine is
+owed (C3d).
+
+| Case | Time master | Time C3a | Δ | Alloc master | Alloc C3a | Δ |
+|---|---|---|---|---|---|---|
+| `tiny a+b` | 4.23 µs | 4.38 µs | +3.3 % | 2,528 B | 2,528 B | +0.0 % |
+| `2x+3y` | 42.42 µs | 43.46 µs | +2.5 % | 7,602 B | 7,618 B | +0.2 % |
+| `x+x+x` | 5.97 µs | 5.62 µs | -6.0 % | 1,176 B | 1,176 B | +0.0 % |
+| `a*x+3*x+x` | 8.96 µs | 9.14 µs | +2.1 % | 7,234 B | 7,250 B | +0.2 % |
+| `c3 target` | 592.75 µs | 548.39 µs | -7.5 % | 433,002 B | 412,928 B | -4.6 % |
+| `linear 32` | 11.04 µs | 10.92 µs | -1.1 % | 21,160 B | 21,160 B | +0.0 % |
+| `linear 200` | 69.28 µs | 68.69 µs | -0.9 % | 124,834 B | 124,834 B | +0.0 % |
+| `repeated 16` | 34.29 µs | 37.69 µs | +9.9 % | 33,704 B | 36,040 B | +6.9 % |
+| `repeated 48` | 102.73 µs | 107.14 µs | +4.3 % | 94,161 B | 104,273 B | +10.7 % |
+| `sin 16x2` | 35,406.45 µs | 36,591.60 µs | +3.3 % | 15,068,664 B | 12,608,184 B | -16.3 % |
+| `coef 24` | 293.35 µs | 320.25 µs | +9.2 % | 189,363 B | 194,784 B | +2.9 % |
+| `product 24` | 6,783.89 µs | 6,865.73 µs | +1.2 % | 3,567,120 B | 2,990,728 B | -16.2 % |
+
+Reuse counters (`SimplificationMetadataStatistics`, one simplification):
+
+| Case | Keys built / reused | Hashes computed / reused |
+|---|---|---|
+| `a + b`, `2x + 3y`, `linear 32`, `linear 200` | n / 0 | n / 0 (no table created) |
+| target `x² + 2x + ax + x + 15 + a + 3cos x + 5sin x` | 198 / 179 | 135 / 126 |
+| `sin 16x2` (32 calls, two repeated runs) | 3,782 / 20,932 | 714 / 12,613 |
+| `product 24` (level by level product) | 28 / 14,945 | 0 / 0 |
+| derived simplifier, 24-term sum (all levels) | ≤ 28 / ≥ 275 (master: a build for every lookup) | ≤ 28 / ≥ 275 |
+
+Reading:
+
+- **Simple and admitted cases are unchanged**: same allocations to the byte, no table; the time differences are within
+  the noise.
+- **Level by level chains gain** where keys were rebuilt at every level: −16 % allocations on `product 24` and
+  `sin 16x2`, −4.6 % on the target expression.
+- **Residual cost**: a chain whose only level by level step is its root (`repeated 16/48`, `coef 24`: a repeated parameter
+  refuses the root, the sub-chains are admitted) stores the root's values without any later reader: +2.9 to +10.7 %
+  allocations (≈ 2–10 KB), time within the noise but up to +10 %. These are the repeated chains that C3b is meant to admit,
+  which removes the cost; until then it is the price of the infrastructure.
+- **Review fix.** The first version grew the table before looking the node up, so updating a stored node at the load
+  threshold doubled it; it now grows only for a new node (`TableGrowsOnlyForNewNodes`). The `repeated 16` row was +14.7 %
+  (38,648 B) before the fix; the other allocations did not change.
+- Transformation visits are unchanged (the table never skips a rule or a node); structural visits decrease by the walks
+  avoided.
+
+### 11.7 Next stages
+
+- **C3b** reads `SimplifiedExpressionInfo` of the prepared terms to decompose them (coefficient, factors) and widens the
+  admission (`IsLinearChain`) to the families the new representation can treat.
+- **C3c** groups terms by factor through the stored hashes, confirmed by `StructuralEqualsRaw`, and merges coefficients
+  through `BuildFactoredProduct` / `AggregateFactoredCoefficient` in one pass.
+- **C3d** certifies `Canonical` for the families whose idempotence is proven, and measures the remaining reuse (key of a
+  product built from the keys of its factors; sorted runs of an operand's canonical form merged instead of sorted again).
