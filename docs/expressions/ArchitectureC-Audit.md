@@ -457,3 +457,11 @@ Validation (Release unless stated): `UtilsTest.Unit` 14,636 run, 14,635 passed, 
 comparer test was added, which passes in the targeted run (8/8); `UtilsTest.Security` 386 run, 383 passed, 3 ignored
 (pre-existing, platform-gated); `UtilsTest.Functional` 383 passed; ETC Debug job (`UtilsTest.Mathematics.Expressions.Coverage`,
 Debug) 351 run, 350 passed, 1 ignored (pre-existing).
+
+### 8.6 Flatten mission C3 (not stage C3 of this document)
+
+The Flatten mission named C3 (global simplification of flattened chains, [SimplifierFlatten.md](SimplifierFlatten.md) §11) is
+unrelated to stage C3 of this plan (the negation and reassociation rewrites of §3.2–3.3 under a policy). Its first step, C3a,
+adds no rewrite and asks no permission: it shares the hashes and keys the canonicalizations already compute, for every
+policy alike (they are functions of the node and the lexical scopes), and records states per instance. The policies of
+this document are untouched; the later C3 steps must keep every regrouping they introduce behind the existing permissions.

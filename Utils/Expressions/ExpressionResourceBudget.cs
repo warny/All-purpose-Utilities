@@ -390,6 +390,15 @@ internal static class ExpressionResourceBudget
         /// </summary>
         public ExpressionNodeSet? FlattenAnchoredRefusals;
 
+        /// <summary>
+        /// The structural hashes, canonical-order keys and canonicalization states the simplifier's canonicalizations computed
+        /// during the running public operation, by node reference (mission C3a, <c>ExpressionSimplifier.DescribeTerm</c>). Every
+        /// public operation, nested ones included, starts with an empty table: <see cref="Enter"/> detaches the enclosing one and
+        /// <see cref="Exit"/> restores it, as the comparison memo of S5 P9 is detached, so a nested call never reads its caller's
+        /// entries and its budget stays exact. Internal walks joining the operation share it.
+        /// </summary>
+        public ExpressionMetadataTable? SimplificationMetadata;
+
         /// <summary>The running effect-analysis strategy (<c>ExpressionEffectAnalysis.EffectMode*</c>); restored by the analysis itself.</summary>
         public int EffectMode;
 
@@ -427,7 +436,12 @@ internal static class ExpressionResourceBudget
                 StructuralLimit,
                 StructuralBase,
                 MaxDepth,
-                MaxNodes);
+                MaxNodes,
+                SimplificationMetadata);
+
+            // Mission C3a: every public operation, nested ones included, starts with an empty metadata table and never reads
+            // the entries of the operation it is nested in (as the comparison memo of S5 P9), so its own budget is exact.
+            SimplificationMetadata = null;
 
             if (OperationDepth == 0)
             {
@@ -484,12 +498,14 @@ internal static class ExpressionResourceBudget
             StructuralBase = scope.StructuralBase;
             MaxDepth = scope.MaxDepth;
             MaxNodes = scope.MaxNodes;
+            SimplificationMetadata = scope.SimplificationMetadata;
             if (scope.IsOutermost)
             {
                 Trace = null;
                 EffectCache = null;
                 FlattenRefusals = null;
                 FlattenAnchoredRefusals = null;
+                SimplificationMetadata = null;
                 EffectMode = 0;
                 TransformVisits = 0;
                 StructuralVisits = 0;
@@ -510,6 +526,7 @@ internal static class ExpressionResourceBudget
     /// <param name="StructuralBase">The previous structural base.</param>
     /// <param name="MaxDepth">The previous depth limit.</param>
     /// <param name="MaxNodes">The previous node limit.</param>
+    /// <param name="SimplificationMetadata">The metadata table of the enclosing operation, detached while this one runs.</param>
     internal readonly record struct Scope(
         object? Owner,
         int OperationDepth,
@@ -520,7 +537,8 @@ internal static class ExpressionResourceBudget
         long StructuralLimit,
         long StructuralBase,
         int MaxDepth,
-        long MaxNodes)
+        long MaxNodes,
+        ExpressionMetadataTable? SimplificationMetadata)
     {
         /// <summary>Gets whether this scope is the outermost operation of the thread.</summary>
         public bool IsOutermost => OperationDepth == 0;
