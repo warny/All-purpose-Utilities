@@ -2496,10 +2496,16 @@ namespace Utils.Mathematics.Expressions
         /// <summary>
         /// Rewrites <c>(-left) / right</c> as <c>-(left / right)</c>.
         /// </summary>
+        /// <remarks>
+        /// Declined for a signed integral type since C3A-01 (C-09), like the mirror overload: for <c>left = MinValue</c> the negation
+        /// wraps, so the source divides <c>MinValue</c> while the rewrite negates the quotient of <c>MinValue</c>; the two differ
+        /// for every <c>right</c> but <c>0</c>, <c>1</c> and <c>-1</c> (<c>int.MinValue</c> and <c>2</c>: <c>-1073741824</c>
+        /// against <c>1073741824</c>).
+        /// </remarks>
         [ExpressionSignature(ExpressionType.Divide)]
         protected Expression DivisionWithNegate(BinaryExpression e, [ExpressionSignature(ExpressionType.Negate)] UnaryExpression left, Expression right)
         {
-            if (!IsOrdinaryBinaryArithmetic(e) || !IsOrdinaryUnaryNegate(left)) return null;
+            if (!IsOrdinaryBinaryArithmetic(e) || !IsOrdinaryUnaryNegate(left) || IsSignedIntegral(e.Type)) return null;
 
             return Expression.Negate(
                 TransformCore(Expression.Divide(left.Operand, right))
