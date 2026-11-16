@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Expressions_FlattenAttribute" data-uid="Utils.Expressions.FlattenAttribute" class="text-break">
-Class FlattenAttribute  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/FlattenAttribute.cs/#L52"><i class="bi bi-code-slash"></i></a>
+Class FlattenAttribute  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/FlattenAttribute.cs/#L60"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -370,12 +370,20 @@ operator must declare the same couple with the same unary operators and bindings
 of several couples.
 </p>
 <p>
-A rule has one of two signatures, checked once when the transformer's dispatch plan is built:
-<code>Expression? Rule(FlattenedTerm[] terms)</code> or <code>Expression? Rule(Expression source, FlattenedTerm[] terms)</code>, where
-<code>source</code> is the original, untransformed root of the chain. The operands are the raw, untransformed sub-expressions:
-a rule that accepts the chain is responsible for transforming them. A <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> result declines the chain;
-when every candidate declines, the transformer processes the chain node by node exactly as it does without this attribute.
-See <code>docs/expressions/FlattenArchitecture.md</code> for the priority, fallback and budget rules.
+A rule has one of three signatures, checked once when the transformer's dispatch plan is built:
+<code>Expression? Rule(FlattenedTerm[] terms)</code>, <code>Expression? Rule(Expression source, FlattenedTerm[] terms)</code> or
+<code>Expression? Rule(Expression source, FlattenedTerm[] terms, FlattenRuleDispatcher dispatcher)</code>, where <code>source</code> is
+the original, untransformed root of the chain. A single operation of a declared couple is a chain of two terms. The
+operands are the raw, untransformed sub-expressions: a rule that accepts the chain is responsible for transforming them. The
+third form also receives a <a class="xref" href="Utils.Expressions.FlattenRuleDispatcher.html">FlattenRuleDispatcher</a>, which applies to a node the transformer's signature rules
+that the chain's group covers (those of its declared operators), in their declaration order and with their usual
+contracts: the rule organizes the work and reuses the elementary rules instead of copying them.
+</p>
+<p>
+A <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> result declines the chain; when every candidate declines, the transformer processes the chain node
+by node as it does without this attribute. When a rule of the chain's group receives the dispatcher, that fallback does not
+run the signature rules on the chain's own nodes (they are the group's, already under the rule's control); their operands
+are transformed as usual. See <code>docs/expressions/FlattenArchitecture.md</code> for the priority, fallback and budget rules.
 </p>
 <p>
 The attribute is a request for a representation, not a permission: declaring an inversion establishes neither
@@ -393,7 +401,7 @@ evaluation. Those decisions remain the rule's own responsibility.
 
   <h3 id="Utils_Expressions_FlattenAttribute__ctor_System_Linq_Expressions_ExpressionType_" data-uid="Utils.Expressions.FlattenAttribute.#ctor(System.Linq.Expressions.ExpressionType)">
   FlattenAttribute(ExpressionType)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/FlattenAttribute.cs/#L57"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/FlattenAttribute.cs/#L65"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Declares a couple made of a direct operation only: every term carries <code class="paramref">direct</code>.</p>
@@ -426,7 +434,7 @@ evaluation. Those decisions remain the rule's own responsibility.
 
   <h3 id="Utils_Expressions_FlattenAttribute__ctor_System_Linq_Expressions_ExpressionType_System_Linq_Expressions_ExpressionType_" data-uid="Utils.Expressions.FlattenAttribute.#ctor(System.Linq.Expressions.ExpressionType,System.Linq.Expressions.ExpressionType)">
   FlattenAttribute(ExpressionType, ExpressionType)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/FlattenAttribute.cs/#L65"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/FlattenAttribute.cs/#L73"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Declares a couple made of a direct operation and its inverse.</p>
@@ -462,7 +470,7 @@ evaluation. Those decisions remain the rule's own responsibility.
 
   <h3 id="Utils_Expressions_FlattenAttribute__ctor_System_Linq_Expressions_ExpressionType_System_Linq_Expressions_ExpressionType_System_Linq_Expressions_ExpressionType_" data-uid="Utils.Expressions.FlattenAttribute.#ctor(System.Linq.Expressions.ExpressionType,System.Linq.Expressions.ExpressionType,System.Linq.Expressions.ExpressionType)">
   FlattenAttribute(ExpressionType, ExpressionType, ExpressionType)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/FlattenAttribute.cs/#L77"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/FlattenAttribute.cs/#L85"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Declares a couple made of a direct operation and its inverse, and one unary operator bound to it
@@ -502,7 +510,7 @@ evaluation. Those decisions remain the rule's own responsibility.
 
   <h3 id="Utils_Expressions_FlattenAttribute__ctor_System_Linq_Expressions_ExpressionType___System_Linq_Expressions_ExpressionType___" data-uid="Utils.Expressions.FlattenAttribute.#ctor(System.Linq.Expressions.ExpressionType[],System.Linq.Expressions.ExpressionType[])">
   FlattenAttribute(ExpressionType[], ExpressionType[])
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/FlattenAttribute.cs/#L90"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/FlattenAttribute.cs/#L98"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Declares several independent couples, <code>(direct[i], inverse[i])</code> for each index <code>i</code>. Their unary operators are
@@ -543,7 +551,7 @@ declared with <a class="xref" href="Utils.Expressions.FlattenUnaryAttribute.html
 
   <h3 id="Utils_Expressions_FlattenAttribute_DirectOperations" data-uid="Utils.Expressions.FlattenAttribute.DirectOperations">
   DirectOperations
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/FlattenAttribute.cs/#L108"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/FlattenAttribute.cs/#L116"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the direct operation of each couple, in declaration order.</p>
@@ -575,7 +583,7 @@ declared with <a class="xref" href="Utils.Expressions.FlattenUnaryAttribute.html
 
   <h3 id="Utils_Expressions_FlattenAttribute_InverseOperations" data-uid="Utils.Expressions.FlattenAttribute.InverseOperations">
   InverseOperations
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/FlattenAttribute.cs/#L111"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/FlattenAttribute.cs/#L119"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the inverse operation of each couple, at the index of its direct operation; empty for direct operations alone.</p>
@@ -607,7 +615,7 @@ declared with <a class="xref" href="Utils.Expressions.FlattenUnaryAttribute.html
 
   <h3 id="Utils_Expressions_FlattenAttribute_Operations" data-uid="Utils.Expressions.FlattenAttribute.Operations">
   Operations
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/FlattenAttribute.cs/#L123"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/FlattenAttribute.cs/#L131"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the operators of this attribute: the direct then the inverse operation of each couple, in index order, then
@@ -640,7 +648,7 @@ declared with <a class="xref" href="Utils.Expressions.FlattenUnaryAttribute.html
 
   <h3 id="Utils_Expressions_FlattenAttribute_UnaryOperator" data-uid="Utils.Expressions.FlattenAttribute.UnaryOperator">
   UnaryOperator
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/FlattenAttribute.cs/#L117"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/FlattenAttribute.cs/#L125"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the unary operator of the simplified constructor, bound to <a class="xref" href="Utils.Expressions.UnaryOperatorBinding.html#Utils_Expressions_UnaryOperatorBinding_FirstGroup">FirstGroup</a>, or
@@ -673,7 +681,7 @@ declared with <a class="xref" href="Utils.Expressions.FlattenUnaryAttribute.html
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/FlattenAttribute.cs/#L52" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/FlattenAttribute.cs/#L60" class="edit-link">Edit this page</a>
         </div>
 
 

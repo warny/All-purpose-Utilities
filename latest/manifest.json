@@ -2365,6 +2365,20 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Expressions.FlattenRuleDispatcher.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Expressions.FlattenRuleDispatcher.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Expressions.FlattenRuleDispatcher",
+      "Summary": "<p sourcefile=\"api/Utils.Expressions.FlattenRuleDispatcher.yml\" sourcestartlinenumber=\"1\">Applies to one node the signature rules (<xref href=\"Utils.Expressions.ExpressionSignatureAttribute\" data-throw-if-not-resolved=\"false\"></xref>) that the group of a chain covers, through\nthe dispatch of the transformer that handed it to a <xref href=\"Utils.Expressions.FlattenAttribute\" data-throw-if-not-resolved=\"false\"></xref> rule: the candidates of the node's type in\nthe transformer's plan, in their declaration order, with the same signature matching, parameter checks, admission, budgets,\nexception contract and tracing as the node-by-node traversal.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/Utils.Expressions.FlattenUnaryAttribute.yml",
       "output": {
         ".html": {

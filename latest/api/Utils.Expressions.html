@@ -490,6 +490,17 @@ yet: the simplifier keeps the strict gate of <span class="xref">Utils.Expression
 context of its operand; the binding only decides which chains cross it and which chain it roots.</p>
 </dd>
     </dl>
+    <h3 id="delegates">
+Delegates
+</h3>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Expressions.FlattenRuleDispatcher.html">FlattenRuleDispatcher</a></dt>
+      <dd><p>Applies to one node the signature rules (<a class="xref" href="Utils.Expressions.ExpressionSignatureAttribute.html">ExpressionSignatureAttribute</a>) that the group of a chain covers, through
+the dispatch of the transformer that handed it to a <a class="xref" href="Utils.Expressions.FlattenAttribute.html">FlattenAttribute</a> rule: the candidates of the node's type in
+the transformer's plan, in their declaration order, with the same signature matching, parameter checks, admission, budgets,
+exception contract and tracing as the node-by-node traversal.</p>
+</dd>
+    </dl>
 
 
 </article>

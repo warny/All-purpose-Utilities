@@ -273,8 +273,10 @@ expected to be faster on <code>master</code>). Splitting a refused chain into ma
 part of this PR: it changes which terms are canonicalized together, so it needs its own proof of compatibility.</p>
 <h2 id="4-mechanism">4. Mechanism</h2>
 <ul>
-<li><code>[Flatten(ExpressionType.Add, ExpressionType.Subtract)] private Expression? FlattenAdditiveChain(Expression source, FlattenedTerm[] terms)</code>: prepares each term once, in source order, with <code>PrepareExpression</code> (transformation, then <code>NaN</code>
-fold), collects it with <code>CollectAdditiveTerms</code>, and returns <code>CanonicalizeAdditiveTerms</code>. It never declines.</li>
+<li><code>[Flatten(ExpressionType.Add, ExpressionType.Subtract)] private Expression? FlattenAdditiveChain(Expression source, FlattenedTerm[] terms, FlattenRuleDispatcher dispatcher)</code>: prepares each term once, in source order, with
+<code>PrepareExpression</code> (transformation, then <code>NaN</code> fold), collects it with <code>CollectAdditiveTerms</code>, and returns
+<code>CanonicalizeAdditiveTerms</code>. It never declines. Since the dispatcher mission it receives the dispatcher of its group, the
+additive signature rules of the plan, which the anchored fallback uses (§10.3, <a href="FlattenArchitecture.html">FlattenArchitecture.md</a> §21.6).</li>
 <li><code>FlattenAdmission(root)</code> (new engine-internal hook, see <a href="FlattenArchitecture.html">FlattenArchitecture.md</a> §5): the built-in
 simplifier admits the linear chains only. The test is one iterative walk of the crossed nodes that stops at the first
 refusal, reads framework operators and leaves by type tests only (an extension node is never read, an operator method
@@ -1156,9 +1158,12 @@ runtime method. Preparing a linear term runs no user code either (§3.1). So the
 exceptions is the level by level one.</p>
 <p><strong>Fallback.</strong> The proof needs the prepared anchor to be a call of a runtime method that is not inert. The admission only
 knows the raw call; if a rule rewrote it (none of the current rules does for an anchor: the probe of the audit found no
-case), the rule runs the levels one by one on the prepared operands, from the anchor's node up
-(<code>TransformCoreWithPreparedOperands</code>, then the <code>NaN</code> fold of each child result, as its parent's <code>PrepareExpression</code> does):
-the historical treatment, without preparing anything twice. The audit counters can force this path
+case), the rule runs the levels one by one on the prepared operands, from the anchor's node up, then the <code>NaN</code> fold of
+each child result, as its parent's <code>PrepareExpression</code> does: the historical treatment, without preparing anything twice.
+Each level is the node rebuilt from its prepared operands, the additive signature rules through the group's
+<code>FlattenRuleDispatcher</code>, then <code>FinalizeExpression</code> when none applies (until the dispatcher mission:
+<code>TransformCoreWithPreparedOperands</code>, which runs the same candidates, admission and finalization; results and budgets are
+unchanged, a trace shows a dispatch treatment per level, without its <code>Finalize</code> event). The audit counters can force this path
 (<code>FlattenAdmissionStatistics.ForceAnchoredFallback</code>); the tests compare it with the level by level treatment on every
 anchored case.</p>
 <h3 id="104-what-is-not-treated">10.4 What is not treated</h3>

@@ -14573,6 +14573,12 @@ references:
   isSpec: "True"
   fullName: Utils.Expressions.FlattenAttribute.UnaryOperator
   nameWithType: FlattenAttribute.UnaryOperator
+- uid: Utils.Expressions.FlattenRuleDispatcher
+  name: FlattenRuleDispatcher
+  href: api/Utils.Expressions.FlattenRuleDispatcher.html
+  commentId: T:Utils.Expressions.FlattenRuleDispatcher
+  fullName: Utils.Expressions.FlattenRuleDispatcher
+  nameWithType: FlattenRuleDispatcher
 - uid: Utils.Expressions.FlattenUnaryAttribute
   name: FlattenUnaryAttribute
   href: api/Utils.Expressions.FlattenUnaryAttribute.html
