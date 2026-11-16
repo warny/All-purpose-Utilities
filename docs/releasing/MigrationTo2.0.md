@@ -319,6 +319,14 @@ Both restore the C-06 promise that an exception the evaluation can raise is kept
   `(a / 0.5m) - (a / 0.5m)` is kept and still throws `OverflowException` at `a = decimal.MaxValue` instead of returning `0`. A
   constant divisor of magnitude 1 or more (`a / 2m`, `a / -1m`) is still inert.
 
+## Expression engine: negated dividend of a signed integral division (C3A-01, C-09)
+
+Behavior change of `ExpressionSimplifier` (and of `ExpressionComparer`); no public signature changed. `(-t) / u` is kept as
+written for `short`, `int` and `long` instead of becoming `-(t / u)`, which returned the opposite quotient when `t` evaluates
+to `MinValue` (`int.MinValue / 2`: `1073741824` instead of `-1073741824`). The mirror `t / (-u)` was already kept for these
+types (C-06). `float`, `double` and `decimal` still give `-(t / u)`. The record is in
+`docs/expressions/ArchitectureC-Audit.md` §8.5.
+
 ## Expression engine: injectable transformation tracing (additive)
 
 New public API in `Utils.Expressions`, without behavior change for code that does not use it: `ExpressionTransformTracing`

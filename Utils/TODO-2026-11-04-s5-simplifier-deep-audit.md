@@ -89,7 +89,7 @@ statement of the body.
 | 26 | `MultiplicationWithNegate(BinaryExpression, Expression, UnaryExpression)` | Multiply | ExpressionSimplifier.cs:2194 | TC | — | ord, neg | Multiply, Negate | 175 | COVERED |
 | 27 | `MultiplicationWithNegate(BinaryExpression, UnaryExpression, Expression)` | Multiply | ExpressionSimplifier.cs:2207 | TC | — | ord, neg | Multiply, Negate | 73 | COVERED |
 | 28 | `DivisionWithNegate(BinaryExpression, Expression, UnaryExpression)` | Divide | ExpressionSimplifier.cs:2224 | TC | — | ord, neg, signed | Divide, Negate | 419 | COVERED |
-| 29 | `DivisionWithNegate(BinaryExpression, UnaryExpression, Expression)` | Divide | ExpressionSimplifier.cs:2237 | TC | — | ord, neg | Divide, Negate | 455 | COVERED |
+| 29 | `DivisionWithNegate(BinaryExpression, UnaryExpression, Expression)` | Divide | ExpressionSimplifier.cs:2237 | TC | — | ord, neg, signed (since C3A-01; missing at the time of this audit) | Divide, Negate | 455 | COVERED |
 | 30 | `MultiplicationOfEqualsElements(BinaryExpression, BinaryExpression, Expression)` | Multiply | ExpressionSimplifier.cs:2251 | TC | — | ord | Multiply | 139 | COVERED |
 | 31 | `MultiplicationOfEqualsElements(BinaryExpression, Expression, BinaryExpression)` | Multiply | ExpressionSimplifier.cs:2286 | TC | — | ord | Multiply | 145 | COVERED |
 | 32 | `MultiplicationOfEqualsElements(BinaryExpression, Expression, Expression)` | Multiply | ExpressionSimplifier.cs:2321 | TC | Equals | ord | Add, Power | 1056 | COVERED |

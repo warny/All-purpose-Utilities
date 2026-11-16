@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed — `omy.Utils` (expression simplifier: `(-t) / u` on signed integers, C3A-01, compatibility entry C-09)
+- **Behavior change.** `ExpressionSimplifier` no longer rewrites `(-t) / u` as `-(t / u)` when the type is `short`, `int` or
+  `long`, under every policy and for derived simplifiers. When `t` evaluates to `MinValue`, `-t` wraps to `MinValue`, so the
+  source divides `MinValue` while the rewrite negated the quotient of `MinValue`: `int.MinValue` and `2` gave `1073741824`
+  instead of `-1073741824`, for every divisor except `0`, `1` and `-1` (compiled `short` keeps the intermediate in 32 bits
+  and was not affected; interpreted `short` was). The mirror `t / (-u) -> -(t / u)` was already declined for these types
+  since C-06; both directions now agree. `float`, `double` and `decimal`, where the rewrite is exact, are unchanged, as are
+  every other rule. Code relying on the old shape `-(t / u)` for a signed integral division now receives `(-t) / u`. See
+  `docs/expressions/ArchitectureC-Audit.md` §8.5.
+
 ### Changed — `omy.Utils` (expression engine: declarative flatten configuration)
 - The flatten engine no longer knows any operator: a declaration states couples (a direct binary operation, which passes
   a two-valued context unchanged to both operands, and an optional inverse one, which inverts it for its right operand) and
