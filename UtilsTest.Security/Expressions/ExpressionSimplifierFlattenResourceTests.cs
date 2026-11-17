@@ -165,10 +165,11 @@ public class ExpressionSimplifierFlattenResourceTests
     [TestMethod]
     public void DeclinedDeepChain_IsAControlledStackRefusal()
     {
-        // The last term repeats the first parameter: the chain is not linear.
+        // The last term squares the first parameter: the chain is neither linear nor a spine chain (mission C3b admits the
+        // repetition of the first parameter alone, see SpineDeepChain_IsSimplified_OnASmallStack).
         Expression linear = LinearChain(20_000, 0);
         ParameterExpression first = (ParameterExpression)Leftmost(linear);
-        Expression declined = Expression.Add(linear, first);
+        Expression declined = Expression.Add(linear, Expression.Multiply(first, first));
 
         RunOnThread(() =>
         {
@@ -181,6 +182,40 @@ public class ExpressionSimplifierFlattenResourceTests
             exception = Assert.ThrowsExactly<ExpressionResourceLimitException>(() => new LevelByLevelSimplifier(NoLimits).Simplify(linear));
             Assert.AreEqual(ExpressionResourceLimitKind.Stack, exception.Kind);
         }, SmallStack, Timeout);
+    }
+
+    /// <summary>
+    /// A spine chain (mission C3b) of 100,000 distinct terms followed by repetitions is simplified on a 256 KiB thread: the
+    /// spine test, the walk of the treatment and the collection of each level's result never recurse on the chain. Its work is
+    /// counted and refused just above each limit, and a refused instance works again.
+    /// </summary>
+    [TestMethod]
+    public void SpineDeepChain_IsSimplified_OnASmallStack()
+    {
+        Expression linear = LinearChain(100_000, 0);
+        ParameterExpression first = (ParameterExpression)Leftmost(linear);
+        Expression spine = Expression.Add(Expression.Add(linear, first), first);
+        RunOnThread(() =>
+        {
+            Expression result = new ExpressionSimplifier(NoLimits).Simplify(spine);
+            Assert.AreEqual(100_000, CountGroups(result));
+            Assert.AreEqual(0, ExpressionResourceBudget.OperationDepth);
+        }, SmallStack, Timeout);
+
+        Expression chain = LinearChain(64, 0);
+        Expression repeated = Expression.Add(Expression.Add(chain, Leftmost(chain)), Leftmost(chain));
+        (long transform, long structural) = Count(new ExpressionSimplifier(NoLimits), repeated);
+        Assert.IsTrue(transform < 2 * 64, $"{transform} transformation visits: one per level above the linear part and one per term");
+        Assert.IsNotNull(new ExpressionSimplifier(NoLimits with { MaxTransformVisits = transform }).Simplify(repeated));
+        var workLimited = new ExpressionSimplifier(NoLimits with { MaxTransformVisits = transform - 1 });
+        Assert.AreEqual(ExpressionResourceLimitKind.Work, Assert.ThrowsExactly<ExpressionResourceLimitException>(() => workLimited.Simplify(repeated)).Kind);
+        Assert.AreEqual(0, ExpressionResourceBudget.OperationDepth);
+        Assert.AreEqual(8, CountGroups(workLimited.Simplify(LinearChain(8, 2))), "The refused instance works again.");
+        Assert.IsNotNull(new ExpressionSimplifier(NoLimits with { MaxStructuralVisits = structural }).Simplify(repeated));
+        var structureLimited = new ExpressionSimplifier(NoLimits with { MaxStructuralVisits = structural - 1 });
+        Assert.AreEqual(ExpressionResourceLimitKind.StructuralWork, Assert.ThrowsExactly<ExpressionResourceLimitException>(() => structureLimited.Simplify(repeated)).Kind);
+        Assert.AreEqual(0, ExpressionResourceBudget.OperationDepth);
+        Assert.AreEqual(8, CountGroups(structureLimited.Simplify(LinearChain(8, 2))), "The refused instance works again.");
     }
 
     /// <summary>Returns the leftmost leaf of a left-associated chain, iteratively.</summary>
@@ -292,7 +327,9 @@ public class ExpressionSimplifierFlattenResourceTests
             Assert.AreEqual(ExpressionRuleRejection.ChainNotAdmitted, state.simplifier.FlattenAdmission(state.dag));
             return ExpressionResourceBudget.StructuralVisits;
         });
-        Assert.AreEqual(50, structural, "One visit per distinct node of the DAG.");
+        // One visit per distinct node of the DAG, plus the root visited by the spine test of mission C3b (a repetition), which
+        // refuses it at once: its two operands are crossed.
+        Assert.AreEqual(51, structural, "One visit per distinct node of the DAG, and one for the spine test.");
 
         ExpressionResourceLimitException exception = Assert.ThrowsExactly<ExpressionResourceLimitException>(() => simplifier.Simplify(dag));
         Assert.AreEqual(ExpressionResourceLimitKind.Work, exception.Kind);

@@ -310,6 +310,7 @@ public partial class ExpressionSimplifier
 
         FlattenAdmissionStatistics? statistics = t_admissionStatistics;
         if (statistics is not null) statistics.SpineLevels += bottom;
+        var pending = new Stack<(Expression Node, bool IsNegative)>();
         for (int index = bottom - 1; index >= 0; index--)
         {
             if (index > 0) ExpressionResourceBudget.ConsumeTransformVisit();
@@ -319,13 +320,13 @@ public partial class ExpressionSimplifier
             signedTerms.Clear();
             if (ReferenceEquals(level.Left, nodes[index + 1]))
             {
-                CollectAdditiveTerms(signedTerms, child, false);
+                CollectAdditiveTermsIteratively(signedTerms, child, pending);
                 CollectAdditiveTerms(signedTerms, prepared[term], operands[term].IsNegative);
             }
             else
             {
                 CollectAdditiveTerms(signedTerms, prepared[term], false);
-                CollectAdditiveTerms(signedTerms, child, false);
+                CollectAdditiveTermsIteratively(signedTerms, child, pending);
             }
 
             // The finalization of the level (CanonicalizeAdditiveExpression of its two operands); the root stores nothing.
@@ -333,6 +334,48 @@ public partial class ExpressionSimplifier
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// <see cref="CollectAdditiveTerms"/> of a positive <paramref name="expression"/> without recursion: the same terms, signs
+    /// and order (an in-order walk through ordinary <c>Add</c>, <c>Subtract</c> and <c>Negate</c> nodes), with an explicit
+    /// stack, so that collecting the canonical result of a level, a right-associated chain as long as the chain, does not use
+    /// one frame of the execution stack per term.
+    /// </summary>
+    /// <param name="terms">Receives the signed terms.</param>
+    /// <param name="expression">The canonical result of the level below.</param>
+    /// <param name="pending">An empty work stack, reused between levels; left empty.</param>
+    private static void CollectAdditiveTermsIteratively(List<(Expression Term, bool IsNegative)> terms, Expression expression, Stack<(Expression Node, bool IsNegative)> pending)
+    {
+        pending.Push((expression, false));
+        while (pending.Count > 0)
+        {
+            (Expression node, bool isNegative) = pending.Pop();
+            if (node is BinaryExpression binary && IsOrdinaryBinaryArithmetic(binary))
+            {
+                if (binary.NodeType == ExpressionType.Add)
+                {
+                    pending.Push((binary.Right, isNegative));
+                    pending.Push((binary.Left, isNegative));
+                    continue;
+                }
+
+                if (binary.NodeType == ExpressionType.Subtract)
+                {
+                    pending.Push((binary.Right, !isNegative));
+                    pending.Push((binary.Left, isNegative));
+                    continue;
+                }
+            }
+
+            if (node is UnaryExpression unary && IsOrdinaryUnaryNegate(unary))
+            {
+                pending.Push((unary.Operand, !isNegative));
+                continue;
+            }
+
+            terms.Add((node, isNegative));
+        }
     }
 
     /// <summary>
