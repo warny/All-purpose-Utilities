@@ -1,5 +1,26 @@
 # Expression simplifier roadmap
 
+## Status reconciliation — 2026-11-17
+
+This section is the **current planning summary**; dated implementation notes below remain historical records and must not be read as a fresh backlog.
+
+| Scope | Status on the inspected default branch | Evidence / remaining decision |
+| --- | --- | --- |
+| S1–S4 | **Completed** | Structural equality and hashing, reconstruction fidelity, symbolic safety contract and canonical keys; ETC later extended the supported families. |
+| ETC R0, R1a, R1a-Security, R1b, R1c, R2, R3, R4, closure | **Completed for the ETC engine** | See the ETC roadmap and PRs #669–#678, #675–#677. Parser hardening S-06 is **not** part of that closure. |
+| S5 P1–P17 | **Completed / experiments explicitly rejected where documented** | Includes P16 and P17; do not re-open rejected performance experiments without new evidence. |
+| P18 Architecture A, A-10, B, C1/C2/C2b | **Implemented** | PRs #681–#687; default-policy compatibility constraints remain binding. |
+| P19d comparer memo | **Implemented; follow-up experiment rejected** | PRs #688–#690 and the regression tests; do not count as an unstarted PR. |
+| Flatten infrastructure, batch additive processing, C3a–C3d | **Implemented in the PR series / verify integration and final validation** | PRs #691–#703. PR existence alone does not prove a merge; validate the actual target SHA and CI before marking integration complete. |
+| Two subsequent trigonometric/division-chain fixes | **Reported implemented and unit-tested, not yet validated/integrated** | Local commits d9805c58, e3ec1be4, 710e20be on `fix/expression-trig-and-division-chains`; S5, differential corpora, BDN, docs and PR were still pending in the latest report. |
+| Remaining simplifier issues | **Open or requires re-audit** | Right-associated/balanced subtraction quotient chains (`subdivR`, `subdivB`, etc.); S5A-04 exception timing, S5A-05/06/09/10 convergence, residual domain/determinism entries. Avoid assuming a finding is unresolved solely because the original audit used future tense. |
+| Execution optimizer O0–O5 | **Open, separate stream** | `ExpressionOptimiser` still needs its own effect/operator/exception correctness review (A10-C) and compiled-runtime benchmarks; C architecture does not complete this work. |
+
+**Closure accounting.** Do not count ETC R1–R4, P18 A/B, C1–C3, P19d or Flatten infrastructure as new PRs without revalidating an actual missing requirement. Audit remaining work by concrete reproducible gaps; count the optimizer separately. The previously suggested 6–9 PR total was a provisional estimate, **not** a verified remaining-PR count.
+
+**Verification gate before closing a row:** verify merge status on the target branch, tests (Unit/Security/Functional and ETC where applicable), effect/provenance invariants, differential S5 outputs, and measured complexity. The unmerged local trig/division branch is not in the inspected default branch.
+
+
 Audit date: 2026-09-15  
 Current audit baseline: `master` at `8d9521549696095b9880db26c68def7b3a86900a` after PR #594.  
 Original roadmap baseline: `0897872cfb9cd0906fabaf28a260e7f28f1e995c` after PR #589.
