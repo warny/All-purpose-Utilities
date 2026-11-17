@@ -175,7 +175,8 @@ public class ExpressionResourceLimitsTests
     [TestMethod]
     public void Work_CombinatorialSimplification_IsStoppedByTheBudget()
     {
-        Expression tree = NegatedDifferenceChain(20);
+        // Mission C3c made this tree about quadratic (it was super-polynomial, S5A-08): 120 terms exceed the budget as 20 did.
+        Expression tree = NegatedDifferenceChain(120);
         var simplifier = new ExpressionSimplifier(ExpressionResourceLimits.Default with { MaxTransformVisits = 20_000 });
 
         ExpressionResourceLimitException exception = Assert.ThrowsExactly<ExpressionResourceLimitException>(() => simplifier.Simplify(tree));
@@ -351,7 +352,7 @@ public class ExpressionResourceLimitsTests
     [TestMethod]
     public void Reentrancy_ConstantEquals_CallingTheSimplifier_IsBounded()
     {
-        var heavy = new ReentrantValue(() => new ExpressionSimplifier(ExpressionResourceLimits.Unlimited).Simplify(NegatedDifferenceChain(18)));
+        var heavy = new ReentrantValue(() => new ExpressionSimplifier(ExpressionResourceLimits.Unlimited).Simplify(NegatedDifferenceChain(60)));
         ExpressionComparer comparer = ExpressionComparer.Create(ExpressionResourceLimits.Default with { MaxTransformVisits = 5_000 });
 
         ExpressionResourceLimitException exception = Assert.ThrowsExactly<ExpressionResourceLimitException>(
@@ -366,7 +367,7 @@ public class ExpressionResourceLimitsTests
     [TestMethod]
     public void Reentrancy_ConstantGetHashCode_CallingTheComparer_IsBounded()
     {
-        var heavy = new ReentrantValue(() => ExpressionComparer.Create(ExpressionResourceLimits.Unlimited).GetHashCode(NegatedDifferenceChain(18)));
+        var heavy = new ReentrantValue(() => ExpressionComparer.Create(ExpressionResourceLimits.Unlimited).GetHashCode(NegatedDifferenceChain(60)));
         ExpressionComparer comparer = ExpressionComparer.Create(ExpressionResourceLimits.Default with { MaxTransformVisits = 5_000 });
 
         ExpressionResourceLimitException exception = Assert.ThrowsExactly<ExpressionResourceLimitException>(() => comparer.GetHashCode(Expression.Constant(heavy)));
@@ -405,7 +406,7 @@ public class ExpressionResourceLimitsTests
         Action[] failures =
         [
             () => new ExpressionSimplifier(Shape(maxDepth: 4)).Simplify(NegateChain(10)),
-            () => new ExpressionSimplifier(ExpressionResourceLimits.Default with { MaxTransformVisits = 3_000 }).Simplify(Expression.Lambda(NegatedDifferenceChain(16))),
+            () => new ExpressionSimplifier(ExpressionResourceLimits.Default with { MaxTransformVisits = 3_000 }).Simplify(Expression.Lambda(NegatedDifferenceChain(48))),
             () => ExpressionComparer.Create(ExpressionResourceLimits.Default with { MaxStructuralVisits = 40 }).Equals(CallChain(60), CallChain(60)),
             () => RunOnThread(() => new ExpressionSimplifier(ExpressionResourceLimits.Unlimited).Simplify(NegateChain(200_000)), 256 * 1024, Timeout),
         ];

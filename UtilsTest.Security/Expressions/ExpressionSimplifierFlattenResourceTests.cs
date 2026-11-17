@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utils.Expressions;
 using Utils.Mathematics.Expressions;
@@ -165,11 +166,11 @@ public class ExpressionSimplifierFlattenResourceTests
     [TestMethod]
     public void DeclinedDeepChain_IsAControlledStackRefusal()
     {
-        // The last term squares the first parameter: the chain is neither linear nor a spine chain (mission C3b admits the
-        // repetition of the first parameter alone, see SpineDeepChain_IsSimplified_OnASmallStack).
+        // The last term divides the first parameter: the chain is neither linear nor factorable (mission C3c admits a square of
+        // the first parameter, which made this chain a factorable one, see SpineDeepChain_IsSimplified_OnASmallStack).
         Expression linear = LinearChain(20_000, 0);
         ParameterExpression first = (ParameterExpression)Leftmost(linear);
-        Expression declined = Expression.Add(linear, Expression.Multiply(first, first));
+        Expression declined = Expression.Add(linear, Expression.Divide(first, Expression.Constant(2.0)));
 
         RunOnThread(() =>
         {
@@ -185,9 +186,9 @@ public class ExpressionSimplifierFlattenResourceTests
     }
 
     /// <summary>
-    /// A spine chain (mission C3b) of 100,000 distinct terms followed by repetitions is simplified on a 256 KiB thread: the
-    /// spine test, the walk of the treatment and the collection of each level's result never recurse on the chain. Its work is
-    /// counted and refused just above each limit, and a refused instance works again.
+    /// A chain of 100,000 distinct terms followed by repetitions (a spine chain of mission C3b, a factorable chain since mission
+    /// C3c) is simplified on a 256 KiB thread: the admission walks, the global factoring and the final negation test never
+    /// recurse on the chain. Its work is counted and refused just above each limit, and a refused instance works again.
     /// </summary>
     [TestMethod]
     public void SpineDeepChain_IsSimplified_OnASmallStack()
@@ -312,6 +313,59 @@ public class ExpressionSimplifierFlattenResourceTests
     }
 
     /// <summary>
+    /// Mission C3c: the factorable test, which runs inside an operation after a linear refusal, refuses with type tests only too:
+    /// an armed extension node held by a product, a call of an impersonating method (whose name, declaring type and return type
+    /// are never read before its provenance is checked) and a product carrying an impersonating operator are never read, and
+    /// each chain is refused, while the same chain with an inert call is admitted.
+    /// </summary>
+    [TestMethod]
+    public void FactorableAdmission_NeverReadsExtensionNodes_NorImpersonatingReflectionObjects()
+    {
+        ParameterExpression a = Expression.Parameter(typeof(double), "a"), b = Expression.Parameter(typeof(double), "b"), c = Expression.Parameter(typeof(double), "c");
+        var extension = new ArmedExtension();
+        MethodInfo sin = typeof(Math).GetMethod(nameof(Math.Sin), [typeof(double)])!;
+        var callMethod = new ImpersonatingMethod(sin);
+        var operatorMethod = new ImpersonatingMethod(typeof(ExpressionSimplifierFlattenResourceTests).GetMethod(nameof(Plus))!);
+
+        // Not linear (a repeats), so the factorable test is reached.
+        Expression repeated = Expression.Add(Expression.Add(a, b), a);
+        Expression[] hostile =
+        [
+            Expression.Add(repeated, Expression.Multiply(Expression.Constant(2.0), extension)),
+            Expression.Add(repeated, Expression.Multiply(extension, c)),
+            Expression.Add(repeated, Expression.Call(callMethod, c)),
+            Expression.Add(repeated, Expression.Multiply(Expression.Constant(3.0), Expression.Call(callMethod, c))),
+            Expression.Add(repeated, Expression.Multiply(c, c, operatorMethod)),
+        ];
+        Expression admitted = Expression.Add(repeated, Expression.Multiply(Expression.Constant(3.0), Expression.Call(sin, c)));
+        var simplifier = new ExpressionSimplifier();
+        Assert.AreEqual(ExpressionRuleRejection.None, ExpressionResourceBudget.Run(NoLimits, simplifier, null, null, (simplifier, admitted), static state => state.simplifier.FlattenAdmission(state.admitted)));
+
+        extension.Armed = true;
+        callMethod.Trap.Reset();
+        callMethod.Trap.Armed = true;
+        operatorMethod.Trap.Reset();
+        operatorMethod.Trap.Armed = true;
+        try
+        {
+            foreach (Expression chain in hostile)
+            {
+                Assert.AreEqual(ExpressionRuleRejection.ChainNotAdmitted, ExpressionResourceBudget.Run(NoLimits, simplifier, null, null, (simplifier, chain), static state => state.simplifier.FlattenAdmission(state.chain)));
+            }
+        }
+        finally
+        {
+            callMethod.Trap.Armed = false;
+            operatorMethod.Trap.Armed = false;
+            extension.Armed = false;
+        }
+
+        Assert.AreEqual(0, extension.Calls);
+        Assert.AreEqual(0, callMethod.Trap.ArmedCalls + callMethod.Trap.TypeReads);
+        Assert.AreEqual(0, operatorMethod.Trap.ArmedCalls + operatorMethod.Trap.TypeReads);
+    }
+
+    /// <summary>
     /// A chain over a shared DAG (every level adds a node to itself: <c>2^n</c> logical terms) is refused by the admission in
     /// one visit per distinct node, at the second occurrence of its parameter, and is never extracted: the simplifier keeps
     /// its level by level treatment and its transformation budget stops it, as before the rule existed.
@@ -327,15 +381,28 @@ public class ExpressionSimplifierFlattenResourceTests
             Assert.AreEqual(ExpressionRuleRejection.ChainNotAdmitted, state.simplifier.FlattenAdmission(state.dag));
             return ExpressionResourceBudget.StructuralVisits;
         });
-        // One visit per distinct node of the DAG, plus the root visited by the spine test of mission C3b (a repetition), which
-        // refuses it at once: its two operands are crossed.
-        Assert.AreEqual(51, structural, "One visit per distinct node of the DAG, and one for the spine test.");
+        // One visit per distinct node of the DAG for the linear test, and as many for the factorable test of mission C3c, which
+        // refuses the first crossed node reached twice (the spine test, which it supersedes, is not run).
+        Assert.AreEqual(101, structural, "One visit per distinct node of the DAG, for each of the two tests.");
 
         ExpressionResourceLimitException exception = Assert.ThrowsExactly<ExpressionResourceLimitException>(() => simplifier.Simplify(dag));
         Assert.AreEqual(ExpressionResourceLimitKind.Work, exception.Kind);
         Assert.AreEqual(0, ExpressionResourceBudget.OperationDepth);
     }
 
+
+    /// <summary>
+    /// Builds <c>x0 / 2 + x1 + ... + x(n-1)</c>, left-associated, iteratively: every level holds the division, a term that is
+    /// neither linear nor factorable (mission C3c: a negation is factorable).
+    /// </summary>
+    /// <param name="terms">The number of terms.</param>
+    /// <returns>The chain.</returns>
+    private static BinaryExpression DivisionFirstChain(int terms)
+    {
+        Expression e = Expression.Divide(Expression.Parameter(typeof(double), "x0"), Expression.Constant(2.0));
+        for (int i = 1; i < terms; i++) e = Expression.Add(e, Expression.Parameter(typeof(double), "x" + i));
+        return (BinaryExpression)e;
+    }
 
     /// <summary>
     /// Builds <c>-x0 + x1 + ... + x(n-1)</c>, left-associated, iteratively: every level holds the negation, a term that is not
@@ -366,15 +433,16 @@ public class ExpressionSimplifierFlattenResourceTests
     }
 
     /// <summary>
-    /// The known refusals of the admission (Flatten mission C1) are counted work: the root walk, one visit per recorded node,
-    /// one per later lookup. A structural budget just below that count refuses inside the recording pass, the operation
-    /// closes, the nodes recorded before the refusal are proven refusals, and the next operation starts without any table.
+    /// The known refusals of the admission (Flatten mission C1) are counted work: the root walks (the linear test, then the
+    /// factorable test of mission C3c), one visit per recorded node, one per later lookup. A structural budget just below that
+    /// count refuses inside the recording pass, the operation closes, the nodes recorded before the refusal are proven
+    /// refusals, and the next operation starts without any table.
     /// </summary>
     [TestMethod]
     public void KnownRefusals_AreCounted_AndARefusalLeavesACorrectTable()
     {
         const int Terms = 64;
-        BinaryExpression chain = NegationFirstChain(Terms);
+        BinaryExpression chain = DivisionFirstChain(Terms);
         List<BinaryExpression> spine = LeftSpine(chain);
         var simplifier = new ExpressionSimplifier(NoLimits);
 
@@ -383,12 +451,12 @@ public class ExpressionSimplifierFlattenResourceTests
             foreach (BinaryExpression node in state.spine) Assert.AreEqual(ExpressionRuleRejection.ChainNotAdmitted, state.simplifier.FlattenAdmission(node));
             return ExpressionResourceBudget.StructuralVisits;
         });
-        Assert.AreEqual((Terms - 1) + (Terms - 2) + (Terms - 2), structural, "Root walk, recording pass, one visit per lookup.");
+        Assert.AreEqual(2 * (Terms - 1) + (Terms - 2) + (Terms - 2), structural, "Two root walks, recording pass, one visit per lookup.");
 
         // A nested operation whose budget runs out in the middle of the recording pass: the outer operation keeps the table.
         ExpressionResourceBudget.Run(NoLimits, null, null, null, (simplifier, spine), static state =>
         {
-            ExpressionResourceLimits tight = NoLimits with { MaxStructuralVisits = (Terms - 1) + 10 };
+            ExpressionResourceLimits tight = NoLimits with { MaxStructuralVisits = 2 * (Terms - 1) + 10 };
             ExpressionResourceLimitException exception = Assert.ThrowsExactly<ExpressionResourceLimitException>(
                 () => ExpressionResourceBudget.Run(tight, null, null, null, state, static inner => inner.simplifier.FlattenAdmission(inner.spine[0])));
             Assert.AreEqual(ExpressionResourceLimitKind.StructuralWork, exception.Kind);
@@ -420,14 +488,15 @@ public class ExpressionSimplifierFlattenResourceTests
     }
 
     /// <summary>
-    /// The walk and the recording pass are iterative: on a 256 KiB thread, the admission of a 100,000-term chain refused by
-    /// its deepest term records the whole spine, and every node below the root is then refused by one lookup.
+    /// The walks and the recording pass are iterative: on a 256 KiB thread, the admission of a 100,000-term chain refused by
+    /// its deepest term (by the linear and the factorable tests) records the whole spine, and every node below the root is
+    /// then refused by one lookup.
     /// </summary>
     [TestMethod]
     public void DeepRefusedChain_IsRecorded_OnASmallStack()
     {
         const int Terms = 100_000;
-        BinaryExpression chain = NegationFirstChain(Terms);
+        BinaryExpression chain = DivisionFirstChain(Terms);
         List<BinaryExpression> spine = LeftSpine(chain);
         RunOnThread(() =>
         {
@@ -437,7 +506,7 @@ public class ExpressionSimplifierFlattenResourceTests
                 foreach (BinaryExpression node in state.spine) Assert.AreEqual(ExpressionRuleRejection.ChainNotAdmitted, state.simplifier.FlattenAdmission(node));
                 return ExpressionResourceBudget.StructuralVisits;
             });
-            Assert.AreEqual((Terms - 1) + 2L * (Terms - 2), structural);
+            Assert.AreEqual(2L * (Terms - 1) + 2L * (Terms - 2), structural);
             Assert.AreEqual(0, ExpressionResourceBudget.OperationDepth);
         }, SmallStack, Timeout);
     }

@@ -407,6 +407,13 @@ internal static class ExpressionResourceBudget
         public System.Linq.Expressions.Expression? AdmittedSpineRoot;
 
         /// <summary>
+        /// The root of the factorable chain the admission of the running operation admitted last (mission C3c,
+        /// <c>ExpressionSimplifier.IsFactorableChain</c>), consumed by the flatten rule invoked right after it on the same root.
+        /// Same lifetime as <see cref="AdmittedSpineRoot"/>: detached by <see cref="Enter"/>, restored by <see cref="Exit"/>.
+        /// </summary>
+        public System.Linq.Expressions.Expression? AdmittedFactorableRoot;
+
+        /// <summary>
         /// The structural hashes, canonical-order keys and canonicalization states the simplifier's canonicalizations computed
         /// during the running public operation, by node reference (mission C3a, <c>ExpressionSimplifier.DescribeTerm</c>). Every
         /// public operation, nested ones included, starts with an empty table: <see cref="Enter"/> detaches the enclosing one and
@@ -454,12 +461,14 @@ internal static class ExpressionResourceBudget
                 MaxDepth,
                 MaxNodes,
                 SimplificationMetadata,
-                AdmittedSpineRoot);
+                AdmittedSpineRoot,
+                AdmittedFactorableRoot);
 
             // Mission C3a: every public operation, nested ones included, starts with an empty metadata table and never reads
             // the entries of the operation it is nested in (as the comparison memo of S5 P9), so its own budget is exact.
             SimplificationMetadata = null;
             AdmittedSpineRoot = null;
+            AdmittedFactorableRoot = null;
 
             if (OperationDepth == 0)
             {
@@ -518,6 +527,7 @@ internal static class ExpressionResourceBudget
             MaxNodes = scope.MaxNodes;
             SimplificationMetadata = scope.SimplificationMetadata;
             AdmittedSpineRoot = scope.AdmittedSpineRoot;
+            AdmittedFactorableRoot = scope.AdmittedFactorableRoot;
             if (scope.IsOutermost)
             {
                 Trace = null;
@@ -527,6 +537,7 @@ internal static class ExpressionResourceBudget
                 FlattenSpineRefusals = null;
                 SimplificationMetadata = null;
                 AdmittedSpineRoot = null;
+                AdmittedFactorableRoot = null;
                 EffectMode = 0;
                 TransformVisits = 0;
                 StructuralVisits = 0;
@@ -549,6 +560,8 @@ internal static class ExpressionResourceBudget
     /// <param name="MaxNodes">The previous node limit.</param>
     /// <param name="SimplificationMetadata">The metadata table of the enclosing operation, detached while this one runs.</param>
     /// <param name="AdmittedSpineRoot">The spine root admitted by the enclosing operation, detached while this one runs.</param>
+    /// <param name="AdmittedFactorableRoot">The factorable root admitted by the enclosing operation, detached while this one runs.</param>
+    /// <param name="AdmittedFactorableRoot">The factorable root admitted by the enclosing operation, detached while this one runs.</param>
     internal readonly record struct Scope(
         object? Owner,
         int OperationDepth,
@@ -561,7 +574,8 @@ internal static class ExpressionResourceBudget
         int MaxDepth,
         long MaxNodes,
         ExpressionMetadataTable? SimplificationMetadata,
-        System.Linq.Expressions.Expression? AdmittedSpineRoot)
+        System.Linq.Expressions.Expression? AdmittedSpineRoot,
+        System.Linq.Expressions.Expression? AdmittedFactorableRoot)
     {
         /// <summary>Gets whether this scope is the outermost operation of the thread.</summary>
         public bool IsOutermost => OperationDepth == 0;
