@@ -66,6 +66,14 @@ public partial class ExpressionSimplifier
     [Flatten(ExpressionType.Add, ExpressionType.Subtract)]
     private Expression? FlattenAdditiveChain(Expression source, FlattenedTerm[] terms, FlattenRuleDispatcher dispatcher)
     {
+        // Mission C3b: the admission, which ran just before the extraction, recognized a spine chain (its terms are linear
+        // terms, so the test below would take it for a linear chain).
+        if (t_admittedSpineRoot is { } spineRoot)
+        {
+            t_admittedSpineRoot = null;
+            if (ReferenceEquals(spineRoot, source)) return FlattenSpineChain((BinaryExpression)source);
+        }
+
         foreach (FlattenedTerm term in terms)
         {
             if (!IsLinearTerm(term.Operand, source.Type)) return FlattenAnchoredChain((BinaryExpression)source, dispatcher);
@@ -321,6 +329,20 @@ public partial class ExpressionSimplifier
         }
 
         bool admissible = IsLinearChain(binary, statistics, out ChainRefusal refusal, out int anchorDepth);
+        if (!admissible && IsRepetition(refusal.Cause))
+        {
+            // Mission C3b: a repetition only refuses the linear family; the spine family tolerates it where no rule can apply.
+            if (IsSpineChain(binary, statistics, out int spineRefusalDepth))
+            {
+                if (statistics is not null) statistics.Spine++;
+                t_admittedSpineRoot = binary;
+                return ExpressionRuleRejection.None;
+            }
+
+            // A node is a known refusal only if every family refuses it: down to the shallower of the two proven depths.
+            refusal = refusal with { Depth = Math.Min(refusal.Depth, spineRefusalDepth) };
+        }
+
         if (admissible && anchorDepth >= 0 && !_usesHistoricalAdmission)
         {
             if (statistics is not null) statistics.Causes[(int)FlattenRefusalCause.AnchoredUnderPolicy]++;
