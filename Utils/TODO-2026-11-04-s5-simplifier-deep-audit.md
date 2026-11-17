@@ -1,5 +1,23 @@
 # S5 deep audit — `ExpressionSimplifier` (2026-11-04)
 
+## Finding disposition update — 2026-11-17
+
+This report describes the **2026-11-04 baseline**. Its original findings and proposed PR ordering are historical. The disposition below supersedes the assumption that every proposed item is still outstanding.
+
+| Finding / workstream | Updated disposition |
+| --- | --- |
+| A-10 reflection provenance | Addressed by PR #682; architecture A/B/C policy integration followed. Verify final target-branch merge when closing. |
+| S5A-03, S5A-13 decimal division exception preservation; missing floating `Pow` classification | Corrections recorded in PRs #684 and #685. |
+| S5A-14/S5A-15 comparator re-entry | P19d implemented in PRs #688–#689, with later memo re-evaluation in #690 (rejected experiment). Do not schedule P19d again. |
+| C1/C2/C2b and C3a–C3d | Work represented by PRs #686–#687 and #700–#703, with Flatten prerequisites #691–#699; do not treat these as untouched proposals. Verify integration and policy-specific tests. |
+| Trigonometric power guard / foreign same-name `Sin` and linear admissible quotient-subtraction chains | Local fixes reported in commits e3ec1be4 and 710e20be; **not yet final S5/differential/benchmark validated or PR-integrated** at time of report. |
+| Right-associated and balanced subtracted quotient groups | **Residual complexity issue**: `subdivR 24` was still reported at 811,813 visits after the local linear-chain fix. Extension of C3c to quotients was explicitly deferred pending new proof/semantic validation. |
+| Other original S5A findings (exception timing, convergence, dispatch determinism, domain-specific behavior) | **Re-audit against the integrated code before scheduling**: the original report predates architecture C and Flatten. Do not infer fixed or open status solely from this baseline. |
+| `ExpressionOptimiser` A10-C / O0–O5 | **Open independent workstream**; no ETC or simplifier policy fix automatically resolves optimizer evaluation-dropping identities. |
+
+**Next evidence required:** confirm actual merge SHAs and CI for the recent PR series; run S5 stability and reference/branch comparisons, differential corpora with new quotients, paired BenchmarkDotNet measurements, and targeted residual-family profiling. Keep a separate count of validated remaining fixes; the old phase-M PR sequence is not a reliable count of future PRs.
+
+
 Status: **audit report, open findings**. Companion of the S5 stage of `TODO-2026-09-12-expression-simplifier-roadmap.md`
 (section "S5 deep audit"). No production rule, canonicalization strategy, budget or ordering was changed by this audit; the
 experiments that mutated the engine ran in a temporary worktree and are not part of the audit branch.
