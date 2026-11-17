@@ -341,31 +341,38 @@ public partial class ExpressionSimplifier
         /// </returns>
         public int[] GroupByFactors()
         {
+            // Mission C3d: a bucket is the chain of its representatives in insertion order (first one in the dictionary, the
+            // next ones linked through nextRepresentative), so no list is allocated per bucket.
             var representatives = new int[_terms.Length];
-            var buckets = new Dictionary<int, List<int>>();
+            var nextRepresentative = new int[_terms.Length];
+            var buckets = new Dictionary<int, int>(_terms.Length);
             for (int index = 0; index < _terms.Length; index++)
             {
+                nextRepresentative[index] = -1;
                 int hash = _terms[index].FactorHash;
-                if (!buckets.TryGetValue(hash, out List<int>? bucket))
+                if (!buckets.TryGetValue(hash, out int candidate))
                 {
-                    buckets.Add(hash, [index]);
+                    buckets.Add(hash, index);
                     representatives[index] = index;
                     continue;
                 }
 
                 int representative = -1;
-                foreach (int candidate in bucket)
+                int last = candidate;
+                for (; candidate >= 0; candidate = nextRepresentative[candidate])
                 {
                     if (HaveSameFactors(candidate, index))
                     {
                         representative = candidate;
                         break;
                     }
+
+                    last = candidate;
                 }
 
                 if (representative < 0)
                 {
-                    bucket.Add(index);
+                    nextRepresentative[last] = index;
                     representative = index;
                 }
 

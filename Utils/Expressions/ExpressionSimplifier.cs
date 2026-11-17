@@ -3190,8 +3190,8 @@ namespace Utils.Mathematics.Expressions
             {
                 if (factoring != AdditiveFactoring.None)
                 {
-                    MergeIdenticalMonomials(terms, type, scopes, recordMetadata);
-                    if (factoring == AdditiveFactoring.CommonFactors) FactorCommonFactors(terms, type, scopes);
+                    MergeIdenticalMonomials(terms, type, scopes, recordMetadata, out AdditiveTermAnalysis? analyzed, out int[]? sources);
+                    if (factoring == AdditiveFactoring.CommonFactors) FactorCommonFactors(terms, type, scopes, analyzed, sources);
                 }
 
                 NegateSubtractedConstant(terms, type, StabilizesRebuiltForms);
