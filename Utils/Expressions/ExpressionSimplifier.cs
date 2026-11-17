@@ -2971,10 +2971,15 @@ namespace Utils.Mathematics.Expressions
 
             // Mission C3c: the inert terms holding the same factors become one term, then, over a whole chain, the terms
             // sharing a factor are grouped; both only rebuild terms from the factors and coefficients already present.
-            if (factoring != AdditiveFactoring.None && MergesMonomials)
+            if (MergesMonomials)
             {
-                MergeIdenticalMonomials(terms, type, scopes, recordMetadata);
-                if (factoring == AdditiveFactoring.CommonFactors) FactorCommonFactors(terms, type, scopes);
+                if (factoring != AdditiveFactoring.None)
+                {
+                    MergeIdenticalMonomials(terms, type, scopes, recordMetadata);
+                    if (factoring == AdditiveFactoring.CommonFactors) FactorCommonFactors(terms, type, scopes);
+                }
+
+                NegateSubtractedConstant(terms, type);
             }
 
             if (terms.Count == 0)

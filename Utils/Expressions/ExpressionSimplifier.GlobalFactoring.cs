@@ -240,6 +240,31 @@ public partial class ExpressionSimplifier
     }
 
     /// <summary>
+    /// Replaces the subtracted constant of a canonicalized sum (the constants are aggregated, so it holds one at most) by its
+    /// negation, for a type with an ordinary negation (mission C3c): <c>y - 1</c> gives <c>-1 + y</c> instead of
+    /// <c>(0 - 1) + y</c>, the form the next call folded (<see cref="SubstractionOfConstants"/> on the constant pair
+    /// <c>0 - 1</c>), so the canonical sum is a fixed point.
+    /// </summary>
+    /// <param name="terms">The inert signed terms of the sum; updated in place.</param>
+    /// <param name="type">The type of the sum.</param>
+    /// <remarks>
+    /// The negation is folded with <see cref="FoldConstants"/>, as the next call folds <c>0 - c</c>: exact for a
+    /// floating-point constant, modular for a signed integral one (<c>0 - MinValue</c> is <c>MinValue</c>, as at run time).
+    /// An unsigned type keeps <c>0 - c</c>: its negation is the large wrapped value that the aggregation of the constants
+    /// avoids on purpose (<see cref="AggregateAdditiveConstants"/>).
+    /// </remarks>
+    private static void NegateSubtractedConstant(List<(Expression Term, bool IsNegative)> terms, Type type)
+    {
+        if (!_ordinaryNegateMethods.ContainsKey(type)) return;
+        for (int index = 0; index < terms.Count; index++)
+        {
+            (Expression term, bool isNegative) = terms[index];
+            if (!isNegative || term is not ConstantExpression constant || !IsAggregatableConstant(constant, type)) continue;
+            if (FoldConstants(ExpressionType.Subtract, type, Convert.ChangeType(0, type), constant.Value) is { } negated) terms[index] = (negated, false);
+        }
+    }
+
+    /// <summary>
     /// Builds the term of a merged group from the factor part of its first eligible member and the sum of the coefficients.
     /// </summary>
     /// <param name="analysis">The analysis of the sum.</param>
