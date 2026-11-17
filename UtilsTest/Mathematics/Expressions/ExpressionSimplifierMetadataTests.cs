@@ -385,7 +385,10 @@ public class ExpressionSimplifierMetadataTests
     public void NestedPublicCallStartsWithAnEmptyTable()
     {
         var simplifier = new ExpressionSimplifier();
-        Expression chain = LeftSum(D.Take(16).Append(D[0]));
+
+        // A division keeps the root out of the flattened families (mission C3c: a repeated term no longer does), so the root
+        // level canonicalizes its seventeen terms and stores their metadata.
+        Expression chain = LeftSum(D.Take(16).Cast<Expression>().Append(Expression.Divide(D[0], D[1])));
         SimplificationMetadataStatistics alone = Measure(() => new ExpressionSimplifier().Simplify(chain));
 
         InOperation(simplifier, () =>

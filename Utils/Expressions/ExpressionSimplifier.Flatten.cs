@@ -62,6 +62,12 @@ public partial class ExpressionSimplifier
     /// the spine: every crossed node from the root down to it contains it. Such a chain goes to
     /// <see cref="FlattenAnchoredChain"/>; a linear chain holds no anchor.
     /// </para>
+    /// <para>
+    /// <b>Spine and factorable chains (missions C3b, C3c).</b> The admission records, in the operation's session, the root of a
+    /// spine or factorable chain it admitted; the rule invoked right after it on that root consumes the record and gives the
+    /// chain to <see cref="FlattenSpineChain"/> or <see cref="FlattenFactorableChain"/>. The linear and anchored chains are
+    /// canonicalized without merging anything (<see cref="AdditiveFactoring.None"/>): their terms are proven distinct.
+    /// </para>
     /// </remarks>
     [Flatten(ExpressionType.Add, ExpressionType.Subtract)]
     private Expression? FlattenAdditiveChain(Expression source, FlattenedTerm[] terms, FlattenRuleDispatcher dispatcher)
@@ -69,10 +75,20 @@ public partial class ExpressionSimplifier
         // Mission C3b: the admission, which ran just before the extraction in the same operation, recognized a spine chain (its
         // terms are linear terms, so the test below would take it for a linear chain). The root lives in the operation's
         // session, which a nested operation detaches and whose exit releases it (ExpressionResourceBudget.Session).
-        if (ExpressionResourceBudget.ActiveSession is { AdmittedSpineRoot: { } spineRoot } session)
+        if (ExpressionResourceBudget.ActiveSession is { } session)
         {
-            session.AdmittedSpineRoot = null;
-            if (ReferenceEquals(spineRoot, source)) return FlattenSpineChain((BinaryExpression)source);
+            if (session.AdmittedSpineRoot is { } spineRoot)
+            {
+                session.AdmittedSpineRoot = null;
+                if (ReferenceEquals(spineRoot, source)) return FlattenSpineChain((BinaryExpression)source);
+            }
+
+            // Mission C3c: a factorable chain, recognized the same way.
+            if (session.AdmittedFactorableRoot is { } factorableRoot)
+            {
+                session.AdmittedFactorableRoot = null;
+                if (ReferenceEquals(factorableRoot, source)) return FlattenFactorableChain(source, terms);
+            }
         }
 
         foreach (FlattenedTerm term in terms)
@@ -89,7 +105,7 @@ public partial class ExpressionSimplifier
             CollectAdditiveTerms(signedTerms, prepared, term.Operation == ExpressionType.Subtract);
         }
 
-        return CanonicalizeAdditiveTerms(signedTerms, source.Type, recordMetadata: false);
+        return CanonicalizeAdditiveTerms(signedTerms, source.Type, recordMetadata: false, AdditiveFactoring.None);
     }
 
     /// <summary>
@@ -189,7 +205,7 @@ public partial class ExpressionSimplifier
             if (statistics is not null) statistics.AnchoredCanonicalizations++;
             var signedTerms = new List<(Expression Term, bool IsNegative)>(prepared.Length);
             for (int i = 0; i < prepared.Length; i++) CollectAdditiveTerms(signedTerms, prepared[i], operands[i].IsNegative);
-            return CanonicalizeAdditiveTerms(signedTerms, type, recordMetadata: false);
+            return CanonicalizeAdditiveTerms(signedTerms, type, recordMetadata: false, AdditiveFactoring.None);
         }
 
         if (statistics is not null) statistics.AnchoredFallbacks++;
@@ -299,6 +315,13 @@ public partial class ExpressionSimplifier
     /// only refuses the linear family. Such a chain is then tested as a spine chain; a refused one is recorded only down to the
     /// shallower of the depths the two walks prove, so that every recorded node is refused by both families.
     /// </para>
+    /// <para>
+    /// <b>Factorable chains (mission C3c).</b> Inside an operation, a chain the linear family refuses is tested as a factorable
+    /// chain (<see cref="IsFactorableChain"/>), whose result is the global factoring of all its terms
+    /// (<see cref="FlattenFactorableChain"/>). Its terms include the linear terms, so it supersedes the spine family, which is
+    /// tested only when the factorable family is switched off (<see cref="FactorableChainsDisabled"/>, audits and tests). A
+    /// refused chain is recorded down to the shallower of the linear and factorable depths.
+    /// </para>
     /// </remarks>
     internal override ExpressionRuleRejection FlattenAdmission(Expression root)
     {
@@ -336,9 +359,25 @@ public partial class ExpressionSimplifier
         }
 
         bool admissible = IsLinearChain(binary, statistics, out ChainRefusal refusal, out int anchorDepth);
+
+        // Mission C3c: a chain whose terms are all factorable is simplified at once by the global factoring. Its terms include
+        // the linear terms, so the spine family (linear terms only) never admits a chain it refuses, and is not tested. Like
+        // the spine family, it is admitted only inside an operation, whose session carries the decision to the rule.
+        if (!admissible && session is not null && !t_factorableChainsDisabled)
+        {
+            if (IsFactorableChain(binary, statistics, out int factorableRefusalDepth))
+            {
+                if (statistics is not null) statistics.Factorable++;
+                session.AdmittedFactorableRoot = binary;
+                return ExpressionRuleRejection.None;
+            }
+
+            // A node is a known refusal only if every family refuses it: down to the shallower of the two proven depths.
+            refusal = refusal with { Depth = Math.Min(refusal.Depth, factorableRefusalDepth) };
+        }
         // A spine chain is admitted only inside an operation, whose session carries the decision to the rule; outside one (a
         // direct call of the admission) the repetition keeps refusing the chain.
-        if (!admissible && IsRepetition(refusal.Cause) && session is not null)
+        else if (!admissible && IsRepetition(refusal.Cause) && session is not null)
         {
             // Mission C3b: a repetition only refuses the linear family; the spine family tolerates it where no rule can apply.
             // A node below a refused spine root, down to its cause, is refused by one lookup instead of another spine walk.
@@ -510,6 +549,21 @@ public partial class ExpressionSimplifier
     /// <summary>The opt-in admission counters of this thread (<see cref="AdmissionStatistics"/>).</summary>
     [ThreadStatic]
     private static FlattenAdmissionStatistics? t_admissionStatistics;
+
+    /// <summary>Backing field of <see cref="FactorableChainsDisabled"/>.</summary>
+    [ThreadStatic]
+    private static bool t_factorableChainsDisabled;
+
+    /// <summary>
+    /// Gets or sets, for this thread, whether the admission skips the factorable family (mission C3c): audits and tests only,
+    /// so that the families it supersedes (the spine chains of mission C3b) stay testable as the reference and the fallback
+    /// they are. <see langword="false"/> by default.
+    /// </summary>
+    internal static bool FactorableChainsDisabled
+    {
+        get => t_factorableChainsDisabled;
+        set => t_factorableChainsDisabled = value;
+    }
 
     /// <summary>
     /// Gets or sets the admission counters of this thread: audits and benchmarks only. While <see langword="null"/> (the

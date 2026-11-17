@@ -236,17 +236,22 @@ public class ExpressionSimplifierNumericChainGrowthTests
     /// The shapes around the P16 chain: first term sorted first (negated head), source terms in reverse order,
     /// right-associated source, pure addition, equal and permuted coefficients, a lambda binding every parameter.
     /// </summary>
+    /// <remarks>
+    /// Since mission C3c these chains are factorable chains, simplified at once: the reversed and the right-associated sources
+    /// give the canonical form of the left-associated one, the equal coefficients are factored out as a canonical product, and
+    /// the two terms of <c>x3</c> of the negated lambda merge into <c>-7 * x3</c>.
+    /// </remarks>
     /// <param name="shape">The shape.</param>
     /// <param name="expected">The simplified tree.</param>
     [TestMethod]
     [DataRow("negatedHead", "-((3 * x1) + ((4 * x2) + ((5 * x3) + ((6 * x4) + ((7 * x5) + ((8 * x6) + (100 * x0)))))))")]
-    [DataRow("reversed", "(((100 * x0) - (3 * x1)) - ((4 * x2) + ((5 * x3) + ((6 * x4) + ((7 * x5) + (8 * x6))))))")]
-    [DataRow("rightAssociated", "(((100 * x0) - (3 * x1)) - ((4 * x2) + ((5 * x3) + ((6 * x4) + ((7 * x5) + (8 * x6))))))")]
+    [DataRow("reversed", "((0 - (3 * x1)) + ((0 - (4 * x2)) + ((0 - (5 * x3)) + ((0 - (6 * x4)) + ((0 - (7 * x5)) + ((0 - (8 * x6)) + (100 * x0)))))))")]
+    [DataRow("rightAssociated", "((0 - (3 * x1)) + ((0 - (4 * x2)) + ((0 - (5 * x3)) + ((0 - (6 * x4)) + ((0 - (7 * x5)) + ((0 - (8 * x6)) + (100 * x0)))))))")]
     [DataRow("addition", "((3 * x1) + ((4 * x2) + ((5 * x3) + ((6 * x4) + ((7 * x5) + ((8 * x6) + (100 * x0)))))))")]
-    [DataRow("equalCoefficients", "(((((((x0 - x1) - x2) - x3) - x4) - x5) - x6) * 3)")]
+    [DataRow("equalCoefficients", "(3 * ((0 - x1) + ((0 - x2) + ((0 - x3) + ((0 - x4) + ((0 - x5) + ((0 - x6) + x0)))))))")]
     [DataRow("permutedCoefficients", "((2 * x0) + ((0 - (16 * x3)) + ((0 - (30 * x6)) + ((0 - (39 * x1)) + ((0 - (53 * x4)) + ((0 - (76 * x2)) + (0 - (90 * x5))))))))")]
     [DataRow("lambda", "(x0, x1, x2, x3, x4, x5, x6) => ((0 - (3 * x1)) + ((0 - (4 * x2)) + ((0 - (5 * x3)) + ((0 - (6 * x4)) + ((0 - (7 * x5)) + ((0 - (8 * x6)) + (100 * x0)))))))")]
-    [DataRow("negatedInLambda", "(x0, x1, x2, x3, x4, x5, x6) => ((0 - (2 * x3)) + ((0 - (3 * x1)) + ((0 - (4 * x2)) + ((0 - (5 * x3)) + ((0 - (6 * x4)) + ((0 - (7 * x5)) + ((0 - (8 * x6)) + (100 * x0))))))))")]
+    [DataRow("negatedInLambda", "(x0, x1, x2, x3, x4, x5, x6) => ((-7 * x3) + ((0 - (3 * x1)) + ((0 - (4 * x2)) + ((0 - (6 * x4)) + ((0 - (7 * x5)) + ((0 - (8 * x6)) + (100 * x0)))))))")]
     public void ChainShapes_SimplifiedForm(string shape, string expected)
     {
         ParameterExpression[] xs = Parameters(7, typeof(double));
@@ -271,7 +276,10 @@ public class ExpressionSimplifierNumericChainGrowthTests
         Assert.AreEqual(expected, Simplified(source));
     }
 
-    /// <summary>Every order of the same four signed terms, in both associations: the digest of the 48 simplified trees.</summary>
+    /// <summary>
+    /// Every order of the same four signed terms, in both associations: the digest of the 48 simplified trees. Since mission
+    /// C3c every chain is simplified at once from its terms (a factorable chain), in its canonical form.
+    /// </summary>
     [TestMethod]
     public void TermPermutations_SimplifiedForms()
     {
@@ -286,7 +294,8 @@ public class ExpressionSimplifierNumericChainGrowthTests
         }
 
         Assert.AreEqual(48, forms.Count);
-        Assert.AreEqual("A2922F82B2886E39", Digest(string.Join("|", forms)));
+
+        Assert.AreEqual("CA6C37D46C52DC7D", Digest(string.Join("|", forms)));
     }
 
     /// <summary>Enumerates the permutations of <paramref name="items"/> in lexicographic order of positions.</summary>
@@ -312,7 +321,8 @@ public class ExpressionSimplifierNumericChainGrowthTests
 
     /// <summary>
     /// Negated additions that cancel or factor, and ones that do not: the comparison of <c>AdditionWithNegate</c> and
-    /// the factoring of the rewritten difference.
+    /// the factoring of the rewritten difference. Since mission C3c the factorable ones are simplified at once: the terms of
+    /// <c>a</c> merge (<c>-7 * a</c>, <c>-9 * a</c>) and the subtracted terms follow the canonical order.
     /// </summary>
     /// <param name="shape">The shape.</param>
     /// <param name="expected">The simplified tree.</param>
@@ -324,9 +334,9 @@ public class ExpressionSimplifierNumericChainGrowthTests
     [DataRow("differencePlusPart", "a")]
     [DataRow("plusZero", "0")]
     [DataRow("timesOne", "c")]
-    [DataRow("partiallyFactorable", "((0 - (3 * a)) + ((0 - (4 * a)) + ((0 - (5 * b)) + (100 * c))))")]
-    [DataRow("repeatedTerm", "((0 - (3 * a)) + ((0 - (6 * a)) + (100 * c)))")]
-    [DataRow("notEqual", "((0 - c) + ((0 - a) + b))")]
+    [DataRow("partiallyFactorable", "((-7 * a) + ((0 - (5 * b)) + (100 * c)))")]
+    [DataRow("repeatedTerm", "((-9 * a) + (100 * c))")]
+    [DataRow("notEqual", "((0 - a) + ((0 - c) + b))")]
     public void NegatedAdditions_SimplifiedForm(string shape, string expected)
     {
         ParameterExpression a = Expression.Parameter(typeof(double), "a");
@@ -354,7 +364,8 @@ public class ExpressionSimplifierNumericChainGrowthTests
     }
 
     /// <summary>
-    /// Repeated terms held by one shared reference and by structurally equal copies simplify to the same tree.
+    /// Repeated terms held by one shared reference and by structurally equal copies simplify to the same tree. Since mission
+    /// C3c the repeated terms merge (<c>-12 * x1</c>, <c>-12 * x2</c>) and their common coefficient is factored out.
     /// </summary>
     [TestMethod]
     public void RepeatedTerms_SharedReferencesAndCopies_SameForm()
@@ -369,7 +380,7 @@ public class ExpressionSimplifierNumericChainGrowthTests
         }
 
         string sharedForm = Simplified(Chain(shared, Expression.Subtract));
-        Assert.AreEqual("(((((0 - (3 * x1)) - (3 * x1)) - (3 * x1)) - (3 * x1)) + ((((0 - (4 * x2)) - (4 * x2)) - (4 * x2)) + (100 * x0)))", sharedForm);
+        Assert.AreEqual("((-12 * (x1 + x2)) + (100 * x0))", sharedForm);
         Assert.AreEqual(sharedForm, Simplified(Chain(copies, Expression.Subtract)));
     }
 
@@ -391,13 +402,15 @@ public class ExpressionSimplifierNumericChainGrowthTests
     /// <summary>
     /// Negated additions over non-finite, signed-zero and extreme constants: the comparison and the rewritten difference
     /// keep their IEEE-754 behavior. The decimal shape used to be rewritten (the rules reassociated additions that may
-    /// overflow); since ETC R1b (C-06) its decimal operands are not inert, so it is returned with its source structure.
+    /// overflow); since ETC R1b (C-06) its decimal operands are not inert, so it is returned with its source structure. Since
+    /// mission C3c the two terms of <c>y</c> with an infinite coefficient merge as the binary factoring folds them
+    /// (<c>-Infinity * y</c>, NaN for <c>y = 0</c> as the source).
     /// </summary>
     /// <param name="shape">The shape.</param>
     /// <param name="expected">The simplified tree, or the innermost exception type.</param>
     [TestMethod]
     [DataRow("nan", "0")]
-    [DataRow("infinity", "((0 - (3 * z)) + ((100 * x) + ((0 - (Infinity * y)) - (Infinity * y))))")]
+    [DataRow("infinity", "((-Infinity * y) + ((0 - (3 * z)) + (100 * x)))")]
     [DataRow("negativeZero", "((0 - (3 * z)) + (100 * x))")]
     [DataRow("decimalMax", "(-(79228162514264337593543950335 + x) + (((79228162514264337593543950335 + (79228162514264337593543950335 * x)) - (-7.25 * y)) - 79228162514264337593543950335))")]
     public void SpecialConstants_SimplifiedForm(string shape, string expected)
@@ -521,7 +534,7 @@ public class ExpressionSimplifierNumericChainGrowthTests
     [TestMethod]
     [DataRow(3, false, "7CA167CBDAAE6DE0", 23)]
     [DataRow(5, false, "7F5D265CD4120525", 563)]
-    [DataRow(5, true, "EE3FFAF773BA5DEA", 563)]
+    [DataRow(5, true, "67AB880A10CAF173", 563)]
     public void OpaqueNegatedAddition_UserCallsAndForm(int n, bool sameValue, string expectedDigest, int expectedCalls)
     {
         var log = new List<string>();
@@ -620,14 +633,16 @@ public class ExpressionSimplifierNumericChainGrowthTests
     /// work of preparing its leaves, far below the former 17,718. Since S5 P19d the comparison memo outlives each comparer
     /// session within the operation and activates on arithmetic from depth 1, so the three non-inert chains request 3,158 comparer
     /// simplifications instead of 17,718 - still exactly the same number for the three heads, and the opaque constant is
-    /// still never called.
+    /// still never called. Since mission C3c the canonical sub-chains the comparisons simplify are factorable chains,
+    /// simplified at once (2,720 requests for both opaque heads, still equal), and the chain headed by the inert call
+    /// <see cref="Math.Sin(double)"/> is itself a factorable chain, simplified at once (8 requests, as the decimal chain).
     /// </summary>
     /// <param name="head">The head term.</param>
     /// <param name="expected">The number of comparer simplifications.</param>
     [TestMethod]
-    [DataRow("opaque", 3_158)]
-    [DataRow("knownSafe", 3_158)]
-    [DataRow("call", 3_158)]
+    [DataRow("opaque", 2_720)]
+    [DataRow("knownSafe", 2_720)]
+    [DataRow("call", 8)]
     [DataRow("decimal", 8)]
     public void NonInertChains_KeepTheirComparerWork(string head, int expected)
     {

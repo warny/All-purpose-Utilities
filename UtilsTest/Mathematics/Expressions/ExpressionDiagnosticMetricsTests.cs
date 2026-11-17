@@ -15,6 +15,8 @@ public class ExpressionDiagnosticMetricsTests
     /// <summary>A derived simplifier without any member: its plan holds no flatten rule, so it simplifies level by level.</summary>
     private sealed class LevelByLevelSimplifier : ExpressionSimplifier
     {
+        /// <summary>Merges identical monomials as the built-in type does (mission C3c), so that only the flatten rule differs.</summary>
+        internal override bool MergesMonomials => true;
     }
 
     /// <summary>Returns the sum of two values for a custom-operator expression.</summary>

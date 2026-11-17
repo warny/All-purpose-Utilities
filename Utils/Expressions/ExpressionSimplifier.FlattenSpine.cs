@@ -298,7 +298,7 @@ public partial class ExpressionSimplifier
         }
 
         if (bottom > 0) ExpressionResourceBudget.ConsumeTransformVisit();
-        Expression result = CanonicalizeAdditiveTerms(signedTerms, type, recordMetadata: bottom > 0);
+        Expression result = CanonicalizeAdditiveTerms(signedTerms, type, recordMetadata: bottom > 0, AdditiveFactoring.None);
 
         FlattenAdmissionStatistics? statistics = t_admissionStatistics;
         if (statistics is not null) statistics.SpineLevels += bottom;

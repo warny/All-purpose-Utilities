@@ -26,9 +26,22 @@ namespace UtilsTest.Mathematics.Expressions;
 [TestClass]
 public class ExpressionSimplifierFlattenAnchoredTests
 {
+    /// <summary>
+    /// Mission C3c: the factorable family supersedes the families tested here (linear, anchored and spine chains) on the chains
+    /// it admits; it is skipped on the test thread so that they keep being validated as the reference and the fallback they are.
+    /// </summary>
+    [TestInitialize]
+    public void DisableFactorableChains() => ExpressionSimplifier.FactorableChainsDisabled = true;
+
+    /// <summary>Restores the factorable family on the test thread.</summary>
+    [TestCleanup]
+    public void RestoreFactorableChains() => ExpressionSimplifier.FactorableChainsDisabled = false;
+
     /// <summary>A derived simplifier without any member: it keeps the level by level treatment.</summary>
     private sealed class LevelByLevelSimplifier : ExpressionSimplifier
     {
+        /// <summary>Merges identical monomials as the built-in type does (mission C3c), so that only the flatten rule differs.</summary>
+        internal override bool MergesMonomials => true;
     }
 
     /// <summary>Free <see cref="double"/> parameters.</summary>

@@ -785,12 +785,13 @@ public class ExpressionSimplifierAdditiveCanonicalizationTests
         var left = (LambdaExpression)Simplify(Build("a", "b"));
         var right = (LambdaExpression)Simplify(Build("q", "p"));
 
-        // a cancels; the single remaining negative group is the canonical "0 - b".
+        // a cancels; the single remaining term is subtracted. Since mission C3c the chain is simplified at once and a sum whose
+        // terms are all subtracted is the negation of their sum, -b, the form SubstractionWithZero gave a second call of the
+        // historical "0 - b".
         Assert.AreEqual(Dump(left), Dump(right));
-        var subtract = (BinaryExpression)left.Body;
-        Assert.AreEqual(ExpressionType.Subtract, subtract.NodeType);
-        Assert.AreEqual("c:Double=0000000000000000", Dump(subtract.Left));
-        Assert.AreSame(left.Parameters[1], subtract.Right);
+        var negate = (UnaryExpression)left.Body;
+        Assert.AreEqual(ExpressionType.Negate, negate.NodeType);
+        Assert.AreSame(left.Parameters[1], negate.Operand);
     }
 
     /// <summary>Distinct free parameters sharing a name never cancel each other: <c>(x - x') + x'</c> keeps the first <c>x</c> instance.</summary>

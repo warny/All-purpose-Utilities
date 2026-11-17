@@ -2279,6 +2279,14 @@ namespace Utils.Mathematics.Expressions
         /// comparer or rule dispatch is added.
         /// </para>
         /// <para>
+        /// <b>Mission C3c.</b> For the built-in type (<see cref="MergesMonomials"/>), the product of a coefficient that is not a
+        /// constant is the canonical product of the factors of both (<see cref="BuildCanonicalProduct"/>): <c>a*x + b*x</c>
+        /// gives <c>x * (a + b)</c>, the tree a second call gave from <c>(a + b) * x</c>, and the tree the global factoring
+        /// builds. Only the order of the factors changes (the inert factors are reordered as the multiplicative
+        /// canonicalization reorders them, a pinned one keeps its place after them); a derived simplifier keeps the historical
+        /// product.
+        /// </para>
+        /// <para>
         /// A folded coefficient of <c>0</c>, <c>1</c> or <c>-1</c> is handed to the existing
         /// <see cref="MultiplicationWithZeroOrOne(BinaryExpression, ConstantExpression, Expression)"/> identity, called
         /// directly on the product: <c>2*x - x</c> gives <c>x</c> instead of <c>1 * x</c>, without dispatching rules or
@@ -2290,6 +2298,16 @@ namespace Utils.Mathematics.Expressions
             Expression coefficient = TryFoldFactoredCoefficient(nodeType, leftCoefficient, rightCoefficient)
                 ?? AggregateFactoredCoefficient(nodeType, leftCoefficient, rightCoefficient)
                 ?? (nodeType == ExpressionType.Add ? Expression.Add(leftCoefficient, rightCoefficient) : Expression.Subtract(leftCoefficient, rightCoefficient));
+
+            if (coefficient is not ConstantExpression && MergesMonomials)
+            {
+                // Mission C3c: a symbolic coefficient gives the canonical product a second call would build ((a + b) * x became
+                // x * (a + b) at the next call), the shape the global factoring builds too.
+                var factors = new List<Expression>(4);
+                CollectMultiplicativeFactors(factors, coefficient);
+                CollectMultiplicativeFactors(factors, factor);
+                return BuildCanonicalProduct(factors, record: null);
+            }
 
             BinaryExpression product = Expression.Multiply(coefficient, factor);
             return coefficient is ConstantExpression constant
@@ -2922,14 +2940,23 @@ namespace Utils.Mathematics.Expressions
         /// single canonicalization of a flattened chain only reads the table, since no enclosing canonicalization collects its
         /// terms again, and storing them would only cost allocations. A canonicalization of two terms never stores either.
         /// </param>
+        /// <param name="factoring">
+        /// What the built-in type merges or factors before ordering (mission C3c): the identical monomials by default
+        /// (<see cref="MergeIdenticalMonomials"/>); nothing for a sum proven to hold distinct linear terms only (a linear or
+        /// an anchored chain, where the analysis could find nothing); the common factors as well
+        /// (<see cref="FactorCommonFactors"/>) only when <paramref name="terms"/> are all the terms of a whole chain (a
+        /// factorable chain, or the residues of one), so that the choice of the factors never depends on how the source
+        /// groups them.
+        /// </param>
         /// <returns>A deterministic additive expression tree preserving semantics.</returns>
         /// <remarks>
         /// Pinned terms, zero constants, constant aggregation, keys, stable ordering, grouping, cancellation and the
         /// right-associated reconstruction are exactly those documented on <see cref="CanonicalizeAdditiveExpression"/>.
         /// The order of <paramref name="terms"/> matters: the sort is stable, so terms whose keys tie (two free
-        /// parameters, for example) keep their collection order.
+        /// parameters, for example) keep their collection order. For the built-in type, the inert terms that hold the same
+        /// factors are merged first (mission C3c, <see cref="MergeIdenticalMonomials"/>).
         /// </remarks>
-        private Expression CanonicalizeAdditiveTerms(List<(Expression Term, bool IsNegative)> terms, Type type, bool recordMetadata = true)
+        private Expression CanonicalizeAdditiveTerms(List<(Expression Term, bool IsNegative)> terms, Type type, bool recordMetadata = true, AdditiveFactoring factoring = AdditiveFactoring.Monomials)
         {
             // Mission C3a: a canonicalization of two terms has collected no canonicalized operand; it is the first level of a
             // chain, or a lone sum, and storing its metadata would mostly cost a table no other canonicalization reads.
@@ -2940,14 +2967,27 @@ namespace Utils.Mathematics.Expressions
             terms.RemoveAll(static term => IsOrdinaryZeroConstant(term.Term));
             AggregateAdditiveConstants(terms, type);
 
+            ParameterExpression[][] scopes = CaptureLexicalScopeSnapshot();
+
+            // Mission C3c: the inert terms holding the same factors become one term, then, over a whole chain, the terms
+            // sharing a factor are grouped; both only rebuild terms from the factors and coefficients already present.
+            if (MergesMonomials)
+            {
+                if (factoring != AdditiveFactoring.None)
+                {
+                    MergeIdenticalMonomials(terms, type, scopes, recordMetadata);
+                    if (factoring == AdditiveFactoring.CommonFactors) FactorCommonFactors(terms, type, scopes);
+                }
+
+                NegateSubtractedConstant(terms, type);
+            }
+
             if (terms.Count == 0)
             {
                 return pinned is null
                     ? Expression.Constant(Convert.ChangeType(0, type), type)
                     : BuildPinnedAdditiveChain([], pinned, type);
             }
-
-            ParameterExpression[][] scopes = CaptureLexicalScopeSnapshot();
 
             var annotatedTerms = new List<AnnotatedAdditiveTerm>(terms.Count);
             foreach ((Expression term, bool isNegative) in terms)
@@ -3273,7 +3313,22 @@ namespace Utils.Mathematics.Expressions
             var factors = new List<Expression>();
             CollectMultiplicativeFactors(factors, left);
             CollectMultiplicativeFactors(factors, right);
+            return BuildCanonicalProduct(factors, record: null);
+        }
 
+        /// <summary>
+        /// Builds the canonical product of collected factors: the core of <see cref="CanonicalizeMultiplicativeExpression"/>,
+        /// shared with the global factoring (mission C3c, <see cref="FactorCommonFactors"/>), which builds its products the way
+        /// a later canonicalization of them would.
+        /// </summary>
+        /// <param name="factors">The factors, collected through ordinary products; the list is consumed.</param>
+        /// <param name="record">
+        /// Whether built keys are stored in the operation's metadata table; <see langword="null"/> for the rule of the
+        /// multiplicative canonicalization (stored for more than two inert factors).
+        /// </param>
+        /// <returns>The right-associated product of the factors in canonical order, the pinned ones last.</returns>
+        private Expression BuildCanonicalProduct(List<Expression> factors, bool? record)
+        {
             // ETC R1b (C-06): a factor whose evaluation is observable keeps its place after the sorted inert factors.
             List<Expression>? pinned = SplitPinnedTerms(factors, static factor => factor);
 
@@ -3281,11 +3336,11 @@ namespace Utils.Mathematics.Expressions
 
             // Mission C3a: the keys of a product of more than two factors (one operand at least was a canonicalized product) are
             // stored, since an enclosing product collects the same factors again; a product of two factors only reads the table.
-            bool record = factors.Count > 2;
+            bool storeKeys = record ?? factors.Count > 2;
 
             // The key comparisons consume the structural budget: a refusal raised inside the sort is restored (ETC R1a-Security).
             var orderedFactors = ExpressionResourceBudget.ToSortedList(factors
-                .OrderBy(factor => GetCanonicalKey(factor, scopes, record)));
+                .OrderBy(factor => GetCanonicalKey(factor, scopes, storeKeys)));
             if (pinned is not null) orderedFactors.AddRange(pinned);
 
             return BuildRightAssociative(orderedFactors, Expression.Multiply);

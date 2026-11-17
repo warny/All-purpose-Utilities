@@ -797,7 +797,9 @@ public class ExpressionSimplifierOptionsTests
 
     /// <summary>
     /// Instances with different policies run in parallel on shared trees, and one instance is shared by every worker: every
-    /// result matches the sequential result of the same policy, and no instance changes the policy of another.
+    /// result matches the sequential result of the same policy and the same type, and no instance changes the policy of
+    /// another. A derived simplifier keeps the historical additive canonicalization (mission C3c), so its sequential results
+    /// are its own.
     /// </summary>
     [TestMethod]
     public void ConcurrentInstances_DoNotContaminateEachOther()
@@ -808,6 +810,9 @@ public class ExpressionSimplifierOptionsTests
         Dictionary<ExpressionSimplifierOptions, string[]> sequential = policies.ToDictionary(
             options => options,
             options => trees.Select(t => Render(new ExpressionSimplifier { Options = options }.Simplify(t))).ToArray());
+        Dictionary<ExpressionSimplifierOptions, string[]> derivedSequential = policies.ToDictionary(
+            options => options,
+            options => trees.Select(t => Render(new DerivedSimplifier { Options = options }.Simplify(t))).ToArray());
         var shared = new ExpressionSimplifier { Options = policies[^1] };
 
         var failures = new System.Collections.Concurrent.ConcurrentBag<string>();
@@ -820,7 +825,8 @@ public class ExpressionSimplifierOptionsTests
                 int index = (k + worker * 7) % trees.Length;
                 ExpressionSimplifier simplifier = k % 3 == 0 ? shared : own;
                 string actual = Render(simplifier.Simplify(trees[index]));
-                if (actual != sequential[simplifier.Options][index]) failures.Add($"worker {worker} tree {index} {simplifier.Options}");
+                string[] reference = simplifier is DerivedSimplifier ? derivedSequential[simplifier.Options] : sequential[simplifier.Options];
+                if (actual != reference[index]) failures.Add($"worker {worker} tree {index} {simplifier.Options}");
                 if (!ReferenceEquals(own.Options, options) || !ReferenceEquals(shared.Options, policies[^1])) failures.Add($"worker {worker}: policy changed");
             }
         });

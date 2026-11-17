@@ -205,8 +205,10 @@ public class ExpressionTransformTracingTests
     [TestMethod]
     public void NestedTreatment_KeepsTheRequestingRule()
     {
-        // 0 - x -> TransformCore(-x) (SubstractionWithZero).
-        ExpressionTransformEvent[] events = Trace(() => new ExpressionSimplifier().Simplify(Expression.Subtract(C(0), X)));
+        // 0 - x -> TransformCore(-x) (SubstractionWithZero). The operand x / 2 keeps the chain out of the factorable family
+        // (mission C3c), whose global treatment would build -x / 2 without the rule.
+        Expression operand = Expression.Divide(X, C(2));
+        ExpressionTransformEvent[] events = Trace(() => new ExpressionSimplifier().Simplify(Expression.Subtract(C(0), operand)));
 
         ExpressionTransformEvent root = events.First(e => e.Kind == ExpressionTransformEventKind.TransformEnter);
         ExpressionTransformEvent negate = events.Single(e => e.Kind == ExpressionTransformEventKind.TransformEnter && e.NodeType == ExpressionType.Negate);

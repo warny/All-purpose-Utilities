@@ -91,6 +91,30 @@ internal sealed class FlattenAdmissionStatistics
     /// <summary>The number of spine refusals per cause, indexed by <see cref="FlattenSpineRefusalCause"/>.</summary>
     public long[] SpineCauses = new long[(int)FlattenSpineRefusalCause.TooManyConstants + 1];
 
+    /// <summary>The number of factorable chain roots admitted (mission C3c).</summary>
+    public long Factorable;
+
+    /// <summary>The number of walks of the factorable test, each after a linear refusal (mission C3c).</summary>
+    public long FactorableWalks;
+
+    /// <summary>The number of factorable chains simplified by the global factoring.</summary>
+    public long FactorableChains;
+
+    /// <summary>The number of groups of identical monomials merged by the additive canonicalization (mission C3c, phase A).</summary>
+    public long MonomialGroups;
+
+    /// <summary>The number of terms those groups held.</summary>
+    public long MergedTerms;
+
+    /// <summary>The number of rounds of the common-factor search (mission C3c, phase B).</summary>
+    public long FactoringRounds;
+
+    /// <summary>The number of common factors (or coefficients) factored out.</summary>
+    public long CommonFactorings;
+
+    /// <summary>The number of factors indexed or compared by the common-factor search.</summary>
+    public long FactorComparisons;
+
     /// <summary>The number of walks of a chain (admissions not answered by the table of known refusals).</summary>
     public long Walks;
 
