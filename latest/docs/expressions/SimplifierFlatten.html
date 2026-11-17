@@ -73,7 +73,7 @@
         <article data-uid="">
 <h1 id="flatten-rule-of-expressionsimplifier-pr-b">Flatten rule of <code>ExpressionSimplifier</code> (PR B)</h1>
 
-<p>Status: first n-ary treatment of the simplifier, restricted to the <em>linear additive chains</em>; §11 describes the shared metadata of mission C3a. Built on the infrastructure of
+<p>Status: first n-ary treatment of the simplifier, restricted to the <em>linear additive chains</em>; §11 describes the shared metadata of mission C3a, §12 the term analysis and the spine chains of mission C3b. Built on the infrastructure of
 <a href="FlattenArchitecture.html">FlattenArchitecture.md</a> (PR A, <code>a9ec71ac</code>). No multiplicative chain, no division, no C3, no change to
 <code>ExpressionDerivation&lt;T&gt;</code> or <code>ExpressionIntegration&lt;T&gt;</code>.</p>
 <h2 id="1-purpose">1. Purpose</h2>
@@ -1694,6 +1694,957 @@ admission (<code>IsLinearChain</code>) to the families the new representation ca
 through <code>BuildFactoredProduct</code> / <code>AggregateFactoredCoefficient</code> in one pass.</li>
 <li><strong>C3d</strong> certifies <code>Canonical</code> for the families whose idempotence is proven, and measures the remaining reuse (key of a
 product built from the keys of its factors; sorted runs of an operand's canonical form merged instead of sorted again).</li>
+</ul>
+<h2 id="12-term-analysis-and-spine-chains-mission-c3b">12. Term analysis and spine chains (mission C3b)</h2>
+<p>Mission C3b prepares the global factoring of C3c: it gives each term of a chain a characterized representation (coefficient,
+factors, family, metadata), and widens the admission to a family of repeated chains that the new treatment handles at a lower
+cost <strong>without losing any historical simplification</strong>. It does not merge coefficients: <code>x + y + x</code> still gives
+<code>(x + x) + y</code>, exactly as level by level, and <code>x + x + x</code> still goes through the factoring rules (<code>3 * x</code>).</p>
+<h3 id="121-phase-a-matrix-of-the-refusals-of-islinearchain">12.1 Phase A: matrix of the refusals of <code>IsLinearChain</code></h3>
+<table>
+<thead>
+<tr>
+<th>Cause (<code>FlattenRefusalCause</code>)</th>
+<th>Minimal example</th>
+<th>Historical treatment</th>
+<th>Rules that may apply</th>
+<th>Policy</th>
+<th>Treatable at once?</th>
+<th>Condition for validity</th>
+<th>Cost of the refusal</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>RepeatedParameter</code></td>
+<td><code>x + y + x</code></td>
+<td>level by level; the levels above the repetition finalize, the factoring probes compare the sub-chain with the term and fail</td>
+<td><code>AdditionOfEqualsElements</code> / <code>SubstractionOfEqualsElements</code> (decline when the sub-chain holds two non-zero monomials)</td>
+<td>none (inert terms)</td>
+<td><strong>yes, as a spine chain</strong> (§12.4)</td>
+<td>comb, linear deepest pair, two certainly non-zero monomials below every level</td>
+<td>rule dispatch and comparer probes per level, admission walk per sub-chain</td>
+</tr>
+<tr>
+<td><code>RepeatedParameter</code> (deepest pair)</td>
+<td><code>x + x + x</code>, <code>a*b + a</code></td>
+<td>the deepest pair factors (<code>2 * x</code>) and the next levels factor again</td>
+<td>factoring rules <strong>apply</strong></td>
+<td>none</td>
+<td>no: needs the merge of C3c</td>
+<td>—</td>
+<td>kept: historical</td>
+</tr>
+<tr>
+<td><code>RepeatedParameter</code> (cancellation)</td>
+<td><code>x + y - y + y</code></td>
+<td><code>x + y - y</code> → <code>x</code>, then <code>x + y</code></td>
+<td>factoring may apply on a single-monomial sub-chain</td>
+<td>none</td>
+<td>no</td>
+<td>—</td>
+<td>kept</td>
+</tr>
+<tr>
+<td><code>RepeatedCoefficient</code></td>
+<td><code>2*a + 3*b + 2*c</code></td>
+<td>as the first row</td>
+<td>factoring rules decline (distinct parameters)</td>
+<td>none</td>
+<td><strong>yes, spine</strong></td>
+<td>as the first row</td>
+<td>as the first row</td>
+</tr>
+<tr>
+<td><code>RepeatedCoefficient</code> (deepest pair)</td>
+<td><code>2*a + 2*b</code></td>
+<td><code>(a + b) * 2</code> (branch 1 of the factoring rule)</td>
+<td>factoring rules <strong>apply</strong></td>
+<td>none</td>
+<td>no</td>
+<td>—</td>
+<td>kept</td>
+</tr>
+<tr>
+<td><code>CoefficientEqualsConstant</code></td>
+<td><code>x + 3*y + 3 + 3*z</code></td>
+<td>as the first row</td>
+<td>decline</td>
+<td>none</td>
+<td><strong>yes, spine</strong></td>
+<td>as the first row</td>
+<td>as the first row</td>
+</tr>
+<tr>
+<td><code>TooManyConstants</code></td>
+<td><code>a + 1 + 2 + 3</code></td>
+<td>constants summed per level (rounding, <code>0 - 3</code>)</td>
+<td>constant folding per level</td>
+<td>none</td>
+<td>no (the grouping of the sums is observable)</td>
+<td>—</td>
+<td>kept</td>
+</tr>
+<tr>
+<td><code>SubtractedGroup</code></td>
+<td><code>a - (b + c)</code></td>
+<td><code>SubstractionWithAddition</code> regroups without canonicalizing</td>
+<td>yes</td>
+<td>none</td>
+<td>no</td>
+<td>—</td>
+<td>kept</td>
+</tr>
+<tr>
+<td><code>ConstantPair</code></td>
+<td><code>a + (1 + 2)</code></td>
+<td>folding, zero identities</td>
+<td>yes</td>
+<td>none</td>
+<td>no</td>
+<td>—</td>
+<td>kept</td>
+</tr>
+<tr>
+<td><code>NonLinearTerm</code> (power, negation, division, conversion)</td>
+<td><code>x² + 2*x²</code>, <code>a + (-b)</code></td>
+<td>level by level</td>
+<td>power, negation, factoring rules</td>
+<td>gate-dependent for effects</td>
+<td>no in C3b (the factoring of powers and calls is C3c)</td>
+<td>—</td>
+<td>kept</td>
+</tr>
+<tr>
+<td><code>CallTerm</code> inert</td>
+<td><code>sin(x) + y + 3*sin(x)</code></td>
+<td>level by level, factoring and trigonometric rules may apply</td>
+<td>yes</td>
+<td>gate</td>
+<td>no in C3b</td>
+<td>—</td>
+<td>kept</td>
+</tr>
+<tr>
+<td><code>CallTerm</code> not inert</td>
+<td><code>F() + x1 + …</code></td>
+<td>anchored chain (C2)</td>
+<td>none (gate refuses)</td>
+<td>historical admission only</td>
+<td>already treated (C2)</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>Operator</code>, <code>ChainType</code></td>
+<td>checked, lifted, <code>decimal</code></td>
+<td>not crossed / level by level</td>
+<td>yes</td>
+<td>—</td>
+<td>no</td>
+<td>—</td>
+<td>kept</td>
+</tr>
+</tbody>
+</table>
+<p>Refusals <strong>needed for safety</strong> are the ones where a rule applies or where the order of evaluation and grouping is observable
+(deepest pair, cancellation down to one monomial, constants, subtracted groups, operators, effects). Refusals <strong>due to the old
+algorithm only</strong> are the repetitions on which every rule provably declines: the spine family of §12.4. <code>IsLinearChain</code> is
+unchanged; the spine test runs only after it refused for a repetition.</p>
+<h3 id="122-phase-b-representation-of-the-terms">12.2 Phase B: representation of the terms</h3>
+<ul>
+<li><code>AnalyzedAdditiveTerm</code> (internal <code>readonly record struct</code>): the prepared term, <code>IsNegative</code>, <code>SourceIndex</code>, <code>Coefficient</code>
+(the single numeric constant factor of an ordinary product, the node itself, never converted; the term itself for a constant;
+<code>null</code> for an implicit one or when two constants remain unfolded), <code>FactorStart</code>/<code>FactorCount</code> (a slice of the shared factor
+arrays), <code>Family</code>, <code>IsDecomposable</code>, <code>IsFunctionLike</code>/<code>CategoryOrder</code> (the grouping classification), <code>StructuralHash</code>,
+<code>FactorHash</code> (an order-independent combination of the factor hashes) and <code>State</code>.</li>
+<li><code>ExpressionSimplifier.AdditiveTermAnalysis</code> (internal sealed): the terms in one array, their factors and factor hashes in two
+shared arrays. A sort or a grouping permutes indices; nothing large is copied. Keys are built on demand only (<code>GetKey</code>),
+<code>Describe(i)</code> gives the <code>SimplifiedExpressionInfo</code> of a term.</li>
+<li>Factors are collected with <code>CollectMultiplicativeFactors</code> (the collection of the multiplicative canonicalization), through
+ordinary products only. A power and a call are kept whole as one factor (<code>x²</code> is the factor of <code>2 * x²</code>), so they can be
+matched as a unit by C3c; <code>a * x</code> has the factors <code>a</code> and <code>x</code> and <strong>no</strong> coefficient: no variable is chosen as the &quot;main&quot; one.</li>
+<li>An unknown term (negation, division, conversion, custom operator, extension node) is one opaque, indivisible factor,
+classified by type tests only (ETC R4: never read); a call whose method is not a runtime reflection object is function-like
+with the last category, its members never read (A-10).</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Term</th>
+<th>Family</th>
+<th>Coefficient</th>
+<th>Factors</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>x</code></td>
+<td><code>Parameter</code></td>
+<td>— (one)</td>
+<td><code>x</code></td>
+</tr>
+<tr>
+<td><code>3*x</code>, <code>x*3</code></td>
+<td><code>Parameter</code></td>
+<td><code>3</code></td>
+<td><code>x</code></td>
+</tr>
+<tr>
+<td><code>a*x</code></td>
+<td><code>Product</code></td>
+<td>—</td>
+<td><code>a</code>, <code>x</code></td>
+</tr>
+<tr>
+<td><code>(a+3)*x</code></td>
+<td><code>Product</code></td>
+<td>—</td>
+<td><code>(a+3)</code>, <code>x</code></td>
+</tr>
+<tr>
+<td><code>x²</code></td>
+<td><code>Power</code></td>
+<td>—</td>
+<td><code>x²</code></td>
+</tr>
+<tr>
+<td><code>2*x²</code></td>
+<td><code>Power</code></td>
+<td><code>2</code></td>
+<td><code>x²</code></td>
+</tr>
+<tr>
+<td><code>3*cos(x)</code></td>
+<td><code>Function</code></td>
+<td><code>3</code></td>
+<td><code>cos(x)</code></td>
+</tr>
+<tr>
+<td><code>sin(x)</code></td>
+<td><code>Function</code></td>
+<td>—</td>
+<td><code>sin(x)</code></td>
+</tr>
+<tr>
+<td><code>7</code></td>
+<td><code>Constant</code></td>
+<td><code>7</code></td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>-x</code>, <code>x/2</code>, extension</td>
+<td><code>Opaque</code></td>
+<td>—</td>
+<td>the term itself</td>
+</tr>
+</tbody>
+</table>
+<h3 id="123-phases-c-and-d-metadata-and-classification">12.3 Phases C and D: metadata and classification</h3>
+<ul>
+<li><strong>Present and valid</strong>: the hash and the key stored by a canonicalization of the running operation are read back, with no walk
+(<code>GetStructuralHash</code>, <code>GetCanonicalKey</code>).</li>
+<li><strong>Absent</strong>: computed once; stored only when the analysis is asked to record.</li>
+<li><strong>Key of another lexical context</strong>: never reused; only the key is rebuilt, the hash (scope-independent) is still reused.</li>
+<li><strong>State</strong>: reported as recorded by the analyzing instance; <code>LocallySimplified</code> is never used to skip anything; <code>Canonical</code>
+stays limited to the leaves of C3a.</li>
+<li><strong>Classification</strong>: three separate notions are kept apart: the grouping class of the canonicalization (<code>IsFunctionLike</code>,
+<code>CategoryOrder</code>, an order only), the structural identity of a whole term (<code>StructuralHash</code> confirmed by <code>StructuralEqualsRaw</code>),
+and the factors a term may share (<code>FactorHash</code>, <code>HaveSameFactors</code>, <code>TryFindCommonFactor</code>). <code>GroupByFactors</code> buckets terms by
+factor hash and compares only within a bucket: <code>sin(x)</code> and <code>5*cos(x)</code> are both <code>Function</code> terms but share no factor.</li>
+</ul>
+<h3 id="124-phase-e-spine-chains">12.4 Phase E: spine chains</h3>
+<p>A chain refused as linear for a repetition is a <strong>spine chain</strong> (<code>IsSpineChain</code>) when:</p>
+<ol>
+<li>it is a <strong>comb</strong>: every crossed node has at most one crossed operand;</li>
+<li>the local conditions of a linear chain hold, every term is a linear term other than the square <code>x * x</code>, and the chain holds
+at most two constant terms;</li>
+<li>the two terms of the deepest node form a linear chain (§3.2: no rule applies to them);</li>
+<li>above it, the sub-chain below every node holds <strong>two monomials whose coefficient is certainly not zero</strong>: all occurrences of
+the monomial (a parameter, an unordered pair of parameters, or the constant monomial when the sub-chain holds exactly one
+constant) have the same effective sign (sign of the term × sign of the coefficient), and, for an integral type, the sum of
+their magnitudes stays below <code>2^(bits - 1)</code> (wrapping arithmetic could reach zero).</li>
+</ol>
+<p><strong>No rule applies above the deepest pair.</strong> By induction, the prepared operand from below is the canonical sum of the sub-chain,
+which has at least two groups (two certainly non-zero monomials cannot both cancel), hence an ordinary <code>Add</code> node; the other
+operand is a prepared linear term (a parameter, a product, a non-zero constant). The zero, constant and negation rules need a
+zero, two constants or a negation; the subtraction rules need a sum or a difference as their right operand (a subtracted group
+is refused); the logarithm and trigonometric rules need calls; the factoring rules augment the sum to <code>1 * sum</code> and compare only
+<code>1</code>, the sum, and the factors of the term (a parameter or a constant): a sum of two monomials with non-zero coefficients is
+equal neither to a parameter nor to a constant, whatever the comparer simplifies it to.</p>
+<p><strong>Treatment</strong> (<code>FlattenSpineChain</code>). Each term is prepared once (<code>PrepareExpression</code>, source order); the deepest sub-chain that is
+still linear is canonicalized once (it is a linear chain: §3); each level above it is its <strong>finalization</strong>, the canonicalization
+of the terms collected from its two prepared operands, the child going through the <code>NaN</code> fold of its parent's preparation. No
+composition of canonicalizations is assumed: every level is computed as level by level does it, so grouping, cancellation,
+constant aggregation and the stable order of tied keys are those of <code>master</code> by construction. What is removed is the rule
+dispatch of every level, the factor comparisons of the factoring rules (each of which simplified the sub-chain again through the
+comparer) and the admission walks of the sub-chains. Keys and hashes of the intermediate levels are stored for the next level
+(C3a), the root stores nothing.</p>
+<p><strong>Handoff.</strong> A spine chain only holds linear terms, so the rule cannot tell it from a linear chain by itself: the admission leaves
+its root in the session of the running operation (<code>Session.AdmittedSpineRoot</code>), which the flatten rule invoked right after it
+consumes (cleared on read, matched by reference). The root belongs to one public operation: <code>Enter</code> detaches it, so a nested
+operation neither sees nor consumes its caller's root, and <code>Exit</code> (in a <code>finally</code>) restores it, which also releases it when a
+budget refusal between the admission and the rule ends the operation (PR #701 review: a first version used a thread-static
+slot, which kept the root alive after such a refusal). Outside an operation the admission does not admit spine chains.</p>
+<p><strong>Known refusals.</strong> A refused spine test reports the spine index of its cause; the chain is recorded only down to the shallower
+of the linear and spine depths, so every recorded node is refused by every family.</p>
+<p><strong>Policies, derived simplifiers.</strong> The terms are inert, so the admission and the treatment are the same under every policy
+(validated, §12.6). A derived simplifier keeps the effect gate (no spine walk).</p>
+<table>
+<thead>
+<tr>
+<th>Family</th>
+<th>Before C3b</th>
+<th>After C3b</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>linear chains</td>
+<td>admitted (one canonicalization)</td>
+<td>unchanged</td>
+</tr>
+<tr>
+<td>anchored chains</td>
+<td>admitted (historical admission)</td>
+<td>unchanged</td>
+</tr>
+<tr>
+<td>comb with repeated parameters, coefficients or coefficient = constant, rules provably declining</td>
+<td>refused, level by level</td>
+<td><strong>admitted as spine chain</strong></td>
+</tr>
+<tr>
+<td><code>x + x + x</code>, <code>2*a + 2*b</code>, <code>a*b + a</code> (deepest pair)</td>
+<td>refused</td>
+<td>refused (rules apply; C3c)</td>
+</tr>
+<tr>
+<td><code>x + y - y + y</code> (one monomial left)</td>
+<td>refused</td>
+<td>refused</td>
+</tr>
+<tr>
+<td>balanced trees with repetitions</td>
+<td>refused</td>
+<td>refused (<code>NotComb</code>)</td>
+</tr>
+<tr>
+<td>squares <code>x*x</code>, powers, calls, negations, divisions</td>
+<td>refused</td>
+<td>refused</td>
+</tr>
+<tr>
+<td>three constants, subtracted groups, constant pairs</td>
+<td>refused</td>
+<td>refused</td>
+</tr>
+</tbody>
+</table>
+<h3 id="125-phase-f-contract-with-c3c">12.5 Phase F: contract with C3c</h3>
+<p>C3c obtains the analyzed terms of a chain (<code>AdditiveTermAnalysis.Analyze</code>), buckets them by factors (<code>GroupByFactors</code>, hash then
+structural confirmation), finds common factors (<code>TryFindCommonFactor</code>: <code>a*x</code> and <code>3*x</code> share <code>x</code>), reads the coefficients
+(<code>Coefficient</code>, the original constant nodes) and merges them through the existing <code>BuildFactoredProduct</code> /
+<code>AggregateFactoredCoefficient</code>, without extracting anything again from the raw expressions. The tests show that <code>x, 2*x, a*x, 3*x</code>, <code>x², 2*x²</code> and <code>sin(x), 3*sin(x)</code> are brought together. The spine treatment is where such a merge will plug in: its levels
+are the places where the historical treatment leaves <code>x + x</code> unmerged.</p>
+<h3 id="126-validation">12.6 Validation</h3>
+<p>Reference: <code>master</code> <code>5ee1e0ea</code> in a separate worktree, same machine and runtime.</p>
+<ul>
+<li><strong>Differential corpus</strong> (dedicated harness, the same seeded corpus simplified by both checkouts, both passes compared line
+by line; trees of 2 to 31 terms over 2 to 6 parameters, <code>double</code>, <code>float</code>, <code>int</code>, <code>long</code>, <code>uint</code>, <code>ulong</code>; left, right and
+random combs and random trees; parameters, coefficients on either side, products of parameters, squares, constants, <code>1 * x</code>,
+<code>sin</code>, negations, zeros; free, lambda-bound, under a product or a negation): <strong>40,000 cases under the default policy, 0
+difference</strong> (60,010 spine chains admitted); <strong>15,000 cases under each of <code>TrustDeclarations</code>, aggressive, no exception
+preserved, the most permissive combination, and with a derived simplifier: 0 difference</strong>.</li>
+<li><strong>S5 campaigns</strong> (<code>terminate</code>, <code>converge</code>, <code>canon</code>, <code>comparer</code>, <code>diff</code>, <code>effects</code>, <code>s3</code>, 1,000 seeds, 1,000 nested):
+<code>canon</code>, <code>comparer</code>, <code>diff</code>, <code>effects</code> and <code>s3</code> are byte-identical; <code>converge</code> differs in <code>secondPassRules</code> only (69 cases),
+<code>terminate</code> in its counters only (<code>rules</code>, <code>visits</code>, <code>depth</code>, 985 cases): no result, class, exception or size changes.
+Transformation visits: 618,329 → 599,502 (−3.04 %), lower in 985 cases and higher in none; trace depth lower in 925 cases
+and higher in none.</li>
+<li><strong>Tests.</strong> <code>ExpressionSimplifierTermAnalysisTests</code> (decomposition matrix, signs and positions, opaque and hostile terms,
+several constant factors, factor grouping and common factors, metadata present / absent / other scopes, keys on demand,
+states, order-independent factor hash). <code>ExpressionSimplifierFlattenSpineTests</code> (admitted families against the level by level
+reference under every policy, both passes, root admission checked through the admission itself; every flattened type;
+refused families; wrapping coefficients; 400 seeded random chains; visits below the level by level ones; budget refusal and
+reuse; one spine walk per refused root; derived simplifiers; lambdas, shared sub-chains, negated chains). The admission
+oracle of <code>ExpressionSimplifierFlattenAdmissionTests</code> transcribes the spine definition independently. Security:
+<code>SpineDeepChain_IsSimplified_OnASmallStack</code> (100,000 terms on 256 KiB, budgets refused just above each limit, reuse).</li>
+<li><strong>Tests whose premise changed</strong> (their chain is now a spine chain; vehicle changed, assertion kept): <code>a + (b + a)</code> removed
+from the declined list of <code>ExpressionSimplifierFlattenTests</code>, <code>(x0 - ... - x9) + x0</code> replaced by <code>+ x0*x0</code> in
+<code>SubChains_OfARefusedChain_AreAdmittedOnTheirOwn</code>; <code>DeepRepetition_RecordsTheLevelsThatHoldBothOccurrences</code> checks the spine
+admission of its chains and keeps the C1 recording on a variant the spine refuses (a node with two crossed operands);
+<code>ComparisonDepth_IsNestedAndNeverLeaks</code> uses a derived simplifier as its level by level vehicle;
+<code>DeclinedDeepChain_IsAControlledStackRefusal</code> uses a square as its refused term; <code>SharedDag_IsRefusedByTheAdmission_WithoutExtraction</code>
+counts 51 structural visits instead of 50 (the spine test of the root, refused at once).</li>
+<li><strong>Suites</strong> (final code): Unit 14,686/14,687 (1 skipped by design), Security 391/394 (3 skipped by design; one earlier full
+run failed <code>ImpersonatingObjects_AreNeverDroppedNorRead</code>, which holds no repeated chain, passes alone and in the next full
+run), Functional 383/383, ETC Debug (<code>Coverage</code>, Debug) 364/365 (1 skipped).</li>
+</ul>
+<h3 id="127-measures">12.7 Measures</h3>
+<p>Visits are counted by bisection of the public limits (exact); keys and hashes by <code>SimplificationMetadataStatistics</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Case</th>
+<th>Transformation visits</th>
+<th>Structural visits</th>
+<th>Keys built/reused</th>
+<th>Hashes computed/reused</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>a+b</code></td>
+<td>3 → 3</td>
+<td>10 → 10</td>
+<td>2/0 → 2/0</td>
+<td>2/0 → 2/0</td>
+</tr>
+<tr>
+<td><code>x+x+x</code> (refused)</td>
+<td>11 → 11</td>
+<td>7 → 11</td>
+<td>0/0 → 0/0</td>
+<td>0/0 → 0/0</td>
+</tr>
+<tr>
+<td><code>repeated 16</code></td>
+<td>39 → 19</td>
+<td>345 → 209</td>
+<td>48/1 → 16/17</td>
+<td>48/1 → 16/17</td>
+</tr>
+<tr>
+<td><code>repeated 48</code></td>
+<td>103 → 51</td>
+<td>1,525 → 911</td>
+<td>144/1 → 48/49</td>
+<td>144/1 → 48/49</td>
+</tr>
+<tr>
+<td><code>repeated 512</code></td>
+<td>1,031 → 515</td>
+<td>25,445 → 15,777</td>
+<td>1,536/1 → 512/513</td>
+<td>1,536/1 → 512/513</td>
+</tr>
+<tr>
+<td><code>coef 24</code></td>
+<td>250 → 127</td>
+<td>1,348 → 707</td>
+<td>171/0 → 75/24</td>
+<td>73/0 → 25/24</td>
+</tr>
+<tr>
+<td><code>coef 128</code></td>
+<td>1,290 → 647</td>
+<td>9,080 → 5,127</td>
+<td>899/0 → 387/128</td>
+<td>385/0 → 129/128</td>
+</tr>
+<tr>
+<td><code>tail 16</code></td>
+<td>650 → 25</td>
+<td>5,197 → 444</td>
+<td>128/1,159 → 16/74</td>
+<td>102/1,155 → 16/74</td>
+</tr>
+<tr>
+<td><code>tail 48</code></td>
+<td>167,574 → 73</td>
+<td>5,111,805 → 4,542</td>
+<td>10,700/1,029,691 → 48/654</td>
+<td>7,090/1,029,471 → 48/654</td>
+</tr>
+<tr>
+<td><code>twice 48</code></td>
+<td>75,708 → 73</td>
+<td>895,167 → 4,980</td>
+<td>10,836/127,983 → 24/876</td>
+<td>6,152/125,959 → 24/876</td>
+</tr>
+<tr>
+<td><code>cancel 128</code></td>
+<td>3,859 → 193</td>
+<td>102,133 → 55,220</td>
+<td>384/6,976 → 128/3,632</td>
+<td>384/6,976 → 128/3,632</td>
+</tr>
+<tr>
+<td><code>rightRep 128</code></td>
+<td>263 → 131</td>
+<td>4,711 → 2,807</td>
+<td>384/1 → 128/129</td>
+<td>384/1 → 128/129</td>
+</tr>
+<tr>
+<td><code>xxx 16</code> (refused)</td>
+<td>76 → 76</td>
+<td>59 → 102</td>
+<td>0/0</td>
+<td>0/0</td>
+</tr>
+<tr>
+<td><code>linear 200</code></td>
+<td>201 → 201</td>
+<td>2,974 → 2,974</td>
+<td>200/0 → 200/0</td>
+<td>200/0 → 200/0</td>
+</tr>
+<tr>
+<td><code>sinMid 16</code> (refused)</td>
+<td>1,435 → 1,435</td>
+<td>10,259 → 10,259</td>
+<td>210/3,974 → 210/3,974</td>
+<td>33/3,546 → 33/3,546</td>
+</tr>
+<tr>
+<td><code>tail 512</code>, <code>twice 128</code></td>
+<td>not measured on <code>master</code> (hours)</td>
+<td>769 / 193</td>
+<td>981,738 / 49,280</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><code>repeated n</code> is a linear chain of <code>n</code> parameters plus the first one again; <code>coef n</code> the coefficients <code>i + 2</code> then the first
+coefficient on a new parameter; <code>tail n</code> <code>n</code> parameters then the first <code>n / 4</code> again; <code>twice n</code> every parameter twice; <code>cancel n</code>
+<code>n</code> parameters then the first <code>n / 4</code> subtracted; <code>rightRep n</code> a right comb with a repetition at the top; <code>xxx n</code> the same
+parameter <code>n</code> times.</p>
+<p>Allocations per simplification (deterministic, Release, <code>GC.GetAllocatedBytesForCurrentThread</code>):</p>
+<table>
+<thead>
+<tr>
+<th>Case</th>
+<th><code>master</code></th>
+<th>C3b</th>
+<th>Δ</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>a+b</code></td>
+<td>2,528 B</td>
+<td>2,528 B</td>
+<td>0 %</td>
+</tr>
+<tr>
+<td><code>x+x+x</code> (refused)</td>
+<td>1,176 B</td>
+<td>1,576 B</td>
+<td>+34 %</td>
+</tr>
+<tr>
+<td><code>repeated 16</code></td>
+<td>36,040 B</td>
+<td>28,200 B</td>
+<td>−21.8 %</td>
+</tr>
+<tr>
+<td><code>repeated 48</code></td>
+<td>104,273 B</td>
+<td>86,561 B</td>
+<td>−17.0 %</td>
+</tr>
+<tr>
+<td><code>repeated 512</code></td>
+<td>1,031,332 B</td>
+<td>888,556 B</td>
+<td>−13.8 %</td>
+</tr>
+<tr>
+<td><code>coef 24</code></td>
+<td>197,238 B</td>
+<td>110,479 B</td>
+<td>−44.0 %</td>
+</tr>
+<tr>
+<td><code>coef 128</code></td>
+<td>1,028,424 B</td>
+<td>561,763 B</td>
+<td>−45.4 %</td>
+</tr>
+<tr>
+<td><code>tail 16</code></td>
+<td>983,650 B</td>
+<td>53,720 B</td>
+<td>−94.5 %</td>
+</tr>
+<tr>
+<td><code>tail 48</code></td>
+<td>587,934,920 B</td>
+<td>321,516 B</td>
+<td>−99.9 %</td>
+</tr>
+<tr>
+<td><code>twice 48</code></td>
+<td>110,981,920 B</td>
+<td>368,845 B</td>
+<td>−99.7 %</td>
+</tr>
+<tr>
+<td><code>cancel 128</code></td>
+<td>3,780,848 B</td>
+<td>1,563,116 B</td>
+<td>−58.7 %</td>
+</tr>
+<tr>
+<td><code>rightRep 128</code></td>
+<td>246,819 B</td>
+<td>196,722 B</td>
+<td>−20.3 %</td>
+</tr>
+<tr>
+<td><code>xxx 16</code> (refused)</td>
+<td>8,352 B</td>
+<td>8,992 B</td>
+<td>+7.7 %</td>
+</tr>
+<tr>
+<td><code>linear 32</code>, <code>linear 200</code>, <code>sinMid 16</code></td>
+<td></td>
+<td></td>
+<td>0 %</td>
+</tr>
+</tbody>
+</table>
+<p>The C3a baseline of the mission (<code>repeated 16</code> 36,040 B, <code>repeated 48</code> 104,273 B, <code>coef 24</code> 194,784 B on C3a) is below the
+pre-C3a <code>master</code> now: 28,200 B, 86,561 B and 110,479 B.</p>
+<p>Times (Release, <code>Stopwatch</code>, 300 ms warm-up per case, calibrated ~40 ms rounds, median of 9 rounds per process; four processes
+interleaved <code>master</code>, C3b, <code>master</code>, C3b; mean of the two processes, each process in parentheses). A first campaign ran while a
+language model server loaded the processors and was discarded (±40 % between processes of one binary); this one ran on an idle
+machine (the server consumed under 0.2 s of CPU per process). BenchmarkDotNet results follow.</p>
+<table>
+<thead>
+<tr>
+<th>Case</th>
+<th><code>master</code> µs</th>
+<th>C3b µs</th>
+<th>Δ</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>repeated 16</code></td>
+<td>18.48 (18.32/18.63)</td>
+<td>11.53 (11.05/12.01)</td>
+<td>−37.6 %</td>
+</tr>
+<tr>
+<td><code>repeated 48</code></td>
+<td>49.89 (48.45/51.33)</td>
+<td>33.77 (35.07/32.46)</td>
+<td>−32.3 %</td>
+</tr>
+<tr>
+<td><code>repeated 512</code></td>
+<td>567.97 (565.86/570.07)</td>
+<td>363.39 (361.26/365.52)</td>
+<td>−36.0 %</td>
+</tr>
+<tr>
+<td><code>coef 8</code></td>
+<td>62.05 (63.41/60.70)</td>
+<td>30.64 (31.36/29.93)</td>
+<td>−50.6 %</td>
+</tr>
+<tr>
+<td><code>coef 24</code></td>
+<td>163.05 (162.06/164.04)</td>
+<td>78.83 (78.38/79.28)</td>
+<td>−51.7 %</td>
+</tr>
+<tr>
+<td><code>coef 128</code></td>
+<td>862.57 (848.94/876.20)</td>
+<td>409.52 (409.51/409.53)</td>
+<td>−52.5 %</td>
+</tr>
+<tr>
+<td><code>tail 16</code></td>
+<td>757.52</td>
+<td>23.98</td>
+<td>−96.8 %</td>
+</tr>
+<tr>
+<td><code>tail 48</code></td>
+<td>604,515.75</td>
+<td>157.02</td>
+<td>−99.97 %</td>
+</tr>
+<tr>
+<td><code>tail 512</code></td>
+<td>—</td>
+<td>19,323.45</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>twice 48</code></td>
+<td>132,385.45</td>
+<td>215.43</td>
+<td>−99.8 %</td>
+</tr>
+<tr>
+<td><code>cancel 128</code></td>
+<td>2,701.59</td>
+<td>986.39</td>
+<td>−63.5 %</td>
+</tr>
+<tr>
+<td><code>rightRep 128</code></td>
+<td>129.07</td>
+<td>77.16</td>
+<td>−40.2 %</td>
+</tr>
+<tr>
+<td><code>x+x+x</code> (refused)</td>
+<td>2.04</td>
+<td>2.12</td>
+<td>+4.2 %</td>
+</tr>
+<tr>
+<td><code>xxx 8</code> (refused)</td>
+<td>6.62 (6.46/6.79)</td>
+<td>7.33 (7.25/7.41)</td>
+<td>+10.6 %</td>
+</tr>
+<tr>
+<td><code>xxx 16</code> (refused)</td>
+<td>14.23 (14.02/14.44)</td>
+<td>15.46 (15.46/15.46)</td>
+<td>+8.6 %</td>
+</tr>
+<tr>
+<td><code>linear 32</code></td>
+<td>9.50</td>
+<td>9.36</td>
+<td>−1.5 %</td>
+</tr>
+<tr>
+<td><code>linear 200</code></td>
+<td>64.94</td>
+<td>61.81</td>
+<td>−4.8 %</td>
+</tr>
+<tr>
+<td><code>sinMid 16</code> (refused)</td>
+<td>2,272.96</td>
+<td>2,227.99</td>
+<td>−2.0 %</td>
+</tr>
+</tbody>
+</table>
+<p><code>a + b</code> (first case of every process, 1.58 and 4.12 µs on the two <code>master</code> processes) is a warm-up artifact: its path and
+allocations are those of <code>master</code>. The only measurable cost is the refused <code>xxx</code> family (+9 to +11 %, the one walk of the spine
+test per operation); every admitted family is faster in time, allocations and visits.
+<strong>BenchmarkDotNet</strong> (0.14.0, in-process, 8 warm-up and 20 measured iterations, <code>MemoryDiagnoser</code>; four processes <code>master</code>, C3b,
+<code>master</code>, C3b, affinity <code>0x14</code>, high priority; the language model server consumed no CPU during any of them). Mean of the two
+processes of each variant, each process in parentheses; allocations per operation as reported by the diagnoser.</p>
+<table>
+<thead>
+<tr>
+<th>Case</th>
+<th><code>master</code> µs</th>
+<th>C3b µs</th>
+<th>Δ</th>
+<th>Alloc <code>master</code></th>
+<th>Alloc C3b</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>a+b</code></td>
+<td>0.93 (0.93 / 0.93)</td>
+<td>0.93 (0.93 / 0.93)</td>
+<td>+0.2 %</td>
+<td>2.47 KB</td>
+<td>2.47 KB</td>
+</tr>
+<tr>
+<td><code>repeated 16</code></td>
+<td>18.00 (18.20 / 17.79)</td>
+<td>11.19 (11.38 / 11.01)</td>
+<td>−37.8 %</td>
+<td>35.20 KB</td>
+<td>27.54 KB</td>
+</tr>
+<tr>
+<td><code>repeated 48</code></td>
+<td>49.88 (50.29 / 49.46)</td>
+<td>31.74 (32.03 / 31.45)</td>
+<td>−36.4 %</td>
+<td>101.83 KB</td>
+<td>84.53 KB</td>
+</tr>
+<tr>
+<td><code>repeated 512</code></td>
+<td>554.20 (553.59 / 554.80)</td>
+<td>380.29 (388.28 / 372.29)</td>
+<td>−31.4 %</td>
+<td>1,007.16 KB</td>
+<td>867.73 KB</td>
+</tr>
+<tr>
+<td><code>coef 8</code></td>
+<td>57.48 (57.51 / 57.46)</td>
+<td>28.64 (28.92 / 28.35)</td>
+<td>−50.2 %</td>
+<td>67.74 KB</td>
+<td>39.26 KB</td>
+</tr>
+<tr>
+<td><code>coef 24</code></td>
+<td>161.85 (164.07 / 159.62)</td>
+<td>78.46 (78.44 / 78.49)</td>
+<td>−51.5 %</td>
+<td>192.62 KB</td>
+<td>107.89 KB</td>
+</tr>
+<tr>
+<td><code>coef 128</code></td>
+<td>831.00 (829.86 / 832.14)</td>
+<td>411.50 (408.95 / 414.06)</td>
+<td>−50.5 %</td>
+<td>1,004.34 KB</td>
+<td>548.59 KB</td>
+</tr>
+<tr>
+<td><code>tail 16</code></td>
+<td>719.81 (721.20 / 718.42)</td>
+<td>23.83 (23.80 / 23.86)</td>
+<td>−96.7 %</td>
+<td>960.64 KB</td>
+<td>52.46 KB</td>
+</tr>
+<tr>
+<td><code>tail 48</code></td>
+<td>551,911.89 (554,292.57 / 549,531.20)</td>
+<td>160.37 (161.54 / 159.19)</td>
+<td>−99.97 %</td>
+<td>574,163.23 KB</td>
+<td>313.98 KB</td>
+</tr>
+<tr>
+<td><code>tail 512</code></td>
+<td>—</td>
+<td>18,650.70 (18,606.12 / 18,695.28)</td>
+<td>—</td>
+<td>—</td>
+<td>27,710.13 KB</td>
+</tr>
+<tr>
+<td><code>twice 16</code></td>
+<td>762.26 (769.93 / 754.58)</td>
+<td>27.07 (27.11 / 27.03)</td>
+<td>−96.4 %</td>
+<td>882.20 KB</td>
+<td>55.05 KB</td>
+</tr>
+<tr>
+<td><code>twice 48</code></td>
+<td>126,800.68 (128,116.82 / 125,484.54)</td>
+<td>208.02 (210.04 / 206.00)</td>
+<td>−99.8 %</td>
+<td>108,378.05 KB</td>
+<td>360.20 KB</td>
+</tr>
+<tr>
+<td><code>cancel 16</code></td>
+<td>48.54 (48.77 / 48.30)</td>
+<td>20.72 (20.70 / 20.75)</td>
+<td>−57.3 %</td>
+<td>84.64 KB</td>
+<td>47.68 KB</td>
+</tr>
+<tr>
+<td><code>cancel 128</code></td>
+<td>2,632.46 (2,604.41 / 2,660.51)</td>
+<td>982.15 (998.01 / 966.29)</td>
+<td>−62.7 %</td>
+<td>3,692.25 KB</td>
+<td>1,526.48 KB</td>
+</tr>
+<tr>
+<td><code>rightRep 16</code></td>
+<td>17.27 (17.18 / 17.35)</td>
+<td>10.63 (10.84 / 10.42)</td>
+<td>−38.4 %</td>
+<td>34.03 KB</td>
+<td>25.34 KB</td>
+</tr>
+<tr>
+<td><code>rightRep 128</code></td>
+<td>124.49 (124.17 / 124.82)</td>
+<td>82.58 (81.09 / 84.08)</td>
+<td>−33.7 %</td>
+<td>241.04 KB</td>
+<td>192.11 KB</td>
+</tr>
+<tr>
+<td><code>x+x+x</code> (refused)</td>
+<td>2.05 (2.06 / 2.04)</td>
+<td>2.22 (2.21 / 2.22)</td>
+<td>+8.1 %</td>
+<td>1.15 KB</td>
+<td>1.54 KB</td>
+</tr>
+<tr>
+<td><code>xxx 8</code> (refused)</td>
+<td>7.01 (7.00 / 7.03)</td>
+<td>7.48 (7.45 / 7.50)</td>
+<td>+6.6 %</td>
+<td>3.84 KB</td>
+<td>4.32 KB</td>
+</tr>
+<tr>
+<td><code>xxx 16</code> (refused)</td>
+<td>14.80 (14.65 / 14.96)</td>
+<td>15.74 (15.59 / 15.90)</td>
+<td>+6.3 %</td>
+<td>8.16 KB</td>
+<td>8.78 KB</td>
+</tr>
+<tr>
+<td><code>linear 32</code></td>
+<td>9.67 (9.64 / 9.70)</td>
+<td>9.70 (9.81 / 9.59)</td>
+<td>+0.3 %</td>
+<td>20.66 KB</td>
+<td>20.66 KB</td>
+</tr>
+<tr>
+<td><code>linear 200</code></td>
+<td>61.15 (60.13 / 62.17)</td>
+<td>62.36 (63.84 / 60.89)</td>
+<td>+2.0 %</td>
+<td>121.91 KB</td>
+<td>121.91 KB</td>
+</tr>
+<tr>
+<td><code>sinMid 16</code> (refused)</td>
+<td>2,175.65 (2,219.41 / 2,131.90)</td>
+<td>2,244.01 (2,241.57 / 2,246.45)</td>
+<td>+3.1 %</td>
+<td>2,630.71 KB</td>
+<td>2,630.71 KB</td>
+</tr>
+</tbody>
+</table>
+<p>Reading: every admitted family is faster (−31 to −99.97 %) and allocates less. <code>linear</code> and <code>sinMid</code> run the code of <code>master</code>
+(same visits, same allocations): their differences (+0.3 to +3.1 %) are below the spread between the two <code>master</code> processes
+(3.4 % and 4.1 %). The only measured cost is the refused <code>x + x + ... + x</code> family (+6 to +8 %, about 0.5–1 µs and +400–600 B):
+the one walk of the spine test per operation.</p>
+<h3 id="128-behaviors-deliberately-unchanged-residual-limits">12.8 Behaviors deliberately unchanged, residual limits</h3>
+<ul>
+<li>No result changes: the spine treatment computes each level as level by level; repeated terms are still grouped as <code>x + x</code>
+and not merged (C3c). <code>x + x + x</code>, <code>2*a + 2*b</code>, cancellations down to one monomial, balanced trees, powers, calls, negations,
+three constants and subtracted groups keep the level by level treatment.</li>
+<li>The levels above the linear sub-chain are canonicalized one by one: a chain with many repeated levels stays quadratic in
+their number (<code>tail 512</code>: 981,738 structural visits). Merging them requires the global factoring of C3c, which will also
+change the results on purpose.</li>
+<li>A refused spine root costs one walk of its comb once per operation (<code>xxx 16</code>: +43 structural visits, +640 B), then a lookup
+per level (<code>FlattenSpineRefusals</code>).</li>
+<li><code>AdditiveTermAnalysis</code> is not yet used by the production paths: it is the input of C3c. No <code>Canonical</code> state was added.</li>
 </ul>
 
 </article>
