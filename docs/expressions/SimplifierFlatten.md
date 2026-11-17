@@ -1061,7 +1061,7 @@ pre-C3a `master` now: 28,200 B, 86,561 B and 110,479 B.
 Times (Release, `Stopwatch`, 300 ms warm-up per case, calibrated ~40 ms rounds, median of 9 rounds per process; four processes
 interleaved `master`, C3b, `master`, C3b; mean of the two processes, each process in parentheses). A first campaign ran while a
 language model server loaded the processors and was discarded (±40 % between processes of one binary); this one ran on an idle
-machine (the server consumed under 0.2 s of CPU per process). BenchmarkDotNet was not run.
+machine (the server consumed under 0.2 s of CPU per process). BenchmarkDotNet results follow.
 
 | Case | `master` µs | C3b µs | Δ |
 |---|---|---|---|
@@ -1087,6 +1087,39 @@ machine (the server consumed under 0.2 s of CPU per process). BenchmarkDotNet wa
 `a + b` (first case of every process, 1.58 and 4.12 µs on the two `master` processes) is a warm-up artifact: its path and
 allocations are those of `master`. The only measurable cost is the refused `xxx` family (+9 to +11 %, the one walk of the spine
 test per operation); every admitted family is faster in time, allocations and visits.
+**BenchmarkDotNet** (0.14.0, in-process, 8 warm-up and 20 measured iterations, `MemoryDiagnoser`; four processes `master`, C3b,
+`master`, C3b, affinity `0x14`, high priority; the language model server consumed no CPU during any of them). Mean of the two
+processes of each variant, each process in parentheses; allocations per operation as reported by the diagnoser.
+
+| Case | `master` µs | C3b µs | Δ | Alloc `master` | Alloc C3b |
+|---|---|---|---|---|---|
+| `a+b` | 0.93 (0.93 / 0.93) | 0.93 (0.93 / 0.93) | +0.2 % | 2.47 KB | 2.47 KB |
+| `repeated 16` | 18.00 (18.20 / 17.79) | 11.19 (11.38 / 11.01) | −37.8 % | 35.20 KB | 27.54 KB |
+| `repeated 48` | 49.88 (50.29 / 49.46) | 31.74 (32.03 / 31.45) | −36.4 % | 101.83 KB | 84.53 KB |
+| `repeated 512` | 554.20 (553.59 / 554.80) | 380.29 (388.28 / 372.29) | −31.4 % | 1,007.16 KB | 867.73 KB |
+| `coef 8` | 57.48 (57.51 / 57.46) | 28.64 (28.92 / 28.35) | −50.2 % | 67.74 KB | 39.26 KB |
+| `coef 24` | 161.85 (164.07 / 159.62) | 78.46 (78.44 / 78.49) | −51.5 % | 192.62 KB | 107.89 KB |
+| `coef 128` | 831.00 (829.86 / 832.14) | 411.50 (408.95 / 414.06) | −50.5 % | 1,004.34 KB | 548.59 KB |
+| `tail 16` | 719.81 (721.20 / 718.42) | 23.83 (23.80 / 23.86) | −96.7 % | 960.64 KB | 52.46 KB |
+| `tail 48` | 551,911.89 (554,292.57 / 549,531.20) | 160.37 (161.54 / 159.19) | −99.97 % | 574,163.23 KB | 313.98 KB |
+| `tail 512` | — | 18,650.70 (18,606.12 / 18,695.28) | — | — | 27,710.13 KB |
+| `twice 16` | 762.26 (769.93 / 754.58) | 27.07 (27.11 / 27.03) | −96.4 % | 882.20 KB | 55.05 KB |
+| `twice 48` | 126,800.68 (128,116.82 / 125,484.54) | 208.02 (210.04 / 206.00) | −99.8 % | 108,378.05 KB | 360.20 KB |
+| `cancel 16` | 48.54 (48.77 / 48.30) | 20.72 (20.70 / 20.75) | −57.3 % | 84.64 KB | 47.68 KB |
+| `cancel 128` | 2,632.46 (2,604.41 / 2,660.51) | 982.15 (998.01 / 966.29) | −62.7 % | 3,692.25 KB | 1,526.48 KB |
+| `rightRep 16` | 17.27 (17.18 / 17.35) | 10.63 (10.84 / 10.42) | −38.4 % | 34.03 KB | 25.34 KB |
+| `rightRep 128` | 124.49 (124.17 / 124.82) | 82.58 (81.09 / 84.08) | −33.7 % | 241.04 KB | 192.11 KB |
+| `x+x+x` (refused) | 2.05 (2.06 / 2.04) | 2.22 (2.21 / 2.22) | +8.1 % | 1.15 KB | 1.54 KB |
+| `xxx 8` (refused) | 7.01 (7.00 / 7.03) | 7.48 (7.45 / 7.50) | +6.6 % | 3.84 KB | 4.32 KB |
+| `xxx 16` (refused) | 14.80 (14.65 / 14.96) | 15.74 (15.59 / 15.90) | +6.3 % | 8.16 KB | 8.78 KB |
+| `linear 32` | 9.67 (9.64 / 9.70) | 9.70 (9.81 / 9.59) | +0.3 % | 20.66 KB | 20.66 KB |
+| `linear 200` | 61.15 (60.13 / 62.17) | 62.36 (63.84 / 60.89) | +2.0 % | 121.91 KB | 121.91 KB |
+| `sinMid 16` (refused) | 2,175.65 (2,219.41 / 2,131.90) | 2,244.01 (2,241.57 / 2,246.45) | +3.1 % | 2,630.71 KB | 2,630.71 KB |
+
+Reading: every admitted family is faster (−31 to −99.97 %) and allocates less. `linear` and `sinMid` run the code of `master`
+(same visits, same allocations): their differences (+0.3 to +3.1 %) are below the spread between the two `master` processes
+(3.4 % and 4.1 %). The only measured cost is the refused `x + x + ... + x` family (+6 to +8 %, about 0.5–1 µs and +400–600 B):
+the one walk of the spine test per operation.
 ### 12.8 Behaviors deliberately unchanged, residual limits
 
 - No result changes: the spine treatment computes each level as level by level; repeated terms are still grouped as `x + x`
