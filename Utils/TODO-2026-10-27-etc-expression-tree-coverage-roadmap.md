@@ -1,5 +1,18 @@
 # ETC — Expression tree coverage, reconstruction fidelity and structural equality
 
+## Current closure status — 2026-11-17
+
+The dated R0–R4 plan below is an **implementation and audit record**, not a list of PRs still to create.
+
+- **Closed within the ETC engine:** R0, R1a, R1a-Security, R1b, R1c, R2, R3 and R4; the closure audit, the audit follow-up and tracing. Covered concerns include faithful node reconstruction, structural comparer/hash/canonical-key extension, scoped alpha-equivalence and substitution, observable-effect safety, opaque extension nodes, and bounded recursive work. Source: this document's round results and closure audit, PRs #669–#678.
+- **Out of ETC scope and still open until separately verified:** parser nesting/stack protection and allocation exposure (ETC-16 and ETC-18; S-06). The expression-engine budget does **not** protect parsing before an expression tree exists.
+- **Algorithmic limitations:** ETC-17 was bounded against exhaustion by R1a-Security, **not** made universally linear. The S5/Flatten/C3 performance work is tracked in the simplifier roadmap. The remaining right-associated/balanced quotient-subtraction families must not be marked fixed just because linear admissible chains improved.
+- **Other Utils.Expressions surfaces:** `ExpressionEx`, `ExpressionOptimiser`, `BlockExpressionBuilder`, expression compilers and arbitrary third-party `Transform` overrides are not automatically protected by the ETC engine's budget. In particular the optimizer audit O0–O5 remains independent.
+- **Status rule:** a closed ETC round is not an open new PR. Re-open only for a reproduced regression or explicitly unfulfilled requirement, with a test, target component and current SHA.
+
+See `TODO-2026-09-12-expression-simplifier-roadmap.md` for the reconciled overall roadmap.
+
+
 Stage identifiers (`R0`…`R4`, `ETC-xx`, `C-xx`, `H-xx`) are stable and are not pull-request numbers.
 
 ## R0 provenance
