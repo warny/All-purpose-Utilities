@@ -147,6 +147,32 @@ public partial class ExpressionSimplifier
         return true;
     }
 
+    /// <summary>
+    /// Records the spine nodes of a refused spine root from index <c>1</c> down to the node where the cause lies
+    /// (<paramref name="depth"/>): each of them roots a chain holding that cause, which the spine test refuses too.
+    /// </summary>
+    /// <param name="root">The refused root.</param>
+    /// <param name="depth">The spine index of the cause (at least one).</param>
+    /// <param name="session">The session of the running operation, which owns the table.</param>
+    /// <param name="statistics">The opt-in counters of the thread, or <see langword="null"/>.</param>
+    /// <remarks>
+    /// The nodes from the root down to the cause have a single crossed operand (the walk stopped at the first node with two),
+    /// so the pass follows it, with one structural visit per node; a refusal in the middle of it leaves a correct table, since
+    /// every recorded node is a proven spine refusal.
+    /// </remarks>
+    private void RecordSpineRefusals(BinaryExpression root, int depth, ExpressionResourceBudget.Session session, FlattenAdmissionStatistics? statistics)
+    {
+        ExpressionNodeSet refusals = session.FlattenSpineRefusals ??= new ExpressionNodeSet();
+        BinaryExpression node = root;
+        for (int index = 1; index <= depth; index++)
+        {
+            ExpressionResourceBudget.ConsumeStructuralVisit();
+            node = AsCrossedAdditiveNode(node.Left) ?? AsCrossedAdditiveNode(node.Right)!;
+            refusals.Add(node);
+            if (statistics is not null) statistics.RecordingVisits++;
+        }
+    }
+
     /// <summary>Reports a refusal of <see cref="IsSpineChain"/>.</summary>
     /// <param name="cause">The cause.</param>
     /// <param name="depth">The spine index of the node where it lies.</param>

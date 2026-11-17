@@ -391,6 +391,13 @@ internal static class ExpressionResourceBudget
         public ExpressionNodeSet? FlattenAnchoredRefusals;
 
         /// <summary>
+        /// The crossed nodes whose chain the spine test of the built-in simplifier's admission proved refused (mission C3b): the
+        /// spine nodes from a refused root down to its cause. Consulted only to skip the spine test, never the linear one (a node
+        /// below a refused spine may still be a linear chain). Same lifetime as <see cref="FlattenRefusals"/>.
+        /// </summary>
+        public ExpressionNodeSet? FlattenSpineRefusals;
+
+        /// <summary>
         /// The structural hashes, canonical-order keys and canonicalization states the simplifier's canonicalizations computed
         /// during the running public operation, by node reference (mission C3a, <c>ExpressionSimplifier.DescribeTerm</c>). Every
         /// public operation, nested ones included, starts with an empty table: <see cref="Enter"/> detaches the enclosing one and
@@ -505,6 +512,7 @@ internal static class ExpressionResourceBudget
                 EffectCache = null;
                 FlattenRefusals = null;
                 FlattenAnchoredRefusals = null;
+                FlattenSpineRefusals = null;
                 SimplificationMetadata = null;
                 EffectMode = 0;
                 TransformVisits = 0;

@@ -308,6 +308,23 @@ public class ExpressionSimplifierFlattenSpineTests
         Assert.AreEqual(Dump(new LevelByLevelSimplifier().Simplify(repeated)), Dump(new ExpressionSimplifier().Simplify(repeated)));
     }
 
+    /// <summary>
+    /// A refused spine root records its spine nodes down to the cause: each sub-chain offered later is refused by one lookup
+    /// instead of another spine walk, so the spine test of <c>x + x + ... + x</c> walks the chain once per operation, and the
+    /// result stays the level by level one.
+    /// </summary>
+    [TestMethod]
+    public void RefusedSpineRoots_AreWalkedOncePerOperation()
+    {
+        Expression tree = LeftSum(Enumerable.Repeat<Expression>(D[0], 16));
+        (Expression result, FlattenAdmissionStatistics statistics) = Simplify(tree);
+        Assert.AreEqual(1, statistics.SpineWalks);
+        Assert.IsTrue(statistics.KnownSpineRefusals >= 13, "the sub-chains above the deepest pair (" + statistics.KnownSpineRefusals + ")");
+        Assert.AreEqual(1, statistics.SpineCauses[(int)FlattenSpineRefusalCause.DeepestPair]);
+        Assert.AreEqual(0, statistics.Spine);
+        Assert.AreEqual(Dump(new LevelByLevelSimplifier().Simplify(tree)), Dump(result));
+    }
+
     /// <summary>A derived simplifier keeps the effect gate: it never admits a spine chain.</summary>
     [TestMethod]
     public void DerivedSimplifiers_DoNotAdmitSpineChains()
