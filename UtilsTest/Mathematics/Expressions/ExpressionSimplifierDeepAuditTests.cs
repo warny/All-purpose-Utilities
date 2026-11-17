@@ -91,9 +91,10 @@ public class ExpressionSimplifierDeepAuditTests
     }
 
     /// <summary>
-    /// S5A-01: <c>AdditionOfCos2andSin2Number</c> dereferences the exponents of any two <see cref="double"/> powers as constants, so
-    /// the sum of two powers with a symbolic exponent throws <see cref="NullReferenceException"/>, from <c>Simplify</c> and from
-    /// the comparer, which simplifies first. The identity itself still works (positive control).
+    /// S5A-01: <c>AdditionOfCos2andSin2Number</c> dereferenced the exponents of any two <see cref="double"/> powers as constants, so
+    /// the sum of two powers with a symbolic exponent threw <see cref="NullReferenceException"/>, from <c>Simplify</c> and from
+    /// the comparer, which simplifies first. Fixed (mission "trigonometric rule and division chains"): the exponents are
+    /// pattern-matched and the rule declines. The identity itself still works (positive control).
     /// </summary>
     /// <param name="shape">The shape.</param>
     [TestMethod]
@@ -101,7 +102,7 @@ public class ExpressionSimplifierDeepAuditTests
     [DataRow("x^2 + z^y")]
     [DataRow("sin(x)^y + cos(x)^2")]
     [DataRow("x^y + x^z")]
-    public void S5A01_SumOfPowersWithSymbolicExponent_ThrowsNullReference(string shape)
+    public void S5A01_SumOfPowersWithSymbolicExponent_Declines(string shape)
     {
         Expression source = shape switch
         {
@@ -111,8 +112,9 @@ public class ExpressionSimplifierDeepAuditTests
             _ => Expression.Add(Expression.Power(X, Y), Expression.Power(X, Z)),
         };
 
-        Assert.IsInstanceOfType<NullReferenceException>(Innermost(() => Simplify(source)));
-        Assert.IsInstanceOfType<NullReferenceException>(Innermost(() => ExpressionComparer.Default.GetHashCode(source)));
+        Assert.IsNull(Innermost(() => Simplify(source)));
+        Assert.IsNull(Innermost(() => ExpressionComparer.Default.GetHashCode(source)));
+        Assert.AreEqual(ExpressionType.Add, Simplify(source).NodeType, Text(Simplify(source)));
         Assert.AreEqual("1", Text(Simplify(Expression.Add(Expression.Power(Expression.Call(Sin, X), C(2)), Expression.Power(Expression.Call(Cos, X), C(2))))));
     }
 

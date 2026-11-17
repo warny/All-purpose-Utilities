@@ -155,6 +155,113 @@ public class ExpressionSimplifierTrigonometricRuleTests
         Assert.IsNull(rules.Squares(Expression.Add(Square(scaledSin), Square(scaledCos)), (BinaryExpression)Square(scaledSin), (BinaryExpression)Square(scaledCos)));
     }
 
+    /// <summary>A constant exponent other than <c>2</c> is not the identity: <c>sin(x)^1 + cos(x)^2</c> is not <c>1</c>.</summary>
+    [TestMethod]
+    public void OtherConstantExponents_Decline()
+    {
+        Expression sin = Expression.Call(Sin, X), cos = Expression.Call(Cos, X);
+        foreach ((double a, double b) in new[] { (1.0, 2.0), (2.0, 3.0), (0.0, 2.0), (2.0, 2.0000000000000004), (-2.0, 2.0) })
+        {
+            Expression source = Expression.Add(Expression.Power(sin, K(a)), Expression.Power(cos, K(b)));
+            Expression result = S(source);
+            Assert.IsNotInstanceOfType<ConstantExpression>(result, $"{source} -> {result}");
+            AssertSameValues(source, result);
+        }
+
+        foreach (Expression source in new Expression[] { Expression.Add(Expression.Power(X, K(1)), Square(Y)), Expression.Add(Square(X), Expression.Power(Y, K(3))), Expression.Add(Expression.Power(X, K(0)), Square(Y)) })
+        {
+            AssertSameValues(source, S(source));
+        }
+    }
+
+    /// <summary>The identity needs one argument: <c>sin(x)^2 + cos(y)^2</c> is not <c>1</c>; two sines or two cosines neither.</summary>
+    [TestMethod]
+    public void OtherArgumentsOrFunctions_Decline()
+    {
+        Expression[] sources =
+        [
+            Expression.Add(Square(Expression.Call(Sin, X)), Square(Expression.Call(Cos, Y))),
+            Expression.Add(Square(Expression.Call(Sin, X)), Square(Expression.Call(Sin, X))),
+            Expression.Add(Square(Expression.Call(Cos, X)), Square(Expression.Call(Tan, X))),
+            Expression.Add(Square(X), Square(Expression.Call(Cos, X))),
+        ];
+
+        foreach (Expression source in sources)
+        {
+            Expression result = S(source);
+            Assert.IsNotInstanceOfType<ConstantExpression>(result, $"{source} -> {result}");
+            AssertSameValues(source, result);
+        }
+
+        // The arguments are compared by the comparer, after simplification: x + 0 is x.
+        Assert.AreEqual(1.0, (S(Expression.Add(Square(Expression.Call(Sin, Expression.Add(X, K(0)))), Square(Expression.Call(Cos, X)))) as ConstantExpression)?.Value);
+    }
+
+    /// <summary>An extension node never matches the shapes of the rule and is never read by it.</summary>
+    [TestMethod]
+    public void ExtensionOperands_Decline()
+    {
+        var exponent = new OpaqueDouble();
+        var argument = new OpaqueDouble();
+        Expression[] sources =
+        [
+            Expression.Add(Expression.Power(Expression.Call(Sin, X), exponent), Square(Expression.Call(Cos, X))),
+            Expression.Add(Square(Expression.Call(Sin, argument)), Square(Expression.Call(Cos, argument))),
+            Expression.Add(Square(argument), Square(Expression.Call(Cos, X))),
+        ];
+
+        foreach (Expression source in sources)
+        {
+            Expression result = S(source);
+            Assert.IsNotInstanceOfType<ConstantExpression>(result, result.ToString());
+        }
+    }
+
+    /// <summary>An extension node of type <see cref="double"/>, irreducible: the simplifier must keep it as an operand.</summary>
+    private sealed class OpaqueDouble : Expression
+    {
+        /// <inheritdoc/>
+        public override ExpressionType NodeType => ExpressionType.Extension;
+
+        /// <inheritdoc/>
+        public override Type Type => typeof(double);
+    }
+
+    /// <summary>The number of calls of <see cref="Observed"/>.</summary>
+    [ThreadStatic]
+    private static int s_observed;
+
+    /// <summary>A user function with an effect: it counts its calls.</summary>
+    /// <param name="value">The value.</param>
+    /// <returns><paramref name="value"/>.</returns>
+    public static double Observed(double value)
+    {
+        s_observed++;
+        return value;
+    }
+
+    /// <summary>
+    /// The arguments may run user code: the identity would drop both evaluations of the argument, so the effect gate keeps the
+    /// sum, and the compiled result evaluates the argument as often as the source.
+    /// </summary>
+    [TestMethod]
+    public void EffectfulArguments_KeepTheirEvaluations()
+    {
+        MethodInfo observed = typeof(ExpressionSimplifierTrigonometricRuleTests).GetMethod(nameof(Observed))!;
+        Expression argument = Expression.Call(observed, X);
+        Expression source = Expression.Add(Square(Expression.Call(Sin, argument)), Square(Expression.Call(Cos, argument)));
+        Expression result = S(source);
+        Func<double, double, double> f = Expression.Lambda<Func<double, double, double>>(source, X, Y).Compile();
+        Func<double, double, double> g = Expression.Lambda<Func<double, double, double>>(result, X, Y).Compile();
+        s_observed = 0;
+        double a = f(0.5, 0);
+        int sourceCalls = s_observed;
+        s_observed = 0;
+        double b = g(0.5, 0);
+        Assert.AreEqual(sourceCalls, s_observed, result.ToString());
+        Assert.AreEqual(a, b, 1e-12);
+    }
+
     /// <summary>Positive control: the identities of the runtime methods of <see cref="double"/> keep applying.</summary>
     [TestMethod]
     public void Identities_StillApply()
@@ -163,5 +270,18 @@ public class ExpressionSimplifierTrigonometricRuleTests
         Assert.AreEqual(1.0, (S(Expression.Add(Square(Expression.Call(Cos, X)), Square(Expression.Call(Sin, X)))) as ConstantExpression)?.Value);
         Assert.AreSame(Tan, (S(Expression.Divide(Expression.Call(Sin, X), Expression.Call(Cos, X))) as MethodCallExpression)?.Method);
         Assert.AreSame(Sin, (S(Expression.Multiply(Expression.Call(Cos, X), Expression.Call(Tan, X))) as MethodCallExpression)?.Method);
+        Assert.AreSame(Sin, (S(Expression.Multiply(Expression.Call(Tan, X), Expression.Call(Cos, X))) as MethodCallExpression)?.Method);
+        Assert.AreSame(Cos, (S(Expression.Divide(Expression.Call(Sin, X), Expression.Call(Tan, X))) as MethodCallExpression)?.Method);
+        Expression cot = S(Expression.Divide(Expression.Call(Cos, X), Expression.Call(Sin, X)));
+        Assert.AreSame(Tan, ((cot as BinaryExpression)?.Right as MethodCallExpression)?.Method, cot.ToString());
+
+        // The same rules on float: its own functions, never those of double.
+        ParameterExpression f = Expression.Parameter(typeof(float), "f");
+        MethodInfo sinF = typeof(float).GetMethod(nameof(float.Sin), [typeof(float)])!, cosF = typeof(float).GetMethod(nameof(float.Cos), [typeof(float)])!;
+        Assert.AreSame(typeof(float).GetMethod(nameof(float.Tan), [typeof(float)]), (S(Expression.Divide(Expression.Call(sinF, f), Expression.Call(cosF, f))) as MethodCallExpression)?.Method);
+
+        // Both orders and an argument that is itself an expression.
+        Expression sum = Expression.Add(X, Y);
+        Assert.AreEqual(1.0, (S(Expression.Add(Square(Expression.Call(Cos, sum)), Square(Expression.Call(Sin, sum)))) as ConstantExpression)?.Value);
     }
 }
