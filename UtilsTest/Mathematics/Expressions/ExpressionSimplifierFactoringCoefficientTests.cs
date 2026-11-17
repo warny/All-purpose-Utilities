@@ -327,8 +327,10 @@ public class ExpressionSimplifierFactoringCoefficientTests
 
     /// <summary>
     /// Nested factoring with constant coefficients folds in the first pass, with free and bound lambda parameters:
-    /// <c>(2*x + 3*x) + 5*z</c> gives <c>(x + z) * 5</c>; before P14 the inner factoring left <c>(2 + 3)</c>, which the
-    /// outer probe simplified on a copy to recognize <c>5</c>, and the result kept <c>(x + z) * (2 + 3)</c>. The
+    /// <c>(2*x + 3*x) + 5*z</c> gives <c>5 * (x + z)</c>; before P14 the inner factoring left <c>(2 + 3)</c>, which the
+    /// outer probe simplified on a copy to recognize <c>5</c>, and the result kept <c>(x + z) * (2 + 3)</c>. Since mission
+    /// C3c the chain is factored at once: <c>2*x + 3*x</c> merges into <c>5*x</c>, then the coefficient <c>5</c> shared with
+    /// <c>5*z</c> is factored out, as a canonical product (the constant first) instead of <c>(x + z) * 5</c>. The
     /// unfolded-coefficient comparison path itself is covered with an opaque coefficient by
     /// <c>ExpressionSimplifierComparerBatchingTests.EndToEnd_NestedAdditionOfEqualsElements_ProducesSecondPassFactoredShape</c>.
     /// </summary>
@@ -343,10 +345,10 @@ public class ExpressionSimplifierFactoringCoefficientTests
         {
             var product = (BinaryExpression)result;
             Assert.AreEqual(ExpressionType.Multiply, product.NodeType, result.ToString());
-            var variables = (BinaryExpression)product.Left;
+            Assert.AreEqual(5.0, (double)((ConstantExpression)product.Left).Value!);
+            var variables = (BinaryExpression)product.Right;
             Assert.AreSame(x, variables.Left);
             Assert.AreSame(z, variables.Right);
-            Assert.AreEqual(5.0, (double)((ConstantExpression)product.Right).Value!);
         }
 
         AssertShape(Simplify(body));
@@ -362,8 +364,9 @@ public class ExpressionSimplifierFactoringCoefficientTests
 
     /// <summary>
     /// Non-constant coefficients without two constants keep the existing factoring and are not simplified again
-    /// (controls): <c>a*x + b*x -&gt; (a + b)*x</c>, <c>a*x + 3*x -&gt; (a + 3)*x</c>. Coefficients holding two
-    /// constants, such as <c>(a + 2)*x + 3*x</c>, are covered by <c>ExpressionSimplifierAdditiveConstantAggregationTests</c>.
+    /// (controls): <c>a*x + b*x -&gt; x*(a + b)</c>, <c>a*x + 3*x -&gt; x*(3 + a)</c>. Since mission C3c the product and its
+    /// coefficient are canonical (they were <c>(a + b)*x</c> and <c>(a + 3)*x</c>, which a second call reordered). Coefficients
+    /// holding two constants, such as <c>(a + 2)*x + 3*x</c>, are covered by <c>ExpressionSimplifierAdditiveConstantAggregationTests</c>.
     /// </summary>
     [TestMethod]
     public void Simplify_OpaqueCoefficients_KeepExistingFactoring()
@@ -371,13 +374,15 @@ public class ExpressionSimplifierFactoringCoefficientTests
         ParameterExpression x = Expression.Parameter(typeof(double), "x");
         ParameterExpression a = Expression.Parameter(typeof(double), "a");
         ParameterExpression b = Expression.Parameter(typeof(double), "b");
-        Assert.AreEqual("((a + b) * x)", Simplify(Expression.Add(Expression.Multiply(a, x), Expression.Multiply(b, x))).ToString());
-        Assert.AreEqual("((a + 3) * x)", Simplify(Expression.Add(Expression.Multiply(a, x), Term(3, x))).ToString());
+        Assert.AreEqual("(x * (a + b))", Simplify(Expression.Add(Expression.Multiply(a, x), Expression.Multiply(b, x))).ToString());
+        Assert.AreEqual("(x * (3 + a))", Simplify(Expression.Add(Expression.Multiply(a, x), Term(3, x))).ToString());
     }
 
     /// <summary>
     /// An unevaluated opaque coefficient still reaches the enclosing factoring and is recognized by its probe
-    /// (control): <c>(a*x + 2*x) + (a + 2)*b</c> gives <c>(x + b) * (a + 2)</c>.
+    /// (control): <c>(a*x + 2*x) + (a + 2)*b</c> gives <c>(2 + a) * (x + b)</c>. The term <c>(a + 2)*b</c> holds a sum, so the
+    /// chain is not factorable (mission C3c): its left operand is factored on its own into <c>x*(2 + a)</c>, and the binary
+    /// factoring of the root builds the canonical product.
     /// </summary>
     [TestMethod]
     public void Simplify_UnfoldedOpaqueCoefficient_StillFactorsInEnclosingSum()
@@ -388,7 +393,7 @@ public class ExpressionSimplifierFactoringCoefficientTests
         Expression source = Expression.Add(
             Expression.Add(Expression.Multiply(a, x), Term(2, x)),
             Expression.Multiply(Expression.Add(a, Expression.Constant(2.0)), b));
-        Assert.AreEqual("((x + b) * (a + 2))", Simplify(source).ToString());
+        Assert.AreEqual("((2 + a) * (x + b))", Simplify(source).ToString());
     }
 
     /// <summary>

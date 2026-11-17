@@ -148,7 +148,8 @@ public class ExpressionSimplifierAdditiveConstantAggregationTests
     /// <summary>
     /// Factored sums whose coefficients mix a non-constant term with constants fold the constants in one call: before,
     /// <c>(5 + a)*x + 5*x + 6*x</c> gave <c>(((5 + a) + 5) + 6) * x</c> (9 nodes, 3 constants), and
-    /// <c>(a + 2)*x + 3*x</c> gave <c>((2 + a) + 3) * x</c>.
+    /// <c>(a + 2)*x + 3*x</c> gave <c>((2 + a) + 3) * x</c>. Since mission C3c the factored product is canonical,
+    /// <c>x * (16 + a)</c>, the form a second call gave.
     /// </summary>
     [TestMethod]
     public void Simplify_MixedFactoredCoefficients_SumTheirConstants()
@@ -159,14 +160,14 @@ public class ExpressionSimplifierAdditiveConstantAggregationTests
         Expression Term(Expression coefficient) => Expression.Multiply(coefficient, x);
         (Expression Source, string Expected)[] cases =
         [
-            (Expression.Add(Expression.Add(Term(Expression.Add(C(5), a)), Term(C(5))), Term(C(6))), "((16 + a) * x)"),
-            (Expression.Add(Term(Expression.Add(a, C(2))), Term(C(3))), "((5 + a) * x)"),
-            (Expression.Add(Term(Expression.Add(C(2), a)), Term(C(3))), "((5 + a) * x)"),
-            (Expression.Subtract(Term(Expression.Add(a, C(2))), Term(C(3))), "((-1 + a) * x)"),
-            (Expression.Add(Term(Expression.Add(C(2), a)), Term(Expression.Add(b, C(3)))), "((5 + (a + b)) * x)"),
-            (Expression.Add(Expression.Add(Term(C(2)), Term(a)), Term(C(3))), "((5 + a) * x)"),
-            (Expression.Add(Term(C(2)), Expression.Add(Term(a), Term(C(3)))), "((5 + a) * x)"),
-            (Expression.Add(Expression.Add(Expression.Add(Term(C(2)), Term(C(3))), Term(a)), Term(C(5))), "((10 + a) * x)"),
+            (Expression.Add(Expression.Add(Term(Expression.Add(C(5), a)), Term(C(5))), Term(C(6))), "(x * (16 + a))"),
+            (Expression.Add(Term(Expression.Add(a, C(2))), Term(C(3))), "(x * (5 + a))"),
+            (Expression.Add(Term(Expression.Add(C(2), a)), Term(C(3))), "(x * (5 + a))"),
+            (Expression.Subtract(Term(Expression.Add(a, C(2))), Term(C(3))), "(x * (-1 + a))"),
+            (Expression.Add(Term(Expression.Add(C(2), a)), Term(Expression.Add(b, C(3)))), "(x * (5 + (a + b)))"),
+            (Expression.Add(Expression.Add(Term(C(2)), Term(a)), Term(C(3))), "(x * (5 + a))"),
+            (Expression.Add(Term(C(2)), Expression.Add(Term(a), Term(C(3)))), "(x * (5 + a))"),
+            (Expression.Add(Expression.Add(Expression.Add(Term(C(2)), Term(C(3))), Term(a)), Term(C(5))), "(x * (10 + a))"),
         ];
         foreach ((Expression source, string expected) in cases)
         {
@@ -189,8 +190,9 @@ public class ExpressionSimplifierAdditiveConstantAggregationTests
         ParameterExpression a = Expression.Parameter(typeof(double), "a");
         ParameterExpression b = Expression.Parameter(typeof(double), "b");
         ParameterExpression x = Expression.Parameter(typeof(double), "x");
-        Assert.AreEqual("((a + 3) * x)", Simplify(Expression.Add(Expression.Multiply(a, x), Expression.Multiply(C(3), x))).ToString());
-        Assert.AreEqual("((a + b) * x)", Simplify(Expression.Add(Expression.Multiply(a, x), Expression.Multiply(b, x))).ToString());
+        // Mission C3c: the product and its coefficient are canonical (a second call reordered (a + 3) * x into x * (3 + a)).
+        Assert.AreEqual("(x * (3 + a))", Simplify(Expression.Add(Expression.Multiply(a, x), Expression.Multiply(C(3), x))).ToString());
+        Assert.AreEqual("(x * (a + b))", Simplify(Expression.Add(Expression.Multiply(a, x), Expression.Multiply(b, x))).ToString());
     }
 
     // ------------------------------------------------------------------------------------------
@@ -311,7 +313,8 @@ public class ExpressionSimplifierAdditiveConstantAggregationTests
         Expression mixed = SimplifyAndCompare<uint>(
             a => Expression.Add(Expression.Subtract(Expression.Add(Expression.Subtract(Expression.Add(a, K(uint.MaxValue - 1)), K(5u)), K(7u)), K(uint.MaxValue)), K(2u)),
             uintSamples);
-        Assert.AreEqual("((0 - 4294967293) + a)", mixed.ToString());
+        // Mission C3c: the five constants of this factorable chain are summed at once (3, exactly), where the levels left 0 - 4294967293.
+        Assert.AreEqual("(3 + a)", mixed.ToString());
         Assert.AreEqual("((0 - 6) + a)", SimplifyAndCompare<uint>(a => Expression.Subtract(Expression.Subtract(Expression.Add(a, K(3u)), K(uint.MaxValue)), K(10u)), uintSamples).ToString());
         // The pre-existing factoring of e - c into (e - c) * 1 (also on master) adds a constant 1 around the sum.
         Expression positive = SimplifyAndCompare<uint>(a => Expression.Subtract(Expression.Add(Expression.Add(a, K(uint.MaxValue)), K(uint.MaxValue)), K(1u)), uintSamples);
@@ -403,7 +406,8 @@ public class ExpressionSimplifierAdditiveConstantAggregationTests
 
     /// <summary>
     /// Factored coefficients mixing several subtractions aggregate their constants with the right signs, with free and
-    /// bound lambda parameters: <c>((a - 2)*x - (3 - b)*x) - 4*x -&gt; (-9 + (a + b)) * x</c> (review of #666).
+    /// bound lambda parameters: <c>((a - 2)*x - (3 - b)*x) - 4*x -&gt; x * (-9 + (a + b))</c> (review of #666; the canonical
+    /// product order since mission C3c).
     /// </summary>
     [TestMethod]
     public void Simplify_CoefficientsWithSeveralSubtractions_AggregateWithSigns()
@@ -414,11 +418,11 @@ public class ExpressionSimplifierAdditiveConstantAggregationTests
         Expression body = Expression.Subtract(
             Expression.Subtract(Expression.Multiply(Expression.Subtract(a, C(2)), x), Expression.Multiply(Expression.Subtract(C(3), b), x)),
             Expression.Multiply(C(4), x));
-        Assert.AreEqual("((-9 + (a + b)) * x)", Simplify(body).ToString());
+        Assert.AreEqual("(x * (-9 + (a + b)))", Simplify(body).ToString());
 
         var source = Expression.Lambda<Func<double, double, double, double>>(body, x, a, b);
         var lambda = (Expression<Func<double, double, double, double>>)Simplify(source);
-        Assert.AreEqual("((-9 + (a + b)) * x)", lambda.Body.ToString());
+        Assert.AreEqual("(x * (-9 + (a + b)))", lambda.Body.ToString());
         CollectionAssert.AreEqual(new[] { x, a, b }, lambda.Parameters.ToArray());
         Func<double, double, double, double> before = source.Compile();
         Func<double, double, double, double> after = lambda.Compile();

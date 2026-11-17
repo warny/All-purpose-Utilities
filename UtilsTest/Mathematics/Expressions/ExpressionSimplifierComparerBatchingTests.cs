@@ -113,11 +113,14 @@ public class ExpressionSimplifierComparerBatchingTests
         Assert.IsNotNull(result, "The rule must recognize (2+3) and 5 as equal after simplifying the unfolded coefficient.");
         var multiply = (BinaryExpression)result!;
         Assert.AreEqual(ExpressionType.Multiply, multiply.NodeType);
-        var sumOfVariables = (BinaryExpression)multiply.Left;
+
+        // Mission C3c: the factored product is canonical, so its operands follow the canonical order of their keys.
+        bool coefficientFirst = ReferenceEquals(unfoldedCoefficient, multiply.Left);
+        var sumOfVariables = (BinaryExpression)(coefficientFirst ? multiply.Right : multiply.Left);
         Assert.AreEqual(ExpressionType.Add, sumOfVariables.NodeType);
         Assert.IsTrue(ReferenceEquals(x, sumOfVariables.Left));
         Assert.IsTrue(ReferenceEquals(z, sumOfVariables.Right));
-        Assert.IsTrue(ReferenceEquals(unfoldedCoefficient, multiply.Right), "The still-unfolded (2+3) coefficient must survive as the factored-out term, unmodified by the equality probe itself.");
+        Assert.IsTrue(ReferenceEquals(unfoldedCoefficient, coefficientFirst ? multiply.Left : multiply.Right), "The still-unfolded (2+3) coefficient must survive as the factored-out term, unmodified by the equality probe itself.");
     }
 
     /// <summary>
@@ -141,11 +144,14 @@ public class ExpressionSimplifierComparerBatchingTests
         Assert.IsNotNull(result, "The rule must recognize (2-3) and -1 as equal after simplifying the unfolded coefficient.");
         var multiply = (BinaryExpression)result!;
         Assert.AreEqual(ExpressionType.Multiply, multiply.NodeType);
-        var differenceOfVariables = (BinaryExpression)multiply.Left;
+
+        // Mission C3c: the factored product is canonical, so its operands follow the canonical order of their keys.
+        bool coefficientFirst = ReferenceEquals(unfoldedCoefficient, multiply.Left);
+        var differenceOfVariables = (BinaryExpression)(coefficientFirst ? multiply.Right : multiply.Left);
         Assert.AreEqual(ExpressionType.Subtract, differenceOfVariables.NodeType);
         Assert.IsTrue(ReferenceEquals(x, differenceOfVariables.Left));
         Assert.IsTrue(ReferenceEquals(z, differenceOfVariables.Right));
-        Assert.IsTrue(ReferenceEquals(unfoldedCoefficient, multiply.Right));
+        Assert.IsTrue(ReferenceEquals(unfoldedCoefficient, coefficientFirst ? multiply.Left : multiply.Right));
     }
 
     /// <summary>
@@ -244,8 +250,10 @@ public class ExpressionSimplifierComparerBatchingTests
         Assert.IsNotNull(result);
         var multiply = (BinaryExpression)result!;
         Assert.AreEqual(ExpressionType.Multiply, multiply.NodeType);
-        Assert.IsTrue(ReferenceEquals(x, multiply.Right));
-        var coefficient = (BinaryExpression)multiply.Left;
+
+        // Mission C3c: the canonical product x * (a + b), the parameter first (it was (a + b) * x, which a second call reordered).
+        Assert.IsTrue(ReferenceEquals(x, multiply.Left));
+        var coefficient = (BinaryExpression)multiply.Right;
         Assert.AreEqual(ExpressionType.Add, coefficient.NodeType);
         Assert.IsTrue(ReferenceEquals(a, coefficient.Left));
         Assert.IsTrue(ReferenceEquals(b, coefficient.Right));

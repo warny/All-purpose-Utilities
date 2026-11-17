@@ -174,7 +174,8 @@ public class ExpressionSimplifierRuleTerminationTests
     /// <summary>
     /// The stack overflow left open by S5 P14 and P16 on <c>a * x + (1 - a) * x</c> had the same cause (the coefficient
     /// <c>1 - a</c> was factored by 1, then moved around by the multiplication rule): it terminates too. The factored
-    /// coefficient is a rule result, simplified by the next pass only (S5 P14).
+    /// coefficient is a rule result, simplified by the next pass only (S5 P14). Since mission C3c the factored product is
+    /// canonical (<c>y * (...)</c>, the order a second pass gave); its coefficient still waits for the next pass.
     /// </summary>
     [TestMethod]
     public void P14OpenStackOverflow_HadTheSameCause()
@@ -182,9 +183,9 @@ public class ExpressionSimplifierRuleTerminationTests
         Expression one = C(1);
         (Expression Body, string Expected)[] cases =
         [
-            (Expression.Add(Expression.Multiply(X, Y), Expression.Multiply(Expression.Subtract(one, X), Y)), "(x + (1 + (0 - x))) * y"),
-            (Expression.Add(Expression.Multiply(Y, Expression.Subtract(one, X)), Expression.Multiply(X, Y)), "(1 + (x - x)) * y"),
-            (Expression.Subtract(Expression.Multiply(Expression.Subtract(X, one), Y), Expression.Multiply(X, Y)), "(-1 + (x + (0 - x))) * y"),
+            (Expression.Add(Expression.Multiply(X, Y), Expression.Multiply(Expression.Subtract(one, X), Y)), "y * (x + (1 + (0 - x)))"),
+            (Expression.Add(Expression.Multiply(Y, Expression.Subtract(one, X)), Expression.Multiply(X, Y)), "y * (1 + (x - x))"),
+            (Expression.Subtract(Expression.Multiply(Expression.Subtract(X, one), Y), Expression.Multiply(X, Y)), "y * (-1 + (x + (0 - x)))"),
         ];
 
         foreach ((Expression body, string expected) in cases)

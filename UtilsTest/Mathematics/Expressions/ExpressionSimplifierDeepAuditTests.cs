@@ -281,13 +281,17 @@ public class ExpressionSimplifierDeepAuditTests
     /// (26) and the coefficient folding of the next pass. The second pass completes each of them, and the comparer, which
     /// simplifies once, does not identify the source with its second-pass result.
     /// </summary>
+    /// <remarks>
+    /// Since mission C3c the additive cases are factorable chains, simplified at once from all their terms: they cancel in the
+    /// first pass, so the comparer identifies them with their result. The multiplicative cases are unchanged.
+    /// </remarks>
     [TestMethod]
     public void S5A05_RuleResultsLeftForTheNextPass()
     {
         (Expression Source, string First, string Second)[] cases =
         [
-            (Expression.Subtract(Expression.Add(X, Y), Expression.Add(X, Y)), "((x + y) - x) - y", "0"),
-            (Expression.Subtract(Expression.Subtract(C(3), Z), Expression.Subtract(C(3), Z)), "((3 + (0 - z)) - 3) - (0 - z)", "0"),
+            (Expression.Subtract(Expression.Add(X, Y), Expression.Add(X, Y)), "0", "0"),
+            (Expression.Subtract(Expression.Subtract(C(3), Z), Expression.Subtract(C(3), Z)), "0", "0"),
             (Expression.Multiply(Expression.Negate(X), C(2)), "2 * (-x)", "-(2 * x)"),
             (Expression.Multiply(Expression.Multiply(C(2), X), C(3)), "3 * (2 * x)", "6 * x"),
         ];
@@ -299,7 +303,8 @@ public class ExpressionSimplifierDeepAuditTests
             Assert.AreEqual(second, Text(Simplify(once)));
         }
 
-        Assert.IsFalse(ExpressionComparer.Default.Equals(cases[0].Source, C(0)));
+        Assert.IsTrue(ExpressionComparer.Default.Equals(cases[0].Source, C(0)), "mission C3c: the first pass cancels");
+        Assert.IsFalse(ExpressionComparer.Default.Equals(cases[3].Source, Expression.Multiply(C(6), X)), "the multiplicative case still needs a second pass");
         Assert.AreEqual("0", Text(Simplify(Expression.Subtract(X, X))), "control: a direct difference cancels");
     }
 
@@ -309,20 +314,25 @@ public class ExpressionSimplifierDeepAuditTests
     /// period 3 (roadmap P10: the subtraction and negation rules return shapes only a later pass recanonicalizes). Consequence: the
     /// comparer does not identify a tree with its own simplified form.
     /// </summary>
+    /// <remarks>
+    /// Fixed by mission C3c: the canonical chain <c>x + ((0 - y) + (0 - z))</c>, which the subtraction rules rewrote level by
+    /// level, is a factorable chain, simplified at once into itself, so both shapes reach a fixed point at the first pass and
+    /// the comparer identifies a tree with its simplified form.
+    /// </remarks>
     [TestMethod]
     public void S5A06_RepeatedPasses_Oscillate()
     {
         Expression twoCycle = Expression.Lambda<Func<double, double, double, double>>(Expression.Subtract(Expression.Subtract(X, Y), Z), X, Y, Z);
         List<string> forms = Passes(twoCycle, 4);
-        CollectionAssert.AreEqual(new[] { "(x, y, z) => x + ((0 - y) + (0 - z))", "(x, y, z) => (x - y) - z", "(x, y, z) => x + ((0 - y) + (0 - z))", "(x, y, z) => (x - y) - z" }, forms);
+        CollectionAssert.AreEqual(Enumerable.Repeat("(x, y, z) => x + ((0 - y) + (0 - z))", 4).ToArray(), forms);
 
         Expression threeCycle = Expression.Lambda<Func<double, double, double, double>>(Expression.Subtract(Expression.Subtract(Expression.Subtract(C(1), X), Y), Z), X, Y, Z);
         List<string> period3 = Passes(threeCycle, 4);
-        Assert.AreNotEqual(period3[0], period3[1]);
-        Assert.AreNotEqual(period3[0], period3[2]);
+        Assert.AreEqual(period3[0], period3[1]);
+        Assert.AreEqual(period3[0], period3[2]);
         Assert.AreEqual(period3[0], period3[3]);
 
-        Assert.IsFalse(ExpressionComparer.Default.Equals(twoCycle, Simplify(twoCycle)), "Equals(e, Simplify(e)) is false on an oscillating form");
+        Assert.IsTrue(ExpressionComparer.Default.Equals(twoCycle, Simplify(twoCycle)), "Equals(e, Simplify(e)) holds on a fixed point");
     }
 
     /// <summary>Applies <paramref name="count"/> public passes and returns the text of each result.</summary>
@@ -347,6 +357,8 @@ public class ExpressionSimplifierDeepAuditTests
     /// work of nested shapes and, the simplifier not being idempotent, even changes the result: <c>t + 0</c> and <c>0 + t</c>
     /// simplify differently. The work ratio was more than three at twelve terms; since S5 P19d the comparison memo serves the
     /// repeated comparer simplifications of the extra pass (830 visits against 557), so only the excess itself is pinned.
+    /// Since mission C3c a chain holding the zero is a factorable chain, simplified at once: <c>t + 0</c> and <c>0 + t</c>
+    /// give the same canonical result.
     /// </summary>
     [TestMethod]
     public void S5A07_ZeroAndOneIdentities_RetransformAPreparedOperand()
@@ -360,8 +372,8 @@ public class ExpressionSimplifierDeepAuditTests
         Expression difference = Expression.Subtract(Expression.Subtract(X, Y), Z);
         string right = Text(Simplify(Expression.Lambda<Func<double, double, double, double>>(Expression.Add(difference, C(0)), X, Y, Z)));
         string left = Text(Simplify(Expression.Lambda<Func<double, double, double, double>>(Expression.Add(C(0), difference), X, Y, Z)));
-        Assert.AreEqual("(x, y, z) => (x - y) - z", right);
-        Assert.AreEqual("(x, y, z) => x + ((0 - y) + (0 - z))", left);
+        Assert.AreEqual("(x, y, z) => x + ((0 - y) + (0 - z))", right);
+        Assert.AreEqual(right, left);
     }
 
     /// <summary>
@@ -375,18 +387,21 @@ public class ExpressionSimplifierDeepAuditTests
     /// chains these re-entries build are canonicalized at once, which removes about a sixth of the visits (117,637 to 99,916
     /// at n = 20; 776,790 at n = 24, now under the default budget) without changing the growth: the budget of the refusal
     /// below went from 100,000 to 50,000 visits for the same tree.
+    /// <para>
+    /// Fixed by mission C3c: the canonical chains the re-entries build are factorable chains, simplified at once, so the levels no
+    /// longer rewrite and compare them again; the work is about quadratic (181 visits at n = 8, 682 at n = 16) and the tree of
+    /// n = 20 fits in the budget that refused it.
+    /// </para>
     /// </remarks>
     [TestMethod]
     public void S5A08_NestedNegatedDifferences_GrowSuperPolynomially()
     {
         static Expression NegatedDifferences(int n) => Nest(n, (acc, v) => Expression.Negate(Expression.Subtract(acc, v)));
         long v8 = Visits(NegatedDifferences(8)), v16 = Visits(NegatedDifferences(16));
-        Assert.IsTrue(v16 > 25 * v8, $"n = 8: {v8} visits, n = 16: {v16}");
+        Assert.IsTrue(v16 < 6 * v8, $"n = 8: {v8} visits, n = 16: {v16}");
 
         var limited = new ExpressionSimplifier(new ExpressionResourceLimits { MaxTransformVisits = 50_000 });
-        var refusal = Innermost(() => limited.Simplify(NegatedDifferences(20))) as ExpressionResourceLimitException;
-        Assert.IsNotNull(refusal, "a 58-node tree exceeds 50,000 visits");
-        Assert.AreEqual(ExpressionResourceLimitKind.Work, refusal.Kind);
+        Assert.IsNull(Innermost(() => limited.Simplify(NegatedDifferences(20))), "a 58-node tree fits in 50,000 visits");
     }
 
     /// <summary>
@@ -400,6 +415,11 @@ public class ExpressionSimplifierDeepAuditTests
     /// visit for the chain and one per term), and gives the same result. The level by level treatment, which a derived
     /// simplifier keeps, still grows exponentially: the cause of S5A-12 (the canonical chain is not a fixed point) is open, and
     /// a canonical chain given back to the built-in simplifier (its <c>0 - t</c> terms are not linear) still pays it.
+    /// <para>
+    /// Fixed by mission C3c: the canonical chain is a factorable chain, simplified at once into itself, and the comparisons the
+    /// rules of a level make simplify their operands that way too, so even the level by level treatment of a derived simplifier
+    /// no longer grows exponentially (169 visits for the free chain of twelve terms, 182 for the bound one).
+    /// </para>
     /// </remarks>
     [TestMethod]
     public void S5A12_DifferenceOfFreeParameters_GrowsExponentially()
@@ -407,31 +427,33 @@ public class ExpressionSimplifierDeepAuditTests
         ParameterExpression[] xs = Enumerable.Range(0, 12).Select(i => Expression.Parameter(typeof(double), "x" + i)).ToArray();
         Expression chain = xs.Aggregate<Expression>(Expression.Subtract);
         long free = LevelByLevelVisits(chain), bound = LevelByLevelVisits(Expression.Lambda(chain, xs));
-        Assert.IsTrue(free > 5 * bound, $"free: {free} visits, bound: {bound}");
+        Assert.IsTrue(free < 2 * bound, $"free: {free} visits, bound: {bound}");
 
         ParameterExpression[] ys = Enumerable.Range(0, 14).Select(i => Expression.Parameter(typeof(double), "y" + i)).ToArray();
         var limits = new ExpressionResourceLimits { MaxTransformVisits = 100_000 };
         var limited = new LevelByLevelSimplifier(limits);
         Expression freeChain = ys.Aggregate<Expression>(Expression.Subtract);
-        var refusal = Innermost(() => limited.Simplify(freeChain)) as ExpressionResourceLimitException;
-        Assert.IsNotNull(refusal, "x0 - ... - x13 (27 nodes) exceeds 100,000 visits");
+        Assert.IsNotNull(limited.Simplify(freeChain), "x0 - ... - x13 (27 nodes) fits in 100,000 visits");
         Assert.IsNotNull(limited.Simplify(Expression.Lambda(freeChain, ys)), "the bound chain stays within the same budget");
-        Assert.AreEqual(ExpressionResourceLimitKind.Work, refusal.Kind);
 
         // The built-in simplifier: the source chain is flattened (n + 1 visits) and gives the level by level result; the
-        // canonical chain it returns is not linear, and simplifying it again is still exponential.
+        // canonical chain it returns is a factorable chain, a fixed point simplified at once.
         Assert.AreEqual(xs.Length + 1, Visits(chain));
         ParameterExpression[] zs = xs.Take(8).ToArray();
         Expression small = zs.Aggregate<Expression>(Expression.Subtract);
         Expression canonical = Simplify(small);
         Assert.AreEqual(Text(new LevelByLevelSimplifier(ExpressionResourceLimits.Unlimited).Simplify(small)), Text(canonical));
         Assert.IsNotNull(new ExpressionSimplifier(limits).Simplify(freeChain), "the flattened source chain stays within the budget");
-        Assert.IsTrue(Visits(canonical) > 20 * (zs.Length + 1), $"second pass: {Visits(canonical)} visits");
+        Assert.AreEqual(Text(canonical), Text(Simplify(canonical)), "the canonical chain is a fixed point");
+        Assert.IsTrue(Visits(canonical) <= 2 * (zs.Length + 1), $"second pass: {Visits(canonical)} visits");
     }
 
     /// <summary>A derived simplifier without any member: its plan does not hold the flatten rule of the built-in type, so it keeps the level by level treatment.</summary>
     private sealed class LevelByLevelSimplifier : ExpressionSimplifier
     {
+        /// <summary>Merges identical monomials as the built-in type does (mission C3c), so that only the flatten rule differs.</summary>
+        internal override bool MergesMonomials => true;
+
         /// <summary>Initializes the simplifier.</summary>
         /// <param name="limits">The resource limits.</param>
         public LevelByLevelSimplifier(ExpressionResourceLimits limits)
@@ -505,13 +527,17 @@ public class ExpressionSimplifierDeepAuditTests
     /// without combining them (<c>x + (x + y)</c> gives <c>(x + x) + y</c>), and the power combination only sees direct operands
     /// (<c>x * (x * y)</c> is kept), so the comparer does not identify <c>x * (x * y)</c> with <c>y * x^2</c>.
     /// </summary>
+    /// <remarks>
+    /// The additive half is fixed by mission C3c: the canonicalization merges the terms holding the same factors, so
+    /// <c>x + (x + y)</c> gives <c>y + 2 * x</c> at the first pass, a fixed point. The multiplicative half is unchanged.
+    /// </remarks>
     [TestMethod]
     public void S5A09_EqualTermsGroupedButNotCombined()
     {
         var sum = Expression.Lambda<Func<double, double, double>>(Expression.Add(X, Expression.Add(X, Y)), X, Y);
         Expression once = Simplify(sum);
-        Assert.AreEqual("(x, y) => (x + x) + y", Text(once));
-        Assert.AreNotEqual(Text(once), Text(Simplify(once)), "the second pass combines the grouped terms");
+        Assert.AreEqual("(x, y) => y + (2 * x)", Text(once));
+        Assert.AreEqual(Text(once), Text(Simplify(once)), "the first pass already combines the equal terms");
 
         var product = Expression.Lambda<Func<double, double, double>>(Expression.Multiply(X, Expression.Multiply(X, Y)), X, Y);
         var power = Expression.Lambda<Func<double, double, double>>(Expression.Multiply(Y, Expression.Power(X, C(2))), X, Y);
