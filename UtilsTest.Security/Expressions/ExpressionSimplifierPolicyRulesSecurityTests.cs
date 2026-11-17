@@ -265,8 +265,10 @@ public class ExpressionSimplifierPolicyRulesSecurityTests
 
     /// <summary>
     /// The pathological nesting <c>((F() * 0) * 0) … * 0</c> with an unknown <c>F</c> makes every level analyze the operand below
-    /// it: the structural work grows quadratically with the depth but stays bounded by the budget, the default limits
-    /// accept the 400-level nesting (well below their structural budget), and the transformation work is the default's.
+    /// it: the structural work grew quadratically with the depth, bounded by the budget. Since mission C3d the canonical product
+    /// multiplies its inert constant factors once (<c>NormalizeProductFactors</c>; the unknown call keeps its place and its single
+    /// evaluation), so the work grows linearly; the default limits accept the 400-level nesting, and the transformation work is
+    /// the default's.
     /// </summary>
     [TestMethod]
     public void NestedProductsByZero_StayBounded()
@@ -279,7 +281,7 @@ public class ExpressionSimplifierPolicyRulesSecurityTests
             (long transform, long structural) = Measure(new ExpressionSimplifier(ExpressionResourceLimits.Unlimited) { Options = Permissive }, tree);
             Assert.AreEqual(defaultTransform, transform, $"depth {depth}");
             Assert.IsTrue(structural < ExpressionResourceLimits.Default.MaxStructuralVisits / 10, $"depth {depth}: {structural}");
-            if (previous > 0) Assert.IsTrue(structural > 2.5 * previous, $"depth {depth}: {structural} against {previous} (quadratic)");
+            if (previous > 0) Assert.IsTrue(structural <= 2.5 * previous, $"depth {depth}: {structural} against {previous} (linear since mission C3d)");
             previous = structural;
             new ExpressionSimplifier { Options = Permissive }.Simplify(tree);
         }

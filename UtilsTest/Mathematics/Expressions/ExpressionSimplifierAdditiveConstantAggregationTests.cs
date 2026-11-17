@@ -223,20 +223,21 @@ public class ExpressionSimplifierAdditiveConstantAggregationTests
     /// <summary>
     /// Integral sums are exact (unchecked modular arithmetic is associative) and keep their type: <see cref="short"/>
     /// wraps in <see cref="short"/>, <see cref="int"/> and <see cref="long"/> wrap, and an unsigned type keeps the sign
-    /// as the term's sign (<c>(a - 5u) + 3u</c> gives <c>(0 - 2) + a</c>, not <c>4294967294 + a</c>).
+    /// as the term's sign while summing. Since mission C3d the remaining subtracted constant is folded to its modular value
+    /// (<c>(a - 5u) + 3u</c> gives <c>4294967294 + a</c>), the form the next call folded <c>(0 - 2) + a</c> to.
     /// </summary>
     [TestMethod]
     public void Simplify_IntegralConstants_SumExactlyInTheirType()
     {
         Expression K<T>(T value) => Expression.Constant(value, typeof(T));
         Assert.AreEqual("(-32536 + a)", SimplifyAndCompare<short>(a => Expression.Add(Expression.Add(a, K((short)32000)), K((short)1000)), 1, -5000).ToString());
-        Assert.AreEqual("((0 - 2) + a)", SimplifyAndCompare<ushort>(a => Expression.Add(Expression.Subtract(a, K((ushort)5)), K((ushort)3)), 10, 1).ToString());
+        Assert.AreEqual("(65534 + a)", SimplifyAndCompare<ushort>(a => Expression.Add(Expression.Subtract(a, K((ushort)5)), K((ushort)3)), 10, 1).ToString());
         Assert.AreEqual("(2 + a)", SimplifyAndCompare<ushort>(a => Expression.Subtract(Expression.Add(a, K((ushort)5)), K((ushort)3)), 10, ushort.MaxValue).ToString());
         Assert.AreEqual("(-2147483648 + a)", SimplifyAndCompare<int>(a => Expression.Add(Expression.Add(a, K(int.MaxValue)), K(1)), 1, -5, 0).ToString());
         Assert.AreEqual("(-2 + a)", SimplifyAndCompare<int>(a => Expression.Add(Expression.Subtract(a, K(5)), K(3)), 1, int.MinValue).ToString());
-        Assert.AreEqual("((0 - 2) + a)", SimplifyAndCompare<uint>(a => Expression.Add(Expression.Subtract(a, K(5u)), K(3u)), 10u, 1u).ToString());
+        Assert.AreEqual("(4294967294 + a)", SimplifyAndCompare<uint>(a => Expression.Add(Expression.Subtract(a, K(5u)), K(3u)), 10u, 1u).ToString());
         Assert.AreEqual("(-2 + a)", SimplifyAndCompare<long>(a => Expression.Add(Expression.Add(a, K(long.MaxValue)), K(long.MaxValue)), 1L, -3L).ToString());
-        Assert.AreEqual("((0 - 18446744073709551614) + a)", SimplifyAndCompare<ulong>(a => Expression.Add(Expression.Subtract(a, K(ulong.MaxValue)), K(1ul)), 5ul, 0ul).ToString());
+        Assert.AreEqual("(2 + a)", SimplifyAndCompare<ulong>(a => Expression.Add(Expression.Subtract(a, K(ulong.MaxValue)), K(1ul)), 5ul, 0ul).ToString());
     }
 
     /// <summary>
@@ -315,17 +316,18 @@ public class ExpressionSimplifierAdditiveConstantAggregationTests
             uintSamples);
         // Mission C3c: the five constants of this factorable chain are summed at once (3, exactly), where the levels left 0 - 4294967293.
         Assert.AreEqual("(3 + a)", mixed.ToString());
-        Assert.AreEqual("((0 - 6) + a)", SimplifyAndCompare<uint>(a => Expression.Subtract(Expression.Subtract(Expression.Add(a, K(3u)), K(uint.MaxValue)), K(10u)), uintSamples).ToString());
+        // Mission C3d: the subtracted constant 6 is folded to its modular value, as the next call folded (0 - 6) + a.
+        Assert.AreEqual("(4294967290 + a)", SimplifyAndCompare<uint>(a => Expression.Subtract(Expression.Subtract(Expression.Add(a, K(3u)), K(uint.MaxValue)), K(10u)), uintSamples).ToString());
         // The pre-existing factoring of e - c into (e - c) * 1 (also on master) adds a constant 1 around the sum.
         Expression positive = SimplifyAndCompare<uint>(a => Expression.Subtract(Expression.Add(Expression.Add(a, K(uint.MaxValue)), K(uint.MaxValue)), K(1u)), uintSamples);
         Assert.IsTrue(ContainsConstant(positive, uint.MaxValue - 2), positive.ToString());
         Assert.IsFalse(ContainsConstant(positive, uint.MaxValue), $"MaxValue + MaxValue - 1 must be one constant: {positive}");
 
         ulong[] ulongSamples = [0ul, 1ul, ulong.MaxValue, ulong.MaxValue - 7];
-        Assert.AreEqual("((0 - 7) + a)", SimplifyAndCompare<ulong>(
+        Assert.AreEqual("(18446744073709551609 + a)", SimplifyAndCompare<ulong>(
             a => Expression.Add(Expression.Subtract(Expression.Add(Expression.Subtract(a, K(ulong.MaxValue)), K(ulong.MaxValue - 2)), K(9ul)), K(4ul)),
             ulongSamples).ToString());
-        Assert.AreEqual("((0 - 18446744073709551614) + a)", SimplifyAndCompare<ulong>(a => Expression.Subtract(Expression.Subtract(a, K(ulong.MaxValue)), K(ulong.MaxValue)), ulongSamples).ToString());
+        Assert.AreEqual("(2 + a)", SimplifyAndCompare<ulong>(a => Expression.Subtract(Expression.Subtract(a, K(ulong.MaxValue)), K(ulong.MaxValue)), ulongSamples).ToString());
     }
 
     /// <summary>

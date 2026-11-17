@@ -303,10 +303,11 @@ public class ExpressionSimplifierGlobalFactoringTests
         Assert.AreEqual("(4294967295 * u)", Text(new ExpressionSimplifier().Simplify(unsigned)));
         Assert.AreEqual(Expression.Lambda<Func<uint, uint>>(unsigned, u).Compile()(7u), Expression.Lambda<Func<uint, uint>>(new ExpressionSimplifier().Simplify(unsigned), u).Compile()(7u));
 
-        // The subtracted constant of a canonical sum is its negation (a fixed point), except for an unsigned type.
+        // The subtracted constant of a canonical sum is its negation (a fixed point); since mission C3d an unsigned one is folded
+        // to its modular value too, as the next call folded (0 - 5) + w.
         AssertForm(Expression.Subtract(Y, K(1)), "(-1 + y)");
         ParameterExpression w = Expression.Parameter(typeof(uint), "w");
-        Assert.AreEqual("((0 - 5) + w)", Text(new ExpressionSimplifier().Simplify(Expression.Subtract(w, Expression.Constant(5u)))));
+        Assert.AreEqual("(4294967291 + w)", Text(new ExpressionSimplifier().Simplify(Expression.Subtract(w, Expression.Constant(5u)))));
 
         // A lone subtracted constant folds as SubstractionOfConstants does, in every type.
         Assert.AreEqual("-1", Text(new ExpressionSimplifier().Simplify(Expression.Subtract(Expression.Subtract(X, X), K(1)))));

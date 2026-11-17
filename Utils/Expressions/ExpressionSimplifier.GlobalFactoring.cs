@@ -56,6 +56,14 @@ public partial class ExpressionSimplifier
     internal virtual bool MergesMonomials => GetType() == typeof(ExpressionSimplifier);
 
     /// <summary>
+    /// Whether the rules of this instance finish the nodes they rebuild (mission C3d): a reassociation rule transforms the
+    /// nodes it builds from its prepared operands, as a second call would, instead of returning them as built. The built-in
+    /// type only, like <see cref="MergesMonomials"/> (which it follows, so that the level by level references of the tests
+    /// keep matching the built-in type); a derived simplifier keeps the historical rules.
+    /// </summary>
+    internal virtual bool StabilizesRebuiltForms => MergesMonomials;
+
+    /// <summary>
     /// Merges the terms of a canonicalized sum that hold the same factors, in any order, into one term whose coefficient is
     /// the sum of theirs (mission C3c, phase A): <c>x + 2*x + 3*x</c> gives <c>6*x</c>, <c>2*a*b + 3*b*a</c> gives
     /// <c>5*(a*b)</c>, <c>x - x</c> gives nothing.
@@ -241,21 +249,24 @@ public partial class ExpressionSimplifier
 
     /// <summary>
     /// Replaces the subtracted constant of a canonicalized sum (the constants are aggregated, so it holds one at most) by its
-    /// negation, for a type with an ordinary negation (mission C3c): <c>y - 1</c> gives <c>-1 + y</c> instead of
-    /// <c>(0 - 1) + y</c>, the form the next call folded (<see cref="SubstractionOfConstants"/> on the constant pair
-    /// <c>0 - 1</c>), so the canonical sum is a fixed point.
+    /// negation (mission C3c): <c>y - 1</c> gives <c>-1 + y</c> instead of <c>(0 - 1) + y</c>, the form the next call folded
+    /// (<see cref="SubstractionOfConstants"/> on the constant pair <c>0 - 1</c>), so the canonical sum is a fixed point.
     /// </summary>
     /// <param name="terms">The inert signed terms of the sum; updated in place.</param>
     /// <param name="type">The type of the sum.</param>
+    /// <param name="unsigned">
+    /// Whether a type without an ordinary negation (the unsigned integers) folds too (mission C3d,
+    /// <see cref="StabilizesRebuiltForms"/>): <c>p - 9ul</c> gives <c>18446744073709551607 + p</c>, the modular value the next
+    /// call folded <c>(0 - 9) + p</c> to. C3c kept <c>0 - c</c> there, which no call ever left alone.
+    /// </param>
     /// <remarks>
     /// The negation is folded with <see cref="FoldConstants"/>, as the next call folds <c>0 - c</c>: exact for a
-    /// floating-point constant, modular for a signed integral one (<c>0 - MinValue</c> is <c>MinValue</c>, as at run time).
-    /// An unsigned type keeps <c>0 - c</c>: its negation is the large wrapped value that the aggregation of the constants
-    /// avoids on purpose (<see cref="AggregateAdditiveConstants"/>).
+    /// floating-point constant, modular for an integral one (<c>0 - MinValue</c> is <c>MinValue</c>, <c>0 - 1u</c> is
+    /// <c>4294967295</c>, as at run time).
     /// </remarks>
-    private static void NegateSubtractedConstant(List<(Expression Term, bool IsNegative)> terms, Type type)
+    private static void NegateSubtractedConstant(List<(Expression Term, bool IsNegative)> terms, Type type, bool unsigned)
     {
-        if (!_ordinaryNegateMethods.ContainsKey(type)) return;
+        if (!unsigned && !_ordinaryNegateMethods.ContainsKey(type)) return;
         for (int index = 0; index < terms.Count; index++)
         {
             (Expression term, bool isNegative) = terms[index];
@@ -966,6 +977,25 @@ public partial class ExpressionSimplifier
 
         Expression result = CanonicalizeAdditiveTerms(signedTerms, source.Type, recordMetadata: false, AdditiveFactoring.CommonFactors);
         return NegateSubtractedSum(result, source.Type);
+    }
+
+    /// <summary>
+    /// Whether the inert terms of a canonicalization are all subtracted, in a type with an ordinary negation (mission C3d):
+    /// the canonicalization then builds the negation of their sum, as <see cref="NegateSubtractedSum"/> does for a factorable
+    /// chain.
+    /// </summary>
+    /// <param name="terms">The inert signed terms, zeros dropped, constants aggregated and subtracted constants folded.</param>
+    /// <param name="type">The type of the sum.</param>
+    /// <returns><see langword="true"/> when there is at least one term and none is added.</returns>
+    private static bool IsNegatedSum(List<(Expression Term, bool IsNegative)> terms, Type type)
+    {
+        if (terms.Count == 0 || !_ordinaryNegateMethods.ContainsKey(type)) return false;
+        foreach ((_, bool isNegative) in terms)
+        {
+            if (!isNegative) return false;
+        }
+
+        return true;
     }
 
     /// <summary>

@@ -147,10 +147,11 @@ public class ExpressionSimplifierComparerBatchingTests
 
         // Mission C3c: the factored product is canonical, so its operands follow the canonical order of their keys.
         bool coefficientFirst = ReferenceEquals(unfoldedCoefficient, multiply.Left);
+        // Mission C3d: the coefficient x - z of the factored product is the canonical sum of the coefficients, (0 - z) + x.
         var differenceOfVariables = (BinaryExpression)(coefficientFirst ? multiply.Right : multiply.Left);
-        Assert.AreEqual(ExpressionType.Subtract, differenceOfVariables.NodeType);
-        Assert.IsTrue(ReferenceEquals(x, differenceOfVariables.Left));
-        Assert.IsTrue(ReferenceEquals(z, differenceOfVariables.Right));
+        Assert.IsTrue(ExpressionComparer.StructuralEqualsRaw(Expression.Add(Expression.Subtract(Expression.Constant(0.0), z), x), differenceOfVariables), differenceOfVariables.ToString());
+        Assert.IsTrue(ReferenceEquals(x, ((BinaryExpression)differenceOfVariables).Right));
+        Assert.IsTrue(ReferenceEquals(z, ((BinaryExpression)((BinaryExpression)differenceOfVariables).Left).Right));
         Assert.IsTrue(ReferenceEquals(unfoldedCoefficient, coefficientFirst ? multiply.Left : multiply.Right));
     }
 
@@ -217,7 +218,9 @@ public class ExpressionSimplifierComparerBatchingTests
         Expression result = simplifier.Simplify(source);
 
         AssertOpaqueSecondPassShape(result, x, z, a, b);
-        AssertFactorProbeSimplifiedUnfoldedCoefficient(() => new ExpressionSimplifier().Simplify(source));
+        // Mission C3d: the built-in type builds the canonical coefficient itself, so its outer comparison no longer simplifies the
+        // unfolded coefficient; a derived simplifier keeps the historical rules and still proves the comparison-simplification path.
+        AssertFactorProbeSimplifiedUnfoldedCoefficient(() => new MinimalDerivedSimplifier().Simplify(source));
     }
 
     // ------------------------------------------------------------------------------------------
@@ -439,7 +442,9 @@ public class ExpressionSimplifierComparerBatchingTests
         ParameterExpression otherB = Expression.Parameter(typeof(double), "b");
         var other = (LambdaExpression)simplifier.Simplify(Expression.Lambda(BuildOpaqueSecondPassSource(otherX, otherZ, otherA, otherB), otherX, otherZ, otherA, otherB));
         AssertOpaqueSecondPassShape(other.Body, otherX, otherZ, otherA, otherB);
-        AssertFactorProbeSimplifiedUnfoldedCoefficient(() => new ExpressionSimplifier().Simplify(source));
+        // Mission C3d: the built-in type builds the canonical coefficient itself, so its outer comparison no longer simplifies the
+        // unfolded coefficient; a derived simplifier keeps the historical rules and still proves the comparison-simplification path.
+        AssertFactorProbeSimplifiedUnfoldedCoefficient(() => new MinimalDerivedSimplifier().Simplify(source));
     }
 
     /// <summary>Builds <c>((a + b)*x - b*x) + a*z</c>, whose inner factoring yields the unfolded coefficient <c>(a + b) - b</c>.</summary>
@@ -454,8 +459,9 @@ public class ExpressionSimplifierComparerBatchingTests
             Expression.Multiply(a, z));
 
     /// <summary>
-    /// Asserts <c>(x + z) * ((a + b) - b)</c>: the factored variables in source order, and the coefficient exactly as
-    /// the inner factoring built it, which the simplifier would have reduced to <c>a</c>.
+    /// Asserts <c>a * (x + z)</c>: before mission C3d the result was <c>(x + z) * ((a + b) - b)</c>, the coefficient exactly as
+    /// the inner factoring built it, which only the next call reduced to <c>a</c>; the inner factoring now builds the canonical
+    /// coefficient <c>a</c> itself.
     /// </summary>
     /// <param name="result">The simplified expression.</param>
     /// <param name="x">The expected left variable.</param>
@@ -464,19 +470,12 @@ public class ExpressionSimplifierComparerBatchingTests
     /// <param name="b">The expected cancelling coefficient parameter.</param>
     private static void AssertOpaqueSecondPassShape(Expression result, ParameterExpression x, ParameterExpression z, ParameterExpression a, ParameterExpression b)
     {
-        var multiply = (BinaryExpression)result;
-        Assert.AreEqual(ExpressionType.Multiply, multiply.NodeType, result.ToString());
-        var sumOfVariables = (BinaryExpression)multiply.Left;
-        Assert.AreEqual(ExpressionType.Add, sumOfVariables.NodeType);
-        Assert.IsTrue(ReferenceEquals(x, sumOfVariables.Left));
-        Assert.IsTrue(ReferenceEquals(z, sumOfVariables.Right));
-        var coefficient = (BinaryExpression)multiply.Right;
-        Assert.AreEqual(ExpressionType.Subtract, coefficient.NodeType, "The coefficient must be the unfolded (a + b) - b built by the inner factoring.");
-        var sum = (BinaryExpression)coefficient.Left;
-        Assert.AreEqual(ExpressionType.Add, sum.NodeType);
-        Assert.IsTrue(ReferenceEquals(a, sum.Left));
-        Assert.IsTrue(ReferenceEquals(b, sum.Right));
-        Assert.IsTrue(ReferenceEquals(b, coefficient.Right));
+        // Mission C3d: the inner factoring builds the canonical coefficient of (a + b) - b, which is a, so the outer factoring
+        // gives a * (x + z) in the first pass; the factor probe still simplified the unfolded coefficient for its comparison
+        // (AssertFactorProbeSimplifiedUnfoldedCoefficient), which is what these scenarios prove.
+        Assert.IsTrue(ExpressionComparer.StructuralEqualsRaw(Expression.Multiply(a, Expression.Add(x, z)), result), result.ToString());
+        Assert.IsTrue(ReferenceEquals(a, ((BinaryExpression)result).Left));
+        Assert.IsFalse(ReferenceEquals(b, ((BinaryExpression)result).Left), "the cancelling coefficient b is gone");
     }
 
     /// <summary>
