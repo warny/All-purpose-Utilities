@@ -1242,7 +1242,8 @@ the dispatcher level by level: the guarantee comes from the admission, not from 
   constant is folded (`0 - 1 → -1`, in every type); an unsigned type keeps `0 - t`.
 - `0 - t` stays the representation of a subtracted group inside a sum (S5 P10), except for a constant of a type with an
   ordinary negation, which is folded into its negation in every canonicalization of the built-in type (`y - 1` gives
-  `-1 + y`, the form the next call folded from `(0 - 1) + y`; `NegateSubtractedConstant`); an unsigned type keeps `0 - c`.
+  `-1 + y`, the form the next call folded from `(0 - 1) + y`; `NegateSubtractedConstant`); an unsigned type kept `0 - c` until
+  mission C3d, which folds it to its modular value too (§14.3, F6).
 
 ### 13.7 Idempotence
 
@@ -1371,10 +1372,267 @@ C3b) now goes through the analysis of the terms and one factoring round (the rep
 - Phase B only factors the factors present in the terms: it never recognizes a sum as a factor of another term, which is why a
   term holding a sum refuses the chain (`x + y + a*(x + y)` keeps the levels, whose binary rule gives `(1 + a)*(x + y)`); powers
   are never split (`x^2 + x*y` stays).
-- A coefficient produced by the binary factoring on a non-factorable chain is still left for the next pass
-  (`x*y + (1 - x)*y` gives `y*(x + (1 + (0 - x)))`, S5 P14).
+- A coefficient produced by the binary factoring on a non-factorable chain was still left for the next pass
+  (`x*y + (1 - x)*y` gave `y*(x + (1 + (0 - x)))`, S5 P14); since mission C3d it is canonical and the product is `y` (§14.3).
 - A shared sub-chain beyond the revisit allowance, a chain holding a non-inert call, a division, a logarithm or a constant pair
   keeps the level by level treatment (with phase A at each level).
 - Derived simplifiers keep their historical results; the factorable family and phase A are reserved to the built-in type.
 - Free parameters of one type still tie in the canonical order (S4): a sum of free parameters may keep an order that depends on
   the source; bound parameters order by their scope.
+
+## 14. Stabilization, idempotence and performance (mission C3d)
+
+Mission C3d starts from master `b7ab5917` (C3c merged) and develops no new factoring family. Its goal is that one public call
+returns the tree a second call returns, wherever the existing rules allow it without changing any permitted behavior, and that
+the allocations C3c added go down. The baseline is a separate worktree of `b7ab5917`; every figure below compares the branch
+with it, never the branch with itself.
+
+### 14.1 Audit tool: the `stability` campaign (C3d.1)
+
+`tests/ExpressionSimplifierAudit` gains the command `stability` (`Campaigns.Stability.cs`). For every case:
+
+1. `E`, `S(E)`, `S(S(E))`, … are computed up to a fixed point, a cycle, an error or eight passes; forms are compared by the
+   strict structural signature of the harness (`StrictForm`), never by a hash.
+2. When one pass does not stabilize, the smallest subtree of `S(E)` that the second pass rewrites is located by a parallel walk
+   of both trees (the *residue*), and the second pass is traced: the first rule whose output differs structurally from its
+   input is the *responsible rule*.
+3. The *family* of the case is the responsible rule and the shapes of the residue before and after, leaves abstracted
+   (parameters renamed by first occurrence, constants other than `0`, `1`, `-1`, `2` printed `c`).
+4. The first cases of each family are reduced: a node is replaced by a child, a parameter or the constant `0`, `1` or `2` of its
+   own type, while the case keeps its kind (cycle or not stable) and its responsible rule. Every candidate is rebuilt by the
+   framework factories, so the reduction never changes a type or an operator.
+
+`Campaigns.RunStability` takes any case source and simplifier, so the external harness ran it on the differential corpus of
+C3b/C3c (40,000 cases, default policy; 15,000 per explicit policy and for a derived simplifier). On `b7ab5917` it reproduces
+the documented baseline exactly: 63,399 cases stable after one pass and 100 cycles on `converge`, 6,190 non-idempotent cases on
+the corpus.
+
+### 14.2 Families and root causes (baseline)
+
+`converge` (3,507 cases not stable after one pass, 100 cycles) and the corpus (6,190 cases, 598 cycles), by responsible rule:
+
+| Family (residue → second pass) | converge | corpus | Cause | Category of the brief | Decision |
+|---|---:|---:|---|---|---|
+| `(c - a) - t` ↔ `c + ((0 - a) + (0 - t))` (period 2) | 989 (64 cycles) | 3,580 (565 cycles) | `SubstractionWithAddition`/`SubstractionWithSubstraction` return the nodes they build untransformed; the next call canonicalizes them, and a canonical chain refused by the admission is rewritten back by the sign rules | rebuilt subtraction, binary rules × Flatten | corrected (F1) |
+| `(c1 - c2) - a` | 889 | 2,545 (unsigned) | same unfinished reassociation (an unfolded constant pair); for an unsigned type the canonical `(0 - c) + t` | unfinished coefficient, numeric type | corrected (F1, F6) |
+| `0 - t`, `(0 - a) + (0 - b)` | ≈ 210 | — | an all-subtracted canonical sum written `0 - t`, which `SubstractionWithZero` rewrites | rebuilt negation | corrected (F2) |
+| `t / 1`, `(-a) / b`, `t / -1` | 1,075 | — | `DivisionOfDivision` returns its division untransformed | specialized rule (not C3) | corrected (F3), local |
+| `c * (c * a)`, `c * -a`, `1 * a`, `-1 * a` | ≈ 230 | — | the canonical product only orders its factors; the commutation and the constant combination return their product untransformed | multiplicative canonicalization | corrected (F4) |
+| `y * (x + (1 + (0 - x)))`, `y * (1 + (y - z))`, `1 * -2` | ≈ 140 | 23 | the coefficient of the binary factoring is built raw (`BuildFactoredProduct`) | unfinished coefficient | corrected (F5) |
+| `(0 - a) + ((0 - b) + R)` ↔ `(0 - b) + ((0 - a) + R)` | 16 | 304 (256 cycles) | two free parameters of one type tie in the canonical order (S4) and keep their collection order, which the level path changes | additive reorganization | **kept, decision required** (§14.7) |
+| `a + a*b → a*(1 + b)` at the second call | ≈ 100 | ≈ 470 | the factorable admission depends on the source shape (a constant pair such as `2 + 0`, a sum factor); the second call admits the chain and factors it | admission × Flatten | deferred (§14.7) |
+| `x / (NaN * y) → NaN`, `-(NaN / x)` | ≈ 120 | — | the policy-dependent `NaN` fold of the next preparation (S5 P18 C2b) | particular numeric type, policy | kept |
+| `x * (y * y) → x * y²`, `2 * 2^x → 2^(1 + x)`, `(1/x) + (1/x)` | ≈ 25 | — | `MultiplicationOfEqualsElements`, `PowerByZeroOrOne` after a canonicalization | specialized rule (not C3) | deferred |
+| `x^x + x^y` throws `NullReferenceException` | 978 errors | — | `AdditionOfCos2andSin2Number` dereferences a non-constant exponent (pre-existing, S5A-01) | not C3 | deferred, separate fix |
+
+### 14.3 Corrections (C3d.2)
+
+All the corrections apply to the built-in type only (`StabilizesRebuiltForms`, which follows `MergesMonomials`, so that the
+level by level references of the tests match the built-in type); derived simplifiers keep the historical rules.
+
+- **F1, finished reassociations.** `SubstractionWithAddition` and `SubstractionWithSubstraction` transform the two nodes they
+  rebuild from their prepared operands (`FinishReassociation`, through `TransformCoreWithPreparedOperands`: rules and
+  finalization, one transformation visit each, no second preparation). One finishing step, not a loop.
+- **F2, negated sums.** A canonical sum whose inert terms are all subtracted, in a type with an ordinary negation, is the
+  negation of their sum (`IsNegatedSum`): the form `SubstractionWithZero` and `SubstractionWithNegate` give.
+- **F3, finished nested divisions.** `DivisionOfDivision` transforms the division it builds (`FinishDivision`).
+- **F4, normalized products.** The canonical product moves the ordinary negations of its inert factors out and multiplies its
+  inert constant factors once (`NormalizeProductFactors`; a resulting `1` is dropped, `-1` becomes the sign, `0` is kept); the
+  commutation `t * c → c * t` and the two constant combinations transform the product they build when it is one the next
+  call rewrote (`FinishProduct`).
+- **F5, canonical coefficients.** The coefficient of a binary factoring is the canonical sum of the terms of both coefficients
+  (`CanonicalizeFactoredCoefficient`), negated as a whole when all its terms are subtracted (the sign the levels and the global
+  factoring give such a group); a constant coefficient of a constant factor is folded. Only a coefficient that holds a
+  subtraction, a negation or two constants is canonicalized (`HasAdditiveNegation`, `CountAdditiveConstants`, both without
+  allocation): a sum of added terms keeps the historical node, since canonicalizing a coefficient that grows by one term per
+  level made the `dag` family quadratic in allocations (§14.8).
+- **F6, unsigned subtracted constants.** The subtracted constant of an unsigned canonical sum is folded to its modular value
+  (`p - 9ul` gives `18446744073709551607 + p`), as `SubstractionOfConstants` folded `(0 - 9) + p` at the next call. This
+  reverses a C3c choice (which kept `0 - c` for readability, a form no call ever left alone).
+
+Guards found by the test suites and kept:
+
+- The finishing re-entries run only on inert, finite arithmetic (`FinishesRebuilt`, `IsFinishableOperand`): on an opaque
+  constant, a call, a member access or a decimal, the re-entered rules compared operands and added user `Equals` calls and
+  comparer simplifications the S5 P15/P16 tests pin; on a `NaN` or an infinity they anticipated the policy-dependent `NaN` fold.
+  Those cases keep the nodes as built.
+- Decimal sums and products are never reassociated (their operators throw on overflow).
+- `FinishProduct` finishes only the shapes the next call rewrote; finishing a plain `c * t` re-ran the comparing rules.
+
+### 14.4 Representation invariants
+
+1. **Factors**: inert factors in canonical key order, pinned factors after them in source order; numeric constant factors of
+   one type folded into one, first; ordinary negations moved out of the product (`-(c * a)`, the fixed point of
+   `MultiplicationWithNegate`).
+2. **Terms**: inert terms in canonical order (ties of free parameters keep their collection order, S4), pinned terms after
+   them; right-associated.
+3. **Numeric coefficient**: on the left of the product (`c * a`).
+4. **Implicit coefficients**: `1` never written; `-1` written as a negation or a subtracted term.
+5. **Zero coefficients**: the term is dropped; a zero constant factor is kept until `CanDropOperand` allows the rules to drop the
+   other factors.
+6. **Negations**: a subtracted term inside a sum is `0 - t`; a sum whose terms are all subtracted is `-(sum)`; a product is
+   `-(product)`.
+7. **Subtractions**: a subtracted constant is folded into a negative (signed types) or modular (unsigned types) constant.
+8. **Factored products**: the canonical product of the factor and of the canonical coefficient.
+
+No result is promoted to `CanonicalizationState.Canonical`: the fixed point is measured, not proven, and the residual families of
+§14.7 show it does not hold everywhere.
+
+### 14.5 Optimizations (C3d.3)
+
+- **O1.** `FactorCommonFactors` builds its monomials from the `AdditiveTermAnalysis` that `MergeIdenticalMonomials` computed for
+  the same terms (`FactoringMonomial.FromAnalysis`); only the merged terms are decomposed again.
+- **O3.** `GroupByFactors` chains the representatives of a hash bucket through an index array instead of one list per bucket.
+- Not done: a dedicated path for very small sums (`x+x+x` keeps its 3.64 KB, the analysis arrays): the measured gain did not
+  justify a second merging path. The repeated per-round dictionaries of `FindBestCandidate` stay (one round in every measured
+  family but `wide`, §14.8).
+
+### 14.6 Validation
+
+**Suites**: Unit 14,717 passed (1 skipped), Security 392 (3 skipped), Functional 383, ETC Debug (`Coverage`) green. New:
+`ExpressionSimplifierStabilityTests` (10 tests: each corrected family reaches a structural fixed point in one call under every
+policy, with its values; derived simplifier unchanged; decimal product not reassociated; unsigned fold; budget refusal).
+Updated with their reason: the unsigned forms (F6), S5A-05 (the multiplicative cases now finish in one pass, and the comparer
+identifies them with their result), AUD-03 and P14 (stable in one pass), `negatedChainCancels` (distinct parameters of the same
+names: one canonical chain), the comparer-batching scenarios (the built-in type builds the canonical coefficient itself; the
+probe path is proven with a derived simplifier), and `NestedProductsByZero_StayBounded` (the structural work is now linear in
+the depth: 398 then 798 visits, instead of quadratic).
+
+**S5 campaigns** (`b7ab5917` against the branch, default policy):
+
+| Campaign | b7ab5917 | C3d | Classification |
+|---|---|---|---|
+| `converge` (70,420) | `fixed@1` 63,399; cycles 100 | `fixed@1` 66,552; cycles 54 | stabilization; the remaining cycles hold a call (`Log`) or a non-finite constant, or are free-parameter ties |
+| `comparer` | `Equals(a,b) == Equals(S(a),S(b))`: 0 violations; 4 exceptions | 0 violations; 1 exception | 3 integral zero divisors the first pass now proves (§14.6 below); the remaining one is the `AdditionOfCos2andSin2Number` defect |
+| `canon` | identical | identical | — |
+| `diff` | no exception added, removed or changed | same; only the `double` and `float` rows move, by at most six cases, between latitude classes (`same`, `rounding`, `signedZero`, `extreme`); every exception column is unchanged | symbolic-equivalence latitude |
+| `effects` | identical | identical | — |
+| `s3` | `x / (1/x)` gives `(x ** 2) / 1` | `x ** 2` | stabilization, same value classes |
+| `terminate` | 975 exceptions (S5A-01); largest visit count 218 | 974; 382 | the finishing re-entries; well within the budgets |
+
+**Exception difference explained.** On `b7ab5917` the first pass left an integral zero divisor unproved
+(`1 / (x - (x - (0 - 2)))`, that is `1 / -2`, `0` for `int`), and the comparer's own simplification of that result threw. The
+first pass now finishes the reassociation and proves the divisor, so `Simplify` throws `DivideByZeroException` one call
+earlier, as `DivideWithZeroOrOne` already does on a proven integral zero divisor and as the source does at every evaluation.
+
+**Differential corpus.** Every branch result is compared with `b7ab5917` and evaluated against its source on twelve samples:
+
+| Policy | same | new form, same values | rounding | value or exception difference | non-idempotent b7ab5917 → C3d |
+|---|---:|---:|---:|---:|---:|
+| default (40,000) | 34,353 | 4,189 | 1,458 | **0** | 6,190 → 782 |
+| each explicit policy (15,000) | 12,865 | 1,590 | 545 | **0** | 2,347 → 322 |
+| derived simplifier (15,000) | 15,000 | 0 | 0 | **0** | unchanged |
+
+The explicit policies give identical classes (the operands are inert; the four policies were identical before the last change of F5, and `TrustDeclarations` was measured again after it); the derived simplifier keeps its results exactly.
+
+### 14.7 Residual cycles and non-idempotence, and why
+
+- **Free-parameter ties (304 corpus cases, 256 cycles; 16 converge cycles).** Two distinct free parameters of one type have no
+  canonical order (S4, documented in `ExpressionCanonicalOrder`); the stable sort keeps their collection order, and a second
+  call that takes the level path collects them in another order. Ordering them by name would remove the cycles but would invent
+  an order the S4 design deliberately refuses; this is left to a decision.
+- **Admission-dependent factoring (≈ 470 corpus cases).** A constant pair in the source (`(p0*p1) + (p0 + (2 + 0))`) or a term
+  with a sum factor refuses the factorable family, so phase B does not run; the second call sees `2 + (p0 + p0*p1)`, admits it
+  and factors `p0`. Admitting constant pairs would revisit the exactness decisions of C3c (signed zeros).
+- **Finishing left out on purpose.** Calls (`Log`, `Sin`), opaque constants, decimals and non-finite constants keep their
+  nodes as built (§14.3); the `NaN` family stays with the policy.
+- **Specialized rules** (`MultiplicationOfEqualsElements`, the reciprocal powers): outside C3, deferred.
+- **`AdditionOfCos2andSin2Number`** throws `NullReferenceException` on `x^x + x^y` (978 `converge` errors, pre-existing): a
+  one-line guard, deferred to a separate fix.
+- **Pre-existing explosion outside C3**: a subtraction chain of division terms (`1 - x1/x0 - x2/x0 - …`, never admitted)
+  costs 7.7 ms at 16 terms and 1.4 s at 64 on `b7ab5917` as on the branch (§14.9).
+
+The simplifier is therefore **not** globally idempotent or canonical.
+
+### 14.8 Growth of the partial factorings (phase E)
+
+Harness mode `growth` (one process per binary, CPU affinity fixed, machine idle): families of 8 to 512 terms; time (median of
+seven rounds), allocations, structural visits (bisection of the public limits), the factoring counters and the size of the
+result. Families: `shared` (`a_i * x`), `none` (`a_i * b_i`), `crossed` (`x*a_i + y*a_i`), `ties` (`a_i * a_(i+1)`, every
+factor in two terms), `repeated` (`(a_i * a_i) * x`), `wide` (six factors per term, one shared), `collide` (free parameters of
+one type hash alike), `dag` (one shared instance of `(u + v)` as a factor of every term), `coefshared` (constant coefficients).
+
+| Family, 512 terms | b7ab5917 µs | C3d µs | b7ab5917 KB | C3d KB | structural visits (both) | rounds | factor comparisons | result nodes (both) |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| `shared` | 1,102 | 988 | 1,888 | 1,667 | 26,055 | 2 | 2,560 | 1,025 |
+| `none` | 744 | 792 | 905 | 905 | 32,038 | 0 | 0 | 2,047 |
+| `crossed` | 1,192 | 1,107 | 1,886 | 1,669 | 31,973 | 6 | 3,086 | 515 |
+| `ties` | 20,439 | 20,028 | 60,933 | 60,748 | 1,280,854 | 513 | 394,496 | 1,535 |
+| `repeated` | 4,778 | 4,699 | 3,697 | 3,475 | 65,826 | 2 | 2,048 | 2,049 |
+| `wide` | 17,962 | 17,769 | 15,760 | 15,539 | 177,168 | 4 | 6,800 | 4,003 |
+| `collide` | 21,682 | 19,561 | 60,472 | 60,288 | 1,283,552 | 507 | 391,403 | 1,541 |
+| `dag` | 28,352 | 34,390 | 19,511 | 19,511 ¹ | 682,747 | 0 | 0 | 1,027 |
+| `coefshared` | 1,363 | 1,426 | 1,744 | 1,698 | 14,276 | 1 | 257 | 1,027 |
+
+¹ Before the restriction of F5 (§14.3) the branch took 73,199 µs, 111,805 KB and 2,664,361 structural visits on `dag 512`
+(a canonicalization of the growing coefficient at every level); after it the structural visits are those of `b7ab5917` at every
+size, and the remaining time difference (+7 % at 64 terms, +21 % at 512) is the allocation-free scan of the coefficient.
+
+- Every family keeps the structural visits and the result of `b7ab5917` at every size (the corrections of C3d do not apply to
+  these sums of products), and the allocations go down by up to 12 % (O1, O3).
+- **Linear**: `shared`, `none`, `crossed`, `repeated`, `wide`, `coefshared`: a constant number of rounds (one per shared
+  candidate), comparisons linear in the factors.
+- **Quadratic, unchanged from C3c**: `ties` and `collide`, where every factor is shared by exactly two terms: each round factors
+  one pair and indexes every factor again, so the rounds grow with `n` and the comparisons as `1.5 n²` (394,496 at 512). Every
+  indexed factor consumes one structural visit, so the work stays under the budget (the default limits refuse such a chain
+  instead of running away). An incremental index (updating the candidate counts of the terms a round removes instead of
+  re-indexing) would make it linear; it is a change of the phase B algorithm, left to a later mission.
+- **Quadratic, level by level (not admitted)**: `dag` (its factor is a sum, which the factorable admission refuses): the binary
+  factoring rebuilds the product at every level, as on `b7ab5917`.
+
+### 14.9 Measures
+
+**BenchmarkDotNet** 0.14.0, in process, 8 warmup and 20 measured iterations, four processes run one after the other with the same
+CPU affinity (performance cores) on an idle machine: `b7ab5917`, branch, `b7ab5917`, branch. The two processes of one binary
+differ by less than 4 %; the table compares the faster process of each side (before the last restriction of F5, which only
+concerns the binary factoring of non-admitted chains and changes none of these cases' visits).
+
+| Case | b7ab5917 µs | C3d µs | Time | b7ab5917 KB | C3d KB | Allocated |
+|---|---:|---:|---:|---:|---:|---:|
+| `a+b` | 0.91 | 0.92 | +0.8 % | 2.47 | 2.47 | 0.0 % |
+| `x+x+x` | 2.12 | 2.12 | 0.0 % | 3.65 | 3.64 | −0.3 % |
+| `repeated 16` | 10.00 | 9.57 | −4.3 % | 24.57 | 21.96 | −10.6 % |
+| `repeated 48` | 27.59 | 26.12 | −5.3 % | 69.87 | 60.03 | −14.1 % |
+| `repeated 512` | 306.27 | 292.27 | −4.6 % | 735.55 | 627.03 | −14.8 % |
+| `coef 8` | 33.07 | 33.21 | +0.4 % | 46.85 | 44.66 | −4.7 % |
+| `coef 24` | 87.21 | 86.31 | −1.0 % | 120.02 | 114.81 | −4.3 % |
+| `coef 128` | 437.81 | 437.02 | −0.2 % | 595.89 | 569.71 | −4.4 % |
+| `tail 48` | 40.15 | 39.76 | −1.0 % | 96.74 | 85.94 | −11.2 % |
+| `tail 512` | 460.89 | 443.17 | −3.8 % | 987.33 | 869.66 | −11.9 % |
+| `twice 48` | 36.05 | 34.52 | −4.2 % | 73.06 | 66.45 | −9.0 % |
+| `cancel 128` | 64.99 | 60.97 | −6.2 % | 163.89 | 142.30 | −13.2 % |
+| `linear 200` | 60.48 | 61.86 | +2.3 % | 121.91 | 121.91 | 0.0 % |
+| `sinMid 16` | 10.50 | 10.11 | −3.7 % | 24.70 | 21.76 | −11.9 % |
+| `mixed 8` | 25.62 | 25.50 | −0.5 % | 29.39 | 28.44 | −3.2 % |
+| `mixed 32` | 106.49 | 105.28 | −1.1 % | 117.31 | 110.03 | −6.2 % |
+| `partial 32` | 70.58 | 71.59 | +1.4 % | 108.27 | 103.07 | −4.8 % |
+| `cross 32` | 76.14 | 74.68 | −1.9 % | 130.56 | 118.89 | −8.9 % |
+| `cycReassoc` (`(1 - y) - x/z`) | 8.55 | 8.48 | −0.8 % | 12.13 | 11.96 | −1.4 % |
+| `cycConstPair` (`2 - (x - 0.5)`) | 2.29 | 2.28 | −0.3 % | 3.82 | 3.82 | 0.0 % |
+| `cycNestedDiv` (`x / (1/x)`) | 3.09 | 3.42 | **+10.6 %** | 2.81 | 2.86 | +1.8 % |
+| `cycProduct` (`(x * -2) * -2`) | 1.00 | 1.66 | **+65.6 %** | 1.58 | 2.73 | +72.8 % |
+| `cycCoefficient` (`x*y + (1 - x)*y`) | 10.88 | 10.61 | −2.5 % | 11.51 | 12.93 | +12.3 % |
+| `subChain 16` (`1 - x1/x0 - … - x16/x0`) | 7,670 | 8,498 | **+10.8 %** | 7,214 | 7,423 | +2.9 % |
+| `subChain 64` | 1,405,723 | 1,361,545 | −3.1 % | 1,148,802 | 1,024,074 | −10.9 % |
+
+- The families C3c optimized keep their gains; their allocations go down by 4 to 15 % (O1, O3) and their time by up to 6 %.
+- The three regressions are the price of the finishing step on tiny or level by level trees, and each is justified: `cycProduct`
+  reaches `4 * x` in one call where `b7ab5917` needed two (`-2 * (-2 * x)` first, 2.00 µs for both calls), likewise
+  `cycNestedDiv` (`x ** 2` instead of `(x ** 2) / 1`); `subChain 16` runs the finishing re-entries and their operand scans at
+  every level of a chain that the admission refuses (+3 % transformation visits, +9 % structural visits).
+- `x+x+x` keeps its allocations (§14.5). `subChain 64` shows a pre-existing super-linear cost of the non-admitted subtraction
+  chains of divisions (7.7 ms at 16 terms, 1.4 s at 64, on both binaries): outside the C3 families, to be studied separately.
+
+**Deterministic counters** (harness mode `counters`, transformation and structural visits by bisection of the public limits):
+identical to `b7ab5917` on every scenario of the mission (`a+b` to `cross 32`, results identical as well); `cycNestedDiv` and
+`cycProduct` take one more transformation visit (the finishing step) and reach their second-pass result; `cycCoefficient` takes
+five structural visits fewer (57 → 52); `subChain 16` takes 6,934 transformation visits instead of 6,724 and 73,776 structural
+visits instead of 67,715.
+
+### 14.10 Possible next steps
+
+- A decision on the free-parameter ties (§14.7): order them by name as a last resort, or keep the S4 policy.
+- An incremental candidate index for phase B (§14.8, `ties`/`collide`).
+- The admission of constant pairs and of sum factors by the factorable family, with their exactness proofs.
+- The `AdditionOfCos2andSin2Number` guard and the cost of the non-admitted division chains.
+

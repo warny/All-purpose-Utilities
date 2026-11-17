@@ -2433,6 +2433,18 @@ namespace Utils.Mathematics.Expressions
             Type type = leftCoefficient.Type;
             if (rightCoefficient.Type != type || !IsInertArithmeticType(type)) return null;
 
+            // Only a coefficient the canonicalization can change beyond the order of its terms is canonicalized: one holding a
+            // subtraction or a negation (a cancellation, the 0 - t form, a negated group) or two constants. A sum of added
+            // terms keeps the historical node: on a long chain whose factor repeats (the dag family of §14.8) the coefficient
+            // grows by one term per level, and canonicalizing it at every level made the factoring quadratic in allocations.
+            if (nodeType != ExpressionType.Subtract
+                && !HasAdditiveNegation(leftCoefficient)
+                && !HasAdditiveNegation(rightCoefficient)
+                && CountAdditiveConstants(rightCoefficient, type, CountAdditiveConstants(leftCoefficient, type, 0)) < 2)
+            {
+                return null;
+            }
+
             var terms = new List<(Expression Term, bool IsNegative)>(4);
             CollectAdditiveTerms(terms, leftCoefficient, false);
             CollectAdditiveTerms(terms, rightCoefficient, nodeType == ExpressionType.Subtract);
@@ -3450,6 +3462,26 @@ namespace Utils.Mathematics.Expressions
             {
                 return false;
             }
+        }
+
+        /// <summary>
+        /// Whether an ordinary subtraction or negation is reachable from <paramref name="expression"/> through ordinary
+        /// additions, without allocating (mission C3d, <see cref="CanonicalizeFactoredCoefficient"/>).
+        /// </summary>
+        /// <param name="expression">A coefficient of a factored sum.</param>
+        /// <returns><see langword="true"/> when a term of the coefficient is subtracted or negated.</returns>
+        private static bool HasAdditiveNegation(Expression expression)
+        {
+            // Recursive helper: guard the execution stack (ETC R1a-Security).
+            ExpressionResourceBudget.EnsureStack();
+            return expression switch
+            {
+                BinaryExpression { NodeType: ExpressionType.Subtract } subtraction when IsOrdinaryBinaryArithmetic(subtraction) => true,
+                BinaryExpression { NodeType: ExpressionType.Add } addition when IsOrdinaryBinaryArithmetic(addition)
+                    => HasAdditiveNegation(addition.Left) || HasAdditiveNegation(addition.Right),
+                UnaryExpression unary => IsOrdinaryUnaryNegate(unary),
+                _ => false,
+            };
         }
 
         /// <summary>
