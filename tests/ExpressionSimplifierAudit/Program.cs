@@ -23,6 +23,7 @@ public static class Program
           inventory                 rule inventory, static graph (add --edges <file> for the dynamic graph)
           terminate                 termination campaign over the structural corpus (writes terminate-edges.tsv)
           converge                  convergence campaign (repeated public passes)
+          stability                 C3d.1 stability campaign: residues, responsible rules, families, reduced cases
           canon                     canonicalization campaign
           comparer                  comparer and canonical-order invariants
           diff                      differential campaign over several numeric types
@@ -118,6 +119,7 @@ public static class Program
                 return anomalies;
             },
             "converge" => w => Campaigns.Converge(campaign, w),
+            "stability" => w => Campaigns.Stability(campaign, w),
             "canon" => w => Campaigns.Canonicalize(w),
             "comparer" => w => Campaigns.ComparerInvariants(campaign, w),
             "diff" => w => Campaigns.Differential(campaign, w),

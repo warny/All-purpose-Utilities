@@ -329,7 +329,9 @@ public class ExpressionSimplifierNumericChainGrowthTests
     [TestMethod]
     [DataRow("negatedLeftCancels", "0")]
     [DataRow("negatedRightCancels", "0")]
-    [DataRow("negatedChainCancels", "((((0 - (3 * x1)) + ((0 - (4 * x2)) + ((0 - (5 * x3)) + ((0 - (6 * x4)) + (100 * x0))))) - (0 - (3 * x1))) - ((0 - (4 * x2)) + ((0 - (5 * x3)) + ((0 - (6 * x4)) + (100 * x0)))))")]
+    // Mission C3d: the two chains hold distinct parameters of the same names, so nothing cancels; the reassociations now finish
+    // their nodes, so the sum is one canonical chain instead of the unfinished reassociation the next call flattened.
+    [DataRow("negatedChainCancels", "((0 - (3 * x1)) + ((3 * x1) + ((0 - (4 * x2)) + ((4 * x2) + ((0 - (5 * x3)) + ((5 * x3) + ((0 - (6 * x4)) + ((6 * x4) + ((0 - (100 * x0)) + (100 * x0))))))))))")]
     [DataRow("sumMinusPart", "a")]
     [DataRow("differencePlusPart", "a")]
     [DataRow("plusZero", "0")]

@@ -283,7 +283,8 @@ public class ExpressionSimplifierDeepAuditTests
     /// </summary>
     /// <remarks>
     /// Since mission C3c the additive cases are factorable chains, simplified at once from all their terms: they cancel in the
-    /// first pass, so the comparer identifies them with their result. The multiplicative cases are unchanged.
+    /// first pass, so the comparer identifies them with their result. Since mission C3d the commutation finishes the product it
+    /// builds (<c>FinishProduct</c>), so the multiplicative cases reach their second-pass form in the first pass too.
     /// </remarks>
     [TestMethod]
     public void S5A05_RuleResultsLeftForTheNextPass()
@@ -292,8 +293,8 @@ public class ExpressionSimplifierDeepAuditTests
         [
             (Expression.Subtract(Expression.Add(X, Y), Expression.Add(X, Y)), "0", "0"),
             (Expression.Subtract(Expression.Subtract(C(3), Z), Expression.Subtract(C(3), Z)), "0", "0"),
-            (Expression.Multiply(Expression.Negate(X), C(2)), "2 * (-x)", "-(2 * x)"),
-            (Expression.Multiply(Expression.Multiply(C(2), X), C(3)), "3 * (2 * x)", "6 * x"),
+            (Expression.Multiply(Expression.Negate(X), C(2)), "-(2 * x)", "-(2 * x)"),
+            (Expression.Multiply(Expression.Multiply(C(2), X), C(3)), "6 * x", "6 * x"),
         ];
 
         foreach ((Expression source, string first, string second) in cases)
@@ -304,7 +305,7 @@ public class ExpressionSimplifierDeepAuditTests
         }
 
         Assert.IsTrue(ExpressionComparer.Default.Equals(cases[0].Source, C(0)), "mission C3c: the first pass cancels");
-        Assert.IsFalse(ExpressionComparer.Default.Equals(cases[3].Source, Expression.Multiply(C(6), X)), "the multiplicative case still needs a second pass");
+        Assert.IsTrue(ExpressionComparer.Default.Equals(cases[3].Source, Expression.Multiply(C(6), X)), "mission C3d: the multiplicative case is finished in the first pass");
         Assert.AreEqual("0", Text(Simplify(Expression.Subtract(X, X))), "control: a direct difference cancels");
     }
 

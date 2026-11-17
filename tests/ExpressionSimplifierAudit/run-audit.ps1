@@ -22,7 +22,7 @@
 param(
     [string] $UtilsRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path,
     [string] $OutputRoot = (Join-Path (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path 'artifacts\s5-audit'),
-    [ValidateSet('inventory', 'terminate', 'converge', 'canon', 'comparer', 'diff', 'effects', 's3', 'complexity')]
+    [ValidateSet('inventory', 'terminate', 'converge', 'stability', 'canon', 'comparer', 'diff', 'effects', 's3', 'complexity')]
     [string[]] $Campaigns = @('terminate', 'inventory', 'converge', 'canon', 'comparer', 'diff', 'effects', 's3', 'complexity'),
     [int] $Seeds = 4000,
     [int] $Nested = 4000,

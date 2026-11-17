@@ -57,8 +57,8 @@ public class ExpressionSimplifierRuleTerminationTests
     /// The four audit reproducers (and the differences that started the loop) terminate, with their values, in the canonical
     /// form of the other differences: <c>y - 1</c> is now simplified like <c>y - 2</c>. Since mission C3c the subtracted constant
     /// of a canonical sum is folded into its negation (<c>-2 + y</c>, the form the second pass gave from <c>(0 - 2) + y</c>). The
-    /// double division keeps the <c>/ 1</c> that <c>DivisionOfDivision</c> leaves on a unit numerator (a separate, pre-existing
-    /// limitation).
+    /// double division lost the <c>/ 1</c> that <c>DivisionOfDivision</c> left on a unit numerator in mission C3d, which finishes
+    /// the division it builds (<c>FinishDivision</c>).
     /// </summary>
     [TestMethod]
     public void Aud03Reproducers_Terminate()
@@ -68,7 +68,7 @@ public class ExpressionSimplifierRuleTerminationTests
             (Expression.Multiply(C(10), Expression.Subtract(Y, C(1))), "10 * (-1 + y)"),
             (Expression.Multiply(C(2), Expression.Subtract(Y, C(1))), "2 * (-1 + y)"),
             (Expression.Multiply(C(10), Expression.Subtract(C(1), Y)), "10 * (1 + (0 - y))"),
-            (Expression.Divide(Expression.Subtract(C(1), Y), Expression.Divide(C(1), Y)), "(y * (1 + (0 - y))) / 1"),
+            (Expression.Divide(Expression.Subtract(C(1), Y), Expression.Divide(C(1), Y)), "y * (1 + (0 - y))"),
             (Expression.Subtract(Y, C(1)), "-1 + y"),
             (Expression.Subtract(C(1), Y), "1 + (0 - y)"),
             (Expression.Multiply(C(-1), Expression.Subtract(Y, C(1))), "-(-1 + y)"),
@@ -178,7 +178,8 @@ public class ExpressionSimplifierRuleTerminationTests
     /// The stack overflow left open by S5 P14 and P16 on <c>a * x + (1 - a) * x</c> had the same cause (the coefficient
     /// <c>1 - a</c> was factored by 1, then moved around by the multiplication rule): it terminates too. The factored
     /// coefficient is a rule result, simplified by the next pass only (S5 P14). Since mission C3c the factored product is
-    /// canonical (<c>y * (...)</c>, the order a second pass gave); its coefficient still waits for the next pass.
+    /// canonical (<c>y * (...)</c>, the order a second pass gave); since mission C3d its coefficient is the canonical sum of the
+    /// coefficients too (<c>CanonicalizeFactoredCoefficient</c>), so <c>x + (1 - x)</c> is <c>1</c> and the product is <c>y</c>.
     /// </summary>
     [TestMethod]
     public void P14OpenStackOverflow_HadTheSameCause()
@@ -186,9 +187,9 @@ public class ExpressionSimplifierRuleTerminationTests
         Expression one = C(1);
         (Expression Body, string Expected)[] cases =
         [
-            (Expression.Add(Expression.Multiply(X, Y), Expression.Multiply(Expression.Subtract(one, X), Y)), "y * (x + (1 + (0 - x)))"),
-            (Expression.Add(Expression.Multiply(Y, Expression.Subtract(one, X)), Expression.Multiply(X, Y)), "y * (1 + (x - x))"),
-            (Expression.Subtract(Expression.Multiply(Expression.Subtract(X, one), Y), Expression.Multiply(X, Y)), "y * ((-1 + x) - x)"),
+            (Expression.Add(Expression.Multiply(X, Y), Expression.Multiply(Expression.Subtract(one, X), Y)), "y"),
+            (Expression.Add(Expression.Multiply(Y, Expression.Subtract(one, X)), Expression.Multiply(X, Y)), "y"),
+            (Expression.Subtract(Expression.Multiply(Expression.Subtract(X, one), Y), Expression.Multiply(X, Y)), "-y"),
         ];
 
         foreach ((Expression body, string expected) in cases)

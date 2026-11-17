@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed — `omy.Utils` (expression simplifier: stabilization of the rebuilt forms, mission C3d)
+- **Behavior change (forms only).** For the built-in `ExpressionSimplifier`, one call now returns, in most cases, the tree a
+  second call returned: the reassociation rules (`SubstractionWithAddition`, `SubstractionWithSubstraction`), the nested
+  division rules (`DivisionOfDivision`) and the multiplication rules that commute or combine constants transform the nodes
+  they rebuild from their prepared operands, when those operands are inert, finite arithmetic; the canonical sum writes an
+  all-subtracted sum as a negation (`-x`, `-(a + b)`); the canonical product multiplies its inert constant factors and
+  moves the negations out; the coefficient of a binary factoring that holds a subtraction or two constants is canonical (`x*y + (1 - x)*y` gives `y`); an unsigned
+  subtracted constant is folded to its modular value (`p - 9ul` gives `18446744073709551607 + p`, the form the next call
+  gave). Values, user calls, comparer work, policy decisions (including the `NaN` folds) and derived simplifiers are
+  unchanged; decimal sums and products are never reassociated. On the S5 convergence corpus the one-pass fixed points go
+  from 63,399 to 66,552 of 70,420 and the cycles from 100 to 54; on the 40,000-case differential corpus the non-idempotent
+  results go from 6,190 to 782, with no value or exception difference. An integral zero divisor that only the second call
+  proved is now proved by the first, which throws `DivideByZeroException` as the source's evaluation does. The simplifier
+  is still not globally idempotent: see `docs/expressions/SimplifierFlatten.md` §14 for the residual families.
+- The S5 audit harness gains a `stability` campaign (residue, responsible rule, family and reduced counterexample of every
+  case one pass does not stabilize).
+
 ### Changed — `omy.Utils` (expression engine: shared metadata of simplified terms, mission C3a)
 - `ExpressionSimplifier`: the canonicalizations of sums and products read back, from a table of the running public operation,
   the raw structural hashes and canonical-order keys an earlier canonicalization of the same operation computed for the same

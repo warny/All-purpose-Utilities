@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
+using System.Runtime.InteropServices;
 using Utils.Expressions;
 using Utils.Objects;
 
@@ -56,6 +57,14 @@ public partial class ExpressionSimplifier
     internal virtual bool MergesMonomials => GetType() == typeof(ExpressionSimplifier);
 
     /// <summary>
+    /// Whether the rules of this instance finish the nodes they rebuild (mission C3d): a reassociation rule transforms the
+    /// nodes it builds from its prepared operands, as a second call would, instead of returning them as built. The built-in
+    /// type only, like <see cref="MergesMonomials"/> (which it follows, so that the level by level references of the tests
+    /// keep matching the built-in type); a derived simplifier keeps the historical rules.
+    /// </summary>
+    internal virtual bool StabilizesRebuiltForms => MergesMonomials;
+
+    /// <summary>
     /// Merges the terms of a canonicalized sum that hold the same factors, in any order, into one term whose coefficient is
     /// the sum of theirs (mission C3c, phase A): <c>x + 2*x + 3*x</c> gives <c>6*x</c>, <c>2*a*b + 3*b*a</c> gives
     /// <c>5*(a*b)</c>, <c>x - x</c> gives nothing.
@@ -64,6 +73,14 @@ public partial class ExpressionSimplifier
     /// <param name="type">The type of the sum, one of <see cref="Types.Number"/>.</param>
     /// <param name="scopes">The lexical scope snapshot of the canonicalization.</param>
     /// <param name="record">Whether computed hashes are stored in the operation's metadata table.</param>
+    /// <param name="analyzed">
+    /// Receives the analysis of the terms, or <see langword="null"/> when none was built (fewer than two non-constant terms), so
+    /// that <see cref="FactorCommonFactors"/> does not decompose the same terms again (mission C3d).
+    /// </param>
+    /// <param name="sources">
+    /// Receives, for each term of the updated list, the index of its analyzed term, <c>-1</c> for a merged term; <see langword="null"/>
+    /// when the list is unchanged (every term is its own analyzed term).
+    /// </param>
     /// <remarks>
     /// <para>
     /// <b>Grouping.</b> The terms are decomposed once (<see cref="AdditiveTermAnalysis"/>) and bucketed by the
@@ -92,8 +109,10 @@ public partial class ExpressionSimplifier
     /// coefficients.
     /// </para>
     /// </remarks>
-    private void MergeIdenticalMonomials(List<(Expression Term, bool IsNegative)> terms, Type type, ParameterExpression[][] scopes, bool record)
+    private void MergeIdenticalMonomials(List<(Expression Term, bool IsNegative)> terms, Type type, ParameterExpression[][] scopes, bool record, out AdditiveTermAnalysis? analyzed, out int[]? sources)
     {
+        analyzed = null;
+        sources = null;
         if (terms.Count < 2 || !Types.Number.Contains(type)) return;
 
         // Without two terms other than constants nothing can merge: no analysis is built.
@@ -106,6 +125,7 @@ public partial class ExpressionSimplifier
         if (candidates < 2) return;
 
         AdditiveTermAnalysis analysis = AdditiveTermAnalysis.Analyze(this, terms, type, scopes, record);
+        analyzed = analysis;
         int[] representatives = analysis.GroupByFactors();
         int count = analysis.Count;
 
@@ -152,6 +172,7 @@ public partial class ExpressionSimplifier
         }
 
         terms.Clear();
+        var kept = new int[count];
         for (int index = 0; index < count; index++)
         {
             ref readonly AnalyzedAdditiveTerm term = ref analysis[index];
@@ -159,12 +180,20 @@ public partial class ExpressionSimplifier
             if (eligible[index] && merged[representative].Merged)
             {
                 // The merged term takes the place of the group's first eligible member; a zero sum leaves nothing.
-                if (index == firstMember[representative] && merged[representative].Term is { } mergedTerm) terms.Add((mergedTerm, merged[representative].IsNegative));
+                if (index == firstMember[representative] && merged[representative].Term is { } mergedTerm)
+                {
+                    kept[terms.Count] = -1;
+                    terms.Add((mergedTerm, merged[representative].IsNegative));
+                }
+
                 continue;
             }
 
+            kept[terms.Count] = index;
             terms.Add((term.Expression, term.IsNegative));
         }
+
+        sources = kept;
     }
 
     /// <summary>
@@ -241,21 +270,24 @@ public partial class ExpressionSimplifier
 
     /// <summary>
     /// Replaces the subtracted constant of a canonicalized sum (the constants are aggregated, so it holds one at most) by its
-    /// negation, for a type with an ordinary negation (mission C3c): <c>y - 1</c> gives <c>-1 + y</c> instead of
-    /// <c>(0 - 1) + y</c>, the form the next call folded (<see cref="SubstractionOfConstants"/> on the constant pair
-    /// <c>0 - 1</c>), so the canonical sum is a fixed point.
+    /// negation (mission C3c): <c>y - 1</c> gives <c>-1 + y</c> instead of <c>(0 - 1) + y</c>, the form the next call folded
+    /// (<see cref="SubstractionOfConstants"/> on the constant pair <c>0 - 1</c>), so the canonical sum is a fixed point.
     /// </summary>
     /// <param name="terms">The inert signed terms of the sum; updated in place.</param>
     /// <param name="type">The type of the sum.</param>
+    /// <param name="unsigned">
+    /// Whether a type without an ordinary negation (the unsigned integers) folds too (mission C3d,
+    /// <see cref="StabilizesRebuiltForms"/>): <c>p - 9ul</c> gives <c>18446744073709551607 + p</c>, the modular value the next
+    /// call folded <c>(0 - 9) + p</c> to. C3c kept <c>0 - c</c> there, which no call ever left alone.
+    /// </param>
     /// <remarks>
     /// The negation is folded with <see cref="FoldConstants"/>, as the next call folds <c>0 - c</c>: exact for a
-    /// floating-point constant, modular for a signed integral one (<c>0 - MinValue</c> is <c>MinValue</c>, as at run time).
-    /// An unsigned type keeps <c>0 - c</c>: its negation is the large wrapped value that the aggregation of the constants
-    /// avoids on purpose (<see cref="AggregateAdditiveConstants"/>).
+    /// floating-point constant, modular for an integral one (<c>0 - MinValue</c> is <c>MinValue</c>, <c>0 - 1u</c> is
+    /// <c>4294967295</c>, as at run time).
     /// </remarks>
-    private static void NegateSubtractedConstant(List<(Expression Term, bool IsNegative)> terms, Type type)
+    private static void NegateSubtractedConstant(List<(Expression Term, bool IsNegative)> terms, Type type, bool unsigned)
     {
-        if (!_ordinaryNegateMethods.ContainsKey(type)) return;
+        if (!unsigned && !_ordinaryNegateMethods.ContainsKey(type)) return;
         for (int index = 0; index < terms.Count; index++)
         {
             (Expression term, bool isNegative) = terms[index];
@@ -320,6 +352,8 @@ public partial class ExpressionSimplifier
     /// <param name="terms">The inert signed terms of the chain, monomials already merged; updated in place.</param>
     /// <param name="type">The type of the chain.</param>
     /// <param name="scopes">The lexical scope snapshot of the canonicalization.</param>
+    /// <param name="analyzed">The phase A analysis of the terms, or <see langword="null"/> (see <see cref="MergeIdenticalMonomials"/>).</param>
+    /// <param name="sources">The analyzed term of each term, <c>-1</c> for a merged one; <see langword="null"/> for the identity.</param>
     /// <remarks>
     /// <para>
     /// <b>Candidates.</b> A candidate is a factor (compared structurally, as a multiset member) or a numeric coefficient other
@@ -349,7 +383,7 @@ public partial class ExpressionSimplifier
     /// another term (<c>x + y + a*(x + y)</c> stays), and a power is never split.
     /// </para>
     /// </remarks>
-    private void FactorCommonFactors(List<(Expression Term, bool IsNegative)> terms, Type type, ParameterExpression[][] scopes)
+    private void FactorCommonFactors(List<(Expression Term, bool IsNegative)> terms, Type type, ParameterExpression[][] scopes, AdditiveTermAnalysis? analyzed = null, int[]? sources = null)
     {
         // Recursive through the canonicalization of the residues: guard the execution stack (ETC R1a-Security).
         ExpressionResourceBudget.EnsureStack();
@@ -357,7 +391,13 @@ public partial class ExpressionSimplifier
 
         FlattenAdmissionStatistics? statistics = t_admissionStatistics;
         var monomials = new List<FactoringMonomial>(terms.Count);
-        foreach ((Expression term, bool isNegative) in terms) monomials.Add(FactoringMonomial.Create(this, term, isNegative, type));
+        for (int index = 0; index < terms.Count; index++)
+        {
+            // Mission C3d: a term the phase A analysis already decomposed is not decomposed again.
+            int source = analyzed is null ? -1 : sources is null ? index : sources[index];
+            (Expression term, bool isNegative) = terms[index];
+            monomials.Add(source >= 0 ? FactoringMonomial.FromAnalysis(analyzed!, source) : FactoringMonomial.Create(this, term, isNegative, type));
+        }
 
         var rejected = new HashSet<FactoringCandidate>();
         ConstantExpression? one = null;
@@ -566,6 +606,31 @@ public partial class ExpressionSimplifier
         {
             var factors = new List<Expression>(4);
             AdditiveTermFamily family = AdditiveTermAnalysis.Decompose(owner, term, type, factors, out ConstantExpression? coefficient);
+            return Build(term, isNegative, family, coefficient, CollectionsMarshal.AsSpan(factors));
+        }
+
+        /// <summary>
+        /// Builds the monomial of a term the analysis of phase A already decomposed (mission C3d): the same family, coefficient
+        /// and factors as <see cref="Create"/>, which runs the same <see cref="AdditiveTermAnalysis.Decompose"/>.
+        /// </summary>
+        /// <param name="analysis">The analysis of the canonicalized sum.</param>
+        /// <param name="index">The index of the analyzed term.</param>
+        /// <returns>The monomial.</returns>
+        public static FactoringMonomial FromAnalysis(AdditiveTermAnalysis analysis, int index)
+        {
+            ref readonly AnalyzedAdditiveTerm term = ref analysis[index];
+            return Build(term.Expression, term.IsNegative, term.Family, term.Coefficient, analysis.GetFactors(index));
+        }
+
+        /// <summary>Builds a monomial from the decomposition of its term.</summary>
+        /// <param name="term">The term.</param>
+        /// <param name="isNegative">Its sign.</param>
+        /// <param name="family">The family of its factor part.</param>
+        /// <param name="coefficient">Its numeric coefficient, or <see langword="null"/>.</param>
+        /// <param name="factors">Its factors, the coefficient set aside.</param>
+        /// <returns>The monomial.</returns>
+        private static FactoringMonomial Build(Expression term, bool isNegative, AdditiveTermFamily family, ConstantExpression? coefficient, ReadOnlySpan<Expression> factors)
+        {
             bool mergeable = family is AdditiveTermFamily.Parameter or AdditiveTermFamily.Product or AdditiveTermFamily.Power or AdditiveTermFamily.Function
                 && (coefficient is null || IsFiniteValue(coefficient.Value!));
             if (mergeable)
@@ -966,6 +1031,25 @@ public partial class ExpressionSimplifier
 
         Expression result = CanonicalizeAdditiveTerms(signedTerms, source.Type, recordMetadata: false, AdditiveFactoring.CommonFactors);
         return NegateSubtractedSum(result, source.Type);
+    }
+
+    /// <summary>
+    /// Whether the inert terms of a canonicalization are all subtracted, in a type with an ordinary negation (mission C3d):
+    /// the canonicalization then builds the negation of their sum, as <see cref="NegateSubtractedSum"/> does for a factorable
+    /// chain.
+    /// </summary>
+    /// <param name="terms">The inert signed terms, zeros dropped, constants aggregated and subtracted constants folded.</param>
+    /// <param name="type">The type of the sum.</param>
+    /// <returns><see langword="true"/> when there is at least one term and none is added.</returns>
+    private static bool IsNegatedSum(List<(Expression Term, bool IsNegative)> terms, Type type)
+    {
+        if (terms.Count == 0 || !_ordinaryNegateMethods.ContainsKey(type)) return false;
+        foreach ((_, bool isNegative) in terms)
+        {
+            if (!isNegative) return false;
+        }
+
+        return true;
     }
 
     /// <summary>

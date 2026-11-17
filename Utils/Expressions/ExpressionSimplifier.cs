@@ -1667,29 +1667,66 @@ namespace Utils.Mathematics.Expressions
         /// <summary>
         /// Simplifies <c>left - (right1 + right2)</c> to <c>(left - right1) - right2</c>.
         /// </summary>
+        /// <remarks>
+        /// Mission C3d: for the built-in type and inert finite operands (<see cref="FinishesRebuilt"/>) both rebuilt nodes are transformed from
+        /// their prepared operands (<see cref="FinishReassociation"/>), so the rule returns what a second call returned.
+        /// </remarks>
         [ExpressionSignature(ExpressionType.Subtract)]
         protected Expression SubstractionWithAddition(BinaryExpression e, Expression left, [ExpressionSignature(ExpressionType.Add)] BinaryExpression right)
         {
             if (!IsOrdinaryBinaryArithmetic(e) || !IsOrdinaryBinaryArithmetic(right)) return null;
 
-            return Expression.Subtract(
-                Expression.Subtract(left, right.Left),
-                right.Right
-            );
+            BinaryExpression inner = Expression.Subtract(left, right.Left);
+            return FinishesRebuilt(left, right)
+                ? FinishReassociation(inner, ExpressionType.Subtract, right.Right)
+                : Expression.Subtract(inner, right.Right);
         }
 
         /// <summary>
         /// Simplifies <c>left - (right1 - right2)</c> to <c>(left + right2) - right1</c>.
         /// </summary>
+        /// <remarks>Mission C3d: finished like <see cref="SubstractionWithAddition"/> for the built-in type.</remarks>
         [ExpressionSignature(ExpressionType.Subtract)]
         protected Expression SubstractionWithSubstraction(BinaryExpression e, Expression left, [ExpressionSignature(ExpressionType.Subtract)] BinaryExpression right)
         {
             if (!IsOrdinaryBinaryArithmetic(e) || !IsOrdinaryBinaryArithmetic(right)) return null;
 
-            return Expression.Subtract(
-                Expression.Add(left, right.Right),
-                right.Left
-            );
+            BinaryExpression inner = Expression.Add(left, right.Right);
+            return FinishesRebuilt(left, right)
+                ? FinishReassociation(inner, ExpressionType.Subtract, right.Left)
+                : Expression.Subtract(inner, right.Left);
+        }
+
+        /// <summary>
+        /// Transforms the two nodes a reassociation rule rebuilds, <c>inner</c> then <c>inner op last</c>, from operands that
+        /// are already prepared (mission C3d, <see cref="FinishesRebuilt"/>).
+        /// </summary>
+        /// <param name="inner">The rebuilt inner node, whose operands are prepared operands of the rule.</param>
+        /// <param name="nodeType">The operator of the outer node.</param>
+        /// <param name="last">The prepared operand the outer node combines with the transformed <paramref name="inner"/>.</param>
+        /// <returns>The transformed outer node.</returns>
+        /// <remarks>
+        /// <para>
+        /// <see cref="SubstractionWithAddition"/> and <see cref="SubstractionWithSubstraction"/> returned the nodes they build
+        /// without transforming them, so a constant pair (<c>(2 - 0.5) - x</c>), a subtraction the canonicalization rewrites
+        /// (<c>(1 - y) - t</c>) or a rule the new nodes match was left to the next call: on the convergence corpus they were
+        /// the dominant reason why one call was not idempotent, and, through <c>(1 - y) - t</c>, half of a period-2 cycle
+        /// with the canonical <c>1 + ((0 - y) + (0 - t))</c> (docs/expressions/SimplifierFlatten.md §14).
+        /// </para>
+        /// <para>
+        /// Both nodes go through <see cref="ExpressionTransformer.TransformCoreWithPreparedOperands"/>: the rules and the
+        /// finalization run on them as they run on any node, and each counts one transformation visit; the operands are
+        /// not prepared a second time (they are the rule's prepared operands, or the result of transforming
+        /// <paramref name="inner"/>). This is one finishing step, not a loop: a rule matched by a rebuilt node rewrites it
+        /// once, as it would at the next call. Every rule that can apply decreases the right operand of the subtraction it
+        /// rewrites, so the re-entries terminate.
+        /// </para>
+        /// </remarks>
+        private Expression FinishReassociation(BinaryExpression inner, ExpressionType nodeType, Expression last)
+        {
+            Expression finishedInner = TransformCoreWithPreparedOperands(inner, inner.Left, inner.Right);
+            BinaryExpression outer = nodeType == ExpressionType.Add ? Expression.Add(finishedInner, last) : Expression.Subtract(finishedInner, last);
+            return TransformCoreWithPreparedOperands(outer, finishedInner, last);
         }
 
         /// <summary>
@@ -2296,6 +2333,7 @@ namespace Utils.Mathematics.Expressions
         private Expression BuildFactoredProduct(ExpressionType nodeType, Expression leftCoefficient, Expression rightCoefficient, Expression factor)
         {
             Expression coefficient = TryFoldFactoredCoefficient(nodeType, leftCoefficient, rightCoefficient)
+                ?? (StabilizesRebuiltForms ? CanonicalizeFactoredCoefficient(nodeType, leftCoefficient, rightCoefficient) : null)
                 ?? AggregateFactoredCoefficient(nodeType, leftCoefficient, rightCoefficient)
                 ?? (nodeType == ExpressionType.Add ? Expression.Add(leftCoefficient, rightCoefficient) : Expression.Subtract(leftCoefficient, rightCoefficient));
 
@@ -2307,6 +2345,21 @@ namespace Utils.Mathematics.Expressions
                 CollectMultiplicativeFactors(factors, coefficient);
                 CollectMultiplicativeFactors(factors, factor);
                 return BuildCanonicalProduct(factors, record: null);
+            }
+
+            // Mission C3d: a constant coefficient of a constant factor is folded, as MultiplicationOfConstants folded the pair at
+            // the next call (x*-2 + (1 - x)*-2 gave 1 * -2); a decimal overflow keeps the product.
+            if (StabilizesRebuiltForms && coefficient is ConstantExpression { Value: { } coefficientValue } && factor is ConstantExpression { Value: { } factorValue }
+                && coefficient.Type == factor.Type && Types.Number.Contains(factor.Type))
+            {
+                try
+                {
+                    if (FoldConstants(ExpressionType.Multiply, factor.Type, coefficientValue, factorValue) is { } folded) return folded;
+                }
+                catch (OverflowException)
+                {
+                    // The product stays, as the overflowing source terms may still evaluate.
+                }
             }
 
             BinaryExpression product = Expression.Multiply(coefficient, factor);
@@ -2358,6 +2411,93 @@ namespace Utils.Mathematics.Expressions
         }
 
         /// <summary>
+        /// Builds the coefficient <c>leftCoefficient op rightCoefficient</c> of a factored sum as the canonical sum of the terms
+        /// of both coefficients (mission C3d, <see cref="StabilizesRebuiltForms"/>).
+        /// </summary>
+        /// <param name="nodeType"><see cref="ExpressionType.Add"/> or <see cref="ExpressionType.Subtract"/>.</param>
+        /// <param name="leftCoefficient">The coefficient of the left term.</param>
+        /// <param name="rightCoefficient">The coefficient of the right term.</param>
+        /// <returns>The canonical coefficient, or <see langword="null"/> when the coefficients are not of one <see cref="Types.Number"/> type.</returns>
+        /// <remarks>
+        /// The coefficient was built with the ordinary factory, so <c>x*y + (1 - x)*y</c> gave <c>y * (x + (1 + (0 - x)))</c> and
+        /// <c>y + (y - z)*y</c> gave <c>y * (1 + (y - z))</c>, which the next call canonicalized (<c>y</c>, and
+        /// <c>y * (1 + ((0 - z) + y))</c>). Both coefficients are prepared operands of the rule, so their terms are collected and
+        /// canonicalized once (<see cref="CanonicalizeAdditiveTerms"/>, the finalization of an ordinary sum: zeros dropped,
+        /// constants aggregated, identical monomials merged, opposite terms cancelled, pinned terms kept in place): the
+        /// coefficient the next call built, without simplifying anything again. A coefficient that becomes a constant goes
+        /// through the identities of <see cref="BuildFactoredProduct"/> (<c>y * 1</c> gives <c>y</c>).
+        /// </remarks>
+        private Expression? CanonicalizeFactoredCoefficient(ExpressionType nodeType, Expression leftCoefficient, Expression rightCoefficient)
+        {
+            // Decimal sums are never canonicalized (their operators throw on overflow, CanonicalizesOperator).
+            Type type = leftCoefficient.Type;
+            if (rightCoefficient.Type != type || !IsInertArithmeticType(type)) return null;
+
+            // Only a coefficient the canonicalization can change beyond the order of its terms is canonicalized: one holding a
+            // subtraction or a negation (a cancellation, the 0 - t form, a negated group) or two constants. A sum of added
+            // terms keeps the historical node: on a long chain whose factor repeats (the dag family of §14.8) the coefficient
+            // grows by one term per level, and canonicalizing it at every level made the factoring quadratic in allocations.
+            if (nodeType != ExpressionType.Subtract
+                && !HasAdditiveNegation(leftCoefficient)
+                && !HasAdditiveNegation(rightCoefficient)
+                && CountAdditiveConstants(rightCoefficient, type, CountAdditiveConstants(leftCoefficient, type, 0)) < 2)
+            {
+                return null;
+            }
+
+            var terms = new List<(Expression Term, bool IsNegative)>(4);
+            CollectAdditiveTerms(terms, leftCoefficient, false);
+            CollectAdditiveTerms(terms, rightCoefficient, nodeType == ExpressionType.Subtract);
+
+            // A coefficient whose terms are all subtracted, a negative constant counting as one, is negated as a whole, the sign
+            // the levels and the global factoring give such a group (-2*d - x*d gives -(d * (2 + x)), not d * (-2 + (0 - x))).
+            if (IsSubtractedCoefficient(terms, type))
+            {
+                for (int index = 0; index < terms.Count; index++)
+                {
+                    (Expression term, bool isNegative) = terms[index];
+                    terms[index] = term is ConstantExpression constant && !isNegative
+                        ? (FoldConstants(ExpressionType.Subtract, type, Convert.ChangeType(0, type), constant.Value)!, false)
+                        : (term, false);
+                }
+
+                return Expression.Negate(CanonicalizeAdditiveTerms(terms, type, recordMetadata: false));
+            }
+
+            return CanonicalizeAdditiveTerms(terms, type, recordMetadata: false);
+        }
+
+        /// <summary>
+        /// Whether every term of a factored coefficient is subtracted or is a negative constant, with at least one subtracted
+        /// non-constant term, in a type with an ordinary negation (mission C3d, <see cref="CanonicalizeFactoredCoefficient"/>).
+        /// </summary>
+        /// <param name="terms">The collected terms of the coefficient.</param>
+        /// <param name="type">The type of the coefficient, an inert arithmetic type.</param>
+        /// <returns><see langword="true"/> when the coefficient is negated as a whole.</returns>
+        private static bool IsSubtractedCoefficient(List<(Expression Term, bool IsNegative)> terms, Type type)
+        {
+            if (!_ordinaryNegateMethods.ContainsKey(type)) return false;
+            bool symbolic = false;
+            foreach ((Expression term, bool isNegative) in terms)
+            {
+                if (term is ConstantExpression { Value: { } value } && IsAggregatableConstant(term, type))
+                {
+                    if (!IsFiniteValue(value)) return false;
+
+                    // The zero of a 0 - t group is no term (the canonicalization drops it).
+                    if (NumericValueEquals(value, 0)) continue;
+                    if (isNegative != (Convert.ToDouble(value, System.Globalization.CultureInfo.InvariantCulture) >= 0)) return false;
+                    continue;
+                }
+
+                if (!isNegative) return false;
+                symbolic = true;
+            }
+
+            return symbolic;
+        }
+
+        /// <summary>
         /// Folds the coefficient of a factored sum or difference when both coefficients are constants of the same type.
         /// </summary>
         /// <param name="nodeType"><see cref="ExpressionType.Add"/> or <see cref="ExpressionType.Subtract"/>.</param>
@@ -2406,11 +2546,12 @@ namespace Utils.Mathematics.Expressions
         /// <summary>
         /// Commutes <c>left * constant</c> to <c>constant * left</c> for consistent transformations.
         /// </summary>
+        /// <remarks>Mission C3d: the commuted product is finished for the built-in type (<see cref="FinishProduct"/>).</remarks>
         [ExpressionSignature(ExpressionType.Multiply)]
         protected Expression Multiplication(BinaryExpression e, Expression left, [ConstantNumeric] ConstantExpression right)
         {
             if (!IsOrdinaryBinaryArithmetic(e)) return null;
-            return Expression.Multiply(right, left);
+            return FinishProduct(right, left);
         }
 
         /// <summary>
@@ -2427,7 +2568,7 @@ namespace Utils.Mathematics.Expressions
             if (right.Left is ConstantExpression rightLeftConst
                 && FoldConstants(ExpressionType.Multiply, e.Type, left.Value, rightLeftConst.Value) is ConstantExpression product)
             {
-                return Expression.Multiply(product, right.Right);
+                return FinishProduct(product, right.Right);
             }
             return null;
         }
@@ -2447,9 +2588,36 @@ namespace Utils.Mathematics.Expressions
             if (left.Left is ConstantExpression leftLeft && right.Left is ConstantExpression rightLeft
                 && FoldConstants(ExpressionType.Multiply, e.Type, leftLeft.Value, rightLeft.Value) is ConstantExpression product)
             {
-                return Expression.Multiply(product, TransformCore(Expression.Multiply(left.Right, right.Right)));
+                return FinishProduct(product, TransformCore(Expression.Multiply(left.Right, right.Right)));
             }
             return null;
+        }
+
+        /// <summary>
+        /// Builds the product <c>left * right</c> a multiplication rule returns from two prepared operands and, for the built-in
+        /// type and inert finite operands (mission C3d, <see cref="FinishesRebuilt"/>), transforms it from them.
+        /// </summary>
+        /// <param name="left">The prepared left operand (a constant for the rules that call this).</param>
+        /// <param name="right">The prepared right operand.</param>
+        /// <returns>The product, transformed for the built-in type.</returns>
+        /// <remarks>
+        /// The commutation <c>x * c -&gt; c * x</c> and the two constant combinations returned the product as built, so
+        /// <c>(x * -2) * -2</c> gave <c>-2 * (-2 * x)</c>, <c>0.5 * (2 * x)</c> gave <c>1 * x</c> and <c>(x * -1) * -2</c> gave
+        /// <c>-2 * (-x)</c>, which the next call rewrote (the constant combination, <see cref="MultiplicationWithZeroOrOne(BinaryExpression, ConstantExpression, Expression)"/>,
+        /// <see cref="MultiplicationWithNegate(BinaryExpression, Expression, UnaryExpression)"/>). The product now goes through
+        /// <see cref="ExpressionTransformer.TransformCoreWithPreparedOperands"/> (rules and finalization, one transformation
+        /// visit, no second preparation of the operands). Its left operand is the constant, so the commutation cannot match it
+        /// again, and each constant combination removes a constant factor, so the re-entries terminate.
+        /// </remarks>
+        private Expression FinishProduct(Expression left, Expression right)
+        {
+            BinaryExpression product = Expression.Multiply(left, right);
+            // Only the shapes a rule of the next call rewrote are finished: the constant meets another constant factor, a negation
+            // or is an identity. A plain c * t is final, and finishing it would only run the comparing rules again.
+            bool rewritable = left is ConstantExpression { Value: { } value }
+                && (right is BinaryExpression { NodeType: ExpressionType.Multiply, Left: ConstantExpression } or UnaryExpression { NodeType: ExpressionType.Negate }
+                    || NumericValueEquals(value, 0) || NumericValueEquals(value, 1) || NumericValueEquals(value, -1));
+            return rewritable && FinishesRebuilt(left, right) ? TransformCoreWithPreparedOperands(product, left, right) : product;
         }
 
         /// <summary>
@@ -2683,10 +2851,9 @@ namespace Utils.Mathematics.Expressions
             if (!IsOrdinaryFieldDivision(e) || !IsOrdinaryFieldDivision(left) || !IsOrdinaryFieldDivision(right)
                 || IsZeroDivisorOutsideFieldDomain(left.Right, right.Left, right.Right)) return null;
 
-            return Expression.Divide(
+            return FinishDivision(
                 TransformCore(Expression.Multiply(left.Left, right.Right)),
-                TransformCore(Expression.Multiply(left.Right, right.Left))
-            );
+                TransformCore(Expression.Multiply(left.Right, right.Left)));
         }
 
         /// <summary>
@@ -2699,10 +2866,7 @@ namespace Utils.Mathematics.Expressions
             if (!IsOrdinaryFieldDivision(e) || !IsOrdinaryFieldDivision(right)
                 || IsZeroDivisorOutsideFieldDomain(right.Left, right.Right)) return null;
 
-            return Expression.Divide(
-                TransformCore(Expression.Multiply(left, right.Right)),
-                right.Left
-            );
+            return FinishDivision(TransformCore(Expression.Multiply(left, right.Right)), right.Left);
         }
 
         /// <summary>
@@ -2717,10 +2881,73 @@ namespace Utils.Mathematics.Expressions
             if (!IsOrdinaryFieldDivision(e) || !IsOrdinaryFieldDivision(left)
                 || IsZeroDivisorOutsideFieldDomain(left.Right, right)) return null;
 
-            return Expression.Divide(
-                left.Left,
-                TransformCore(Expression.Multiply(left.Right, right))
-            );
+            return FinishDivision(left.Left, TransformCore(Expression.Multiply(left.Right, right)));
+        }
+
+        /// <summary>
+        /// Builds the division a <see cref="DivisionOfDivision(BinaryExpression, BinaryExpression, BinaryExpression)"/> rule
+        /// returns from its two prepared operands and, for the built-in type and inert finite operands (mission C3d, <see cref="FinishesRebuilt"/>),
+        /// transforms it from them.
+        /// </summary>
+        /// <param name="dividend">The prepared dividend: a transformed product, or a prepared operand of the rule.</param>
+        /// <param name="divisor">The prepared divisor.</param>
+        /// <returns>The division, transformed for the built-in type.</returns>
+        /// <remarks>
+        /// The rules returned the division as built, so <c>x / (1 / x)</c> gave <c>(x ** 2) / 1</c> and <c>-1 / (x / y)</c> gave
+        /// <c>(-y) / x</c>, which the next call rewrote (<see cref="DivideWithZeroOrOne"/>,
+        /// <see cref="DivisionWithNegate(BinaryExpression, UnaryExpression, Expression)"/>): on the convergence corpus, the second
+        /// most frequent reason why one call was not idempotent. The division now goes through
+        /// <see cref="ExpressionTransformer.TransformCoreWithPreparedOperands"/> (rules and finalization, one transformation
+        /// visit, no second preparation of the operands). It may match a nested-division rule again (a dividend transformed into
+        /// a division), but each application removes one division node of the operands, so the re-entries terminate.
+        /// </remarks>
+        private Expression FinishDivision(Expression dividend, Expression divisor)
+        {
+            BinaryExpression division = Expression.Divide(dividend, divisor);
+            return FinishesRebuilt(dividend, divisor) ? TransformCoreWithPreparedOperands(division, dividend, divisor) : division;
+        }
+
+        /// <summary>
+        /// Whether a rule finishes the nodes it rebuilds from <paramref name="left"/> and <paramref name="right"/> (mission C3d):
+        /// for the built-in type (<see cref="StabilizesRebuiltForms"/>) and inert arithmetic operands only
+        /// (<see cref="IsInertArithmetic"/>).
+        /// </summary>
+        /// <param name="left">A prepared operand of the rebuilt nodes.</param>
+        /// <param name="right">The other prepared operand.</param>
+        /// <returns><see langword="true"/> when the rule transforms its rebuilt nodes.</returns>
+        /// <remarks>
+        /// The finishing re-enters the rules, and some rules compare their operands. On inert arithmetic a comparison calls no user
+        /// code and its simplified forms are reused (<see cref="EqualsKeepingSimplifiedForms"/>); on an opaque constant, a call, a
+        /// member access or a decimal it would add user <see cref="object.Equals(object?)"/> calls and comparer simplifications
+        /// that the historical rules never made (S5 P15/P16 pin those counts), so such operands keep the nodes as built and are
+        /// left to the next call, as before. The <c>NaN</c> fold of <see cref="PrepareExpression"/> is not applied to the rebuilt
+        /// nodes either: its policy-dependent decisions (S5 P18 C2b) stay where they were.
+        /// </remarks>
+        private bool FinishesRebuilt(Expression left, Expression right)
+            => StabilizesRebuiltForms && IsFinishableOperand(left) && IsFinishableOperand(right);
+
+        /// <summary>
+        /// Whether <paramref name="expression"/> is inert arithmetic (<see cref="IsInertArithmetic"/>) without a <c>NaN</c> or an
+        /// infinite constant (mission C3d, <see cref="FinishesRebuilt"/>): a non-finite constant is left to the policy-dependent
+        /// <c>NaN</c> fold of the next preparation (S5 P18 C2b), which the finishing must not anticipate.
+        /// </summary>
+        /// <param name="expression">A prepared operand.</param>
+        /// <returns><see langword="true"/> when the rebuilt nodes may be finished.</returns>
+        private static bool IsFinishableOperand(Expression expression)
+        {
+            // Recursive helper: guard the execution stack (ETC R1a-Security).
+            ExpressionResourceBudget.EnsureStack();
+            return expression switch
+            {
+                ParameterExpression parameter => IsInertArithmeticType(parameter.Type),
+                ConstantExpression constant => constant.Value is not null && IsInertArithmeticType(constant.Type) && IsFiniteValue(constant.Value),
+                UnaryExpression unary => IsOrdinaryUnaryNegate(unary) && IsFinishableOperand(unary.Operand),
+                BinaryExpression binary => IsOrdinaryBinaryArithmetic(binary)
+                    && (binary.NodeType != ExpressionType.Divide || binary.Type == typeof(double) || binary.Type == typeof(float))
+                    && IsFinishableOperand(binary.Left)
+                    && IsFinishableOperand(binary.Right),
+                _ => false,
+            };
         }
 
         /// <summary>
@@ -2975,11 +3202,20 @@ namespace Utils.Mathematics.Expressions
             {
                 if (factoring != AdditiveFactoring.None)
                 {
-                    MergeIdenticalMonomials(terms, type, scopes, recordMetadata);
-                    if (factoring == AdditiveFactoring.CommonFactors) FactorCommonFactors(terms, type, scopes);
+                    MergeIdenticalMonomials(terms, type, scopes, recordMetadata, out AdditiveTermAnalysis? analyzed, out int[]? sources);
+                    if (factoring == AdditiveFactoring.CommonFactors) FactorCommonFactors(terms, type, scopes, analyzed, sources);
                 }
 
-                NegateSubtractedConstant(terms, type);
+                NegateSubtractedConstant(terms, type, StabilizesRebuiltForms);
+            }
+
+            // Mission C3d: a sum whose terms are all subtracted is the negation of their sum, the form the levels build
+            // (0 - t gives -t, (-a) - b gives -(a + b)); the canonical 0 - t was rewritten by the next call.
+            if (pinned is null && StabilizesRebuiltForms && IsNegatedSum(terms, type))
+            {
+                for (int index = 0; index < terms.Count; index++) terms[index] = (terms[index].Term, false);
+                Expression positive = terms.Count == 1 ? terms[0].Term : CanonicalizeAdditiveTerms(terms, type, recordMetadata, AdditiveFactoring.None);
+                return Expression.Negate(positive);
             }
 
             if (terms.Count == 0)
@@ -3229,6 +3465,26 @@ namespace Utils.Mathematics.Expressions
         }
 
         /// <summary>
+        /// Whether an ordinary subtraction or negation is reachable from <paramref name="expression"/> through ordinary
+        /// additions, without allocating (mission C3d, <see cref="CanonicalizeFactoredCoefficient"/>).
+        /// </summary>
+        /// <param name="expression">A coefficient of a factored sum.</param>
+        /// <returns><see langword="true"/> when a term of the coefficient is subtracted or negated.</returns>
+        private static bool HasAdditiveNegation(Expression expression)
+        {
+            // Recursive helper: guard the execution stack (ETC R1a-Security).
+            ExpressionResourceBudget.EnsureStack();
+            return expression switch
+            {
+                BinaryExpression { NodeType: ExpressionType.Subtract } subtraction when IsOrdinaryBinaryArithmetic(subtraction) => true,
+                BinaryExpression { NodeType: ExpressionType.Add } addition when IsOrdinaryBinaryArithmetic(addition)
+                    => HasAdditiveNegation(addition.Left) || HasAdditiveNegation(addition.Right),
+                UnaryExpression unary => IsOrdinaryUnaryNegate(unary),
+                _ => false,
+            };
+        }
+
+        /// <summary>
         /// Counts, up to two, the numeric constants of <paramref name="type"/> reachable from <paramref name="expression"/>
         /// through ordinary additions, subtractions and negations, without allocating.
         /// </summary>
@@ -3332,6 +3588,9 @@ namespace Utils.Mathematics.Expressions
             // ETC R1b (C-06): a factor whose evaluation is observable keeps its place after the sorted inert factors.
             List<Expression>? pinned = SplitPinnedTerms(factors, static factor => factor);
 
+            // Mission C3d: the negations and the constants of the inert factors are normalized as the next call normalized them.
+            bool negated = StabilizesRebuiltForms && NormalizeProductFactors(factors);
+
             ParameterExpression[][] scopes = CaptureLexicalScopeSnapshot();
 
             // Mission C3a: the keys of a product of more than two factors (one operand at least was a canonicalized product) are
@@ -3343,7 +3602,102 @@ namespace Utils.Mathematics.Expressions
                 .OrderBy(factor => GetCanonicalKey(factor, scopes, storeKeys)));
             if (pinned is not null) orderedFactors.AddRange(pinned);
 
-            return BuildRightAssociative(orderedFactors, Expression.Multiply);
+            Expression product = BuildRightAssociative(orderedFactors, Expression.Multiply);
+            return negated ? Expression.Negate(product) : product;
+        }
+
+        /// <summary>
+        /// Normalizes the inert factors of a canonical product as the multiplication rules of the next call did (mission C3d,
+        /// <see cref="StabilizesRebuiltForms"/>), and tells whether the product must be negated.
+        /// </summary>
+        /// <param name="factors">The inert factors; updated in place, never emptied.</param>
+        /// <returns><see langword="true"/> when the product of the updated factors must be negated.</returns>
+        /// <remarks>
+        /// <para>
+        /// The canonicalization only ordered the factors, so the next call still rewrote them: <c>(x * -2) * -2</c> gave
+        /// <c>-2 * (-2 * x)</c>, then <c>4 * x</c> (<see cref="Multiplication(BinaryExpression, ConstantExpression, BinaryExpression)"/>);
+        /// <c>-2 * (-x)</c> gave <c>-(-2 * x)</c> (<see cref="MultiplicationWithNegate(BinaryExpression, Expression, UnaryExpression)"/>);
+        /// <c>0.5 * (2 * x)</c> gave <c>1 * x</c>, then <c>x</c>.
+        /// </para>
+        /// <para>
+        /// An ordinary negation factor <c>-a</c> becomes <c>a</c> (its own factors when <c>a</c> is an ordinary product) and
+        /// flips the sign of the product: <c>(-a) * b</c> and <c>-(a * b)</c> are the same value for every type with an ordinary
+        /// negation (IEEE-754 negation is exact, integral negation wraps like the product). The constant factors of one
+        /// <see cref="Types.Number"/> type are then multiplied with <see cref="FoldConstants"/>, in order, as the rules fold
+        /// them (for <see cref="float"/> and <see cref="double"/> this is the reassociation latitude those rules already take;
+        /// a <see cref="decimal"/> overflow leaves every constant in place, so simplifying never throws). A resulting constant
+        /// <c>1</c> is dropped, <c>-1</c> dropped and turned into the sign (<c>-1 * x</c> gives <c>-x</c>). The sign stays
+        /// outside the product, as <see cref="MultiplicationWithNegate(BinaryExpression, Expression, UnaryExpression)"/> leaves
+        /// it (<c>-2 * (-x)</c> gives <c>-(-2 * x)</c>, a fixed point of the rules), so a canonical product and a rule result
+        /// never disagree on it. A constant <c>0</c> is kept: dropping the other factors needs <see cref="CanDropOperand"/>,
+        /// which the multiplication rules ask.
+        /// </para>
+        /// <para>
+        /// Only inert factors are touched (the pinned ones keep their place and their nodes) and nothing is evaluated beyond the
+        /// boxed constants, so no user code runs.
+        /// </para>
+        /// </remarks>
+        private bool NormalizeProductFactors(List<Expression> factors)
+        {
+            bool negated = false;
+            for (int index = 0; index < factors.Count; index++)
+            {
+                if (factors[index] is not UnaryExpression unary || !IsOrdinaryUnaryNegate(unary)) continue;
+                negated = !negated;
+                var inner = new List<Expression>(2);
+                CollectMultiplicativeFactors(inner, unary.Operand);
+                factors.RemoveAt(index);
+                factors.InsertRange(index, inner);
+                index--;
+            }
+
+            int first = -1;
+            ConstantExpression? folded = null;
+            for (int index = 0; index < factors.Count; index++)
+            {
+                // A decimal product is not reassociated: (x * c1) * c2 may overflow where x * (c1 * c2) does not.
+                if (factors[index] is not ConstantExpression constant || !IsAggregatableConstant(constant, constant.Type) || !IsInertArithmeticType(constant.Type)) continue;
+                if (folded is null)
+                {
+                    first = index;
+                    folded = constant;
+                    continue;
+                }
+
+                if (constant.Type != folded.Type) continue;
+                try
+                {
+                    folded = FoldConstants(ExpressionType.Multiply, folded.Type, folded.Value, constant.Value);
+                }
+                catch (OverflowException)
+                {
+                    return negated;
+                }
+
+                if (folded is null) return negated;
+            }
+
+            if (folded is null) return negated;
+            Type type = folded.Type;
+
+            // Every aggregated constant goes; the folded one takes the place of the first.
+            for (int index = factors.Count - 1; index > first; index--)
+            {
+                if (factors[index] is ConstantExpression constant && constant.Type == type && IsAggregatableConstant(constant, type)) factors.RemoveAt(index);
+            }
+
+            factors[first] = folded;
+            if (factors.Count > 1 && NumericValueEquals(folded.Value, 1))
+            {
+                factors.RemoveAt(first);
+            }
+            else if (factors.Count > 1 && NumericValueEquals(folded.Value, -1) && _ordinaryNegateMethods.ContainsKey(type))
+            {
+                factors.RemoveAt(first);
+                negated = !negated;
+            }
+
+            return negated;
         }
 
         /// <summary>
