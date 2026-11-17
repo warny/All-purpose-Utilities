@@ -499,7 +499,9 @@ public class ExpressionSimplifierFlattenAdmissionTests
             var simplifier = new ExpressionSimplifier();
             foreach (BinaryExpression node in nodes)
             {
-                Assert.AreEqual(ReferenceIsAdmissible(node) ? ExpressionRuleRejection.None : ExpressionRuleRejection.ChainNotAdmitted, simplifier.FlattenAdmission(node), $"{label} (alone): {node}");
+                // Each node in an operation of its own (a spine chain is admitted only inside an operation, PR #701 review).
+                ExpressionRuleRejection decision = ExpressionResourceBudget.Run(ExpressionResourceLimits.Unlimited, simplifier, null, null, (simplifier, node), static state => state.simplifier.FlattenAdmission(state.node));
+                Assert.AreEqual(ReferenceIsAdmissible(node) ? ExpressionRuleRejection.None : ExpressionRuleRejection.ChainNotAdmitted, decision, $"{label} (alone): {node}");
             }
 
             cases++;

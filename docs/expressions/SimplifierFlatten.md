@@ -941,8 +941,12 @@ dispatch of every level, the factor comparisons of the factoring rules (each of 
 comparer) and the admission walks of the sub-chains. Keys and hashes of the intermediate levels are stored for the next level
 (C3a), the root stores nothing.
 
-**Handoff.** A spine chain only holds linear terms; the admission leaves its root in a thread-static slot that the flatten rule
-invoked right after it consumes (cleared on read; a stale value cannot match another root).
+**Handoff.** A spine chain only holds linear terms, so the rule cannot tell it from a linear chain by itself: the admission leaves
+its root in the session of the running operation (`Session.AdmittedSpineRoot`), which the flatten rule invoked right after it
+consumes (cleared on read, matched by reference). The root belongs to one public operation: `Enter` detaches it, so a nested
+operation neither sees nor consumes its caller's root, and `Exit` (in a `finally`) restores it, which also releases it when a
+budget refusal between the admission and the rule ends the operation (PR #701 review: a first version used a thread-static
+slot, which kept the root alive after such a refusal). Outside an operation the admission does not admit spine chains.
 
 **Known refusals.** A refused spine test reports the spine index of its cause; the chain is recorded only down to the shallower
 of the linear and spine depths, so every recorded node is refused by every family.

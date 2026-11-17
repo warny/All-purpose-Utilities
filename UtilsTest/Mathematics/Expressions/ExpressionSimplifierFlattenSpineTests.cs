@@ -118,7 +118,8 @@ public class ExpressionSimplifierFlattenSpineTests
         ExpressionSimplifier.AdmissionStatistics = statistics;
         try
         {
-            new ExpressionSimplifier { Options = options }.FlattenAdmission(tree);
+            var simplifier = new ExpressionSimplifier { Options = options };
+            ExpressionResourceBudget.Run(ExpressionResourceLimits.Unlimited, simplifier, null, null, (simplifier, tree), static state => state.simplifier.FlattenAdmission(state.tree));
         }
         finally
         {
@@ -324,6 +325,61 @@ public class ExpressionSimplifierFlattenSpineTests
         Assert.AreEqual(0, statistics.Spine);
         Assert.AreEqual(Dump(new LevelByLevelSimplifier().Simplify(tree)), Dump(result));
     }
+
+    /// <summary>
+    /// The admitted spine root belongs to its operation (PR #701 review): an exception between the admission and the flatten
+    /// rule (a budget refusal of the extraction or of the root's visit, or any other exception) leaves no root behind once the
+    /// operation is over; a nested public operation neither sees nor consumes its caller's root, and gives it back on exit;
+    /// outside an operation the admission does not admit a spine chain at all.
+    /// </summary>
+    [TestMethod]
+    public void AdmittedSpineRoot_BelongsToItsOperation()
+    {
+        Expression tree = Expression.Add(LeftSum(D.Take(16)), D[0]);
+        Expression other = Expression.Add(LeftSum(D.Skip(20).Take(8)), D[20]);
+        var simplifier = new ExpressionSimplifier();
+
+        // Outside an operation: refused (nothing could carry the decision to the rule).
+        Assert.AreEqual(ExpressionRuleRejection.ChainNotAdmitted, simplifier.FlattenAdmission(tree));
+
+        // Any exception after the admission: the next operation starts without a root.
+        Assert.ThrowsExactly<InvalidOperationException>(() => ExpressionResourceBudget.Run<(ExpressionSimplifier simplifier, Expression tree), int>(ExpressionResourceLimits.Unlimited, simplifier, null, null, (simplifier, tree), static state =>
+        {
+            Assert.AreEqual(ExpressionRuleRejection.None, state.simplifier.FlattenAdmission(state.tree));
+            Assert.AreSame(state.tree, ExpressionResourceBudget.ActiveSession!.AdmittedSpineRoot);
+            throw new InvalidOperationException("after the admission");
+        }));
+        Assert.IsNull(LeftOverRoot(simplifier));
+
+        // Budget refusals between the admission and the rule (the root's visit is consumed after the extraction): every small
+        // budget that refuses the chain leaves no root behind.
+        for (long visits = 1; visits < 5; visits++)
+        {
+            var limited = new ExpressionSimplifier(ExpressionResourceLimits.Default with { MaxTransformVisits = visits });
+            Assert.ThrowsExactly<ExpressionResourceLimitException>(() => limited.Simplify(tree));
+            Assert.IsNull(LeftOverRoot(limited), "after a refusal with " + visits + " visits");
+        }
+
+        // A nested public operation runs with its own root and gives the caller's back.
+        ExpressionResourceBudget.Run(ExpressionResourceLimits.Unlimited, simplifier, null, null, (simplifier, tree, other), static state =>
+        {
+            Assert.AreEqual(ExpressionRuleRejection.None, state.simplifier.FlattenAdmission(state.tree));
+            Expression? seen = ExpressionResourceBudget.Run(ExpressionResourceLimits.Unlimited, state.simplifier, null, null, state.other, static inner =>
+                ExpressionResourceBudget.ActiveSession!.AdmittedSpineRoot);
+            Assert.IsNull(seen, "a nested operation does not see its caller's root");
+            Assert.AreEqual(Dump(new LevelByLevelSimplifier().Simplify(state.other)), Dump(new ExpressionSimplifier().Simplify(state.other)), "a nested simplification uses its own root");
+            Assert.AreSame(state.tree, ExpressionResourceBudget.ActiveSession!.AdmittedSpineRoot, "the caller's root is given back");
+            return 0;
+        });
+        Assert.IsNull(LeftOverRoot(simplifier));
+        Assert.AreEqual(Dump(new LevelByLevelSimplifier().Simplify(tree)), Dump(simplifier.Simplify(tree)));
+    }
+
+    /// <summary>The spine root a new operation of <paramref name="simplifier"/> finds in its session when it starts.</summary>
+    /// <param name="simplifier">The simplifier.</param>
+    /// <returns>The root left in the session, or <see langword="null"/>.</returns>
+    private static Expression? LeftOverRoot(ExpressionSimplifier simplifier)
+        => ExpressionResourceBudget.Run(ExpressionResourceLimits.Unlimited, simplifier, null, null, 0, static _ => ExpressionResourceBudget.ActiveSession!.AdmittedSpineRoot);
 
     /// <summary>A derived simplifier keeps the effect gate: it never admits a spine chain.</summary>
     [TestMethod]

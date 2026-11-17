@@ -66,11 +66,12 @@ public partial class ExpressionSimplifier
     [Flatten(ExpressionType.Add, ExpressionType.Subtract)]
     private Expression? FlattenAdditiveChain(Expression source, FlattenedTerm[] terms, FlattenRuleDispatcher dispatcher)
     {
-        // Mission C3b: the admission, which ran just before the extraction, recognized a spine chain (its terms are linear
-        // terms, so the test below would take it for a linear chain).
-        if (t_admittedSpineRoot is { } spineRoot)
+        // Mission C3b: the admission, which ran just before the extraction in the same operation, recognized a spine chain (its
+        // terms are linear terms, so the test below would take it for a linear chain). The root lives in the operation's
+        // session, which a nested operation detaches and whose exit releases it (ExpressionResourceBudget.Session).
+        if (ExpressionResourceBudget.ActiveSession is { AdmittedSpineRoot: { } spineRoot } session)
         {
-            t_admittedSpineRoot = null;
+            session.AdmittedSpineRoot = null;
             if (ReferenceEquals(spineRoot, source)) return FlattenSpineChain((BinaryExpression)source);
         }
 
@@ -335,12 +336,14 @@ public partial class ExpressionSimplifier
         }
 
         bool admissible = IsLinearChain(binary, statistics, out ChainRefusal refusal, out int anchorDepth);
-        if (!admissible && IsRepetition(refusal.Cause))
+        // A spine chain is admitted only inside an operation, whose session carries the decision to the rule; outside one (a
+        // direct call of the admission) the repetition keeps refusing the chain.
+        if (!admissible && IsRepetition(refusal.Cause) && session is not null)
         {
             // Mission C3b: a repetition only refuses the linear family; the spine family tolerates it where no rule can apply.
             // A node below a refused spine root, down to its cause, is refused by one lookup instead of another spine walk.
             int spineRefusalDepth;
-            if (session?.FlattenSpineRefusals is { } spineRefusals && spineRefusals.Contains(binary))
+            if (session.FlattenSpineRefusals is { } spineRefusals && spineRefusals.Contains(binary))
             {
                 ExpressionResourceBudget.ConsumeStructuralVisit();
                 if (statistics is not null) statistics.KnownSpineRefusals++;
@@ -349,10 +352,10 @@ public partial class ExpressionSimplifier
             else if (IsSpineChain(binary, statistics, out spineRefusalDepth))
             {
                 if (statistics is not null) statistics.Spine++;
-                t_admittedSpineRoot = binary;
+                session.AdmittedSpineRoot = binary;
                 return ExpressionRuleRejection.None;
             }
-            else if (spineRefusalDepth > 0 && session is not null)
+            else if (spineRefusalDepth > 0)
             {
                 RecordSpineRefusals(binary, spineRefusalDepth, session, statistics);
             }

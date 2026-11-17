@@ -45,14 +45,6 @@ internal enum FlattenSpineRefusalCause
 
 public partial class ExpressionSimplifier
 {
-    /// <summary>
-    /// The root of the spine chain the admission of this thread admitted last (<see cref="IsSpineChain"/>), consumed by the
-    /// flatten rule invoked right after it on the same root: a spine chain only holds linear terms, so without it the rule
-    /// would take the chain for a linear one.
-    /// </summary>
-    [ThreadStatic]
-    private static BinaryExpression? t_admittedSpineRoot;
-
     /// <summary>Whether <paramref name="cause"/> is a repetition, the refusal a spine chain may overcome.</summary>
     /// <param name="cause">A refusal of <see cref="IsLinearChain"/>.</param>
     /// <returns><see langword="true"/> for a repeated parameter or coefficient, or a coefficient equal to a constant term.</returns>
