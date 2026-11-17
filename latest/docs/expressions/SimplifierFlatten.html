@@ -2829,7 +2829,8 @@ constant (<code>a*x + b*x</code> gives <code>x*(a + b)</code>, the tree a second
 constant is folded (<code>0 - 1 → -1</code>, in every type); an unsigned type keeps <code>0 - t</code>.</li>
 <li><code>0 - t</code> stays the representation of a subtracted group inside a sum (S5 P10), except for a constant of a type with an
 ordinary negation, which is folded into its negation in every canonicalization of the built-in type (<code>y - 1</code> gives
-<code>-1 + y</code>, the form the next call folded from <code>(0 - 1) + y</code>; <code>NegateSubtractedConstant</code>); an unsigned type keeps <code>0 - c</code>.</li>
+<code>-1 + y</code>, the form the next call folded from <code>(0 - 1) + y</code>; <code>NegateSubtractedConstant</code>); an unsigned type kept <code>0 - c</code> until
+mission C3d, which folds it to its modular value too (§14.3, F6).</li>
 </ul>
 <h3 id="137-idempotence">13.7 Idempotence</h3>
 <p><code>Simplify(Simplify(e))</code> is structurally <code>Simplify(e)</code> on every example of the mission and on 300 random factorable chains
@@ -3248,13 +3249,730 @@ C3b) now goes through the analysis of the terms and one factoring round (the rep
 <li>Phase B only factors the factors present in the terms: it never recognizes a sum as a factor of another term, which is why a
 term holding a sum refuses the chain (<code>x + y + a*(x + y)</code> keeps the levels, whose binary rule gives <code>(1 + a)*(x + y)</code>); powers
 are never split (<code>x^2 + x*y</code> stays).</li>
-<li>A coefficient produced by the binary factoring on a non-factorable chain is still left for the next pass
-(<code>x*y + (1 - x)*y</code> gives <code>y*(x + (1 + (0 - x)))</code>, S5 P14).</li>
+<li>A coefficient produced by the binary factoring on a non-factorable chain was still left for the next pass
+(<code>x*y + (1 - x)*y</code> gave <code>y*(x + (1 + (0 - x)))</code>, S5 P14); since mission C3d it is canonical and the product is <code>y</code> (§14.3).</li>
 <li>A shared sub-chain beyond the revisit allowance, a chain holding a non-inert call, a division, a logarithm or a constant pair
 keeps the level by level treatment (with phase A at each level).</li>
 <li>Derived simplifiers keep their historical results; the factorable family and phase A are reserved to the built-in type.</li>
 <li>Free parameters of one type still tie in the canonical order (S4): a sum of free parameters may keep an order that depends on
 the source; bound parameters order by their scope.</li>
+</ul>
+<h2 id="14-stabilization-idempotence-and-performance-mission-c3d">14. Stabilization, idempotence and performance (mission C3d)</h2>
+<p>Mission C3d starts from master <code>b7ab5917</code> (C3c merged) and develops no new factoring family. Its goal is that one public call
+returns the tree a second call returns, wherever the existing rules allow it without changing any permitted behavior, and that
+the allocations C3c added go down. The baseline is a separate worktree of <code>b7ab5917</code>; every figure below compares the branch
+with it, never the branch with itself.</p>
+<h3 id="141-audit-tool-the-stability-campaign-c3d1">14.1 Audit tool: the <code>stability</code> campaign (C3d.1)</h3>
+<p><code>tests/ExpressionSimplifierAudit</code> gains the command <code>stability</code> (<code>Campaigns.Stability.cs</code>). For every case:</p>
+<ol>
+<li><code>E</code>, <code>S(E)</code>, <code>S(S(E))</code>, … are computed up to a fixed point, a cycle, an error or eight passes; forms are compared by the
+strict structural signature of the harness (<code>StrictForm</code>), never by a hash.</li>
+<li>When one pass does not stabilize, the smallest subtree of <code>S(E)</code> that the second pass rewrites is located by a parallel walk
+of both trees (the <em>residue</em>), and the second pass is traced: the first rule whose output differs structurally from its
+input is the <em>responsible rule</em>.</li>
+<li>The <em>family</em> of the case is the responsible rule and the shapes of the residue before and after, leaves abstracted
+(parameters renamed by first occurrence, constants other than <code>0</code>, <code>1</code>, <code>-1</code>, <code>2</code> printed <code>c</code>).</li>
+<li>The first cases of each family are reduced: a node is replaced by a child, a parameter or the constant <code>0</code>, <code>1</code> or <code>2</code> of its
+own type, while the case keeps its kind (cycle or not stable) and its responsible rule. Every candidate is rebuilt by the
+framework factories, so the reduction never changes a type or an operator.</li>
+</ol>
+<p><code>Campaigns.RunStability</code> takes any case source and simplifier, so the external harness ran it on the differential corpus of
+C3b/C3c (40,000 cases, default policy; 15,000 per explicit policy and for a derived simplifier). On <code>b7ab5917</code> it reproduces
+the documented baseline exactly: 63,399 cases stable after one pass and 100 cycles on <code>converge</code>, 6,190 non-idempotent cases on
+the corpus.</p>
+<h3 id="142-families-and-root-causes-baseline">14.2 Families and root causes (baseline)</h3>
+<p><code>converge</code> (3,507 cases not stable after one pass, 100 cycles) and the corpus (6,190 cases, 598 cycles), by responsible rule:</p>
+<table>
+<thead>
+<tr>
+<th>Family (residue → second pass)</th>
+<th style="text-align: right;">converge</th>
+<th style="text-align: right;">corpus</th>
+<th>Cause</th>
+<th>Category of the brief</th>
+<th>Decision</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>(c - a) - t</code> ↔ <code>c + ((0 - a) + (0 - t))</code> (period 2)</td>
+<td style="text-align: right;">989 (64 cycles)</td>
+<td style="text-align: right;">3,580 (565 cycles)</td>
+<td><code>SubstractionWithAddition</code>/<code>SubstractionWithSubstraction</code> return the nodes they build untransformed; the next call canonicalizes them, and a canonical chain refused by the admission is rewritten back by the sign rules</td>
+<td>rebuilt subtraction, binary rules × Flatten</td>
+<td>corrected (F1)</td>
+</tr>
+<tr>
+<td><code>(c1 - c2) - a</code></td>
+<td style="text-align: right;">889</td>
+<td style="text-align: right;">2,545 (unsigned)</td>
+<td>same unfinished reassociation (an unfolded constant pair); for an unsigned type the canonical <code>(0 - c) + t</code></td>
+<td>unfinished coefficient, numeric type</td>
+<td>corrected (F1, F6)</td>
+</tr>
+<tr>
+<td><code>0 - t</code>, <code>(0 - a) + (0 - b)</code></td>
+<td style="text-align: right;">≈ 210</td>
+<td style="text-align: right;">—</td>
+<td>an all-subtracted canonical sum written <code>0 - t</code>, which <code>SubstractionWithZero</code> rewrites</td>
+<td>rebuilt negation</td>
+<td>corrected (F2)</td>
+</tr>
+<tr>
+<td><code>t / 1</code>, <code>(-a) / b</code>, <code>t / -1</code></td>
+<td style="text-align: right;">1,075</td>
+<td style="text-align: right;">—</td>
+<td><code>DivisionOfDivision</code> returns its division untransformed</td>
+<td>specialized rule (not C3)</td>
+<td>corrected (F3), local</td>
+</tr>
+<tr>
+<td><code>c * (c * a)</code>, <code>c * -a</code>, <code>1 * a</code>, <code>-1 * a</code></td>
+<td style="text-align: right;">≈ 230</td>
+<td style="text-align: right;">—</td>
+<td>the canonical product only orders its factors; the commutation and the constant combination return their product untransformed</td>
+<td>multiplicative canonicalization</td>
+<td>corrected (F4)</td>
+</tr>
+<tr>
+<td><code>y * (x + (1 + (0 - x)))</code>, <code>y * (1 + (y - z))</code>, <code>1 * -2</code></td>
+<td style="text-align: right;">≈ 140</td>
+<td style="text-align: right;">23</td>
+<td>the coefficient of the binary factoring is built raw (<code>BuildFactoredProduct</code>)</td>
+<td>unfinished coefficient</td>
+<td>corrected (F5)</td>
+</tr>
+<tr>
+<td><code>(0 - a) + ((0 - b) + R)</code> ↔ <code>(0 - b) + ((0 - a) + R)</code></td>
+<td style="text-align: right;">16</td>
+<td style="text-align: right;">304 (256 cycles)</td>
+<td>two free parameters of one type tie in the canonical order (S4) and keep their collection order, which the level path changes</td>
+<td>additive reorganization</td>
+<td><strong>kept, decision required</strong> (§14.7)</td>
+</tr>
+<tr>
+<td><code>a + a*b → a*(1 + b)</code> at the second call</td>
+<td style="text-align: right;">≈ 100</td>
+<td style="text-align: right;">≈ 470</td>
+<td>the factorable admission depends on the source shape (a constant pair such as <code>2 + 0</code>, a sum factor); the second call admits the chain and factors it</td>
+<td>admission × Flatten</td>
+<td>deferred (§14.7)</td>
+</tr>
+<tr>
+<td><code>x / (NaN * y) → NaN</code>, <code>-(NaN / x)</code></td>
+<td style="text-align: right;">≈ 120</td>
+<td style="text-align: right;">—</td>
+<td>the policy-dependent <code>NaN</code> fold of the next preparation (S5 P18 C2b)</td>
+<td>particular numeric type, policy</td>
+<td>kept</td>
+</tr>
+<tr>
+<td><code>x * (y * y) → x * y²</code>, <code>2 * 2^x → 2^(1 + x)</code>, <code>(1/x) + (1/x)</code></td>
+<td style="text-align: right;">≈ 25</td>
+<td style="text-align: right;">—</td>
+<td><code>MultiplicationOfEqualsElements</code>, <code>PowerByZeroOrOne</code> after a canonicalization</td>
+<td>specialized rule (not C3)</td>
+<td>deferred</td>
+</tr>
+<tr>
+<td><code>x^x + x^y</code> throws <code>NullReferenceException</code></td>
+<td style="text-align: right;">978 errors</td>
+<td style="text-align: right;">—</td>
+<td><code>AdditionOfCos2andSin2Number</code> dereferences a non-constant exponent (pre-existing, S5A-01)</td>
+<td>not C3</td>
+<td>deferred, separate fix</td>
+</tr>
+</tbody>
+</table>
+<h3 id="143-corrections-c3d2">14.3 Corrections (C3d.2)</h3>
+<p>All the corrections apply to the built-in type only (<code>StabilizesRebuiltForms</code>, which follows <code>MergesMonomials</code>, so that the
+level by level references of the tests match the built-in type); derived simplifiers keep the historical rules.</p>
+<ul>
+<li><strong>F1, finished reassociations.</strong> <code>SubstractionWithAddition</code> and <code>SubstractionWithSubstraction</code> transform the two nodes they
+rebuild from their prepared operands (<code>FinishReassociation</code>, through <code>TransformCoreWithPreparedOperands</code>: rules and
+finalization, one transformation visit each, no second preparation). One finishing step, not a loop.</li>
+<li><strong>F2, negated sums.</strong> A canonical sum whose inert terms are all subtracted, in a type with an ordinary negation, is the
+negation of their sum (<code>IsNegatedSum</code>): the form <code>SubstractionWithZero</code> and <code>SubstractionWithNegate</code> give.</li>
+<li><strong>F3, finished nested divisions.</strong> <code>DivisionOfDivision</code> transforms the division it builds (<code>FinishDivision</code>).</li>
+<li><strong>F4, normalized products.</strong> The canonical product moves the ordinary negations of its inert factors out and multiplies its
+inert constant factors once (<code>NormalizeProductFactors</code>; a resulting <code>1</code> is dropped, <code>-1</code> becomes the sign, <code>0</code> is kept); the
+commutation <code>t * c → c * t</code> and the two constant combinations transform the product they build when it is one the next
+call rewrote (<code>FinishProduct</code>).</li>
+<li><strong>F5, canonical coefficients.</strong> The coefficient of a binary factoring is the canonical sum of the terms of both coefficients
+(<code>CanonicalizeFactoredCoefficient</code>), negated as a whole when all its terms are subtracted (the sign the levels and the global
+factoring give such a group); a constant coefficient of a constant factor is folded. Only a coefficient that holds a
+subtraction, a negation or two constants is canonicalized (<code>HasAdditiveNegation</code>, <code>CountAdditiveConstants</code>, both without
+allocation): a sum of added terms keeps the historical node, since canonicalizing a coefficient that grows by one term per
+level made the <code>dag</code> family quadratic in allocations (§14.8).</li>
+<li><strong>F6, unsigned subtracted constants.</strong> The subtracted constant of an unsigned canonical sum is folded to its modular value
+(<code>p - 9ul</code> gives <code>18446744073709551607 + p</code>), as <code>SubstractionOfConstants</code> folded <code>(0 - 9) + p</code> at the next call. This
+reverses a C3c choice (which kept <code>0 - c</code> for readability, a form no call ever left alone).</li>
+</ul>
+<p>Guards found by the test suites and kept:</p>
+<ul>
+<li>The finishing re-entries run only on inert, finite arithmetic (<code>FinishesRebuilt</code>, <code>IsFinishableOperand</code>): on an opaque
+constant, a call, a member access or a decimal, the re-entered rules compared operands and added user <code>Equals</code> calls and
+comparer simplifications the S5 P15/P16 tests pin; on a <code>NaN</code> or an infinity they anticipated the policy-dependent <code>NaN</code> fold.
+Those cases keep the nodes as built.</li>
+<li>Decimal sums and products are never reassociated (their operators throw on overflow).</li>
+<li><code>FinishProduct</code> finishes only the shapes the next call rewrote; finishing a plain <code>c * t</code> re-ran the comparing rules.</li>
+</ul>
+<h3 id="144-representation-invariants">14.4 Representation invariants</h3>
+<ol>
+<li><strong>Factors</strong>: inert factors in canonical key order, pinned factors after them in source order; numeric constant factors of
+one type folded into one, first; ordinary negations moved out of the product (<code>-(c * a)</code>, the fixed point of
+<code>MultiplicationWithNegate</code>).</li>
+<li><strong>Terms</strong>: inert terms in canonical order (ties of free parameters keep their collection order, S4), pinned terms after
+them; right-associated.</li>
+<li><strong>Numeric coefficient</strong>: on the left of the product (<code>c * a</code>).</li>
+<li><strong>Implicit coefficients</strong>: <code>1</code> never written; <code>-1</code> written as a negation or a subtracted term.</li>
+<li><strong>Zero coefficients</strong>: the term is dropped; a zero constant factor is kept until <code>CanDropOperand</code> allows the rules to drop the
+other factors.</li>
+<li><strong>Negations</strong>: a subtracted term inside a sum is <code>0 - t</code>; a sum whose terms are all subtracted is <code>-(sum)</code>; a product is
+<code>-(product)</code>.</li>
+<li><strong>Subtractions</strong>: a subtracted constant is folded into a negative (signed types) or modular (unsigned types) constant.</li>
+<li><strong>Factored products</strong>: the canonical product of the factor and of the canonical coefficient.</li>
+</ol>
+<p>No result is promoted to <code>CanonicalizationState.Canonical</code>: the fixed point is measured, not proven, and the residual families of
+§14.7 show it does not hold everywhere.</p>
+<h3 id="145-optimizations-c3d3">14.5 Optimizations (C3d.3)</h3>
+<ul>
+<li><strong>O1.</strong> <code>FactorCommonFactors</code> builds its monomials from the <code>AdditiveTermAnalysis</code> that <code>MergeIdenticalMonomials</code> computed for
+the same terms (<code>FactoringMonomial.FromAnalysis</code>); only the merged terms are decomposed again.</li>
+<li><strong>O3.</strong> <code>GroupByFactors</code> chains the representatives of a hash bucket through an index array instead of one list per bucket.</li>
+<li>Not done: a dedicated path for very small sums (<code>x+x+x</code> keeps its 3.64 KB, the analysis arrays): the measured gain did not
+justify a second merging path. The repeated per-round dictionaries of <code>FindBestCandidate</code> stay (one round in every measured
+family but <code>wide</code>, §14.8).</li>
+</ul>
+<h3 id="146-validation">14.6 Validation</h3>
+<p><strong>Suites</strong>: Unit 14,717 passed (1 skipped), Security 392 (3 skipped), Functional 383, ETC Debug (<code>Coverage</code>) green. New:
+<code>ExpressionSimplifierStabilityTests</code> (10 tests: each corrected family reaches a structural fixed point in one call under every
+policy, with its values; derived simplifier unchanged; decimal product not reassociated; unsigned fold; budget refusal).
+Updated with their reason: the unsigned forms (F6), S5A-05 (the multiplicative cases now finish in one pass, and the comparer
+identifies them with their result), AUD-03 and P14 (stable in one pass), <code>negatedChainCancels</code> (distinct parameters of the same
+names: one canonical chain), the comparer-batching scenarios (the built-in type builds the canonical coefficient itself; the
+probe path is proven with a derived simplifier), and <code>NestedProductsByZero_StayBounded</code> (the structural work is now linear in
+the depth: 398 then 798 visits, instead of quadratic).</p>
+<p><strong>S5 campaigns</strong> (<code>b7ab5917</code> against the branch, default policy):</p>
+<table>
+<thead>
+<tr>
+<th>Campaign</th>
+<th>b7ab5917</th>
+<th>C3d</th>
+<th>Classification</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>converge</code> (70,420)</td>
+<td><code>fixed@1</code> 63,399; cycles 100</td>
+<td><code>fixed@1</code> 66,552; cycles 54</td>
+<td>stabilization; the remaining cycles hold a call (<code>Log</code>) or a non-finite constant, or are free-parameter ties</td>
+</tr>
+<tr>
+<td><code>comparer</code></td>
+<td><code>Equals(a,b) == Equals(S(a),S(b))</code>: 0 violations; 4 exceptions</td>
+<td>0 violations; 1 exception</td>
+<td>3 integral zero divisors the first pass now proves (§14.6 below); the remaining one is the <code>AdditionOfCos2andSin2Number</code> defect</td>
+</tr>
+<tr>
+<td><code>canon</code></td>
+<td>identical</td>
+<td>identical</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>diff</code></td>
+<td>no exception added, removed or changed</td>
+<td>same; only the <code>double</code> and <code>float</code> rows move, by at most six cases, between latitude classes (<code>same</code>, <code>rounding</code>, <code>signedZero</code>, <code>extreme</code>); every exception column is unchanged</td>
+<td>symbolic-equivalence latitude</td>
+</tr>
+<tr>
+<td><code>effects</code></td>
+<td>identical</td>
+<td>identical</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>s3</code></td>
+<td><code>x / (1/x)</code> gives <code>(x ** 2) / 1</code></td>
+<td><code>x ** 2</code></td>
+<td>stabilization, same value classes</td>
+</tr>
+<tr>
+<td><code>terminate</code></td>
+<td>975 exceptions (S5A-01); largest visit count 218</td>
+<td>974; 382</td>
+<td>the finishing re-entries; well within the budgets</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Exception difference explained.</strong> On <code>b7ab5917</code> the first pass left an integral zero divisor unproved
+(<code>1 / (x - (x - (0 - 2)))</code>, that is <code>1 / -2</code>, <code>0</code> for <code>int</code>), and the comparer's own simplification of that result threw. The
+first pass now finishes the reassociation and proves the divisor, so <code>Simplify</code> throws <code>DivideByZeroException</code> one call
+earlier, as <code>DivideWithZeroOrOne</code> already does on a proven integral zero divisor and as the source does at every evaluation.</p>
+<p><strong>Differential corpus.</strong> Every branch result is compared with <code>b7ab5917</code> and evaluated against its source on twelve samples:</p>
+<table>
+<thead>
+<tr>
+<th>Policy</th>
+<th style="text-align: right;">same</th>
+<th style="text-align: right;">new form, same values</th>
+<th style="text-align: right;">rounding</th>
+<th style="text-align: right;">value or exception difference</th>
+<th style="text-align: right;">non-idempotent b7ab5917 → C3d</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>default (40,000)</td>
+<td style="text-align: right;">34,353</td>
+<td style="text-align: right;">4,189</td>
+<td style="text-align: right;">1,458</td>
+<td style="text-align: right;"><strong>0</strong></td>
+<td style="text-align: right;">6,190 → 782</td>
+</tr>
+<tr>
+<td>each explicit policy (15,000)</td>
+<td style="text-align: right;">12,865</td>
+<td style="text-align: right;">1,590</td>
+<td style="text-align: right;">545</td>
+<td style="text-align: right;"><strong>0</strong></td>
+<td style="text-align: right;">2,347 → 322</td>
+</tr>
+<tr>
+<td>derived simplifier (15,000)</td>
+<td style="text-align: right;">15,000</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;"><strong>0</strong></td>
+<td style="text-align: right;">unchanged</td>
+</tr>
+</tbody>
+</table>
+<p>The explicit policies give identical classes (the operands are inert; the four policies were identical before the last change of F5, and <code>TrustDeclarations</code> was measured again after it); the derived simplifier keeps its results exactly.</p>
+<h3 id="147-residual-cycles-and-non-idempotence-and-why">14.7 Residual cycles and non-idempotence, and why</h3>
+<ul>
+<li><strong>Free-parameter ties (304 corpus cases, 256 cycles; 16 converge cycles).</strong> Two distinct free parameters of one type have no
+canonical order (S4, documented in <code>ExpressionCanonicalOrder</code>); the stable sort keeps their collection order, and a second
+call that takes the level path collects them in another order. Ordering them by name would remove the cycles but would invent
+an order the S4 design deliberately refuses; this is left to a decision.</li>
+<li><strong>Admission-dependent factoring (≈ 470 corpus cases).</strong> A constant pair in the source (<code>(p0*p1) + (p0 + (2 + 0))</code>) or a term
+with a sum factor refuses the factorable family, so phase B does not run; the second call sees <code>2 + (p0 + p0*p1)</code>, admits it
+and factors <code>p0</code>. Admitting constant pairs would revisit the exactness decisions of C3c (signed zeros).</li>
+<li><strong>Finishing left out on purpose.</strong> Calls (<code>Log</code>, <code>Sin</code>), opaque constants, decimals and non-finite constants keep their
+nodes as built (§14.3); the <code>NaN</code> family stays with the policy.</li>
+<li><strong>Specialized rules</strong> (<code>MultiplicationOfEqualsElements</code>, the reciprocal powers): outside C3, deferred.</li>
+<li><strong><code>AdditionOfCos2andSin2Number</code></strong> throws <code>NullReferenceException</code> on <code>x^x + x^y</code> (978 <code>converge</code> errors, pre-existing): a
+one-line guard, deferred to a separate fix.</li>
+<li><strong>Pre-existing explosion outside C3</strong>: a subtraction chain of division terms (<code>1 - x1/x0 - x2/x0 - …</code>, never admitted)
+costs 7.7 ms at 16 terms and 1.4 s at 64 on <code>b7ab5917</code> as on the branch (§14.9).</li>
+</ul>
+<p>The simplifier is therefore <strong>not</strong> globally idempotent or canonical.</p>
+<h3 id="148-growth-of-the-partial-factorings-phase-e">14.8 Growth of the partial factorings (phase E)</h3>
+<p>Harness mode <code>growth</code> (one process per binary, CPU affinity fixed, machine idle): families of 8 to 512 terms; time (median of
+seven rounds), allocations, structural visits (bisection of the public limits), the factoring counters and the size of the
+result. Families: <code>shared</code> (<code>a_i * x</code>), <code>none</code> (<code>a_i * b_i</code>), <code>crossed</code> (<code>x*a_i + y*a_i</code>), <code>ties</code> (<code>a_i * a_(i+1)</code>, every
+factor in two terms), <code>repeated</code> (<code>(a_i * a_i) * x</code>), <code>wide</code> (six factors per term, one shared), <code>collide</code> (free parameters of
+one type hash alike), <code>dag</code> (one shared instance of <code>(u + v)</code> as a factor of every term), <code>coefshared</code> (constant coefficients).</p>
+<table>
+<thead>
+<tr>
+<th>Family, 512 terms</th>
+<th style="text-align: right;">b7ab5917 µs</th>
+<th style="text-align: right;">C3d µs</th>
+<th style="text-align: right;">b7ab5917 KB</th>
+<th style="text-align: right;">C3d KB</th>
+<th style="text-align: right;">structural visits (both)</th>
+<th style="text-align: right;">rounds</th>
+<th style="text-align: right;">factor comparisons</th>
+<th style="text-align: right;">result nodes (both)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>shared</code></td>
+<td style="text-align: right;">1,102</td>
+<td style="text-align: right;">988</td>
+<td style="text-align: right;">1,888</td>
+<td style="text-align: right;">1,667</td>
+<td style="text-align: right;">26,055</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">2,560</td>
+<td style="text-align: right;">1,025</td>
+</tr>
+<tr>
+<td><code>none</code></td>
+<td style="text-align: right;">744</td>
+<td style="text-align: right;">792</td>
+<td style="text-align: right;">905</td>
+<td style="text-align: right;">905</td>
+<td style="text-align: right;">32,038</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">2,047</td>
+</tr>
+<tr>
+<td><code>crossed</code></td>
+<td style="text-align: right;">1,192</td>
+<td style="text-align: right;">1,107</td>
+<td style="text-align: right;">1,886</td>
+<td style="text-align: right;">1,669</td>
+<td style="text-align: right;">31,973</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">3,086</td>
+<td style="text-align: right;">515</td>
+</tr>
+<tr>
+<td><code>ties</code></td>
+<td style="text-align: right;">20,439</td>
+<td style="text-align: right;">20,028</td>
+<td style="text-align: right;">60,933</td>
+<td style="text-align: right;">60,748</td>
+<td style="text-align: right;">1,280,854</td>
+<td style="text-align: right;">513</td>
+<td style="text-align: right;">394,496</td>
+<td style="text-align: right;">1,535</td>
+</tr>
+<tr>
+<td><code>repeated</code></td>
+<td style="text-align: right;">4,778</td>
+<td style="text-align: right;">4,699</td>
+<td style="text-align: right;">3,697</td>
+<td style="text-align: right;">3,475</td>
+<td style="text-align: right;">65,826</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">2,048</td>
+<td style="text-align: right;">2,049</td>
+</tr>
+<tr>
+<td><code>wide</code></td>
+<td style="text-align: right;">17,962</td>
+<td style="text-align: right;">17,769</td>
+<td style="text-align: right;">15,760</td>
+<td style="text-align: right;">15,539</td>
+<td style="text-align: right;">177,168</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">6,800</td>
+<td style="text-align: right;">4,003</td>
+</tr>
+<tr>
+<td><code>collide</code></td>
+<td style="text-align: right;">21,682</td>
+<td style="text-align: right;">19,561</td>
+<td style="text-align: right;">60,472</td>
+<td style="text-align: right;">60,288</td>
+<td style="text-align: right;">1,283,552</td>
+<td style="text-align: right;">507</td>
+<td style="text-align: right;">391,403</td>
+<td style="text-align: right;">1,541</td>
+</tr>
+<tr>
+<td><code>dag</code></td>
+<td style="text-align: right;">28,352</td>
+<td style="text-align: right;">34,390</td>
+<td style="text-align: right;">19,511</td>
+<td style="text-align: right;">19,511 ¹</td>
+<td style="text-align: right;">682,747</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1,027</td>
+</tr>
+<tr>
+<td><code>coefshared</code></td>
+<td style="text-align: right;">1,363</td>
+<td style="text-align: right;">1,426</td>
+<td style="text-align: right;">1,744</td>
+<td style="text-align: right;">1,698</td>
+<td style="text-align: right;">14,276</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">257</td>
+<td style="text-align: right;">1,027</td>
+</tr>
+</tbody>
+</table>
+<p>¹ Before the restriction of F5 (§14.3) the branch took 73,199 µs, 111,805 KB and 2,664,361 structural visits on <code>dag 512</code>
+(a canonicalization of the growing coefficient at every level); after it the structural visits are those of <code>b7ab5917</code> at every
+size, and the remaining time difference (+7 % at 64 terms, +21 % at 512) is the allocation-free scan of the coefficient.</p>
+<ul>
+<li>Every family keeps the structural visits and the result of <code>b7ab5917</code> at every size (the corrections of C3d do not apply to
+these sums of products), and the allocations go down by up to 12 % (O1, O3).</li>
+<li><strong>Linear</strong>: <code>shared</code>, <code>none</code>, <code>crossed</code>, <code>repeated</code>, <code>wide</code>, <code>coefshared</code>: a constant number of rounds (one per shared
+candidate), comparisons linear in the factors.</li>
+<li><strong>Quadratic, unchanged from C3c</strong>: <code>ties</code> and <code>collide</code>, where every factor is shared by exactly two terms: each round factors
+one pair and indexes every factor again, so the rounds grow with <code>n</code> and the comparisons as <code>1.5 n²</code> (394,496 at 512). Every
+indexed factor consumes one structural visit, so the work stays under the budget (the default limits refuse such a chain
+instead of running away). An incremental index (updating the candidate counts of the terms a round removes instead of
+re-indexing) would make it linear; it is a change of the phase B algorithm, left to a later mission.</li>
+<li><strong>Quadratic, level by level (not admitted)</strong>: <code>dag</code> (its factor is a sum, which the factorable admission refuses): the binary
+factoring rebuilds the product at every level, as on <code>b7ab5917</code>.</li>
+</ul>
+<h3 id="149-measures">14.9 Measures</h3>
+<p><strong>BenchmarkDotNet</strong> 0.14.0, in process, 8 warmup and 20 measured iterations, four processes run one after the other with the same
+CPU affinity (performance cores) on an idle machine: <code>b7ab5917</code>, branch, <code>b7ab5917</code>, branch. The two processes of one binary
+differ by less than 4 %; the table compares the faster process of each side (before the last restriction of F5, which only
+concerns the binary factoring of non-admitted chains and changes none of these cases' visits).</p>
+<table>
+<thead>
+<tr>
+<th>Case</th>
+<th style="text-align: right;">b7ab5917 µs</th>
+<th style="text-align: right;">C3d µs</th>
+<th style="text-align: right;">Time</th>
+<th style="text-align: right;">b7ab5917 KB</th>
+<th style="text-align: right;">C3d KB</th>
+<th style="text-align: right;">Allocated</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>a+b</code></td>
+<td style="text-align: right;">0.91</td>
+<td style="text-align: right;">0.92</td>
+<td style="text-align: right;">+0.8 %</td>
+<td style="text-align: right;">2.47</td>
+<td style="text-align: right;">2.47</td>
+<td style="text-align: right;">0.0 %</td>
+</tr>
+<tr>
+<td><code>x+x+x</code></td>
+<td style="text-align: right;">2.12</td>
+<td style="text-align: right;">2.12</td>
+<td style="text-align: right;">0.0 %</td>
+<td style="text-align: right;">3.65</td>
+<td style="text-align: right;">3.64</td>
+<td style="text-align: right;">−0.3 %</td>
+</tr>
+<tr>
+<td><code>repeated 16</code></td>
+<td style="text-align: right;">10.00</td>
+<td style="text-align: right;">9.57</td>
+<td style="text-align: right;">−4.3 %</td>
+<td style="text-align: right;">24.57</td>
+<td style="text-align: right;">21.96</td>
+<td style="text-align: right;">−10.6 %</td>
+</tr>
+<tr>
+<td><code>repeated 48</code></td>
+<td style="text-align: right;">27.59</td>
+<td style="text-align: right;">26.12</td>
+<td style="text-align: right;">−5.3 %</td>
+<td style="text-align: right;">69.87</td>
+<td style="text-align: right;">60.03</td>
+<td style="text-align: right;">−14.1 %</td>
+</tr>
+<tr>
+<td><code>repeated 512</code></td>
+<td style="text-align: right;">306.27</td>
+<td style="text-align: right;">292.27</td>
+<td style="text-align: right;">−4.6 %</td>
+<td style="text-align: right;">735.55</td>
+<td style="text-align: right;">627.03</td>
+<td style="text-align: right;">−14.8 %</td>
+</tr>
+<tr>
+<td><code>coef 8</code></td>
+<td style="text-align: right;">33.07</td>
+<td style="text-align: right;">33.21</td>
+<td style="text-align: right;">+0.4 %</td>
+<td style="text-align: right;">46.85</td>
+<td style="text-align: right;">44.66</td>
+<td style="text-align: right;">−4.7 %</td>
+</tr>
+<tr>
+<td><code>coef 24</code></td>
+<td style="text-align: right;">87.21</td>
+<td style="text-align: right;">86.31</td>
+<td style="text-align: right;">−1.0 %</td>
+<td style="text-align: right;">120.02</td>
+<td style="text-align: right;">114.81</td>
+<td style="text-align: right;">−4.3 %</td>
+</tr>
+<tr>
+<td><code>coef 128</code></td>
+<td style="text-align: right;">437.81</td>
+<td style="text-align: right;">437.02</td>
+<td style="text-align: right;">−0.2 %</td>
+<td style="text-align: right;">595.89</td>
+<td style="text-align: right;">569.71</td>
+<td style="text-align: right;">−4.4 %</td>
+</tr>
+<tr>
+<td><code>tail 48</code></td>
+<td style="text-align: right;">40.15</td>
+<td style="text-align: right;">39.76</td>
+<td style="text-align: right;">−1.0 %</td>
+<td style="text-align: right;">96.74</td>
+<td style="text-align: right;">85.94</td>
+<td style="text-align: right;">−11.2 %</td>
+</tr>
+<tr>
+<td><code>tail 512</code></td>
+<td style="text-align: right;">460.89</td>
+<td style="text-align: right;">443.17</td>
+<td style="text-align: right;">−3.8 %</td>
+<td style="text-align: right;">987.33</td>
+<td style="text-align: right;">869.66</td>
+<td style="text-align: right;">−11.9 %</td>
+</tr>
+<tr>
+<td><code>twice 48</code></td>
+<td style="text-align: right;">36.05</td>
+<td style="text-align: right;">34.52</td>
+<td style="text-align: right;">−4.2 %</td>
+<td style="text-align: right;">73.06</td>
+<td style="text-align: right;">66.45</td>
+<td style="text-align: right;">−9.0 %</td>
+</tr>
+<tr>
+<td><code>cancel 128</code></td>
+<td style="text-align: right;">64.99</td>
+<td style="text-align: right;">60.97</td>
+<td style="text-align: right;">−6.2 %</td>
+<td style="text-align: right;">163.89</td>
+<td style="text-align: right;">142.30</td>
+<td style="text-align: right;">−13.2 %</td>
+</tr>
+<tr>
+<td><code>linear 200</code></td>
+<td style="text-align: right;">60.48</td>
+<td style="text-align: right;">61.86</td>
+<td style="text-align: right;">+2.3 %</td>
+<td style="text-align: right;">121.91</td>
+<td style="text-align: right;">121.91</td>
+<td style="text-align: right;">0.0 %</td>
+</tr>
+<tr>
+<td><code>sinMid 16</code></td>
+<td style="text-align: right;">10.50</td>
+<td style="text-align: right;">10.11</td>
+<td style="text-align: right;">−3.7 %</td>
+<td style="text-align: right;">24.70</td>
+<td style="text-align: right;">21.76</td>
+<td style="text-align: right;">−11.9 %</td>
+</tr>
+<tr>
+<td><code>mixed 8</code></td>
+<td style="text-align: right;">25.62</td>
+<td style="text-align: right;">25.50</td>
+<td style="text-align: right;">−0.5 %</td>
+<td style="text-align: right;">29.39</td>
+<td style="text-align: right;">28.44</td>
+<td style="text-align: right;">−3.2 %</td>
+</tr>
+<tr>
+<td><code>mixed 32</code></td>
+<td style="text-align: right;">106.49</td>
+<td style="text-align: right;">105.28</td>
+<td style="text-align: right;">−1.1 %</td>
+<td style="text-align: right;">117.31</td>
+<td style="text-align: right;">110.03</td>
+<td style="text-align: right;">−6.2 %</td>
+</tr>
+<tr>
+<td><code>partial 32</code></td>
+<td style="text-align: right;">70.58</td>
+<td style="text-align: right;">71.59</td>
+<td style="text-align: right;">+1.4 %</td>
+<td style="text-align: right;">108.27</td>
+<td style="text-align: right;">103.07</td>
+<td style="text-align: right;">−4.8 %</td>
+</tr>
+<tr>
+<td><code>cross 32</code></td>
+<td style="text-align: right;">76.14</td>
+<td style="text-align: right;">74.68</td>
+<td style="text-align: right;">−1.9 %</td>
+<td style="text-align: right;">130.56</td>
+<td style="text-align: right;">118.89</td>
+<td style="text-align: right;">−8.9 %</td>
+</tr>
+<tr>
+<td><code>cycReassoc</code> (<code>(1 - y) - x/z</code>)</td>
+<td style="text-align: right;">8.55</td>
+<td style="text-align: right;">8.48</td>
+<td style="text-align: right;">−0.8 %</td>
+<td style="text-align: right;">12.13</td>
+<td style="text-align: right;">11.96</td>
+<td style="text-align: right;">−1.4 %</td>
+</tr>
+<tr>
+<td><code>cycConstPair</code> (<code>2 - (x - 0.5)</code>)</td>
+<td style="text-align: right;">2.29</td>
+<td style="text-align: right;">2.28</td>
+<td style="text-align: right;">−0.3 %</td>
+<td style="text-align: right;">3.82</td>
+<td style="text-align: right;">3.82</td>
+<td style="text-align: right;">0.0 %</td>
+</tr>
+<tr>
+<td><code>cycNestedDiv</code> (<code>x / (1/x)</code>)</td>
+<td style="text-align: right;">3.09</td>
+<td style="text-align: right;">3.42</td>
+<td style="text-align: right;"><strong>+10.6 %</strong></td>
+<td style="text-align: right;">2.81</td>
+<td style="text-align: right;">2.86</td>
+<td style="text-align: right;">+1.8 %</td>
+</tr>
+<tr>
+<td><code>cycProduct</code> (<code>(x * -2) * -2</code>)</td>
+<td style="text-align: right;">1.00</td>
+<td style="text-align: right;">1.66</td>
+<td style="text-align: right;"><strong>+65.6 %</strong></td>
+<td style="text-align: right;">1.58</td>
+<td style="text-align: right;">2.73</td>
+<td style="text-align: right;">+72.8 %</td>
+</tr>
+<tr>
+<td><code>cycCoefficient</code> (<code>x*y + (1 - x)*y</code>)</td>
+<td style="text-align: right;">10.88</td>
+<td style="text-align: right;">10.61</td>
+<td style="text-align: right;">−2.5 %</td>
+<td style="text-align: right;">11.51</td>
+<td style="text-align: right;">12.93</td>
+<td style="text-align: right;">+12.3 %</td>
+</tr>
+<tr>
+<td><code>subChain 16</code> (<code>1 - x1/x0 - … - x16/x0</code>)</td>
+<td style="text-align: right;">7,670</td>
+<td style="text-align: right;">8,498</td>
+<td style="text-align: right;"><strong>+10.8 %</strong></td>
+<td style="text-align: right;">7,214</td>
+<td style="text-align: right;">7,423</td>
+<td style="text-align: right;">+2.9 %</td>
+</tr>
+<tr>
+<td><code>subChain 64</code></td>
+<td style="text-align: right;">1,405,723</td>
+<td style="text-align: right;">1,361,545</td>
+<td style="text-align: right;">−3.1 %</td>
+<td style="text-align: right;">1,148,802</td>
+<td style="text-align: right;">1,024,074</td>
+<td style="text-align: right;">−10.9 %</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>The families C3c optimized keep their gains; their allocations go down by 4 to 15 % (O1, O3) and their time by up to 6 %.</li>
+<li>The three regressions are the price of the finishing step on tiny or level by level trees, and each is justified: <code>cycProduct</code>
+reaches <code>4 * x</code> in one call where <code>b7ab5917</code> needed two (<code>-2 * (-2 * x)</code> first, 2.00 µs for both calls), likewise
+<code>cycNestedDiv</code> (<code>x ** 2</code> instead of <code>(x ** 2) / 1</code>); <code>subChain 16</code> runs the finishing re-entries and their operand scans at
+every level of a chain that the admission refuses (+3 % transformation visits, +9 % structural visits).</li>
+<li><code>x+x+x</code> keeps its allocations (§14.5). <code>subChain 64</code> shows a pre-existing super-linear cost of the non-admitted subtraction
+chains of divisions (7.7 ms at 16 terms, 1.4 s at 64, on both binaries): outside the C3 families, to be studied separately.</li>
+</ul>
+<p><strong>Deterministic counters</strong> (harness mode <code>counters</code>, transformation and structural visits by bisection of the public limits):
+identical to <code>b7ab5917</code> on every scenario of the mission (<code>a+b</code> to <code>cross 32</code>, results identical as well); <code>cycNestedDiv</code> and
+<code>cycProduct</code> take one more transformation visit (the finishing step) and reach their second-pass result; <code>cycCoefficient</code> takes
+five structural visits fewer (57 → 52); <code>subChain 16</code> takes 6,934 transformation visits instead of 6,724 and 73,776 structural
+visits instead of 67,715.</p>
+<h3 id="1410-possible-next-steps">14.10 Possible next steps</h3>
+<ul>
+<li>A decision on the free-parameter ties (§14.7): order them by name as a last resort, or keep the S4 policy.</li>
+<li>An incremental candidate index for phase B (§14.8, <code>ties</code>/<code>collide</code>).</li>
+<li>The admission of constant pairs and of sum factors by the factorable family, with their exactness proofs.</li>
+<li>The <code>AdditionOfCos2andSin2Number</code> guard and the cost of the non-admitted division chains.</li>
 </ul>
 
 </article>
