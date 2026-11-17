@@ -12,6 +12,11 @@ namespace UtilsTest.Mathematics.Expressions;
 [TestClass]
 public class ExpressionDiagnosticMetricsTests
 {
+    /// <summary>A derived simplifier without any member: its plan holds no flatten rule, so it simplifies level by level.</summary>
+    private sealed class LevelByLevelSimplifier : ExpressionSimplifier
+    {
+    }
+
     /// <summary>Returns the sum of two values for a custom-operator expression.</summary>
     /// <param name="left">The left value.</param>
     /// <param name="right">The right value.</param>
@@ -186,16 +191,16 @@ public class ExpressionDiagnosticMetricsTests
         ParameterExpression[] parameters = Enumerable.Range(0, 4)
             .Select(index => Expression.Parameter(typeof(double), $"p{index}"))
             .ToArray();
-        // 2*p0 + 3*p1 + 4*p2 + 2*p3: the last coefficient repeats the first one, so the chain is not a linear chain and the
-        // flatten rule of the simplifier declines it (docs/expressions/SimplifierFlatten.md); with distinct coefficients the
-        // chain is canonicalized by that rule without any comparison. The factoring probes of each level then nest as before.
+        // 2*p0 + 3*p1 + 4*p2 + 2*p3, simplified level by level by a derived simplifier (whose plan holds no flatten rule): the
+        // built-in simplifier treats this chain at once since mission C3b (a spine chain, docs/expressions/SimplifierFlatten.md
+        // §12), without any comparison. The factoring probes of each level then nest as before.
         Expression source = Expression.Multiply(Expression.Constant(2.0), parameters[0]);
         for (int i = 1; i < parameters.Length; i++)
         {
             source = Expression.Add(source, Expression.Multiply(Expression.Constant((double)(i % 3) + 2), parameters[i]));
         }
 
-        new ExpressionSimplifier().Simplify(source);
+        new LevelByLevelSimplifier().Simplify(source);
         var events = ExpressionComparer.EndDiagnosticCapture();
         Assert.IsTrue(events.Any(item => item.ComparisonDepth == 1));
         Assert.IsTrue(events.Any(item => item.ComparisonDepth >= 2));

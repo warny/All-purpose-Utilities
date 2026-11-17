@@ -113,7 +113,7 @@ public class ExpressionSimplifierFlattenAdmissionTests
 
         if (!nodes.All(ExpressionSimplifier.IsOrdinaryBinaryArithmetic)) return false;
         List<Expression> others = [.. terms.Where(term => IsReferenceLinearTerm(term, type))];
-        if (others.Count == terms.Count) return HasDistinctOperands(others);
+        if (others.Count == terms.Count) return HasDistinctOperands(others) || IsReferenceSpine(root, type);
 
         Expression? anchor = terms.Count - others.Count == 1 ? terms.Single(term => !IsReferenceLinearTerm(term, type)) : null;
         return historical
@@ -122,6 +122,84 @@ public class ExpressionSimplifierFlattenAdmissionTests
             && !ExpressionEffectAnalysis.IsInert(ExpressionEffectAnalysis.MethodEffects(call.Method))
             && IsOnSpine(root, anchor)
             && HasDistinctOperands(others);
+    }
+
+    /// <summary>
+    /// The spine definition (mission C3b, §12), transcribed from scratch for a chain whose terms are all linear: a comb with no
+    /// square <c>x * x</c> and at most two constants, whose deepest pair is a linear chain, and whose sub-chain below every
+    /// other node holds two monomials with a certainly non-zero coefficient (all occurrences of the same effective sign and,
+    /// for an integral type, a total magnitude below <c>2^(bits - 1)</c>; the constant monomial counts when the sub-chain
+    /// holds exactly one constant).
+    /// </summary>
+    /// <param name="root">A crossed root whose local conditions hold.</param>
+    /// <param name="type">Its type.</param>
+    /// <returns><see langword="true"/> for a spine chain.</returns>
+    private static bool IsReferenceSpine(BinaryExpression root, Type type)
+    {
+        var spine = new List<BinaryExpression>();
+        for (Expression node = root; IsCrossed(node);)
+        {
+            var binary = (BinaryExpression)node;
+            if (IsCrossed(binary.Left) && IsCrossed(binary.Right)) return false;
+            spine.Add(binary);
+            node = IsCrossed(binary.Left) ? binary.Left : binary.Right;
+        }
+
+        var all = new List<Expression>();
+        Collect(root, [], all);
+        if (all.Any(static term => term is BinaryExpression { Left: ParameterExpression l, Right: ParameterExpression r } && l == r)) return false;
+        if (all.Count(static term => term is ConstantExpression) > 2) return false;
+
+        BinaryExpression deepest = spine[^1];
+        if (!HasDistinctOperands([deepest.Left, deepest.Right])) return false;
+        System.Numerics.BigInteger bound = type == typeof(int) || type == typeof(uint) ? System.Numerics.BigInteger.One << 31
+            : type == typeof(long) || type == typeof(ulong) ? System.Numerics.BigInteger.One << 63
+            : System.Numerics.BigInteger.MinusOne;
+        for (int index = spine.Count - 2; index >= 0; index--)
+        {
+            var below = new List<(Expression Term, bool Negative)>();
+            CollectSigned(IsCrossed(spine[index].Left) ? spine[index].Left : spine[index].Right, false, below);
+            int certain = below.Count(static t => t.Term is ConstantExpression) == 1 ? 1 : 0;
+            foreach (var monomial in below.Where(static t => t.Term is not ConstantExpression).GroupBy(static t => MonomialName(t.Term)))
+            {
+                var signs = monomial.Select(t => t.Negative != (Convert.ToDouble(Coefficient(t.Term)) < 0)).Distinct().Count();
+                System.Numerics.BigInteger magnitude = monomial.Aggregate(System.Numerics.BigInteger.Zero, (sum, t) => sum + System.Numerics.BigInteger.Abs(new System.Numerics.BigInteger(Convert.ToDecimal(Coefficient(t.Term)))));
+                if (signs == 1 && (bound.Sign < 0 || magnitude < bound)) certain++;
+            }
+
+            if (certain < 2) return false;
+        }
+
+        return true;
+
+        static object Coefficient(Expression term) => term is BinaryExpression product
+            ? (product.Left as ConstantExpression ?? product.Right as ConstantExpression)?.Value ?? 1
+            : 1;
+
+        static string MonomialName(Expression term) => term switch
+        {
+            ParameterExpression parameter => System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(parameter).ToString(),
+            BinaryExpression { Left: ParameterExpression l, Right: ParameterExpression r } => string.Join("*", new[] { l, r }.Select(System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode).OrderBy(static h => h)),
+            BinaryExpression product => MonomialName(product.Left as ParameterExpression ?? (ParameterExpression)product.Right),
+            _ => throw new InvalidOperationException(),
+        };
+    }
+
+    /// <summary>Collects the terms of a chain with their sign relative to it.</summary>
+    /// <param name="node">A crossed node or a term.</param>
+    /// <param name="negative">The sign of <paramref name="node"/>.</param>
+    /// <param name="terms">Receives the signed terms.</param>
+    private static void CollectSigned(Expression node, bool negative, List<(Expression Term, bool Negative)> terms)
+    {
+        if (!IsCrossed(node))
+        {
+            terms.Add((node, negative));
+            return;
+        }
+
+        var binary = (BinaryExpression)node;
+        CollectSigned(binary.Left, negative, terms);
+        CollectSigned(binary.Right, binary.NodeType == ExpressionType.Subtract ? !negative : negative, terms);
     }
 
     /// <summary>Whether the node that holds <paramref name="term"/> is reached from the root through nodes with a single crossed operand.</summary>
@@ -421,7 +499,9 @@ public class ExpressionSimplifierFlattenAdmissionTests
             var simplifier = new ExpressionSimplifier();
             foreach (BinaryExpression node in nodes)
             {
-                Assert.AreEqual(ReferenceIsAdmissible(node) ? ExpressionRuleRejection.None : ExpressionRuleRejection.ChainNotAdmitted, simplifier.FlattenAdmission(node), $"{label} (alone): {node}");
+                // Each node in an operation of its own (a spine chain is admitted only inside an operation, PR #701 review).
+                ExpressionRuleRejection decision = ExpressionResourceBudget.Run(ExpressionResourceLimits.Unlimited, simplifier, null, null, (simplifier, node), static state => state.simplifier.FlattenAdmission(state.node));
+                Assert.AreEqual(ReferenceIsAdmissible(node) ? ExpressionRuleRejection.None : ExpressionRuleRejection.ChainNotAdmitted, decision, $"{label} (alone): {node}");
             }
 
             cases++;
@@ -539,34 +619,45 @@ public class ExpressionSimplifierFlattenAdmissionTests
     [TestMethod]
     public void DeepRepetition_RecordsTheLevelsThatHoldBothOccurrences()
     {
-        // d0 + d1 + d2 + d0 + d4 + ... + d39, left-associated: the root walk meets d0 first at term 3 (spine index 36).
+        // Mission C3b: a repetition alone no longer refuses a comb; d0 + d1 + d2 + d0 + d4 + ... + d39 is a spine chain, and so
+        // is every level that holds both occurrences: nothing is recorded.
+        FlattenAdmissionStatistics comb = MeasureAdmissions(LeftSum(Terms(40, 3, D[0])));
+        Assert.AreEqual(37, comb.Spine, "The root and the 36 levels holding both occurrences.");
+        Assert.AreEqual(0, comb.RecordedRefusals);
+
+        // The same repetition in a chain the spine refuses below it (a node with two crossed operands at spine index 38): the
+        // walk meets d0 first at term 3 (spine index 36), and the levels that hold both occurrences are recorded down to it.
         Expression[] terms = Terms(40, 3, D[0]);
+        terms[0] = Expression.Add(D[60], D[61]);
+        terms[1] = Expression.Add(D[62], D[63]);
+        terms[2] = D[0];
         FlattenAdmissionStatistics statistics = MeasureAdmissions(LeftSum(terms));
-        Assert.AreEqual(1, statistics.Causes[(int)FlattenRefusalCause.RepeatedParameter]);
+        Assert.IsTrue(statistics.Causes[(int)FlattenRefusalCause.RepeatedParameter] >= 1);
+        Assert.IsTrue(statistics.SpineCauses[(int)FlattenSpineRefusalCause.NotComb] >= 1);
         Assert.AreEqual(36, statistics.RecordedRefusals);
         Assert.AreEqual(36, statistics.KnownRefusals);
-        Assert.AreEqual(3, statistics.Walks, "The root, then the two admitted chains below the earlier occurrence.");
-        Assert.AreEqual(39, statistics.Admissions);
+        Assert.AreEqual(0, statistics.Spine);
 
-        // The repetition of the last term: nothing to record (repeatLast).
+        // The repetition of the last term: nothing to record (repeatLast), the root is a spine chain.
         FlattenAdmissionStatistics last = MeasureAdmissions(Expression.Add(LeftSum(D.Take(39)), D[0]));
         Assert.AreEqual(0, last.RecordedRefusals);
         Assert.AreEqual(0, last.KnownRefusals);
+        Assert.AreEqual(1, last.Spine);
 
-        // A coefficient repeated deep, and a coefficient equal to a constant deep: same recording.
+        // A repeated coefficient and a coefficient equal to a constant, deep or at the root: spine chains, nothing recorded.
         FlattenAdmissionStatistics coefficient = MeasureAdmissions(LeftSum([.. D.Take(3), Expression.Multiply(C(2), D[3]), .. D.Skip(4).Take(30), Expression.Multiply(C(2), D[40])]));
-        Assert.AreEqual(1, coefficient.Causes[(int)FlattenRefusalCause.RepeatedCoefficient]);
-        Assert.AreEqual(0, coefficient.RecordedRefusals, "The repeated coefficient is the right operand of the root.");
+        Assert.AreEqual(1, coefficient.Spine);
+        Assert.AreEqual(0, coefficient.RecordedRefusals);
         FlattenAdmissionStatistics deep = MeasureAdmissions(LeftSum([Expression.Multiply(C(2), D[0]), .. D.Skip(1).Take(2), Expression.Multiply(C(2), D[3]), .. D.Skip(4).Take(30)]));
-        Assert.AreEqual(1, deep.Causes[(int)FlattenRefusalCause.RepeatedCoefficient]);
-        Assert.AreEqual(30, deep.RecordedRefusals);
+        Assert.AreEqual(31, deep.Spine);
+        Assert.AreEqual(0, deep.RecordedRefusals);
         FlattenAdmissionStatistics constant = MeasureAdmissions(LeftSum([C(2), .. D.Skip(1).Take(2), Expression.Multiply(C(2), D[3]), .. D.Skip(4).Take(30)]));
-        Assert.AreEqual(1, constant.Causes[(int)FlattenRefusalCause.CoefficientEqualsConstant]);
-        Assert.AreEqual(30, constant.RecordedRefusals);
+        Assert.AreEqual(31, constant.Spine);
+        Assert.AreEqual(0, constant.RecordedRefusals);
 
         // The coefficient equal to the constant is the fifth one the walk meets, past the inline entries of its set.
         FlattenAdmissionStatistics fifth = MeasureAdmissions(LeftSum([C(2), D[0], .. Enumerable.Range(1, 5).Select(static i => (Expression)Expression.Multiply(C(i + 1.0), D[i]))]));
-        Assert.AreEqual(1, fifth.Causes[(int)FlattenRefusalCause.CoefficientEqualsConstant]);
+        Assert.AreEqual(5, fifth.Spine, "refused by the linear walk, admitted as a spine chain with the four levels holding both");
     }
 
     /// <summary>

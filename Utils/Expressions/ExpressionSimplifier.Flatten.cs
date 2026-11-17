@@ -66,6 +66,15 @@ public partial class ExpressionSimplifier
     [Flatten(ExpressionType.Add, ExpressionType.Subtract)]
     private Expression? FlattenAdditiveChain(Expression source, FlattenedTerm[] terms, FlattenRuleDispatcher dispatcher)
     {
+        // Mission C3b: the admission, which ran just before the extraction in the same operation, recognized a spine chain (its
+        // terms are linear terms, so the test below would take it for a linear chain). The root lives in the operation's
+        // session, which a nested operation detaches and whose exit releases it (ExpressionResourceBudget.Session).
+        if (ExpressionResourceBudget.ActiveSession is { AdmittedSpineRoot: { } spineRoot } session)
+        {
+            session.AdmittedSpineRoot = null;
+            if (ReferenceEquals(spineRoot, source)) return FlattenSpineChain((BinaryExpression)source);
+        }
+
         foreach (FlattenedTerm term in terms)
         {
             if (!IsLinearTerm(term.Operand, source.Type)) return FlattenAnchoredChain((BinaryExpression)source, dispatcher);
@@ -256,9 +265,10 @@ public partial class ExpressionSimplifier
             && !ExpressionEffectAnalysis.IsInert(ExpressionEffectAnalysis.MethodEffects(call.Method));
 
     /// <summary>
-    /// Admits to <see cref="FlattenAdditiveChain"/> the linear chains (<see cref="IsLinearChain"/>) and, under the historical
-    /// admission, the anchored chains (Flatten mission C2), for the built-in simplifier; a derived simplifier, whose plan does
-    /// not hold that rule, keeps the effect gate for its own flatten rules.
+    /// Admits to <see cref="FlattenAdditiveChain"/> the linear chains (<see cref="IsLinearChain"/>), under the historical
+    /// admission the anchored chains (Flatten mission C2), and the spine chains a repetition refuses as linear chains
+    /// (<see cref="IsSpineChain"/>, mission C3b), for the built-in simplifier; a derived simplifier, whose plan does not hold
+    /// that rule, keeps the effect gate for its own flatten rules.
     /// </summary>
     /// <param name="root">The raw root of a chain.</param>
     /// <returns>
@@ -283,6 +293,11 @@ public partial class ExpressionSimplifier
     /// cause; such a node, offered later, is refused by one lookup instead of a walk. Nothing else is recorded: an admitted
     /// chain says nothing about a larger one, and a node that does not contain the cause is walked as before. The table
     /// lives as long as the outermost operation of the thread, like the effect table.
+    /// </para>
+    /// <para>
+    /// <b>Spine chains (mission C3b).</b> A repetition (a repeated parameter or coefficient, a coefficient equal to a constant)
+    /// only refuses the linear family. Such a chain is then tested as a spine chain; a refused one is recorded only down to the
+    /// shallower of the depths the two walks prove, so that every recorded node is refused by both families.
     /// </para>
     /// </remarks>
     internal override ExpressionRuleRejection FlattenAdmission(Expression root)
@@ -321,6 +336,34 @@ public partial class ExpressionSimplifier
         }
 
         bool admissible = IsLinearChain(binary, statistics, out ChainRefusal refusal, out int anchorDepth);
+        // A spine chain is admitted only inside an operation, whose session carries the decision to the rule; outside one (a
+        // direct call of the admission) the repetition keeps refusing the chain.
+        if (!admissible && IsRepetition(refusal.Cause) && session is not null)
+        {
+            // Mission C3b: a repetition only refuses the linear family; the spine family tolerates it where no rule can apply.
+            // A node below a refused spine root, down to its cause, is refused by one lookup instead of another spine walk.
+            int spineRefusalDepth;
+            if (session.FlattenSpineRefusals is { } spineRefusals && spineRefusals.Contains(binary))
+            {
+                ExpressionResourceBudget.ConsumeStructuralVisit();
+                if (statistics is not null) statistics.KnownSpineRefusals++;
+                spineRefusalDepth = 0;
+            }
+            else if (IsSpineChain(binary, statistics, out spineRefusalDepth))
+            {
+                if (statistics is not null) statistics.Spine++;
+                session.AdmittedSpineRoot = binary;
+                return ExpressionRuleRejection.None;
+            }
+            else if (spineRefusalDepth > 0)
+            {
+                RecordSpineRefusals(binary, spineRefusalDepth, session, statistics);
+            }
+
+            // A node is a known refusal only if every family refuses it: down to the shallower of the two proven depths.
+            refusal = refusal with { Depth = Math.Min(refusal.Depth, spineRefusalDepth) };
+        }
+
         if (admissible && anchorDepth >= 0 && !_usesHistoricalAdmission)
         {
             if (statistics is not null) statistics.Causes[(int)FlattenRefusalCause.AnchoredUnderPolicy]++;

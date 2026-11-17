@@ -391,6 +391,22 @@ internal static class ExpressionResourceBudget
         public ExpressionNodeSet? FlattenAnchoredRefusals;
 
         /// <summary>
+        /// The crossed nodes whose chain the spine test of the built-in simplifier's admission proved refused (mission C3b): the
+        /// spine nodes from a refused root down to its cause. Consulted only to skip the spine test, never the linear one (a node
+        /// below a refused spine may still be a linear chain). Same lifetime as <see cref="FlattenRefusals"/>.
+        /// </summary>
+        public ExpressionNodeSet? FlattenSpineRefusals;
+
+        /// <summary>
+        /// The root of the spine chain the admission of the running operation admitted last, which the flatten rule invoked right
+        /// after it on the same root consumes (mission C3b, <c>ExpressionSimplifier.IsSpineChain</c>). It belongs to one public
+        /// operation: <see cref="Enter"/> detaches it, so a nested operation neither reads nor consumes its caller's root, and
+        /// <see cref="Exit"/> restores it, which also releases it when an exception (a budget refusal between the admission and
+        /// the rule) ends the operation.
+        /// </summary>
+        public System.Linq.Expressions.Expression? AdmittedSpineRoot;
+
+        /// <summary>
         /// The structural hashes, canonical-order keys and canonicalization states the simplifier's canonicalizations computed
         /// during the running public operation, by node reference (mission C3a, <c>ExpressionSimplifier.DescribeTerm</c>). Every
         /// public operation, nested ones included, starts with an empty table: <see cref="Enter"/> detaches the enclosing one and
@@ -437,11 +453,13 @@ internal static class ExpressionResourceBudget
                 StructuralBase,
                 MaxDepth,
                 MaxNodes,
-                SimplificationMetadata);
+                SimplificationMetadata,
+                AdmittedSpineRoot);
 
             // Mission C3a: every public operation, nested ones included, starts with an empty metadata table and never reads
             // the entries of the operation it is nested in (as the comparison memo of S5 P9), so its own budget is exact.
             SimplificationMetadata = null;
+            AdmittedSpineRoot = null;
 
             if (OperationDepth == 0)
             {
@@ -499,13 +517,16 @@ internal static class ExpressionResourceBudget
             MaxDepth = scope.MaxDepth;
             MaxNodes = scope.MaxNodes;
             SimplificationMetadata = scope.SimplificationMetadata;
+            AdmittedSpineRoot = scope.AdmittedSpineRoot;
             if (scope.IsOutermost)
             {
                 Trace = null;
                 EffectCache = null;
                 FlattenRefusals = null;
                 FlattenAnchoredRefusals = null;
+                FlattenSpineRefusals = null;
                 SimplificationMetadata = null;
+                AdmittedSpineRoot = null;
                 EffectMode = 0;
                 TransformVisits = 0;
                 StructuralVisits = 0;
@@ -527,6 +548,7 @@ internal static class ExpressionResourceBudget
     /// <param name="MaxDepth">The previous depth limit.</param>
     /// <param name="MaxNodes">The previous node limit.</param>
     /// <param name="SimplificationMetadata">The metadata table of the enclosing operation, detached while this one runs.</param>
+    /// <param name="AdmittedSpineRoot">The spine root admitted by the enclosing operation, detached while this one runs.</param>
     internal readonly record struct Scope(
         object? Owner,
         int OperationDepth,
@@ -538,7 +560,8 @@ internal static class ExpressionResourceBudget
         long StructuralBase,
         int MaxDepth,
         long MaxNodes,
-        ExpressionMetadataTable? SimplificationMetadata)
+        ExpressionMetadataTable? SimplificationMetadata,
+        System.Linq.Expressions.Expression? AdmittedSpineRoot)
     {
         /// <summary>Gets whether this scope is the outermost operation of the thread.</summary>
         public bool IsOutermost => OperationDepth == 0;

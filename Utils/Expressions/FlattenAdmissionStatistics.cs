@@ -76,6 +76,21 @@ internal sealed class FlattenAdmissionStatistics
     /// <summary>The number of anchored chains whose prepared anchor sent them to the level by level fallback.</summary>
     public long AnchoredFallbacks;
 
+    /// <summary>The number of spine chain roots admitted (mission C3b).</summary>
+    public long Spine;
+
+    /// <summary>The number of walks of the spine test, each after a linear refusal for a repetition (mission C3b).</summary>
+    public long SpineWalks;
+
+    /// <summary>The number of spine tests answered by the table of known spine refusals, without any walk.</summary>
+    public long KnownSpineRefusals;
+
+    /// <summary>The number of levels of admitted spine chains finalized one by one above their linear sub-chain.</summary>
+    public long SpineLevels;
+
+    /// <summary>The number of spine refusals per cause, indexed by <see cref="FlattenSpineRefusalCause"/>.</summary>
+    public long[] SpineCauses = new long[(int)FlattenSpineRefusalCause.TooManyConstants + 1];
+
     /// <summary>The number of walks of a chain (admissions not answered by the table of known refusals).</summary>
     public long Walks;
 

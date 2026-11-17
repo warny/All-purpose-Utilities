@@ -341,7 +341,7 @@ public class ExpressionSimplifierFlattenTests
         {
             ("a + a", Add(D[0], D[0])),
             ("a - a", Sub(D[0], D[0])),
-            ("a + (b + a)", Add(D[0], Add(D[1], D[0]))),
+            // "a + (b + a)" became a spine chain in mission C3b (ExpressionSimplifierFlattenSpineTests).
             ("(a + b) + (a + b)", Add(Add(D[0], D[1]), Add(D[0], D[1]))),
             ("3*a + 2*a", Add(Mul(C(3.0), D[0]), Mul(C(2.0), D[0]))),
             ("a*b + a", Add(Mul(D[0], D[1]), D[0])),
@@ -445,7 +445,8 @@ public class ExpressionSimplifierFlattenTests
         var cases = new (string Label, Expression Source, Expression Linear)[]
         {
             ("(x0 - ... - x9) + sin(y)", Add(linear, Expression.Call(sin, D[20])), linear),
-            ("(x0 - ... - x9) + x0", Add(linear, D[0]), linear),
+            // "(x0 - ... - x9) + x0" became a spine chain in mission C3b; a square of a parameter is still refused.
+            ("(x0 - ... - x9) + x0*x0", Add(linear, Mul(D[0], D[0])), linear),
             ("sin(y) - (x0 - ... - x9)", Sub(Expression.Call(sin, D[20]), linear), linear),
         };
 
