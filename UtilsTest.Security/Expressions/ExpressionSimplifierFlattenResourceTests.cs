@@ -381,9 +381,10 @@ public class ExpressionSimplifierFlattenResourceTests
             Assert.AreEqual(ExpressionRuleRejection.ChainNotAdmitted, state.simplifier.FlattenAdmission(state.dag));
             return ExpressionResourceBudget.StructuralVisits;
         });
-        // One visit per distinct node of the DAG for the linear test, and as many for the factorable test of mission C3c, which
-        // refuses the first crossed node reached twice (the spine test, which it supersedes, is not run).
-        Assert.AreEqual(101, structural, "One visit per distinct node of the DAG, for each of the two tests.");
+        // One visit per distinct node of the DAG for the linear test; the factorable test of mission C3c accepts a few revisits
+        // of shared nodes, then refuses once they exceed the distinct nodes: 100 visits for the 50 levels (the spine test, which
+        // it supersedes, is not run).
+        Assert.AreEqual(150, structural, "One visit per distinct node for the linear test, two for the factorable one.");
 
         ExpressionResourceLimitException exception = Assert.ThrowsExactly<ExpressionResourceLimitException>(() => simplifier.Simplify(dag));
         Assert.AreEqual(ExpressionResourceLimitKind.Work, exception.Kind);

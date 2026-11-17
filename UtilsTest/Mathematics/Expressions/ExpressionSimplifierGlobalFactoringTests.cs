@@ -551,6 +551,38 @@ public class ExpressionSimplifierGlobalFactoringTests
         Assert.AreEqual("(x * (a + b))", Text(simplifier.Simplify(tree)));
     }
 
+    /// <summary>
+    /// A tree whose sub-chains are shared simplifies as its rebuilt copy (the comparer's reflexivity relies on it): a few shared
+    /// occurrences keep the chain factorable, as the copy is.
+    /// </summary>
+    [TestMethod]
+    public void SharedSubChains_SimplifyAsTheirCopies()
+    {
+        Expression shared = Expression.Subtract(Y, C);
+        Expression[] sources =
+        [
+            Expression.Subtract(shared, shared),
+            Expression.Add(Expression.Add(shared, Mul(K(2), X)), shared),
+            Expression.Multiply(Expression.Subtract(shared, shared), Expression.Subtract(Expression.Subtract(C, Y), C)),
+        ];
+        foreach (Expression source in sources)
+        {
+            Expression copy = new CopyVisitor().Visit(source);
+            Assert.AreEqual(Text(new ExpressionSimplifier().Simplify(copy)), Text(new ExpressionSimplifier().Simplify(source)), Text(source));
+            Assert.IsTrue(ExpressionComparer.Default.Equals(source, copy), Text(source));
+        }
+
+        Assert.AreEqual("0", Text(new ExpressionSimplifier().Simplify(sources[0])));
+    }
+
+    /// <summary>Rebuilds every binary node, so that no sub-tree of the copy is shared.</summary>
+    private sealed class CopyVisitor : ExpressionVisitor
+    {
+        /// <inheritdoc/>
+        protected override Expression VisitBinary(BinaryExpression node)
+            => Expression.MakeBinary(node.NodeType, Visit(node.Left), Visit(node.Right), node.IsLiftedToNull, node.Method);
+    }
+
     /// <summary>The factorable root a new operation of <paramref name="simplifier"/> finds in its session when it starts.</summary>
     /// <param name="simplifier">The simplifier.</param>
     /// <returns>The root left in the session, or <see langword="null"/>.</returns>

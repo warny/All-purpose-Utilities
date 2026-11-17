@@ -14,6 +14,12 @@ namespace Utils.Mathematics.Expressions;
 /// </summary>
 public partial class ExpressionSimplifier
 {
+    /// <summary>
+    /// The number of revisits of shared crossed nodes the factorable test always accepts (<see cref="IsFactorableChain"/>);
+    /// beyond it, the revisits may not exceed the distinct shared nodes.
+    /// </summary>
+    private const int SharedRevisitAllowance = 16;
+
     /// <summary>What the additive canonicalization of the built-in type merges or factors (mission C3c).</summary>
     private enum AdditiveFactoring
     {
@@ -736,8 +742,9 @@ public partial class ExpressionSimplifier
     /// <para>
     /// <b>Refusals that keep the levels.</b> A crossed node with two constant operands is refused, as by the linear family: the
     /// levels fold it exactly (<c>-0.0 + -0.0</c> is <c>-0.0</c>), where the canonicalization drops zeros symbolically. A
-    /// crossed node reached twice (a shared sub-chain, a DAG) is refused at its second occurrence: its terms would be extracted
-    /// once per path. Every refusal is local, so it is inherited by every chain that crosses the refusing node, and reported
+    /// shared sub-chain is accepted while its revisits stay below the distinct nodes (a tree and its rebuilt copy then give the
+    /// same result); a DAG whose paths multiply is refused, after a number of visits linear in its distinct nodes, since its
+    /// terms would be extracted once per path. Every refusal is local, so it is inherited by every chain that crosses the refusing node, and reported
     /// as such (<paramref name="refusalDepth"/>).
     /// </para>
     /// <para>
@@ -755,6 +762,7 @@ public partial class ExpressionSimplifier
         if (statistics is not null) statistics.FactorableWalks++;
         Stack<BinaryExpression>? pending = null;
         HashSet<BinaryExpression>? branchNodes = null;
+        int revisits = 0;
         BinaryExpression? node = root;
         int depth = 0;
         bool onSpine = true;
@@ -762,11 +770,14 @@ public partial class ExpressionSimplifier
         {
             ExpressionResourceBudget.ConsumeStructuralVisit();
 
-            // A crossed node reached twice is a shared sub-chain: its terms would be extracted once per path (2^n terms for a DAG
-            // of n levels), so the chain is refused at the second occurrence, as the linear family refuses its repeated
-            // parameter. Only the nodes below the first node with two crossed operands can be reached twice: a comb allocates
-            // nothing.
-            if (!onSpine && !(branchNodes ??= new HashSet<BinaryExpression>(ReferenceEqualityComparer.Instance)).Add(node))
+            // A crossed node reached again is a shared sub-chain, whose terms are extracted once per path. A few shared
+            // occurrences are accepted, so that a tree and its rebuilt copy are treated alike (the comparer's reflexivity relies
+            // on it: t - t with t shared or copied both cancel); a DAG whose paths multiply (2^n terms over n levels) is refused
+            // once the revisits exceed the distinct nodes, after a number of visits linear in them. Only the nodes below the
+            // first node with two crossed operands can be reached twice: a comb allocates nothing.
+            if (!onSpine
+                && !(branchNodes ??= new HashSet<BinaryExpression>(ReferenceEqualityComparer.Instance)).Add(node)
+                && ++revisits > Math.Max(SharedRevisitAllowance, branchNodes.Count))
             {
                 refusalDepth = depth;
                 return false;
