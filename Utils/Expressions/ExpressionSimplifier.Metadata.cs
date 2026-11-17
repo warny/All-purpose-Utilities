@@ -64,6 +64,21 @@ internal sealed class SimplificationMetadataStatistics
 
     /// <summary>Canonical-order keys read back from the operation's table.</summary>
     public long KeyReuses;
+
+    /// <summary>Comparisons made by a factor equality probe of the factoring rules.</summary>
+    public long ProbeComparisons;
+
+    /// <summary>Probe comparisons the comparer's fast path decided, without simplifying any operand.</summary>
+    public long ProbeFastPathDecisions;
+
+    /// <summary>Simplifications requested from the comparer (<c>SimplifyForComparisonInSession</c>), nested ones included.</summary>
+    public long ComparerSimplifications;
+
+    /// <summary>Comparer simplifications answered by the comparison memo or the observed comparison memo.</summary>
+    public long ComparerMemoHits;
+
+    /// <summary>Additive canonicalizations (<c>CanonicalizeAdditiveTerms</c> calls).</summary>
+    public long AdditiveCanonicalizations;
 }
 
 public partial class ExpressionSimplifier

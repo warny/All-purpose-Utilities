@@ -401,6 +401,12 @@ internal static class Families
         ("constabs", "2 + Abs(2 + Abs(... Sin(x0))) (AdditionOfEqualsElements probes a constant other than 1 against a call: 2^n comparer simplifications)"),
         ("nanabs", "NaN + Abs(NaN + Abs(... Sin(x0))) (constabs with NaN; a non-default policy folds every level, S5 P18 C2b)"),
         ("nanpow", "NaN + (NaN + (... x0) ^ 2) ^ 2 (inert operand at every level: a non-default policy classifies the whole operand at every level, S5 P18 C2b)"),
+        ("subdiv", "1 - x1/x0 - x2/x0 - ... - xn/x0 (left-associated subtraction of quotients over one denominator, n quotients)"),
+        ("subdivR", "1 - (x1/x0 - (x2/x0 - (... - xn/x0))) (right-associated)"),
+        ("subdivB", "1 - ((x1/x0 + x2/x0) + (x3/x0 + x4/x0)) ... (balanced sum of the quotients, subtracted once)"),
+        ("subdivM", "1 - x1/x0 + x2/x0 - x3/x0 + ... (left-associated, alternating signs)"),
+        ("subdivD", "1 - x1/y1 - x2/y2 - ... - xn/yn (left-associated, distinct denominators)"),
+        ("subdivL", "1 - x1/x0 - x2/x0 - ... - xn/x0 over long (integral division: not a field)"),
     ];
 
     /// <summary>Builds family <paramref name="name"/> at size <paramref name="n"/>.</summary>
@@ -442,6 +448,14 @@ internal static class Families
             "nanpow" => Enumerable.Range(0, n).Aggregate((Expression)x, (acc, _) => Expression.Add(Expression.Constant(double.NaN), Expression.Power(acc, Expression.Constant(2.0)))),
             "constabs" =>Enumerable.Range(0, n).Aggregate((Expression)Expression.Call(Sin, x), (acc, _) => Expression.Add(Expression.Constant(2.0), Expression.Call(typeof(Math).GetMethod(nameof(Math.Abs), [typeof(double)])!, acc))),
             "horner" => Enumerable.Range(0, n).Aggregate((Expression)xs[0], (acc, _) => Expression.Add(Expression.Multiply(acc, xs[Math.Min(1, n - 1)]), Expression.Constant(1.0))),
+            "subdiv" => LeftChain(Quotients(n, false).Prepend(Expression.Constant(1.0)), Expression.Subtract),
+            "subdivR" => Quotients(n, false).Reverse().Aggregate((Expression?)null, (acc, q) => acc is null ? q : Expression.Subtract(q, acc)) is { } tail
+                ? Expression.Subtract(Expression.Constant(1.0), tail) : Expression.Constant(1.0),
+            "subdivB" => Expression.Subtract(Expression.Constant(1.0), Balanced(Quotients(n, false).ToList())),
+            "subdivM" => Quotients(n, false).Select((q, i) => (q, i)).Aggregate((Expression)Expression.Constant(1.0),
+                (acc, p) => p.i % 2 == 0 ? Expression.Subtract(acc, p.q) : Expression.Add(acc, p.q)),
+            "subdivD" => LeftChain(Quotients(n, true).Prepend(Expression.Constant(1.0)), Expression.Subtract),
+            "subdivL" => LeftChain(Quotients(n, false, typeof(long)).Prepend(Expression.Constant(1L)), Expression.Subtract),
             "bal" => Balanced(Enumerable.Range(0, Math.Max(1, n / 2)).Select(i => (Expression)Expression.Subtract(xs[2 * i % n], xs[(2 * i + 1) % n])).ToList()),
             _ => throw new ArgumentException("Unknown family " + name),
         };
@@ -491,6 +505,22 @@ internal static class Families
         Expression acc = xs[0];
         for (int i = 1; i < xs.Length; i++) acc = wrap(acc, xs[i]);
         return acc;
+    }
+
+    /// <summary>The quotients <c>x1/x0, ..., xn/x0</c>, or <c>x1/y1, ..., xn/yn</c> over distinct denominators.</summary>
+    /// <param name="n">The number of quotients.</param>
+    /// <param name="distinct">Whether every quotient has its own denominator.</param>
+    /// <param name="type">The type of the parameters (<see cref="double"/> by default).</param>
+    /// <returns>The quotients.</returns>
+    private static IEnumerable<Expression> Quotients(int n, bool distinct, Type? type = null)
+    {
+        type ??= typeof(double);
+        ParameterExpression x0 = Expression.Parameter(type, "x0");
+        for (int i = 1; i <= n; i++)
+        {
+            Expression denominator = distinct ? Expression.Parameter(type, "y" + i) : x0;
+            yield return Expression.Divide(Expression.Parameter(type, "x" + i), denominator);
+        }
     }
 
     /// <summary>Folds items into a balanced sum.</summary>

@@ -30,6 +30,8 @@ public static class Program
           effects                   observable-effect campaign
           s3                        S3 identity matrix
           measure <family> <n>      complexity of one family at one size (one process per measurement)
+          profile <family> <n>      cost of one family at one size split by mechanism (budgets, comparer, probes, admission)
+          profile <family> <n>      cost of one family at one size split by mechanism (budgets, comparer, probes, admission)
           families                  list the families
           trace "<template>"        simplify a template (x, y, z are parameters) and print passes, trace and cycle report
           replay diff|effects <seed> re-run one seed of a campaign verbosely
@@ -100,6 +102,17 @@ public static class Program
                     File.AppendAllText(Path.Combine(output, "measure.jsonl"), line + Environment.NewLine, new UTF8Encoding(false));
                     return 0;
                 }, timeout, memory, (reason, current) => Abort(output, "measure", reason, positional[0] + " " + positional[1]));
+            case "profile":
+                if (positional.Count < 2) return Fail("profile needs <family> <n>");
+                return Worker.Run(() =>
+                {
+                    object record = Profile.Run(positional[0], int.Parse(positional[1], CultureInfo.InvariantCulture), double.Parse(Get("max-seconds", "8"), CultureInfo.InvariantCulture));
+                    string line = JsonSerializer.Serialize(record, record.GetType());
+                    Console.WriteLine(line);
+                    Directory.CreateDirectory(output);
+                    File.AppendAllText(Path.Combine(output, "profile.jsonl"), line + Environment.NewLine, new UTF8Encoding(false));
+                    return 0;
+                }, timeout, memory, (reason, current) => Abort(output, "profile", reason, positional[0] + " " + positional[1]));
             case "trace":
                 if (positional.Count < 1) return Fail("trace needs a template");
                 return Worker.Run(() => Trace(positional[0]), timeout, memory, (reason, current) => Console.Error.WriteLine(reason + ": " + current));

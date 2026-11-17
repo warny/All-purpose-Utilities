@@ -105,6 +105,7 @@ namespace Utils.Mathematics.Expressions
             Dictionary<ObservedComparisonMemoKey, Expression>? memo = _observedComparisonMemo;
             if (memo is not null && memo.TryGetValue(key, out Expression? cached))
             {
+                if (t_metadataStatistics is { } statistics) statistics.ComparerMemoHits++;
                 return cached;
             }
 

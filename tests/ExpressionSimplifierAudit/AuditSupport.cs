@@ -651,11 +651,12 @@ internal static class Simplification
     /// <param name="source">The source tree.</param>
     /// <param name="limits">The resource limits (default limits when <see langword="null"/>).</param>
     /// <param name="tracer">An optional tracer.</param>
+    /// <param name="detail">The detail level of the trace.</param>
     /// <returns>The result or the exception.</returns>
-    public static (Expression? Result, Exception? Error) Run(Expression source, ExpressionResourceLimits? limits = null, IExpressionTransformTracer? tracer = null)
+    public static (Expression? Result, Exception? Error) Run(Expression source, ExpressionResourceLimits? limits = null, IExpressionTransformTracer? tracer = null, ExpressionTraceDetail detail = ExpressionTraceDetail.Standard)
     {
         var simplifier = limits is null ? new ExpressionSimplifier { Options = Policy } : new ExpressionSimplifier(limits) { Options = Policy };
-        ExpressionTraceScope? scope = tracer is null ? null : ExpressionTransformTracing.Begin(tracer);
+        ExpressionTraceScope? scope = tracer is null ? null : ExpressionTransformTracing.Begin(tracer, detail);
         try
         {
             return (simplifier.Simplify(source), null);
