@@ -561,7 +561,6 @@ internal static class ExpressionResourceBudget
     /// <param name="SimplificationMetadata">The metadata table of the enclosing operation, detached while this one runs.</param>
     /// <param name="AdmittedSpineRoot">The spine root admitted by the enclosing operation, detached while this one runs.</param>
     /// <param name="AdmittedFactorableRoot">The factorable root admitted by the enclosing operation, detached while this one runs.</param>
-    /// <param name="AdmittedFactorableRoot">The factorable root admitted by the enclosing operation, detached while this one runs.</param>
     internal readonly record struct Scope(
         object? Owner,
         int OperationDepth,
