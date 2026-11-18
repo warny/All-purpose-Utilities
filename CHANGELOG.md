@@ -4,6 +4,27 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed — `omy.Utils` (expression simplifier: S5 residual correctness audit)
+- **S5A-02.** `ExpressionSimplifier` no longer throws `InvalidOperationException` on `double.Round(x, digits)`,
+  `double.Round(x, mode)` and `double.Round(x, digits, mode)`: the `*ConversionMath` rules (`TransformCall`) rebuild a `double`
+  call only with the very method it holds and keep the prepared call otherwise, instead of looking a method up by name and an
+  all-`double` signature of the same arity. Every other matched overload keeps its result (checked for each public static
+  `double` overload the rules match: method identity, argument types, values on midpoints, signed zero, NaN and infinities,
+  argument evaluations, comparer and hash, derived simplifier).
+- **S5A-11 (determinism).** The dispatch plan of the built-in simplifier (76 signature rules, an order that comes from the
+  unspecified `Type.GetMethods` order and the compilation order of the partial files) is pinned rule for rule by
+  `ExpressionSimplifierDispatchOrderTests`, with the priorities that decide a result (`log(x) + log(x)` gives `2 * Log(x)`), and
+  the derived-simplifier order (own rules first). No production change: the order is the compatibility baseline.
+- **S5A-04 (open, documented).** A throwing constant fold (integral zero divisor, `MinValue / -1`, decimal overflow) still raises
+  its exception while simplifying, in every lazily evaluated context (conditional, `&&`, `||`, `??`, switch, try body, catch,
+  filter, uninvoked lambda) and under every policy, which contradicts the "never move an exception to simplification time" rule of
+  the policies; correcting it changes the public contract and is left to a separate, specified change. Pinned by
+  `S5A04_EveryLazyContext_RaisesTheFoldExceptionWhileSimplifying`.
+- The re-audit of every S5A finding on `master` `c509bdf6` (statuses, current reproducers, campaign baselines, the measured but
+  deferred S5A-07 and S5A-10 experiments) is recorded in `Utils/TODO-2026-11-04-s5-simplifier-deep-audit.md`. The S5 audit
+  harness `stability` campaign accepts `S5_AUDIT_BIND=1` to bind the free parameters of every case (free-parameter ties told apart
+  from real cycles).
+
 ### Fixed — `omy.Utils` (expression simplifier: grouped quotient chains)
 - **Performance.** The additive chains of `double` or `float` that subtract groups of quotients, right-associated
   (`1 - (x1/x0 - (x2/x0 - … - xn/x0))`), balanced (`1 - ((x1/x0 + x2/x0) + (x3/x0 + x4/x0))`) or with mixed signs, with shared

@@ -128,6 +128,13 @@ The five operations of the brief:
 | 5. Move an exception from run time to simplification time | never | constant folding must not evaluate a throwing operation; not a policy dimension |
 | (Introduce an exception) | never | |
 
+**Known deviation (S5A-04, open).** Operation 5 is not enforced yet: a throwing constant fold (an integral or decimal zero
+divisor in `DivideWithZeroOrOne`, `MinValue / -1` and decimal overflows in `FoldConstants`) raises its exception while
+simplifying, under every policy, including in conditional branches, short-circuit operands, `??`, switch bodies, try and catch
+bodies, filters and uninvoked lambdas, where the source does not evaluate the node. The proposed correction (a fold that would
+throw declines, so the node raises its exception at evaluation) changes the public behavior of `Simplify` and waits for a
+contract decision: `Utils/TODO-2026-11-04-s5-simplifier-deep-audit.md`, re-audit of 2026-11-18.
+
 The three categories suffice: operations 1 and 2 are the only ones that change whether or when a category is observed, 3 and 4
 reduce to them, and 5 is never allowed. A finer "operation kind" dimension (for example, allowing reordering but not dropping)
 has no demonstrated need; if C ever needs one, it would be a new, restrictive option whose default keeps today's meaning of a
