@@ -5317,6 +5317,24 @@ Audit and plan: [`docs/expressions/ArchitectureC-Audit.md`](../docs/expressions/
 - Next: C2b (NaN fold under the policy), C3 (negation and reassociation family, factoring, quotients, canonicalization with a
   per-operation behavior memo; needs #684 merged), C4 (inlining, comparer only if needed), then the C-08 pull request.
 
+#### S5 residual correctness re-audit (2026-11-18) — closure of the S5A findings
+
+Report: [`TODO-2026-11-04-s5-simplifier-deep-audit.md`](TODO-2026-11-04-s5-simplifier-deep-audit.md), section "Re-audit on the
+integrated code". Base `master` `c509bdf6` (after PR #706); branch `fix/expression-s5-residual-correctness`.
+
+- Every original finding measured again on the base (campaign baselines, bound-parameter stability, controlled experiments).
+  Fixed before this branch: S5A-01, S5A-03, S5A-08 and S5A-12 (now polynomial and linear), S5A-13, S5A-14, S5A-15;
+  original reproducers fixed with a documented residue: S5A-05, S5A-06 (75 cycles: 49 free-parameter ties, 26 bound cycles
+  all holding non-finite constants or call terms), S5A-09 (additive half). Still exponential, documented: z//k (L-6,
+  opaque carrier refused by the linear admission) and o/ (L-7, user calls).
+- Fixed here: **S5A-02** (`double.Round` overloads with an `int` or `MidpointRounding` parameter no longer throw; exact method
+  identity kept). Pinned here: **S5A-11** (the 76-rule plan order and the priorities that decide a result, run by the Ubuntu
+  and Debug CI jobs); **S5A-04** characterized in every lazy context and policy.
+- Deferred with evidence, each to its own pull request: S5A-04 (contract decision: a throwing fold should decline; changes
+  `Simplify`'s public behavior), S5A-07 (removing the extra transformation changes one first-pass result in 70,470), S5A-10
+  (a local `-(-t)` rule is bypassed by the flatten path, adds 151 two-pass cases and 3 comparer-invariant violations), S5A-09
+  multiplicative half (incomplete canonicalization, evaluation counts and rounding would change).
+
 ## Execution-optimizer stages
 
 These remain separate from the simplifier stages above.

@@ -13,10 +13,260 @@ This report describes the **2026-11-04 baseline**. Its original findings and pro
 | Trigonometric power guard / foreign same-name `Sin` and linear admissible quotient-subtraction chains | Local fixes reported in commits e3ec1be4 and 710e20be; **not yet final S5/differential/benchmark validated or PR-integrated** at time of report. |
 | Trigonometric power guard / linear quotient-subtraction chains (update 2026-11-18) | Merged in PR #705 (`ed3ea136`) with S5, differential and BDN validation (`docs/expressions/SimplifierFlatten.md` §15). |
 | Right-associated and balanced subtracted quotient groups | **Fixed for the restricted grouped family** (branch `fix/expression-grouped-quotient-chains`, §16): `double`/`float` chains of parameters, at most one constant, linear products and quotients of two parameters with unique numerators and denominators used nowhere else, any grouping and signs, are canonicalized once (`subdivR`, `subdivB`, `subdivBM`, `subdivRD`, `subdivRF`: `3n + 2` visits), first-pass structure identical to the historical one. **Still open:** grouped chains outside that family (repeated or shared terms, two constants, quotients of other shapes, integral/decimal) keep the level by level cost; admitting them needs quotient atoms in the C3c proof obligations, still deferred. |
-| Other original S5A findings (exception timing, convergence, dispatch determinism, domain-specific behavior) | **Re-audit against the integrated code before scheduling**: the original report predates architecture C and Flatten. Do not infer fixed or open status solely from this baseline. |
+| Other original S5A findings (exception timing, convergence, dispatch determinism, domain-specific behavior) | **Re-audited on `c509bdf6` (2026-11-18)**, see "Re-audit on the integrated code" below: S5A-02 fixed and S5A-11 pinned on branch `fix/expression-s5-residual-correctness`; S5A-04, S5A-07 and S5A-10 open with a specified separate change each; S5A-05, S5A-06 and S5A-09 reduced to documented residues; S5A-08 and S5A-12 resolved. |
 | `ExpressionOptimiser` A10-C / O0–O5 | **Open independent workstream**; no ETC or simplifier policy fix automatically resolves optimizer evaluation-dropping identities. |
 
 **Next evidence required:** confirm actual merge SHAs and CI for the recent PR series; run S5 stability and reference/branch comparisons, differential corpora with new quotients, paired BenchmarkDotNet measurements, and targeted residual-family profiling. Keep a separate count of validated remaining fixes; the old phase-M PR sequence is not a reliable count of future PRs.
+
+## Re-audit on the integrated code — 2026-11-18 (mission "S5 residual correctness")
+
+Branch `fix/expression-s5-residual-correctness`, base `master` `c509bdf6` (PR #706 merged, verified equal to `origin/master`).
+Every status below was measured again on that base, never taken from the 2026-11-04 tables. Machine and runtime: Windows 11 Pro
+10.0.26300, Intel i7-12700KF (20 logical processors), .NET SDK 11.0.100, tests `net9.0`, `Utils` `net8.0`, Release unless
+stated. The base was measured in a detached worktree of `c509bdf6`, so the branch never contaminated it.
+
+### Baseline on `c509bdf6`
+
+| Suite | Result |
+|---|---|
+| `dotnet build Utils.sln -c Release` | 0 errors (`--ignore-failed-sources`: a configured NuGet source answers 404) |
+| `UtilsTest.Unit` (Release) | 14,751 passed, 1 not executed |
+| `UtilsTest.Security` (Release) | 399 passed, 3 not executed |
+| `UtilsTest.Functional` (Release) | 383 passed |
+| ETC Debug (`UtilsTest.Mathematics.Expressions.Coverage`, Debug) | 350 passed, 1 not executed |
+
+| S5 campaign (4,000 seeds, 4,000 nested compositions) | Result on `c509bdf6` |
+|---|---|
+| `inventory` | 76 signature rules, plan order identical to the 2026-11-04 inventory |
+| `terminate` | 66,270 cases, all normal (no exception, refusal, cycle or excessive work); largest 382 visits |
+| `converge` / `stability` | 70,470 cases: fixed@0 2,930, fixed@1 67,164, fixed@2 272, fixed@3 21, fixed@4 8, cycles 75 (period 2: 62, period 3: 13), 0 errors |
+| `stability`, free parameters bound (`S5_AUDIT_BIND=1`) | fixed@1 67,155, fixed@2 270, fixed@3 21, fixed@4 8, cycles 26 (period 2: 20, period 3: 6) |
+| `comparer` | 0 violation over 1.6 million checks, `Equals(a, b) == Equals(S(a), S(b))` included (11 in 2026-11-04) |
+| `diff` | 0 `EXC-*`, 0 `SIMPLIFY-THROWS`; one `VALUE` (`0 ** y` at `y = 0`, documented domain, class 4) |
+| `effects` | 2,638 rewritten trees: 0 evaluation-log or exception difference; the same documented `VALUE` |
+| `s3` | the documented domain anomalies only; `double.Round(x, 2)` throws (S5A-02) |
+| `canon` | free-parameter ties and pinned effectful terms as documented (L-3, C-06) |
+
+### Status of every original finding
+
+| Finding | Status | Current evidence (reproducer, test) | Location |
+|---|---|---|---|
+| S5A-01 `x^y + z^2` NRE | **FIXED** (PR #705) | `terminate` 0 exception, `converge` 0 error; `S5A01_SumOfPowersWithSymbolicExponent_Declines` | `ExpressionSimplifier.INumber.cs`, `AdditionOfCos2andSin2Number` |
+| S5A-02 `double.Round(x, 2)` throws | **FIXED** (this branch) | see below; `S5A02_DoubleRoundWithANonDoubleArgument_IsKept`, `ExpressionSimplifierRoundOverloadTests` | `ExpressionSimplifier.Math.cs`, `TransformCall` |
+| S5A-03 decimal nested divisions | **FIXED** (P18b, PR #684) | `diff` decimal: 0 `EXC-*`; `S5A03_DecimalNestedDivision_KeepsTheExceptions` | `IsOrdinaryFieldDivision` |
+| S5A-04 exception of an unevaluated branch | **OPEN-CONFIRMED** (contract decision needed) | every lazy context, every policy; `S5A04_EveryLazyContext_RaisesTheFoldExceptionWhileSimplifying` | `DivideWithZeroOrOne`, `FoldConstants` callers |
+| S5A-05 rule results left for the next pass | **PARTIAL** | original examples fixed by C3c/C3d (`S5A05_RuleResultsLeftForTheNextPass`); 301 corpus cases still need 2–4 passes (residues `t - (sum)` 66, `/ ±1` 63 = L-2, constant pair 25, `-(product)` 22) | plan order, `FinishReassociation` |
+| S5A-06 oscillating passes | **PARTIAL** → residue is a **DOCUMENTED-LIMITATION** | original examples fixed by C3c (`S5A06_RepeatedPasses_Oscillate`); 75 cycles, 49 of them free-parameter ties (L-3), 26 with bound parameters, all outside the C3c/C3d families (below) | `SubstractionWithZero(0, t)`, `FlattenAdditiveChain` |
+| S5A-07 `t + 0`, `t ^ 1` re-transform a prepared operand | **PARTIAL** (deferred) | excess bounded (×1.48 at n = 12, ×1.30 at n = 20); removing it changes 1 first-pass result (below); `S5A07_ZeroAndOneIdentities_RetransformAPreparedOperand` | `AdditionWithZero(e, t, 0)`, `PowerByZeroOrOne` |
+| S5A-08 nested negated differences | **FIXED** (C3c: bounded polynomial) | `negsum` 3,038 visits at n = 20 (363,882 on 2026-11-04), `subneg` 3,059, `negmul` 6,745, `negdiv` 8,869, `zerominus` 9,224 (about n^2.3 to n^2.5); `S5A08_NestedNegatedDifferences_GrowSuperPolynomially` | negation rules, C3c factorable chains |
+| S5A-09 equal terms not combined | additive **FIXED** (C3c); multiplicative **DOCUMENTED-LIMITATION** | `S5A09_EqualTermsGroupedButNotCombined`: `x * (x * y)` kept, not identified with `y * x^2` | `MultiplicationOfEqualsElements` |
+| S5A-10 `-(-x)` kept | **OPEN-CONFIRMED** (deferred, not isolable) | `S5A10_DoubleNegation_IsNeverSimplified`; experiment below | missing rule |
+| S5A-11 plan order from `GetMethods` | **FIXED as a pinned contract** (no nondeterminism demonstrated) | `ExpressionSimplifierDispatchOrderTests` (Windows, Ubuntu and Debug CI jobs) | `ExpressionTransformer.BuildPlan` |
+| S5A-12 free-parameter subtraction chains | **FIXED** (Flatten PR B + C3c) | `Lsub` `n + 1` visits (21 at n = 20); level by level: free 169, bound 182 visits at twelve terms; `S5A12_DifferenceOfFreeParameters_GrowsExponentially` | C3c factorable chain |
+| S5A-13 decimal divisor below 1 inert | **FIXED** (P18b, PR #684) | `S5A13_DecimalDivisionByASmallConstant_IsNotInert` | `ExpressionEffectAnalysis.IsSafeDivisor` |
+| S5A-14 constant plus call nesting | **FIXED** (P19d) | `S5A14_ConstantPlusCallNesting_GrowsPolynomially` | comparison memo |
+| S5A-15 Horner chain | **FIXED** (P19d) | `S5A15_HornerChain_GrowsPolynomially` | comparison memo |
+
+### Complexity on `c509bdf6` (deterministic counters)
+
+Transformation visits (comparer simplifications included), limits lifted, one process per point; the timings are a single
+campaign on this machine (`run-audit.ps1 -Campaigns complexity -Unlimited -StopAfterSeconds 10`). 2026-11-04 values in
+parentheses where the family was super-linear.
+
+| Family | n = 4 | 8 | 12 | 16 | 20 | Growth | Classification |
+|---|---:|---:|---:|---:|---:|---|---|
+| `p`, `B` | 17 | 33 | 49 | 65 | 81 (88,452; 29,790) | linear | resolved by C3c |
+| `g` (L-5) | 21 | 41 | 61 | 81 | 101 (refused from 16) | linear | resolved by C3c |
+| `Lsub` (S5A-12) | 5 | 9 | 13 | 17 | 21 (heap guard at 20) | linear | resolved (Flatten PR B, C3c) |
+| `n` (`Sin` call term) | 19 | 35 | 51 | 67 | 83 (19,145,130) | linear | resolved |
+| `negsum` (S5A-08) | 50 | 315 | 848 | 1,729 | 3,038 (363,882) | about n^2.3 | bounded polynomial |
+| `subneg` | 71 | 336 | 869 | 1,750 | 3,059 (384,509) | about n^2.3 | bounded polynomial |
+| `negmul`, `negdiv`, `zerominus` | 96, 74, 104 | 479, 585, 616 | 1,501, 1,901, 2,008 | 3,483, 4,513, 4,728 | 6,745, 8,869, 9,224 (about 0.7 M each) | about n^2.5 | bounded polynomial |
+| `plus0`, `pow1` (S5A-07) | 61, 66 | 291, 296 | 825, 830 | 1,791, 1,796 | 3,317, 3,322 (62,141) | about n^2.2 | polynomial, 1.3 times the `zeroplus` control (2,553) |
+| `Lmul`, `Gm`, `div`, `horner` | 27, 68, 19, 48 | 161, 262, 103, 156 | 535, 728, 192, 328 | 1,277, 1,594, 312, 564 | 2,515, 2,988, 464, 864 | polynomial | resolved or bounded |
+| `constabs`, `nanabs` (S5A-14) | 54 | 144 | 282 | 468 | 702 | quadratic | resolved by P19d |
+| `F`, `H`, `pow`, `Rsub`, `bal` | | | | | 79, 101, 193, 21, 21 | linear | — |
+| `subdiv*` (10 quotient families, PRs #705/#706) | 14 | 26 | 38 | 50 | 62 (`subdivL` 81) | `3n + 2` (`4n + 1`) | resolved |
+| `z`, `k` (L-6) | 169 | 3,969 | 68,809 | 1,112,689 | 17,823,609 (22,388,319), 71 s | ×16 per +4 | **exponential, documented limitation** |
+| `e` (L-6) | 263 | 4,127 | 69,031 | 1,112,975 | 17,823,959, 70 s | ×16 per +4 | **exponential, documented limitation** |
+| `o` (L-7) | 645 | 363,377 | heap guard | | | user calls | **exponential, imposed by the contract** |
+| `r` (L-7) | 228 | 13,932 | 1,122,036 | heap guard | | user calls | **exponential, imposed by the contract** |
+
+No family regressed against 2026-11-04 and no new exponential family appeared. The `z`/`e`/`k` residue
+(`100 * carrier(opaque) - x1*3 - 4*x2 - …`): 3,934 of the 3,969 visits at n = 8 are comparer simplifications; the carrier
+term (`Math.Truncate((opaque as Nullable) ?? 1)`) is refused by the linear admission (`NonLinearTerm`, 340 refusals), so the
+chain is treated level by level and the `SubstractionOfEqualsElements` probe of every level re-simplifies the chain below
+(2,665 of 2,720 comparer simplifications are memo hits; the rest grow with the depth). `n`, whose call term is admitted, is
+linear. Admitting opaque carriers needs them in the C3c proof obligations (stop condition: a global C3c change); `o`/`r`
+re-run user code, which the contract forbids to reuse (P15).
+
+### S5A-02 — exact overload handling (fixed)
+
+The 25 `*ConversionMath` rules (26 function names with `Pow`) match a call by declaring type `double` and name only. Audit of
+every public static `double` method they match (reflection over the rule attributes, `Inventory_OnlyRoundHasOverloadsWithOtherParameterTypes`):
+
+| Functions | Source parameters → return | Target before | Target now |
+|---|---|---|---|
+| `Abs`, `Acos`, `Acosh`, `Asin`, `Asinh`, `Atan`, `Atanh`, `Cbrt`, `Ceiling`, `Cos`, `Cosh`, `Floor`, `Log2`, `Log10`, `Sin`, `Sinh`, `Sqrt`, `Tan`, `Tanh`, `Round(double)`, `Log(double)` | `double` → `double` | the same method (lookup by name and `(double)`) | unchanged: the same method |
+| `Sign` | `double` → `int` | the same method | unchanged |
+| `Min`, `Max`, `Log(double, double)` | `double, double` → `double` | the same method | unchanged |
+| `Clamp` | `double, double, double` → `double` | the same method | unchanged |
+| `Pow` | `double, double` → `double` | `PowerConvertionNumber1` builds a power node first (`PowerConversionMath` shadowed) | unchanged |
+| `Round(double, int)`, `Round(double, MidpointRounding)`, `Round(double, int, MidpointRounding)` | heterogeneous | **none**: the `(double, double)` / `(double, double, double)` lookup fails, `InvalidOperationException` | the prepared call itself, same method, arguments neither converted nor dropped |
+
+No conversion was ever applied on a supported overload (a call's arguments already have the parameter types). The rule now
+rebuilds a source call that is a runtime reflection object declared by `double` (provenance asked before any member is read)
+only with the very method it holds, and returns the prepared call otherwise (an `Expression[]` rule cannot return `null`: the
+engine would propagate it). A derived simplifier calling a rule directly with another source node keeps the historical lookup
+and exception (`TransformCall_RoundDoubleInt_OtherSourceNode_KeepsTheHistoricalResolution`). No method-resolution cache was
+added. `TransformCall_RoundDoubleInt_DoesNotReuseSourceMethodInfo_ThrowsInvalidOperationException` pinned the defect itself on
+the engine's own path and became `TransformCall_RoundDoubleInt_KeepsTheSourceCall`.
+
+### S5A-04 — exception timing (open, separate pull request)
+
+Map (all measured, `S5A04_EveryLazyContext_RaisesTheFoldExceptionWhileSimplifying`): an integral zero divisor
+(`DivideWithZeroOrOne` throws `DivideByZeroException`), `int.MinValue / -1` and a decimal overflow (`FoldConstants` through
+`DivisionOfConstants`, `MultiplicationOfConstants`, `AdditionOfConstants`, `SubstractionOfConstants`, and the factoring and
+aggregation helpers that call it) raise their exception while simplifying in **every** context where the source does not
+evaluate the node: conditional branch, right operand of `&&` and `||`, right operand of `??`, switch case and default body, a
+try body whose exception is caught, a catch body, an exception filter, an uninvoked lambda; under the default policy and under
+the most permissive one (trust, aggressive, no category preserved). Since a lambda body is simplified before it is ever invoked, the
+same move happens for an always-evaluated node of any lambda body: the evaluation-time exception becomes a simplification-time one.
+
+| Kind | Where | Today |
+|---|---|---|
+| represented by a node (`Throw`) | the tree | kept as a node, never raised by simplification |
+| raised by a rule | `DivideWithZeroOrOne` (integral or decimal constant zero divisor, inert dividend) | thrown while simplifying; declined outside the effect gate (Architecture C) |
+| raised by constant folding | `FoldConstants` (integral and decimal division by zero, `MinValue / -1`, decimal overflow of `+ - * /`) | thrown while simplifying |
+| user code | an opaque constant's `Equals`/`GetHashCode` called by the comparer | propagates, documented |
+| permitted by the symbolic contract | none: the IEEE folds (`float`, `double`) never throw | — |
+
+The contracts disagree: the XML documentation of `DivideWithZeroOrOne` and `FoldConstants` says "throws as evaluating the node
+would", while `docs/expressions/SimplificationPolicies.md` §2.3 (operation 5, "never") and the remarks of
+`ExpressionSimplifierOptions.ExceptionPreservation` state that no exception is moved to simplification time, under any policy.
+`ExceptionPreservation` cannot express either choice (it governs dropping and reordering evaluations only).
+
+Proposed correction model ("deferred fold", for a separate pull request after a contract decision): a fold or an identity whose
+evaluation would throw declines, so the node stays and raises its exception when, and only if, it is evaluated. It needs no
+contextual evaluation metadata (the decline is local and context-free), no change of the traversal or of the resource
+accounting, and it composes with the effect gate already in place: an unfolded throwing node (`1 / 0`, `i / 0`) is not inert
+(`IsSafeDivisor`), so no rule drops, merges or moves it. Consequences: `Simplify` and `ExpressionComparer` no longer throw on
+these trees (a public behavior change, migration-guide entry), `S5A04_*` and the tests that pin a simplification-time exception
+are inverted, and the differential campaign moves its `SIMPLIFY-THROWS-LIKE-SOURCE` seeds (210 on this base) to evaluation-time
+outcomes. The alternative (throw only outside lazy contexts) needs contextual execution metadata across the traversal and still
+moves the exception of every lambda body: not recommended. Not implemented here (stop condition: it changes the
+symbolic-equivalence contract).
+
+### S5A-05 / S5A-06 — convergence
+
+The original reproducers reach a fixed point at the first pass since C3c/C3d and stay pinned. What remains on the 70,470
+convergence cases: 301 cases need two to four passes (all with a fixed point), 75 cycles. Binding the free parameters of every
+case removes 49 cycles: they are the free-parameter ties of the S4 order (L-3; the canonical order of free parameters of one type
+is not a total order, and the mission rules out reordering free parameters globally). The 26 cycles with bound parameters (20 of
+period 2, 6 of period 3) all hold a term outside the families C3c/C3d canonicalize at once ("inert finite" operands): 14 a
+non-finite constant (`1 / 0`, `0 ** -2`, `1E+300 * 1E+300`, `Log(-2)`, `Sqrt(Sin(-1))`), 9 a call term (`Log`, `Sin`, `Cos`,
+`Tan`, a power with a symbolic exponent) in a subtractive chain, 3 not reduced by the harness. The first rule of the second pass
+is `SubstractionWithZero(0, t)` or `FlattenAdditiveChain` (the `0 - t` orientation conflict of S5A-06). No cycle involves lexical
+scopes (block, catch or nested-lambda variables), effectful terms or resource refusals (the convergence corpus holds none; the
+`effects` and ETC suites cover them), and no value differs (`diff`, `effects`). Classification: documented limitation (stable noncanonical forms of unsupported structures); admitting
+non-finite or call terms in the C3c proof obligations is out of scope (stop condition: global C3c/C3d change).
+
+### S5A-07 — redundant re-transformation (measured, deferred)
+
+Controlled experiment (worktree of `c509bdf6`, `AdditionWithZero(e, t, 0)` and `PowerByZeroOrOne(e, t, 1)` returning the
+prepared operand): `plus0` and `pow1` exactly reach the `zeroplus` control (557 visits at n = 12 against 825 and 830, 2,553 at
+n = 20 against 3,317 and 3,322; comparer simplifications 462 against 704). The `terminate`, `diff`, `effects`, `comparer` and
+`canon` outputs are identical, but one `converge` first-pass result changes and gets worse (case 68,497:
+`(0 - y) + (x + Double.Sin(Infinity))`, fixed@1, becomes `(Double.Sin(Infinity) - (0 - x)) - y`, fixed@2): the second
+transformation finishes an operand that is not a fixed point. The optimization is therefore not behavior-neutral; no narrower
+guard proves equivalence without knowing that the prepared operand is a fixed point. Left for a separately approved change.
+
+### S5A-09 / S5A-10 — conservative algebra
+
+S5A-09 (multiplicative half) is incomplete canonicalization, not a correctness defect: values and effects are unchanged, only the
+comparer misses `x * (x * y) = y * x^2`. Merging powers would change evaluation counts (`x * x` evaluates `x` twice), needs
+`double` only (`Power` is not defined for the integral types) and changes rounding (`Pow` against a product); not done.
+
+S5A-10: `-(-t) -> t` is exact for ordinary, non-lifted, non-checked negations of every type with an ordinary negation (`double`
+and `float`: the sign bit flips twice, NaN payloads and signed zeros included; signed integers wrap twice, `-(-MinValue)` is
+`MinValue`; `decimal` never overflows on negation), it keeps the single evaluation of `t`, and excludes custom, lifted and
+checked negations by `IsOrdinaryUnaryNegate`. Experiment (a local `NegateOfNegate` rule): 5 `terminate`, 229 `converge`, 32
+`diff` and 16 `effects` first-pass forms change (values unchanged), but the rule does not run where the negation is a flattened
+unary of an additive chain, so `-(-x)` itself still needs two passes (fixed@2 rises from 272 to 423 cases), and the comparer
+invariant `Equals(a, b) == Equals(S(a), S(b))` gets 3 violations. It changes canonical results without being isolable: deferred
+(it needs the flatten path to treat a double negation, a C3 change).
+
+### S5A-11 — dispatch determinism
+
+`BuildPlan` keeps the order of `Type.GetMethods(Public | NonPublic | InvokeMethod | Instance)`: for the built-in type, the
+declaration order of `ExpressionSimplifier.cs`, then `.INumber.cs`, then `.Math.cs` (alphabetical on this machine; MSBuild and
+the runtime do not promise it); for a derived simplifier, its own rules first, then the base rules. The flatten rules have their
+own sequence. Nothing sorts the rules, and no alphabetical sort was introduced (it would reorder 76 priorities). The current
+order is the compatibility baseline: `BuiltInPlan_IsTheRecordedBaseline` pins it rule for rule, `PlanRules_MirrorsTheEnginePlan`
+checks the enumeration against the trace indices of the engine, `Priorities_ThatDecideAResult` pins the cross-file and
+same-file priorities that decide a result (`log(x) + log(x)` gives `2 * Double.Log(x)`), `DerivedPlan_PutsItsOwnRulesFirst`
+the derived order. The tests live in the `Coverage` namespace, so the Ubuntu unit job and the Debug expression-engine job run
+them too: a platform, configuration or file-order difference fails CI instead of changing a result.
+
+### Validation of the branch
+
+Production change: `ExpressionSimplifier.Math.cs` (`TransformCall`, the documentation of `RoundConversionMath`) only.
+
+| Suite | `c509bdf6` | Branch |
+|---|---|---|
+| `dotnet build Utils.sln -c Release` | 0 errors | 0 errors |
+| `UtilsTest.Unit` (Release) | 14,751 passed, 1 not executed | 14,764 passed, 1 not executed |
+| `UtilsTest.Security` (Release) | 399 passed, 3 not executed | 399 passed, 3 not executed |
+| `UtilsTest.Functional` (Release) | 383 passed | 383 passed |
+| ETC Debug (`…Expressions.Coverage`, Debug) | 350 passed, 1 not executed | 354 passed, 1 not executed |
+
+S5 campaigns (same options, branch against base, per-case first-pass outputs compared): `terminate` 66,270 cases, `converge`
+70,470, `diff` 4,000 seeds, `effects` 4,001 records, `canon` 48 groups: **0 differences**; `stability` and `comparer` summaries
+byte-identical; `inventory` differs only by the source line numbers of `ExpressionSimplifier.Math.cs`; `s3`: the one intended
+change, `Round(x, 2)` goes from `throws InvalidOperationException` to `Double.Round(x, 2)` with no difference over its 256
+assignments. No other first-pass output changed, so no second-pass or convergence comparison was needed beyond these campaigns.
+
+Complexity: the 75 points measured on the branch (`n`, `constabs`, `nanabs`, `horner`, `negsum`, `negmul`, `Lsub`, `g`, `plus0`,
+`pow1`, `zeroplus`, `subdivR`, `subdivBM`, `z`, `k` at n = 4 to 20) have exactly the base counters (transformation visits,
+comparer simplifications, output size).
+
+Performance (`tests/ExpressionTracingBench/run-campaign.ps1`, one process per scenario and variant, rotating order, A/A copy of
+the base binaries; two scenarios added for the touched path: `calls8`, eight nested `double` functions, and `callsum16`, a sum of
+sixteen `Sin`):
+
+| Scenario | Base | A/A | Branch | Allocated (base = branch) |
+|---|---:|---:|---:|---:|
+| `ext-root` | 94.7 ns | −1.5 % | −1.6 % | 0 B |
+| `scalar` | 1,348 ns | +3.2 % | +3.8 % (7 rounds: +0.2 % / −1.1 %) | 2,256 B |
+| `binary` | 5,836 ns | −0.6 % | −1.8 % | 6,513 B |
+| `lambda` | 3,370 ns | −2.8 % | −4.8 % | 6,385 B |
+| `leftsum20` | 6,606 ns | −1.6 % | +0.1 % | 14,368 B |
+| `p9family16` | 40,381 ns | −2.2 % | −1.5 % | 52,131 B |
+| `dag10` | 957,443 ns | +0.3 % | −0.1 % | 1,288,331 B (branch 1,288,325) |
+| `calls8` | 4,503 ns | +2.1 % | +3.9 % (7 rounds: −0.1 % / +0.7 %) | 2,632 B |
+| `callsum16` | 20,116 ns | −0.8 % | +1.3 % (7 rounds: −0.5 % / +1.7 %) | 31,344 B |
+| `cmp-pos` | 59,478 ns | +1.0 % | +1.9 % | 61,742 B |
+| `hash` | 30,010 ns | −1.1 % | −1.0 % | 29,694 B |
+
+Reading: no allocation difference (the 6 bytes of `dag10` are integer rounding of a large scenario); the call scenarios stay
+within about 2 % of the base after the seven-round re-measure (the rule adds a type test, a provenance check and a method
+comparison per matched `double` call), the others inside the A/A band.
+
+Found by the validation and fixed in the same commit: two assertions of the new S5A-02 tests were wrong (the formatter prints
+`MidpointRounding.AwayFromZero`; `Round(x, 2) - Round(x, 2)` is rightly kept, because `double.Round(double, int)` can throw
+`ArgumentOutOfRangeException` and is not inert).
+
+CI: see the pull request (the dispatch-order tests run on Ubuntu there for the first time).
+
+### Remaining work before the final 2.0 release (expression simplifier)
+
+1. S5A-04: contract decision on simplification-time exceptions, then the "deferred fold" pull request (migration-guide entry).
+2. S5A-07 and S5A-10: each a separately approved change of first-pass results (S5A-10 needs the flatten path to treat double
+   negations).
+3. Documented, not blocking: free-parameter ties (L-3), bound cycles with non-finite constants or call terms, `z`/`e`/`k`
+   (L-6), `o`/`r` (L-7), the multiplicative half of S5A-09, grouped quotient chains outside the #706 family.
+4. `ExpressionOptimiser` A10-C / O0–O5 (independent workstream).
+
 
 
 Status: **audit report, open findings**. Companion of the S5 stage of `TODO-2026-09-12-expression-simplifier-roadmap.md`

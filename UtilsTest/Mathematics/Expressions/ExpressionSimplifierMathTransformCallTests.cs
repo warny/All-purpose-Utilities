@@ -457,17 +457,15 @@ public class ExpressionSimplifierMathTransformCallTests
     }
 
     /// <summary>
-    /// <c>TransformCall</c> must never reuse the source <see cref="MethodCallExpression.Method"/>: it
-    /// always resolves from <c>functionName</c> plus an all-<see cref="double"/> signature built from
-    /// <c>expressions.Length</c>. A real <see cref="double.Round(double, int)"/> source call passed
-    /// through <c>Round</c> with two arguments still fails to resolve, because the lookup signature is
-    /// <c>(double, double)</c>, not <c>(double, int)</c> — <see cref="double.Round(double, double)"/>
-    /// does not exist. If a future optimization shortcut ever read <c>((MethodCallExpression)e).Method</c>
-    /// instead, this exact case would silently start succeeding with the wrong (source) method — a
-    /// historical-behavior change this test forbids.
+    /// S5A-02: a real <see cref="double.Round(double, int)"/> source call passed through <c>Round</c>, which is exactly what the
+    /// engine dispatches, used to fail to resolve (the lookup signature is <c>(double, double)</c>) and threw
+    /// <see cref="InvalidOperationException"/> out of <c>Simplify</c>. <c>TransformCall</c> still never builds a call from the
+    /// source's <see cref="MethodCallExpression.Method"/> combined with a looked-up name: when the all-<see cref="double"/>
+    /// resolution does not give back the source's own method, the prepared source call itself is returned, its
+    /// <see cref="int"/> argument not converted to <see cref="double"/>.
     /// </summary>
     [TestMethod]
-    public void TransformCall_RoundDoubleInt_DoesNotReuseSourceMethodInfo_ThrowsInvalidOperationException()
+    public void TransformCall_RoundDoubleInt_KeepsTheSourceCall()
     {
         var simplifier = new ExposedMathSimplifier();
         MethodInfo roundDoubleInt = typeof(double).GetMethod(
@@ -476,7 +474,45 @@ public class ExpressionSimplifierMathTransformCallTests
         ParameterExpression digits = Expression.Parameter(typeof(int), "digits");
         MethodCallExpression sourceCall = Expression.Call(roundDoubleInt, value, digits);
 
-        Assert.ThrowsExactly<InvalidOperationException>(() => simplifier.Round(sourceCall, [value, digits]));
+        Assert.AreSame(sourceCall, simplifier.Round(sourceCall, [value, digits]));
+    }
+
+    /// <summary>
+    /// A source call to an all-<see cref="double"/> overload is rebuilt with the very method it holds: same
+    /// <see cref="MethodInfo"/>, a new node, the argument instances reused.
+    /// </summary>
+    [TestMethod]
+    public void TransformCall_RoundDouble_RebuildsWithTheSourceMethod()
+    {
+        var simplifier = new ExposedMathSimplifier();
+        MethodInfo roundDouble = typeof(double).GetMethod(
+            nameof(double.Round), BindingFlags.Public | BindingFlags.Static, [typeof(double)])!;
+        ParameterExpression value = Expression.Parameter(typeof(double), "value");
+        MethodCallExpression sourceCall = Expression.Call(roundDouble, value);
+
+        var call = (MethodCallExpression)simplifier.Round(sourceCall, [value]);
+
+        Assert.AreNotSame(sourceCall, call);
+        Assert.AreSame(roundDouble, call.Method);
+        Assert.AreSame(value, call.Arguments[0]);
+    }
+
+    /// <summary>
+    /// A derived simplifier calling a rule directly with a source node that is not a <see cref="double"/> call (here a
+    /// <see cref="Math.Round(double, int)"/> call, then a constant) keeps the historical resolution: the
+    /// <c>(double, double)</c> lookup finds no <c>Round</c> and throws <see cref="InvalidOperationException"/>.
+    /// </summary>
+    [TestMethod]
+    public void TransformCall_RoundDoubleInt_OtherSourceNode_KeepsTheHistoricalResolution()
+    {
+        var simplifier = new ExposedMathSimplifier();
+        MethodInfo mathRound = typeof(Math).GetMethod(
+            nameof(Math.Round), BindingFlags.Public | BindingFlags.Static, [typeof(double), typeof(int)])!;
+        ParameterExpression value = Expression.Parameter(typeof(double), "value");
+        ParameterExpression digits = Expression.Parameter(typeof(int), "digits");
+
+        Assert.ThrowsExactly<InvalidOperationException>(() => simplifier.Round(Expression.Call(mathRound, value, digits), [value, digits]));
+        Assert.ThrowsExactly<InvalidOperationException>(() => simplifier.Round(DummySource, [value, digits]));
     }
 
     /// <summary>

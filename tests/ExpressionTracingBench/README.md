@@ -14,6 +14,7 @@ against an A/A control measured in the same campaign.
 | `ext-root` | the fixed cost of one public operation (an opaque root, a single visit) |
 | `scalar`, `binary`, `lambda` | small trees |
 | `leftsum20`, `p9family16`, `dag10`, `block16`, `li1024` | growing node counts: a per-node cost shows as a drift proportional to their size |
+| `calls8`, `callsum16` | `double` calls rebuilt by the `*ConversionMath` rules: eight nested functions, a sum of sixteen `Sin` (S5A-02) |
 | `cmp-pos`, `hash` | structural comparison and hash (same resource sessions, no transformer) |
 
 Each line is `label,scenario,mode,medianNs,p25Ns,p75Ns,bytesPerOp,eventsPerOp`. Modes: `off` (no scope), `minimal` (a tracer

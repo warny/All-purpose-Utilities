@@ -38,6 +38,8 @@ public static class Program
         ["dag10"] = () => Simplify(Dag(10)),
         ["block16"] = () => Simplify(BlockOf(16)),
         ["li1024"] = () => Simplify(Expression.ListInit(Expression.New(typeof(List<double>)), Enumerable.Range(0, 1024).Select(i => One(Xs[i % 64])))),
+        ["calls8"] = () => Simplify(new[] { "Atan", "Tan", "Cos", "Sin", "Ceiling", "Floor", "Abs", "Sqrt" }.Aggregate((Expression)Xs[0], static (e, name) => Expression.Call(typeof(double).GetMethod(name, [typeof(double)])!, e))),
+        ["callsum16"] = () => Simplify(Enumerable.Range(0, 16).Select(i => (Expression)Expression.Call(typeof(double).GetMethod(nameof(double.Sin), [typeof(double)])!, Xs[i])).Aggregate(Expression.Add)),
         ["cmp-pos"] = () => Compare(Chain(8), Chain(8)),
         ["hash"] = () => Hash(Chain(8)),
     };
