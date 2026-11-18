@@ -90,9 +90,12 @@ public partial class ExpressionSimplifier
                 if (ReferenceEquals(factorableRoot, source)) return FlattenFactorableChain(source, terms);
             }
 
-            // §16: a grouped quotient chain, recognized the same way. Its terms are terms of a linear chain, so it is canonicalized
-            // below as one, from its signed terms.
-            session.AdmittedGroupedQuotientRoot = null;
+            // §16: a grouped quotient chain, recognized the same way (its terms are terms of a linear chain).
+            if (session.AdmittedGroupedQuotientRoot is { } groupedRoot)
+            {
+                session.AdmittedGroupedQuotientRoot = null;
+                if (ReferenceEquals(groupedRoot, source)) return FlattenGroupedQuotientChain((BinaryExpression)source, terms, dispatcher);
+            }
         }
 
         foreach (FlattenedTerm term in terms)

@@ -118,6 +118,12 @@ internal sealed class FlattenAdmissionStatistics
     /// <summary>The number of grouped-quotient refusals per cause, indexed by <see cref="FlattenRefusalCause"/>.</summary>
     public long[] GroupedCauses = new long[(int)FlattenRefusalCause.KnownRefusal + 1];
 
+    /// <summary>The number of grouped quotient chains simplified by one canonicalization.</summary>
+    public long GroupedChains;
+
+    /// <summary>The number of grouped quotient chains whose prepared terms sent them to the level by level fallback.</summary>
+    public long GroupedFallbacks;
+
     /// <summary>The number of groups of identical monomials merged by the additive canonicalization (mission C3c, phase A).</summary>
     public long MonomialGroups;
 
@@ -162,4 +168,10 @@ internal sealed class FlattenAdmissionStatistics
     /// whatever its prepared anchor, so that the fallback can be compared with the historical treatment on any chain.
     /// </summary>
     public bool ForceAnchoredFallback;
+
+    /// <summary>
+    /// Audits only: when <see langword="true"/>, every grouped quotient chain takes the level by level fallback of the flatten
+    /// rule, whatever its prepared terms, so that the fallback can be compared with the historical treatment on any chain.
+    /// </summary>
+    public bool ForceGroupedFallback;
 }
