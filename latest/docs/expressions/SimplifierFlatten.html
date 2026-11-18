@@ -3972,7 +3972,522 @@ visits instead of 67,715.</p>
 <li>A decision on the free-parameter ties (§14.7): order them by name as a last resort, or keep the S4 policy.</li>
 <li>An incremental candidate index for phase B (§14.8, <code>ties</code>/<code>collide</code>).</li>
 <li>The admission of constant pairs and of sum factors by the factorable family, with their exactness proofs.</li>
-<li>The <code>AdditionOfCos2andSin2Number</code> guard and the cost of the non-admitted division chains.</li>
+<li>The <code>AdditionOfCos2andSin2Number</code> guard and the cost of the non-admitted division chains (done in §15).</li>
+</ul>
+<h2 id="15-trigonometric-rule-and-quotient-chains">15. Trigonometric rule and quotient chains</h2>
+<p>Two pre-existing defects of <code>ExpressionSimplifier</code>, found by the S5 campaigns and deferred by C3d (§14.7, §14.10): the
+<code>NullReferenceException</code> of <code>AdditionOfCos2andSin2Number</code> on powers with a symbolic exponent (S5A-01), and the cost of the
+additive chains of quotients <code>1 - x1/x0 - x2/x0 - … - xn/x0</code> (<code>subChain</code>, §14.9). The baseline is a separate worktree of the
+diagnostic commit <code>d9805c58</code> (master <code>ad0a65c4</code> plus opt-in counters and the reproduction tests); every figure compares the
+branch with it.</p>
+<h3 id="151-reproduction-diagnostic-commit">15.1 Reproduction (diagnostic commit)</h3>
+<ul>
+<li><code>x^x + x^y</code>, <code>x^2 + x^y</code>, <code>x^y + x^2</code>, <code>x^(x+1) + y^2</code>, <code>x^sin(y) + x^2</code>, <code>sin(x)^y + cos(x)^2</code> threw
+<code>NullReferenceException</code> from <code>Simplify</code> and from the comparer (<code>ExpressionSimplifierTrigonometricRuleTests</code>,
+<code>ExpressionSimplifierDeepAuditTests.S5A01_…</code>).</li>
+<li>The quotient and product rules (<code>DivisionOfCosAndSinNumber</code>, <code>DivisionOfSinAndCosNumber</code>, <code>MultiplicationOfCosAndTanNumber</code>,
+<code>MultiplicationOfTanAndCosNumber</code>, <code>DivisionOfSinAndTanNumber</code>) called directly, as a derived simplifier may call them,
+rewrote foreign methods: <code>DegreeTrigonometry.Sin(x) / DegreeTrigonometry.Cos(x)</code> (a test type implementing
+<code>ITrigonometricFunctions&lt;double&gt;</code> explicitly, with public degree-based <code>Sin</code>/<code>Cos</code>) became <code>double.Tan(x)</code>, and the second
+argument of a two-argument <code>Sin(x, s) / Cos(x, t)</code> was dropped. Through the public entry points the effect gate refuses
+every rule on a call of a user method under every policy, so no public result was wrong: the defect was latent.</li>
+<li><code>subChain</code>: opt-in counters in <code>SimplificationMetadataStatistics</code> (<code>ProbeComparisons</code>, <code>ProbeFastPathDecisions</code>,
+<code>ComparerSimplifications</code>, <code>ComparerMemoHits</code>, <code>AdditiveCanonicalizations</code>), and the S5 harness command
+<code>profile &lt;family&gt; &lt;n&gt;</code> with the families <code>subdiv</code> (left-associated), <code>subdivR</code> (right-associated), <code>subdivB</code> (a balanced
+group subtracted once), <code>subdivM</code> (alternating signs), <code>subdivD</code> (distinct denominators) and <code>subdivL</code> (<code>long</code>).</li>
+</ul>
+<h3 id="152-root-cause-of-the-nullreferenceexception">15.2 Root cause of the <code>NullReferenceException</code></h3>
+<p><code>AdditionOfCos2andSin2Number</code> read <code>left.Right as ConstantExpression</code> and then <code>.Value</code> without testing the cast: any exponent
+that is not a constant (a parameter, a call, a computed expression) dereferenced <code>null</code>. The rule is a candidate for every sum
+of two ordinary powers, so the defect hit every such sum, and the comparer, which simplifies first.</p>
+<h3 id="153-correction-of-the-trigonometric-rules">15.3 Correction of the trigonometric rules</h3>
+<ul>
+<li><strong>Shape before value.</strong> The identity checks every shape before reading any value: two ordinary powers of one type, both
+exponents the <code>double</code> constant <code>2</code> (<code>IsSquareExponent</code>), both bases calls of the sine and the cosine of that type with one
+argument each, then the structural identity of the arguments. Any other shape declines (<code>null</code>), never throws.</li>
+<li><strong>Exact function of the type.</strong> <code>TryGetTrigonometricArgument</code> (and <code>TryMatchTrigonometricPair</code> for the quotients and
+products) accepts a call only when it is exactly the public static <code>T F(T)</code> function of the call's own result type, one
+argument, its provenance checked first (<code>ExpressionReflectionProvenance.IsRuntime</code>, <code>IsSameMember</code>, S5 A-10): an overload of
+another arity, a homonym with other values (a degree-based sine) or an impersonating reflection object never matches.
+<code>TrigonometricMethods</code> resolves <code>null</code> for a function the type does not declare with that signature and return type (an
+explicit interface implementation), and the rule then declines instead of building a call of <code>double</code>.</li>
+<li>Tests: <code>ExpressionSimplifierTrigonometricRuleTests</code> (non-constant exponents, other constant exponents, other arguments or
+functions, foreign methods called directly or through a derived simplifier, extension operands, effectful arguments, the
+identities that still apply) and <code>ExpressionTrigonometricRuleSecurityTests</code> (impersonating methods declined without being
+read; mixed calls keep the impersonated evaluation). The deep-audit test <code>S5A01_…_Declines</code> pins the fix.</li>
+</ul>
+<h3 id="154-root-cause-of-the-cost-of-the-quotient-chains">15.4 Root cause of the cost of the quotient chains</h3>
+<p>A chain <code>1 - x1/x0 - … - xn/x0</code> was refused by the linear family (a division is not a linear term, §12) and simplified level
+by level. At every level <code>SubstractionOfEqualsElements</code> compares the canonical prefix <code>P_k</code> with the new quotient and the
+constant; the comparer simplifies <code>P_k</code> again, and that simplification rebuilds the prefix level by level through the <code>0 - t</code>
+re-entries of the sign rules. The work is cubic in <code>n</code>, and 97 % of the transformation visits ran inside comparer
+simplifications: for 64 quotients, 373,830 transformation visits, 25.8 million structural visits and 345,408 comparer
+simplifications (2.4 s).</p>
+<h3 id="155-correction-linear-quotients">15.5 Correction: linear quotients</h3>
+<p>A linear chain (<code>IsLinearChain</code>, §12) of <code>double</code> or <code>float</code> may now hold <strong>linear quotients</strong> (<code>IsLinearQuotient</code>): an
+ordinary division of a parameter by a parameter, of the chain's type. <code>LinearChainOperands</code> keeps its proof obligations:</p>
+<ul>
+<li>the numerators are parameters that the chain holds nowhere else (as a term, a factor or another numerator);</li>
+<li>a denominator may divide several quotients (<code>_denominators</code>) but is never a term, a factor or a numerator;</li>
+<li>every other condition of the linear family is unchanged (constants, coefficients, crossed nodes, subtracted groups).</li>
+</ul>
+<p>Why the result is the level by level result. No rule prepares such a quotient into anything else (no constant, no negation,
+no nested division, no call: a field division of two parameters never throws in IEEE-754). Two operands of a level always hold a
+parameter the other does not hold (a term, a factor or a numerator), the simplifier never introduces a parameter and never
+removes one from such a chain, so the factoring comparisons of <code>AdditionOfEqualsElements</code> and <code>SubstractionOfEqualsElements</code>
+fail at every level and nothing cancels, exactly as for the parameters of a linear chain. The accepted chain is therefore
+rebuilt canonically without any comparison: structurally the tree the levels give (pinned by
+<code>ExpressionSimplifierFlattenTests.QuotientChains_AreAccepted_AndGiveTheLevelByLevelResult</code> against a derived simplifier).</p>
+<p>Refused on purpose, and kept level by level (<code>OtherQuotientChains_AreDeclined_AndKeepTheLevelByLevelResult</code>): integral quotients
+(truncating, throwing on a zero divisor), decimal chains, a quotient whose numerator or denominator is not a parameter, a
+denominator that is also a term, a factor or a numerator, a repeated numerator. The spine family (§12.4) keeps its linear terms
+only (<code>IsSpineTerm</code>): a quotient is never a spine term.</p>
+<p>Tests: <code>ExpressionSimplifierDivisionChainTests</code> (values in every type and shape, one result under every policy, effectful
+chains keep their evaluations, derived simplifiers keep their rules, budgets refuse cleanly at the limit, shared quotient
+instances treated once, a 2,000-term chain on a small stack, concurrency and re-entrancy, linear work).</p>
+<h3 id="156-validation">15.6 Validation</h3>
+<p><strong>Suites</strong>: Unit 14,736 passed (1 skipped), Security 394 (3 skipped), Functional 383, ETC Debug (<code>Coverage</code>) 350 (1 skipped).</p>
+<p><strong>S5 campaigns</strong> (<code>d9805c58</code> against the branch, default policy, 1,000 seeds and 1,000 nested cases):</p>
+<table>
+<thead>
+<tr>
+<th>Campaign</th>
+<th>d9805c58</th>
+<th>Branch</th>
+<th>Classification</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>terminate</code></td>
+<td>881 <code>NullReferenceException</code> (<code>AdditionOfCos2andSin2Number</code>); largest visit count 129</td>
+<td>0 exceptions; 140</td>
+<td>S5A-01 fixed; the 881 cases now run their rules (well within the budgets)</td>
+</tr>
+<tr>
+<td><code>converge</code> (64,450)</td>
+<td><code>error@1</code> 879, <code>error@2</code> 92; <code>fixed@0</code> 1,640, <code>fixed@1</code> 61,672; cycles 15</td>
+<td>no error; <code>fixed@0</code> 2,129, <code>fixed@1</code> 62,154; cycles 15</td>
+<td>S5A-01 fixed; the cases not stable after one pass are the same 152</td>
+</tr>
+<tr>
+<td><code>stability</code></td>
+<td>same categories as <code>converge</code></td>
+<td>same as <code>converge</code></td>
+<td>one case moves between the families <code>(finalization)</code> and <code>FlattenAdditiveChain</code> (a quotient chain now admitted)</td>
+</tr>
+<tr>
+<td><code>s3</code></td>
+<td><code>x^y + z^2</code> throws</td>
+<td><code>(z ** 2) + (x ** y)</code></td>
+<td>S5A-01 fixed</td>
+</tr>
+<tr>
+<td><code>comparer</code>, <code>diff</code>, <code>effects</code>, <code>canon</code></td>
+<td>—</td>
+<td>byte-identical</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Differential corpus</strong> (the corpus of C3b–C3d; every branch result compared with <code>d9805c58</code>, then evaluated against its source
+on twelve samples when it differs). <code>C3E_QUOTIENTS=1</code> adds quotient terms (parameter by parameter, parameter by constant) and up
+to sixteen parameters per case.</p>
+<table>
+<thead>
+<tr>
+<th>Corpus</th>
+<th style="text-align: right;">Cases</th>
+<th style="text-align: right;">same</th>
+<th style="text-align: right;">different</th>
+<th style="text-align: right;">non-idempotent d9805c58 → branch</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>default</td>
+<td style="text-align: right;">40,000</td>
+<td style="text-align: right;">40,000</td>
+<td style="text-align: right;"><strong>0</strong></td>
+<td style="text-align: right;">782 → 782</td>
+</tr>
+<tr>
+<td>each explicit policy</td>
+<td style="text-align: right;">15,000</td>
+<td style="text-align: right;">15,000</td>
+<td style="text-align: right;"><strong>0</strong></td>
+<td style="text-align: right;">322 → 322</td>
+</tr>
+<tr>
+<td>derived simplifier</td>
+<td style="text-align: right;">15,000</td>
+<td style="text-align: right;">15,000</td>
+<td style="text-align: right;"><strong>0</strong></td>
+<td style="text-align: right;">10,501 → 10,501</td>
+</tr>
+<tr>
+<td>quotients, default</td>
+<td style="text-align: right;">40,000</td>
+<td style="text-align: right;">40,000</td>
+<td style="text-align: right;"><strong>0</strong></td>
+<td style="text-align: right;">4,873 → 4,864</td>
+</tr>
+<tr>
+<td>quotients, derived simplifier</td>
+<td style="text-align: right;">15,000</td>
+<td style="text-align: right;">15,000</td>
+<td style="text-align: right;"><strong>0</strong></td>
+<td style="text-align: right;">6,012 → 6,008</td>
+</tr>
+</tbody>
+</table>
+<p>Every first-pass result is identical; the admitted quotient chains only make a few second passes reach the first-pass result.</p>
+<h3 id="157-growth-profile">15.7 Growth (<code>profile</code>)</h3>
+<p>S5 harness <code>profile &lt;family&gt; &lt;n&gt;</code>, one process per measure, median of the timed runs; a family stops after the first size whose
+median exceeds 2 s. Transformation visits are deterministic.</p>
+<table>
+<thead>
+<tr>
+<th>Family</th>
+<th style="text-align: right;">n</th>
+<th style="text-align: right;">d9805c58 ms</th>
+<th style="text-align: right;">branch ms</th>
+<th style="text-align: right;">d9805c58 transformation visits</th>
+<th style="text-align: right;">branch transformation visits</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>subdiv</code></td>
+<td style="text-align: right;">16</td>
+<td style="text-align: right;">8.56</td>
+<td style="text-align: right;">0.04</td>
+<td style="text-align: right;">6,934</td>
+<td style="text-align: right;">50</td>
+</tr>
+<tr>
+<td><code>subdiv</code></td>
+<td style="text-align: right;">64</td>
+<td style="text-align: right;">2,388</td>
+<td style="text-align: right;">0.16</td>
+<td style="text-align: right;">373,830</td>
+<td style="text-align: right;">194</td>
+</tr>
+<tr>
+<td><code>subdiv</code></td>
+<td style="text-align: right;">256</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">0.48</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">770</td>
+</tr>
+<tr>
+<td><code>subdivD</code></td>
+<td style="text-align: right;">64</td>
+<td style="text-align: right;">2,368</td>
+<td style="text-align: right;">0.35</td>
+<td style="text-align: right;">373,830</td>
+<td style="text-align: right;">194</td>
+</tr>
+<tr>
+<td><code>subdivM</code></td>
+<td style="text-align: right;">24</td>
+<td style="text-align: right;">3,168</td>
+<td style="text-align: right;">0.04</td>
+<td style="text-align: right;">1,112,766</td>
+<td style="text-align: right;">74</td>
+</tr>
+<tr>
+<td><code>subdivM</code></td>
+<td style="text-align: right;">256</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">0.51</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">770</td>
+</tr>
+<tr>
+<td><code>subdivB</code></td>
+<td style="text-align: right;">64</td>
+<td style="text-align: right;">2,517</td>
+<td style="text-align: right;">393</td>
+<td style="text-align: right;">376,046</td>
+<td style="text-align: right;">294,472</td>
+</tr>
+<tr>
+<td><code>subdivB</code></td>
+<td style="text-align: right;">128</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">4,182</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">2,227,336</td>
+</tr>
+<tr>
+<td><code>subdivR</code></td>
+<td style="text-align: right;">24</td>
+<td style="text-align: right;">2,917</td>
+<td style="text-align: right;">1,540</td>
+<td style="text-align: right;">907,610</td>
+<td style="text-align: right;">811,813</td>
+</tr>
+<tr>
+<td><code>subdivL</code></td>
+<td style="text-align: right;">128</td>
+<td style="text-align: right;">2.61</td>
+<td style="text-align: right;">2.39</td>
+<td style="text-align: right;">513</td>
+<td style="text-align: right;">513</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><code>subdiv</code>, <code>subdivD</code> (distinct denominators) and <code>subdivM</code> (alternating signs) are now linear: <code>3n + 2</code> transformation
+visits, no comparer simplification.</li>
+<li><code>subdivL</code> (<code>long</code>) was already linear: the effect gate refuses the rules on integral divisions, which may throw.</li>
+<li><strong>Residual limit.</strong> <code>subdivR</code> (right-associated, <code>1 - (x1/x0 - (x2/x0 - …))</code>) and <code>subdivB</code> (a balanced group subtracted
+once) stay super-linear: a subtracted group is not a term of the linear family, so their roots stay level by level and the
+comparer rebuilds the subtracted groups. Admitting them needs the factorable family of C3c with quotient atoms, a change of
+its proof obligations; it is out of the scope of this mission. Their cost goes down a little (−11 % and −22 % visits), as
+inner groups are now admitted as linear chains (one main chain flattened instead of none; at 16 terms 210 and 451 chains
+flattened inside the comparer, admission walks 1,404 → 452 and 4,811 → 2,644).</li>
+<li>Mixed-sign quotient chains keep the free-parameter ties of S4 (§14.7): their result is the level by level result, which is
+not always idempotent either.</li>
+</ul>
+<h3 id="158-measures">15.8 Measures</h3>
+<p><strong>Reduced validation (user decision).</strong> To save about one hour of machine time, the branch growth profile of <code>subdivR</code> stops at
+24 terms and BenchmarkDotNet runs a targeted list only: <code>subChain 16/64</code> and the quotient variants <code>subChainM 24</code>,
+<code>subChainD 64</code>, <code>subChainF 64</code>, plus the C3c/C3d references (<code>a+b</code>, <code>x+x+x</code>, <code>repeated 16/48/512</code>, <code>coef 24/128</code>,
+<code>tail 48/512</code>, <code>twice 48</code>, <code>cancel 128</code>, <code>linear 200</code>, <code>sinMid 16</code>, <code>mixed 8/32</code>, <code>partial 32</code>, <code>cross 32</code>) and the harness
+<code>growth</code> families (<code>dag</code>, <code>ties</code>, <code>collide</code> among them).</p>
+<p><strong>BenchmarkDotNet</strong> 0.14.0, in process, 8 warmup and 20 measured iterations, four processes run one after the other pinned to
+the performance cores at high priority: <code>d9805c58</code>, branch, <code>d9805c58</code>, branch. The table compares the faster process of each
+side; the two processes of one binary differ by less than 6 % (9 % for <code>tail 48</code> on <code>d9805c58</code>).</p>
+<table>
+<thead>
+<tr>
+<th>Case</th>
+<th style="text-align: right;">d9805c58 µs</th>
+<th style="text-align: right;">branch µs</th>
+<th style="text-align: right;">Time</th>
+<th style="text-align: right;">d9805c58 KB</th>
+<th style="text-align: right;">branch KB</th>
+<th style="text-align: right;">Allocated</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>a+b</code></td>
+<td style="text-align: right;">0.90</td>
+<td style="text-align: right;">0.89</td>
+<td style="text-align: right;">−2.1 %</td>
+<td style="text-align: right;">2.47</td>
+<td style="text-align: right;">2.47</td>
+<td style="text-align: right;">0.0 %</td>
+</tr>
+<tr>
+<td><code>x+x+x</code></td>
+<td style="text-align: right;">2.07</td>
+<td style="text-align: right;">2.07</td>
+<td style="text-align: right;">+0.2 %</td>
+<td style="text-align: right;">3.64</td>
+<td style="text-align: right;">3.64</td>
+<td style="text-align: right;">0.0 %</td>
+</tr>
+<tr>
+<td><code>repeated 16</code></td>
+<td style="text-align: right;">9.51</td>
+<td style="text-align: right;">9.27</td>
+<td style="text-align: right;">−2.6 %</td>
+<td style="text-align: right;">21.96</td>
+<td style="text-align: right;">21.96</td>
+<td style="text-align: right;">0.0 %</td>
+</tr>
+<tr>
+<td><code>repeated 48</code></td>
+<td style="text-align: right;">26.72</td>
+<td style="text-align: right;">25.53</td>
+<td style="text-align: right;">−4.4 %</td>
+<td style="text-align: right;">60.03</td>
+<td style="text-align: right;">60.03</td>
+<td style="text-align: right;">0.0 %</td>
+</tr>
+<tr>
+<td><code>repeated 512</code></td>
+<td style="text-align: right;">287.21</td>
+<td style="text-align: right;">285.94</td>
+<td style="text-align: right;">−0.4 %</td>
+<td style="text-align: right;">627.03</td>
+<td style="text-align: right;">627.03</td>
+<td style="text-align: right;">0.0 %</td>
+</tr>
+<tr>
+<td><code>coef 24</code></td>
+<td style="text-align: right;">84.03</td>
+<td style="text-align: right;">84.31</td>
+<td style="text-align: right;">+0.3 %</td>
+<td style="text-align: right;">114.81</td>
+<td style="text-align: right;">114.81</td>
+<td style="text-align: right;">0.0 %</td>
+</tr>
+<tr>
+<td><code>coef 128</code></td>
+<td style="text-align: right;">426.86</td>
+<td style="text-align: right;">430.87</td>
+<td style="text-align: right;">+0.9 %</td>
+<td style="text-align: right;">569.73</td>
+<td style="text-align: right;">569.71</td>
+<td style="text-align: right;">0.0 %</td>
+</tr>
+<tr>
+<td><code>tail 48</code></td>
+<td style="text-align: right;">37.93</td>
+<td style="text-align: right;">38.58</td>
+<td style="text-align: right;">+1.7 %</td>
+<td style="text-align: right;">85.94</td>
+<td style="text-align: right;">85.94</td>
+<td style="text-align: right;">0.0 %</td>
+</tr>
+<tr>
+<td><code>tail 512</code></td>
+<td style="text-align: right;">438.66</td>
+<td style="text-align: right;">448.09</td>
+<td style="text-align: right;">+2.1 %</td>
+<td style="text-align: right;">869.66</td>
+<td style="text-align: right;">869.66</td>
+<td style="text-align: right;">0.0 %</td>
+</tr>
+<tr>
+<td><code>twice 48</code></td>
+<td style="text-align: right;">34.61</td>
+<td style="text-align: right;">34.91</td>
+<td style="text-align: right;">+0.9 %</td>
+<td style="text-align: right;">66.45</td>
+<td style="text-align: right;">66.45</td>
+<td style="text-align: right;">0.0 %</td>
+</tr>
+<tr>
+<td><code>cancel 128</code></td>
+<td style="text-align: right;">59.18</td>
+<td style="text-align: right;">59.91</td>
+<td style="text-align: right;">+1.2 %</td>
+<td style="text-align: right;">142.30</td>
+<td style="text-align: right;">142.30</td>
+<td style="text-align: right;">0.0 %</td>
+</tr>
+<tr>
+<td><code>linear 200</code></td>
+<td style="text-align: right;">60.24</td>
+<td style="text-align: right;">59.29</td>
+<td style="text-align: right;">−1.6 %</td>
+<td style="text-align: right;">121.91</td>
+<td style="text-align: right;">121.91</td>
+<td style="text-align: right;">0.0 %</td>
+</tr>
+<tr>
+<td><code>sinMid 16</code></td>
+<td style="text-align: right;">9.75</td>
+<td style="text-align: right;">9.79</td>
+<td style="text-align: right;">+0.4 %</td>
+<td style="text-align: right;">21.76</td>
+<td style="text-align: right;">21.76</td>
+<td style="text-align: right;">0.0 %</td>
+</tr>
+<tr>
+<td><code>mixed 8</code></td>
+<td style="text-align: right;">24.99</td>
+<td style="text-align: right;">24.79</td>
+<td style="text-align: right;">−0.8 %</td>
+<td style="text-align: right;">28.44</td>
+<td style="text-align: right;">28.44</td>
+<td style="text-align: right;">0.0 %</td>
+</tr>
+<tr>
+<td><code>mixed 32</code></td>
+<td style="text-align: right;">101.12</td>
+<td style="text-align: right;">102.71</td>
+<td style="text-align: right;">+1.6 %</td>
+<td style="text-align: right;">110.03</td>
+<td style="text-align: right;">110.03</td>
+<td style="text-align: right;">0.0 %</td>
+</tr>
+<tr>
+<td><code>partial 32</code></td>
+<td style="text-align: right;">69.83</td>
+<td style="text-align: right;">70.01</td>
+<td style="text-align: right;">+0.3 %</td>
+<td style="text-align: right;">103.07</td>
+<td style="text-align: right;">103.07</td>
+<td style="text-align: right;">0.0 %</td>
+</tr>
+<tr>
+<td><code>cross 32</code></td>
+<td style="text-align: right;">73.12</td>
+<td style="text-align: right;">73.61</td>
+<td style="text-align: right;">+0.7 %</td>
+<td style="text-align: right;">118.89</td>
+<td style="text-align: right;">118.89</td>
+<td style="text-align: right;">0.0 %</td>
+</tr>
+<tr>
+<td><code>subChain 16</code></td>
+<td style="text-align: right;">8,026.95</td>
+<td style="text-align: right;">17.07</td>
+<td style="text-align: right;"><strong>−99.8 %</strong></td>
+<td style="text-align: right;">7,422.96</td>
+<td style="text-align: right;">17.83</td>
+<td style="text-align: right;">−99.8 %</td>
+</tr>
+<tr>
+<td><code>subChain 64</code></td>
+<td style="text-align: right;">1,332,638.65</td>
+<td style="text-align: right;">64.47</td>
+<td style="text-align: right;"><strong>÷ 20,670</strong></td>
+<td style="text-align: right;">1,024,072.95</td>
+<td style="text-align: right;">65.56</td>
+<td style="text-align: right;">÷ 15,620</td>
+</tr>
+<tr>
+<td><code>subChainM 24</code> (alternating signs)</td>
+<td style="text-align: right;">1,882,977.92</td>
+<td style="text-align: right;">25.75</td>
+<td style="text-align: right;"><strong>÷ 73,120</strong></td>
+<td style="text-align: right;">1,310,054.66</td>
+<td style="text-align: right;">23.20</td>
+<td style="text-align: right;">÷ 56,470</td>
+</tr>
+<tr>
+<td><code>subChainD 64</code> (distinct denominators)</td>
+<td style="text-align: right;">1,318,146.36</td>
+<td style="text-align: right;">67.02</td>
+<td style="text-align: right;"><strong>÷ 19,670</strong></td>
+<td style="text-align: right;">1,024,072.84</td>
+<td style="text-align: right;">68.87</td>
+<td style="text-align: right;">÷ 14,870</td>
+</tr>
+<tr>
+<td><code>subChainF 64</code> (<code>float</code>)</td>
+<td style="text-align: right;">1,380,861.47</td>
+<td style="text-align: right;">73.98</td>
+<td style="text-align: right;"><strong>÷ 18,670</strong></td>
+<td style="text-align: right;">1,024,072.01</td>
+<td style="text-align: right;">65.38</td>
+<td style="text-align: right;">÷ 15,660</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>The reference families of C3c/C3d allocate exactly what they did and their times stay within the noise of the two processes
+(−4.4 % to +2.1 %): the new test (<code>IsLinearQuotient</code>) runs only on the operands that are not linear terms, by type tests.</li>
+<li>The quotient chains go from seconds to tens of microseconds, linearly in their length.</li>
+</ul>
+<p><strong>Harness <code>growth</code> families</strong> (<code>shared</code>, <code>none</code>, <code>crossed</code>, <code>ties</code>, <code>repeated</code>, <code>wide</code>, <code>collide</code>, <code>dag</code>, <code>coefshared</code>, 8 to 512
+terms, §14.8): transformation visits, structural visits and result sizes identical to <code>d9805c58</code> at every size; allocations
+equal up to a few hundred bytes of measurement noise; times within −3 % to +4 % (<code>dag 512</code>: 33.6 ms and 34.8 ms).</p>
+<h3 id="159-residual-limits">15.9 Residual limits</h3>
+<ul>
+<li>Right-associated and balanced subtracted groups of quotients (<code>subdivR</code>, <code>subdivB</code>) stay super-linear (§15.7).</li>
+<li>Quotients of other shapes (a constant or a product numerator, a sum denominator) and integral or decimal quotient chains keep
+the level by level path, with its cost.</li>
+<li>The free-parameter ties (S4) and the other residual families of §14.7 are unchanged.</li>
 </ul>
 
 </article>
