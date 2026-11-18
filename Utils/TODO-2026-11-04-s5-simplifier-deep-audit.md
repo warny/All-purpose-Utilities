@@ -157,6 +157,48 @@ outcomes. The alternative (throw only outside lazy contexts) needs contextual ex
 moves the exception of every lambda body: not recommended. Not implemented here (stop condition: it changes the
 symbolic-equivalence contract).
 
+### S5A-04 — inventory of the throwing folds on `9be5fcff` (2026-11-18, mission "deferred arithmetic exceptions")
+
+Branch `fix/expression-s5a04-deferred-arithmetic-exceptions`, base `master` `9be5fcff` (PR #707 merged, equal to
+`origin/master`). Contract decision taken by the maintainer: **arithmetic constant folding never raises an arithmetic exception
+itself**, under every policy; a fold that would throw declines and the node stays, raising its exception when, and only if, it is
+evaluated. Baseline S5 campaigns (default policy, 4,000 seeds) on a detached worktree of the base: `terminate` 0 anomaly,
+`converge`/`stability` 75 cycles, `comparer` 0, `diff` 1 documented `VALUE` and **210** `SIMPLIFY-THROWS-LIKE-SOURCE` seeds
+(decimal 25, int 66, long 52, uint 67), `effects` 1 documented `VALUE`, `s3` 1, `canon` 19 (documented ties).
+
+Every evaluation of a numeric constant by the simplifier was searched (`FoldConstants` and its callers; `throw new`;
+`checked`/`unchecked`; `Convert.*`; `double.Pow`; delegates, `Compile`, `DynamicInvoke`, reflection invocation). The only arithmetic
+evaluator is the private `ConstantFolders` table: four unchecked generic-math operators (`+ - * /`) on `double`, `float`, `decimal`,
+`int`, `long`, `uint`, `ulong`, `short`, `ushort`, built once by the type initializer and never written afterwards, so no user code,
+reflection or dynamic binding runs in it. Its only throwing cases are `DivideByZeroException` (integral or decimal zero divisor),
+`OverflowException` (`int.MinValue / -1`, `long.MinValue / -1`; any decimal operation whose result exceeds the range). The
+`short`/`ushort` folds compute in their own type (no `int` promotion), so `short.MinValue / -1` wraps to `short.MinValue` exactly
+as the compiled node does and never throws.
+
+| File | Method | Operation | Possible exception | Existing handler | Behavior on failure (base) | Original kept | Unsafe continuation | Action |
+|---|---|---|---|---|---|---|---|---|
+| `ExpressionSimplifier.cs` | `FoldConstants` | table folder, `+ - * /` | `DivideByZeroException`, `OverflowException` | none | propagates | no | n/a | catch exactly these two around the folder call only, return `null` |
+| idem | `DivideWithZeroOrOne` | none (zero test) | `DivideByZeroException` **thrown by the rule** (integral/decimal zero divisor, inside the gate) | none; declines outside the gate | propagates | no | no | decline (`null`) for every type |
+| idem | `AdditionOfConstants`, `SubstractionOfConstants`, `MultiplicationOfConstants`, `DivisionOfConstants` | fold of a constant pair | both | none | propagates | no | no (the rule returns the fold) | none: `null` declines the rule, the node stays |
+| idem | `Multiplication(c, c2 * r)` | `c * c2` | decimal `OverflowException` | none | propagates | no | no: `null` already declines | none (the reassociation is now declined, the source product kept) |
+| idem | `Multiplication(c1 * x, c2 * y)` | `c1 * c2` | decimal `OverflowException` | none | propagates | no | no | none, as above |
+| idem | `TryFoldFactoredCoefficient` | `c1 ± c2` | decimal `OverflowException` | `catch (OverflowException)` | `null` | yes (unevaluated coefficient node) | no | `null` path identical; redundant catch removed |
+| idem | `BuildFactoredProduct` | `coefficient * factor` (C3d, constant factor) | decimal `OverflowException` | `catch (OverflowException)` | product kept | yes | no | `null` path identical; redundant catch removed |
+| idem | `CanonicalizeFactoredCoefficient` | `0 - c` | none: the type is inert (`short`, `int`, `long`, `float`, `double` once `_ordinaryNegateMethods` is required), unchecked, folder present, operand non-null | `!` | n/a | n/a | the `!` relied on an unstated invariant | invariant documented; explicit fallback `return null` (the term list is local, the caller rebuilds from the untouched coefficients) |
+| idem | `TrySumConstants` (`AggregateAdditiveConstants`) | running `±` sums | decimal `OverflowException` | `catch (OverflowException)` | `false`, terms unchanged | yes (no mutation before the sum) | no | `null` path identical; redundant catch removed |
+| idem | `NormalizeProductFactors` | product of constant factors | none reachable (inert types only) | `catch (OverflowException)` | constants kept | yes (only the sign-tracked negation unwrapping precedes it, returned to the caller) | no | `null` path identical; redundant catch removed |
+| idem | `PowerOfConstants` | `double.Pow` | none (IEEE) | none | n/a | n/a | no | none |
+| `ExpressionSimplifier.GlobalFactoring.cs` | `SumCoefficients` | running `±` sums | none reachable (never decimal) | `catch (OverflowException)` | `null`, group not merged | yes (`merged` built before `terms` is cleared) | no | `null` path identical; redundant catch removed |
+| idem | `NegateSubtractedConstant` | `0 - c` | none (decimal negation is exact; integral unchecked) | none | n/a | yes (term replaced only on success) | no | none |
+| idem | `NegateSubtractedSum` | `0 - c` | none, as above | none | n/a | yes | no | none |
+| idem | `TryBuildFactoredTerm` | `coefficient * c` | none reachable (never decimal) | none local | propagates | — | `factors` is local; `false` rejects the candidate (`rejected.Add`) | none: the existing rejection handles `null` |
+
+Not arithmetic folding, unchanged and never caught: `Convert.ChangeType(0 or 1, numeric type)` and `Convert.ToDouble` of a primitive
+(cannot throw); `Convert.ToDouble` of a third-party `INumber<T>` in `ConstantNumericAttribute.Match` (user code, already guarded by
+`IConvertible`); `ExpressionResourceLimitException`, stack guards, factory `ArgumentException`/`InvalidOperationException`
+(`BuildOrdinary*Methods` probes), custom operator methods, reflection members and tracer callbacks (never folded: a node with a
+method is not ordinary, `IsOrdinaryBinaryArithmetic`).
+
 ### S5A-05 / S5A-06 — convergence
 
 The original reproducers reach a fixed point at the first pass since C3c/C3d and stay pinned. What remains on the 70,470
