@@ -922,8 +922,8 @@ namespace Utils.Mathematics.Expressions
         /// <param name="type">The node's type, which is also the type of both operands.</param>
         /// <param name="left">The left constant.</param>
         /// <param name="right">The right constant.</param>
-        /// <returns>The folded constant, or <see langword="null"/> when an operand is <see langword="null"/> or the
-        /// (operator, type) pair has no folder.</returns>
+        /// <returns>The folded constant, or <see langword="null"/> when an operand is <see langword="null"/>, the
+        /// (operator, type) pair has no folder, or evaluating the operation would throw.</returns>
         /// <remarks>
         /// <para>
         /// The caller must have proven the node ordinary (<see cref="IsOrdinaryBinaryArithmetic(BinaryExpression)"/>):
@@ -943,13 +943,36 @@ namespace Utils.Mathematics.Expressions
         /// decimal overflow), and follow IEEE-754 for <see cref="float"/> and <see cref="double"/> (<c>NaN</c>,
         /// infinities and signed zeros).
         /// </para>
+        /// <para>
+        /// A fold never raises an arithmetic exception itself (S5A-04, mission "deferred arithmetic exceptions"): when the
+        /// folder throws <see cref="DivideByZeroException"/> or <see cref="OverflowException"/>, the fold is declined and the
+        /// caller keeps the node, which raises that exception when, and only if, it is evaluated. The folded node may sit in a
+        /// branch the source never evaluates (<c>i &gt; 0 ? 1 / 0 : 2</c>) or in a lambda body never invoked, so throwing here
+        /// moved the exception to simplification time. Only these two exceptions are caught, and only around the folder call:
+        /// the folders are the primitive generic-math operators of the table, so nothing else can be raised there, and any other
+        /// failure (of a factory, a resource budget or a violated invariant) stays visible.
+        /// </para>
         /// </remarks>
         private static ConstantExpression? FoldConstants(ExpressionType nodeType, Type type, object? left, object? right)
-            => left is not null
-                && right is not null
-                && ConstantFolders.TryGetValue((nodeType, type), out Func<object, object, object>? folder)
-                ? Expression.Constant(folder(left, right))
-                : null;
+        {
+            if (left is null || right is null || !ConstantFolders.TryGetValue((nodeType, type), out Func<object, object, object>? folder)) return null;
+
+            object result;
+            try
+            {
+                result = folder(left, right);
+            }
+            catch (DivideByZeroException)
+            {
+                return null;
+            }
+            catch (OverflowException)
+            {
+                return null;
+            }
+
+            return Expression.Constant(result);
+        }
 
         /// <summary>
         /// Typed evaluators of the ordinary binary operators, indexed by operator and operand type; used by
