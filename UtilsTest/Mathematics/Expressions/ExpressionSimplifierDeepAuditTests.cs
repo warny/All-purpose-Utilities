@@ -263,49 +263,54 @@ public class ExpressionSimplifierDeepAuditTests
     }
 
     /// <summary>
-    /// S5A-04: constant folding and the zero-divisor check throw while simplifying, even when the node sits in a conditional branch
-    /// that the source never evaluates for some inputs: the exception moves from evaluation time (conditional) to simplification
-    /// time (unconditional), and the comparer, which simplifies first, throws too. The documented intent ("throws as evaluating
-    /// the node would") holds for an unconditional node only.
+    /// S5A-04, fixed (mission "deferred arithmetic exceptions"): constant folding and the zero-divisor check threw while simplifying,
+    /// even when the node sat in a conditional branch that the source never evaluates for some inputs, and the comparer, which
+    /// simplifies first, threw too. A fold that would throw now declines: simplification completes, the throwing operation stays in
+    /// the tree, and it raises its exception when, and only if, the branch is evaluated.
     /// </summary>
     [TestMethod]
-    public void S5A04_ExceptionOfAnUnevaluatedBranch_IsRaisedBySimplification()
+    public void S5A04_ExceptionOfAnUnevaluatedBranch_IsDeferredToEvaluation()
     {
         ParameterExpression i = Expression.Parameter(typeof(int), "i");
         ParameterExpression m = Expression.Parameter(typeof(decimal), "m");
-        (Expression Body, ParameterExpression Parameter, object Negative, Type Exception)[] cases =
+        (Expression Body, ParameterExpression Parameter, object Negative, object Positive, Type Exception)[] cases =
         [
-            (Expression.Condition(Expression.GreaterThan(i, Expression.Constant(0)), Expression.Divide(Expression.Constant(1), Expression.Constant(0)), Expression.Constant(2)), i, -1, typeof(DivideByZeroException)),
-            (Expression.Condition(Expression.GreaterThan(i, Expression.Constant(0)), Expression.Divide(i, Expression.Constant(0)), Expression.Constant(2)), i, -1, typeof(DivideByZeroException)),
-            (Expression.Condition(Expression.GreaterThan(i, Expression.Constant(0)), Expression.Divide(Expression.Constant(int.MinValue), Expression.Constant(-1)), Expression.Constant(2)), i, -1, typeof(OverflowException)),
-            (Expression.Condition(Expression.GreaterThan(m, Expression.Constant(0m)), Expression.Multiply(Expression.Constant(decimal.MaxValue), Expression.Constant(2m)), Expression.Constant(0m)), m, -1m, typeof(OverflowException)),
+            (Expression.Condition(Expression.GreaterThan(i, Expression.Constant(0)), Expression.Divide(Expression.Constant(1), Expression.Constant(0)), Expression.Constant(2)), i, -1, 1, typeof(DivideByZeroException)),
+            (Expression.Condition(Expression.GreaterThan(i, Expression.Constant(0)), Expression.Divide(i, Expression.Constant(0)), Expression.Constant(2)), i, -1, 1, typeof(DivideByZeroException)),
+            (Expression.Condition(Expression.GreaterThan(i, Expression.Constant(0)), Expression.Divide(Expression.Constant(int.MinValue), Expression.Constant(-1)), Expression.Constant(2)), i, -1, 1, typeof(OverflowException)),
+            (Expression.Condition(Expression.GreaterThan(m, Expression.Constant(0m)), Expression.Multiply(Expression.Constant(decimal.MaxValue), Expression.Constant(2m)), Expression.Constant(0m)), m, -1m, 1m, typeof(OverflowException)),
         ];
 
-        foreach ((Expression body, ParameterExpression parameter, object negative, Type exception) in cases)
+        foreach ((Expression body, ParameterExpression parameter, object negative, object positive, Type exception) in cases)
         {
             LambdaExpression lambda = Expression.Lambda(body, parameter);
-            Assert.IsNotNull(lambda.Compile().DynamicInvoke(negative), "the source evaluates without exception on the other branch");
-            Assert.AreEqual(exception, Innermost(() => Simplify(lambda))?.GetType(), Text(body));
-            Assert.AreEqual(exception, Innermost(() => ExpressionComparer.Default.Equals(lambda, Expression.Lambda(body, parameter)))?.GetType(), Text(body));
+            LambdaExpression? simplified = null;
+            Assert.IsNull(Innermost(() => simplified = (LambdaExpression)Simplify(lambda)), Text(body));
+            Delegate source = lambda.Compile(), result = simplified!.Compile();
+            Assert.AreEqual(Outcome(source, [negative]), Outcome(result, [negative]), Text(body));
+            Assert.AreEqual("exception " + exception.Name, Outcome(source, [positive]), Text(body));
+            Assert.AreEqual("exception " + exception.Name, Outcome(result, [positive]), Text(simplified));
+            Assert.IsNull(Innermost(() => ExpressionComparer.Default.Equals(lambda, Expression.Lambda(body, parameter))), Text(body));
+            Assert.IsTrue(ExpressionComparer.Default.Equals(lambda, Expression.Lambda(body, parameter)), Text(body));
         }
     }
 
     /// <summary>
-    /// S5A-04 re-audit (mission "S5 residual correctness"): the map of the contexts in which a child is not guaranteed to run, for
-    /// the three throwing folds (an integral zero divisor in <c>DivideWithZeroOrOne</c>, <c>int.MinValue / -1</c> and a decimal
-    /// overflow in <c>FoldConstants</c>), under the default policy and the most permissive one. Every context raises the exception
-    /// while simplifying, whereas the source runs without it on some input (or never runs the node: an uninvoked lambda, a caught
-    /// exception). The behavior is open and pinned, not fixed: correcting it changes the documented
-    /// "throws as evaluating the node would" contract of <c>Simplify</c> and needs a contract decision
-    /// (<c>Utils/TODO-2026-11-04-s5-simplifier-deep-audit.md</c>, S5A-04 re-audit). The constants outside any lazy context are the
-    /// control: the node always runs, so its exception is the one the source raises.
+    /// S5A-04, fixed (mission "deferred arithmetic exceptions"): the map of the contexts in which a child is not guaranteed to run,
+    /// established by the re-audit of PR #707, for the three throwing folds (an integral zero divisor in <c>DivideWithZeroOrOne</c>,
+    /// <c>int.MinValue / -1</c> and a decimal overflow in <c>FoldConstants</c>), under every policy. Every context raised the
+    /// exception while simplifying; now simplification completes under each policy, and the simplified tree gives exactly the
+    /// source's outcome on an input that skips the node and on an input that evaluates it: the same value, the same exception type,
+    /// the same handler or filter decision. The constants outside any lazy context are the control: the node always runs, and its
+    /// exception is raised by the evaluation of the simplified tree, never by the simplification.
     /// </summary>
     [TestMethod]
-    public void S5A04_EveryLazyContext_RaisesTheFoldExceptionWhileSimplifying()
+    public void S5A04_EveryLazyContext_DefersTheFoldExceptionToEvaluation()
     {
         ParameterExpression i = Expression.Parameter(typeof(int), "i");
         ParameterExpression n = Expression.Parameter(typeof(int?), "n");
         ParameterExpression b = Expression.Parameter(typeof(bool), "b");
+        Expression raise = Expression.Throw(Expression.Constant(new InvalidOperationException("raised")), typeof(int));
         (Func<Expression> Node, Type Exception)[] throwing =
         [
             (() => Expression.Divide(i, Expression.Constant(0)), typeof(DivideByZeroException)),
@@ -315,35 +320,92 @@ public class ExpressionSimplifierDeepAuditTests
 
         foreach ((Func<Expression> node, Type exception) in throwing)
         {
-            (string Name, LambdaExpression Lambda, object?[] Safe)[] contexts =
+            string thrown = "exception " + exception.Name;
+
+            // The input that skips the node, then the input that evaluates it, with the source's outcome on the latter.
+            (string Name, LambdaExpression Lambda, object?[] Safe, object?[] Failing, string Expected)[] contexts =
             [
-                ("conditional", Expression.Lambda(Expression.Condition(b, node(), Expression.Constant(2)), b, i), [false, 1]),
-                ("and-also", Expression.Lambda(Expression.AndAlso(b, Expression.Equal(node(), Expression.Constant(0))), b, i), [false, 1]),
-                ("or-else", Expression.Lambda(Expression.OrElse(b, Expression.Equal(node(), Expression.Constant(0))), b, i), [true, 1]),
-                ("coalesce", Expression.Lambda(Expression.Coalesce(n, node()), n, i), [5, 1]),
-                ("switch case", Expression.Lambda(Expression.Switch(i, Expression.Constant(2), Expression.SwitchCase(node(), Expression.Constant(7))), i), [1]),
-                ("switch default", Expression.Lambda(Expression.Switch(i, node(), Expression.SwitchCase(Expression.Constant(2), Expression.Constant(1))), i), [1]),
-                ("try body, caught", Expression.Lambda(Expression.TryCatch(node(), Expression.Catch(typeof(ArithmeticException), Expression.Constant(2))), i), [1]),
-                ("catch handler", Expression.Lambda(Expression.TryCatch(Expression.Constant(2), Expression.Catch(typeof(Exception), node())), i), [1]),
-                ("filter", Expression.Lambda(Expression.TryCatch(Expression.Constant(2), Expression.Catch(Expression.Parameter(typeof(Exception), "ex"), Expression.Constant(3), Expression.Equal(node(), Expression.Constant(0)))), i), [1]),
-                ("uninvoked lambda", Expression.Lambda(Expression.Lambda<Func<int>>(node()), i), [1]),
+                ("conditional", Expression.Lambda(Expression.Condition(b, node(), Expression.Constant(2)), b, i), [false, 1], [true, 1], thrown),
+                ("and-also", Expression.Lambda(Expression.AndAlso(b, Expression.Equal(node(), Expression.Constant(0))), b, i), [false, 1], [true, 1], thrown),
+                ("or-else", Expression.Lambda(Expression.OrElse(b, Expression.Equal(node(), Expression.Constant(0))), b, i), [true, 1], [false, 1], thrown),
+                ("coalesce", Expression.Lambda(Expression.Coalesce(n, node()), n, i), [5, 1], [null, 1], thrown),
+                ("switch case", Expression.Lambda(Expression.Switch(i, Expression.Constant(2), Expression.SwitchCase(node(), Expression.Constant(7))), i), [1], [7], thrown),
+                ("switch default", Expression.Lambda(Expression.Switch(i, node(), Expression.SwitchCase(Expression.Constant(2), Expression.Constant(1))), i), [1], [5], thrown),
+                // The preserved operation still throws, and the original handler still catches it.
+                ("try body, caught", Expression.Lambda(Expression.TryCatch(Expression.Condition(b, node(), Expression.Constant(4)), Expression.Catch(typeof(ArithmeticException), Expression.Constant(2))), b, i), [false, 1], [true, 1], "value 2"),
+                // The handler runs only when the body throws; the exception it raises then replaces the body's one.
+                ("catch handler", Expression.Lambda(Expression.TryCatch(Expression.Condition(b, raise, Expression.Constant(2)), Expression.Catch(typeof(Exception), node())), b, i), [false, 1], [true, 1], thrown),
+                // CLR semantics: an exception thrown by a filter is swallowed and the filter counts as false, so the handler is
+                // skipped and the body's exception propagates.
+                ("filter", Expression.Lambda(Expression.TryCatch(Expression.Condition(b, raise, Expression.Constant(2)), Expression.Catch(Expression.Parameter(typeof(Exception), "ex"), Expression.Constant(3), Expression.Equal(node(), Expression.Constant(0)))), b, i), [false, 1], [true, 1], "exception InvalidOperationException"),
+                // Creating the inner delegate raises nothing; invoking it raises the exception.
+                ("uninvoked lambda", Expression.Lambda(Expression.Lambda<Func<int>>(node()), i), [1], [1], "delegate, then " + thrown),
             ];
 
-            foreach ((string name, LambdaExpression lambda, object?[] safe) in contexts)
+            foreach ((string name, LambdaExpression lambda, object?[] safe, object?[] failing, string expected) in contexts)
             {
                 string label = name + ": " + Text(lambda);
-                Assert.IsNull(Innermost(() => lambda.Compile().DynamicInvoke(safe)), label + " (the source runs without the exception)");
-                foreach (ExpressionSimplifierOptions options in new[] { ExpressionSimplifierOptions.Default, new ExpressionSimplifierOptions { TrustPolicy = ExpressionTrustPolicy.TrustDeclarations, AggressiveSimplification = true, ExceptionPreservation = ExpressionExceptionPreservation.None } })
+                Delegate source = lambda.Compile();
+                Assert.IsFalse(Outcome(source, safe).StartsWith("exception", StringComparison.Ordinal), label + " (the source skips the node)");
+                Assert.AreEqual(expected, Outcome(source, failing, invokeResult: name == "uninvoked lambda"), label + " (the source evaluates the node)");
+                foreach (ExpressionSimplifierOptions options in AllPolicies)
                 {
-                    Assert.AreEqual(exception, Innermost(() => new ExpressionSimplifier { Options = options }.Simplify(lambda))?.GetType(), label + " " + options);
+                    LambdaExpression? simplified = null;
+                    Assert.IsNull(Innermost(() => simplified = (LambdaExpression)new ExpressionSimplifier { Options = options }.Simplify(lambda)), label + " " + options);
+                    Delegate result = simplified!.Compile();
+                    Assert.AreEqual(Outcome(source, safe), Outcome(result, safe), label + " " + options + " -> " + Text(simplified));
+                    Assert.AreEqual(expected, Outcome(result, failing, invokeResult: name == "uninvoked lambda"), label + " " + options + " -> " + Text(simplified));
                 }
             }
 
-            // Control: outside any lazy context the node always runs, and raises the same exception at evaluation.
+            // Control: outside any lazy context the node always runs; the simplified tree raises its exception at evaluation.
             LambdaExpression always = Expression.Lambda(node(), i);
-            Assert.AreEqual(exception, Innermost(() => always.Compile().DynamicInvoke(1))?.GetType());
-            Assert.AreEqual(exception, Innermost(() => Simplify(always))?.GetType());
+            Assert.AreEqual(thrown, Outcome(always.Compile(), [1]));
+            LambdaExpression? folded = null;
+            Assert.IsNull(Innermost(() => folded = (LambdaExpression)Simplify(always)), Text(always));
+            Assert.AreEqual(thrown, Outcome(folded!.Compile(), [1]), Text(folded));
         }
+    }
+
+    /// <summary>
+    /// S5A-04: every policy of the matrix of the mission "deferred arithmetic exceptions": the default, each trust policy, aggressive
+    /// simplification, the exception categories preserved (<see cref="ExpressionExceptionPreservation.Arithmetic"/> left out, then
+    /// none) and the most permissive combination. No policy lets a constant fold raise an arithmetic exception.
+    /// </summary>
+    internal static readonly ExpressionSimplifierOptions[] AllPolicies =
+    [
+        ExpressionSimplifierOptions.Default,
+        new ExpressionSimplifierOptions { TrustPolicy = ExpressionTrustPolicy.Verified },
+        new ExpressionSimplifierOptions { TrustPolicy = ExpressionTrustPolicy.TrustDeclarations },
+        new ExpressionSimplifierOptions { AggressiveSimplification = true },
+        new ExpressionSimplifierOptions { ExceptionPreservation = ExpressionExceptionPreservation.Runtime | ExpressionExceptionPreservation.UserCode },
+        new ExpressionSimplifierOptions { ExceptionPreservation = ExpressionExceptionPreservation.None },
+        new ExpressionSimplifierOptions { TrustPolicy = ExpressionTrustPolicy.TrustDeclarations, AggressiveSimplification = true, ExceptionPreservation = ExpressionExceptionPreservation.None },
+    ];
+
+    /// <summary>
+    /// Invokes a compiled lambda and describes its outcome: <c>value …</c>, <c>exception …</c> (innermost type name), or, for a
+    /// delegate result invoked in turn, <c>delegate, then …</c>.
+    /// </summary>
+    /// <param name="function">The compiled lambda.</param>
+    /// <param name="arguments">The arguments.</param>
+    /// <param name="invokeResult">Whether a delegate result is invoked (without arguments) and its outcome appended.</param>
+    /// <returns>The outcome.</returns>
+    internal static string Outcome(Delegate function, object?[] arguments, bool invokeResult = false)
+    {
+        object? value;
+        try
+        {
+            value = function.DynamicInvoke(arguments);
+        }
+        catch (Exception exception)
+        {
+            while (exception is TargetInvocationException { InnerException: { } inner }) exception = inner;
+            return "exception " + exception.GetType().Name;
+        }
+
+        if (invokeResult && value is Delegate created) return "delegate, then " + Outcome(created, []);
+        return "value " + Convert.ToString(value, System.Globalization.CultureInfo.InvariantCulture);
     }
 
     /// <summary>
