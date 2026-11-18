@@ -407,6 +407,10 @@ internal static class Families
         ("subdivM", "1 - x1/x0 + x2/x0 - x3/x0 + ... (left-associated, alternating signs)"),
         ("subdivD", "1 - x1/y1 - x2/y2 - ... - xn/yn (left-associated, distinct denominators)"),
         ("subdivL", "1 - x1/x0 - x2/x0 - ... - xn/x0 over long (integral division: not a field)"),
+        ("subdivRD", "1 - (x1/y1 - (x2/y2 - (... - xn/yn))) (right-associated, distinct denominators)"),
+        ("subdivRF", "1 - (x1/x0 - (x2/x0 - (... - xn/x0))) over float"),
+        ("subdivBM", "1 - ((x1/x0 - x2/x0) + (x3/x0 - x4/x0)) ... (balanced, every right operand of an odd level subtracted)"),
+        ("subdivBF", "1 - ((x1/x0 + x2/x0) + (x3/x0 + x4/x0)) ... over float"),
     ];
 
     /// <summary>Builds family <paramref name="name"/> at size <paramref name="n"/>.</summary>
@@ -456,6 +460,10 @@ internal static class Families
                 (acc, p) => p.i % 2 == 0 ? Expression.Subtract(acc, p.q) : Expression.Add(acc, p.q)),
             "subdivD" => LeftChain(Quotients(n, true).Prepend(Expression.Constant(1.0)), Expression.Subtract),
             "subdivL" => LeftChain(Quotients(n, false, typeof(long)).Prepend(Expression.Constant(1L)), Expression.Subtract),
+            "subdivRD" => RightSubtraction(Quotients(n, true), Expression.Constant(1.0)),
+            "subdivRF" => RightSubtraction(Quotients(n, false, typeof(float)), Expression.Constant(1f)),
+            "subdivBM" => Expression.Subtract(Expression.Constant(1.0), Balanced(Quotients(n, false).ToList(), 0)),
+            "subdivBF" => Expression.Subtract(Expression.Constant(1f), Balanced(Quotients(n, false, typeof(float)).ToList())),
             "bal" => Balanced(Enumerable.Range(0, Math.Max(1, n / 2)).Select(i => (Expression)Expression.Subtract(xs[2 * i % n], xs[(2 * i + 1) % n])).ToList()),
             _ => throw new ArgumentException("Unknown family " + name),
         };
@@ -528,4 +536,24 @@ internal static class Families
     /// <returns>The sum.</returns>
     private static Expression Balanced(IReadOnlyList<Expression> items)
         => items.Count == 1 ? items[0] : Expression.Add(Balanced(items.Take(items.Count / 2).ToList()), Balanced(items.Skip(items.Count / 2).ToList()));
+
+    /// <summary>Folds items into a balanced tree whose nodes at an odd level subtract their right operand.</summary>
+    /// <param name="items">The items.</param>
+    /// <param name="level">The level of the node built (the root is at level 0).</param>
+    /// <returns>The tree.</returns>
+    private static Expression Balanced(IReadOnlyList<Expression> items, int level)
+    {
+        if (items.Count == 1) return items[0];
+        Expression left = Balanced(items.Take(items.Count / 2).ToList(), level + 1);
+        Expression right = Balanced(items.Skip(items.Count / 2).ToList(), level + 1);
+        return level % 2 == 1 ? Expression.Subtract(left, right) : Expression.Add(left, right);
+    }
+
+    /// <summary>Builds <c>head - (q1 - (q2 - (... - qn)))</c>.</summary>
+    /// <param name="items">The terms <c>q1 ... qn</c>.</param>
+    /// <param name="head">The first term.</param>
+    /// <returns>The tree.</returns>
+    private static Expression RightSubtraction(IEnumerable<Expression> items, Expression head)
+        => items.Reverse().Aggregate((Expression?)null, (acc, q) => acc is null ? q : Expression.Subtract(q, acc)) is { } tail
+            ? Expression.Subtract(head, tail) : head;
 }

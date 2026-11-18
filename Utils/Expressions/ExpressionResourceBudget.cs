@@ -398,6 +398,14 @@ internal static class ExpressionResourceBudget
         public ExpressionNodeSet? FlattenSpineRefusals;
 
         /// <summary>
+        /// The crossed nodes whose chain the grouped-quotient test of the built-in simplifier's admission proved refused
+        /// (<c>ExpressionSimplifier.IsGroupedLinearQuotientChain</c>, docs/expressions/SimplifierFlatten.md §16): the spine nodes from
+        /// a refused root down to its cause. Consulted only to skip that test, never the linear or factorable ones (a node below a
+        /// refused grouped chain may still be a linear chain). Same lifetime as <see cref="FlattenRefusals"/>.
+        /// </summary>
+        public ExpressionNodeSet? FlattenGroupedRefusals;
+
+        /// <summary>
         /// The root of the spine chain the admission of the running operation admitted last, which the flatten rule invoked right
         /// after it on the same root consumes (mission C3b, <c>ExpressionSimplifier.IsSpineChain</c>). It belongs to one public
         /// operation: <see cref="Enter"/> detaches it, so a nested operation neither reads nor consumes its caller's root, and
@@ -412,6 +420,13 @@ internal static class ExpressionResourceBudget
         /// Same lifetime as <see cref="AdmittedSpineRoot"/>: detached by <see cref="Enter"/>, restored by <see cref="Exit"/>.
         /// </summary>
         public System.Linq.Expressions.Expression? AdmittedFactorableRoot;
+
+        /// <summary>
+        /// The root of the grouped quotient chain the admission of the running operation admitted last (§16,
+        /// <c>ExpressionSimplifier.IsGroupedLinearQuotientChain</c>), consumed by the flatten rule invoked right after it on the
+        /// same root. Same lifetime as <see cref="AdmittedSpineRoot"/>: detached by <see cref="Enter"/>, restored by <see cref="Exit"/>.
+        /// </summary>
+        public System.Linq.Expressions.Expression? AdmittedGroupedQuotientRoot;
 
         /// <summary>
         /// The structural hashes, canonical-order keys and canonicalization states the simplifier's canonicalizations computed
@@ -462,13 +477,15 @@ internal static class ExpressionResourceBudget
                 MaxNodes,
                 SimplificationMetadata,
                 AdmittedSpineRoot,
-                AdmittedFactorableRoot);
+                AdmittedFactorableRoot,
+                AdmittedGroupedQuotientRoot);
 
             // Mission C3a: every public operation, nested ones included, starts with an empty metadata table and never reads
             // the entries of the operation it is nested in (as the comparison memo of S5 P9), so its own budget is exact.
             SimplificationMetadata = null;
             AdmittedSpineRoot = null;
             AdmittedFactorableRoot = null;
+            AdmittedGroupedQuotientRoot = null;
 
             if (OperationDepth == 0)
             {
@@ -528,6 +545,7 @@ internal static class ExpressionResourceBudget
             SimplificationMetadata = scope.SimplificationMetadata;
             AdmittedSpineRoot = scope.AdmittedSpineRoot;
             AdmittedFactorableRoot = scope.AdmittedFactorableRoot;
+            AdmittedGroupedQuotientRoot = scope.AdmittedGroupedQuotientRoot;
             if (scope.IsOutermost)
             {
                 Trace = null;
@@ -535,9 +553,11 @@ internal static class ExpressionResourceBudget
                 FlattenRefusals = null;
                 FlattenAnchoredRefusals = null;
                 FlattenSpineRefusals = null;
+                FlattenGroupedRefusals = null;
                 SimplificationMetadata = null;
                 AdmittedSpineRoot = null;
                 AdmittedFactorableRoot = null;
+                AdmittedGroupedQuotientRoot = null;
                 EffectMode = 0;
                 TransformVisits = 0;
                 StructuralVisits = 0;
@@ -561,6 +581,7 @@ internal static class ExpressionResourceBudget
     /// <param name="SimplificationMetadata">The metadata table of the enclosing operation, detached while this one runs.</param>
     /// <param name="AdmittedSpineRoot">The spine root admitted by the enclosing operation, detached while this one runs.</param>
     /// <param name="AdmittedFactorableRoot">The factorable root admitted by the enclosing operation, detached while this one runs.</param>
+    /// <param name="AdmittedGroupedQuotientRoot">The grouped quotient root admitted by the enclosing operation, detached while this one runs.</param>
     internal readonly record struct Scope(
         object? Owner,
         int OperationDepth,
@@ -574,7 +595,8 @@ internal static class ExpressionResourceBudget
         long MaxNodes,
         ExpressionMetadataTable? SimplificationMetadata,
         System.Linq.Expressions.Expression? AdmittedSpineRoot,
-        System.Linq.Expressions.Expression? AdmittedFactorableRoot)
+        System.Linq.Expressions.Expression? AdmittedFactorableRoot,
+        System.Linq.Expressions.Expression? AdmittedGroupedQuotientRoot)
     {
         /// <summary>Gets whether this scope is the outermost operation of the thread.</summary>
         public bool IsOutermost => OperationDepth == 0;

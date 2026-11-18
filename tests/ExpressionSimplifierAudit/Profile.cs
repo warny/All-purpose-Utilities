@@ -86,6 +86,8 @@ internal static class Profile
             transformVisits, structuralVisits,
             main = tracer.Main, comparer = tracer.Nested,
             applied = tracer.Applied.OrderByDescending(p => p.Value).ToDictionary(p => p.Key, p => p.Value),
+            candidates = tracer.Candidates.OrderByDescending(p => p.Value).ToDictionary(p => p.Key, p => p.Value),
+            declined = tracer.Declined.OrderByDescending(p => p.Value).ToDictionary(p => p.Key, p => p.Value),
             metadata, admission,
             comparerEvents, comparerMaxDepth, comparerDepthHistogram = histogram,
             inputNodes = AuditText.Count(tree), outputNodes = AuditText.Count(result), outputDepth = Depth(result),
@@ -144,10 +146,34 @@ internal static class Profile
         foreach (FieldInfo field in property.PropertyType.GetFields(BindingFlags.Public | BindingFlags.Instance))
         {
             if (field.FieldType == typeof(long) && (long)field.GetValue(statistics)! is long value and not 0) counters[field.Name] = value;
+
+            // The per-cause arrays (FlattenAdmissionStatistics.Causes, SpineCauses), each entry named after its enum member.
+            if (field.FieldType == typeof(long[]) && field.GetValue(statistics) is long[] values)
+            {
+                Type? causes = CauseEnum(property.PropertyType.Assembly, field.Name);
+                for (int index = 0; index < values.Length; index++)
+                {
+                    if (values[index] == 0) continue;
+                    string name = causes is not null && Enum.IsDefined(causes, index) ? Enum.GetName(causes, index)! : index.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                    counters[field.Name + "." + name] = values[index];
+                }
+            }
         }
 
         return counters;
     }
+
+    /// <summary>The internal enum whose members index a per-cause counter array of the admission statistics.</summary>
+    /// <param name="assembly">The engine assembly.</param>
+    /// <param name="field">The name of the array field.</param>
+    /// <returns>The enum type, or <see langword="null"/> when unknown or unavailable.</returns>
+    private static Type? CauseEnum(Assembly assembly, string field) => field switch
+    {
+        "Causes" => assembly.GetType("Utils.Mathematics.Expressions.FlattenRefusalCause"),
+        "SpineCauses" => assembly.GetType("Utils.Mathematics.Expressions.FlattenSpineRefusalCause"),
+        "GroupedCauses" => assembly.GetType("Utils.Mathematics.Expressions.FlattenRefusalCause"),
+        _ => null,
+    };
 
     /// <summary>The depth of a tree.</summary>
     /// <param name="e">The tree.</param>
@@ -207,24 +233,42 @@ internal static class Profile
         /// <summary>Gets the applications per rule, prefixed by <c>main:</c> or <c>cmp:</c>.</summary>
         public Dictionary<string, long> Applied { get; } = new();
 
+        /// <summary>Gets the candidacies per rule, prefixed by <c>main:</c> or <c>cmp:</c>.</summary>
+        public Dictionary<string, long> Candidates { get; } = new();
+
+        /// <summary>Gets the declinations per rule, prefixed by <c>main:</c> or <c>cmp:</c>.</summary>
+        public Dictionary<string, long> Declined { get; } = new();
+
         /// <inheritdoc/>
         public void OnEvent(in ExpressionTransformEvent e)
         {
             bool nested = ComparisonDepth is not null && ComparisonDepth() > 0;
             Side side = nested ? Nested : Main;
+            string prefix = nested ? "cmp:" : "main:";
             switch (e.Kind)
             {
                 case ExpressionTransformEventKind.TransformEnter: side.Visits++; break;
-                case ExpressionTransformEventKind.RuleCandidate: side.RuleCandidates++; break;
-                case ExpressionTransformEventKind.RuleRejected when e.Rejection == ExpressionRuleRejection.Declined: side.RulesDeclined++; break;
+                case ExpressionTransformEventKind.RuleCandidate:
+                    side.RuleCandidates++;
+                    if (e.Rule is not null) Increment(Candidates, prefix + e.Rule.DisplayName);
+                    break;
+                case ExpressionTransformEventKind.RuleRejected when e.Rejection == ExpressionRuleRejection.Declined:
+                    side.RulesDeclined++;
+                    if (e.Rule is not null) Increment(Declined, prefix + e.Rule.DisplayName);
+                    break;
                 case ExpressionTransformEventKind.ChainFlattened: side.ChainsFlattened++; break;
                 case ExpressionTransformEventKind.Finalize when e.Outcome == ExpressionTransformOutcome.Finalized: side.Canonicalizations++; break;
                 case ExpressionTransformEventKind.RuleApplied when e.Rule is not null:
                     side.RulesApplied++;
-                    string key = (nested ? "cmp:" : "main:") + e.Rule.DisplayName;
-                    Applied[key] = Applied.TryGetValue(key, out long count) ? count + 1 : 1;
+                    Increment(Applied, prefix + e.Rule.DisplayName);
                     break;
             }
         }
+
+        /// <summary>Adds one to the counter <paramref name="key"/> of <paramref name="counters"/>.</summary>
+        /// <param name="counters">The counters.</param>
+        /// <param name="key">The counter name.</param>
+        private static void Increment(Dictionary<string, long> counters, string key)
+            => counters[key] = counters.TryGetValue(key, out long count) ? count + 1 : 1;
     }
 }
