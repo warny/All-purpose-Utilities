@@ -1634,5 +1634,196 @@ visits instead of 67,715.
 - A decision on the free-parameter ties (§14.7): order them by name as a last resort, or keep the S4 policy.
 - An incremental candidate index for phase B (§14.8, `ties`/`collide`).
 - The admission of constant pairs and of sum factors by the factorable family, with their exactness proofs.
-- The `AdditionOfCos2andSin2Number` guard and the cost of the non-admitted division chains.
+- The `AdditionOfCos2andSin2Number` guard and the cost of the non-admitted division chains (done in §15).
+
+## 15. Trigonometric rule and quotient chains
+
+Two pre-existing defects of `ExpressionSimplifier`, found by the S5 campaigns and deferred by C3d (§14.7, §14.10): the
+`NullReferenceException` of `AdditionOfCos2andSin2Number` on powers with a symbolic exponent (S5A-01), and the cost of the
+additive chains of quotients `1 - x1/x0 - x2/x0 - … - xn/x0` (`subChain`, §14.9). The baseline is a separate worktree of the
+diagnostic commit `d9805c58` (master `ad0a65c4` plus opt-in counters and the reproduction tests); every figure compares the
+branch with it.
+
+### 15.1 Reproduction (diagnostic commit)
+
+- `x^x + x^y`, `x^2 + x^y`, `x^y + x^2`, `x^(x+1) + y^2`, `x^sin(y) + x^2`, `sin(x)^y + cos(x)^2` threw
+  `NullReferenceException` from `Simplify` and from the comparer (`ExpressionSimplifierTrigonometricRuleTests`,
+  `ExpressionSimplifierDeepAuditTests.S5A01_…`).
+- The quotient and product rules (`DivisionOfCosAndSinNumber`, `DivisionOfSinAndCosNumber`, `MultiplicationOfCosAndTanNumber`,
+  `MultiplicationOfTanAndCosNumber`, `DivisionOfSinAndTanNumber`) called directly, as a derived simplifier may call them,
+  rewrote foreign methods: `DegreeTrigonometry.Sin(x) / DegreeTrigonometry.Cos(x)` (a test type implementing
+  `ITrigonometricFunctions<double>` explicitly, with public degree-based `Sin`/`Cos`) became `double.Tan(x)`, and the second
+  argument of a two-argument `Sin(x, s) / Cos(x, t)` was dropped. Through the public entry points the effect gate refuses
+  every rule on a call of a user method under every policy, so no public result was wrong: the defect was latent.
+- `subChain`: opt-in counters in `SimplificationMetadataStatistics` (`ProbeComparisons`, `ProbeFastPathDecisions`,
+  `ComparerSimplifications`, `ComparerMemoHits`, `AdditiveCanonicalizations`), and the S5 harness command
+  `profile <family> <n>` with the families `subdiv` (left-associated), `subdivR` (right-associated), `subdivB` (a balanced
+  group subtracted once), `subdivM` (alternating signs), `subdivD` (distinct denominators) and `subdivL` (`long`).
+
+### 15.2 Root cause of the `NullReferenceException`
+
+`AdditionOfCos2andSin2Number` read `left.Right as ConstantExpression` and then `.Value` without testing the cast: any exponent
+that is not a constant (a parameter, a call, a computed expression) dereferenced `null`. The rule is a candidate for every sum
+of two ordinary powers, so the defect hit every such sum, and the comparer, which simplifies first.
+
+### 15.3 Correction of the trigonometric rules
+
+- **Shape before value.** The identity checks every shape before reading any value: two ordinary powers of one type, both
+  exponents the `double` constant `2` (`IsSquareExponent`), both bases calls of the sine and the cosine of that type with one
+  argument each, then the structural identity of the arguments. Any other shape declines (`null`), never throws.
+- **Exact function of the type.** `TryGetTrigonometricArgument` (and `TryMatchTrigonometricPair` for the quotients and
+  products) accepts a call only when it is exactly the public static `T F(T)` function of the call's own result type, one
+  argument, its provenance checked first (`ExpressionReflectionProvenance.IsRuntime`, `IsSameMember`, S5 A-10): an overload of
+  another arity, a homonym with other values (a degree-based sine) or an impersonating reflection object never matches.
+  `TrigonometricMethods` resolves `null` for a function the type does not declare with that signature and return type (an
+  explicit interface implementation), and the rule then declines instead of building a call of `double`.
+- Tests: `ExpressionSimplifierTrigonometricRuleTests` (non-constant exponents, other constant exponents, other arguments or
+  functions, foreign methods called directly or through a derived simplifier, extension operands, effectful arguments, the
+  identities that still apply) and `ExpressionTrigonometricRuleSecurityTests` (impersonating methods declined without being
+  read; mixed calls keep the impersonated evaluation). The deep-audit test `S5A01_…_Declines` pins the fix.
+
+### 15.4 Root cause of the cost of the quotient chains
+
+A chain `1 - x1/x0 - … - xn/x0` was refused by the linear family (a division is not a linear term, §12) and simplified level
+by level. At every level `SubstractionOfEqualsElements` compares the canonical prefix `P_k` with the new quotient and the
+constant; the comparer simplifies `P_k` again, and that simplification rebuilds the prefix level by level through the `0 - t`
+re-entries of the sign rules. The work is cubic in `n`, and 97 % of the transformation visits ran inside comparer
+simplifications: for 64 quotients, 373,830 transformation visits, 25.8 million structural visits and 345,408 comparer
+simplifications (2.4 s).
+
+### 15.5 Correction: linear quotients
+
+A linear chain (`IsLinearChain`, §12) of `double` or `float` may now hold **linear quotients** (`IsLinearQuotient`): an
+ordinary division of a parameter by a parameter, of the chain's type. `LinearChainOperands` keeps its proof obligations:
+
+- the numerators are parameters that the chain holds nowhere else (as a term, a factor or another numerator);
+- a denominator may divide several quotients (`_denominators`) but is never a term, a factor or a numerator;
+- every other condition of the linear family is unchanged (constants, coefficients, crossed nodes, subtracted groups).
+
+Why the result is the level by level result. No rule prepares such a quotient into anything else (no constant, no negation,
+no nested division, no call: a field division of two parameters never throws in IEEE-754). Two operands of a level always hold a
+parameter the other does not hold (a term, a factor or a numerator), the simplifier never introduces a parameter and never
+removes one from such a chain, so the factoring comparisons of `AdditionOfEqualsElements` and `SubstractionOfEqualsElements`
+fail at every level and nothing cancels, exactly as for the parameters of a linear chain. The accepted chain is therefore
+rebuilt canonically without any comparison: structurally the tree the levels give (pinned by
+`ExpressionSimplifierFlattenTests.QuotientChains_AreAccepted_AndGiveTheLevelByLevelResult` against a derived simplifier).
+
+Refused on purpose, and kept level by level (`OtherQuotientChains_AreDeclined_AndKeepTheLevelByLevelResult`): integral quotients
+(truncating, throwing on a zero divisor), decimal chains, a quotient whose numerator or denominator is not a parameter, a
+denominator that is also a term, a factor or a numerator, a repeated numerator. The spine family (§12.4) keeps its linear terms
+only (`IsSpineTerm`): a quotient is never a spine term.
+
+Tests: `ExpressionSimplifierDivisionChainTests` (values in every type and shape, one result under every policy, effectful
+chains keep their evaluations, derived simplifiers keep their rules, budgets refuse cleanly at the limit, shared quotient
+instances treated once, a 2,000-term chain on a small stack, concurrency and re-entrancy, linear work).
+
+### 15.6 Validation
+
+**Suites**: Unit 14,736 passed (1 skipped), Security 394 (3 skipped), Functional 383, ETC Debug (`Coverage`) 350 (1 skipped).
+
+**S5 campaigns** (`d9805c58` against the branch, default policy, 1,000 seeds and 1,000 nested cases):
+
+| Campaign | d9805c58 | Branch | Classification |
+|---|---|---|---|
+| `terminate` | 881 `NullReferenceException` (`AdditionOfCos2andSin2Number`); largest visit count 129 | 0 exceptions; 140 | S5A-01 fixed; the 881 cases now run their rules (well within the budgets) |
+| `converge` (64,450) | `error@1` 879, `error@2` 92; `fixed@0` 1,640, `fixed@1` 61,672; cycles 15 | no error; `fixed@0` 2,129, `fixed@1` 62,154; cycles 15 | S5A-01 fixed; the cases not stable after one pass are the same 152 |
+| `stability` | same categories as `converge` | same as `converge` | one case moves between the families `(finalization)` and `FlattenAdditiveChain` (a quotient chain now admitted) |
+| `s3` | `x^y + z^2` throws | `(z ** 2) + (x ** y)` | S5A-01 fixed |
+| `comparer`, `diff`, `effects`, `canon` | — | byte-identical | — |
+
+**Differential corpus** (the corpus of C3b–C3d; every branch result compared with `d9805c58`, then evaluated against its source
+on twelve samples when it differs). `C3E_QUOTIENTS=1` adds quotient terms (parameter by parameter, parameter by constant) and up
+to sixteen parameters per case.
+
+| Corpus | Cases | same | different | non-idempotent d9805c58 → branch |
+|---|---:|---:|---:|---:|
+| default | 40,000 | 40,000 | **0** | 782 → 782 |
+| each explicit policy | 15,000 | 15,000 | **0** | 322 → 322 |
+| derived simplifier | 15,000 | 15,000 | **0** | 10,501 → 10,501 |
+| quotients, default | 40,000 | 40,000 | **0** | 4,873 → 4,864 |
+| quotients, derived simplifier | 15,000 | 15,000 | **0** | 6,012 → 6,008 |
+
+Every first-pass result is identical; the admitted quotient chains only make a few second passes reach the first-pass result.
+
+### 15.7 Growth (`profile`)
+
+S5 harness `profile <family> <n>`, one process per measure, median of the timed runs; a family stops after the first size whose
+median exceeds 2 s. Transformation visits are deterministic.
+
+| Family | n | d9805c58 ms | branch ms | d9805c58 transformation visits | branch transformation visits |
+|---|---:|---:|---:|---:|---:|
+| `subdiv` | 16 | 8.56 | 0.04 | 6,934 | 50 |
+| `subdiv` | 64 | 2,388 | 0.16 | 373,830 | 194 |
+| `subdiv` | 256 | — | 0.48 | — | 770 |
+| `subdivD` | 64 | 2,368 | 0.35 | 373,830 | 194 |
+| `subdivM` | 24 | 3,168 | 0.04 | 1,112,766 | 74 |
+| `subdivM` | 256 | — | 0.51 | — | 770 |
+| `subdivB` | 64 | 2,517 | 393 | 376,046 | 294,472 |
+| `subdivB` | 128 | — | 4,182 | — | 2,227,336 |
+| `subdivR` | 24 | 2,917 | 1,540 | 907,610 | 811,813 |
+| `subdivL` | 128 | 2.61 | 2.39 | 513 | 513 |
+
+- `subdiv`, `subdivD` (distinct denominators) and `subdivM` (alternating signs) are now linear: `3n + 2` transformation
+  visits, no comparer simplification.
+- `subdivL` (`long`) was already linear: the effect gate refuses the rules on integral divisions, which may throw.
+- **Residual limit.** `subdivR` (right-associated, `1 - (x1/x0 - (x2/x0 - …))`) and `subdivB` (a balanced group subtracted
+  once) stay super-linear: a subtracted group is not a term of the linear family, so their roots stay level by level and the
+  comparer rebuilds the subtracted groups. Admitting them needs the factorable family of C3c with quotient atoms, a change of
+  its proof obligations; it is out of the scope of this mission. Their cost goes down a little (−11 % and −22 % visits), as
+  inner groups are now admitted as linear chains (one main chain flattened instead of none; at 16 terms 210 and 451 chains
+  flattened inside the comparer, admission walks 1,404 → 452 and 4,811 → 2,644).
+- Mixed-sign quotient chains keep the free-parameter ties of S4 (§14.7): their result is the level by level result, which is
+  not always idempotent either.
+
+### 15.8 Measures
+
+**Reduced validation (user decision).** To save about one hour of machine time, the branch growth profile of `subdivR` stops at
+24 terms and BenchmarkDotNet runs a targeted list only: `subChain 16/64` and the quotient variants `subChainM 24`,
+`subChainD 64`, `subChainF 64`, plus the C3c/C3d references (`a+b`, `x+x+x`, `repeated 16/48/512`, `coef 24/128`,
+`tail 48/512`, `twice 48`, `cancel 128`, `linear 200`, `sinMid 16`, `mixed 8/32`, `partial 32`, `cross 32`) and the harness
+`growth` families (`dag`, `ties`, `collide` among them).
+
+**BenchmarkDotNet** 0.14.0, in process, 8 warmup and 20 measured iterations, four processes run one after the other pinned to
+the performance cores at high priority: `d9805c58`, branch, `d9805c58`, branch. The table compares the faster process of each
+side; the two processes of one binary differ by less than 6 % (9 % for `tail 48` on `d9805c58`).
+
+| Case | d9805c58 µs | branch µs | Time | d9805c58 KB | branch KB | Allocated |
+|---|---:|---:|---:|---:|---:|---:|
+| `a+b` | 0.90 | 0.89 | −2.1 % | 2.47 | 2.47 | 0.0 % |
+| `x+x+x` | 2.07 | 2.07 | +0.2 % | 3.64 | 3.64 | 0.0 % |
+| `repeated 16` | 9.51 | 9.27 | −2.6 % | 21.96 | 21.96 | 0.0 % |
+| `repeated 48` | 26.72 | 25.53 | −4.4 % | 60.03 | 60.03 | 0.0 % |
+| `repeated 512` | 287.21 | 285.94 | −0.4 % | 627.03 | 627.03 | 0.0 % |
+| `coef 24` | 84.03 | 84.31 | +0.3 % | 114.81 | 114.81 | 0.0 % |
+| `coef 128` | 426.86 | 430.87 | +0.9 % | 569.73 | 569.71 | 0.0 % |
+| `tail 48` | 37.93 | 38.58 | +1.7 % | 85.94 | 85.94 | 0.0 % |
+| `tail 512` | 438.66 | 448.09 | +2.1 % | 869.66 | 869.66 | 0.0 % |
+| `twice 48` | 34.61 | 34.91 | +0.9 % | 66.45 | 66.45 | 0.0 % |
+| `cancel 128` | 59.18 | 59.91 | +1.2 % | 142.30 | 142.30 | 0.0 % |
+| `linear 200` | 60.24 | 59.29 | −1.6 % | 121.91 | 121.91 | 0.0 % |
+| `sinMid 16` | 9.75 | 9.79 | +0.4 % | 21.76 | 21.76 | 0.0 % |
+| `mixed 8` | 24.99 | 24.79 | −0.8 % | 28.44 | 28.44 | 0.0 % |
+| `mixed 32` | 101.12 | 102.71 | +1.6 % | 110.03 | 110.03 | 0.0 % |
+| `partial 32` | 69.83 | 70.01 | +0.3 % | 103.07 | 103.07 | 0.0 % |
+| `cross 32` | 73.12 | 73.61 | +0.7 % | 118.89 | 118.89 | 0.0 % |
+| `subChain 16` | 8,026.95 | 17.07 | **−99.8 %** | 7,422.96 | 17.83 | −99.8 % |
+| `subChain 64` | 1,332,638.65 | 64.47 | **÷ 20,670** | 1,024,072.95 | 65.56 | ÷ 15,620 |
+| `subChainM 24` (alternating signs) | 1,882,977.92 | 25.75 | **÷ 73,120** | 1,310,054.66 | 23.20 | ÷ 56,470 |
+| `subChainD 64` (distinct denominators) | 1,318,146.36 | 67.02 | **÷ 19,670** | 1,024,072.84 | 68.87 | ÷ 14,870 |
+| `subChainF 64` (`float`) | 1,380,861.47 | 73.98 | **÷ 18,670** | 1,024,072.01 | 65.38 | ÷ 15,660 |
+
+- The reference families of C3c/C3d allocate exactly what they did and their times stay within the noise of the two processes
+  (−4.4 % to +2.1 %): the new test (`IsLinearQuotient`) runs only on the operands that are not linear terms, by type tests.
+- The quotient chains go from seconds to tens of microseconds, linearly in their length.
+
+**Harness `growth` families** (`shared`, `none`, `crossed`, `ties`, `repeated`, `wide`, `collide`, `dag`, `coefshared`, 8 to 512
+terms, §14.8): transformation visits, structural visits and result sizes identical to `d9805c58` at every size; allocations
+equal up to a few hundred bytes of measurement noise; times within −3 % to +4 % (`dag 512`: 33.6 ms and 34.8 ms).
+
+### 15.9 Residual limits
+
+- Right-associated and balanced subtracted groups of quotients (`subdivR`, `subdivB`) stay super-linear (§15.7).
+- Quotients of other shapes (a constant or a product numerator, a sum denominator) and integral or decimal quotient chains keep
+  the level by level path, with its cost.
+- The free-parameter ties (S4) and the other residual families of §14.7 are unchanged.
 

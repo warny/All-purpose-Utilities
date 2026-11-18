@@ -216,6 +216,7 @@ namespace Utils.Mathematics.Expressions
         {
             _comparisonMemoDepth++;
             long userCodeBefore = ExpressionComparer.UserCodeInvocationCount;
+            if (t_metadataStatistics is { } statistics) statistics.ComparerSimplifications++;
             try
             {
                 if (!_comparisonMemoActive)
@@ -241,6 +242,7 @@ namespace Utils.Mathematics.Expressions
                 Dictionary<ComparisonMemoKey, Expression>? memo = _comparisonMemo;
                 if (memo is not null && memo.TryGetValue(key, out Expression? cached))
                 {
+                    if (t_metadataStatistics is { } hits) hits.ComparerMemoHits++;
                     return cached;
                 }
 

@@ -384,7 +384,6 @@ public class ExpressionSimplifierFlattenTests
             ("a - (-b)", Sub(D[0], Expression.Negate(D[1]))),
             ("a + sin(b)", Add(D[0], Expression.Call(sin, D[1]))),
             ("a + b^2", Add(D[0], Expression.Power(D[1], C(2.0)))),
-            ("a + b/c", Add(D[0], Expression.Divide(D[1], D[2]))),
             ("a + (b + c)*d", Add(D[0], Mul(Add(D[1], D[2]), D[3]))),
             ("a + 2*(3*b)", Add(D[0], Mul(C(2.0), Mul(C(3.0), D[1])))),
             ("a + (b +checked c)", Add(D[0], Expression.AddChecked(D[1], D[2]))),
@@ -393,6 +392,78 @@ public class ExpressionSimplifierFlattenTests
 
         foreach ((string label, Expression source) in cases) AssertDeclined(label, source);
     }
+
+    /// <summary>
+    /// The linear quotients (§15): a chain of <see cref="double"/> or <see cref="float"/> whose terms include quotients of a
+    /// parameter by a parameter, the numerators distinct and held nowhere else, a denominator possibly shared, is accepted and
+    /// gives the level by level result under every policy, first and second pass. <c>a + b/c</c> was declined before.
+    /// </summary>
+    [TestMethod]
+    public void QuotientChains_AreAccepted_AndGiveTheLevelByLevelResult()
+    {
+        Expression Q(int numerator, int denominator) => Expression.Divide(D[numerator], D[denominator]);
+        var cases = new (string Label, Expression Source)[]
+        {
+            ("a + b/c", Add(D[0], Q(1, 2))),
+            ("1 - b/a - c/a - d/a", Sub(Sub(Sub(C(1.0), Q(1, 0)), Q(2, 0)), Q(3, 0))),
+            ("1 - b/a + c/a - d/a", Sub(Add(Sub(C(1.0), Q(1, 0)), Q(2, 0)), Q(3, 0))),
+            ("1 - b/c - d/e - f/g", Sub(Sub(Sub(C(1.0), Q(1, 2)), Q(3, 4)), Q(5, 6))),
+            ("b/a + (c/a + d/a)", Add(Q(1, 0), Add(Q(2, 0), Q(3, 0)))),
+            ("(b/a + c/a) + (d/a - e/a)", Add(Add(Q(1, 0), Q(2, 0)), Sub(Q(3, 0), Q(4, 0)))),
+            ("2*x + b/a - 3 + y*z", Add(Sub(Add(Mul(C(2.0), D[10]), Q(1, 0)), C(3.0)), Mul(D[11], D[12]))),
+            ("b/a - c/d + 2 - e/a", Sub(Add(Sub(Q(1, 0), Q(2, 3)), C(2.0)), Q(4, 0))),
+            ("1 - b/a ... 40 quotients", Enumerable.Range(1, 40).Aggregate((Expression)C(1.0), (acc, i) => Sub(acc, Q(i, 0)))),
+            ("right sum of 30 quotients", RightSum(Enumerable.Range(1, 30).Select(i => Q(i, 0)))),
+            ("balanced sum of 30 quotients", BalancedSum([.. Enumerable.Range(1, 30).Select(i => Q(i, 0))])),
+            ("float: 1 - f1/f0 - f2/f0 + f3", Add(Sub(Sub(C(1f), Expression.Divide(F[1], F[0])), Expression.Divide(F[2], F[0])), F[3])),
+        };
+
+        foreach ((string label, Expression source) in cases) AssertAccepted(label, source);
+    }
+
+    /// <summary>
+    /// The quotients outside the family keep the level by level treatment: a numerator held twice, a denominator that is also a
+    /// term, a factor or a numerator, a parameter divided by itself, a constant or nested operand, an integral quotient
+    /// (truncating, throwing on a zero divisor), a custom operator.
+    /// </summary>
+    [TestMethod]
+    public void OtherQuotientChains_AreDeclined_AndKeepTheLevelByLevelResult()
+    {
+        Expression Q(int numerator, int denominator) => Expression.Divide(D[numerator], D[denominator]);
+        MethodInfo divide = typeof(ExpressionSimplifierFlattenTests).GetMethod(nameof(UserDivide))!;
+        var cases = new (string Label, Expression Source)[]
+        {
+            ("a/c + a/d", Add(Q(0, 2), Q(0, 3))),
+            ("a + a/b", Add(D[0], Q(0, 1))),
+            ("a/b + b", Add(Q(0, 1), D[1])),
+            ("b + a/b", Add(D[1], Q(0, 1))),
+            ("a/b + b/c", Add(Q(0, 1), Q(1, 2))),
+            ("2*b + a/b", Add(Mul(C(2.0), D[1]), Q(0, 1))),
+            ("a/a + b", Add(Q(0, 0), D[1])),
+            ("c + a/2", Add(D[2], Expression.Divide(D[0], C(2.0)))),
+            ("c + 2/a", Add(D[2], Expression.Divide(C(2.0), D[0]))),
+            ("c + a/0", Add(D[2], Expression.Divide(D[0], C(0.0)))),
+            ("c + (a/b)/d", Add(D[2], Expression.Divide(Q(0, 1), D[3]))),
+            ("c + a/(b/d)", Add(D[2], Expression.Divide(D[0], Q(1, 3)))),
+            ("c + a/(b/0)", Add(D[2], Expression.Divide(D[0], Expression.Divide(D[1], C(0.0))))),
+            ("c + (a/0)/b", Add(D[2], Expression.Divide(Expression.Divide(D[0], C(0.0)), D[1]))),
+            ("c + (a/b)/0", Add(D[2], Expression.Divide(Q(0, 1), C(0.0)))),
+            ("c + a/(b + d)", Add(D[2], Expression.Divide(D[0], Add(D[1], D[3])))),
+            ("c + (-a)/b", Add(D[2], Expression.Divide(Expression.Negate(D[0]), D[1]))),
+            ("c + user(a, b)", Add(D[2], Expression.Divide(D[0], D[1], divide))),
+            ("int: 1 - i1/i0 - i2/i0", Sub(Sub(C(1), Expression.Divide(I[1], I[0])), Expression.Divide(I[2], I[0]))),
+            ("long: l2 + l1/l0", Add(L[2], Expression.Divide(L[1], L[0]))),
+            ("uint: u2 + u1/u0", Add(U[2], Expression.Divide(U[1], U[0]))),
+        };
+
+        foreach ((string label, Expression source) in cases) AssertDeclined(label, source);
+    }
+
+    /// <summary>A user division operator.</summary>
+    /// <param name="x">The dividend.</param>
+    /// <param name="y">The divisor.</param>
+    /// <returns>The quotient.</returns>
+    public static double UserDivide(double x, double y) => x / y;
 
     /// <summary>
     /// A linear chain with one call that is not inert (Flatten mission C2): before C2 these two cases of

@@ -1900,7 +1900,13 @@ namespace Utils.Mathematics.Expressions
             /// <returns><see langword="true"/> when the operands compare equal.</returns>
             private bool EqualsCore(Expression x, Expression y)
             {
-                if (ExpressionComparer.TryFastPathEquals(x, y, out bool fastResult)) return fastResult;
+                SimplificationMetadataStatistics? statistics = t_metadataStatistics;
+                if (statistics is not null) statistics.ProbeComparisons++;
+                if (ExpressionComparer.TryFastPathEquals(x, y, out bool fastResult))
+                {
+                    if (statistics is not null) statistics.ProbeFastPathDecisions++;
+                    return fastResult;
+                }
 
                 // Classify BOTH operands before simplifying EITHER one (S5 P3 review round 7): classification
                 // alone (MightInvokeUserCodeWhenSimplified) never simplifies anything and is therefore
@@ -3185,6 +3191,8 @@ namespace Utils.Mathematics.Expressions
         /// </remarks>
         private Expression CanonicalizeAdditiveTerms(List<(Expression Term, bool IsNegative)> terms, Type type, bool recordMetadata = true, AdditiveFactoring factoring = AdditiveFactoring.Monomials)
         {
+            if (t_metadataStatistics is { } statistics) statistics.AdditiveCanonicalizations++;
+
             // Mission C3a: a canonicalization of two terms has collected no canonicalized operand; it is the first level of a
             // chain, or a lone sum, and storing its metadata would mostly cost a table no other canonicalization reads.
             recordMetadata &= terms.Count > 2;

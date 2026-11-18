@@ -93,7 +93,7 @@ public partial class ExpressionSimplifier
 
         foreach (FlattenedTerm term in terms)
         {
-            if (!IsLinearTerm(term.Operand, source.Type)) return FlattenAnchoredChain((BinaryExpression)source, dispatcher);
+            if (!IsLinearChainTerm(term.Operand, source.Type)) return FlattenAnchoredChain((BinaryExpression)source, dispatcher);
         }
 
         var signedTerms = new List<(Expression Term, bool IsNegative)>(terms.Length);
@@ -164,7 +164,7 @@ public partial class ExpressionSimplifier
             bool negativeRight = node.NodeType == ExpressionType.Subtract;
             BinaryExpression? left = AsCrossedAdditiveNode(node.Left);
             BinaryExpression? right = AsCrossedAdditiveNode(node.Right);
-            if ((left is null && !IsLinearTerm(node.Left, type)) || (right is null && !IsLinearTerm(node.Right, type)))
+            if ((left is null && !IsLinearChainTerm(node.Left, type)) || (right is null && !IsLinearChainTerm(node.Right, type)))
             {
                 // The anchor's node: both operands, in their order (a crossed one is a linear chain, prepared as a unit).
                 operands.Add((node.Left, false, index));
@@ -597,12 +597,16 @@ public partial class ExpressionSimplifier
     /// <see cref="SubstractionWithSubstraction"/> return an uncanonicalized difference and reorder its terms), and no
     /// crossed node has two constant operands (constant folding, and the zero identities that follow a zero sum);</item>
     /// <item>every term is a parameter, a finite non-zero constant, or the product of a parameter by another parameter or
-    /// by a finite constant other than <c>0</c>, <c>1</c> and <c>-1</c> (<see cref="IsLinearTerm"/>): preparing such a
-    /// term runs no user code and gives a parameter, a constant or a product, never a sum, a negation or a zero;</item>
-    /// <item>no parameter occurs twice in the chain, the constant coefficients differ from each other and from the constant
-    /// terms: the factor comparisons of <see cref="AdditionOfEqualsElements"/> and
-    /// <see cref="SubstractionOfEqualsElements"/> then fail at every level (two operands never hold the same parameter,
-    /// and the simplifier never introduces one), nothing cancels and every group holds one term;</item>
+    /// by a finite constant other than <c>0</c>, <c>1</c> and <c>-1</c> (<see cref="IsLinearTerm"/>), or, in a chain of
+    /// <see cref="double"/> or <see cref="float"/>, the quotient of a parameter by a parameter (<see cref="IsLinearQuotient"/>,
+    /// §15): preparing such a term runs no user code and gives a parameter, a constant, a product or that quotient, never a
+    /// sum, a negation or a zero;</item>
+    /// <item>no parameter occurs twice in the chain but a denominator, which may divide several quotients and is never a
+    /// term, a factor or a numerator; the constant coefficients differ from each other and from the constant terms: the factor
+    /// comparisons of <see cref="AdditionOfEqualsElements"/> and <see cref="SubstractionOfEqualsElements"/> then fail at every
+    /// level (each operand holds a parameter, as a term, a factor or a numerator, that the other does not hold, the simplifier
+    /// never introduces a parameter and never removes one from such a chain), nothing cancels and every group holds one
+    /// term;</item>
     /// <item>the chain holds at most two constant terms: level by level, constants are summed only when a level holds two of
     /// them, so with three or more the result depends on the grouping (a floating-point sum rounds according to it, and
     /// when a partial sum is zero the next constant stays alone: <c>((a + 5) - 5) - 3</c> keeps <c>0 - 3</c> where the sum
@@ -673,9 +677,9 @@ public partial class ExpressionSimplifier
 
             // The terms first, by type tests: the operator of the node is classified (which makes the framework read the
             // types of its operands) only once both operands are known to be framework nodes.
-            bool leftAnchor = left is null && !IsLinearTerm(node.Left, type);
+            bool leftAnchor = left is null && !IsLinearChainTerm(node.Left, type);
             if (leftAnchor && !TryAnchor(node.Left, depth, onSpine, ref anchorDepth, out refusal)) return false;
-            bool rightAnchor = right is null && !IsLinearTerm(node.Right, type);
+            bool rightAnchor = right is null && !IsLinearChainTerm(node.Right, type);
             if (rightAnchor && !TryAnchor(node.Right, depth, onSpine, ref anchorDepth, out refusal)) return false;
 
             if (!IsOrdinaryBinaryArithmetic(node))
@@ -792,6 +796,35 @@ public partial class ExpressionSimplifier
     };
 
     /// <summary>
+    /// Whether <paramref name="operand"/> is a term of a linear chain of <paramref name="type"/>: a linear term
+    /// (<see cref="IsLinearTerm"/>) or a linear quotient (<see cref="IsLinearQuotient"/>). The spine family keeps the linear terms
+    /// only (<see cref="IsSpineTerm"/>).
+    /// </summary>
+    /// <param name="operand">A raw operand of the chain.</param>
+    /// <param name="type">The type of the chain.</param>
+    /// <returns><see langword="true"/> for a term of a linear chain.</returns>
+    private static bool IsLinearChainTerm(Expression operand, Type type) => IsLinearTerm(operand, type) || IsLinearQuotient(operand, type);
+
+    /// <summary>
+    /// Whether <paramref name="operand"/> is a <em>linear quotient</em> of a chain of <paramref name="type"/> (mission
+    /// "trigonometric rule and division chains", <c>docs/expressions/SimplifierFlatten.md</c> §15): an ordinary division of a
+    /// parameter by a parameter, in a chain of <see cref="double"/> or <see cref="float"/>, whose division is a field division
+    /// that never throws (IEEE-754). No rule prepares such a quotient into anything else (no constant, no negation, no nested
+    /// division, no call), and its numerator is a parameter that a linear chain holds nowhere else
+    /// (<see cref="LinearChainOperands"/>), so no comparison of the additive rules can succeed on it. A quotient of an
+    /// integral type truncates and throws on a zero divisor: it is not a linear quotient. Type tests come first, so an
+    /// extension node is never read.
+    /// </summary>
+    /// <param name="operand">A raw operand of the chain.</param>
+    /// <param name="type">The type of the chain.</param>
+    /// <returns><see langword="true"/> for a linear quotient.</returns>
+    private static bool IsLinearQuotient(Expression operand, Type type)
+        => operand is BinaryExpression { NodeType: ExpressionType.Divide, Left: ParameterExpression, Right: ParameterExpression } quotient
+            && (ReferenceEquals(type, typeof(double)) || ReferenceEquals(type, typeof(float)))
+            && IsOrdinaryBinaryArithmetic(quotient)
+            && ReferenceEquals(quotient.Type, type);
+
+    /// <summary>
     /// Whether <paramref name="constant"/> is a finite, non-zero boxed primitive of exactly <paramref name="type"/>: a
     /// constant that neither a zero identity nor the <c>NaN</c> fold rewrites.
     /// </summary>
@@ -828,8 +861,17 @@ public partial class ExpressionSimplifier
     /// </summary>
     private struct LinearChainOperands
     {
-        /// <summary>The parameters met, as terms or as factors (compared by reference, as a parameter has no other equality).</summary>
+        /// <summary>
+        /// The parameters met as terms, factors or numerators (compared by reference, as a parameter has no other equality):
+        /// each occurs once in the chain.
+        /// </summary>
         private SmallOperandSet _parameters;
+
+        /// <summary>
+        /// The denominators of the linear quotients met: a denominator may divide several quotients, but is never a term, a
+        /// factor or a numerator of the chain (§15).
+        /// </summary>
+        private SmallOperandSet _denominators;
 
         /// <summary>The values of the constant coefficients met (boxed primitives, compared by value).</summary>
         private SmallOperandSet _coefficients;
@@ -876,10 +918,25 @@ public partial class ExpressionSimplifier
                     object value = constant.Value!;
                     _constants.Add(value);
                     return Accept(!_coefficients.Contains(value), FlattenRefusalCause.CoefficientEqualsConstant, depth, value, out refusal);
+                case BinaryExpression { NodeType: ExpressionType.Divide } quotient:
+                    return AddParameter((ParameterExpression)quotient.Left, depth, out refusal)
+                        && AddDenominator((ParameterExpression)quotient.Right, depth, out refusal);
                 default:
                     var product = (BinaryExpression)term;
                     return AddFactor(product.Left, depth, out refusal) && AddFactor(product.Right, depth, out refusal);
             }
+        }
+
+        /// <summary>Records the denominator of a linear quotient: a parameter that no term, factor or numerator holds.</summary>
+        /// <param name="denominator">The denominator.</param>
+        /// <param name="depth">The spine index of the node that holds the quotient.</param>
+        /// <param name="refusal">Receives the refusal when the parameter was already met as a term, a factor or a numerator.</param>
+        /// <returns><see langword="true"/> when the denominator is accepted (a repeated denominator is).</returns>
+        private bool AddDenominator(ParameterExpression denominator, int depth, out ChainRefusal refusal)
+        {
+            if (!Accept(!_parameters.Contains(denominator), FlattenRefusalCause.RepeatedParameter, depth, denominator, out refusal)) return false;
+            _denominators.Add(denominator);
+            return true;
         }
 
         /// <summary>Records a factor of a product term: a parameter of the chain, or a constant coefficient.</summary>
@@ -895,13 +952,13 @@ public partial class ExpressionSimplifier
                 && Accept(!_constants.Contains(value), FlattenRefusalCause.CoefficientEqualsConstant, depth, value, out refusal);
         }
 
-        /// <summary>Records a parameter, as a term or as a factor.</summary>
+        /// <summary>Records a parameter, as a term, a factor or a numerator.</summary>
         /// <param name="parameter">The parameter.</param>
         /// <param name="depth">The spine index of the node that holds it.</param>
-        /// <param name="refusal">Receives the refusal when the parameter was already met.</param>
+        /// <param name="refusal">Receives the refusal when the parameter was already met (a denominator included).</param>
         /// <returns><see langword="true"/> when the parameter is new.</returns>
         private bool AddParameter(ParameterExpression parameter, int depth, out ChainRefusal refusal)
-            => Accept(_parameters.Add(parameter), FlattenRefusalCause.RepeatedParameter, depth, parameter, out refusal);
+            => Accept(!_denominators.Contains(parameter) && _parameters.Add(parameter), FlattenRefusalCause.RepeatedParameter, depth, parameter, out refusal);
 
         /// <summary>Builds the outcome of one check of a repetition.</summary>
         /// <param name="accepted">Whether the check passed.</param>
