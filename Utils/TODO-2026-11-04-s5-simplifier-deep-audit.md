@@ -14,6 +14,7 @@ This report describes the **2026-11-04 baseline**. Its original findings and pro
 | Trigonometric power guard / linear quotient-subtraction chains (update 2026-11-18) | Merged in PR #705 (`ed3ea136`) with S5, differential and BDN validation (`docs/expressions/SimplifierFlatten.md` §15). |
 | Right-associated and balanced subtracted quotient groups | **Fixed for the restricted grouped family** (branch `fix/expression-grouped-quotient-chains`, §16): `double`/`float` chains of parameters, at most one constant, linear products and quotients of two parameters with unique numerators and denominators used nowhere else, any grouping and signs, are canonicalized once (`subdivR`, `subdivB`, `subdivBM`, `subdivRD`, `subdivRF`: `3n + 2` visits), first-pass structure identical to the historical one. **Still open:** grouped chains outside that family (repeated or shared terms, two constants, quotients of other shapes, integral/decimal) keep the level by level cost; admitting them needs quotient atoms in the C3c proof obligations, still deferred. |
 | Other original S5A findings (exception timing, convergence, dispatch determinism, domain-specific behavior) | **Re-audited on `c509bdf6` (2026-11-18)**, see "Re-audit on the integrated code" below: S5A-02 fixed and S5A-11 pinned on branch `fix/expression-s5-residual-correctness`; S5A-04, S5A-07 and S5A-10 open with a specified separate change each; S5A-05, S5A-06 and S5A-09 reduced to documented residues; S5A-08 and S5A-12 resolved. |
+| S5A-04 exception timing (update 2026-11-18) | **Fixed** on branch `fix/expression-s5a04-deferred-arithmetic-exceptions` (base `9be5fcff`): a throwing constant fold declines under every policy; see "S5A-04 — disposition" below. |
 | `ExpressionOptimiser` A10-C / O0–O5 | **Open independent workstream**; no ETC or simplifier policy fix automatically resolves optimizer evaluation-dropping identities. |
 
 **Next evidence required:** confirm actual merge SHAs and CI for the recent PR series; run S5 stability and reference/branch comparisons, differential corpora with new quotients, paired BenchmarkDotNet measurements, and targeted residual-family profiling. Keep a separate count of validated remaining fixes; the old phase-M PR sequence is not a reliable count of future PRs.
@@ -54,7 +55,7 @@ stated. The base was measured in a detached worktree of `c509bdf6`, so the branc
 | S5A-01 `x^y + z^2` NRE | **FIXED** (PR #705) | `terminate` 0 exception, `converge` 0 error; `S5A01_SumOfPowersWithSymbolicExponent_Declines` | `ExpressionSimplifier.INumber.cs`, `AdditionOfCos2andSin2Number` |
 | S5A-02 `double.Round(x, 2)` throws | **FIXED** (this branch) | see below; `S5A02_DoubleRoundWithANonDoubleArgument_IsKept`, `ExpressionSimplifierRoundOverloadTests` | `ExpressionSimplifier.Math.cs`, `TransformCall` |
 | S5A-03 decimal nested divisions | **FIXED** (P18b, PR #684) | `diff` decimal: 0 `EXC-*`; `S5A03_DecimalNestedDivision_KeepsTheExceptions` | `IsOrdinaryFieldDivision` |
-| S5A-04 exception of an unevaluated branch | **OPEN-CONFIRMED** (contract decision needed) | every lazy context, every policy; `S5A04_EveryLazyContext_RaisesTheFoldExceptionWhileSimplifying` | `DivideWithZeroOrOne`, `FoldConstants` callers |
+| S5A-04 exception of an unevaluated branch | **OPEN-CONFIRMED** (contract decision needed); **FIXED 2026-11-18** (deferred fold, disposition below) | every lazy context, every policy; `S5A04_EveryLazyContext_RaisesTheFoldExceptionWhileSimplifying` | `DivideWithZeroOrOne`, `FoldConstants` callers |
 | S5A-05 rule results left for the next pass | **PARTIAL** | original examples fixed by C3c/C3d (`S5A05_RuleResultsLeftForTheNextPass`); 301 corpus cases still need 2–4 passes (residues `t - (sum)` 66, `/ ±1` 63 = L-2, constant pair 25, `-(product)` 22) | plan order, `FinishReassociation` |
 | S5A-06 oscillating passes | **PARTIAL** → residue is a **DOCUMENTED-LIMITATION** | original examples fixed by C3c (`S5A06_RepeatedPasses_Oscillate`); 75 cycles, 49 of them free-parameter ties (L-3), 26 with bound parameters, all outside the C3c/C3d families (below) | `SubstractionWithZero(0, t)`, `FlattenAdditiveChain` |
 | S5A-07 `t + 0`, `t ^ 1` re-transform a prepared operand | **PARTIAL** (deferred) | excess bounded (×1.48 at n = 12, ×1.30 at n = 20); removing it changes 1 first-pass result (below); `S5A07_ZeroAndOneIdentities_RetransformAPreparedOperand` | `AdditionWithZero(e, t, 0)`, `PowerByZeroOrOne` |
@@ -199,6 +200,59 @@ Not arithmetic folding, unchanged and never caught: `Convert.ChangeType(0 or 1, 
 (`BuildOrdinary*Methods` probes), custom operator methods, reflection members and tracer callbacks (never folded: a node with a
 method is not ordinary, `IsOrdinaryBinaryArithmetic`).
 
+### S5A-04 — disposition (2026-11-18, mission "deferred arithmetic exceptions")
+
+**Fixed.** The findings above describe the baseline and are kept as recorded. Changed methods: `FoldConstants` (catches exactly
+`DivideByZeroException` and `OverflowException` around the folder call, returns `null`), `DivideWithZeroOrOne` (declines every
+zero divisor), `AdditionOfEqualsElements` and `Multiplication(BinaryExpression, Expression, ConstantExpression)` (decline on a
+constant pair: a declined fold reached them, `decimal.MaxValue + decimal.MaxValue` became `2 * decimal.MaxValue` and
+`3m * decimal.MaxValue` was commuted, then commuted back by the next call), `CanonicalizeFactoredCoefficient` (explicit `null`
+fallback instead of `!`), and the removal of the now dead `catch (OverflowException)` of `TryFoldFactoredCoefficient`,
+`BuildFactoredProduct`, `TrySumConstants`, `NormalizeProductFactors` and `SumCoefficients` (their `null` path is the historical
+fallback, unchanged). No traversal, policy, permission, analysis, option or public signature change; no stop condition met.
+
+| Case (every policy) | Before (`9be5fcff`) | After |
+|---|---|---|
+| `i / 0`, `1 / 0`, `1m / 0m` (all integral types and decimal) | `Simplify` throws `DivideByZeroException` (wrapped by the rule invocation) | returns; the division is kept and throws at evaluation |
+| `int.MinValue / -1`, `long.MinValue / -1` | throws `OverflowException` | kept, throws at evaluation |
+| decimal `+ - * /` overflow | throws `OverflowException` | kept as built (operator, method, operands), throws at evaluation |
+| the same inside `?:`, `&&`, `||`, `??`, switch, try, catch, filter, uninvoked lambda | throws while simplifying | the source's outcome on both inputs (handler and filter decisions included) |
+| `ExpressionComparer` on such trees | throws | completes; reflexive, symmetric, consistent hashes |
+| successful and IEEE-754 folds | constant | identical constant, type and bits |
+| custom operators, conversions, user calls, resource limits, stack guard, derived rules | propagate | unchanged |
+
+Validation (base and branch measured on the same machine, base in a detached worktree):
+
+| Suite | `9be5fcff` | branch |
+|---|---|---|
+| `UtilsTest.Unit` (Release) | 14,764 passed of 14,765 | 14,764 passed of 14,765 before the new test class, then +8 (`ExpressionSimplifierDeferredFoldTests`) |
+| `UtilsTest.Security` (Release) | 399 passed of 402 | 399 passed of 402 |
+| `UtilsTest.Functional` (Release) | 383 passed | 383 passed |
+| ETC Debug (`…Expressions.Coverage`) | 354 passed of 355 | 354 passed of 355 |
+
+S5 campaigns, default policy, 4,000 seeds and 4,000 nested compositions, line-by-line comparison of every `.jsonl`: `terminate`
+(66,270), `converge` (70,470), `stability`, `effects` (4,004), `s3`, `canon` and every anomaly file **byte-identical**; `diff`:
+exactly the 210 `SIMPLIFY-THROWS-LIKE-SOURCE` seeds changed, all to `same` on their 26 assignments (category 1, no
+`EXC-*`); `comparer`: 0 violation, 28,000 cases checked instead of 26,879 (the formerly throwing ones are now checked). Permissive
+policy (trust, aggressive, no category preserved): `terminate` and `effects` identical; `diff` 211 changed seeds, 204 to `same`,
+6 `EXC-REMOVED` and 1 `EXC-CHANGED` that are all drops of a throwing factor of `t * 0` (operation 1, authorized when
+`Arithmetic` is not preserved, the classes of the 35 `EXC-REMOVED` and 3 `EXC-CHANGED` already reported on the base);
+`comparer` 18 violations of `Equals(a, b) == Equals(S(a), S(b))` instead of 10, the 8 new ones the same `t * 0` drop class on
+seeds that threw before (the permissive `S` drops what the default comparer keeps). No new class.
+
+Performance (BenchmarkDotNet 0.14 in process, 8 warm-ups, 20 iterations, two rotated processes per side plus an A/A copy of the
+base binary, cores 2 and 4, high priority): every case whose fold succeeds is within the A/A spread (base → branch: single
+`+ - * /` folds −3.5 % to +1.9 %, decimal −1.2 %, 30-level nested arithmetic +0.6 %, factored coefficients −2.0 % and −1.3 %
+decimal, C3c chain of 12 +2.1 % (A/A +0.8 %), C3d coefficient +0.2 %, PR #705 chain of 16 −1.6 %, PR #706 grouped chain of 8
++0.5 %; A/A −5.0 % to +5.0 %), with **identical allocations** to the byte. The failure path no longer unwinds an exception
+through the reflective rule invocation: `decimal.MaxValue * 2m` 13.6 → 6.2 µs, `1 / 0` 10.9 → 3.5 µs, `i / 0` 10.9 → 0.56 µs
+(no exception at all: the zero-divisor rule declines first), the lazy `b ? 1 / 0 : 2` 15.4 → 4.2 µs (base timings with the
+exception caught by the benchmark). No cache, no allocation on the successful path.
+
+Residual limitations: a node left unfolded is not inert (`IsSafeDivisor`), so the rule gate keeps the rules away from its
+parents exactly as for any throwing evaluation; under a policy that does not preserve `Arithmetic`, an independently authorized
+rule may still drop it (`0 * (1 / 0) -> 0`, operation 1 of `SimplificationPolicies.md` §2.3). The historical differential
+corpora of PRs #705/#706 were not available on this machine; the S5 `diff` and `converge` corpora and the targeted tests stand in.
 ### S5A-05 / S5A-06 — convergence
 
 The original reproducers reach a fixed point at the first pass since C3c/C3d and stay pinned. What remains on the 70,470
