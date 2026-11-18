@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed — `omy.Utils` (expression simplifier: trigonometric rule and quotient chains)
+- **S5A-01.** `ExpressionSimplifier.AdditionOfCos2andSin2Number` no longer throws `NullReferenceException` on a sum of powers
+  whose exponent is not a constant (`x^x + x^y`, `x^2 + x^y`, `sin(x)^y + cos(x)^2`): every shape is checked before any value
+  is read, and the rule declines. `Simplify` and the comparer return a result where they threw (881 `terminate` and 971
+  `converge` cases of the S5 campaigns).
+- The trigonometric rules (the identity, the sin/cos, cos/sin and sin/tan quotients, the cos·tan and tan·cos products) accept a
+  call only when it is exactly the public static `T F(T)` function of its own result type, with one argument, its provenance
+  checked first; a homonym of another type or arity (a degree-based `Sin`, a two-argument overload) is no longer rewritten with
+  the functions of `double` when a derived simplifier calls these protected rules directly (the public entry points already
+  refused user calls).
+- **Performance.** The additive chains of quotients of `double` or `float` parameters (`1 - x1/x0 - x2/x0 - … - xn/x0`, one or
+  several denominators that are never terms, factors or numerators) are admitted by the linear chain family: 64 quotients take
+  194 transformation visits and 0.16 ms instead of 373,830 visits and 2.4 s, with the same result (no first-pass difference
+  on 170,000 differential cases). Integral and decimal quotient chains keep the level by level path; right-associated and
+  balanced subtracted groups of quotients stay super-linear (documented limit). See `docs/expressions/SimplifierFlatten.md`
+  §15.
+- The S5 audit harness gains a `profile <family> <n>` command and the `subdiv*` families.
+
 ### Changed — `omy.Utils` (expression simplifier: stabilization of the rebuilt forms, mission C3d)
 - **Behavior change (forms only).** For the built-in `ExpressionSimplifier`, one call now returns, in most cases, the tree a
   second call returned: the reassociation rules (`SubstractionWithAddition`, `SubstractionWithSubstraction`), the nested
