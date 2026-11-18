@@ -410,7 +410,63 @@ internal static partial class Campaigns
             return result!;
         }
 
-        return RunStability(ConvergenceCases(options), Pass, options, writer);
+        // S5_AUDIT_BIND=1: every case is wrapped in a lambda binding its free parameters, in order of first occurrence, so that
+        // the free-parameter ties of the S4 order (documented limitation L-3) are told apart from the cycles of bound trees.
+        IEnumerable<(string Label, Expression Tree)> cases = ConvergenceCases(options);
+        if (Environment.GetEnvironmentVariable("S5_AUDIT_BIND") == "1")
+        {
+            cases = cases.Select(static c => (c.Label, (Expression)Expression.Lambda(c.Tree, FreeParameterCollector.Collect(c.Tree))));
+        }
+
+        return RunStability(cases, Pass, options, writer);
+    }
+
+    /// <summary>Collects the free parameters of a tree in order of first occurrence (parameters declared by a lambda, a block or a catch are bound).</summary>
+    private sealed class FreeParameterCollector : ExpressionVisitor
+    {
+        /// <summary>The free parameters found, in order.</summary>
+        private readonly List<ParameterExpression> _free = [];
+
+        /// <summary>The parameters declared by the enclosing binders.</summary>
+        private readonly HashSet<ParameterExpression> _bound = [];
+
+        /// <summary>Returns the free parameters of <paramref name="tree"/>.</summary>
+        /// <param name="tree">The tree.</param>
+        /// <returns>The free parameters, in order of first occurrence.</returns>
+        public static List<ParameterExpression> Collect(Expression tree)
+        {
+            var collector = new FreeParameterCollector();
+            collector.Visit(tree);
+            return collector._free;
+        }
+
+        /// <inheritdoc/>
+        protected override Expression VisitParameter(ParameterExpression node)
+        {
+            if (!_bound.Contains(node) && !_free.Contains(node)) _free.Add(node);
+            return node;
+        }
+
+        /// <inheritdoc/>
+        protected override Expression VisitLambda<T>(Expression<T> node)
+        {
+            foreach (ParameterExpression parameter in node.Parameters) _bound.Add(parameter);
+            return base.VisitLambda(node);
+        }
+
+        /// <inheritdoc/>
+        protected override Expression VisitBlock(BlockExpression node)
+        {
+            foreach (ParameterExpression variable in node.Variables) _bound.Add(variable);
+            return base.VisitBlock(node);
+        }
+
+        /// <inheritdoc/>
+        protected override CatchBlock VisitCatchBlock(CatchBlock node)
+        {
+            if (node.Variable is not null) _bound.Add(node.Variable);
+            return base.VisitCatchBlock(node);
+        }
     }
 
     /// <summary>

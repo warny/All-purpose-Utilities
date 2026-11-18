@@ -66,6 +66,9 @@ $env:S5_AUDIT_POLICY = 'permissive'
 Remove-Item Env:\S5_AUDIT_POLICY
 ```
 
+Set `S5_AUDIT_BIND=1` to run the `stability` campaign on every case wrapped in a lambda that binds its free parameters (in order
+of first occurrence): the cycles that remain are not the free-parameter ties of the S4 order (documented limitation L-3).
+
 Exit codes: `0` no anomaly, `1` anomalies found, `2` usage error, `3` harness failure, `5` a case exceeded `--timeout`, `6` the
 managed heap exceeded `--memory` (MB). On `5` and `6` the case is appended to `<campaign>-aborted.txt`; `run-audit.ps1` resumes
 the campaign after it (`--start`, `--resume`).
