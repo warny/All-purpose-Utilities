@@ -136,8 +136,8 @@ public class ExpressionSimplifierDeepAuditTests
         (Expression Source, MethodInfo Method, string Text)[] cases =
         [
             (Expression.Call(digitsMethod, X, Expression.Constant(2)), digitsMethod, "Double.Round(x, 2)"),
-            (Expression.Call(modeMethod, X, Expression.Constant(MidpointRounding.AwayFromZero)), modeMethod, "Double.Round(x, AwayFromZero)"),
-            (Expression.Call(bothMethod, X, Expression.Constant(2), Expression.Constant(MidpointRounding.ToEven)), bothMethod, "Double.Round(x, 2, ToEven)"),
+            (Expression.Call(modeMethod, X, Expression.Constant(MidpointRounding.AwayFromZero)), modeMethod, "Double.Round(x, MidpointRounding.AwayFromZero)"),
+            (Expression.Call(bothMethod, X, Expression.Constant(2), Expression.Constant(MidpointRounding.ToEven)), bothMethod, "Double.Round(x, 2, MidpointRounding.ToEven)"),
         ];
 
         foreach ((Expression source, MethodInfo method, string text) in cases)

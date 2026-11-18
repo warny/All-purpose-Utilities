@@ -311,7 +311,10 @@ public class ExpressionSimplifierRoundOverloadTests
         Assert.IsFalse(ExpressionComparer.Default.Equals(two, three));
         Assert.IsFalse(ExpressionComparer.Default.Equals(away, even));
         Assert.IsFalse(ExpressionComparer.Default.Equals(two, away));
-        Assert.IsTrue(ExpressionComparer.Default.Equals(Expression.Subtract(two, twoCopy), Expression.Constant(0.0)), "x - x cancels on the kept call");
+        // double.Round(double, int) throws ArgumentOutOfRangeException outside 0..15 digits: the call is not inert, so its
+        // difference with itself is kept (both evaluations stay), and simplifying it no longer throws.
+        Expression difference = new ExpressionSimplifier().Simplify(Expression.Subtract(two, twoCopy));
+        Assert.IsTrue(ExpressionComparer.Default.Equals(difference, Expression.Subtract(two, two)), ExpressionTraceFormatter.Format(difference));
     }
 
     /// <summary>Records the evaluations of the arguments of a call.</summary>

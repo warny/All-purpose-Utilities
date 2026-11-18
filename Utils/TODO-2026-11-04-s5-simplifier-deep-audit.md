@@ -208,6 +208,66 @@ same-file priorities that decide a result (`log(x) + log(x)` gives `2 * Double.L
 the derived order. The tests live in the `Coverage` namespace, so the Ubuntu unit job and the Debug expression-engine job run
 them too: a platform, configuration or file-order difference fails CI instead of changing a result.
 
+### Validation of the branch
+
+Production change: `ExpressionSimplifier.Math.cs` (`TransformCall`, the documentation of `RoundConversionMath`) only.
+
+| Suite | `c509bdf6` | Branch |
+|---|---|---|
+| `dotnet build Utils.sln -c Release` | 0 errors | 0 errors |
+| `UtilsTest.Unit` (Release) | 14,751 passed, 1 not executed | 14,764 passed, 1 not executed |
+| `UtilsTest.Security` (Release) | 399 passed, 3 not executed | 399 passed, 3 not executed |
+| `UtilsTest.Functional` (Release) | 383 passed | 383 passed |
+| ETC Debug (`…Expressions.Coverage`, Debug) | 350 passed, 1 not executed | 354 passed, 1 not executed |
+
+S5 campaigns (same options, branch against base, per-case first-pass outputs compared): `terminate` 66,270 cases, `converge`
+70,470, `diff` 4,000 seeds, `effects` 4,001 records, `canon` 48 groups: **0 differences**; `stability` and `comparer` summaries
+byte-identical; `inventory` differs only by the source line numbers of `ExpressionSimplifier.Math.cs`; `s3`: the one intended
+change, `Round(x, 2)` goes from `throws InvalidOperationException` to `Double.Round(x, 2)` with no difference over its 256
+assignments. No other first-pass output changed, so no second-pass or convergence comparison was needed beyond these campaigns.
+
+Complexity: the 75 points measured on the branch (`n`, `constabs`, `nanabs`, `horner`, `negsum`, `negmul`, `Lsub`, `g`, `plus0`,
+`pow1`, `zeroplus`, `subdivR`, `subdivBM`, `z`, `k` at n = 4 to 20) have exactly the base counters (transformation visits,
+comparer simplifications, output size).
+
+Performance (`tests/ExpressionTracingBench/run-campaign.ps1`, one process per scenario and variant, rotating order, A/A copy of
+the base binaries; two scenarios added for the touched path: `calls8`, eight nested `double` functions, and `callsum16`, a sum of
+sixteen `Sin`):
+
+| Scenario | Base | A/A | Branch | Allocated (base = branch) |
+|---|---:|---:|---:|---:|
+| `ext-root` | 94.7 ns | −1.5 % | −1.6 % | 0 B |
+| `scalar` | 1,348 ns | +3.2 % | +3.8 % (7 rounds: +0.2 % / −1.1 %) | 2,256 B |
+| `binary` | 5,836 ns | −0.6 % | −1.8 % | 6,513 B |
+| `lambda` | 3,370 ns | −2.8 % | −4.8 % | 6,385 B |
+| `leftsum20` | 6,606 ns | −1.6 % | +0.1 % | 14,368 B |
+| `p9family16` | 40,381 ns | −2.2 % | −1.5 % | 52,131 B |
+| `dag10` | 957,443 ns | +0.3 % | −0.1 % | 1,288,331 B (branch 1,288,325) |
+| `calls8` | 4,503 ns | +2.1 % | +3.9 % (7 rounds: −0.1 % / +0.7 %) | 2,632 B |
+| `callsum16` | 20,116 ns | −0.8 % | +1.3 % (7 rounds: −0.5 % / +1.7 %) | 31,344 B |
+| `cmp-pos` | 59,478 ns | +1.0 % | +1.9 % | 61,742 B |
+| `hash` | 30,010 ns | −1.1 % | −1.0 % | 29,694 B |
+
+Reading: no allocation difference (the 6 bytes of `dag10` are integer rounding of a large scenario); the call scenarios stay
+within about 2 % of the base after the seven-round re-measure (the rule adds a type test, a provenance check and a method
+comparison per matched `double` call), the others inside the A/A band.
+
+Found by the validation and fixed in the same commit: two assertions of the new S5A-02 tests were wrong (the formatter prints
+`MidpointRounding.AwayFromZero`; `Round(x, 2) - Round(x, 2)` is rightly kept, because `double.Round(double, int)` can throw
+`ArgumentOutOfRangeException` and is not inert).
+
+CI: see the pull request (the dispatch-order tests run on Ubuntu there for the first time).
+
+### Remaining work before the final 2.0 release (expression simplifier)
+
+1. S5A-04: contract decision on simplification-time exceptions, then the "deferred fold" pull request (migration-guide entry).
+2. S5A-07 and S5A-10: each a separately approved change of first-pass results (S5A-10 needs the flatten path to treat double
+   negations).
+3. Documented, not blocking: free-parameter ties (L-3), bound cycles with non-finite constants or call terms, `z`/`e`/`k`
+   (L-6), `o`/`r` (L-7), the multiplicative half of S5A-09, grouped quotient chains outside the #706 family.
+4. `ExpressionOptimiser` A10-C / O0–O5 (independent workstream).
+
+
 
 Status: **audit report, open findings**. Companion of the S5 stage of `TODO-2026-09-12-expression-simplifier-roadmap.md`
 (section "S5 deep audit"). No production rule, canonicalization strategy, budget or ordering was changed by this audit; the
