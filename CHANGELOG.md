@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed — `omy.Utils` (expression simplifier: arithmetic exceptions deferred to evaluation, S5A-04)
+- **Behavior change, every policy.** `ExpressionSimplifier.Simplify` (and `ExpressionComparer`, which simplifies first) no
+  longer throws `DivideByZeroException` or `OverflowException` on a constant fold that would throw: an integral or `decimal`
+  constant zero divisor, `int.MinValue / -1`, `long.MinValue / -1`, a `decimal` overflow of `+ - * /`. The fold declines and the
+  failing operation stays in the tree (same operator, method, type and place), so it raises its exception when, and only if, it
+  is evaluated; a branch, a short-circuit operand, a `??` operand, a switch body, a try or catch body, a filter or an uninvoked
+  lambda that the source does not evaluate no longer makes simplification fail. Successful and IEEE-754 folds are unchanged, and
+  exceptions of invalid usage, resource limits, user code and derived rules still propagate. No public signature or option
+  changed. See `docs/releasing/MigrationTo2.0.md` ("arithmetic exceptions deferred to evaluation").
+- Internals: `FoldConstants` catches exactly these two exceptions around its folder call; `DivideWithZeroOrOne` declines every
+  zero divisor; `AdditionOfEqualsElements` and the commutation `Multiplication(e, t, c)` decline on a pair of constants (reached
+  only by a declined fold); the redundant `OverflowException` handlers of the coefficient and aggregation helpers are removed, and
+  `CanonicalizeFactoredCoefficient` no longer relies on a null-forgiving fold.
+- Supersedes the "S5A-04 (open, documented)" entry below: `S5A04_EveryLazyContext_RaisesTheFoldExceptionWhileSimplifying` became
+  `S5A04_EveryLazyContext_DefersTheFoldExceptionToEvaluation`.
+
 ### Fixed — `omy.Utils` (expression simplifier: S5 residual correctness audit)
 - **S5A-02.** `ExpressionSimplifier` no longer throws `InvalidOperationException` on `double.Round(x, digits)`,
   `double.Round(x, mode)` and `double.Round(x, digits, mode)`: the `*ConversionMath` rules (`TransformCall`) rebuild a `double`

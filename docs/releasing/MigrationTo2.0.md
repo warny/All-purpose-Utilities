@@ -329,6 +329,31 @@ match, `double.Round(x)` included, are unchanged. A derived simplifier calling a
 node that is not a `double` call keeps the historical lookup and its exception. The record is in
 `Utils/TODO-2026-11-04-s5-simplifier-deep-audit.md` (re-audit of 2026-11-18).
 
+## Expression engine: arithmetic exceptions deferred to evaluation (S5A-04)
+
+Intentional behavior change of `ExpressionSimplifier` (and of `ExpressionComparer`, which simplifies first), under **every**
+policy (`ExpressionSimplifierOptions.Default` and any explicit one); no public signature and no option changed. Constant folding
+no longer evaluates an arithmetic operation that throws:
+
+- An integral or `decimal` division by a constant zero (`i / 0`, `1 / 0`, `1m / 0m`), `int.MinValue / -1`, `long.MinValue / -1`
+  and a `decimal` addition, subtraction, multiplication or division that overflows (`decimal.MaxValue * 2m`) used to make
+  `Simplify` throw `DivideByZeroException` or `OverflowException` (wrapped in `TargetInvocationException` when raised by a rule).
+  `Simplify` now returns, and the failing operation stays in the tree, with its operator, method, type and place: it raises the
+  same exception when, and only if, it is evaluated.
+- The exception therefore moves back from simplification time to evaluation time. A node the source never evaluates (a branch
+  of `?:`, the right operand of `&&`, `||` or `??`, a switch case or default, a caught try body, a catch body, a filter, an
+  uninvoked lambda) no longer makes simplification fail; a node that is always evaluated throws when the compiled tree runs.
+- Code that relied on `Simplify` to detect such trees must now compile and evaluate them, or inspect the result.
+- Unchanged: successful folds (same constant, type and bits), IEEE-754 folds (`float`, `double`), and every exception that is
+  not an arithmetic exception of a fold: invalid engine usage (`ArgumentException`, `InvalidOperationException`), resource
+  limits (`ExpressionResourceLimitException`, the execution-stack guard), user code (custom operators, conversions, methods,
+  extension nodes, the `Equals` of an opaque constant the comparer calls) and derived simplifiers' own rules.
+- Derived simplifiers calling `DivideWithZeroOrOne`, `AdditionOfConstants`, `SubstractionOfConstants`,
+  `MultiplicationOfConstants` or `DivisionOfConstants` directly receive `null` (declined) instead of the exception.
+
+The record is in `Utils/TODO-2026-11-04-s5-simplifier-deep-audit.md` (S5A-04, disposition of 2026-11-18) and
+`docs/expressions/SimplificationPolicies.md` §2.3.
+
 ## Expression engine: negated dividend of a signed integral division (C3A-01, C-09)
 
 Behavior change of `ExpressionSimplifier` (and of `ExpressionComparer`); no public signature changed. `(-t) / u` is kept as

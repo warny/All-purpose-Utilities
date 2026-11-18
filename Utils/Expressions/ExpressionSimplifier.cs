@@ -922,8 +922,8 @@ namespace Utils.Mathematics.Expressions
         /// <param name="type">The node's type, which is also the type of both operands.</param>
         /// <param name="left">The left constant.</param>
         /// <param name="right">The right constant.</param>
-        /// <returns>The folded constant, or <see langword="null"/> when an operand is <see langword="null"/> or the
-        /// (operator, type) pair has no folder.</returns>
+        /// <returns>The folded constant, or <see langword="null"/> when an operand is <see langword="null"/>, the
+        /// (operator, type) pair has no folder, or evaluating the operation would throw.</returns>
         /// <remarks>
         /// <para>
         /// The caller must have proven the node ordinary (<see cref="IsOrdinaryBinaryArithmetic(BinaryExpression)"/>):
@@ -943,13 +943,36 @@ namespace Utils.Mathematics.Expressions
         /// decimal overflow), and follow IEEE-754 for <see cref="float"/> and <see cref="double"/> (<c>NaN</c>,
         /// infinities and signed zeros).
         /// </para>
+        /// <para>
+        /// A fold never raises an arithmetic exception itself (S5A-04, mission "deferred arithmetic exceptions"): when the
+        /// folder throws <see cref="DivideByZeroException"/> or <see cref="OverflowException"/>, the fold is declined and the
+        /// caller keeps the node, which raises that exception when, and only if, it is evaluated. The folded node may sit in a
+        /// branch the source never evaluates (<c>i &gt; 0 ? 1 / 0 : 2</c>) or in a lambda body never invoked, so throwing here
+        /// moved the exception to simplification time. Only these two exceptions are caught, and only around the folder call:
+        /// the folders are the primitive generic-math operators of the table, so nothing else can be raised there, and any other
+        /// failure (of a factory, a resource budget or a violated invariant) stays visible.
+        /// </para>
         /// </remarks>
         private static ConstantExpression? FoldConstants(ExpressionType nodeType, Type type, object? left, object? right)
-            => left is not null
-                && right is not null
-                && ConstantFolders.TryGetValue((nodeType, type), out Func<object, object, object>? folder)
-                ? Expression.Constant(folder(left, right))
-                : null;
+        {
+            if (left is null || right is null || !ConstantFolders.TryGetValue((nodeType, type), out Func<object, object, object>? folder)) return null;
+
+            object result;
+            try
+            {
+                result = folder(left, right);
+            }
+            catch (DivideByZeroException)
+            {
+                return null;
+            }
+            catch (OverflowException)
+            {
+                return null;
+            }
+
+            return Expression.Constant(result);
+        }
 
         /// <summary>
         /// Typed evaluators of the ordinary binary operators, indexed by operator and operand type; used by
@@ -1349,44 +1372,38 @@ namespace Utils.Mathematics.Expressions
         }
 
         /// <summary>
-        /// Simplifies division by 1 or -1, and throws on an integral or decimal zero divisor.
+        /// Simplifies division by 1 or -1; declines a zero divisor.
         /// </summary>
         /// <remarks>
         /// Any other divisor, including <c>NaN</c>, an infinity or a value beyond the decimal range, leaves the node to
-        /// the following rules (S5 P11; it threw <see cref="OverflowException"/> before). An integral or
-        /// <see cref="decimal"/> zero divisor throws <see cref="DivideByZeroException"/>, as evaluating the node would.
-        /// A <see cref="float"/> or <see cref="double"/> zero divisor is declined instead (S5 P12; it threw before):
-        /// IEEE-754 division by <c>±0</c> is defined (an infinity or <c>NaN</c>), so <see cref="DivisionOfConstants"/>
-        /// folds a constant dividend exactly and a non-constant dividend keeps the division node.
+        /// the following rules (S5 P11; it threw <see cref="OverflowException"/> before). A zero divisor is declined for every
+        /// type. An integral or <see cref="decimal"/> zero divisor threw <see cref="DivideByZeroException"/> while simplifying
+        /// until S5A-04 (mission "deferred arithmetic exceptions"), even in a branch the source never evaluates; the division
+        /// now stays, <see cref="DivisionOfConstants"/> declines too on a constant dividend (<see cref="FoldConstants"/>), and
+        /// the node raises the exception when, and only if, it is evaluated. A <see cref="float"/> or <see cref="double"/> zero
+        /// divisor was already declined (S5 P12): IEEE-754 division by <c>±0</c> is defined (an infinity or <c>NaN</c>), so
+        /// <see cref="DivisionOfConstants"/> folds a constant dividend exactly and a non-constant dividend keeps the division node.
         /// <para>
         /// The <c>±1</c> identities decline on a constant dividend, which <see cref="DivisionOfConstants"/> folds to
         /// a constant of the node's type instead: <c>5 / -1</c> was left as the unevaluated <c>-(5)</c>, and
         /// <c>int.MinValue / -1</c> (or <c>long.MinValue / -1</c>) became <c>-(MinValue)</c>, which evaluates to
-        /// <c>MinValue</c> where the source throws <see cref="OverflowException"/>; the fold throws it while simplifying,
-        /// as a zero divisor does. On a non-constant dividend <c>x / -1 -&gt; -x</c> stays for the floating-point types
+        /// <c>MinValue</c> where the source throws <see cref="OverflowException"/>; that fold now declines (S5A-04), so the
+        /// division is kept and throws at evaluation. On a non-constant dividend <c>x / -1 -&gt; -x</c> stays for the floating-point types
         /// and <see cref="decimal"/>, where it is exact. For a signed integral type it is declined since ETC R1b (C-06): for
         /// <c>x = MinValue</c> the negation wraps where the division throws <see cref="OverflowException"/>, and a rule must
         /// not remove an exception the evaluation can raise.
         /// </para>
         /// <para>
-        /// Outside the effect gate (S5 P18 Architecture C) the dividend is not inert, so a zero divisor is declined instead of
-        /// throwing: the evaluation of the dividend (a call, an assignment) comes first and must stay, and the exception must stay
-        /// an evaluation-time exception. The <c>±1</c> identities keep the dividend's single evaluation.
+        /// Outside the effect gate (S5 P18 Architecture C) the dividend is not inert: the zero divisor is declined as inside the
+        /// gate, so the evaluation of the dividend (a call, an assignment) still comes first. The <c>±1</c> identities keep the
+        /// dividend's single evaluation.
         /// </para>
         /// </remarks>
         [ExpressionSignature(ExpressionType.Divide)]
         public Expression DivideWithZeroOrOne(BinaryExpression e, Expression left, ConstantExpression right)
         {
-            if (!IsOrdinaryBinaryArithmetic(e)) return null;
-            if (NumericValueEquals(right.Value, 0))
-            {
-                if (e.Type != typeof(double) && e.Type != typeof(float))
-                {
-                    if (RuleRunsOutsideGate) return null;
-                    throw new DivideByZeroException();
-                }
-            }
-            else if (left is not ConstantExpression)
+            if (!IsOrdinaryBinaryArithmetic(e) || NumericValueEquals(right.Value, 0)) return null;
+            if (left is not ConstantExpression)
             {
                 if (NumericValueEquals(right.Value, 1)) return left;
                 if (NumericValueEquals(right.Value, -1) && !IsSignedIntegral(e.Type)) return Expression.Negate(left);
@@ -2119,10 +2136,16 @@ namespace Utils.Mathematics.Expressions
         /// Attempts to factor out common elements in <c>left + right</c> if possible.
         /// E.g., rewriting <c>a*x + b*x</c> as <c>(a+b)*x</c>.
         /// </summary>
+        /// <remarks>
+        /// Declines on a pair of constants (<see cref="IsConstantPair"/>). An ordinary numeric pair is folded by
+        /// <see cref="AdditionOfConstants"/> first, so it reaches this rule only when that fold declines because the addition
+        /// throws (S5A-04: <c>decimal.MaxValue + decimal.MaxValue</c>); the throwing node is then kept as built instead of
+        /// being rewritten into the equivalent <c>2 * decimal.MaxValue</c>.
+        /// </remarks>
         [ExpressionSignature(ExpressionType.Add)]
         protected Expression AdditionOfEqualsElements(BinaryExpression e, Expression left, Expression right)
         {
-            if (!IsOrdinaryBinaryArithmetic(e)) return null;
+            if (!IsOrdinaryBinaryArithmetic(e) || IsConstantPair(e)) return null;
             if (!Types.Number.Contains(left.Type) || !Types.Number.Contains(right.Type))
             {
                 return null;
@@ -2354,18 +2377,13 @@ namespace Utils.Mathematics.Expressions
             }
 
             // Mission C3d: a constant coefficient of a constant factor is folded, as MultiplicationOfConstants folded the pair at
-            // the next call (x*-2 + (1 - x)*-2 gave 1 * -2); a decimal overflow keeps the product.
+            // the next call (x*-2 + (1 - x)*-2 gave 1 * -2); a decimal overflow declines the fold (FoldConstants) and keeps the
+            // product, as the overflowing source terms may still evaluate.
             if (StabilizesRebuiltForms && coefficient is ConstantExpression { Value: { } coefficientValue } && factor is ConstantExpression { Value: { } factorValue }
-                && coefficient.Type == factor.Type && Types.Number.Contains(factor.Type))
+                && coefficient.Type == factor.Type && Types.Number.Contains(factor.Type)
+                && FoldConstants(ExpressionType.Multiply, factor.Type, coefficientValue, factorValue) is { } folded)
             {
-                try
-                {
-                    if (FoldConstants(ExpressionType.Multiply, factor.Type, coefficientValue, factorValue) is { } folded) return folded;
-                }
-                catch (OverflowException)
-                {
-                    // The product stays, as the overflowing source terms may still evaluate.
-                }
+                return folded;
             }
 
             BinaryExpression product = Expression.Multiply(coefficient, factor);
@@ -2462,9 +2480,19 @@ namespace Utils.Mathematics.Expressions
                 for (int index = 0; index < terms.Count; index++)
                 {
                     (Expression term, bool isNegative) = terms[index];
-                    terms[index] = term is ConstantExpression constant && !isNegative
-                        ? (FoldConstants(ExpressionType.Subtract, type, Convert.ChangeType(0, type), constant.Value)!, false)
-                        : (term, false);
+                    if (term is not ConstantExpression constant || isNegative)
+                    {
+                        terms[index] = (term, false);
+                        continue;
+                    }
+
+                    // IsSubtractedCoefficient admits an added constant only when it is aggregatable (non-null, of the type) and
+                    // the type has an ordinary negation; with IsInertArithmeticType that leaves short, int, long, float and
+                    // double, whose unchecked or IEEE 0 - c has a folder and cannot throw (S5A-04 inventory). Should that fold
+                    // ever decline, the coefficient is not canonicalized: the terms are local, and the caller rebuilds it from
+                    // the untouched coefficients (AggregateFactoredCoefficient, then the ordinary factory).
+                    if (FoldConstants(ExpressionType.Subtract, type, Convert.ChangeType(0, type), constant.Value) is not { } negated) return null;
+                    terms[index] = (negated, false);
                 }
 
                 return Expression.Negate(CanonicalizeAdditiveTerms(terms, type, recordMetadata: false));
@@ -2511,27 +2539,14 @@ namespace Utils.Mathematics.Expressions
         /// <param name="rightCoefficient">The coefficient of the right term.</param>
         /// <returns>The folded coefficient, or <see langword="null"/> when it is not a pair of constants or a decimal overflow occurs.</returns>
         /// <remarks>
-        /// Only <see cref="OverflowException"/> is caught: unchecked integral and floating-point addition and subtraction
-        /// never throw, so it can only come from <see cref="decimal"/> (see <see cref="BuildFactoredProduct"/>).
+        /// Unchecked integral and floating-point addition and subtraction never throw, so only a <see cref="decimal"/> sum can
+        /// overflow (see <see cref="BuildFactoredProduct"/>); <see cref="FoldConstants"/> then declines (it caught the
+        /// <see cref="OverflowException"/> here before S5A-04), and the coefficient node is built unevaluated.
         /// </remarks>
         private static ConstantExpression? TryFoldFactoredCoefficient(ExpressionType nodeType, Expression leftCoefficient, Expression rightCoefficient)
-        {
-            if (leftCoefficient is not ConstantExpression left
-                || rightCoefficient is not ConstantExpression right
-                || left.Type != right.Type)
-            {
-                return null;
-            }
-
-            try
-            {
-                return FoldConstants(nodeType, left.Type, left.Value, right.Value);
-            }
-            catch (OverflowException)
-            {
-                return null;
-            }
-        }
+            => leftCoefficient is ConstantExpression left && rightCoefficient is ConstantExpression right && left.Type == right.Type
+                ? FoldConstants(nodeType, left.Type, left.Value, right.Value)
+                : null;
 
         #endregion
 
@@ -2552,11 +2567,16 @@ namespace Utils.Mathematics.Expressions
         /// <summary>
         /// Commutes <c>left * constant</c> to <c>constant * left</c> for consistent transformations.
         /// </summary>
-        /// <remarks>Mission C3d: the commuted product is finished for the built-in type (<see cref="FinishProduct"/>).</remarks>
+        /// <remarks>
+        /// Mission C3d: the commuted product is finished for the built-in type (<see cref="FinishProduct"/>). Declines on a pair
+        /// of constants (<see cref="IsConstantPair"/>), which reaches this rule only when <see cref="MultiplicationOfConstants"/>
+        /// declines a throwing fold (S5A-04, <c>3m * decimal.MaxValue</c>): the throwing node is kept as built, since commuting
+        /// it gave <c>decimal.MaxValue * 3m</c>, which the next call commuted back.
+        /// </remarks>
         [ExpressionSignature(ExpressionType.Multiply)]
         protected Expression Multiplication(BinaryExpression e, Expression left, [ConstantNumeric] ConstantExpression right)
         {
-            if (!IsOrdinaryBinaryArithmetic(e)) return null;
+            if (!IsOrdinaryBinaryArithmetic(e) || IsConstantPair(e)) return null;
             return FinishProduct(right, left);
         }
 
@@ -2630,8 +2650,10 @@ namespace Utils.Mathematics.Expressions
         /// Simplifies constant division <c>(a / b)</c> when both are numeric constants.
         /// </summary>
         /// <remarks>
-        /// Folded by <see cref="FoldConstants"/> in the node's own type: an integral or decimal zero divisor and
-        /// <c>int.MinValue / -1</c> throw as the compiled node would, and a floating-point division follows IEEE-754.
+        /// Folded by <see cref="FoldConstants"/> in the node's own type, and a floating-point division follows IEEE-754. An
+        /// integral or decimal zero divisor, <c>int.MinValue / -1</c>, <c>long.MinValue / -1</c> and a decimal overflow decline
+        /// the fold (S5A-04; they threw while simplifying before): the division node stays and throws as the compiled node
+        /// does, when it is evaluated.
         /// </remarks>
         [ExpressionSignature(ExpressionType.Divide)]
         protected Expression DivisionOfConstants(
@@ -3422,54 +3444,49 @@ namespace Utils.Mathematics.Expressions
 
             // A running total starts at the first constant of its sign (null until then), so no zero is boxed or
             // added; a signed type keeps a single total, an unsigned type one per sign.
+            // A decimal overflow declines its fold (FoldConstants, S5A-04), which refuses the whole aggregation: the terms are
+            // only read here, so they stay as they are.
             object? positive = null;
             object? negative = null;
-            try
+            foreach ((Expression term, bool isNegative) in terms)
             {
-                foreach ((Expression term, bool isNegative) in terms)
+                if (!IsAggregatableConstant(term, type)) continue;
+                object value = ((ConstantExpression)term).Value!;
+                if (unsigned && isNegative)
                 {
-                    if (!IsAggregatableConstant(term, type)) continue;
-                    object value = ((ConstantExpression)term).Value!;
-                    if (unsigned && isNegative)
-                    {
-                        negative = negative is null ? value : FoldConstants(ExpressionType.Add, type, negative, value)?.Value;
-                        if (negative is null) return false;
-                    }
-                    else if (positive is null && !isNegative)
-                    {
-                        positive = value;
-                    }
-                    else
-                    {
-                        positive = FoldConstants(isNegative ? ExpressionType.Subtract : ExpressionType.Add, type, positive ?? Convert.ChangeType(0, type), value)?.Value;
-                        if (positive is null) return false;
-                    }
+                    negative = negative is null ? value : FoldConstants(ExpressionType.Add, type, negative, value)?.Value;
+                    if (negative is null) return false;
                 }
-
-                if (!unsigned || negative is null)
+                else if (positive is null && !isNegative)
                 {
-                    sum = positive;
-                    return sum is not null;
+                    positive = value;
                 }
-
-                if (positive is null)
+                else
                 {
-                    sumIsNegative = true;
-                    sum = negative;
-                    return true;
+                    positive = FoldConstants(isNegative ? ExpressionType.Subtract : ExpressionType.Add, type, positive ?? Convert.ChangeType(0, type), value)?.Value;
+                    if (positive is null) return false;
                 }
+            }
 
-                // Unsigned: subtract the smaller total from the larger one and keep the sign as the term's sign.
-                sumIsNegative = ((IComparable)negative).CompareTo(positive) > 0;
-                sum = sumIsNegative
-                    ? FoldConstants(ExpressionType.Subtract, type, negative, positive)?.Value
-                    : FoldConstants(ExpressionType.Subtract, type, positive, negative)?.Value;
+            if (!unsigned || negative is null)
+            {
+                sum = positive;
                 return sum is not null;
             }
-            catch (OverflowException)
+
+            if (positive is null)
             {
-                return false;
+                sumIsNegative = true;
+                sum = negative;
+                return true;
             }
+
+            // Unsigned: subtract the smaller total from the larger one and keep the sign as the term's sign.
+            sumIsNegative = ((IComparable)negative).CompareTo(positive) > 0;
+            sum = sumIsNegative
+                ? FoldConstants(ExpressionType.Subtract, type, negative, positive)?.Value
+                : FoldConstants(ExpressionType.Subtract, type, positive, negative)?.Value;
+            return sum is not null;
         }
 
         /// <summary>
@@ -3673,15 +3690,9 @@ namespace Utils.Mathematics.Expressions
                 }
 
                 if (constant.Type != folded.Type) continue;
-                try
-                {
-                    folded = FoldConstants(ExpressionType.Multiply, folded.Type, folded.Value, constant.Value);
-                }
-                catch (OverflowException)
-                {
-                    return negated;
-                }
 
+                // Unreachable on these inert types, a declined fold (FoldConstants) leaves every constant in place.
+                folded = FoldConstants(ExpressionType.Multiply, folded.Type, folded.Value, constant.Value);
                 if (folded is null) return negated;
             }
 

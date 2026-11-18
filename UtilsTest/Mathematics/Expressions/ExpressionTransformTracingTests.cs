@@ -267,21 +267,26 @@ public class ExpressionTransformTracingTests
     /// A rule exception leaves one failure event per treatment it crosses, naming the rule that was running, and the
     /// exception reaching the caller is the very one an untraced operation throws (same type and wrapping).
     /// </summary>
+    /// <remarks>
+    /// Until S5A-04 the throwing rule was the built-in <c>DivideWithZeroOrOne</c> on <c>i / 0</c>; it now declines (the
+    /// division is left for evaluation), so the rule is a derived simplifier's own (<see cref="ThrowingDivisionSimplifier"/>).
+    /// </remarks>
     [TestMethod]
     public void RuleException_IsTracedWithTheRunningRule()
     {
         ParameterExpression i = Expression.Parameter(typeof(int), "i");
         Expression division = Expression.Add(i, Expression.Divide(i, Expression.Constant(0)));
-        Exception untraced = Assert.ThrowsExactly<TargetInvocationException>(() => new ExpressionSimplifier().Simplify(division));
+        Assert.AreEqual(ExpressionType.Add, new ExpressionSimplifier().Simplify(division).NodeType, "S5A-04: the built-in simplifier no longer throws.");
+        Exception untraced = Assert.ThrowsExactly<TargetInvocationException>(() => new ThrowingDivisionSimplifier().Simplify(division));
 
         Exception? traced = null;
-        ExpressionTransformEvent[] events = Trace(() => traced = Assert.ThrowsExactly<TargetInvocationException>(() => new ExpressionSimplifier().Simplify(division)));
+        ExpressionTransformEvent[] events = Trace(() => traced = Assert.ThrowsExactly<TargetInvocationException>(() => new ThrowingDivisionSimplifier().Simplify(division)));
         Assert.AreEqual(untraced.InnerException!.GetType(), traced!.InnerException!.GetType());
         Assert.IsInstanceOfType<DivideByZeroException>(traced.InnerException);
 
         ExpressionTransformEvent[] failures = events.Where(e => e.Kind == ExpressionTransformEventKind.TransformFailed).ToArray();
         Assert.AreEqual(2, failures.Length, "the division and the enclosing sum");
-        Assert.AreEqual("DivideWithZeroOrOne", failures[0].Rule!.Name);
+        Assert.AreEqual(nameof(ThrowingDivisionSimplifier.ThrowOnZeroDivisor), failures[0].Rule!.Name);
         Assert.AreEqual(ExpressionType.Divide, failures[0].NodeType);
         Assert.IsNull(failures[1].Rule, "the sum was preparing its operands, no rule was running");
         Assert.IsFalse(events.Any(e => e.Kind == ExpressionTransformEventKind.ResourceLimitReached));
@@ -319,6 +324,19 @@ public class ExpressionTransformTracingTests
         Assert.AreEqual(ExpressionTransformEventKind.ResourceLimitReached, only.Kind);
         Assert.AreEqual(ExpressionResourceLimitKind.Depth, only.ResourceLimit);
         Assert.AreEqual(0, only.OperationId);
+    }
+
+    /// <summary>A derived simplifier whose own rule throws on an integral zero divisor, as the built-in rule did before S5A-04.</summary>
+    private sealed class ThrowingDivisionSimplifier : ExpressionSimplifier
+    {
+        /// <summary>Throws <see cref="DivideByZeroException"/> on a constant zero divisor.</summary>
+        /// <param name="e">The division.</param>
+        /// <param name="left">The dividend.</param>
+        /// <param name="right">The divisor.</param>
+        /// <returns>Never returns: the signature only matches a zero divisor.</returns>
+        [ExpressionSignature(ExpressionType.Divide)]
+        public Expression ThrowOnZeroDivisor(BinaryExpression e, Expression left, [ConstantNumeric(0)] ConstantExpression right)
+            => throw new DivideByZeroException();
     }
 
     /// <summary>A transformer whose rule transforms the same form again without end (a strict one-step cycle).</summary>

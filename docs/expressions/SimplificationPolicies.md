@@ -128,12 +128,21 @@ The five operations of the brief:
 | 5. Move an exception from run time to simplification time | never | constant folding must not evaluate a throwing operation; not a policy dimension |
 | (Introduce an exception) | never | |
 
-**Known deviation (S5A-04, open).** Operation 5 is not enforced yet: a throwing constant fold (an integral or decimal zero
-divisor in `DivideWithZeroOrOne`, `MinValue / -1` and decimal overflows in `FoldConstants`) raises its exception while
-simplifying, under every policy, including in conditional branches, short-circuit operands, `??`, switch bodies, try and catch
-bodies, filters and uninvoked lambdas, where the source does not evaluate the node. The proposed correction (a fold that would
-throw declines, so the node raises its exception at evaluation) changes the public behavior of `Simplify` and waits for a
-contract decision: `Utils/TODO-2026-11-04-s5-simplifier-deep-audit.md`, re-audit of 2026-11-18.
+**Known deviation (S5A-04, open on 2026-11-18, fixed the same day).** Operation 5 was not enforced: a throwing constant fold
+(an integral or decimal zero divisor in `DivideWithZeroOrOne`, `MinValue / -1` and decimal overflows in `FoldConstants`) raised
+its exception while simplifying, under every policy, including in conditional branches, short-circuit operands, `??`, switch
+bodies, try and catch bodies, filters and uninvoked lambdas, where the source does not evaluate the node.
+
+**Disposition (2026-11-18, mission "deferred arithmetic exceptions").** Operation 5 is enforced for every policy: arithmetic
+constant folding never raises an arithmetic exception itself. A fold that would throw `DivideByZeroException` or
+`OverflowException` declines (`FoldConstants` catches exactly these two around the evaluation of its primitive folder), the zero
+divisor identity declines, and the rules that a declined constant pair would reach next (`AdditionOfEqualsElements`, the
+commutation `x * c -> c * x`) decline on a pair of constants, so the failing operation stays as built, in its place, and raises
+its exception when, and only if, it is evaluated. This needs no contextual evaluation metadata and no policy dimension: it is
+independent of `ExceptionPreservation`, which keeps governing operations 1 to 4 (a category left out may still let an
+independently authorized rule drop an unfolded throwing node, as for any other throwing evaluation). Exceptions that are not
+arithmetic exceptions of a fold are unaffected and stay visible: invalid engine usage, resource limits and the stack guard, user
+code, derived simplifiers' own rules. Record: `Utils/TODO-2026-11-04-s5-simplifier-deep-audit.md`, S5A-04 disposition.
 
 The three categories suffice: operations 1 and 2 are the only ones that change whether or when a category is observed, 3 and 4
 reduce to them, and 5 is never allowed. A finer "operation kind" dimension (for example, allowing reordering but not dropping)

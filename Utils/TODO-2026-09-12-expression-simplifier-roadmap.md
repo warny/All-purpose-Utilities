@@ -14,7 +14,7 @@ This section is the **current planning summary**; dated implementation notes bel
 | Flatten infrastructure, batch additive processing, C3a–C3d | **Implemented in the PR series / verify integration and final validation** | PRs #691–#703. PR existence alone does not prove a merge; validate the actual target SHA and CI before marking integration complete. |
 | Two subsequent trigonometric/division-chain fixes | **Merged** | PR #705 (`ed3ea136`): S5A-01 trigonometric NRE and linear quotient chains, with S5, differential corpora and BDN validation (`docs/expressions/SimplifierFlatten.md` §15). |
 | Grouped quotient chains (`subdivR`, `subdivB`, mixed signs, distinct denominators, `float`) | **Fixed for the restricted family** (2026-11-18, branch `fix/expression-grouped-quotient-chains`) | `IsGroupedLinearQuotientChain` + one canonicalization, first-pass structure identical to the historical result; see `docs/expressions/SimplifierFlatten.md` §16 for the admitted family and the chains that keep the level by level cost. |
-| Remaining simplifier issues | **Open or requires re-audit** | Grouped quotient chains outside the restricted family of §16 (repeated or shared terms, two constants, other quotient shapes, integral/decimal); S5A-04 exception timing, S5A-05/06/09/10 convergence, residual domain/determinism entries. Avoid assuming a finding is unresolved solely because the original audit used future tense. |
+| Remaining simplifier issues | **Open or requires re-audit** | Grouped quotient chains outside the restricted family of §16 (repeated or shared terms, two constants, other quotient shapes, integral/decimal); S5A-05/06/09/10 convergence (S5A-04 exception timing fixed on 2026-11-18, see "S5A-04 — deferred arithmetic exceptions" below), residual domain/determinism entries. Avoid assuming a finding is unresolved solely because the original audit used future tense. |
 | Execution optimizer O0–O5 | **Open, separate stream** | `ExpressionOptimiser` still needs its own effect/operator/exception correctness review (A10-C) and compiled-runtime benchmarks; C architecture does not complete this work. |
 
 **Closure accounting.** Do not count ETC R1–R4, P18 A/B, C1–C3, P19d or Flatten infrastructure as new PRs without revalidating an actual missing requirement. Audit remaining work by concrete reproducible gaps; count the optimizer separately. The previously suggested 6–9 PR total was a provisional estimate, **not** a verified remaining-PR count.
@@ -5334,6 +5334,17 @@ integrated code". Base `master` `c509bdf6` (after PR #706); branch `fix/expressi
   `Simplify`'s public behavior), S5A-07 (removing the extra transformation changes one first-pass result in 70,470), S5A-10
   (a local `-(-t)` rule is bypassed by the flatten path, adds 151 two-pass cases and 3 comparer-invariant violations), S5A-09
   multiplicative half (incomplete canonicalization, evaluation counts and rounding would change).
+
+### S5A-04 — deferred arithmetic exceptions (2026-11-18)
+
+Branch `fix/expression-s5a04-deferred-arithmetic-exceptions`, base `master` `9be5fcff`. Contract decision taken: arithmetic
+constant folding never raises an arithmetic exception itself, under every policy. `FoldConstants` declines (returns `null`) when
+its primitive folder throws `DivideByZeroException` or `OverflowException` (and only then), `DivideWithZeroOrOne` declines every
+zero divisor, and `AdditionOfEqualsElements` and the commutation `Multiplication(e, t, c)` decline on a constant pair (reached
+only by a declined fold), so the failing operation stays as built and raises its exception at evaluation. No traversal,
+policy, permission or option change. S5 (default policy): `diff` 210 `SIMPLIFY-THROWS-LIKE-SOURCE` seeds become `same`, every other
+campaign line identical; permissive policy: the newly simplifiable seeds fall into the documented `t * 0` drop classes. Record:
+`Utils/TODO-2026-11-04-s5-simplifier-deep-audit.md` (S5A-04 disposition), `docs/releasing/MigrationTo2.0.md`.
 
 ## Execution-optimizer stages
 

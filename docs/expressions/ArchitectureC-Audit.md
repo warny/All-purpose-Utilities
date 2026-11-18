@@ -66,7 +66,7 @@ relaxation only an explicit policy grants, e.g. an operator exception), — (no 
 | `MultiplicationWithZeroOrOne` (both) | `t * 1 -> t`, `t * -1 -> -t` | – | – | – | `* ±1` never throws (`MinValue * -1` and `-MinValue` wrap alike) | none | A |
 | idem | `t * 0 -> 0` | `t` | – | – | `* 0` never throws | `CanDiscard(t)` | B/C |
 | `DivideWithZeroOrOne` | `t / 1 -> t`, `t / -1 -> -t` (not signed integral) | – | – | – | `/ ±1` never throws there | none | A |
-| idem | integral/decimal `t / 0` **throws while simplifying** | (all) | – | – | moves an exception to simplification time | **never outside the gate** (B §2.3, op. 5; S5A-04) | – |
+| idem | integral/decimal `t / 0` **threw while simplifying** (declined since the S5A-04 fix, 2026-11-18) | (all) | – | – | moved an exception to simplification time | **never**, under any policy (B §2.3, op. 5; S5A-04) | – |
 | `DivideWithZero` | `0 / t -> 0` (`float`/`double`) | `t` | – | – | IEEE division never throws | `CanDiscard(t)` | B/C |
 | `PowerOfZeroOrOne` | `0 ^ t -> 0`, `1 ^ t -> 1` | `t` | – | – | `Math.Pow` never throws | `CanDiscard(t)` | B/C |
 | `PowerByZeroOrOne` | `t ^ 0 -> 1` | `t` | – | – | idem | `CanDiscard(t)` | B/C |
@@ -436,7 +436,7 @@ made independently of the C3a policies, because the historical result was wrong.
 - **Fix.** `|| IsSignedIntegral(e.Type)` added to the guard of the overload, as on its mirror. No other rule, Flatten, the
   admission, the policies, the budgets or the ETC R4/A-10 invariants are touched. `float`, `double` and `decimal` keep the
   rewrite (exact: negation never rounds or overflows there; the only difference is the sign of a `NaN`, outside the IEEE
-  contract). A constant divisor `0` still throws while simplifying (`DivideWithZeroOrOne`, S5A-04), as before.
+  contract). A constant divisor `0` still threw while simplifying (`DivideWithZeroOrOne`, S5A-04), as before; since the S5A-04 fix (2026-11-18) it is declined and kept for evaluation.
 - **Tests** (`ExpressionSimplifierDivisionWithNegateTests`, 8): the exact divergence domain of the historical rewrite per type
   and evaluation mode; the rewrite refused for `short`/`int`/`long` under five policies (default, each axis relaxed, all
   relaxed) and for a derived simplifier, the result evaluated like the source, compiled and interpreted, on a grid including

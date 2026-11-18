@@ -2,6 +2,7 @@ using System;
 using System.Linq.Expressions;
 using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Utils.Expressions;
 using Utils.Mathematics.Expressions;
 
 namespace UtilsTest.Security.Expressions;
@@ -92,6 +93,39 @@ public class ExpressionComparisonMemoResourceLimitTests
         Assert.IsTrue(equal);
         Assert.IsFalse(differentEqual);
         Assert.IsFalse(overBudgetEligible);
+    }
+
+    /// <summary>
+    /// A transformation-budget refusal raised in the middle of an eligible operand's simplification propagates on every
+    /// attempt and is never cached: the memo holds no entry afterwards and the session depth is restored, so a refused
+    /// simplification can neither be replayed as a result nor leave the session state corrupted.
+    /// </summary>
+    /// <remarks>
+    /// Until S5A-04 the throwing eligible operand of this check was an integral division by zero (unit test
+    /// <c>Exceptions_AreNeverCached</c>); a constant fold no longer throws, so no eligible operand, which holds only native
+    /// arithmetic, raises an exception of its own while simplifying, and the refusal of a comparer with tight limits is used.
+    /// </remarks>
+    [TestMethod]
+    public void RefusedSimplification_IsNeverCached()
+    {
+        ParameterExpression i = Expression.Parameter(typeof(int), "i");
+        Expression refused = Expression.Add(Expression.Multiply(Expression.Add(i, Expression.Constant(1)), Expression.Constant(2)), Expression.Add(i, Expression.Constant(3)));
+        Assert.IsTrue(ExpressionSimplifier.IsComparisonMemoEligible(refused));
+        ExpressionComparer tight = ExpressionComparer.Create(new ExpressionResourceLimits { MaxTransformVisits = 3 });
+
+        using (ExpressionSimplifier.BeginActivatedComparisonMemoSessionForTesting())
+        {
+            Assert.ThrowsExactly<ExpressionResourceLimitException>(() => tight.GetHashCode(refused));
+            Assert.ThrowsExactly<ExpressionResourceLimitException>(() => tight.GetHashCode(refused));
+            Assert.AreEqual(0, ExpressionSimplifier.ComparisonMemoEntryCount);
+            Assert.AreEqual(1, ExpressionSimplifier.ComparisonMemoDepth, "The session depth must be restored after a refused simplification.");
+        }
+
+        Assert.AreEqual(0, ExpressionSimplifier.ComparisonMemoDepth);
+        Assert.IsFalse(ExpressionSimplifier.IsComparisonMemoActive);
+        Assert.IsFalse(ExpressionSimplifier.HasComparisonMemo);
+        Assert.IsFalse(ExpressionSimplifier.HasObservedComparisonMemo);
+        Assert.IsFalse(ExpressionSimplifier.IsComparisonMemoRetained);
     }
 
     /// <summary>

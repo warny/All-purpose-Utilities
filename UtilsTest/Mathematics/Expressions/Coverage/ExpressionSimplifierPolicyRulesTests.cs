@@ -567,8 +567,8 @@ public class ExpressionSimplifierPolicyRulesTests
     /// <summary>
     /// A constant zero divisor of an integral or decimal division whose dividend is not inert never throws while simplifying:
     /// outside the gate the rule declines, so the dividend still runs first and the evaluation throws
-    /// <see cref="DivideByZeroException"/> as the source does. An inert dividend keeps the historical behavior under every policy
-    /// (the fold throws while simplifying, as evaluating the node would).
+    /// <see cref="DivideByZeroException"/> as the source does. Since S5A-04 an inert dividend is left to evaluation too, under
+    /// every policy: the rule and the fold threw while simplifying before, even where the source never evaluates the node.
     /// </summary>
     [TestMethod]
     public void ZeroDivisor_OfANonInertDividend_IsLeftToEvaluation()
@@ -589,17 +589,10 @@ public class ExpressionSimplifierPolicyRulesTests
             Assert.ThrowsExactly<DivideByZeroException>(() => decimalFunction(3m), options.ToString());
             Assert.AreEqual(1, _calls, options.ToString());
 
-            Exception? thrown = null;
-            try
-            {
-                simplifier.Simplify(inert);
-            }
-            catch (Exception exception)
-            {
-                thrown = exception is TargetInvocationException { InnerException: { } inner } ? inner : exception;
-            }
-
-            Assert.IsInstanceOfType<DivideByZeroException>(thrown, options.ToString());
+            Expression inertSimplified = simplifier.Simplify(inert);
+            Assert.AreEqual(ExpressionType.Divide, inertSimplified.NodeType, options.ToString());
+            Func<int, int> inertFunction = Expression.Lambda<Func<int, int>>(inertSimplified, I).Compile();
+            Assert.ThrowsExactly<DivideByZeroException>(() => inertFunction(3), options.ToString());
         }
     }
 

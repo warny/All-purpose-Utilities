@@ -112,15 +112,6 @@ public class ExpressionSimplifierNumericRobustnessTests
     /// <returns>The simplified expression.</returns>
     private static Expression Simplify(Expression expression) => new ExpressionSimplifier().Simplify(expression);
 
-    /// <summary>Asserts that <paramref name="action"/> throws <typeparamref name="TException"/> from a rule, unwrapping the reflective invocation.</summary>
-    /// <typeparam name="TException">The exception the rule throws.</typeparam>
-    /// <param name="action">The simplification to run.</param>
-    private static void AssertThrowsRuleException<TException>(Action action) where TException : Exception
-    {
-        Exception thrown = Assert.Throws<Exception>(action);
-        while (thrown is TargetInvocationException { InnerException: not null } wrapper) thrown = wrapper.InnerException;
-        Assert.IsInstanceOfType<TException>(thrown);
-    }
 
     /// <summary>Formats a result so that every <c>NaN</c> compares equal and signed zeros differ.</summary>
     /// <param name="value">The value.</param>
@@ -306,17 +297,21 @@ public class ExpressionSimplifierNumericRobustnessTests
     }
 
     /// <summary>
-    /// Integral and decimal division by zero keep throwing while simplifying, matching their runtime behavior. The
-    /// floating-point zero divisor, which this test characterized as still throwing until S5 P12, is covered by
-    /// <see cref="ExpressionSimplifierIeeeDivisionPowerTests"/>.
+    /// Integral and decimal division by zero threw while simplifying until S5A-04; the division is now kept and raises
+    /// <see cref="DivideByZeroException"/> when evaluated, matching the source. The floating-point zero divisor, which this
+    /// test characterized as still throwing until S5 P12, is covered by <see cref="ExpressionSimplifierIeeeDivisionPowerTests"/>.
     /// </summary>
     [TestMethod]
-    public void Simplify_IntegralOrDecimalZeroDivisor_Throws()
+    public void Simplify_IntegralOrDecimalZeroDivisor_IsDeferredToEvaluation()
     {
         ParameterExpression i = Expression.Parameter(typeof(int), "i");
         ParameterExpression m = Expression.Parameter(typeof(decimal), "m");
-        AssertThrowsRuleException<DivideByZeroException>(() => Simplify(Expression.Divide(i, Expression.Constant(0))));
-        AssertThrowsRuleException<DivideByZeroException>(() => Simplify(Expression.Divide(m, Expression.Constant(0m))));
+        var integral = (Expression<Func<int, int>>)Simplify(Expression.Lambda<Func<int, int>>(Expression.Divide(i, Expression.Constant(0)), i));
+        var fractional = (Expression<Func<decimal, decimal>>)Simplify(Expression.Lambda<Func<decimal, decimal>>(Expression.Divide(m, Expression.Constant(0m)), m));
+        Assert.AreEqual(ExpressionType.Divide, integral.Body.NodeType);
+        Assert.AreEqual(ExpressionType.Divide, fractional.Body.NodeType);
+        Assert.ThrowsExactly<DivideByZeroException>(() => integral.Compile()(7));
+        Assert.ThrowsExactly<DivideByZeroException>(() => fractional.Compile()(7m));
     }
 
     /// <summary>Large integral and decimal constants keep their exact comparison: none is taken for zero, one or minus one.</summary>
