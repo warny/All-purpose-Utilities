@@ -225,7 +225,7 @@ Validation (base and branch measured on the same machine, base in a detached wor
 
 | Suite | `9be5fcff` | branch |
 |---|---|---|
-| `UtilsTest.Unit` (Release) | 14,764 passed of 14,765 | 14,764 passed of 14,765 before the new test class, then +8 (`ExpressionSimplifierDeferredFoldTests`) |
+| `UtilsTest.Unit` (Release) | 14,764 passed of 14,765 | 14,772 passed of 14,773 (+8: `ExpressionSimplifierDeferredFoldTests`) |
 | `UtilsTest.Security` (Release) | 399 passed of 402 | 399 passed of 402 |
 | `UtilsTest.Functional` (Release) | 383 passed | 383 passed |
 | ETC Debug (`…Expressions.Coverage`) | 354 passed of 355 | 354 passed of 355 |
