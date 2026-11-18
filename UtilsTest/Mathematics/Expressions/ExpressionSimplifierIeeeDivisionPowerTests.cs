@@ -116,15 +116,6 @@ public class ExpressionSimplifierIeeeDivisionPowerTests
         return simplified;
     }
 
-    /// <summary>Asserts that <paramref name="action"/> throws <typeparamref name="TException"/> from a rule, unwrapping the reflective invocation.</summary>
-    /// <typeparam name="TException">The exception the rule throws.</typeparam>
-    /// <param name="action">The simplification to run.</param>
-    private static void AssertThrowsRuleException<TException>(Action action) where TException : Exception
-    {
-        Exception thrown = Assert.Throws<Exception>(action);
-        while (thrown is TargetInvocationException { InnerException: not null } wrapper) thrown = wrapper.InnerException;
-        Assert.IsInstanceOfType<TException>(thrown);
-    }
 
     // ------------------------------------------------------------------------------------------
     // P12 - floating-point division by zero

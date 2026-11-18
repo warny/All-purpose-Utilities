@@ -112,15 +112,6 @@ public class ExpressionSimplifierNumericRobustnessTests
     /// <returns>The simplified expression.</returns>
     private static Expression Simplify(Expression expression) => new ExpressionSimplifier().Simplify(expression);
 
-    /// <summary>Asserts that <paramref name="action"/> throws <typeparamref name="TException"/> from a rule, unwrapping the reflective invocation.</summary>
-    /// <typeparam name="TException">The exception the rule throws.</typeparam>
-    /// <param name="action">The simplification to run.</param>
-    private static void AssertThrowsRuleException<TException>(Action action) where TException : Exception
-    {
-        Exception thrown = Assert.Throws<Exception>(action);
-        while (thrown is TargetInvocationException { InnerException: not null } wrapper) thrown = wrapper.InnerException;
-        Assert.IsInstanceOfType<TException>(thrown);
-    }
 
     /// <summary>Formats a result so that every <c>NaN</c> compares equal and signed zeros differ.</summary>
     /// <param name="value">The value.</param>
