@@ -359,6 +359,14 @@ treated as unable to throw: it overflows near <code>decimal.MaxValue</code>. Rew
 <code>(a / 0.5m) - (a / 0.5m)</code> is kept and still throws <code>OverflowException</code> at <code>a = decimal.MaxValue</code> instead of returning <code>0</code>. A
 constant divisor of magnitude 1 or more (<code>a / 2m</code>, <code>a / -1m</code>) is still inert.</li>
 </ul>
+<h2 id="expression-engine-doubleround-overloads-s5a-02">Expression engine: <code>double.Round</code> overloads (S5A-02)</h2>
+<p>Bug fix of <code>ExpressionSimplifier</code> (and of <code>ExpressionComparer</code>, which simplifies first); no public signature changed.
+<code>double.Round(x, digits)</code>, <code>double.Round(x, mode)</code> and <code>double.Round(x, digits, mode)</code> used to make <code>Simplify</code> throw
+<code>InvalidOperationException</code> (&quot;The method Round could not be located on System.Double&quot;); they are now kept with their own method
+and arguments (the arguments are still simplified, none is converted to <code>double</code>). The other <code>double</code> calls the conversion rules
+match, <code>double.Round(x)</code> included, are unchanged. A derived simplifier calling a <code>*ConversionMath</code> rule directly with a source
+node that is not a <code>double</code> call keeps the historical lookup and its exception. The record is in
+<code>Utils/TODO-2026-11-04-s5-simplifier-deep-audit.md</code> (re-audit of 2026-11-18).</p>
 <h2 id="expression-engine-negated-dividend-of-a-signed-integral-division-c3a-01-c-09">Expression engine: negated dividend of a signed integral division (C3A-01, C-09)</h2>
 <p>Behavior change of <code>ExpressionSimplifier</code> (and of <code>ExpressionComparer</code>); no public signature changed. <code>(-t) / u</code> is kept as
 written for <code>short</code>, <code>int</code> and <code>long</code> instead of becoming <code>-(t / u)</code>, which returned the opposite quotient when <code>t</code> evaluates

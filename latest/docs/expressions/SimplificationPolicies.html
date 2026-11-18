@@ -245,6 +245,12 @@ guarantees remain (side effects, allocation, determinism, mutable-state ordering
 </tr>
 </tbody>
 </table>
+<p><strong>Known deviation (S5A-04, open).</strong> Operation 5 is not enforced yet: a throwing constant fold (an integral or decimal zero
+divisor in <code>DivideWithZeroOrOne</code>, <code>MinValue / -1</code> and decimal overflows in <code>FoldConstants</code>) raises its exception while
+simplifying, under every policy, including in conditional branches, short-circuit operands, <code>??</code>, switch bodies, try and catch
+bodies, filters and uninvoked lambdas, where the source does not evaluate the node. The proposed correction (a fold that would
+throw declines, so the node raises its exception at evaluation) changes the public behavior of <code>Simplify</code> and waits for a
+contract decision: <code>Utils/TODO-2026-11-04-s5-simplifier-deep-audit.md</code>, re-audit of 2026-11-18.</p>
 <p>The three categories suffice: operations 1 and 2 are the only ones that change whether or when a category is observed, 3 and 4
 reduce to them, and 5 is never allowed. A finer &quot;operation kind&quot; dimension (for example, allowing reordering but not dropping)
 has no demonstrated need; if C ever needs one, it would be a new, restrictive option whose default keeps today's meaning of a
