@@ -41,8 +41,14 @@ internal enum FlattenRefusalCause
     /// <summary>Global: a constant coefficient equals a constant term.</summary>
     CoefficientEqualsConstant,
 
-    /// <summary>Global: the chain holds a third constant term.</summary>
+    /// <summary>Global: the chain holds a third constant term (a second one for a grouped quotient chain, §16).</summary>
     TooManyConstants,
+
+    /// <summary>
+    /// Global, grouped quotient chains only (docs/expressions/SimplifierFlatten.md §16): the chain holds no linear quotient. Every
+    /// sub-chain holds none either.
+    /// </summary>
+    NoQuotient,
 
     /// <summary>
     /// An anchored chain (Flatten mission C2), refused by an instance of an explicit policy, whose audited rules may run
@@ -99,6 +105,18 @@ internal sealed class FlattenAdmissionStatistics
 
     /// <summary>The number of factorable chains simplified by the global factoring.</summary>
     public long FactorableChains;
+
+    /// <summary>The number of grouped quotient chain roots admitted (docs/expressions/SimplifierFlatten.md §16).</summary>
+    public long GroupedQuotient;
+
+    /// <summary>The number of walks of the grouped-quotient test, each after a linear refusal for a subtracted group.</summary>
+    public long GroupedWalks;
+
+    /// <summary>The number of grouped-quotient tests answered by the table of known grouped refusals, without any walk.</summary>
+    public long KnownGroupedRefusals;
+
+    /// <summary>The number of grouped-quotient refusals per cause, indexed by <see cref="FlattenRefusalCause"/>.</summary>
+    public long[] GroupedCauses = new long[(int)FlattenRefusalCause.KnownRefusal + 1];
 
     /// <summary>The number of groups of identical monomials merged by the additive canonicalization (mission C3c, phase A).</summary>
     public long MonomialGroups;

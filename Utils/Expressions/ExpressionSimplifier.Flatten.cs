@@ -89,6 +89,10 @@ public partial class ExpressionSimplifier
                 session.AdmittedFactorableRoot = null;
                 if (ReferenceEquals(factorableRoot, source)) return FlattenFactorableChain(source, terms);
             }
+
+            // §16: a grouped quotient chain, recognized the same way. Its terms are terms of a linear chain, so it is canonicalized
+            // below as one, from its signed terms.
+            session.AdmittedGroupedQuotientRoot = null;
         }
 
         foreach (FlattenedTerm term in terms)
@@ -403,6 +407,17 @@ public partial class ExpressionSimplifier
             refusal = refusal with { Depth = Math.Min(refusal.Depth, spineRefusalDepth) };
         }
 
+        // §16: a subtracted group only refuses the linear family; a chain of linear terms and quotients that subtracts groups is
+        // a grouped quotient chain. Every other linear refusal is a refusal of that family too (its conditions are those of a
+        // linear chain, with at most one constant and no anchor), so the test runs only after this one, inside an operation.
+        if (!admissible && refusal.Cause == FlattenRefusalCause.SubtractedGroup && session is not null && !t_groupedQuotientChainsDisabled)
+        {
+            if (TryAdmitGroupedQuotientChain(binary, session, statistics, out int groupedRefusalDepth)) return ExpressionRuleRejection.None;
+
+            // A node is a known refusal only if every family refuses it: down to the shallower of the proven depths.
+            refusal = refusal with { Depth = Math.Min(refusal.Depth, groupedRefusalDepth) };
+        }
+
         if (admissible && anchorDepth >= 0 && !_usesHistoricalAdmission)
         {
             if (statistics is not null) statistics.Causes[(int)FlattenRefusalCause.AnchoredUnderPolicy]++;
@@ -417,7 +432,7 @@ public partial class ExpressionSimplifier
             else statistics.Accepted++;
         }
 
-        if (!admissible && refusal.Depth > 0 && session is not null) RecordRefusedSpine(binary, refusal, session, statistics);
+        if (!admissible && refusal.Depth > 0 && session is not null) RecordRefusedSpine(binary, refusal, ref session.FlattenRefusals, statistics);
         return admissible ? ExpressionRuleRejection.None : ExpressionRuleRejection.ChainNotAdmitted;
     }
 
@@ -454,8 +469,12 @@ public partial class ExpressionSimplifier
     /// </summary>
     /// <param name="root">The refused root.</param>
     /// <param name="refusal">The refusal reported by the walk; its depth is at least one.</param>
-    /// <param name="session">The session of the running operation, which owns the table.</param>
+    /// <param name="refusals">
+    /// The table of the running operation's session that receives the nodes, created on first use: the shared table of the
+    /// refusals of every family, or the table of one family (§16).
+    /// </param>
     /// <param name="statistics">The opt-in counters of the thread, or <see langword="null"/>.</param>
+    /// <returns>The spine index of the deepest node recorded, <c>0</c> when none was: every node down to it is proven refused.</returns>
     /// <remarks>
     /// <para>
     /// The pass follows the spine from the root, with one structural visit per node, and stops at the first of: the spine
@@ -472,17 +491,17 @@ public partial class ExpressionSimplifier
     /// refusal) in the middle of the pass leaves a correct table.
     /// </para>
     /// </remarks>
-    private void RecordRefusedSpine(BinaryExpression root, in ChainRefusal refusal, ExpressionResourceBudget.Session session, FlattenAdmissionStatistics? statistics)
+    private int RecordRefusedSpine(BinaryExpression root, in ChainRefusal refusal, ref ExpressionNodeSet? refusals, FlattenAdmissionStatistics? statistics)
     {
-        if (refusal.Key is not null && HoldsOccurrence(root, refusal)) return;
+        if (refusal.Key is not null && HoldsOccurrence(root, refusal)) return 0;
 
-        ExpressionNodeSet refusals = session.FlattenRefusals ??= new ExpressionNodeSet();
+        refusals ??= new ExpressionNodeSet();
         BinaryExpression node = root;
         for (int index = 1; index <= refusal.Depth; index++)
         {
             BinaryExpression? left = AsCrossedAdditiveNode(node.Left);
             BinaryExpression? right = AsCrossedAdditiveNode(node.Right);
-            if (left is not null && right is not null) return;
+            if (left is not null && right is not null) return index - 1;
 
             ExpressionResourceBudget.ConsumeStructuralVisit();
             node = (left ?? right)!;
@@ -493,8 +512,10 @@ public partial class ExpressionSimplifier
                 if (added) statistics.RecordedRefusals++;
             }
 
-            if (refusal.Key is not null && HoldsOccurrence(node, refusal)) return;
+            if (refusal.Key is not null && HoldsOccurrence(node, refusal)) return index;
         }
+
+        return refusal.Depth;
     }
 
     /// <summary>
@@ -888,8 +909,27 @@ public partial class ExpressionSimplifier
         /// <summary>Whether a term was recorded.</summary>
         private bool _recorded;
 
+        /// <summary>
+        /// The number of constant terms the chain may hold: <c>2</c> for a linear chain (the default value of the field,
+        /// <c>0</c>, stands for it), <c>1</c> for a grouped quotient chain (<see cref="ForGroupedChain"/>, §16).
+        /// </summary>
+        private int _constantLimit;
+
+        /// <summary>Whether a linear quotient was recorded.</summary>
+        private bool _quotient;
+
         /// <summary>Gets whether at least one term was recorded.</summary>
         public readonly bool HasOperands => _recorded;
+
+        /// <summary>Gets whether at least one linear quotient was recorded.</summary>
+        public readonly bool HasQuotients => _quotient;
+
+        /// <summary>
+        /// Creates the operands of a grouped quotient chain (<see cref="IsGroupedLinearQuotientChain"/>, §16): the checks of a
+        /// linear chain, with at most one constant term.
+        /// </summary>
+        /// <returns>The empty operands.</returns>
+        public static LinearChainOperands ForGroupedChain() => new() { _constantLimit = 1 };
 
         /// <summary>Records a linear term.</summary>
         /// <param name="term">A term accepted by <see cref="IsLinearTerm"/>.</param>
@@ -908,7 +948,7 @@ public partial class ExpressionSimplifier
                 case ParameterExpression parameter:
                     return AddParameter(parameter, depth, out refusal);
                 case ConstantExpression constant:
-                    if (++_constantCount > 2)
+                    if (++_constantCount > (_constantLimit == 0 ? 2 : _constantLimit))
                     {
                         refusal = new ChainRefusal(FlattenRefusalCause.TooManyConstants, _firstConstantDepth, null);
                         return false;
@@ -919,6 +959,7 @@ public partial class ExpressionSimplifier
                     _constants.Add(value);
                     return Accept(!_coefficients.Contains(value), FlattenRefusalCause.CoefficientEqualsConstant, depth, value, out refusal);
                 case BinaryExpression { NodeType: ExpressionType.Divide } quotient:
+                    _quotient = true;
                     return AddParameter((ParameterExpression)quotient.Left, depth, out refusal)
                         && AddDenominator((ParameterExpression)quotient.Right, depth, out refusal);
                 default:
