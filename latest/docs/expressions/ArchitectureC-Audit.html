@@ -257,12 +257,12 @@ relaxation only an explicit policy grants, e.g. an operator exception), — (no 
 </tr>
 <tr>
 <td>idem</td>
-<td>integral/decimal <code>t / 0</code> <strong>throws while simplifying</strong></td>
+<td>integral/decimal <code>t / 0</code> <strong>threw while simplifying</strong> (declined since the S5A-04 fix, 2026-11-18)</td>
 <td>(all)</td>
 <td>–</td>
 <td>–</td>
-<td>moves an exception to simplification time</td>
-<td><strong>never outside the gate</strong> (B §2.3, op. 5; S5A-04)</td>
+<td>moved an exception to simplification time</td>
+<td><strong>never</strong>, under any policy (B §2.3, op. 5; S5A-04)</td>
 <td>–</td>
 </tr>
 <tr>
@@ -1066,7 +1066,7 @@ no ordinary division or negation node.</li>
 <li><strong>Fix.</strong> <code>|| IsSignedIntegral(e.Type)</code> added to the guard of the overload, as on its mirror. No other rule, Flatten, the
 admission, the policies, the budgets or the ETC R4/A-10 invariants are touched. <code>float</code>, <code>double</code> and <code>decimal</code> keep the
 rewrite (exact: negation never rounds or overflows there; the only difference is the sign of a <code>NaN</code>, outside the IEEE
-contract). A constant divisor <code>0</code> still throws while simplifying (<code>DivideWithZeroOrOne</code>, S5A-04), as before.</li>
+contract). A constant divisor <code>0</code> still threw while simplifying (<code>DivideWithZeroOrOne</code>, S5A-04), as before; since the S5A-04 fix (2026-11-18) it is declined and kept for evaluation.</li>
 <li><strong>Tests</strong> (<code>ExpressionSimplifierDivisionWithNegateTests</code>, 8): the exact divergence domain of the historical rewrite per type
 and evaluation mode; the rewrite refused for <code>short</code>/<code>int</code>/<code>long</code> under five policies (default, each axis relaxed, all
 relaxed) and for a derived simplifier, the result evaluated like the source, compiled and interpreted, on a grid including

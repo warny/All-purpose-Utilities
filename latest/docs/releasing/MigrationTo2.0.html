@@ -367,6 +367,29 @@ and arguments (the arguments are still simplified, none is converted to <code>do
 match, <code>double.Round(x)</code> included, are unchanged. A derived simplifier calling a <code>*ConversionMath</code> rule directly with a source
 node that is not a <code>double</code> call keeps the historical lookup and its exception. The record is in
 <code>Utils/TODO-2026-11-04-s5-simplifier-deep-audit.md</code> (re-audit of 2026-11-18).</p>
+<h2 id="expression-engine-arithmetic-exceptions-deferred-to-evaluation-s5a-04">Expression engine: arithmetic exceptions deferred to evaluation (S5A-04)</h2>
+<p>Intentional behavior change of <code>ExpressionSimplifier</code> (and of <code>ExpressionComparer</code>, which simplifies first), under <strong>every</strong>
+policy (<code>ExpressionSimplifierOptions.Default</code> and any explicit one); no public signature and no option changed. Constant folding
+no longer evaluates an arithmetic operation that throws:</p>
+<ul>
+<li>An integral or <code>decimal</code> division by a constant zero (<code>i / 0</code>, <code>1 / 0</code>, <code>1m / 0m</code>), <code>int.MinValue / -1</code>, <code>long.MinValue / -1</code>
+and a <code>decimal</code> addition, subtraction, multiplication or division that overflows (<code>decimal.MaxValue * 2m</code>) used to make
+<code>Simplify</code> throw <code>DivideByZeroException</code> or <code>OverflowException</code> (wrapped in <code>TargetInvocationException</code> when raised by a rule).
+<code>Simplify</code> now returns, and the failing operation stays in the tree, with its operator, method, type and place: it raises the
+same exception when, and only if, it is evaluated.</li>
+<li>The exception therefore moves back from simplification time to evaluation time. A node the source never evaluates (a branch
+of <code>?:</code>, the right operand of <code>&amp;&amp;</code>, <code>||</code> or <code>??</code>, a switch case or default, a caught try body, a catch body, a filter, an
+uninvoked lambda) no longer makes simplification fail; a node that is always evaluated throws when the compiled tree runs.</li>
+<li>Code that relied on <code>Simplify</code> to detect such trees must now compile and evaluate them, or inspect the result.</li>
+<li>Unchanged: successful folds (same constant, type and bits), IEEE-754 folds (<code>float</code>, <code>double</code>), and every exception that is
+not an arithmetic exception of a fold: invalid engine usage (<code>ArgumentException</code>, <code>InvalidOperationException</code>), resource
+limits (<code>ExpressionResourceLimitException</code>, the execution-stack guard), user code (custom operators, conversions, methods,
+extension nodes, the <code>Equals</code> of an opaque constant the comparer calls) and derived simplifiers' own rules.</li>
+<li>Derived simplifiers calling <code>DivideWithZeroOrOne</code>, <code>AdditionOfConstants</code>, <code>SubstractionOfConstants</code>,
+<code>MultiplicationOfConstants</code> or <code>DivisionOfConstants</code> directly receive <code>null</code> (declined) instead of the exception.</li>
+</ul>
+<p>The record is in <code>Utils/TODO-2026-11-04-s5-simplifier-deep-audit.md</code> (S5A-04, disposition of 2026-11-18) and
+<code>docs/expressions/SimplificationPolicies.md</code> §2.3.</p>
 <h2 id="expression-engine-negated-dividend-of-a-signed-integral-division-c3a-01-c-09">Expression engine: negated dividend of a signed integral division (C3A-01, C-09)</h2>
 <p>Behavior change of <code>ExpressionSimplifier</code> (and of <code>ExpressionComparer</code>); no public signature changed. <code>(-t) / u</code> is kept as
 written for <code>short</code>, <code>int</code> and <code>long</code> instead of becoming <code>-(t / u)</code>, which returned the opposite quotient when <code>t</code> evaluates
