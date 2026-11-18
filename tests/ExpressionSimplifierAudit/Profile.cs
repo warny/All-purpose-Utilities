@@ -107,7 +107,7 @@ internal static class Profile
             high *= 2;
         }
 
-        long low = high / 2;
+        long low = high == 64 ? 0 : high / 2;
         while (low + 1 < high)
         {
             long middle = low + (high - low) / 2;
