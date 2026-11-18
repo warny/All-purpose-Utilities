@@ -319,6 +319,16 @@ Both restore the C-06 promise that an exception the evaluation can raise is kept
   `(a / 0.5m) - (a / 0.5m)` is kept and still throws `OverflowException` at `a = decimal.MaxValue` instead of returning `0`. A
   constant divisor of magnitude 1 or more (`a / 2m`, `a / -1m`) is still inert.
 
+## Expression engine: `double.Round` overloads (S5A-02)
+
+Bug fix of `ExpressionSimplifier` (and of `ExpressionComparer`, which simplifies first); no public signature changed.
+`double.Round(x, digits)`, `double.Round(x, mode)` and `double.Round(x, digits, mode)` used to make `Simplify` throw
+`InvalidOperationException` ("The method Round could not be located on System.Double"); they are now kept with their own method
+and arguments (the arguments are still simplified, none is converted to `double`). The other `double` calls the conversion rules
+match, `double.Round(x)` included, are unchanged. A derived simplifier calling a `*ConversionMath` rule directly with a source
+node that is not a `double` call keeps the historical lookup and its exception. The record is in
+`Utils/TODO-2026-11-04-s5-simplifier-deep-audit.md` (re-audit of 2026-11-18).
+
 ## Expression engine: negated dividend of a signed integral division (C3A-01, C-09)
 
 Behavior change of `ExpressionSimplifier` (and of `ExpressionComparer`); no public signature changed. `(-t) / u` is kept as

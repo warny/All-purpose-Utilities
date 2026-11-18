@@ -139,6 +139,18 @@ public partial class ExpressionSimplifier
     /// <c>(functionName, arity) -&gt; MethodInfo</c> cache was measured and rejected. Only the temporary
     /// all-<see cref="FloatingPointType"/> lookup-signature array is reused, via
     /// <see cref="ResolveTransformCallSignature"/>.
+    /// <para>
+    /// S5A-02: the rules match every overload of their function by declaring type and name only, so the engine also gives
+    /// them calls such as <see cref="double.Round(double, int)"/>, <see cref="double.Round(double, MidpointRounding)"/> or
+    /// <see cref="double.Round(double, int, MidpointRounding)"/>, which no all-<see cref="FloatingPointType"/> signature
+    /// represents. When <paramref name="e"/> is such a call — a runtime reflection object (the provenance gate is asked
+    /// before any member is read) declared by <see cref="FloatingPointType"/> — the call is rebuilt only with the very
+    /// method it already holds; when the resolved method is another one or none, <paramref name="e"/> (the prepared call:
+    /// every argument kept, in order) is returned unchanged. A call is never synthesized from its name and arity alone, and
+    /// no <see cref="int"/> or <see cref="MidpointRounding"/> argument is converted to <see cref="double"/>. Any other
+    /// <paramref name="e"/> (a derived simplifier calling a rule directly) keeps the historical resolution, its
+    /// <see cref="InvalidOperationException"/> included.
+    /// </para>
     /// </remarks>
     private Expression TransformCall(Type requiredInterface, string functionName, Expression e, Expression[] expressions)
     {
@@ -151,9 +163,21 @@ public partial class ExpressionSimplifier
             throw new InvalidOperationException($"{FloatingPointType} does not implement {requiredInterface}.");
         }
 
+        MethodInfo? sourceMethod = e is MethodCallExpression { Object: null } source
+            && ExpressionReflectionProvenance.IsRuntime(source.Method)
+            && source.Method.DeclaringType == FloatingPointType
+                ? source.Method
+                : null;
+
         Type[] signature = ResolveTransformCallSignature(expressions.Length);
 
         MethodInfo? method = FloatingPointType.GetMethod(functionName, BindingFlags.Public | BindingFlags.Static, signature);
+        if (sourceMethod is not null && (method is null || !method.Equals(sourceMethod)))
+        {
+            // An overload outside the all-double signatures (or another method than the source's): kept as prepared.
+            return e;
+        }
+
         if (method is null)
         {
             throw new InvalidOperationException($"The method {functionName} could not be located on {FloatingPointType}.");
@@ -211,6 +235,8 @@ public partial class ExpressionSimplifier
 
     /// <summary>
     /// Converts a call to <see cref="double.Round(double)"/> into a call to <see cref="IFloatingPoint{T}.Round(T)"/>.
+    /// The other overloads (<see cref="double.Round(double, int)"/>, <see cref="double.Round(double, MidpointRounding)"/>,
+    /// <see cref="double.Round(double, int, MidpointRounding)"/>) are kept as prepared (S5A-02, see <c>TransformCall</c>).
     /// </summary>
     [ExpressionCallSignature(typeof(double), nameof(double.Round))]
     protected Expression RoundConversionMath(Expression e, Expression[] expressions)

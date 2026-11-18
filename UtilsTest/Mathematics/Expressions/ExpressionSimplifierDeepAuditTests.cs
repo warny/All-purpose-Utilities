@@ -119,21 +119,35 @@ public class ExpressionSimplifierDeepAuditTests
     }
 
     /// <summary>
-    /// S5A-02: the <c>*ConversionMath</c> rules rebuild a <see cref="double"/> call by looking the method up with an all-double
+    /// S5A-02: the <c>*ConversionMath</c> rules rebuilt a <see cref="double"/> call by looking the method up with an all-double
     /// signature of the same arity, so the <see cref="double.Round(double, int)"/>, <see cref="double.Round(double, MidpointRounding)"/>
-    /// and <see cref="double.Round(double, int, MidpointRounding)"/> overloads throw <see cref="InvalidOperationException"/>. The
-    /// one-argument overload and <see cref="Math.Round(double, int)"/> (not matched) are unaffected.
+    /// and <see cref="double.Round(double, int, MidpointRounding)"/> overloads threw <see cref="InvalidOperationException"/> on a
+    /// valid tree. Fixed (mission "S5 residual correctness"): a source call is rebuilt only with the very method it holds, so these
+    /// overloads are kept as prepared, their arguments simplified and none converted. The one-argument overload and
+    /// <see cref="Math.Round(double, int)"/> (not matched) are unchanged; the detailed controls are in
+    /// <c>ExpressionSimplifierRoundOverloadTests</c>.
     /// </summary>
     [TestMethod]
-    public void S5A02_DoubleRoundWithANonDoubleArgument_Throws()
+    public void S5A02_DoubleRoundWithANonDoubleArgument_IsKept()
     {
-        Expression digits = Expression.Call(typeof(double).GetMethod(nameof(double.Round), [typeof(double), typeof(int)])!, X, Expression.Constant(2));
-        Expression mode = Expression.Call(typeof(double).GetMethod(nameof(double.Round), [typeof(double), typeof(MidpointRounding)])!, X, Expression.Constant(MidpointRounding.AwayFromZero));
-        Expression both = Expression.Call(typeof(double).GetMethod(nameof(double.Round), [typeof(double), typeof(int), typeof(MidpointRounding)])!, X, Expression.Constant(2), Expression.Constant(MidpointRounding.ToEven));
+        MethodInfo digitsMethod = typeof(double).GetMethod(nameof(double.Round), [typeof(double), typeof(int)])!;
+        MethodInfo modeMethod = typeof(double).GetMethod(nameof(double.Round), [typeof(double), typeof(MidpointRounding)])!;
+        MethodInfo bothMethod = typeof(double).GetMethod(nameof(double.Round), [typeof(double), typeof(int), typeof(MidpointRounding)])!;
+        (Expression Source, MethodInfo Method, string Text)[] cases =
+        [
+            (Expression.Call(digitsMethod, X, Expression.Constant(2)), digitsMethod, "Double.Round(x, 2)"),
+            (Expression.Call(modeMethod, X, Expression.Constant(MidpointRounding.AwayFromZero)), modeMethod, "Double.Round(x, AwayFromZero)"),
+            (Expression.Call(bothMethod, X, Expression.Constant(2), Expression.Constant(MidpointRounding.ToEven)), bothMethod, "Double.Round(x, 2, ToEven)"),
+        ];
 
-        foreach (Expression source in new[] { digits, mode, both })
+        foreach ((Expression source, MethodInfo method, string text) in cases)
         {
-            Assert.IsInstanceOfType<InvalidOperationException>(Innermost(() => Simplify(source)), Text(source));
+            Assert.IsNull(Innermost(() => Simplify(source)), Text(source));
+            var simplified = (MethodCallExpression)Simplify(source);
+            Assert.AreSame(method, simplified.Method, text);
+            Assert.AreEqual(text, Text(simplified));
+            Assert.IsNull(Innermost(() => ExpressionComparer.Default.GetHashCode(source)), text);
+            Assert.IsTrue(ExpressionComparer.Default.Equals(source, simplified), text);
         }
 
         Assert.AreEqual("Double.Round(x)", Text(Simplify(Expression.Call(typeof(double).GetMethod(nameof(double.Round), [typeof(double)])!, X))));

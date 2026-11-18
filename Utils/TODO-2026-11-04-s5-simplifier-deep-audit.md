@@ -52,7 +52,7 @@ stated. The base was measured in a detached worktree of `c509bdf6`, so the branc
 | Finding | Status | Current evidence (reproducer, test) | Location |
 |---|---|---|---|
 | S5A-01 `x^y + z^2` NRE | **FIXED** (PR #705) | `terminate` 0 exception, `converge` 0 error; `S5A01_SumOfPowersWithSymbolicExponent_Declines` | `ExpressionSimplifier.INumber.cs`, `AdditionOfCos2andSin2Number` |
-| S5A-02 `double.Round(x, 2)` throws | **OPEN-CONFIRMED** | `double.Round(x, 2)`, `(x, mode)`, `(x, 2, mode)` throw `InvalidOperationException` (`s3`); `S5A02_DoubleRoundWithANonDoubleArgument_Throws` | `ExpressionSimplifier.Math.cs`, `TransformCall` |
+| S5A-02 `double.Round(x, 2)` throws | **FIXED** (this branch) | see below; `S5A02_DoubleRoundWithANonDoubleArgument_IsKept`, `ExpressionSimplifierRoundOverloadTests` | `ExpressionSimplifier.Math.cs`, `TransformCall` |
 | S5A-03 decimal nested divisions | **FIXED** (P18b, PR #684) | `diff` decimal: 0 `EXC-*`; `S5A03_DecimalNestedDivision_KeepsTheExceptions` | `IsOrdinaryFieldDivision` |
 | S5A-04 exception of an unevaluated branch | **OPEN-CONFIRMED** (contract decision needed) | every lazy context, every policy (targeted probes); `S5A04_ExceptionOfAnUnevaluatedBranch_IsRaisedBySimplification` covers the conditional only (missing coverage) | `DivideWithZeroOrOne`, `FoldConstants` callers |
 | S5A-05 rule results left for the next pass | **PARTIAL** | original examples fixed by C3c/C3d (`S5A05_RuleResultsLeftForTheNextPass`); 301 corpus cases still need 2–4 passes (residues `t - (sum)` 66, `/ ±1` 63 = L-2, constant pair 25, `-(product)` 22) | plan order, `FinishReassociation` |
@@ -99,6 +99,28 @@ chain is treated level by level and the `SubstractionOfEqualsElements` probe of 
 (2,665 of 2,720 comparer simplifications are memo hits; the rest grow with the depth). `n`, whose call term is admitted, is
 linear. Admitting opaque carriers needs them in the C3c proof obligations (stop condition: a global C3c change); `o`/`r`
 re-run user code, which the contract forbids to reuse (P15).
+
+### S5A-02 — exact overload handling (fixed)
+
+The 25 `*ConversionMath` rules (26 function names with `Pow`) match a call by declaring type `double` and name only. Audit of
+every public static `double` method they match (reflection over the rule attributes, `Inventory_OnlyRoundHasOverloadsWithOtherParameterTypes`):
+
+| Functions | Source parameters → return | Target before | Target now |
+|---|---|---|---|
+| `Abs`, `Acos`, `Acosh`, `Asin`, `Asinh`, `Atan`, `Atanh`, `Cbrt`, `Ceiling`, `Cos`, `Cosh`, `Floor`, `Log2`, `Log10`, `Sin`, `Sinh`, `Sqrt`, `Tan`, `Tanh`, `Round(double)`, `Log(double)` | `double` → `double` | the same method (lookup by name and `(double)`) | unchanged: the same method |
+| `Sign` | `double` → `int` | the same method | unchanged |
+| `Min`, `Max`, `Log(double, double)` | `double, double` → `double` | the same method | unchanged |
+| `Clamp` | `double, double, double` → `double` | the same method | unchanged |
+| `Pow` | `double, double` → `double` | `PowerConvertionNumber1` builds a power node first (`PowerConversionMath` shadowed) | unchanged |
+| `Round(double, int)`, `Round(double, MidpointRounding)`, `Round(double, int, MidpointRounding)` | heterogeneous | **none**: the `(double, double)` / `(double, double, double)` lookup fails, `InvalidOperationException` | the prepared call itself, same method, arguments neither converted nor dropped |
+
+No conversion was ever applied on a supported overload (a call's arguments already have the parameter types). The rule now
+rebuilds a source call that is a runtime reflection object declared by `double` (provenance asked before any member is read)
+only with the very method it holds, and returns the prepared call otherwise (an `Expression[]` rule cannot return `null`: the
+engine would propagate it). A derived simplifier calling a rule directly with another source node keeps the historical lookup
+and exception (`TransformCall_RoundDoubleInt_OtherSourceNode_KeepsTheHistoricalResolution`). No method-resolution cache was
+added. `TransformCall_RoundDoubleInt_DoesNotReuseSourceMethodInfo_ThrowsInvalidOperationException` pinned the defect itself on
+the engine's own path and became `TransformCall_RoundDoubleInt_KeepsTheSourceCall`.
 
 ### S5A-04 — exception timing (open, separate pull request)
 
@@ -173,6 +195,12 @@ checked negations by `IsOrdinaryUnaryNegate`. Experiment (a local `NegateOfNegat
 unary of an additive chain, so `-(-x)` itself still needs two passes (fixed@2 rises from 272 to 423 cases), and the comparer
 invariant `Equals(a, b) == Equals(S(a), S(b))` gets 3 violations. It changes canonical results without being isolable: deferred
 (it needs the flatten path to treat a double negation, a C3 change).
+
+
+
+Status: **audit report, open findings**. Companion of the S5 stage of `TODO-2026-09-12-expression-simplifier-roadmap.md`
+(section "S5 deep audit"). No production rule, canonicalization strategy, budget or ordering was changed by this audit; the
+experiments that mutated the engine ran in a temporary worktree and are not part of the audit branch.
 
 ## 1. Reference
 
