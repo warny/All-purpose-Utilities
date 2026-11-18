@@ -248,21 +248,16 @@ public partial class ExpressionSimplifier
     /// <returns>The boxed sum, or <see langword="null"/> when a fold is refused.</returns>
     private static object? SumCoefficients(List<(Expression Term, bool IsNegative)> coefficients, Type type)
     {
+        // A declined fold (FoldConstants, S5A-04; unreachable here, since the type is never decimal) refuses the merge of the
+        // group, whose terms are kept.
         object? sum = null;
-        try
+        foreach ((Expression term, bool isNegative) in coefficients)
         {
-            foreach ((Expression term, bool isNegative) in coefficients)
-            {
-                object value = ((ConstantExpression)term).Value!;
-                sum = sum is null
-                    ? isNegative ? FoldConstants(ExpressionType.Subtract, type, Convert.ChangeType(0, type), value)?.Value : value
-                    : FoldConstants(isNegative ? ExpressionType.Subtract : ExpressionType.Add, type, sum, value)?.Value;
-                if (sum is null) return null;
-            }
-        }
-        catch (OverflowException)
-        {
-            return null;
+            object value = ((ConstantExpression)term).Value!;
+            sum = sum is null
+                ? isNegative ? FoldConstants(ExpressionType.Subtract, type, Convert.ChangeType(0, type), value)?.Value : value
+                : FoldConstants(isNegative ? ExpressionType.Subtract : ExpressionType.Add, type, sum, value)?.Value;
+            if (sum is null) return null;
         }
 
         return sum;
@@ -519,7 +514,10 @@ public partial class ExpressionSimplifier
     /// <param name="type">The type of the chain.</param>
     /// <param name="term">Receives the term, or <see langword="null"/> when the residues cancel.</param>
     /// <param name="isNegative">Receives the sign of the term.</param>
-    /// <returns><see langword="false"/> when the coefficient cannot be folded (a non-finite product): the candidate is abandoned.</returns>
+    /// <returns>
+    /// <see langword="false"/> when the coefficient cannot be folded (a non-finite product, or a fold <see cref="FoldConstants"/>
+    /// declines): the candidate is abandoned and the terms holding it are kept; the factors collected here are local.
+    /// </returns>
     private bool TryBuildFactoredTerm(FactoringCandidate candidate, Expression sum, Type type, out Expression? term, out bool isNegative)
     {
         term = null;
