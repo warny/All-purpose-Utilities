@@ -1,6 +1,6 @@
 # Flatten rule of `ExpressionSimplifier` (PR B)
 
-Status: first n-ary treatment of the simplifier, restricted to the *linear additive chains*; §11 describes the shared metadata of mission C3a, §12 the term analysis and the spine chains of mission C3b, §13 the global factoring of mission C3c. Built on the infrastructure of
+Status: first n-ary treatment of the simplifier, restricted to the *linear additive chains*; §11 describes the shared metadata of mission C3a, §12 the term analysis and the spine chains of mission C3b, §13 the global factoring of mission C3c, §14 the stabilization of mission C3d, §15 the trigonometric rule and the linear quotient chains, §16 the grouped quotient chains. Built on the infrastructure of
 [FlattenArchitecture.md](FlattenArchitecture.md) (PR A, `a9ec71ac`). No multiplicative chain, no division, no C3, no change to
 `ExpressionDerivation<T>` or `ExpressionIntegration<T>`.
 
@@ -1827,3 +1827,309 @@ equal up to a few hundred bytes of measurement noise; times within −3 % to +4 
   the level by level path, with its cost.
 - The free-parameter ties (S4) and the other residual families of §14.7 are unchanged.
 
+## 16. Grouped quotient chains
+
+The residual limit of §15.9: the right-associated and balanced subtracted groups of quotients, `subdivR`
+(`1 - (x1/x0 - (x2/x0 - (… - xn/x0)))`) and `subdivB` (`1 - ((x1/x0 + x2/x0) + (x3/x0 + x4/x0))`), stayed super-linear.
+The baseline is `master` `ed3ea136` (PR #705), built from a separate worktree; every figure compares the branch with it.
+
+### 16.1 Reproduction and root cause
+
+Diagnostic commit: the S5 harness `profile` reports the admission refusals per cause and the rule candidacies and declinations
+per rule, split between the main transformation and the comparer simplifications (opt-in, behavior-neutral), and gains the
+families `subdivRD` (distinct denominators), `subdivRF` (`float`), `subdivBM` (balanced, mixed signs) and `subdivBF`.
+
+Baseline growth (`ed3ea136` with the diagnostic commit, one process per point, median of the timed runs; a family stops after
+the first size above 3 s, and the right-associated families at 24 quotients, whose next size would take minutes per run):
+
+| Family | n | transformation visits | structural visits | comparer simplifications | median ms |
+|---|---:|---:|---:|---:|---:|
+| `subdivR` | 4 | 127 | 574 | 44 | 0.14 |
+| `subdivR` | 8 | 869 | 5,340 | 316 | 0.94 |
+| `subdivR` | 12 | 4,313 | 31,210 | 1,438 | 4.8 |
+| `subdivR` | 16 | 22,085 | 189,431 | 7,046 | 27.8 |
+| `subdivR` | 24 | 811,813 | 10,188,073 | 247,450 | 1,509 |
+| `subdivB` | 8 | 976 | 4,273 | 168 | 1.3 |
+| `subdivB` | 16 | 6,040 | 34,384 | 720 | 9.4 |
+| `subdivB` | 32 | 40,744 | 344,777 | 2,976 | 34.9 |
+| `subdivB` | 64 | 294,472 | 3,616,658 | 12,096 | 392 |
+| `subdivBM` | 8 | 512 | 2,870 | 168 | 0.65 |
+| `subdivBM` | 16 | 8,320 | 70,732 | 2,640 | 10.2 |
+| `subdivBM` | 24 | 293,292 | 3,813,720 | 89,414 | 570 |
+
+`subdivRD` (distinct denominators) and `subdivRF` (`float`) have exactly the counters of `subdivR` at every size (1.6 s at 24).
+
+At 8 quotients 748 of the 869 transformation visits of `subdivR` run inside comparer simplifications, and at 12 quotients every
+division rule is a candidate 990 times there (each quotient is transformed again about 80 times). The mechanism:
+
+1. The linear family refuses the root at once (a subtraction with a crossed right operand, `SubtractedGroup`, spine index 0),
+   and so does the factorable family (a quotient is not a factorable term, §13.4): the root is simplified level by level.
+   Each inner sub-chain without a subtracted group is admitted as a linear chain (§15.5); the admission walks themselves are
+   cheap (one or two nodes each).
+2. Every level `A - B` whose prepared `B` is a canonical sum is reassociated (`SubstractionWithAddition`,
+   `SubstractionWithSubstraction`, finished by `FinishReassociation`), which transforms the rebuilt nodes again; the canonical
+   form `(0 - q) + R` then goes through `SubstractionWithZero(0, t)` and `AdditionWithNegate`, whose comparison
+   (`EqualsKeepingSimplifiedForms`) simplifies both operands through the comparer.
+3. The canonical sums the comparer simplifies hold the symbolic zeros of `0 - q`: a zero is not a linear term, so they are
+   refused as linear chains (`NonLinearTerm`, 378 refusals at 12 quotients) and simplified level by level again, with the same
+   re-entries one comparison deeper. The memo of S5 P9 answers most repeated comparisons (1,294 hits for 1,438
+   simplifications at 12), but each level still simplifies a canonical prefix of growing length.
+
+The admission refusals, the walks of `IsLinearChain` and `IsFactorableChain` and `SubstractionOfEqualsElements` are not the
+cost: the cost is the repeated comparison-driven simplification of already prepared, already canonical groups.
+
+### 16.2 Reference characterization
+
+Before any production change, `ExpressionSimplifierGroupedQuotientReferenceTests` pins, with literal expectations that pass on
+`ed3ea136`, the result of one and two calls of the built-in simplifier on `subdivR`, `subdivB`, `subdivBM`, `subdivRD`,
+`subdivRF` and the `long` variant under the six policies of the brief (identical under all of them), the values on finite,
+zero, negative zero, infinite, NaN, tiny and huge operands and zero divisors (within the S3 reassociation latitude), the
+exceptions of the integral variant (a zero divisor throws as the source does) and the order of observable evaluations around a
+grouped chain (the simplification itself runs none). Two observations:
+
+- The first-pass result of every grouped chain of these families is **exactly the canonicalization of its signed terms**: the
+  result of the linear chain of the same signed terms in source order, term instance for term instance (`subdivR n` gives the
+  result of the alternating chain `subdivM n`, `subdivB n` the one of `subdiv n`; `subdivR 4` gives
+  `1 + ((0 - x1/x0) + ((0 - x3/x0) + (x2/x0 + x4/x0)))`). No factoring, cancellation, merging or constant folding happens.
+- With mixed signs the second pass reorders the subtracted terms (`0 - x3/x0` before `0 - x1/x0`): the free-parameter ties of
+  S4 (§14.7, §15.9), unchanged here.
+
+The built-in simplifier itself is the reference of every differential test: `ExpressionSimplifier.GroupedQuotientChainsDisabled`
+(internal, per thread, audits and tests only) switches the new family off and leaves every other path as it is, so the
+simplifier treats such a chain level by level, as before. A derived simplifier is not the reference (its plan differs since
+C3c, and it keeps the level by level treatment anyway).
+
+### 16.3 Admission: `IsGroupedLinearQuotientChain`
+
+`FlattenAdmission` tests the family only when the linear walk refused the chain **for a subtracted group** (its first refusal
+cause is `SubtractedGroup`), after the factorable family refused it too, for the exact built-in type, inside an operation.
+Every other linear refusal is a refusal of this family as well (its conditions are those of a linear chain, with at most one
+constant and no anchor), so no other chain is walked once more. The conditions:
+
+1. the chain is `double` or `float`;
+2. every crossed node is an ordinary `Add` or `Subtract` of that type (`AsCrossedAdditiveNode`, `IsOrdinaryBinaryArithmetic`):
+   no custom, lifted or checked operator (a checked node is not crossed, so it is a term, and no term is one);
+3. no crossed node has two constant operands;
+4. every term is a linear term (a parameter, a finite non-zero constant, a product of a parameter by a parameter or by a
+   finite constant other than `0`, `1`, `-1`) or a linear quotient (`IsLinearQuotient`: an ordinary division of a parameter by a
+   parameter of the chain's type, §15.5): no call, invocation, member access, conversion, negation, nested division, extension
+   or dynamic node;
+5. the checks of `LinearChainOperands` over the **whole tree**, every branch included: a numerator occurs once and is never a
+   term, a factor or another numerator; a denominator may divide several quotients but is never a term, a factor or a
+   numerator; the coefficients differ from each other and from the constant term;
+6. at most **one** constant term (`LinearChainOperands.ForGroupedChain`, explicit local state) and at least one quotient
+   (`HasQuotients`; a chain of linear terms only belongs to the factorable family).
+
+The walk is the walk of `IsLinearChain` without the subtracted-group and anchor cases: iterative, one structural visit per
+crossed node, type tests first (an extension node is never read; the operator of a node is classified only once both operands
+are known to be framework nodes of an accepted shape), the pending stack allocated only for a branched tree. A shared sub-chain
+holds a numerator twice (refused at its second occurrence) or constants only (refused at its first constant pair), so the walk
+is linear in the distinct nodes even on a DAG whose paths multiply.
+
+**Refusal propagation.** A refusal of the family is inherited by every chain that contains its cause, as for the linear family
+(§9): a local cause by every chain that crosses its node, a repetition by every chain that holds both occurrences, a second
+constant by every chain that holds both constants. `RecordRefusedSpine` (now given its target table and returning the depth it
+proved) records the spine nodes that contain the cause in the family's own table, `FlattenGroupedRefusals`, which only ever
+skips this test (a node below a refused grouped chain may still be a linear chain). The shared table of known refusals is
+lowered to the depth this family proved, so that a sub-chain the family may admit is never refused by one lookup; the linear
+refusal depth is not reused unproven. The type of the chain and the absence of quotients (`NoQuotient`) are inherited by every
+sub-chain and do not restrict that depth. The old paths are unchanged for the chains no family admits: the linear walk, then
+the factorable walk (or the spine test when the factorable family is switched off), with their own causes and depths.
+
+### 16.4 Treatment: `FlattenGroupedQuotientChain`
+
+The admitted root is recorded in the session (`AdmittedGroupedQuotientRoot`, detached by every nested operation and restored on
+exit, like the spine and factorable roots); the flatten rule invoked right after it on that root consumes it.
+`FlattenedChain.Extract` already gives the signed terms of the whole tree, the inverted sign applied through every subtracted
+group: the rule prepares each term once, in source order (`PrepareExpression`, `RecordLocallySimplified`), collects them and
+canonicalizes them once with `AdditiveFactoring.None`. Each quotient is an **indivisible additive atom**: `IsFactorableTerm`,
+`AdditiveTermFamily` and the algorithms of C3c/C3d are unchanged, and no transformation `a/b + c/b → (a + c)/b`,
+`a/b - a/b → 0` or `c * (a/b) → (c * a)/b` is introduced. `ExpressionTranformer.Flatten.cs` is not modified.
+
+**Fallback.** The proof below needs every prepared term to be its raw term, a constant node holding the same boxed value, or the
+same quotient or product (`IsPreparedGroupedTerm`). No rule is known to rewrite such a term; should one do so, the levels run
+one by one on the prepared terms, children before their parent, through `TransformLevel` and the `NaN` fold of the parent's
+preparation (`TransformGroupedLevelByLevel`, an explicit stack of frames, one structural visit per node): the historical
+treatment, without preparing anything twice. `FlattenAdmissionStatistics.ForceGroupedFallback` forces it for audits; the seeded
+corpus gives the historical structure through it too.
+
+### 16.5 Why the result is the level by level result
+
+Level by level, a crossed node sees two prepared operands, each a prepared term or the canonical form of a sub-chain.
+
+- **Terms.** Preparing a term gives the term itself (§15.5): a parameter, the constant, a product, a field division of two
+  parameters, which never throws in IEEE-754; no rule rewrites it into a sum, a negation, a zero or a call.
+- **The rules that apply** are the reassociation rules on a subtracted canonical sum (`SubstractionWithAddition`,
+  `SubstractionWithSubstraction` and their finishing), the sign rules on the symbolic `0 - t` of a canonical subtracted term
+  (`SubstractionWithZero(0, t)`, `AdditionWithNegate`, `SubstractionWithNegate`) and the finalization, which canonicalizes the
+  signed terms it collects. They only move signs and regroup terms: identities the global canonicalization applies.
+- **Nothing else can apply.** Two operands of a level always hold a parameter the other does not hold (a term, a factor or a
+  numerator; a shared denominator is never an operand by itself), the simplifier never introduces a parameter and never removes
+  one from such a chain, so every factoring comparison of `AdditionOfEqualsElements`, `SubstractionOfEqualsElements` and of the
+  additive canonicalization fails and nothing cancels or merges; a sub-sum only matches another sub-sum (§13.4), never one with
+  disjoint parameters. With one constant term no constant pair is folded; the only zeros are the symbolic ones of `0 - t`, which
+  the sign rules consume. No logarithm, power or call is present, so no other additive rule matches.
+- **Order.** Free parameters tie in the canonical order (S4); every rewrite above keeps the relative order of the terms of one
+  sign, those of the left operand before those of the right one, so the per-level stable sorts compose into the stable sort of
+  the signed terms in source order, which is what the single canonicalization sorts.
+- **Effects and policies.** Every operand is inert ordinary floating-point arithmetic over parameters and primitive constants:
+  nothing throws, nothing calls user code, the effect gate admits every rule on it under every policy, the result does not
+  depend on the policy, and no evaluation is dropped, repeated or moved.
+
+This is the proof sketch; the equality is **pinned** on every tested shape against the historical treatment of the built-in
+simplifier, by strict structural identity after one pass (node types, static types, operator methods, constant bits and
+parameter instances), never through a numerical tolerance alone (§16.6).
+
+### 16.6 Validation
+
+**Suites** (Release): Unit 14,751 passed (1 skipped), Security 399 (3 skipped), Functional 383 (a first run reported one
+failure that the rerun did not reproduce; 383 of 383 on the rerun), ETC Debug (`Coverage`) 350 (1 skipped).
+
+**New tests.** `ExpressionSimplifierGroupedQuotientReferenceTests` (§16.2, passes on `ed3ea136`),
+`ExpressionSimplifierGroupedQuotientChainTests` (Unit) and `ExpressionSimplifierGroupedQuotientSecurityTests` (Security):
+
+- a seeded corpus of 3,000 grouped chains (2 to 14 terms, `double` and `float`, shared and own denominators, parameters,
+  linear products, at most one constant, random groupings and signs, distinct, shared or missing parameter names) gives after
+  one and two passes exactly the structure of the historical treatment, under the six policies on one case in ten; 938 of them
+  are admitted grouped chains. The forced fallback gives it too (600 cases);
+- right, balanced and mixed-sign families of 2 to 12 quotients, shared and distinct denominators, `double` and `float`, are
+  admitted and give the historical structure under every policy, after one and two passes; 8 to 128 quotients give the result
+  of the linear chain of the same signed terms (the historical treatment is the reference up to 16);
+- 24 refused shapes keep the root refused and the historical result: repeated numerator, numerator reused as a denominator,
+  denominator reused as a numerator, a term or a factor, two constants, a `NaN` constant, no quotient, constant numerator or
+  denominator, sum numerator, product denominator, nested division, negated quotient, custom division, custom or checked crossed
+  operator, effectful call or numerator, shared group, `long`, `int`, `decimal` and lifted `double?` quotients;
+- derived simplifiers keep their rules (a division rule of their own sees every quotient as often as before), their
+  finalization and their result, and the admission never walks the family for them;
+- values bit for bit those of the historical result on special operands; observable evaluations as often and in the order of
+  the source, none run by the simplification; comparer equality and hash consistent with the linear chain;
+- concurrency (32 parallel calls on one instance), a nested public call from user code, an instance reused after a budget
+  refusal, the per-thread switch;
+- security: extension nodes (as a term, a numerator, a denominator) and impersonating division and subtraction methods never
+  read by the admission; the work counted and refused just above each limit; 20,000 quotients simplified on a 256 KiB stack, the
+  same chain ending with a call keeps the controlled `Stack` refusal; a DAG of `2^50` paths refused by the admission in fewer
+  than four visits per distinct node; a refused 200-level chain walked once by the family (199 lookups), the table isolated per
+  operation and thread.
+
+**S5 campaigns** (`ed3ea136` against the branch, default policy, 1,000 seeds and 1,000 nested cases): `terminate`, `converge`,
+`stability`, `comparer`, `diff`, `effects`, `s3` and `canon` produce byte-identical result, anomaly and summary files (25 files):
+no case of these corpora changes.
+
+**Differential corpora** (every branch result compared with `ed3ea136`, then evaluated against its source on twelve samples when
+it differs):
+
+| Corpus | Cases | same | different | `master` budget refusal, branch result |
+|---|---:|---:|---:|---:|
+| historical (C3b–C3e), default | 40,000 | 40,000 | 0 | 0 |
+| historical, each explicit policy (5) | 15,000 | 15,000 | 0 | 0 |
+| historical, derived simplifier | 15,000 | 15,000 | 0 | 0 |
+| historical with quotients, default | 40,000 | 40,000 | 0 | 0 |
+| historical with quotients, derived | 15,000 | 15,000 | 0 | 0 |
+| grouped (2 to 40 terms), default | 3,000 | 2,995 | 0 | 5 |
+| grouped, each explicit policy (5) | 1,000 | 997 | 0 | 3 |
+| grouped, derived simplifier | 1,000 | 1,000 | 0 | 0 |
+
+- **Expected improvements.** The only differences are grouped chains on which `master` exceeds the default budget
+  (`ExpressionResourceLimitException`, 1,000,000 transformation visits) and the branch returns a result. On the five cases of the
+  default policy, the historical treatment run **without limits** (1.7 to 9.9 s each) gives exactly the structure of the branch,
+  and the values agree with the source within rounding.
+- **Structural changes, exception changes, value changes, evaluation-count changes: none.** The non-idempotent counts are those
+  of the baseline (782, 322, 10,501, 4,864, 6,008 on the historical corpora; free-parameter ties on the grouped ones).
+
+**Stress families** (S5 harness `profile`, `ed3ea136` against the branch): `p` 16 and 64, `B`, `g`, `F`, `H`, `Lsub`, `Rsub`,
+`Lmul`, `bal` 64, `z`, `e`, `k`, `n` 16, `o`, `r` 8, `Gm`, `div`, `pow`, `negmul`, `negdiv`, `subneg`, `plus0`, `zeroplus`,
+`pow1` 32, `negsum`, `zerominus` 16, `horner` 12, `constabs`, `nanabs`, `nanpow` 10 and `subdiv`, `subdivM`, `subdivD`, `subdivL`
+64: identical minimal transformation and structural budgets, comparer simplifications and results at every point.
+
+### 16.7 Growth (`profile`)
+
+Branch, same protocol (`profile`, one process per point; the times are medians on a loaded machine, the counters are
+deterministic):
+
+| Family | n | transformation visits | structural visits | comparer simplifications | median ms |
+|---|---:|---:|---:|---:|---:|
+| `subdivR` | 8 | 26 | 171 | 0 | 0.018 |
+| `subdivR` | 24 | 74 | 895 | 0 | 0.043 |
+| `subdivR` | 64 | 194 | 3,623 | 0 | 0.13 |
+| `subdivR` | 128 | 386 | 7,377 | 0 | 0.19 |
+| `subdivR` | 256 | 770 | 18,561 | 0 | 0.49 |
+| `subdivR` | 512 | 1,538 | 40,751 | 0 | 2.8 |
+| `subdivB` | 64 | 194 | 2,224 | 0 | 0.36 |
+| `subdivB` | 512 | 1,538 | 29,977 | 0 | 5.7 |
+| `subdivBM` | 24 | 74 | 980 | 0 | 0.041 |
+| `subdivBM` | 512 | 1,538 | 39,915 | 0 | 2.8 |
+
+- Every grouped family (`subdivR`, `subdivB`, `subdivBM`, `subdivRD`, `subdivRF`, `subdivBF`) takes `3n + 2` transformation
+  visits at every size from 4 to 512 (one for the root, one per term, one per operand of each quotient) and no comparer
+  simplification: the growth is linear. `subdivR 24`: 811,813 → 74 visits, 1.5 s → 43 µs; `subdivB 64`: 294,472 → 194 visits,
+  392 ms → 0.36 ms; `subdivBM 24`: 293,292 → 74 visits.
+- The structural visits are those of the linear chain of the same signed terms (`subdivR` and `subdivM`, `subdivB` and
+  `subdiv`) plus the admission walk (3 to 11 visits more): a ratio of 2.0 to 2.5 per doubling, the `n log n` comparisons of the
+  sort of the canonicalization (§15.7).
+- The reference families have exactly their baseline counters at every size from 4 to 512: `subdiv`, `subdivM`, `subdivD`
+  (`3n + 2` transformation visits; 29,966, 40,748 and 29,966 structural visits at 512) and `subdivL` (`4n + 1`, refused for the
+  integral division; its structural visits stay quadratic, 131,333 at 512, as on the baseline).
+
+### 16.8 Measures
+
+**BenchmarkDotNet** 0.14.0, in process, 8 warmup and 20 measured iterations, five processes run one after the other pinned to the
+performance cores (affinity `0x14`) at high priority, as in §15.8: base (`ed3ea136`), branch, base, branch, base. The table
+compares the faster process of each side; the A/A column is the spread of the three base processes. `subChainBM 32` could not run
+on the base (BenchmarkDotNet refuses an in-process case of several seconds per operation): `subChainBM 16` replaces it.
+
+| Case | base µs | branch µs | Time | base A/A | base KB | branch KB | Allocated |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| `a+b` | 0.90 | 0.90 | +0.7 % | 3.2 % | 2.47 | 2.47 | 0.0 % |
+| `x+x+x` | 2.08 | 2.08 | +0.2 % | 2.5 % | 3.64 | 3.64 | 0.0 % |
+| `repeated 16` | 9.31 | 9.52 | +2.3 % | 3.3 % | 21.96 | 21.96 | 0.0 % |
+| `repeated 48` | 25.33 | 25.32 | −0.1 % | 0.8 % | 60.03 | 60.03 | 0.0 % |
+| `repeated 512` | 282.61 | 283.94 | +0.5 % | 1.0 % | 627.03 | 627.03 | 0.0 % |
+| `coef 24` | 83.40 | 84.60 | +1.4 % | 0.9 % | 114.81 | 114.81 | 0.0 % |
+| `coef 128` | 422.91 | 429.00 | +1.4 % | 0.6 % | 569.71 | 569.71 | 0.0 % |
+| `tail 48` | 37.95 | 37.79 | −0.4 % | 0.9 % | 85.94 | 85.94 | 0.0 % |
+| `tail 512` | 429.06 | 437.11 | +1.9 % | 0.9 % | 869.66 | 869.66 | 0.0 % |
+| `twice 48` | 33.35 | 33.83 | +1.4 % | 1.2 % | 66.45 | 66.45 | 0.0 % |
+| `cancel 128` | 58.07 | 58.49 | +0.7 % | 1.3 % | 142.30 | 142.30 | 0.0 % |
+| `linear 200` | 58.63 | 58.85 | +0.4 % | 1.8 % | 121.91 | 121.91 | 0.0 % |
+| `sinMid 16` | 9.81 | 9.71 | −1.0 % | 0.2 % | 21.76 | 21.76 | 0.0 % |
+| `mixed 8` | 24.75 | 24.94 | +0.8 % | 0.3 % | 28.44 | 28.44 | 0.0 % |
+| `mixed 32` | 100.91 | 102.84 | +1.9 % | 1.8 % | 110.03 | 110.03 | 0.0 % |
+| `partial 32` | 69.39 | 70.05 | +0.9 % | 0.1 % | 103.07 | 103.07 | 0.0 % |
+| `cross 32` | 72.07 | 72.77 | +1.0 % | 1.0 % | 118.89 | 118.89 | 0.0 % |
+| `subChain 16` | 16.39 | 16.90 | +3.1 % | 6.6 % | 17.83 | 17.83 | 0.0 % |
+| `subChain 64` | 60.67 | 63.05 | +3.9 % | 8.2 % | 65.56 | 65.56 | 0.0 % |
+| `subChainM 24` | 24.36 | 25.28 | +3.8 % | 6.3 % | 23.20 | 23.20 | 0.0 % |
+| `subChainD 64` | 62.65 | 65.48 | +4.5 % | 7.5 % | 68.87 | 68.87 | 0.0 % |
+| `subChainF 64` | 70.76 | 71.37 | +0.9 % | 4.2 % | 65.38 | 65.38 | 0.0 % |
+| `subChainR 16` | 18,319.53 | 16.79 | **÷ 1,091** | 0.7 % | 14,077.00 | 16.10 | ÷ 874 |
+| `subChainR 24` | 924,035.99 | 24.86 | **÷ 37,170** | 0.5 % | 587,847.88 | 22.47 | ÷ 26,160 |
+| `subChainB 32` | 30,652.35 | 31.24 | **÷ 981** | 0.6 % | 18,606.01 | 32.68 | ÷ 569 |
+| `subChainB 64` | 250,266.74 | 62.14 | **÷ 4,027** | 2.5 % | 134,269.07 | 62.95 | ÷ 2,133 |
+| `subChainBM 16` | 6,817.78 | 17.39 | **÷ 392** | 1.3 % | 5,362.02 | 16.59 | ÷ 323 |
+
+- The grouped chains go from milliseconds or seconds to tens of microseconds, linearly in their length, and cost what the linear
+  chain of the same length costs (`subChainR 24` 24.9 µs, `subChainM 24` 25.3 µs; `subChainB 64` 62.1 µs, `subChain 64` 63.1 µs).
+- The reference families allocate exactly what they did. Their times differ by −1.0 % to +4.5 %: within the A/A spread of the
+  base for the quotient chains (4 to 8 %) and the small cases; `coef 24`, `coef 128`, `tail 512`, `mixed 32` and `twice 48`
+  (+1.4 % to +1.9 %) are slightly above the spread of the three base processes, a level §15.8 also measured between two
+  processes of one binary (up to 9 %). The new test runs only after a linear refusal for a subtracted group and a factorable
+  refusal, which none of these cases reaches; the only change on their path is one more field in the saved operation scope.
+- **Harness `growth` families** (`shared`, `none`, `crossed`, `ties`, `repeated`, `wide`, `collide`, `dag`, `coefshared`, 8 to
+  512 terms): transformation visits, structural visits, factoring counters and result sizes identical at every size;
+  allocations equal up to 160 bytes of measurement noise. Single-process times vary by −10 % to +14 %; a second A/A pair at 512
+  terms (two pinned processes per binary) gives `ties` 18.4 / 19.3 ms (base) and 19.4 / 18.6 ms (branch), `dag` 33.5 / 34.5 and
+  34.5 / 34.3 ms, `wide` 17.3 / 17.2 and 17.7 / 18.6 ms, `coefshared` 1.39 / 1.34 and 1.39 / 1.34 ms: noise of the same order on
+  both sides.
+
+### 16.9 Residual limits
+
+- The family is restricted: at most one constant term (with two, the level by level constant folding depends on the
+  grouping), no repeated numerator, no denominator used elsewhere, no quotient of another shape (a constant or product
+  numerator, a sum or product denominator, a nested division), no call, no negated term, `double` and `float` only. These
+  chains keep the historical cost.
+- A grouped chain whose terms repeat (`x - (x/y - …)`) or share factors is neither linear, factorable nor grouped: admitting it
+  needs quotient atoms in the proof obligations of the factorable family (C3c), a separate decision.
+- The structural visits grow as `n log n`, like those of every linear chain: the sort of the canonicalization (§15.7).
+- Mixed signs keep the free-parameter ties of S4: the result is the level by level result, which is not always idempotent.
+- A root refused by one lookup of the family's own table lowers the shared known-refusal depth to `0` for that root (a
+  performance-only choice: its sub-chains are walked again by the old families).

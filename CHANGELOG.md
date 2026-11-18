@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed — `omy.Utils` (expression simplifier: grouped quotient chains)
+- **Performance.** The additive chains of `double` or `float` that subtract groups of quotients, right-associated
+  (`1 - (x1/x0 - (x2/x0 - … - xn/x0))`), balanced (`1 - ((x1/x0 + x2/x0) + (x3/x0 + x4/x0))`) or with mixed signs, with shared
+  or distinct denominators, are canonicalized once from their signed terms instead of level by level (new private admission
+  family `IsGroupedLinearQuotientChain`): `3n + 2` transformation visits and no comparer simplification, where 24
+  right-associated quotients took 811,813 visits and 1.5 s. The first-pass result is structurally identical to the historical
+  one under every policy (pinned by tests against the built-in simplifier with the family switched off, and on 3,000 seeded
+  grouped chains plus 185,000 historical differential cases). Only parameters, at most one constant, linear products and
+  quotients of two parameters with unique numerators and denominators used nowhere else are admitted; every other chain, derived
+  simplifiers and integral or decimal quotients keep the level by level path. See `docs/expressions/SimplifierFlatten.md` §16.
+- The S5 audit harness `profile` reports the refusal causes per family and the rule candidacies per rule, and gains the families
+  `subdivRD`, `subdivRF`, `subdivBM` and `subdivBF`.
+
 ### Fixed — `omy.Utils` (expression simplifier: trigonometric rule and quotient chains)
 - **S5A-01.** `ExpressionSimplifier.AdditionOfCos2andSin2Number` no longer throws `NullReferenceException` on a sum of powers
   whose exponent is not a constant (`x^x + x^y`, `x^2 + x^y`, `sin(x)^y + cos(x)^2`): every shape is checked before any value
