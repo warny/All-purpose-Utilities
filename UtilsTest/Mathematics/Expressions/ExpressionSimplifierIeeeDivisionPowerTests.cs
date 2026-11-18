@@ -267,17 +267,27 @@ public class ExpressionSimplifierIeeeDivisionPowerTests
     }
 
     /// <summary>
-    /// Integral and decimal division by a zero constant keep throwing while simplifying, as they do at runtime,
-    /// including when the dividend is a constant.
+    /// Integral and decimal division by a zero constant, a constant dividend included, threw while simplifying until S5A-04;
+    /// the division is now kept and throws as the compiled source does, when it is evaluated.
     /// </summary>
     [TestMethod]
-    public void Simplify_IntegralAndDecimalZeroDivisor_StillThrow()
+    public void Simplify_IntegralAndDecimalZeroDivisor_IsDeferredToEvaluation()
     {
-        AssertThrowsRuleException<DivideByZeroException>(() => Simplify(Expression.Divide(Expression.Constant(1), Expression.Constant(0))));
-        AssertThrowsRuleException<DivideByZeroException>(() => Simplify(Expression.Divide(Expression.Constant(0L), Expression.Constant(0L))));
-        AssertThrowsRuleException<DivideByZeroException>(() => Simplify(Expression.Divide(Expression.Constant(1u), Expression.Constant(0u))));
-        AssertThrowsRuleException<DivideByZeroException>(() => Simplify(Expression.Divide(Expression.Constant(1m), Expression.Constant(0m))));
-        Assert.ThrowsExactly<DivideByZeroException>(() => Expression.Lambda<Func<int>>(Expression.Divide(Expression.Constant(1), Expression.Constant(0))).Compile()());
+        Expression[] sources =
+        [
+            Expression.Divide(Expression.Constant(1), Expression.Constant(0)),
+            Expression.Divide(Expression.Constant(0L), Expression.Constant(0L)),
+            Expression.Divide(Expression.Constant(1u), Expression.Constant(0u)),
+            Expression.Divide(Expression.Constant(1m), Expression.Constant(0m)),
+        ];
+
+        foreach (Expression source in sources)
+        {
+            Assert.AreEqual("throws DivideByZeroException", EvaluateKey(source), "Precondition: the compiled node throws.");
+            Assert.IsNull(TrySimplify(source, out Expression? simplified), source.ToString());
+            Assert.AreEqual(ExpressionType.Divide, simplified!.NodeType, source.ToString());
+            Assert.AreEqual("throws DivideByZeroException", EvaluateKey(simplified), source.ToString());
+        }
     }
 
     /// <summary>
@@ -587,19 +597,22 @@ public class ExpressionSimplifierIeeeDivisionPowerTests
     }
 
     /// <summary>
-    /// <c>int.MinValue / -1</c> and <c>long.MinValue / -1</c> throw <see cref="OverflowException"/> while simplifying,
-    /// as the compiled node does; the <c>-1</c> identity turned them into a negation that silently wraps to
-    /// <c>MinValue</c>.
+    /// <c>int.MinValue / -1</c> and <c>long.MinValue / -1</c> throw <see cref="OverflowException"/> when the compiled node is
+    /// evaluated; the <c>-1</c> identity turned them into a negation that silently wraps to <c>MinValue</c>. The fold threw
+    /// while simplifying until S5A-04; the division is now kept, so the exception is raised at evaluation only.
     /// </summary>
     [TestMethod]
-    public void Simplify_MinValueOverMinusOne_ThrowsOverflow()
+    public void Simplify_MinValueOverMinusOne_IsDeferredToEvaluation()
     {
-        Expression intSource = Expression.Divide(Expression.Constant(int.MinValue), Expression.Constant(-1));
-        Assert.ThrowsExactly<OverflowException>(() => Expression.Lambda<Func<int>>(intSource).Compile()(), "Precondition: the compiled node throws.");
-        AssertThrowsRuleException<OverflowException>(() => Simplify(intSource));
-        Expression longSource = Expression.Divide(Expression.Constant(long.MinValue), Expression.Constant(-1L));
-        Assert.ThrowsExactly<OverflowException>(() => Expression.Lambda<Func<long>>(longSource).Compile()(), "Precondition: the compiled node throws.");
-        AssertThrowsRuleException<OverflowException>(() => Simplify(longSource));
+        foreach (Expression source in new Expression[] { Expression.Divide(Expression.Constant(int.MinValue), Expression.Constant(-1)), Expression.Divide(Expression.Constant(long.MinValue), Expression.Constant(-1L)) })
+        {
+            Assert.AreEqual("throws OverflowException", EvaluateKey(source), "Precondition: the compiled node throws.");
+            Assert.IsNull(TrySimplify(source, out Expression? simplified), source.ToString());
+            var kept = (BinaryExpression)simplified!;
+            Assert.AreEqual(ExpressionType.Divide, kept.NodeType, source.ToString());
+            Assert.IsInstanceOfType<ConstantExpression>(kept.Left, "never turned into a negation");
+            Assert.AreEqual("throws OverflowException", EvaluateKey(kept), source.ToString());
+        }
     }
 
     /// <summary>
@@ -689,14 +702,17 @@ public class ExpressionSimplifierIeeeDivisionPowerTests
     }
 
     /// <summary>
-    /// Checks every pair of <see cref="TypedSamples"/> under <paramref name="operators"/>: simplifying either throws the
-    /// exception the compiled node throws, or returns a constant of the node's type with the compiled node's value.
+    /// Checks every pair of <see cref="TypedSamples"/> under <paramref name="operators"/>: simplifying never throws; it returns
+    /// a constant of the node's type with the compiled node's value, or, when the compiled node throws, the very operation
+    /// (same operator, method and constant operands), which throws the same exception when evaluated (S5A-04: it threw while
+    /// simplifying before).
     /// </summary>
     /// <param name="operators">The node factories to check.</param>
     private static void AssertConstantArithmeticFoldsInNodeType(Func<Expression, Expression, BinaryExpression>[] operators)
     {
         int checkedCases = 0;
         int expectedCases = 0;
+        int throwingCases = 0;
         foreach ((Type type, object[] values) in TypedSamples)
         {
             foreach (Func<Expression, Expression, BinaryExpression> make in operators)
@@ -708,17 +724,26 @@ public class ExpressionSimplifierIeeeDivisionPowerTests
                         BinaryExpression source = make(Expression.Constant(left, type), Expression.Constant(right, type));
                         string expected = EvaluateKey(source);
                         string? thrown = TrySimplify(source, out Expression? simplified);
-                        if (thrown is not null)
+                        Assert.IsNull(thrown, $"{type.Name} {source} threw while simplifying.");
+                        Assert.AreEqual(type, simplified!.Type, $"{type.Name} {source} => {simplified}");
+                        if (expected.StartsWith("throws ", StringComparison.Ordinal))
                         {
-                            Assert.AreEqual(expected, thrown, $"{type.Name} {source} threw while simplifying.");
+                            throwingCases++;
+                            var kept = simplified as BinaryExpression
+                                ?? throw new AssertFailedException($"{type.Name} {source} => {simplified} is not the throwing operation.");
+                            Assert.AreEqual(source.NodeType, kept.NodeType, $"{type.Name} {source} => {simplified}");
+                            Assert.AreEqual(source.Method, kept.Method, $"{type.Name} {source} => {simplified}");
+                            Assert.AreSame(left, ((ConstantExpression)kept.Left).Value, $"{type.Name} {source} => {simplified}");
+                            Assert.AreSame(right, ((ConstantExpression)kept.Right).Value, $"{type.Name} {source} => {simplified}");
+                            Assert.AreEqual(expected, EvaluateKey(kept), $"{type.Name} {source} => {simplified}");
                         }
                         else
                         {
-                            Assert.AreEqual(type, simplified!.Type, $"{type.Name} {source} => {simplified}");
                             ConstantExpression folded = simplified as ConstantExpression
                                 ?? throw new AssertFailedException($"{type.Name} {source} => {simplified} is not a constant.");
                             Assert.AreEqual(expected, ValueKey(folded.Value!), $"{type.Name} {source} => {simplified}");
                         }
+
                         checkedCases++;
                     }
                 }
@@ -727,6 +752,7 @@ public class ExpressionSimplifierIeeeDivisionPowerTests
 
         foreach ((Type _, object[] values) in TypedSamples) expectedCases += operators.Length * values.Length * values.Length;
         Assert.AreEqual(expectedCases, checkedCases);
+        Assert.IsTrue(throwingCases > 0, "The samples must hold throwing pairs, or the deferred-exception check is vacuous.");
     }
 
     /// <summary>

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -624,15 +625,15 @@ public class ExpressionSimplifierComparerBatchingTests
     /// which simplifies by reaching its own nested <c>AdditionOfEqualsElements</c> call whose structural
     /// argument comparison invokes <c>hostileLeft.Equals(hostileRight)</c> and throws
     /// <see cref="HostileConstantException"/>). <c>y</c> is cacheable (<c>Convert(Divide(Constant(1), Constant(0)),
-    /// double)</c>, only native numeric constants) but its OWN simplification unconditionally throws
-    /// <see cref="DivideByZeroException"/> (<c>ExpressionSimplifier.DivideWithZeroOrOne</c> on an integral zero
-    /// divisor) - a DIFFERENT exception type from <c>x</c>'s, chosen specifically so the propagated exception's TYPE
-    /// identifies which operand was actually attempted first.
+    /// double)</c>, only native numeric constants). The comparer's diagnostic capture records the root node type of
+    /// every operand it simplifies, so the absence of a <see cref="ExpressionType.Convert"/> root proves that <c>y</c> was
+    /// never simplified before <c>x</c>'s exception ended the comparison.
     /// </summary>
     /// <remarks>
     /// Until S5 P12 <c>y</c> was <c>Divide(Constant(1.0), Constant(0.0))</c>; floating-point division by zero now
-    /// folds to <c>+inf</c> instead of throwing, so the integral division (which throws at runtime as well) keeps
-    /// <c>y</c>'s own simplification throwing. The test first checks that it does, so it cannot pass vacuously.
+    /// folds to <c>+inf</c> instead of throwing. Until S5A-04 the integral division threw while simplifying
+    /// (<c>DivideWithZeroOrOne</c>), a different exception type from <c>x</c>'s, and the propagated type identified the
+    /// operand attempted first; it now declines, the division staying for evaluation, so the capture is the observable.
     /// <para>
     /// <c>left</c>/<c>right</c> share the exact same <c>Constant(5.0)</c> instance as their <c>Multiply</c>
     /// left factor, so <c>equalityProbe.Equals(leftleft, rightleft)</c> - the first check
@@ -658,20 +659,33 @@ public class ExpressionSimplifierComparerBatchingTests
             Expression.Multiply(Expression.Constant(2.0), SafeOpaqueTerm.Carrier(hostileLeft)),
             Expression.Multiply(Expression.Constant(3.0), SafeOpaqueTerm.Carrier(hostileRight)));
 
-        // Cacheable (only native numeric constants reachable) but its OWN simplification unconditionally
-        // throws DivideByZeroException - a different exception type from x's, so the type that propagates
-        // proves which operand was attempted first.
+        // Cacheable (only native numeric constants reachable). Its own simplification threw DivideByZeroException
+        // until S5A-04; it now completes (the division is kept for evaluation), so the comparer's diagnostic capture,
+        // which records the root of every operand it simplifies, proves which operand was attempted: a Convert root
+        // can only be y.
         Expression y = Expression.Convert(Expression.Divide(Expression.Constant(1), Expression.Constant(0)), typeof(double));
-        Exception yAlone = Assert.Throws<Exception>(() => new ExpressionSimplifier().Simplify(y));
-        while (yAlone is TargetInvocationException { InnerException: { } yInner }) yAlone = yInner;
-        Assert.IsInstanceOfType<DivideByZeroException>(yAlone, "Precondition: y's own simplification must throw, or the order check below is vacuous.");
+        new ExpressionSimplifier().Simplify(y); // S5A-04: y's own simplification no longer throws.
 
         Expression sharedFactor = Expression.Constant(5.0);
         Expression left = Expression.Multiply(sharedFactor, x);
         Expression right = Expression.Multiply(sharedFactor, y);
 
-        TargetInvocationException thrown = Assert.ThrowsExactly<TargetInvocationException>(
-            () => InvokeAdditionOfEqualsElements(simplifier, left, right));
+        TargetInvocationException? thrown = null;
+        ExpressionComparer.BeginDiagnosticCapture();
+        IReadOnlyList<ExpressionComparer.ComparisonDiagnosticEvent> events;
+        try
+        {
+            thrown = Assert.ThrowsExactly<TargetInvocationException>(() => InvokeAdditionOfEqualsElements(simplifier, left, right));
+        }
+        finally
+        {
+            events = ExpressionComparer.EndDiagnosticCapture();
+        }
+
+        Assert.IsTrue(events.Count > 0, "Precondition: the capture observed the comparison, or the order check below is vacuous.");
+        Assert.IsFalse(
+            events.Any(e => e.RootNodeType == ExpressionType.Convert),
+            "y must not be simplified before x: x's exception ends the comparison first.");
 
         Exception innermost = thrown.InnerException!;
         while (innermost is TargetInvocationException { InnerException: { } nestedInner })

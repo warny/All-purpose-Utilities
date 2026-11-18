@@ -365,23 +365,38 @@ public class ExpressionSimplifierComparisonMemoTests
 
     /// <summary>Exceptions thrown while simplifying an eligible operand are never cached and propagate every time.</summary>
     /// <remarks>
-    /// The throwing operand is an integral division by zero, which throws at runtime as well; until S5 P12 it was
-    /// <c>x / 0.0</c>, which now simplifies without throwing (IEEE-754 division by zero is defined).
+    /// Until S5A-04 the throwing operand was an integral division by zero (and until S5 P12 <c>x / 0.0</c>); a constant fold
+    /// no longer throws, so no eligible operand, which holds only native arithmetic, raises an exception of its own while
+    /// simplifying. The exception is now the refusal of the operation's transformation budget, raised in the middle of the
+    /// eligible operand's simplification by a comparer whose limits are tight. The former operand simplifies and is cached
+    /// like any other (control).
     /// </remarks>
     [TestMethod]
     public void Exceptions_AreNeverCached()
     {
         ParameterExpression i = Expression.Parameter(typeof(int), "i");
-        Expression throwing = Expression.Divide(i, Expression.Constant(0));
+        Expression throwing = Expression.Add(Expression.Multiply(Expression.Add(i, Expression.Constant(1)), Expression.Constant(2)), Expression.Add(i, Expression.Constant(3)));
         Assert.IsTrue(ExpressionSimplifier.IsComparisonMemoEligible(throwing));
+        ExpressionComparer tight = ExpressionComparer.Create(new ExpressionResourceLimits { MaxTransformVisits = 3 });
 
         using (ExpressionSimplifier.BeginActivatedComparisonMemoSessionForTesting())
         {
-            // Rule exceptions surface wrapped by the reflective rule invocation, exactly as without the memo.
-            AssertThrowsRuleException<DivideByZeroException>(() => ExpressionComparer.SimplifyForComparison(throwing));
-            AssertThrowsRuleException<DivideByZeroException>(() => ExpressionComparer.SimplifyForComparison(throwing));
+            Assert.ThrowsExactly<ExpressionResourceLimitException>(() => tight.GetHashCode(throwing));
+            Assert.ThrowsExactly<ExpressionResourceLimitException>(() => tight.GetHashCode(throwing));
             Assert.AreEqual(0, ExpressionSimplifier.ComparisonMemoEntryCount);
             Assert.AreEqual(1, ExpressionSimplifier.ComparisonMemoDepth, "The session depth must be restored after a thrown simplification.");
+        }
+
+        AssertNoMemoState();
+
+        // S5A-04: the former throwing operand simplifies, keeps its division for evaluation, and is cached.
+        Expression divideByZero = Expression.Divide(i, Expression.Constant(0));
+        using (ExpressionSimplifier.BeginActivatedComparisonMemoSessionForTesting())
+        {
+            Expression simplified = ExpressionComparer.SimplifyForComparison(divideByZero);
+            Assert.AreEqual(ExpressionType.Divide, simplified.NodeType);
+            Assert.AreEqual(1, ExpressionSimplifier.ComparisonMemoEntryCount);
+            Assert.AreSame(simplified, ExpressionComparer.SimplifyForComparison(divideByZero));
         }
 
         AssertNoMemoState();
@@ -389,8 +404,10 @@ public class ExpressionSimplifierComparisonMemoTests
 
     /// <summary>The comparer keeps its x-before-y simplification and exception ordering inside an activated session.</summary>
     /// <remarks>
-    /// The second operand throws through an integral division by zero, converted to <see cref="double"/> so both
-    /// operands keep the same type; until S5 P12 it was <c>x / 0.0</c>, which now simplifies without throwing.
+    /// Until S5A-04 the second operand threw through an integral division by zero, so the propagated exception type showed which
+    /// operand ran first. It now simplifies without throwing (the division is kept for evaluation), so the comparer's diagnostic
+    /// capture, which records the root of every operand it simplifies, is the observable: a <see cref="ExpressionType.Convert"/>
+    /// root is that operand.
     /// </remarks>
     [TestMethod]
     public void ComparerExceptionOrder_IsPreservedInSession()
@@ -403,11 +420,30 @@ public class ExpressionSimplifierComparisonMemoTests
 
         using (ExpressionSimplifier.BeginActivatedComparisonMemoSessionForTesting())
         {
-            AssertThrowsRuleException<HostileConstantException>(() => ExpressionComparer.Default.Equals(hostile, dividesByZero));
-            AssertThrowsRuleException<DivideByZeroException>(() => ExpressionComparer.Default.Equals(dividesByZero, hostile));
+            Assert.IsFalse(SimplifiedRoots(() => AssertThrowsRuleException<HostileConstantException>(() => ExpressionComparer.Default.Equals(hostile, dividesByZero))).Contains(ExpressionType.Convert), "x throws before y is simplified");
+            Assert.IsTrue(SimplifiedRoots(() => AssertThrowsRuleException<HostileConstantException>(() => ExpressionComparer.Default.Equals(dividesByZero, hostile))).Contains(ExpressionType.Convert), "x is simplified, then y throws");
         }
 
         AssertNoMemoState();
+    }
+
+    /// <summary>Runs <paramref name="action"/> under the comparer's diagnostic capture and returns the root node types it simplified.</summary>
+    /// <param name="action">The action.</param>
+    /// <returns>The root node types, in order.</returns>
+    private static ExpressionType[] SimplifiedRoots(Action action)
+    {
+        ExpressionComparer.BeginDiagnosticCapture();
+        IReadOnlyList<ExpressionComparer.ComparisonDiagnosticEvent> events;
+        try
+        {
+            action();
+        }
+        finally
+        {
+            events = ExpressionComparer.EndDiagnosticCapture();
+        }
+
+        return events.Select(e => e.RootNodeType).ToArray();
     }
 
     /// <summary>

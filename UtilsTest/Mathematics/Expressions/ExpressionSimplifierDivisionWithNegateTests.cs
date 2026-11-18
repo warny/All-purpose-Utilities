@@ -214,8 +214,8 @@ public class ExpressionSimplifierDivisionWithNegateTests
     /// <summary>
     /// The same holds behind a constant divisor (<c>2</c>, <c>-2</c>, <c>MinValue</c>, where the source diverged) and for a dividend
     /// that is not a parameter; the identities of the divisor <c>1</c> (<c>(-t) / 1 -&gt; -t</c>) are not affected, the divisor
-    /// <c>-1</c> keeps its exception, and the constant divisor <c>0</c> still throws <see cref="DivideByZeroException"/> while
-    /// simplifying, as it did before (<c>DivideWithZeroOrOne</c>, S5A-04).
+    /// <c>-1</c> keeps its exception, and the constant divisor <c>0</c>, which threw <see cref="DivideByZeroException"/> while
+    /// simplifying until S5A-04 (<c>DivideWithZeroOrOne</c>), is kept and raises it at evaluation, as the source does.
     /// </summary>
     [TestMethod]
     public void NegatedDividend_SignedIntegral_ConstantDivisorsEvaluateLikeTheSource()
@@ -242,14 +242,6 @@ public class ExpressionSimplifierDivisionWithNegateTests
                         foreach (ExpressionSimplifier simplifier in Simplifiers(policy))
                         {
                             string label = $"{type.Name} {source} {simplifier.GetType().Name} under {policy}";
-                            if (Convert.ToInt64(divisor) == 0)
-                            {
-                                // The rule throws from its reflective invocation.
-                                Exception thrown = Assert.Throws<Exception>(() => simplifier.Simplify(source), label);
-                                while (thrown is TargetInvocationException { InnerException: not null } wrapper) thrown = wrapper.InnerException;
-                                Assert.IsInstanceOfType<DivideByZeroException>(thrown, label);
-                                continue;
-                            }
                             AssertSameOutcomes(source, simplifier.Simplify(source), t, u, SignedValues(type), label);
                         }
                     }

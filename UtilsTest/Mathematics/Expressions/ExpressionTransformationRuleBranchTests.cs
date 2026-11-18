@@ -197,19 +197,21 @@ public sealed class ExpressionTransformationRuleBranchTests
     }
 
     /// <summary>
-    /// Verifies division by an actual integral or decimal zero constant fails with the documented exception, as
-    /// evaluating the node would.
+    /// Verifies the rule declines an actual integral or decimal zero divisor, called directly as a derived simplifier may: it
+    /// threw <see cref="DivideByZeroException"/> until S5A-04, which moved the evaluation-time exception to simplification
+    /// time. The division is left for evaluation, where it throws.
     /// </summary>
     [TestMethod]
-    public void Simplify_DivideWithZeroOrOne_IntegralOrDecimalZeroDenominator_ThrowsDivideByZeroException()
+    public void Simplify_DivideWithZeroOrOne_IntegralOrDecimalZeroDenominator_Declines()
     {
         ParameterExpression i = Expression.Parameter(typeof(int), "i");
         ConstantExpression intZero = Expression.Constant(0);
-        Assert.ThrowsExactly<DivideByZeroException>(() => new ExpressionSimplifier().DivideWithZeroOrOne(Expression.Divide(i, intZero), i, intZero));
+        Assert.IsNull(new ExpressionSimplifier().DivideWithZeroOrOne(Expression.Divide(i, intZero), i, intZero));
+        Assert.IsNull(new ExpressionSimplifier().DivideWithZeroOrOne(Expression.Divide(Expression.Constant(1), intZero), Expression.Constant(1), intZero));
 
         ParameterExpression m = Expression.Parameter(typeof(decimal), "m");
         ConstantExpression decimalZero = Expression.Constant(0m);
-        Assert.ThrowsExactly<DivideByZeroException>(() => new ExpressionSimplifier().DivideWithZeroOrOne(Expression.Divide(m, decimalZero), m, decimalZero));
+        Assert.IsNull(new ExpressionSimplifier().DivideWithZeroOrOne(Expression.Divide(m, decimalZero), m, decimalZero));
     }
 
     /// <summary>
