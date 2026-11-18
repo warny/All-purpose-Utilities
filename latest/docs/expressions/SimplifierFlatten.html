@@ -73,7 +73,7 @@
         <article data-uid="">
 <h1 id="flatten-rule-of-expressionsimplifier-pr-b">Flatten rule of <code>ExpressionSimplifier</code> (PR B)</h1>
 
-<p>Status: first n-ary treatment of the simplifier, restricted to the <em>linear additive chains</em>; §11 describes the shared metadata of mission C3a, §12 the term analysis and the spine chains of mission C3b, §13 the global factoring of mission C3c. Built on the infrastructure of
+<p>Status: first n-ary treatment of the simplifier, restricted to the <em>linear additive chains</em>; §11 describes the shared metadata of mission C3a, §12 the term analysis and the spine chains of mission C3b, §13 the global factoring of mission C3c, §14 the stabilization of mission C3d, §15 the trigonometric rule and the linear quotient chains, §16 the grouped quotient chains. Built on the infrastructure of
 <a href="FlattenArchitecture.html">FlattenArchitecture.md</a> (PR A, <code>a9ec71ac</code>). No multiplicative chain, no division, no C3, no change to
 <code>ExpressionDerivation&lt;T&gt;</code> or <code>ExpressionIntegration&lt;T&gt;</code>.</p>
 <h2 id="1-purpose">1. Purpose</h2>
@@ -4488,6 +4488,780 @@ equal up to a few hundred bytes of measurement noise; times within −3 % to +4 
 <li>Quotients of other shapes (a constant or a product numerator, a sum denominator) and integral or decimal quotient chains keep
 the level by level path, with its cost.</li>
 <li>The free-parameter ties (S4) and the other residual families of §14.7 are unchanged.</li>
+</ul>
+<h2 id="16-grouped-quotient-chains">16. Grouped quotient chains</h2>
+<p>The residual limit of §15.9: the right-associated and balanced subtracted groups of quotients, <code>subdivR</code>
+(<code>1 - (x1/x0 - (x2/x0 - (… - xn/x0)))</code>) and <code>subdivB</code> (<code>1 - ((x1/x0 + x2/x0) + (x3/x0 + x4/x0))</code>), stayed super-linear.
+The baseline is <code>master</code> <code>ed3ea136</code> (PR #705), built from a separate worktree; every figure compares the branch with it.</p>
+<h3 id="161-reproduction-and-root-cause">16.1 Reproduction and root cause</h3>
+<p>Diagnostic commit: the S5 harness <code>profile</code> reports the admission refusals per cause and the rule candidacies and declinations
+per rule, split between the main transformation and the comparer simplifications (opt-in, behavior-neutral), and gains the
+families <code>subdivRD</code> (distinct denominators), <code>subdivRF</code> (<code>float</code>), <code>subdivBM</code> (balanced, mixed signs) and <code>subdivBF</code>.</p>
+<p>Baseline growth (<code>ed3ea136</code> with the diagnostic commit, one process per point, median of the timed runs; a family stops after
+the first size above 3 s, and the right-associated families at 24 quotients, whose next size would take minutes per run):</p>
+<table>
+<thead>
+<tr>
+<th>Family</th>
+<th style="text-align: right;">n</th>
+<th style="text-align: right;">transformation visits</th>
+<th style="text-align: right;">structural visits</th>
+<th style="text-align: right;">comparer simplifications</th>
+<th style="text-align: right;">median ms</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>subdivR</code></td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">127</td>
+<td style="text-align: right;">574</td>
+<td style="text-align: right;">44</td>
+<td style="text-align: right;">0.14</td>
+</tr>
+<tr>
+<td><code>subdivR</code></td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">869</td>
+<td style="text-align: right;">5,340</td>
+<td style="text-align: right;">316</td>
+<td style="text-align: right;">0.94</td>
+</tr>
+<tr>
+<td><code>subdivR</code></td>
+<td style="text-align: right;">12</td>
+<td style="text-align: right;">4,313</td>
+<td style="text-align: right;">31,210</td>
+<td style="text-align: right;">1,438</td>
+<td style="text-align: right;">4.8</td>
+</tr>
+<tr>
+<td><code>subdivR</code></td>
+<td style="text-align: right;">16</td>
+<td style="text-align: right;">22,085</td>
+<td style="text-align: right;">189,431</td>
+<td style="text-align: right;">7,046</td>
+<td style="text-align: right;">27.8</td>
+</tr>
+<tr>
+<td><code>subdivR</code></td>
+<td style="text-align: right;">24</td>
+<td style="text-align: right;">811,813</td>
+<td style="text-align: right;">10,188,073</td>
+<td style="text-align: right;">247,450</td>
+<td style="text-align: right;">1,509</td>
+</tr>
+<tr>
+<td><code>subdivB</code></td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">976</td>
+<td style="text-align: right;">4,273</td>
+<td style="text-align: right;">168</td>
+<td style="text-align: right;">1.3</td>
+</tr>
+<tr>
+<td><code>subdivB</code></td>
+<td style="text-align: right;">16</td>
+<td style="text-align: right;">6,040</td>
+<td style="text-align: right;">34,384</td>
+<td style="text-align: right;">720</td>
+<td style="text-align: right;">9.4</td>
+</tr>
+<tr>
+<td><code>subdivB</code></td>
+<td style="text-align: right;">32</td>
+<td style="text-align: right;">40,744</td>
+<td style="text-align: right;">344,777</td>
+<td style="text-align: right;">2,976</td>
+<td style="text-align: right;">34.9</td>
+</tr>
+<tr>
+<td><code>subdivB</code></td>
+<td style="text-align: right;">64</td>
+<td style="text-align: right;">294,472</td>
+<td style="text-align: right;">3,616,658</td>
+<td style="text-align: right;">12,096</td>
+<td style="text-align: right;">392</td>
+</tr>
+<tr>
+<td><code>subdivBM</code></td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">512</td>
+<td style="text-align: right;">2,870</td>
+<td style="text-align: right;">168</td>
+<td style="text-align: right;">0.65</td>
+</tr>
+<tr>
+<td><code>subdivBM</code></td>
+<td style="text-align: right;">16</td>
+<td style="text-align: right;">8,320</td>
+<td style="text-align: right;">70,732</td>
+<td style="text-align: right;">2,640</td>
+<td style="text-align: right;">10.2</td>
+</tr>
+<tr>
+<td><code>subdivBM</code></td>
+<td style="text-align: right;">24</td>
+<td style="text-align: right;">293,292</td>
+<td style="text-align: right;">3,813,720</td>
+<td style="text-align: right;">89,414</td>
+<td style="text-align: right;">570</td>
+</tr>
+</tbody>
+</table>
+<p><code>subdivRD</code> (distinct denominators) and <code>subdivRF</code> (<code>float</code>) have exactly the counters of <code>subdivR</code> at every size (1.6 s at 24).</p>
+<p>At 8 quotients 748 of the 869 transformation visits of <code>subdivR</code> run inside comparer simplifications, and at 12 quotients every
+division rule is a candidate 990 times there (each quotient is transformed again about 80 times). The mechanism:</p>
+<ol>
+<li>The linear family refuses the root at once (a subtraction with a crossed right operand, <code>SubtractedGroup</code>, spine index 0),
+and so does the factorable family (a quotient is not a factorable term, §13.4): the root is simplified level by level.
+Each inner sub-chain without a subtracted group is admitted as a linear chain (§15.5); the admission walks themselves are
+cheap (one or two nodes each).</li>
+<li>Every level <code>A - B</code> whose prepared <code>B</code> is a canonical sum is reassociated (<code>SubstractionWithAddition</code>,
+<code>SubstractionWithSubstraction</code>, finished by <code>FinishReassociation</code>), which transforms the rebuilt nodes again; the canonical
+form <code>(0 - q) + R</code> then goes through <code>SubstractionWithZero(0, t)</code> and <code>AdditionWithNegate</code>, whose comparison
+(<code>EqualsKeepingSimplifiedForms</code>) simplifies both operands through the comparer.</li>
+<li>The canonical sums the comparer simplifies hold the symbolic zeros of <code>0 - q</code>: a zero is not a linear term, so they are
+refused as linear chains (<code>NonLinearTerm</code>, 378 refusals at 12 quotients) and simplified level by level again, with the same
+re-entries one comparison deeper. The memo of S5 P9 answers most repeated comparisons (1,294 hits for 1,438
+simplifications at 12), but each level still simplifies a canonical prefix of growing length.</li>
+</ol>
+<p>The admission refusals, the walks of <code>IsLinearChain</code> and <code>IsFactorableChain</code> and <code>SubstractionOfEqualsElements</code> are not the
+cost: the cost is the repeated comparison-driven simplification of already prepared, already canonical groups.</p>
+<h3 id="162-reference-characterization">16.2 Reference characterization</h3>
+<p>Before any production change, <code>ExpressionSimplifierGroupedQuotientReferenceTests</code> pins, with literal expectations that pass on
+<code>ed3ea136</code>, the result of one and two calls of the built-in simplifier on <code>subdivR</code>, <code>subdivB</code>, <code>subdivBM</code>, <code>subdivRD</code>,
+<code>subdivRF</code> and the <code>long</code> variant under the six policies of the brief (identical under all of them), the values on finite,
+zero, negative zero, infinite, NaN, tiny and huge operands and zero divisors (within the S3 reassociation latitude), the
+exceptions of the integral variant (a zero divisor throws as the source does) and the order of observable evaluations around a
+grouped chain (the simplification itself runs none). Two observations:</p>
+<ul>
+<li>The first-pass result of every grouped chain of these families is <strong>exactly the canonicalization of its signed terms</strong>: the
+result of the linear chain of the same signed terms in source order, term instance for term instance (<code>subdivR n</code> gives the
+result of the alternating chain <code>subdivM n</code>, <code>subdivB n</code> the one of <code>subdiv n</code>; <code>subdivR 4</code> gives
+<code>1 + ((0 - x1/x0) + ((0 - x3/x0) + (x2/x0 + x4/x0)))</code>). No factoring, cancellation, merging or constant folding happens.</li>
+<li>With mixed signs the second pass reorders the subtracted terms (<code>0 - x3/x0</code> before <code>0 - x1/x0</code>): the free-parameter ties of
+S4 (§14.7, §15.9), unchanged here.</li>
+</ul>
+<p>The built-in simplifier itself is the reference of every differential test: <code>ExpressionSimplifier.GroupedQuotientChainsDisabled</code>
+(internal, per thread, audits and tests only) switches the new family off and leaves every other path as it is, so the
+simplifier treats such a chain level by level, as before. A derived simplifier is not the reference (its plan differs since
+C3c, and it keeps the level by level treatment anyway).</p>
+<h3 id="163-admission-isgroupedlinearquotientchain">16.3 Admission: <code>IsGroupedLinearQuotientChain</code></h3>
+<p><code>FlattenAdmission</code> tests the family only when the linear walk refused the chain <strong>for a subtracted group</strong> (its first refusal
+cause is <code>SubtractedGroup</code>), after the factorable family refused it too, for the exact built-in type, inside an operation.
+Every other linear refusal is a refusal of this family as well (its conditions are those of a linear chain, with at most one
+constant and no anchor), so no other chain is walked once more. The conditions:</p>
+<ol>
+<li>the chain is <code>double</code> or <code>float</code>;</li>
+<li>every crossed node is an ordinary <code>Add</code> or <code>Subtract</code> of that type (<code>AsCrossedAdditiveNode</code>, <code>IsOrdinaryBinaryArithmetic</code>):
+no custom, lifted or checked operator (a checked node is not crossed, so it is a term, and no term is one);</li>
+<li>no crossed node has two constant operands;</li>
+<li>every term is a linear term (a parameter, a finite non-zero constant, a product of a parameter by a parameter or by a
+finite constant other than <code>0</code>, <code>1</code>, <code>-1</code>) or a linear quotient (<code>IsLinearQuotient</code>: an ordinary division of a parameter by a
+parameter of the chain's type, §15.5): no call, invocation, member access, conversion, negation, nested division, extension
+or dynamic node;</li>
+<li>the checks of <code>LinearChainOperands</code> over the <strong>whole tree</strong>, every branch included: a numerator occurs once and is never a
+term, a factor or another numerator; a denominator may divide several quotients but is never a term, a factor or a
+numerator; the coefficients differ from each other and from the constant term;</li>
+<li>at most <strong>one</strong> constant term (<code>LinearChainOperands.ForGroupedChain</code>, explicit local state) and at least one quotient
+(<code>HasQuotients</code>; a chain of linear terms only belongs to the factorable family).</li>
+</ol>
+<p>The walk is the walk of <code>IsLinearChain</code> without the subtracted-group and anchor cases: iterative, one structural visit per
+crossed node, type tests first (an extension node is never read; the operator of a node is classified only once both operands
+are known to be framework nodes of an accepted shape), the pending stack allocated only for a branched tree. A shared sub-chain
+holds a numerator twice (refused at its second occurrence) or constants only (refused at its first constant pair), so the walk
+is linear in the distinct nodes even on a DAG whose paths multiply.</p>
+<p><strong>Refusal propagation.</strong> A refusal of the family is inherited by every chain that contains its cause, as for the linear family
+(§9): a local cause by every chain that crosses its node, a repetition by every chain that holds both occurrences, a second
+constant by every chain that holds both constants. <code>RecordRefusedSpine</code> (now given its target table and returning the depth it
+proved) records the spine nodes that contain the cause in the family's own table, <code>FlattenGroupedRefusals</code>, which only ever
+skips this test (a node below a refused grouped chain may still be a linear chain). The shared table of known refusals is
+lowered to the depth this family proved, so that a sub-chain the family may admit is never refused by one lookup; the linear
+refusal depth is not reused unproven. The type of the chain and the absence of quotients (<code>NoQuotient</code>) are inherited by every
+sub-chain and do not restrict that depth. The old paths are unchanged for the chains no family admits: the linear walk, then
+the factorable walk (or the spine test when the factorable family is switched off), with their own causes and depths.</p>
+<h3 id="164-treatment-flattengroupedquotientchain">16.4 Treatment: <code>FlattenGroupedQuotientChain</code></h3>
+<p>The admitted root is recorded in the session (<code>AdmittedGroupedQuotientRoot</code>, detached by every nested operation and restored on
+exit, like the spine and factorable roots); the flatten rule invoked right after it on that root consumes it.
+<code>FlattenedChain.Extract</code> already gives the signed terms of the whole tree, the inverted sign applied through every subtracted
+group: the rule prepares each term once, in source order (<code>PrepareExpression</code>, <code>RecordLocallySimplified</code>), collects them and
+canonicalizes them once with <code>AdditiveFactoring.None</code>. Each quotient is an <strong>indivisible additive atom</strong>: <code>IsFactorableTerm</code>,
+<code>AdditiveTermFamily</code> and the algorithms of C3c/C3d are unchanged, and no transformation <code>a/b + c/b → (a + c)/b</code>,
+<code>a/b - a/b → 0</code> or <code>c * (a/b) → (c * a)/b</code> is introduced. <code>ExpressionTranformer.Flatten.cs</code> is not modified.</p>
+<p><strong>Fallback.</strong> The proof below needs every prepared term to be its raw term, a constant node holding the same boxed value, or the
+same quotient or product (<code>IsPreparedGroupedTerm</code>). No rule is known to rewrite such a term; should one do so, the levels run
+one by one on the prepared terms, children before their parent, through <code>TransformLevel</code> and the <code>NaN</code> fold of the parent's
+preparation (<code>TransformGroupedLevelByLevel</code>, an explicit stack of frames, one structural visit per node): the historical
+treatment, without preparing anything twice. <code>FlattenAdmissionStatistics.ForceGroupedFallback</code> forces it for audits; the seeded
+corpus gives the historical structure through it too.</p>
+<h3 id="165-why-the-result-is-the-level-by-level-result">16.5 Why the result is the level by level result</h3>
+<p>Level by level, a crossed node sees two prepared operands, each a prepared term or the canonical form of a sub-chain.</p>
+<ul>
+<li><strong>Terms.</strong> Preparing a term gives the term itself (§15.5): a parameter, the constant, a product, a field division of two
+parameters, which never throws in IEEE-754; no rule rewrites it into a sum, a negation, a zero or a call.</li>
+<li><strong>The rules that apply</strong> are the reassociation rules on a subtracted canonical sum (<code>SubstractionWithAddition</code>,
+<code>SubstractionWithSubstraction</code> and their finishing), the sign rules on the symbolic <code>0 - t</code> of a canonical subtracted term
+(<code>SubstractionWithZero(0, t)</code>, <code>AdditionWithNegate</code>, <code>SubstractionWithNegate</code>) and the finalization, which canonicalizes the
+signed terms it collects. They only move signs and regroup terms: identities the global canonicalization applies.</li>
+<li><strong>Nothing else can apply.</strong> Two operands of a level always hold a parameter the other does not hold (a term, a factor or a
+numerator; a shared denominator is never an operand by itself), the simplifier never introduces a parameter and never removes
+one from such a chain, so every factoring comparison of <code>AdditionOfEqualsElements</code>, <code>SubstractionOfEqualsElements</code> and of the
+additive canonicalization fails and nothing cancels or merges; a sub-sum only matches another sub-sum (§13.4), never one with
+disjoint parameters. With one constant term no constant pair is folded; the only zeros are the symbolic ones of <code>0 - t</code>, which
+the sign rules consume. No logarithm, power or call is present, so no other additive rule matches.</li>
+<li><strong>Order.</strong> Free parameters tie in the canonical order (S4); every rewrite above keeps the relative order of the terms of one
+sign, those of the left operand before those of the right one, so the per-level stable sorts compose into the stable sort of
+the signed terms in source order, which is what the single canonicalization sorts.</li>
+<li><strong>Effects and policies.</strong> Every operand is inert ordinary floating-point arithmetic over parameters and primitive constants:
+nothing throws, nothing calls user code, the effect gate admits every rule on it under every policy, the result does not
+depend on the policy, and no evaluation is dropped, repeated or moved.</li>
+</ul>
+<p>This is the proof sketch; the equality is <strong>pinned</strong> on every tested shape against the historical treatment of the built-in
+simplifier, by strict structural identity after one pass (node types, static types, operator methods, constant bits and
+parameter instances), never through a numerical tolerance alone (§16.6).</p>
+<h3 id="166-validation">16.6 Validation</h3>
+<p><strong>Suites</strong> (Release): Unit 14,751 passed (1 skipped), Security 399 (3 skipped), Functional 383 (a first run reported one
+failure that the rerun did not reproduce; 383 of 383 on the rerun), ETC Debug (<code>Coverage</code>) 350 (1 skipped).</p>
+<p><strong>New tests.</strong> <code>ExpressionSimplifierGroupedQuotientReferenceTests</code> (§16.2, passes on <code>ed3ea136</code>),
+<code>ExpressionSimplifierGroupedQuotientChainTests</code> (Unit) and <code>ExpressionSimplifierGroupedQuotientSecurityTests</code> (Security):</p>
+<ul>
+<li>a seeded corpus of 3,000 grouped chains (2 to 14 terms, <code>double</code> and <code>float</code>, shared and own denominators, parameters,
+linear products, at most one constant, random groupings and signs, distinct, shared or missing parameter names) gives after
+one and two passes exactly the structure of the historical treatment, under the six policies on one case in ten; 938 of them
+are admitted grouped chains. The forced fallback gives it too (600 cases);</li>
+<li>right, balanced and mixed-sign families of 2 to 12 quotients, shared and distinct denominators, <code>double</code> and <code>float</code>, are
+admitted and give the historical structure under every policy, after one and two passes; 8 to 128 quotients give the result
+of the linear chain of the same signed terms (the historical treatment is the reference up to 16);</li>
+<li>24 refused shapes keep the root refused and the historical result: repeated numerator, numerator reused as a denominator,
+denominator reused as a numerator, a term or a factor, two constants, a <code>NaN</code> constant, no quotient, constant numerator or
+denominator, sum numerator, product denominator, nested division, negated quotient, custom division, custom or checked crossed
+operator, effectful call or numerator, shared group, <code>long</code>, <code>int</code>, <code>decimal</code> and lifted <code>double?</code> quotients;</li>
+<li>derived simplifiers keep their rules (a division rule of their own sees every quotient as often as before), their
+finalization and their result, and the admission never walks the family for them;</li>
+<li>values bit for bit those of the historical result on special operands; observable evaluations as often and in the order of
+the source, none run by the simplification; comparer equality and hash consistent with the linear chain;</li>
+<li>concurrency (32 parallel calls on one instance), a nested public call from user code, an instance reused after a budget
+refusal, the per-thread switch;</li>
+<li>security: extension nodes (as a term, a numerator, a denominator) and impersonating division and subtraction methods never
+read by the admission; the work counted and refused just above each limit; 20,000 quotients simplified on a 256 KiB stack, the
+same chain ending with a call keeps the controlled <code>Stack</code> refusal; a DAG of <code>2^50</code> paths refused by the admission in fewer
+than four visits per distinct node; a refused 200-level chain walked once by the family (199 lookups), the table isolated per
+operation and thread.</li>
+</ul>
+<p><strong>S5 campaigns</strong> (<code>ed3ea136</code> against the branch, default policy, 1,000 seeds and 1,000 nested cases): <code>terminate</code>, <code>converge</code>,
+<code>stability</code>, <code>comparer</code>, <code>diff</code>, <code>effects</code>, <code>s3</code> and <code>canon</code> produce byte-identical result, anomaly and summary files (25 files):
+no case of these corpora changes.</p>
+<p><strong>Differential corpora</strong> (every branch result compared with <code>ed3ea136</code>, then evaluated against its source on twelve samples when
+it differs):</p>
+<table>
+<thead>
+<tr>
+<th>Corpus</th>
+<th style="text-align: right;">Cases</th>
+<th style="text-align: right;">same</th>
+<th style="text-align: right;">different</th>
+<th style="text-align: right;"><code>master</code> budget refusal, branch result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>historical (C3b–C3e), default</td>
+<td style="text-align: right;">40,000</td>
+<td style="text-align: right;">40,000</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr>
+<td>historical, each explicit policy (5)</td>
+<td style="text-align: right;">15,000</td>
+<td style="text-align: right;">15,000</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr>
+<td>historical, derived simplifier</td>
+<td style="text-align: right;">15,000</td>
+<td style="text-align: right;">15,000</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr>
+<td>historical with quotients, default</td>
+<td style="text-align: right;">40,000</td>
+<td style="text-align: right;">40,000</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr>
+<td>historical with quotients, derived</td>
+<td style="text-align: right;">15,000</td>
+<td style="text-align: right;">15,000</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr>
+<td>grouped (2 to 40 terms), default</td>
+<td style="text-align: right;">3,000</td>
+<td style="text-align: right;">2,995</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">5</td>
+</tr>
+<tr>
+<td>grouped, each explicit policy (5)</td>
+<td style="text-align: right;">1,000</td>
+<td style="text-align: right;">997</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">3</td>
+</tr>
+<tr>
+<td>grouped, derived simplifier</td>
+<td style="text-align: right;">1,000</td>
+<td style="text-align: right;">1,000</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>Expected improvements.</strong> The only differences are grouped chains on which <code>master</code> exceeds the default budget
+(<code>ExpressionResourceLimitException</code>, 1,000,000 transformation visits) and the branch returns a result. On the five cases of the
+default policy, the historical treatment run <strong>without limits</strong> (1.7 to 9.9 s each) gives exactly the structure of the branch,
+and the values agree with the source within rounding.</li>
+<li><strong>Structural changes, exception changes, value changes, evaluation-count changes: none.</strong> The non-idempotent counts are those
+of the baseline (782, 322, 10,501, 4,864, 6,008 on the historical corpora; free-parameter ties on the grouped ones).</li>
+</ul>
+<p><strong>Stress families</strong> (S5 harness <code>profile</code>, <code>ed3ea136</code> against the branch): <code>p</code> 16 and 64, <code>B</code>, <code>g</code>, <code>F</code>, <code>H</code>, <code>Lsub</code>, <code>Rsub</code>,
+<code>Lmul</code>, <code>bal</code> 64, <code>z</code>, <code>e</code>, <code>k</code>, <code>n</code> 16, <code>o</code>, <code>r</code> 8, <code>Gm</code>, <code>div</code>, <code>pow</code>, <code>negmul</code>, <code>negdiv</code>, <code>subneg</code>, <code>plus0</code>, <code>zeroplus</code>,
+<code>pow1</code> 32, <code>negsum</code>, <code>zerominus</code> 16, <code>horner</code> 12, <code>constabs</code>, <code>nanabs</code>, <code>nanpow</code> 10 and <code>subdiv</code>, <code>subdivM</code>, <code>subdivD</code>, <code>subdivL</code>
+64: identical minimal transformation and structural budgets, comparer simplifications and results at every point.</p>
+<h3 id="167-growth-profile">16.7 Growth (<code>profile</code>)</h3>
+<p>Branch, same protocol (<code>profile</code>, one process per point; the times are medians on a loaded machine, the counters are
+deterministic):</p>
+<table>
+<thead>
+<tr>
+<th>Family</th>
+<th style="text-align: right;">n</th>
+<th style="text-align: right;">transformation visits</th>
+<th style="text-align: right;">structural visits</th>
+<th style="text-align: right;">comparer simplifications</th>
+<th style="text-align: right;">median ms</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>subdivR</code></td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">26</td>
+<td style="text-align: right;">171</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.018</td>
+</tr>
+<tr>
+<td><code>subdivR</code></td>
+<td style="text-align: right;">24</td>
+<td style="text-align: right;">74</td>
+<td style="text-align: right;">895</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.043</td>
+</tr>
+<tr>
+<td><code>subdivR</code></td>
+<td style="text-align: right;">64</td>
+<td style="text-align: right;">194</td>
+<td style="text-align: right;">3,623</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.13</td>
+</tr>
+<tr>
+<td><code>subdivR</code></td>
+<td style="text-align: right;">128</td>
+<td style="text-align: right;">386</td>
+<td style="text-align: right;">7,377</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.19</td>
+</tr>
+<tr>
+<td><code>subdivR</code></td>
+<td style="text-align: right;">256</td>
+<td style="text-align: right;">770</td>
+<td style="text-align: right;">18,561</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.49</td>
+</tr>
+<tr>
+<td><code>subdivR</code></td>
+<td style="text-align: right;">512</td>
+<td style="text-align: right;">1,538</td>
+<td style="text-align: right;">40,751</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">2.8</td>
+</tr>
+<tr>
+<td><code>subdivB</code></td>
+<td style="text-align: right;">64</td>
+<td style="text-align: right;">194</td>
+<td style="text-align: right;">2,224</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.36</td>
+</tr>
+<tr>
+<td><code>subdivB</code></td>
+<td style="text-align: right;">512</td>
+<td style="text-align: right;">1,538</td>
+<td style="text-align: right;">29,977</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">5.7</td>
+</tr>
+<tr>
+<td><code>subdivBM</code></td>
+<td style="text-align: right;">24</td>
+<td style="text-align: right;">74</td>
+<td style="text-align: right;">980</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.041</td>
+</tr>
+<tr>
+<td><code>subdivBM</code></td>
+<td style="text-align: right;">512</td>
+<td style="text-align: right;">1,538</td>
+<td style="text-align: right;">39,915</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">2.8</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Every grouped family (<code>subdivR</code>, <code>subdivB</code>, <code>subdivBM</code>, <code>subdivRD</code>, <code>subdivRF</code>, <code>subdivBF</code>) takes <code>3n + 2</code> transformation
+visits at every size from 4 to 512 (one for the root, one per term, one per operand of each quotient) and no comparer
+simplification: the growth is linear. <code>subdivR 24</code>: 811,813 → 74 visits, 1.5 s → 43 µs; <code>subdivB 64</code>: 294,472 → 194 visits,
+392 ms → 0.36 ms; <code>subdivBM 24</code>: 293,292 → 74 visits.</li>
+<li>The structural visits are those of the linear chain of the same signed terms (<code>subdivR</code> and <code>subdivM</code>, <code>subdivB</code> and
+<code>subdiv</code>) plus the admission walk (3 to 11 visits more): a ratio of 2.0 to 2.5 per doubling, the <code>n log n</code> comparisons of the
+sort of the canonicalization (§15.7).</li>
+<li>The reference families have exactly their baseline counters at every size from 4 to 512: <code>subdiv</code>, <code>subdivM</code>, <code>subdivD</code>
+(<code>3n + 2</code> transformation visits; 29,966, 40,748 and 29,966 structural visits at 512) and <code>subdivL</code> (<code>4n + 1</code>, refused for the
+integral division; its structural visits stay quadratic, 131,333 at 512, as on the baseline).</li>
+</ul>
+<h3 id="168-measures">16.8 Measures</h3>
+<p><strong>BenchmarkDotNet</strong> 0.14.0, in process, 8 warmup and 20 measured iterations, five processes run one after the other pinned to the
+performance cores (affinity <code>0x14</code>) at high priority, as in §15.8: base (<code>ed3ea136</code>), branch, base, branch, base. The table
+compares the faster process of each side; the A/A column is the spread of the three base processes. <code>subChainBM 32</code> could not run
+on the base (BenchmarkDotNet refuses an in-process case of several seconds per operation): <code>subChainBM 16</code> replaces it.</p>
+<table>
+<thead>
+<tr>
+<th>Case</th>
+<th style="text-align: right;">base µs</th>
+<th style="text-align: right;">branch µs</th>
+<th style="text-align: right;">Time</th>
+<th style="text-align: right;">base A/A</th>
+<th style="text-align: right;">base KB</th>
+<th style="text-align: right;">branch KB</th>
+<th style="text-align: right;">Allocated</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>a+b</code></td>
+<td style="text-align: right;">0.90</td>
+<td style="text-align: right;">0.90</td>
+<td style="text-align: right;">+0.7 %</td>
+<td style="text-align: right;">3.2 %</td>
+<td style="text-align: right;">2.47</td>
+<td style="text-align: right;">2.47</td>
+<td style="text-align: right;">0.0 %</td>
+</tr>
+<tr>
+<td><code>x+x+x</code></td>
+<td style="text-align: right;">2.08</td>
+<td style="text-align: right;">2.08</td>
+<td style="text-align: right;">+0.2 %</td>
+<td style="text-align: right;">2.5 %</td>
+<td style="text-align: right;">3.64</td>
+<td style="text-align: right;">3.64</td>
+<td style="text-align: right;">0.0 %</td>
+</tr>
+<tr>
+<td><code>repeated 16</code></td>
+<td style="text-align: right;">9.31</td>
+<td style="text-align: right;">9.52</td>
+<td style="text-align: right;">+2.3 %</td>
+<td style="text-align: right;">3.3 %</td>
+<td style="text-align: right;">21.96</td>
+<td style="text-align: right;">21.96</td>
+<td style="text-align: right;">0.0 %</td>
+</tr>
+<tr>
+<td><code>repeated 48</code></td>
+<td style="text-align: right;">25.33</td>
+<td style="text-align: right;">25.32</td>
+<td style="text-align: right;">−0.1 %</td>
+<td style="text-align: right;">0.8 %</td>
+<td style="text-align: right;">60.03</td>
+<td style="text-align: right;">60.03</td>
+<td style="text-align: right;">0.0 %</td>
+</tr>
+<tr>
+<td><code>repeated 512</code></td>
+<td style="text-align: right;">282.61</td>
+<td style="text-align: right;">283.94</td>
+<td style="text-align: right;">+0.5 %</td>
+<td style="text-align: right;">1.0 %</td>
+<td style="text-align: right;">627.03</td>
+<td style="text-align: right;">627.03</td>
+<td style="text-align: right;">0.0 %</td>
+</tr>
+<tr>
+<td><code>coef 24</code></td>
+<td style="text-align: right;">83.40</td>
+<td style="text-align: right;">84.60</td>
+<td style="text-align: right;">+1.4 %</td>
+<td style="text-align: right;">0.9 %</td>
+<td style="text-align: right;">114.81</td>
+<td style="text-align: right;">114.81</td>
+<td style="text-align: right;">0.0 %</td>
+</tr>
+<tr>
+<td><code>coef 128</code></td>
+<td style="text-align: right;">422.91</td>
+<td style="text-align: right;">429.00</td>
+<td style="text-align: right;">+1.4 %</td>
+<td style="text-align: right;">0.6 %</td>
+<td style="text-align: right;">569.71</td>
+<td style="text-align: right;">569.71</td>
+<td style="text-align: right;">0.0 %</td>
+</tr>
+<tr>
+<td><code>tail 48</code></td>
+<td style="text-align: right;">37.95</td>
+<td style="text-align: right;">37.79</td>
+<td style="text-align: right;">−0.4 %</td>
+<td style="text-align: right;">0.9 %</td>
+<td style="text-align: right;">85.94</td>
+<td style="text-align: right;">85.94</td>
+<td style="text-align: right;">0.0 %</td>
+</tr>
+<tr>
+<td><code>tail 512</code></td>
+<td style="text-align: right;">429.06</td>
+<td style="text-align: right;">437.11</td>
+<td style="text-align: right;">+1.9 %</td>
+<td style="text-align: right;">0.9 %</td>
+<td style="text-align: right;">869.66</td>
+<td style="text-align: right;">869.66</td>
+<td style="text-align: right;">0.0 %</td>
+</tr>
+<tr>
+<td><code>twice 48</code></td>
+<td style="text-align: right;">33.35</td>
+<td style="text-align: right;">33.83</td>
+<td style="text-align: right;">+1.4 %</td>
+<td style="text-align: right;">1.2 %</td>
+<td style="text-align: right;">66.45</td>
+<td style="text-align: right;">66.45</td>
+<td style="text-align: right;">0.0 %</td>
+</tr>
+<tr>
+<td><code>cancel 128</code></td>
+<td style="text-align: right;">58.07</td>
+<td style="text-align: right;">58.49</td>
+<td style="text-align: right;">+0.7 %</td>
+<td style="text-align: right;">1.3 %</td>
+<td style="text-align: right;">142.30</td>
+<td style="text-align: right;">142.30</td>
+<td style="text-align: right;">0.0 %</td>
+</tr>
+<tr>
+<td><code>linear 200</code></td>
+<td style="text-align: right;">58.63</td>
+<td style="text-align: right;">58.85</td>
+<td style="text-align: right;">+0.4 %</td>
+<td style="text-align: right;">1.8 %</td>
+<td style="text-align: right;">121.91</td>
+<td style="text-align: right;">121.91</td>
+<td style="text-align: right;">0.0 %</td>
+</tr>
+<tr>
+<td><code>sinMid 16</code></td>
+<td style="text-align: right;">9.81</td>
+<td style="text-align: right;">9.71</td>
+<td style="text-align: right;">−1.0 %</td>
+<td style="text-align: right;">0.2 %</td>
+<td style="text-align: right;">21.76</td>
+<td style="text-align: right;">21.76</td>
+<td style="text-align: right;">0.0 %</td>
+</tr>
+<tr>
+<td><code>mixed 8</code></td>
+<td style="text-align: right;">24.75</td>
+<td style="text-align: right;">24.94</td>
+<td style="text-align: right;">+0.8 %</td>
+<td style="text-align: right;">0.3 %</td>
+<td style="text-align: right;">28.44</td>
+<td style="text-align: right;">28.44</td>
+<td style="text-align: right;">0.0 %</td>
+</tr>
+<tr>
+<td><code>mixed 32</code></td>
+<td style="text-align: right;">100.91</td>
+<td style="text-align: right;">102.84</td>
+<td style="text-align: right;">+1.9 %</td>
+<td style="text-align: right;">1.8 %</td>
+<td style="text-align: right;">110.03</td>
+<td style="text-align: right;">110.03</td>
+<td style="text-align: right;">0.0 %</td>
+</tr>
+<tr>
+<td><code>partial 32</code></td>
+<td style="text-align: right;">69.39</td>
+<td style="text-align: right;">70.05</td>
+<td style="text-align: right;">+0.9 %</td>
+<td style="text-align: right;">0.1 %</td>
+<td style="text-align: right;">103.07</td>
+<td style="text-align: right;">103.07</td>
+<td style="text-align: right;">0.0 %</td>
+</tr>
+<tr>
+<td><code>cross 32</code></td>
+<td style="text-align: right;">72.07</td>
+<td style="text-align: right;">72.77</td>
+<td style="text-align: right;">+1.0 %</td>
+<td style="text-align: right;">1.0 %</td>
+<td style="text-align: right;">118.89</td>
+<td style="text-align: right;">118.89</td>
+<td style="text-align: right;">0.0 %</td>
+</tr>
+<tr>
+<td><code>subChain 16</code></td>
+<td style="text-align: right;">16.39</td>
+<td style="text-align: right;">16.90</td>
+<td style="text-align: right;">+3.1 %</td>
+<td style="text-align: right;">6.6 %</td>
+<td style="text-align: right;">17.83</td>
+<td style="text-align: right;">17.83</td>
+<td style="text-align: right;">0.0 %</td>
+</tr>
+<tr>
+<td><code>subChain 64</code></td>
+<td style="text-align: right;">60.67</td>
+<td style="text-align: right;">63.05</td>
+<td style="text-align: right;">+3.9 %</td>
+<td style="text-align: right;">8.2 %</td>
+<td style="text-align: right;">65.56</td>
+<td style="text-align: right;">65.56</td>
+<td style="text-align: right;">0.0 %</td>
+</tr>
+<tr>
+<td><code>subChainM 24</code></td>
+<td style="text-align: right;">24.36</td>
+<td style="text-align: right;">25.28</td>
+<td style="text-align: right;">+3.8 %</td>
+<td style="text-align: right;">6.3 %</td>
+<td style="text-align: right;">23.20</td>
+<td style="text-align: right;">23.20</td>
+<td style="text-align: right;">0.0 %</td>
+</tr>
+<tr>
+<td><code>subChainD 64</code></td>
+<td style="text-align: right;">62.65</td>
+<td style="text-align: right;">65.48</td>
+<td style="text-align: right;">+4.5 %</td>
+<td style="text-align: right;">7.5 %</td>
+<td style="text-align: right;">68.87</td>
+<td style="text-align: right;">68.87</td>
+<td style="text-align: right;">0.0 %</td>
+</tr>
+<tr>
+<td><code>subChainF 64</code></td>
+<td style="text-align: right;">70.76</td>
+<td style="text-align: right;">71.37</td>
+<td style="text-align: right;">+0.9 %</td>
+<td style="text-align: right;">4.2 %</td>
+<td style="text-align: right;">65.38</td>
+<td style="text-align: right;">65.38</td>
+<td style="text-align: right;">0.0 %</td>
+</tr>
+<tr>
+<td><code>subChainR 16</code></td>
+<td style="text-align: right;">18,319.53</td>
+<td style="text-align: right;">16.79</td>
+<td style="text-align: right;"><strong>÷ 1,091</strong></td>
+<td style="text-align: right;">0.7 %</td>
+<td style="text-align: right;">14,077.00</td>
+<td style="text-align: right;">16.10</td>
+<td style="text-align: right;">÷ 874</td>
+</tr>
+<tr>
+<td><code>subChainR 24</code></td>
+<td style="text-align: right;">924,035.99</td>
+<td style="text-align: right;">24.86</td>
+<td style="text-align: right;"><strong>÷ 37,170</strong></td>
+<td style="text-align: right;">0.5 %</td>
+<td style="text-align: right;">587,847.88</td>
+<td style="text-align: right;">22.47</td>
+<td style="text-align: right;">÷ 26,160</td>
+</tr>
+<tr>
+<td><code>subChainB 32</code></td>
+<td style="text-align: right;">30,652.35</td>
+<td style="text-align: right;">31.24</td>
+<td style="text-align: right;"><strong>÷ 981</strong></td>
+<td style="text-align: right;">0.6 %</td>
+<td style="text-align: right;">18,606.01</td>
+<td style="text-align: right;">32.68</td>
+<td style="text-align: right;">÷ 569</td>
+</tr>
+<tr>
+<td><code>subChainB 64</code></td>
+<td style="text-align: right;">250,266.74</td>
+<td style="text-align: right;">62.14</td>
+<td style="text-align: right;"><strong>÷ 4,027</strong></td>
+<td style="text-align: right;">2.5 %</td>
+<td style="text-align: right;">134,269.07</td>
+<td style="text-align: right;">62.95</td>
+<td style="text-align: right;">÷ 2,133</td>
+</tr>
+<tr>
+<td><code>subChainBM 16</code></td>
+<td style="text-align: right;">6,817.78</td>
+<td style="text-align: right;">17.39</td>
+<td style="text-align: right;"><strong>÷ 392</strong></td>
+<td style="text-align: right;">1.3 %</td>
+<td style="text-align: right;">5,362.02</td>
+<td style="text-align: right;">16.59</td>
+<td style="text-align: right;">÷ 323</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>The grouped chains go from milliseconds or seconds to tens of microseconds, linearly in their length, and cost what the linear
+chain of the same length costs (<code>subChainR 24</code> 24.9 µs, <code>subChainM 24</code> 25.3 µs; <code>subChainB 64</code> 62.1 µs, <code>subChain 64</code> 63.1 µs).</li>
+<li>The reference families allocate exactly what they did. Their times differ by −1.0 % to +4.5 %: within the A/A spread of the
+base for the quotient chains (4 to 8 %) and the small cases; <code>coef 24</code>, <code>coef 128</code>, <code>tail 512</code>, <code>mixed 32</code> and <code>twice 48</code>
+(+1.4 % to +1.9 %) are slightly above the spread of the three base processes, a level §15.8 also measured between two
+processes of one binary (up to 9 %). The new test runs only after a linear refusal for a subtracted group and a factorable
+refusal, which none of these cases reaches; the only change on their path is one more field in the saved operation scope.</li>
+<li><strong>Harness <code>growth</code> families</strong> (<code>shared</code>, <code>none</code>, <code>crossed</code>, <code>ties</code>, <code>repeated</code>, <code>wide</code>, <code>collide</code>, <code>dag</code>, <code>coefshared</code>, 8 to
+512 terms): transformation visits, structural visits, factoring counters and result sizes identical at every size;
+allocations equal up to 160 bytes of measurement noise. Single-process times vary by −10 % to +14 %; a second A/A pair at 512
+terms (two pinned processes per binary) gives <code>ties</code> 18.4 / 19.3 ms (base) and 19.4 / 18.6 ms (branch), <code>dag</code> 33.5 / 34.5 and
+34.5 / 34.3 ms, <code>wide</code> 17.3 / 17.2 and 17.7 / 18.6 ms, <code>coefshared</code> 1.39 / 1.34 and 1.39 / 1.34 ms: noise of the same order on
+both sides.</li>
+</ul>
+<h3 id="169-residual-limits">16.9 Residual limits</h3>
+<ul>
+<li>The family is restricted: at most one constant term (with two, the level by level constant folding depends on the
+grouping), no repeated numerator, no denominator used elsewhere, no quotient of another shape (a constant or product
+numerator, a sum or product denominator, a nested division), no call, no negated term, <code>double</code> and <code>float</code> only. These
+chains keep the historical cost.</li>
+<li>A grouped chain whose terms repeat (<code>x - (x/y - …)</code>) or share factors is neither linear, factorable nor grouped: admitting it
+needs quotient atoms in the proof obligations of the factorable family (C3c), a separate decision.</li>
+<li>The structural visits grow as <code>n log n</code>, like those of every linear chain: the sort of the canonicalization (§15.7).</li>
+<li>Mixed signs keep the free-parameter ties of S4: the result is the level by level result, which is not always idempotent.</li>
+<li>A root refused by one lookup of the family's own table lowers the shared known-refusal depth to <code>0</code> for that root (a
+performance-only choice: its sub-chains are walked again by the old families).</li>
 </ul>
 
 </article>
