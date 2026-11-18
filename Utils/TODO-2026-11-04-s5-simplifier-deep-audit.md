@@ -54,14 +54,14 @@ stated. The base was measured in a detached worktree of `c509bdf6`, so the branc
 | S5A-01 `x^y + z^2` NRE | **FIXED** (PR #705) | `terminate` 0 exception, `converge` 0 error; `S5A01_SumOfPowersWithSymbolicExponent_Declines` | `ExpressionSimplifier.INumber.cs`, `AdditionOfCos2andSin2Number` |
 | S5A-02 `double.Round(x, 2)` throws | **FIXED** (this branch) | see below; `S5A02_DoubleRoundWithANonDoubleArgument_IsKept`, `ExpressionSimplifierRoundOverloadTests` | `ExpressionSimplifier.Math.cs`, `TransformCall` |
 | S5A-03 decimal nested divisions | **FIXED** (P18b, PR #684) | `diff` decimal: 0 `EXC-*`; `S5A03_DecimalNestedDivision_KeepsTheExceptions` | `IsOrdinaryFieldDivision` |
-| S5A-04 exception of an unevaluated branch | **OPEN-CONFIRMED** (contract decision needed) | every lazy context, every policy (targeted probes); `S5A04_ExceptionOfAnUnevaluatedBranch_IsRaisedBySimplification` covers the conditional only (missing coverage) | `DivideWithZeroOrOne`, `FoldConstants` callers |
+| S5A-04 exception of an unevaluated branch | **OPEN-CONFIRMED** (contract decision needed) | every lazy context, every policy; `S5A04_EveryLazyContext_RaisesTheFoldExceptionWhileSimplifying` | `DivideWithZeroOrOne`, `FoldConstants` callers |
 | S5A-05 rule results left for the next pass | **PARTIAL** | original examples fixed by C3c/C3d (`S5A05_RuleResultsLeftForTheNextPass`); 301 corpus cases still need 2–4 passes (residues `t - (sum)` 66, `/ ±1` 63 = L-2, constant pair 25, `-(product)` 22) | plan order, `FinishReassociation` |
 | S5A-06 oscillating passes | **PARTIAL** → residue is a **DOCUMENTED-LIMITATION** | original examples fixed by C3c (`S5A06_RepeatedPasses_Oscillate`); 75 cycles, 49 of them free-parameter ties (L-3), 26 with bound parameters, all outside the C3c/C3d families (below) | `SubstractionWithZero(0, t)`, `FlattenAdditiveChain` |
 | S5A-07 `t + 0`, `t ^ 1` re-transform a prepared operand | **PARTIAL** (deferred) | excess bounded (×1.48 at n = 12, ×1.30 at n = 20); removing it changes 1 first-pass result (below); `S5A07_ZeroAndOneIdentities_RetransformAPreparedOperand` | `AdditionWithZero(e, t, 0)`, `PowerByZeroOrOne` |
 | S5A-08 nested negated differences | **FIXED** (C3c: bounded polynomial) | `negsum` 3,038 visits at n = 20 (363,882 on 2026-11-04), `subneg` 3,059, `negmul` 6,745, `negdiv` 8,869, `zerominus` 9,224 (about n^2.3 to n^2.5); `S5A08_NestedNegatedDifferences_GrowSuperPolynomially` | negation rules, C3c factorable chains |
 | S5A-09 equal terms not combined | additive **FIXED** (C3c); multiplicative **DOCUMENTED-LIMITATION** | `S5A09_EqualTermsGroupedButNotCombined`: `x * (x * y)` kept, not identified with `y * x^2` | `MultiplicationOfEqualsElements` |
 | S5A-10 `-(-x)` kept | **OPEN-CONFIRMED** (deferred, not isolable) | `S5A10_DoubleNegation_IsNeverSimplified`; experiment below | missing rule |
-| S5A-11 plan order from `GetMethods` | **OPEN** (latent: no nondeterminism demonstrated, no test pins the order) | `inventory`: 76 rules, the 2026-11-04 order; no test covers a cross-file priority | `ExpressionTransformer.BuildPlan` |
+| S5A-11 plan order from `GetMethods` | **FIXED as a pinned contract** (no nondeterminism demonstrated) | `ExpressionSimplifierDispatchOrderTests` (Windows, Ubuntu and Debug CI jobs) | `ExpressionTransformer.BuildPlan` |
 | S5A-12 free-parameter subtraction chains | **FIXED** (Flatten PR B + C3c) | `Lsub` `n + 1` visits (21 at n = 20); level by level: free 169, bound 182 visits at twelve terms; `S5A12_DifferenceOfFreeParameters_GrowsExponentially` | C3c factorable chain |
 | S5A-13 decimal divisor below 1 inert | **FIXED** (P18b, PR #684) | `S5A13_DecimalDivisionByASmallConstant_IsNotInert` | `ExpressionEffectAnalysis.IsSafeDivisor` |
 | S5A-14 constant plus call nesting | **FIXED** (P19d) | `S5A14_ConstantPlusCallNesting_GrowsPolynomially` | comparison memo |
@@ -124,7 +124,7 @@ the engine's own path and became `TransformCall_RoundDoubleInt_KeepsTheSourceCal
 
 ### S5A-04 — exception timing (open, separate pull request)
 
-Map (all measured with targeted probes; only the conditional is covered by a test): an integral zero divisor
+Map (all measured, `S5A04_EveryLazyContext_RaisesTheFoldExceptionWhileSimplifying`): an integral zero divisor
 (`DivideWithZeroOrOne` throws `DivideByZeroException`), `int.MinValue / -1` and a decimal overflow (`FoldConstants` through
 `DivisionOfConstants`, `MultiplicationOfConstants`, `AdditionOfConstants`, `SubstractionOfConstants`, and the factoring and
 aggregation helpers that call it) raise their exception while simplifying in **every** context where the source does not
@@ -196,6 +196,17 @@ unary of an additive chain, so `-(-x)` itself still needs two passes (fixed@2 ri
 invariant `Equals(a, b) == Equals(S(a), S(b))` gets 3 violations. It changes canonical results without being isolable: deferred
 (it needs the flatten path to treat a double negation, a C3 change).
 
+### S5A-11 — dispatch determinism
+
+`BuildPlan` keeps the order of `Type.GetMethods(Public | NonPublic | InvokeMethod | Instance)`: for the built-in type, the
+declaration order of `ExpressionSimplifier.cs`, then `.INumber.cs`, then `.Math.cs` (alphabetical on this machine; MSBuild and
+the runtime do not promise it); for a derived simplifier, its own rules first, then the base rules. The flatten rules have their
+own sequence. Nothing sorts the rules, and no alphabetical sort was introduced (it would reorder 76 priorities). The current
+order is the compatibility baseline: `BuiltInPlan_IsTheRecordedBaseline` pins it rule for rule, `PlanRules_MirrorsTheEnginePlan`
+checks the enumeration against the trace indices of the engine, `Priorities_ThatDecideAResult` pins the cross-file and
+same-file priorities that decide a result (`log(x) + log(x)` gives `2 * Double.Log(x)`), `DerivedPlan_PutsItsOwnRulesFirst`
+the derived order. The tests live in the `Coverage` namespace, so the Ubuntu unit job and the Debug expression-engine job run
+them too: a platform, configuration or file-order difference fails CI instead of changing a result.
 
 
 Status: **audit report, open findings**. Companion of the S5 stage of `TODO-2026-09-12-expression-simplifier-roadmap.md`
