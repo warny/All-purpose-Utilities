@@ -363,34 +363,22 @@ public class ExpressionSimplifierComparisonMemoTests
         AssertNoMemoState();
     }
 
-    /// <summary>Exceptions thrown while simplifying an eligible operand are never cached and propagate every time.</summary>
+    /// <summary>
+    /// An eligible integral division by zero, whose simplification threw until S5A-04 and was therefore never cached, now
+    /// simplifies, keeps its division for evaluation, and is cached like any other operand.
+    /// </summary>
     /// <remarks>
-    /// Until S5A-04 the throwing operand was an integral division by zero (and until S5 P12 <c>x / 0.0</c>); a constant fold
-    /// no longer throws, so no eligible operand, which holds only native arithmetic, raises an exception of its own while
-    /// simplifying. The exception is now the refusal of the operation's transformation budget, raised in the middle of the
-    /// eligible operand's simplification by a comparer whose limits are tight. The former operand simplifies and is cached
-    /// like any other (control).
+    /// This test checked that the exception was never cached (until S5 P12 with <c>x / 0.0</c>). No eligible operand, which
+    /// holds only native arithmetic, raises an exception of its own while simplifying any more; the remaining refusal, the
+    /// transformation budget, is a resource-exhaustion invariant and is checked in <c>UtilsTest.Security</c>
+    /// (<c>ExpressionComparisonMemoResourceLimitTests.RefusedSimplification_IsNeverCached</c>).
     /// </remarks>
     [TestMethod]
-    public void Exceptions_AreNeverCached()
+    public void DeferredDivisionByZero_IsCachedLikeAnyOperand()
     {
         ParameterExpression i = Expression.Parameter(typeof(int), "i");
-        Expression throwing = Expression.Add(Expression.Multiply(Expression.Add(i, Expression.Constant(1)), Expression.Constant(2)), Expression.Add(i, Expression.Constant(3)));
-        Assert.IsTrue(ExpressionSimplifier.IsComparisonMemoEligible(throwing));
-        ExpressionComparer tight = ExpressionComparer.Create(new ExpressionResourceLimits { MaxTransformVisits = 3 });
-
-        using (ExpressionSimplifier.BeginActivatedComparisonMemoSessionForTesting())
-        {
-            Assert.ThrowsExactly<ExpressionResourceLimitException>(() => tight.GetHashCode(throwing));
-            Assert.ThrowsExactly<ExpressionResourceLimitException>(() => tight.GetHashCode(throwing));
-            Assert.AreEqual(0, ExpressionSimplifier.ComparisonMemoEntryCount);
-            Assert.AreEqual(1, ExpressionSimplifier.ComparisonMemoDepth, "The session depth must be restored after a thrown simplification.");
-        }
-
-        AssertNoMemoState();
-
-        // S5A-04: the former throwing operand simplifies, keeps its division for evaluation, and is cached.
         Expression divideByZero = Expression.Divide(i, Expression.Constant(0));
+        Assert.IsTrue(ExpressionSimplifier.IsComparisonMemoEligible(divideByZero));
         using (ExpressionSimplifier.BeginActivatedComparisonMemoSessionForTesting())
         {
             Expression simplified = ExpressionComparer.SimplifyForComparison(divideByZero);

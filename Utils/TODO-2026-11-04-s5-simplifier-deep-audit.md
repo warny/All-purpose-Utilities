@@ -226,7 +226,7 @@ Validation (base and branch measured on the same machine, base in a detached wor
 | Suite | `9be5fcff` | branch |
 |---|---|---|
 | `UtilsTest.Unit` (Release) | 14,764 passed of 14,765 | 14,772 passed of 14,773 (+8: `ExpressionSimplifierDeferredFoldTests`) |
-| `UtilsTest.Security` (Release) | 399 passed of 402 | 399 passed of 402 |
+| `UtilsTest.Security` (Release) | 399 passed of 402 | 402 passed of 405 (+3: `ExpressionSimplifierDeferredFoldResourceTests`, `ExpressionComparisonMemoResourceLimitTests.RefusedSimplification_IsNeverCached`) |
 | `UtilsTest.Functional` (Release) | 383 passed | 383 passed |
 | ETC Debug (`…Expressions.Coverage`) | 354 passed of 355 | 354 passed of 355 |
 

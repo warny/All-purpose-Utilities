@@ -337,11 +337,11 @@ public class ExpressionSimplifierDeferredFoldTests
 
     /// <summary>
     /// Derived simplifiers inherit the decline, and the protected folding rules, called directly as a derived simplifier may,
-    /// decline instead of throwing; a resource-budget refusal is still raised on a tree holding a throwing fold (it is not an
-    /// arithmetic exception of a fold).
+    /// decline instead of throwing. (That a resource-budget refusal still propagates on a tree holding a throwing fold is a
+    /// resource-exhaustion invariant, checked in <c>UtilsTest.Security</c>, <c>ExpressionSimplifierDeferredFoldResourceTests</c>.)
     /// </summary>
     [TestMethod]
-    public void DerivedSimplifiersDirectRulesAndBudgets_AreUnaffected()
+    public void DerivedSimplifiersAndDirectRuleCalls_Decline()
     {
         var derived = new DerivedSimplifier();
         ParameterExpression i = Expression.Parameter(typeof(int), "i");
@@ -356,18 +356,14 @@ public class ExpressionSimplifierDeferredFoldTests
         Assert.IsNull(derived.Multiply(Expression.Multiply(max, two), max, two));
         Assert.IsNull(derived.Subtract(Expression.Subtract(Expression.Constant(decimal.MinValue), two), Expression.Constant(decimal.MinValue), two));
         Assert.IsNotNull(derived.Divide(Expression.Divide(Expression.Constant(6), Expression.Constant(3)), Expression.Constant(6), Expression.Constant(3)), "a successful fold still folds");
-
-        Expression large = Expression.Divide(Expression.Constant(1), Expression.Constant(0));
-        for (int k = 0; k < 20; k++) large = Expression.Add(Expression.Multiply(large, Expression.Constant(1)), i);
-        Assert.ThrowsExactly<ExpressionResourceLimitException>(() => new ExpressionSimplifier(new ExpressionResourceLimits { MaxTransformVisits = 5 }).Simplify(large));
     }
 
     /// <summary>
-    /// Concurrent and reentrant simplifications of throwing folds all complete with the same result, on many threads, and on a
-    /// thread with a small stack (the stack guard, not the fold handler, decides there: no exception is swallowed).
+    /// Concurrent and reentrant simplifications of throwing folds all complete with the same result. (The limited-stack case
+    /// is a resource-exhaustion invariant, checked in <c>UtilsTest.Security</c>.)
     /// </summary>
     [TestMethod]
-    public void ConcurrentReentrantAndLimitedStackSimplifications_Complete()
+    public void ConcurrentAndReentrantSimplifications_Complete()
     {
         ParameterExpression i = Expression.Parameter(typeof(int), "i");
         Expression Build() => Expression.Lambda(Expression.Condition(Expression.GreaterThan(i, Expression.Constant(0)), Expression.Add(i, Expression.Divide(Expression.Constant(int.MinValue), Expression.Constant(-1))), Expression.Constant(2)), i);
@@ -381,24 +377,6 @@ public class ExpressionSimplifierDeferredFoldTests
         var reentrant = new ReentrantSimplifier(Build);
         Assert.AreEqual(ExpressionType.Add, reentrant.Simplify(Expression.Add(i, Expression.Constant(5))).NodeType);
         Assert.AreEqual(expected, reentrant.Inner);
-
-        Exception? failure = null;
-        string? limited = null;
-        var thread = new Thread(() =>
-        {
-            try
-            {
-                limited = Text(new ExpressionSimplifier().Simplify(Build()));
-            }
-            catch (Exception exception)
-            {
-                failure = exception;
-            }
-        }, 256 * 1024);
-        thread.Start();
-        thread.Join();
-        Assert.IsTrue(failure is null || failure is InsufficientExecutionStackException, failure?.ToString());
-        if (failure is null) Assert.AreEqual(expected, limited);
     }
 
     /// <summary>A derived simplifier exposing the protected constant-folding rules.</summary>
