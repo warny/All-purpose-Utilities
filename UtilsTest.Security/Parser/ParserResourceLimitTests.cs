@@ -367,6 +367,60 @@ public class ParserResourceLimitTests
     }
 
     /// <summary>
+    /// Tokens supplied directly to <see cref="ParserEngine.Parse"/> are bounded by <see cref="ParserResourceLimits.MaxTokens"/>
+    /// like tokenizer output: every received token counts (hidden channels included), a prebuilt list over the limit is
+    /// refused from its count, a lazy (even endless) sequence is refused after exactly the allowed tokens were examined,
+    /// and inputs at the limit keep the tree of an unlimited engine.
+    /// </summary>
+    [TestMethod]
+    public void DirectTokenInput_IsBoundedByMaxTokens()
+    {
+        var definition = Antlr4GrammarConverter.Parse(HiddenChannelGrammar);
+        var all = new CompiledGrammar(definition, ParserRuntimeFeaturePolicy.Default, ParserResourceLimits.Unlimited).Tokenize("ab #c de #f gh");
+        Assert.AreEqual(5, all.Count);
+        Assert.AreEqual(2, all.Count(t => t.Channel == "HIDDEN"));
+        var expected = Dump(new ParserEngine(definition, ParserRuntimeFeaturePolicy.Default, ParserResourceLimits.Unlimited).Parse(all));
+        ParserEngine Engine(int maxTokens) => new(definition, ParserRuntimeFeaturePolicy.Default, ParserResourceLimits.Default with { MaxTokens = maxTokens });
+
+        // At the limit: prebuilt list, hidden tokens included in the count, and lazy sequence.
+        Assert.AreEqual(expected, Dump(Engine(5).Parse(all)));
+        Assert.AreEqual(expected, Dump(Engine(5).Parse(all.Select(t => t))));
+
+        // One below: hidden tokens count, so 3 default-channel tokens do not fit in 4.
+        foreach (var input in new IEnumerable<Token>[] { all, all.ToList(), all.Select(t => t) })
+        {
+            var refusal = Assert.ThrowsExactly<ParserResourceLimitException>(() => Engine(4).Parse(input));
+            Assert.AreEqual(ParserResourceLimitKind.Tokens, refusal.Kind);
+            Assert.AreEqual(ParserResourcePhase.Parser, refusal.Phase);
+            Assert.AreEqual(4L, refusal.Limit);
+            Assert.AreEqual(5L, refusal.Observed);
+            Assert.AreEqual(all[4].Span.Position, refusal.Offset);
+        }
+
+        // An endless lazy sequence is never materialized: enumeration stops at the first token over the limit.
+        var produced = 0;
+        IEnumerable<Token> Endless()
+        {
+            for (var index = 0; ; index++)
+            {
+                produced++;
+                yield return all[index % all.Count] with { Span = new Utils.Parser.Source.SourceSpan(index, 1, 1, index + 1) };
+            }
+        }
+
+        var endless = Assert.ThrowsExactly<ParserResourceLimitException>(() => Engine(1_000).Parse(Endless()));
+        Assert.AreEqual(ParserResourceLimitKind.Tokens, endless.Kind);
+        Assert.AreEqual(1_001L, endless.Observed);
+        Assert.AreEqual(1_000, endless.Offset);
+        Assert.AreEqual(1_001, produced, "only the allowed tokens and the first token over the limit are pulled");
+
+        // A refused direct input leaves the engine reusable.
+        var engine = Engine(4);
+        Assert.ThrowsExactly<ParserResourceLimitException>(() => engine.Parse(all));
+        Assert.AreEqual(Dump(new ParserEngine(definition).Parse(all.Take(3))), Dump(engine.Parse(all.Take(3))));
+    }
+
+    /// <summary>
     /// A short, highly ambiguous input cannot perform unlimited work: the parser-step budget refuses it, and parser work
     /// spent in rejected or backtracked branches is never refunded.
     /// </summary>

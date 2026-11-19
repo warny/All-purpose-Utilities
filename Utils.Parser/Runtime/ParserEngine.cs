@@ -328,12 +328,27 @@ public sealed class ParserEngine
     /// Returns the default-channel tokens of <paramref name="tokens"/> in order, reusing the caller's list when it is
     /// already a read-only list of default-channel tokens only.
     /// </summary>
+    /// <remarks>
+    /// Tokens supplied directly to the parser are bounded by <see cref="ParserResourceLimits.MaxTokens"/>, like the
+    /// tokens a tokenization emits: every received token counts, whatever its channel, so the work spent examining the
+    /// input is bounded too. A list is refused from its count before it is examined; a lazy sequence is counted while it
+    /// is enumerated and refused before the first token over the limit is examined or stored, so it is never fully
+    /// materialized first.
+    /// </remarks>
     /// <param name="tokens">The token stream.</param>
     /// <returns>The default-channel tokens.</returns>
-    private static IReadOnlyList<Token> FilterDefaultChannel(IEnumerable<Token> tokens)
+    /// <exception cref="ParserResourceLimitException">More tokens than <see cref="ParserResourceLimits.MaxTokens"/> were supplied.</exception>
+    private IReadOnlyList<Token> FilterDefaultChannel(IEnumerable<Token> tokens)
     {
+        ArgumentNullException.ThrowIfNull(tokens);
+        var maxTokens = _resourceLimits.MaxTokens;
         if (tokens is IReadOnlyList<Token> list)
         {
+            if (list.Count > maxTokens)
+            {
+                throw RefuseSuppliedTokens(maxTokens, list[maxTokens]);
+            }
+
             var allDefault = true;
             for (var index = 0; index < list.Count; index++)
             {
@@ -350,8 +365,31 @@ public sealed class ParserEngine
             }
         }
 
-        return tokens.Where(static token => token.Channel == "DEFAULT_CHANNEL").ToList();
+        var filtered = new List<Token>();
+        var received = 0;
+        foreach (var token in tokens)
+        {
+            if (received >= maxTokens)
+            {
+                throw RefuseSuppliedTokens(maxTokens, token);
+            }
+
+            received++;
+            if (token.Channel == "DEFAULT_CHANNEL")
+            {
+                filtered.Add(token);
+            }
+        }
+
+        return filtered;
     }
+
+    /// <summary>Builds the refusal of a token input longer than <see cref="ParserResourceLimits.MaxTokens"/>.</summary>
+    /// <param name="maxTokens">The limit.</param>
+    /// <param name="firstOverLimit">The first token over the limit, whose start is reported as the offset.</param>
+    /// <returns>The exception to throw.</returns>
+    private static ParserResourceLimitException RefuseSuppliedTokens(int maxTokens, Token firstOverLimit)
+        => new(ParserResourceLimitKind.Tokens, ParserResourcePhase.Parser, maxTokens, (long)maxTokens + 1, firstOverLimit?.Span.Position);
 
     /// <summary>
     /// Parses from the root rule and applies the global outcome gates (root failure and trailing tokens).

@@ -116,7 +116,10 @@ public sealed record ParserResourceLimits
 
     /// <summary>
     /// Gets the maximum number of tokens one tokenization emits, every channel and lexer-extension token included.
-    /// Skipped tokens are not emitted and are charged as lexer steps only.
+    /// Skipped tokens are not emitted and are charged as lexer steps only. The same limit bounds the tokens supplied
+    /// directly to <see cref="ParserEngine.Parse"/>: every received token counts, whatever its channel; a list longer than
+    /// the limit is refused before it is examined, and a lazy sequence is refused before the first token over the limit
+    /// is examined or stored (kind <see cref="ParserResourceLimitKind.Tokens"/>, phase <see cref="ParserResourcePhase.Parser"/>).
     /// </summary>
     /// <exception cref="ArgumentOutOfRangeException">The value is less than 1.</exception>
     public int MaxTokens

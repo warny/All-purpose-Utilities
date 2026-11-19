@@ -18,6 +18,8 @@ All notable changes to this project will be documented in this file.
   `ParserEngine(definition, policy, limits)`, `CompiledGrammar(definition, policy, limits)` and a `ResourceLimits`
   property on the three types. Existing constructors are unchanged and use the defaults. Trusted callers needing larger
   inputs pass explicit limits, e.g. `new CompiledGrammar(XGrammar.Build(), policy, ParserResourceLimits.Unlimited)`.
+- Tokens supplied directly to `ParserEngine.Parse(IEnumerable<Token>)` are bounded by `MaxTokens` too (every received token, any channel; lazy sequences are counted while enumerated and never fully materialized first).
+- Small stacks: a controlled refusal is guaranteed, successful parsing is not (on a 256 KiB thread even `(x0)` is refused); parse on threads of at least 1 MiB.
 - Each operation owns a private budget; backtracking never refunds consumed work; registry, memo and look-ahead entries
   are charged before insertion and an exhausted budget refuses the whole parse. Registry state is now released when each
   parse ends (it previously stayed alive until the next parse on the same engine).

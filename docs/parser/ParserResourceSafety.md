@@ -161,7 +161,7 @@ its own `new CompiledGrammar(XGrammar.Build(), policy, ParserResourceLimits.Unli
 | Lexer step | every `TryMatchContent` dispatch (one per candidate rule at a token start, then one per literal, range, set, rule reference, sequence, alternation, alternative, quantifier iteration, negation, command, action and predicate match attempt). Skipped tokens are charged as steps only. |
 | Lexer depth | every active `TryMatchContent` dispatch (recursive lexer rules and fragments). |
 | Input characters | every character read from the `TextReader` (end of input is not charged); `CompiledGrammar` also refuses an oversized string before any work. |
-| Tokens | every emitted token, any channel, lexer-extension and `ERROR` tokens included, before it is yielded. |
+| Tokens | every emitted token, any channel, lexer-extension and `ERROR` tokens included, before it is yielded; and every token supplied directly to `ParserEngine.Parse(IEnumerable<Token>)`, any channel (phase `Parser`): a list longer than the limit is refused from its count, a lazy sequence before the first token over the limit is examined or stored. |
 | Parser step | every `ParseRule` (memo hits included), every `TryParseContent` dispatch, every scheduled alternative attempt, every look-ahead probe (preparation and execution), every quantifier iteration attempt, every left-recursive extension attempt. Negation probes are charged through the dispatch of the probed content. |
 | Parse depth | every active `ParseRule` and `TryParseContent` (rule invocations and content nesting alike). |
 | Parse nodes | every `ParserNode`, `QuantifierNode` and `LexerNode` built by the engine, empty predicate/action nodes included, in accepted and rejected branches alike. |
@@ -290,6 +290,7 @@ from several threads at once.
 
 ## 8. Remaining limitations and follow-up
 
+- **Small stacks are not supported for useful work.** The parser guarantees a controlled refusal, not successful parsing, on small stacks: on a 256 KiB thread even `(x0)` is refused by CSyntax/VBSyntax and `Antlr4GrammarConverter` refuses small grammar texts. Run parsing on threads of at least 1 MiB (the .NET default on Windows) when inputs must succeed.
 - **Stack capacity.** About 1.3 KB of stack per depth unit (Windows Release): a 1 MiB thread accepts 19 CSyntax
   parenthesis levels and a 256 KiB thread accepts unparenthesized CSyntax expressions but refuses `(x0)` (the baseline parsed 2 levels there and crashed at 3: the guard's fixed headroom, reserved by `TryEnsureSufficientExecutionStack`, costs the remaining capacity of very small stacks); the ANTLR4 meta-grammar used by `Antlr4GrammarConverter` is
   refused (controlled `Stack`) on a 256 KiB thread even for small grammar texts. These are controlled refusals, not
@@ -301,6 +302,7 @@ from several threads at once.
 - **Allocation.** Parsing remains linear at about 21 KB allocated per input character (CSyntax compile); live memory is
   dominated by retained registry metadata (visited states and continuations are write-only in production). Bounding or
   removing that metadata needs a metadata-lifecycle design.
+- **Grammar immutability assumption.** `ParserEngine` precomputes scheduling shapes (priority order, structural descriptors) and `LexerEngine` precomputes candidate rules from the definition at construction. This relies on the documented immutability of the grammar model (`Rule`, `Alternation`, `LeftRecursiveRuleInfo` capture immutable snapshots); a future mutable model would have to invalidate these tables.
 - **Wall-clock time and process memory** are not limited; the budgets bound parser-managed work and retained states.
 - **User code** inside policy callbacks is not interrupted and not covered by the stack guard beyond its headroom.
 - **Concurrency**: see section 7.
