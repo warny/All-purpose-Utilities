@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Parser_Runtime_ParseTreeCompiler_2" data-uid="Utils.Parser.Runtime.ParseTreeCompiler`2" class="text-break">
-Class ParseTreeCompiler&lt;TContext, TResult&gt;  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseTreeCompiler.cs/#L43"><i class="bi bi-code-slash"></i></a>
+Class ParseTreeCompiler&lt;TContext, TResult&gt;  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseTreeCompiler.cs/#L45"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -276,7 +276,7 @@ creating a derived instance (e.g. a new scope) isolates sibling subtrees.
 
   <h3 id="Utils_Parser_Runtime_ParseTreeCompiler_2_Compile_Utils_Parser_Runtime_ParseNode__0_" data-uid="Utils.Parser.Runtime.ParseTreeCompiler`2.Compile(Utils.Parser.Runtime.ParseNode,`0)">
   Compile(ParseNode, TContext)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseTreeCompiler.cs/#L265"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseTreeCompiler.cs/#L271"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Compiles the parse tree rooted at <code class="paramref">root</code>, starting with
@@ -312,6 +312,13 @@ creating a derived instance (e.g. a new scope) isolates sibling subtrees.
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Runtime.ParserResourceLimitException.html">ParserResourceLimitException</a></dt>
+    <dd><p>The remaining execution stack is insufficient to visit the tree (kind <a class="xref" href="Utils.Parser.Runtime.ParserResourceLimitKind.html#Utils_Parser_Runtime_ParserResourceLimitKind_Stack">Stack</a>,
+phase <a class="xref" href="Utils.Parser.Runtime.ParserResourcePhase.html#Utils_Parser_Runtime_ParserResourcePhase_TreeCompilation">TreeCompilation</a>), instead of a process-terminating stack overflow.</p>
+</dd>
+  </dl>
 
 
 
@@ -319,7 +326,7 @@ creating a derived instance (e.g. a new scope) isolates sibling subtrees.
 
   <h3 id="Utils_Parser_Runtime_ParseTreeCompiler_2_DefaultAscend_System_Func_Utils_Parser_Runtime_ParseTreeNavigator__0_System_Collections_Generic_IReadOnlyList__1___1__" data-uid="Utils.Parser.Runtime.ParseTreeCompiler`2.DefaultAscend(System.Func{Utils.Parser.Runtime.ParseTreeNavigator,`0,System.Collections.Generic.IReadOnlyList{`1},`1})">
   DefaultAscend(Func&lt;ParseTreeNavigator, TContext, IReadOnlyList&lt;TResult?&gt;, TResult?&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseTreeCompiler.cs/#L234"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseTreeCompiler.cs/#L236"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Sets the fallback ascent handler used when no rule-specific handler is registered.</p>
@@ -359,7 +366,7 @@ Defaults to returning <code>default(<code class="typeparamref">TResult</code>)</
 
   <h3 id="Utils_Parser_Runtime_ParseTreeCompiler_2_DefaultDescend_System_Func_Utils_Parser_Runtime_ParseTreeNavigator__0__0__" data-uid="Utils.Parser.Runtime.ParseTreeCompiler`2.DefaultDescend(System.Func{Utils.Parser.Runtime.ParseTreeNavigator,`0,`0})">
   DefaultDescend(Func&lt;ParseTreeNavigator, TContext, TContext&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseTreeCompiler.cs/#L221"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseTreeCompiler.cs/#L223"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Sets the fallback descent handler used when no rule-specific handler is registered.</p>
@@ -399,7 +406,7 @@ Defaults to passing the parent context through to children unchanged.
 
   <h3 id="Utils_Parser_Runtime_ParseTreeCompiler_2_OnAscend_System_Func_Utils_Parser_Runtime_ParseTreeNavigator_System_Boolean__System_Func_Utils_Parser_Runtime_ParseTreeNavigator__0_System_Collections_Generic_IReadOnlyList__1___1__" data-uid="Utils.Parser.Runtime.ParseTreeCompiler`2.OnAscend(System.Func{Utils.Parser.Runtime.ParseTreeNavigator,System.Boolean},System.Func{Utils.Parser.Runtime.ParseTreeNavigator,`0,System.Collections.Generic.IReadOnlyList{`1},`1})">
   OnAscend(Func&lt;ParseTreeNavigator, bool&gt;, Func&lt;ParseTreeNavigator, TContext, IReadOnlyList&lt;TResult?&gt;, TResult?&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseTreeCompiler.cs/#L193"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseTreeCompiler.cs/#L195"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Registers a compilation handler called when <em>ascending from</em>
@@ -446,7 +453,7 @@ when this handler should be applied.</p>
 
   <h3 id="Utils_Parser_Runtime_ParseTreeCompiler_2_OnAscend_System_Func_Utils_Parser_Runtime_ParseTreeNavigator_System_Boolean__System_Func_Utils_Parser_Runtime_ParseTreeNavigator__0__1__" data-uid="Utils.Parser.Runtime.ParseTreeCompiler`2.OnAscend(System.Func{Utils.Parser.Runtime.ParseTreeNavigator,System.Boolean},System.Func{Utils.Parser.Runtime.ParseTreeNavigator,`0,`1})">
   OnAscend(Func&lt;ParseTreeNavigator, bool&gt;, Func&lt;ParseTreeNavigator, TContext, TResult?&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseTreeCompiler.cs/#L210"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseTreeCompiler.cs/#L212"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Convenience overload of
@@ -489,7 +496,7 @@ for nodes that do not need to inspect child results.</p>
 
   <h3 id="Utils_Parser_Runtime_ParseTreeCompiler_2_OnAscend_System_String_System_Func_Utils_Parser_Runtime_ParseTreeNavigator__0_System_Collections_Generic_IReadOnlyList__1___1__" data-uid="Utils.Parser.Runtime.ParseTreeCompiler`2.OnAscend(System.String,System.Func{Utils.Parser.Runtime.ParseTreeNavigator,`0,System.Collections.Generic.IReadOnlyList{`1},`1})">
   OnAscend(string, Func&lt;ParseTreeNavigator, TContext, IReadOnlyList&lt;TResult?&gt;, TResult?&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseTreeCompiler.cs/#L130"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseTreeCompiler.cs/#L132"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Registers a compilation handler called when <em>ascending from</em> nodes
@@ -542,7 +549,7 @@ node was entered, and the ordered list of results produced by its children
 
   <h3 id="Utils_Parser_Runtime_ParseTreeCompiler_2_OnAscend_System_String_System_Func_Utils_Parser_Runtime_ParseTreeNavigator__0__1__" data-uid="Utils.Parser.Runtime.ParseTreeCompiler`2.OnAscend(System.String,System.Func{Utils.Parser.Runtime.ParseTreeNavigator,`0,`1})">
   OnAscend(string, Func&lt;ParseTreeNavigator, TContext, TResult?&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseTreeCompiler.cs/#L150"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseTreeCompiler.cs/#L152"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Convenience overload of <a class="xref" href="Utils.Parser.Runtime.ParseTreeCompiler-2.html#Utils_Parser_Runtime_ParseTreeCompiler_2_OnAscend_System_String_System_Func_Utils_Parser_Runtime_ParseTreeNavigator__0_System_Collections_Generic_IReadOnlyList__1___1__">OnAscend(string, Func&lt;ParseTreeNavigator, TContext, IReadOnlyList&lt;TResult?&gt;, TResult?&gt;)</a>
@@ -585,7 +592,7 @@ or transparent pass-through rules.</p>
 
   <h3 id="Utils_Parser_Runtime_ParseTreeCompiler_2_OnDescend_System_Func_Utils_Parser_Runtime_ParseTreeNavigator_System_Boolean__System_Func_Utils_Parser_Runtime_ParseTreeNavigator__0__0__" data-uid="Utils.Parser.Runtime.ParseTreeCompiler`2.OnDescend(System.Func{Utils.Parser.Runtime.ParseTreeNavigator,System.Boolean},System.Func{Utils.Parser.Runtime.ParseTreeNavigator,`0,`0})">
   OnDescend(Func&lt;ParseTreeNavigator, bool&gt;, Func&lt;ParseTreeNavigator, TContext, TContext&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseTreeCompiler.cs/#L170"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseTreeCompiler.cs/#L172"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Registers a context-enrichment handler called when <em>descending into</em>
@@ -632,7 +639,7 @@ when this handler should be applied.</p>
 
   <h3 id="Utils_Parser_Runtime_ParseTreeCompiler_2_OnDescend_System_String_System_Func_Utils_Parser_Runtime_ParseTreeNavigator__0__0__" data-uid="Utils.Parser.Runtime.ParseTreeCompiler`2.OnDescend(System.String,System.Func{Utils.Parser.Runtime.ParseTreeNavigator,`0,`0})">
   OnDescend(string, Func&lt;ParseTreeNavigator, TContext, TContext&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseTreeCompiler.cs/#L103"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseTreeCompiler.cs/#L105"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Registers a context-enrichment handler called when <em>descending into</em>
@@ -685,7 +692,7 @@ Returning the parent context unchanged is always valid.
 
   <h3 id="Utils_Parser_Runtime_ParseTreeCompiler_2_OnError_System_Func_Utils_Parser_Runtime_ParseTreeNavigator__0__1__" data-uid="Utils.Parser.Runtime.ParseTreeCompiler`2.OnError(System.Func{Utils.Parser.Runtime.ParseTreeNavigator,`0,`1})">
   OnError(Func&lt;ParseTreeNavigator, TContext, TResult?&gt;)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseTreeCompiler.cs/#L249"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseTreeCompiler.cs/#L251"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Sets the handler invoked when an <a class="xref" href="Utils.Parser.Runtime.ErrorNode.html">ErrorNode</a> is encountered anywhere
@@ -727,7 +734,7 @@ without throwing.
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseTreeCompiler.cs/#L43" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseTreeCompiler.cs/#L45" class="edit-link">Edit this page</a>
         </div>
 
 

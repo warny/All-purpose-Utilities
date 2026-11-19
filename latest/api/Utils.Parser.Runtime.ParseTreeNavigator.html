@@ -736,7 +736,7 @@ or no matching child exists.</p>
 
   <h3 id="Utils_Parser_Runtime_ParseTreeNavigator_Descendant_System_String_" data-uid="Utils.Parser.Runtime.ParseTreeNavigator.Descendant(System.String)">
   Descendant(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseTreeNavigator.cs/#L239"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseTreeNavigator.cs/#L260"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Navigates to the first descendant whose rule name equals
@@ -780,7 +780,7 @@ or no matching child exists.</p>
 
   <h3 id="Utils_Parser_Runtime_ParseTreeNavigator_Descendants" data-uid="Utils.Parser.Runtime.ParseTreeNavigator.Descendants">
   Descendants()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseTreeNavigator.cs/#L215"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseTreeNavigator.cs/#L219"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns navigators for every descendant of the current node in depth-first
@@ -805,6 +805,10 @@ pre-order (the current node itself is excluded).</p>
 
 
 
+  <h4 class="section" id="Utils_Parser_Runtime_ParseTreeNavigator_Descendants_remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>The traversal keeps an explicit stack of child enumerators instead of nesting one iterator per level, so its stack
+use and its cost per yielded node do not grow with the depth of the tree.</p>
+</div>
 
 
 
@@ -813,7 +817,7 @@ pre-order (the current node itself is excluded).</p>
 
   <h3 id="Utils_Parser_Runtime_ParseTreeNavigator_Descendants_System_String_" data-uid="Utils.Parser.Runtime.ParseTreeNavigator.Descendants(System.String)">
   Descendants(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseTreeNavigator.cs/#L229"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseTreeNavigator.cs/#L250"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns navigators for every descendant whose rule name equals
@@ -851,7 +855,7 @@ pre-order (the current node itself is excluded).</p>
 
   <h3 id="Utils_Parser_Runtime_ParseTreeNavigator_ToString" data-uid="Utils.Parser.Runtime.ParseTreeNavigator.ToString">
   ToString()
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseTreeNavigator.cs/#L262"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseTreeNavigator.cs/#L283"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Returns a string that represents the current object.</p>
@@ -965,7 +969,7 @@ searched only when no direct match exists. Grouped-sequence frames inside a
 
   <h3 id="Utils_Parser_Runtime_ParseTreeNavigator_TryDescendant_System_String_" data-uid="Utils.Parser.Runtime.ParseTreeNavigator.TryDescendant(System.String)">
   TryDescendant(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseTreeNavigator.cs/#L248"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseTreeNavigator.cs/#L269"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Navigates to the first descendant whose rule name equals
@@ -1007,7 +1011,7 @@ searched only when no direct match exists. Grouped-sequence frames inside a
 
   <h3 id="Utils_Parser_Runtime_ParseTreeNavigator_op_Implicit_Utils_Parser_Runtime_ParseNode__Utils_Parser_Runtime_ParseTreeNavigator" data-uid="Utils.Parser.Runtime.ParseTreeNavigator.op_Implicit(Utils.Parser.Runtime.ParseNode)~Utils.Parser.Runtime.ParseTreeNavigator">
   implicit operator ParseTreeNavigator(ParseNode)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseTreeNavigator.cs/#L254"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseTreeNavigator.cs/#L275"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Wraps a <a class="xref" href="Utils.Parser.Runtime.ParseNode.html">ParseNode</a> in a new navigator.</p>
@@ -1044,7 +1048,7 @@ searched only when no direct match exists. Grouped-sequence frames inside a
 
   <h3 id="Utils_Parser_Runtime_ParseTreeNavigator_op_Implicit_Utils_Parser_Runtime_ParseTreeNavigator__Utils_Parser_Runtime_ParseNode" data-uid="Utils.Parser.Runtime.ParseTreeNavigator.op_Implicit(Utils.Parser.Runtime.ParseTreeNavigator)~Utils.Parser.Runtime.ParseNode">
   implicit operator ParseNode(ParseTreeNavigator)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseTreeNavigator.cs/#L257"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParseTreeNavigator.cs/#L278"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Unwraps the underlying <a class="xref" href="Utils.Parser.Runtime.ParseNode.html">ParseNode</a>.</p>

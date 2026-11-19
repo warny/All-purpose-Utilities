@@ -6,7 +6,7 @@
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <meta name="title" content="Class CompiledGrammar | omy.Utils Documentation ">
       
-      <meta name="description" content="A ready-to-use grammar instance that encapsulates the full parse pipeline:  tokenization followed by  parsing.  Obtain an instance from a resolved  via the constructor, or compile directly from an ANTLR4 grammar source string via Antlr4GrammarConverter.Compile(grammarText).">
+      <meta name="description" content="A ready-to-use grammar instance that encapsulates the full parse pipeline:  tokenization followed by  parsing.  Obtain an instance from a resolved  via the constructor, or compile directly from an ANTLR4 grammar source string via Antlr4GrammarConverter.Compile(grammarText).   Every  and  call runs under  with a private, per-call budget; an excess ends the call with a .">
       <link rel="icon" href="../favicon.ico">
       <link rel="stylesheet" href="../public/docfx.min.css">
       <link rel="stylesheet" href="../public/main.css">
@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Parser_Runtime_CompiledGrammar" data-uid="Utils.Parser.Runtime.CompiledGrammar" class="text-break">
-Class CompiledGrammar  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/CompiledGrammar.cs/#L15"><i class="bi bi-code-slash"></i></a>
+Class CompiledGrammar  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/CompiledGrammar.cs/#L23"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -103,6 +103,10 @@ Class CompiledGrammar  <a class="header-action link-secondary" title="View sourc
 Obtain an instance from a resolved <a class="xref" href="Utils.Parser.Model.ParserDefinition.html">ParserDefinition</a> via the constructor,
 or compile directly from an ANTLR4 grammar source string via
 <code>Antlr4GrammarConverter.Compile(grammarText)</code>.
+</p>
+<p>
+Every <a class="xref" href="Utils.Parser.Runtime.CompiledGrammar.html#Utils_Parser_Runtime_CompiledGrammar_Tokenize_System_String_">Tokenize(string)</a> and <a class="xref" href="Utils.Parser.Runtime.CompiledGrammar.html#Utils_Parser_Runtime_CompiledGrammar_Parse_System_String_">Parse(string)</a> call runs under <a class="xref" href="Utils.Parser.Runtime.CompiledGrammar.html#Utils_Parser_Runtime_CompiledGrammar_ResourceLimits">ResourceLimits</a> with a private,
+per-call budget; an excess ends the call with a <a class="xref" href="Utils.Parser.Runtime.ParserResourceLimitException.html">ParserResourceLimitException</a>.
 </p>
 </div>
   <div class="markdown conceptual"></div>
@@ -241,6 +245,10 @@ or compile directly from an ANTLR4 grammar source string via
 
 
 
+  <h2 id="Utils_Parser_Runtime_CompiledGrammar_remarks">Remarks</h2>
+  <div class="markdown level0 remarks"><p>This class is not thread-safe: it owns one <a class="xref" href="Utils.Parser.Runtime.LexerEngine.html">LexerEngine</a> and one <a class="xref" href="Utils.Parser.Runtime.ParserEngine.html">ParserEngine</a>, whose
+per-operation registries are reset by every call. Concurrent calls must use separate instances.</p>
+</div>
 
 
   <h2 class="section" id="constructors">Constructors
@@ -251,7 +259,7 @@ or compile directly from an ANTLR4 grammar source string via
 
   <h3 id="Utils_Parser_Runtime_CompiledGrammar__ctor_Utils_Parser_Model_ParserDefinition_" data-uid="Utils.Parser.Runtime.CompiledGrammar.#ctor(Utils.Parser.Model.ParserDefinition)">
   CompiledGrammar(ParserDefinition)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/CompiledGrammar.cs/#L28"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/CompiledGrammar.cs/#L39"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initialises a <a class="xref" href="Utils.Parser.Runtime.CompiledGrammar.html">CompiledGrammar</a> from a fully resolved
@@ -285,11 +293,11 @@ or compile directly from an ANTLR4 grammar source string via
 
   <h3 id="Utils_Parser_Runtime_CompiledGrammar__ctor_Utils_Parser_Model_ParserDefinition_Utils_Parser_Runtime_ParserRuntimeFeaturePolicy_" data-uid="Utils.Parser.Runtime.CompiledGrammar.#ctor(Utils.Parser.Model.ParserDefinition,Utils.Parser.Runtime.ParserRuntimeFeaturePolicy)">
   CompiledGrammar(ParserDefinition, ParserRuntimeFeaturePolicy)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/CompiledGrammar.cs/#L39"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/CompiledGrammar.cs/#L50"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initialises a <a class="xref" href="Utils.Parser.Runtime.CompiledGrammar.html">CompiledGrammar</a> from a fully resolved
-<a class="xref" href="Utils.Parser.Model.ParserDefinition.html">ParserDefinition</a> with an explicit runtime feature policy.</p>
+<a class="xref" href="Utils.Parser.Model.ParserDefinition.html">ParserDefinition</a> with an explicit runtime feature policy and <a class="xref" href="Utils.Parser.Runtime.ParserResourceLimits.html#Utils_Parser_Runtime_ParserResourceLimits_Default">Default</a>.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -318,6 +326,47 @@ or compile directly from an ANTLR4 grammar source string via
 
 
 
+  <a id="Utils_Parser_Runtime_CompiledGrammar__ctor_" data-uid="Utils.Parser.Runtime.CompiledGrammar.#ctor*"></a>
+
+  <h3 id="Utils_Parser_Runtime_CompiledGrammar__ctor_Utils_Parser_Model_ParserDefinition_Utils_Parser_Runtime_ParserRuntimeFeaturePolicy_Utils_Parser_Runtime_ParserResourceLimits_" data-uid="Utils.Parser.Runtime.CompiledGrammar.#ctor(Utils.Parser.Model.ParserDefinition,Utils.Parser.Runtime.ParserRuntimeFeaturePolicy,Utils.Parser.Runtime.ParserResourceLimits)">
+  CompiledGrammar(ParserDefinition, ParserRuntimeFeaturePolicy, ParserResourceLimits)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/CompiledGrammar.cs/#L63"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Initialises a <a class="xref" href="Utils.Parser.Runtime.CompiledGrammar.html">CompiledGrammar</a> from a fully resolved
+<a class="xref" href="Utils.Parser.Model.ParserDefinition.html">ParserDefinition</a> with an explicit runtime feature policy and explicit resource limits, for example
+<a class="xref" href="Utils.Parser.Runtime.ParserResourceLimits.html#Utils_Parser_Runtime_ParserResourceLimits_Unlimited">Unlimited</a> for trusted inputs larger than the defaults allow.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public CompiledGrammar(ParserDefinition definition, ParserRuntimeFeaturePolicy runtimeFeaturePolicy, ParserResourceLimits resourceLimits)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>definition</code> <a class="xref" href="Utils.Parser.Model.ParserDefinition.html">ParserDefinition</a></dt>
+    <dd><p>A resolved grammar definition.</p>
+</dd>
+    <dt><code>runtimeFeaturePolicy</code> <a class="xref" href="Utils.Parser.Runtime.ParserRuntimeFeaturePolicy.html">ParserRuntimeFeaturePolicy</a></dt>
+    <dd><p>Runtime feature policy applied to parser execution.</p>
+</dd>
+    <dt><code>resourceLimits</code> <a class="xref" href="Utils.Parser.Runtime.ParserResourceLimits.html">ParserResourceLimits</a></dt>
+    <dd><p>Limits applied to each tokenization and parse.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
   <h2 class="section" id="properties">Properties
 </h2>
 
@@ -326,7 +375,7 @@ or compile directly from an ANTLR4 grammar source string via
 
   <h3 id="Utils_Parser_Runtime_CompiledGrammar_Definition" data-uid="Utils.Parser.Runtime.CompiledGrammar.Definition">
   Definition
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/CompiledGrammar.cs/#L21"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/CompiledGrammar.cs/#L29"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>The resolved <a class="xref" href="Utils.Parser.Model.ParserDefinition.html">ParserDefinition</a> backing this grammar.</p>
@@ -354,6 +403,38 @@ or compile directly from an ANTLR4 grammar source string via
 
 
 
+  <a id="Utils_Parser_Runtime_CompiledGrammar_ResourceLimits_" data-uid="Utils.Parser.Runtime.CompiledGrammar.ResourceLimits*"></a>
+
+  <h3 id="Utils_Parser_Runtime_CompiledGrammar_ResourceLimits" data-uid="Utils.Parser.Runtime.CompiledGrammar.ResourceLimits">
+  ResourceLimits
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/CompiledGrammar.cs/#L32"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the resource limits applied to every tokenization and parse of this grammar.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ParserResourceLimits ResourceLimits { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Runtime.ParserResourceLimits.html">ParserResourceLimits</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
   <h2 class="section" id="methods">Methods
 </h2>
 
@@ -362,7 +443,7 @@ or compile directly from an ANTLR4 grammar source string via
 
   <h3 id="Utils_Parser_Runtime_CompiledGrammar_Parse_System_String_" data-uid="Utils.Parser.Runtime.CompiledGrammar.Parse(System.String)">
   Parse(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/CompiledGrammar.cs/#L69"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/CompiledGrammar.cs/#L106"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Runs the full parse pipeline on <code class="paramref">input</code>: tokenizes the text
@@ -397,6 +478,12 @@ input does not conform to the grammar rather than throwing an exception.</p>
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Runtime.ParserResourceLimitException.html">ParserResourceLimitException</a></dt>
+    <dd><p>The tokenization or the parse exceeds <a class="xref" href="Utils.Parser.Runtime.CompiledGrammar.html#Utils_Parser_Runtime_CompiledGrammar_ResourceLimits">ResourceLimits</a>; this is a refusal, not a syntax error.</p>
+</dd>
+  </dl>
 
 
 
@@ -404,7 +491,7 @@ input does not conform to the grammar rather than throwing an exception.</p>
 
   <h3 id="Utils_Parser_Runtime_CompiledGrammar_Tokenize_System_String_" data-uid="Utils.Parser.Runtime.CompiledGrammar.Tokenize(System.String)">
   Tokenize(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/CompiledGrammar.cs/#L53"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/CompiledGrammar.cs/#L86"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Tokenizes <code class="paramref">input</code> and returns all tokens produced by the lexer,
@@ -438,6 +525,12 @@ excluded from the stream at this stage.</p>
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Runtime.ParserResourceLimitException.html">ParserResourceLimitException</a></dt>
+    <dd><p>The tokenization exceeds <a class="xref" href="Utils.Parser.Runtime.CompiledGrammar.html#Utils_Parser_Runtime_CompiledGrammar_ResourceLimits">ResourceLimits</a>.</p>
+</dd>
+  </dl>
 
 
 
@@ -445,7 +538,7 @@ excluded from the stream at this stage.</p>
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/CompiledGrammar.cs/#L15" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/CompiledGrammar.cs/#L23" class="edit-link">Edit this page</a>
         </div>
 
 

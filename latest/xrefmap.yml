@@ -91889,6 +91889,15 @@ references:
   fullName.vb: Utils.Parser.Runtime.CompiledGrammar.New(Utils.Parser.Model.ParserDefinition, Utils.Parser.Runtime.ParserRuntimeFeaturePolicy)
   nameWithType: CompiledGrammar.CompiledGrammar(ParserDefinition, ParserRuntimeFeaturePolicy)
   nameWithType.vb: CompiledGrammar.New(ParserDefinition, ParserRuntimeFeaturePolicy)
+- uid: Utils.Parser.Runtime.CompiledGrammar.#ctor(Utils.Parser.Model.ParserDefinition,Utils.Parser.Runtime.ParserRuntimeFeaturePolicy,Utils.Parser.Runtime.ParserResourceLimits)
+  name: CompiledGrammar(ParserDefinition, ParserRuntimeFeaturePolicy, ParserResourceLimits)
+  href: api/Utils.Parser.Runtime.CompiledGrammar.html#Utils_Parser_Runtime_CompiledGrammar__ctor_Utils_Parser_Model_ParserDefinition_Utils_Parser_Runtime_ParserRuntimeFeaturePolicy_Utils_Parser_Runtime_ParserResourceLimits_
+  commentId: M:Utils.Parser.Runtime.CompiledGrammar.#ctor(Utils.Parser.Model.ParserDefinition,Utils.Parser.Runtime.ParserRuntimeFeaturePolicy,Utils.Parser.Runtime.ParserResourceLimits)
+  name.vb: New(ParserDefinition, ParserRuntimeFeaturePolicy, ParserResourceLimits)
+  fullName: Utils.Parser.Runtime.CompiledGrammar.CompiledGrammar(Utils.Parser.Model.ParserDefinition, Utils.Parser.Runtime.ParserRuntimeFeaturePolicy, Utils.Parser.Runtime.ParserResourceLimits)
+  fullName.vb: Utils.Parser.Runtime.CompiledGrammar.New(Utils.Parser.Model.ParserDefinition, Utils.Parser.Runtime.ParserRuntimeFeaturePolicy, Utils.Parser.Runtime.ParserResourceLimits)
+  nameWithType: CompiledGrammar.CompiledGrammar(ParserDefinition, ParserRuntimeFeaturePolicy, ParserResourceLimits)
+  nameWithType.vb: CompiledGrammar.New(ParserDefinition, ParserRuntimeFeaturePolicy, ParserResourceLimits)
 - uid: Utils.Parser.Runtime.CompiledGrammar.#ctor*
   name: CompiledGrammar
   href: api/Utils.Parser.Runtime.CompiledGrammar.html#Utils_Parser_Runtime_CompiledGrammar__ctor_
@@ -91928,6 +91937,19 @@ references:
   isSpec: "True"
   fullName: Utils.Parser.Runtime.CompiledGrammar.Parse
   nameWithType: CompiledGrammar.Parse
+- uid: Utils.Parser.Runtime.CompiledGrammar.ResourceLimits
+  name: ResourceLimits
+  href: api/Utils.Parser.Runtime.CompiledGrammar.html#Utils_Parser_Runtime_CompiledGrammar_ResourceLimits
+  commentId: P:Utils.Parser.Runtime.CompiledGrammar.ResourceLimits
+  fullName: Utils.Parser.Runtime.CompiledGrammar.ResourceLimits
+  nameWithType: CompiledGrammar.ResourceLimits
+- uid: Utils.Parser.Runtime.CompiledGrammar.ResourceLimits*
+  name: ResourceLimits
+  href: api/Utils.Parser.Runtime.CompiledGrammar.html#Utils_Parser_Runtime_CompiledGrammar_ResourceLimits_
+  commentId: Overload:Utils.Parser.Runtime.CompiledGrammar.ResourceLimits
+  isSpec: "True"
+  fullName: Utils.Parser.Runtime.CompiledGrammar.ResourceLimits
+  nameWithType: CompiledGrammar.ResourceLimits
 - uid: Utils.Parser.Runtime.CompiledGrammar.Tokenize(System.String)
   name: Tokenize(string)
   href: api/Utils.Parser.Runtime.CompiledGrammar.html#Utils_Parser_Runtime_CompiledGrammar_Tokenize_System_String_
@@ -92971,6 +92993,15 @@ references:
   fullName.vb: Utils.Parser.Runtime.LexerEngine.New(Utils.Parser.Model.ParserDefinition, Utils.Parser.Runtime.ParserRuntimeFeaturePolicy)
   nameWithType: LexerEngine.LexerEngine(ParserDefinition, ParserRuntimeFeaturePolicy?)
   nameWithType.vb: LexerEngine.New(ParserDefinition, ParserRuntimeFeaturePolicy)
+- uid: Utils.Parser.Runtime.LexerEngine.#ctor(Utils.Parser.Model.ParserDefinition,Utils.Parser.Runtime.ParserRuntimeFeaturePolicy,Utils.Parser.Runtime.ParserResourceLimits)
+  name: LexerEngine(ParserDefinition, ParserRuntimeFeaturePolicy?, ParserResourceLimits)
+  href: api/Utils.Parser.Runtime.LexerEngine.html#Utils_Parser_Runtime_LexerEngine__ctor_Utils_Parser_Model_ParserDefinition_Utils_Parser_Runtime_ParserRuntimeFeaturePolicy_Utils_Parser_Runtime_ParserResourceLimits_
+  commentId: M:Utils.Parser.Runtime.LexerEngine.#ctor(Utils.Parser.Model.ParserDefinition,Utils.Parser.Runtime.ParserRuntimeFeaturePolicy,Utils.Parser.Runtime.ParserResourceLimits)
+  name.vb: New(ParserDefinition, ParserRuntimeFeaturePolicy, ParserResourceLimits)
+  fullName: Utils.Parser.Runtime.LexerEngine.LexerEngine(Utils.Parser.Model.ParserDefinition, Utils.Parser.Runtime.ParserRuntimeFeaturePolicy?, Utils.Parser.Runtime.ParserResourceLimits)
+  fullName.vb: Utils.Parser.Runtime.LexerEngine.New(Utils.Parser.Model.ParserDefinition, Utils.Parser.Runtime.ParserRuntimeFeaturePolicy, Utils.Parser.Runtime.ParserResourceLimits)
+  nameWithType: LexerEngine.LexerEngine(ParserDefinition, ParserRuntimeFeaturePolicy?, ParserResourceLimits)
+  nameWithType.vb: LexerEngine.New(ParserDefinition, ParserRuntimeFeaturePolicy, ParserResourceLimits)
 - uid: Utils.Parser.Runtime.LexerEngine.#ctor*
   name: LexerEngine
   href: api/Utils.Parser.Runtime.LexerEngine.html#Utils_Parser_Runtime_LexerEngine__ctor_
@@ -92981,6 +93012,19 @@ references:
   fullName.vb: Utils.Parser.Runtime.LexerEngine.New
   nameWithType: LexerEngine.LexerEngine
   nameWithType.vb: LexerEngine.New
+- uid: Utils.Parser.Runtime.LexerEngine.ResourceLimits
+  name: ResourceLimits
+  href: api/Utils.Parser.Runtime.LexerEngine.html#Utils_Parser_Runtime_LexerEngine_ResourceLimits
+  commentId: P:Utils.Parser.Runtime.LexerEngine.ResourceLimits
+  fullName: Utils.Parser.Runtime.LexerEngine.ResourceLimits
+  nameWithType: LexerEngine.ResourceLimits
+- uid: Utils.Parser.Runtime.LexerEngine.ResourceLimits*
+  name: ResourceLimits
+  href: api/Utils.Parser.Runtime.LexerEngine.html#Utils_Parser_Runtime_LexerEngine_ResourceLimits_
+  commentId: Overload:Utils.Parser.Runtime.LexerEngine.ResourceLimits
+  isSpec: "True"
+  fullName: Utils.Parser.Runtime.LexerEngine.ResourceLimits
+  nameWithType: LexerEngine.ResourceLimits
 - uid: Utils.Parser.Runtime.LexerEngine.Tokenize(System.IO.TextReader,Utils.Parser.Runtime.LexerEngineOptions,Utils.Parser.Diagnostics.DiagnosticBag,System.String)
   name: Tokenize(TextReader, LexerEngineOptions?, DiagnosticBag?, string?)
   href: api/Utils.Parser.Runtime.LexerEngine.html#Utils_Parser_Runtime_LexerEngine_Tokenize_System_IO_TextReader_Utils_Parser_Runtime_LexerEngineOptions_Utils_Parser_Diagnostics_DiagnosticBag_System_String_
@@ -94432,6 +94476,15 @@ references:
   fullName.vb: Utils.Parser.Runtime.ParserEngine.New(Utils.Parser.Model.ParserDefinition, Utils.Parser.Runtime.ParserRuntimeFeaturePolicy)
   nameWithType: ParserEngine.ParserEngine(ParserDefinition, ParserRuntimeFeaturePolicy)
   nameWithType.vb: ParserEngine.New(ParserDefinition, ParserRuntimeFeaturePolicy)
+- uid: Utils.Parser.Runtime.ParserEngine.#ctor(Utils.Parser.Model.ParserDefinition,Utils.Parser.Runtime.ParserRuntimeFeaturePolicy,Utils.Parser.Runtime.ParserResourceLimits)
+  name: ParserEngine(ParserDefinition, ParserRuntimeFeaturePolicy, ParserResourceLimits)
+  href: api/Utils.Parser.Runtime.ParserEngine.html#Utils_Parser_Runtime_ParserEngine__ctor_Utils_Parser_Model_ParserDefinition_Utils_Parser_Runtime_ParserRuntimeFeaturePolicy_Utils_Parser_Runtime_ParserResourceLimits_
+  commentId: M:Utils.Parser.Runtime.ParserEngine.#ctor(Utils.Parser.Model.ParserDefinition,Utils.Parser.Runtime.ParserRuntimeFeaturePolicy,Utils.Parser.Runtime.ParserResourceLimits)
+  name.vb: New(ParserDefinition, ParserRuntimeFeaturePolicy, ParserResourceLimits)
+  fullName: Utils.Parser.Runtime.ParserEngine.ParserEngine(Utils.Parser.Model.ParserDefinition, Utils.Parser.Runtime.ParserRuntimeFeaturePolicy, Utils.Parser.Runtime.ParserResourceLimits)
+  fullName.vb: Utils.Parser.Runtime.ParserEngine.New(Utils.Parser.Model.ParserDefinition, Utils.Parser.Runtime.ParserRuntimeFeaturePolicy, Utils.Parser.Runtime.ParserResourceLimits)
+  nameWithType: ParserEngine.ParserEngine(ParserDefinition, ParserRuntimeFeaturePolicy, ParserResourceLimits)
+  nameWithType.vb: ParserEngine.New(ParserDefinition, ParserRuntimeFeaturePolicy, ParserResourceLimits)
 - uid: Utils.Parser.Runtime.ParserEngine.#ctor*
   name: ParserEngine
   href: api/Utils.Parser.Runtime.ParserEngine.html#Utils_Parser_Runtime_ParserEngine__ctor_
@@ -94458,6 +94511,19 @@ references:
   isSpec: "True"
   fullName: Utils.Parser.Runtime.ParserEngine.Parse
   nameWithType: ParserEngine.Parse
+- uid: Utils.Parser.Runtime.ParserEngine.ResourceLimits
+  name: ResourceLimits
+  href: api/Utils.Parser.Runtime.ParserEngine.html#Utils_Parser_Runtime_ParserEngine_ResourceLimits
+  commentId: P:Utils.Parser.Runtime.ParserEngine.ResourceLimits
+  fullName: Utils.Parser.Runtime.ParserEngine.ResourceLimits
+  nameWithType: ParserEngine.ResourceLimits
+- uid: Utils.Parser.Runtime.ParserEngine.ResourceLimits*
+  name: ResourceLimits
+  href: api/Utils.Parser.Runtime.ParserEngine.html#Utils_Parser_Runtime_ParserEngine_ResourceLimits_
+  commentId: Overload:Utils.Parser.Runtime.ParserEngine.ResourceLimits
+  isSpec: "True"
+  fullName: Utils.Parser.Runtime.ParserEngine.ResourceLimits
+  nameWithType: ParserEngine.ResourceLimits
 - uid: Utils.Parser.Runtime.ParserExecutionContextCopier`1
   name: ParserExecutionContextCopier<TContext>
   href: api/Utils.Parser.Runtime.ParserExecutionContextCopier-1.html
@@ -94986,6 +95052,373 @@ references:
   isSpec: "True"
   fullName: Utils.Parser.Runtime.ParserRawNamedArgumentSplitter.SplitNamedTopLevel
   nameWithType: ParserRawNamedArgumentSplitter.SplitNamedTopLevel
+- uid: Utils.Parser.Runtime.ParserResourceLimitException
+  name: ParserResourceLimitException
+  href: api/Utils.Parser.Runtime.ParserResourceLimitException.html
+  commentId: T:Utils.Parser.Runtime.ParserResourceLimitException
+  fullName: Utils.Parser.Runtime.ParserResourceLimitException
+  nameWithType: ParserResourceLimitException
+- uid: Utils.Parser.Runtime.ParserResourceLimitException.#ctor(Utils.Parser.Runtime.ParserResourceLimitKind,Utils.Parser.Runtime.ParserResourcePhase,System.Int64,System.Int64,System.Nullable{System.Int32})
+  name: ParserResourceLimitException(ParserResourceLimitKind, ParserResourcePhase, long, long, int?)
+  href: api/Utils.Parser.Runtime.ParserResourceLimitException.html#Utils_Parser_Runtime_ParserResourceLimitException__ctor_Utils_Parser_Runtime_ParserResourceLimitKind_Utils_Parser_Runtime_ParserResourcePhase_System_Int64_System_Int64_System_Nullable_System_Int32__
+  commentId: M:Utils.Parser.Runtime.ParserResourceLimitException.#ctor(Utils.Parser.Runtime.ParserResourceLimitKind,Utils.Parser.Runtime.ParserResourcePhase,System.Int64,System.Int64,System.Nullable{System.Int32})
+  name.vb: New(ParserResourceLimitKind, ParserResourcePhase, Long, Long, Integer?)
+  fullName: Utils.Parser.Runtime.ParserResourceLimitException.ParserResourceLimitException(Utils.Parser.Runtime.ParserResourceLimitKind, Utils.Parser.Runtime.ParserResourcePhase, long, long, int?)
+  fullName.vb: Utils.Parser.Runtime.ParserResourceLimitException.New(Utils.Parser.Runtime.ParserResourceLimitKind, Utils.Parser.Runtime.ParserResourcePhase, Long, Long, Integer?)
+  nameWithType: ParserResourceLimitException.ParserResourceLimitException(ParserResourceLimitKind, ParserResourcePhase, long, long, int?)
+  nameWithType.vb: ParserResourceLimitException.New(ParserResourceLimitKind, ParserResourcePhase, Long, Long, Integer?)
+- uid: Utils.Parser.Runtime.ParserResourceLimitException.#ctor(Utils.Parser.Runtime.ParserResourceLimitKind,Utils.Parser.Runtime.ParserResourcePhase,System.Int64,System.Int64,System.Nullable{System.Int32},System.Exception)
+  name: ParserResourceLimitException(ParserResourceLimitKind, ParserResourcePhase, long, long, int?, Exception?)
+  href: api/Utils.Parser.Runtime.ParserResourceLimitException.html#Utils_Parser_Runtime_ParserResourceLimitException__ctor_Utils_Parser_Runtime_ParserResourceLimitKind_Utils_Parser_Runtime_ParserResourcePhase_System_Int64_System_Int64_System_Nullable_System_Int32__System_Exception_
+  commentId: M:Utils.Parser.Runtime.ParserResourceLimitException.#ctor(Utils.Parser.Runtime.ParserResourceLimitKind,Utils.Parser.Runtime.ParserResourcePhase,System.Int64,System.Int64,System.Nullable{System.Int32},System.Exception)
+  name.vb: New(ParserResourceLimitKind, ParserResourcePhase, Long, Long, Integer?, Exception)
+  fullName: Utils.Parser.Runtime.ParserResourceLimitException.ParserResourceLimitException(Utils.Parser.Runtime.ParserResourceLimitKind, Utils.Parser.Runtime.ParserResourcePhase, long, long, int?, System.Exception?)
+  fullName.vb: Utils.Parser.Runtime.ParserResourceLimitException.New(Utils.Parser.Runtime.ParserResourceLimitKind, Utils.Parser.Runtime.ParserResourcePhase, Long, Long, Integer?, System.Exception)
+  nameWithType: ParserResourceLimitException.ParserResourceLimitException(ParserResourceLimitKind, ParserResourcePhase, long, long, int?, Exception?)
+  nameWithType.vb: ParserResourceLimitException.New(ParserResourceLimitKind, ParserResourcePhase, Long, Long, Integer?, Exception)
+- uid: Utils.Parser.Runtime.ParserResourceLimitException.#ctor*
+  name: ParserResourceLimitException
+  href: api/Utils.Parser.Runtime.ParserResourceLimitException.html#Utils_Parser_Runtime_ParserResourceLimitException__ctor_
+  commentId: Overload:Utils.Parser.Runtime.ParserResourceLimitException.#ctor
+  isSpec: "True"
+  name.vb: New
+  fullName: Utils.Parser.Runtime.ParserResourceLimitException.ParserResourceLimitException
+  fullName.vb: Utils.Parser.Runtime.ParserResourceLimitException.New
+  nameWithType: ParserResourceLimitException.ParserResourceLimitException
+  nameWithType.vb: ParserResourceLimitException.New
+- uid: Utils.Parser.Runtime.ParserResourceLimitException.Kind
+  name: Kind
+  href: api/Utils.Parser.Runtime.ParserResourceLimitException.html#Utils_Parser_Runtime_ParserResourceLimitException_Kind
+  commentId: P:Utils.Parser.Runtime.ParserResourceLimitException.Kind
+  fullName: Utils.Parser.Runtime.ParserResourceLimitException.Kind
+  nameWithType: ParserResourceLimitException.Kind
+- uid: Utils.Parser.Runtime.ParserResourceLimitException.Kind*
+  name: Kind
+  href: api/Utils.Parser.Runtime.ParserResourceLimitException.html#Utils_Parser_Runtime_ParserResourceLimitException_Kind_
+  commentId: Overload:Utils.Parser.Runtime.ParserResourceLimitException.Kind
+  isSpec: "True"
+  fullName: Utils.Parser.Runtime.ParserResourceLimitException.Kind
+  nameWithType: ParserResourceLimitException.Kind
+- uid: Utils.Parser.Runtime.ParserResourceLimitException.Limit
+  name: Limit
+  href: api/Utils.Parser.Runtime.ParserResourceLimitException.html#Utils_Parser_Runtime_ParserResourceLimitException_Limit
+  commentId: P:Utils.Parser.Runtime.ParserResourceLimitException.Limit
+  fullName: Utils.Parser.Runtime.ParserResourceLimitException.Limit
+  nameWithType: ParserResourceLimitException.Limit
+- uid: Utils.Parser.Runtime.ParserResourceLimitException.Limit*
+  name: Limit
+  href: api/Utils.Parser.Runtime.ParserResourceLimitException.html#Utils_Parser_Runtime_ParserResourceLimitException_Limit_
+  commentId: Overload:Utils.Parser.Runtime.ParserResourceLimitException.Limit
+  isSpec: "True"
+  fullName: Utils.Parser.Runtime.ParserResourceLimitException.Limit
+  nameWithType: ParserResourceLimitException.Limit
+- uid: Utils.Parser.Runtime.ParserResourceLimitException.Observed
+  name: Observed
+  href: api/Utils.Parser.Runtime.ParserResourceLimitException.html#Utils_Parser_Runtime_ParserResourceLimitException_Observed
+  commentId: P:Utils.Parser.Runtime.ParserResourceLimitException.Observed
+  fullName: Utils.Parser.Runtime.ParserResourceLimitException.Observed
+  nameWithType: ParserResourceLimitException.Observed
+- uid: Utils.Parser.Runtime.ParserResourceLimitException.Observed*
+  name: Observed
+  href: api/Utils.Parser.Runtime.ParserResourceLimitException.html#Utils_Parser_Runtime_ParserResourceLimitException_Observed_
+  commentId: Overload:Utils.Parser.Runtime.ParserResourceLimitException.Observed
+  isSpec: "True"
+  fullName: Utils.Parser.Runtime.ParserResourceLimitException.Observed
+  nameWithType: ParserResourceLimitException.Observed
+- uid: Utils.Parser.Runtime.ParserResourceLimitException.Offset
+  name: Offset
+  href: api/Utils.Parser.Runtime.ParserResourceLimitException.html#Utils_Parser_Runtime_ParserResourceLimitException_Offset
+  commentId: P:Utils.Parser.Runtime.ParserResourceLimitException.Offset
+  fullName: Utils.Parser.Runtime.ParserResourceLimitException.Offset
+  nameWithType: ParserResourceLimitException.Offset
+- uid: Utils.Parser.Runtime.ParserResourceLimitException.Offset*
+  name: Offset
+  href: api/Utils.Parser.Runtime.ParserResourceLimitException.html#Utils_Parser_Runtime_ParserResourceLimitException_Offset_
+  commentId: Overload:Utils.Parser.Runtime.ParserResourceLimitException.Offset
+  isSpec: "True"
+  fullName: Utils.Parser.Runtime.ParserResourceLimitException.Offset
+  nameWithType: ParserResourceLimitException.Offset
+- uid: Utils.Parser.Runtime.ParserResourceLimitException.Phase
+  name: Phase
+  href: api/Utils.Parser.Runtime.ParserResourceLimitException.html#Utils_Parser_Runtime_ParserResourceLimitException_Phase
+  commentId: P:Utils.Parser.Runtime.ParserResourceLimitException.Phase
+  fullName: Utils.Parser.Runtime.ParserResourceLimitException.Phase
+  nameWithType: ParserResourceLimitException.Phase
+- uid: Utils.Parser.Runtime.ParserResourceLimitException.Phase*
+  name: Phase
+  href: api/Utils.Parser.Runtime.ParserResourceLimitException.html#Utils_Parser_Runtime_ParserResourceLimitException_Phase_
+  commentId: Overload:Utils.Parser.Runtime.ParserResourceLimitException.Phase
+  isSpec: "True"
+  fullName: Utils.Parser.Runtime.ParserResourceLimitException.Phase
+  nameWithType: ParserResourceLimitException.Phase
+- uid: Utils.Parser.Runtime.ParserResourceLimitKind
+  name: ParserResourceLimitKind
+  href: api/Utils.Parser.Runtime.ParserResourceLimitKind.html
+  commentId: T:Utils.Parser.Runtime.ParserResourceLimitKind
+  fullName: Utils.Parser.Runtime.ParserResourceLimitKind
+  nameWithType: ParserResourceLimitKind
+- uid: Utils.Parser.Runtime.ParserResourceLimitKind.InputCharacters
+  name: InputCharacters
+  href: api/Utils.Parser.Runtime.ParserResourceLimitKind.html#Utils_Parser_Runtime_ParserResourceLimitKind_InputCharacters
+  commentId: F:Utils.Parser.Runtime.ParserResourceLimitKind.InputCharacters
+  fullName: Utils.Parser.Runtime.ParserResourceLimitKind.InputCharacters
+  nameWithType: ParserResourceLimitKind.InputCharacters
+- uid: Utils.Parser.Runtime.ParserResourceLimitKind.LexerDepth
+  name: LexerDepth
+  href: api/Utils.Parser.Runtime.ParserResourceLimitKind.html#Utils_Parser_Runtime_ParserResourceLimitKind_LexerDepth
+  commentId: F:Utils.Parser.Runtime.ParserResourceLimitKind.LexerDepth
+  fullName: Utils.Parser.Runtime.ParserResourceLimitKind.LexerDepth
+  nameWithType: ParserResourceLimitKind.LexerDepth
+- uid: Utils.Parser.Runtime.ParserResourceLimitKind.LexerSteps
+  name: LexerSteps
+  href: api/Utils.Parser.Runtime.ParserResourceLimitKind.html#Utils_Parser_Runtime_ParserResourceLimitKind_LexerSteps
+  commentId: F:Utils.Parser.Runtime.ParserResourceLimitKind.LexerSteps
+  fullName: Utils.Parser.Runtime.ParserResourceLimitKind.LexerSteps
+  nameWithType: ParserResourceLimitKind.LexerSteps
+- uid: Utils.Parser.Runtime.ParserResourceLimitKind.ParseDepth
+  name: ParseDepth
+  href: api/Utils.Parser.Runtime.ParserResourceLimitKind.html#Utils_Parser_Runtime_ParserResourceLimitKind_ParseDepth
+  commentId: F:Utils.Parser.Runtime.ParserResourceLimitKind.ParseDepth
+  fullName: Utils.Parser.Runtime.ParserResourceLimitKind.ParseDepth
+  nameWithType: ParserResourceLimitKind.ParseDepth
+- uid: Utils.Parser.Runtime.ParserResourceLimitKind.ParseNodes
+  name: ParseNodes
+  href: api/Utils.Parser.Runtime.ParserResourceLimitKind.html#Utils_Parser_Runtime_ParserResourceLimitKind_ParseNodes
+  commentId: F:Utils.Parser.Runtime.ParserResourceLimitKind.ParseNodes
+  fullName: Utils.Parser.Runtime.ParserResourceLimitKind.ParseNodes
+  nameWithType: ParserResourceLimitKind.ParseNodes
+- uid: Utils.Parser.Runtime.ParserResourceLimitKind.ParserSteps
+  name: ParserSteps
+  href: api/Utils.Parser.Runtime.ParserResourceLimitKind.html#Utils_Parser_Runtime_ParserResourceLimitKind_ParserSteps
+  commentId: F:Utils.Parser.Runtime.ParserResourceLimitKind.ParserSteps
+  fullName: Utils.Parser.Runtime.ParserResourceLimitKind.ParserSteps
+  nameWithType: ParserResourceLimitKind.ParserSteps
+- uid: Utils.Parser.Runtime.ParserResourceLimitKind.RetainedStates
+  name: RetainedStates
+  href: api/Utils.Parser.Runtime.ParserResourceLimitKind.html#Utils_Parser_Runtime_ParserResourceLimitKind_RetainedStates
+  commentId: F:Utils.Parser.Runtime.ParserResourceLimitKind.RetainedStates
+  fullName: Utils.Parser.Runtime.ParserResourceLimitKind.RetainedStates
+  nameWithType: ParserResourceLimitKind.RetainedStates
+- uid: Utils.Parser.Runtime.ParserResourceLimitKind.Stack
+  name: Stack
+  href: api/Utils.Parser.Runtime.ParserResourceLimitKind.html#Utils_Parser_Runtime_ParserResourceLimitKind_Stack
+  commentId: F:Utils.Parser.Runtime.ParserResourceLimitKind.Stack
+  fullName: Utils.Parser.Runtime.ParserResourceLimitKind.Stack
+  nameWithType: ParserResourceLimitKind.Stack
+- uid: Utils.Parser.Runtime.ParserResourceLimitKind.Tokens
+  name: Tokens
+  href: api/Utils.Parser.Runtime.ParserResourceLimitKind.html#Utils_Parser_Runtime_ParserResourceLimitKind_Tokens
+  commentId: F:Utils.Parser.Runtime.ParserResourceLimitKind.Tokens
+  fullName: Utils.Parser.Runtime.ParserResourceLimitKind.Tokens
+  nameWithType: ParserResourceLimitKind.Tokens
+- uid: Utils.Parser.Runtime.ParserResourceLimits
+  name: ParserResourceLimits
+  href: api/Utils.Parser.Runtime.ParserResourceLimits.html
+  commentId: T:Utils.Parser.Runtime.ParserResourceLimits
+  fullName: Utils.Parser.Runtime.ParserResourceLimits
+  nameWithType: ParserResourceLimits
+- uid: Utils.Parser.Runtime.ParserResourceLimits.Default
+  name: Default
+  href: api/Utils.Parser.Runtime.ParserResourceLimits.html#Utils_Parser_Runtime_ParserResourceLimits_Default
+  commentId: P:Utils.Parser.Runtime.ParserResourceLimits.Default
+  fullName: Utils.Parser.Runtime.ParserResourceLimits.Default
+  nameWithType: ParserResourceLimits.Default
+- uid: Utils.Parser.Runtime.ParserResourceLimits.Default*
+  name: Default
+  href: api/Utils.Parser.Runtime.ParserResourceLimits.html#Utils_Parser_Runtime_ParserResourceLimits_Default_
+  commentId: Overload:Utils.Parser.Runtime.ParserResourceLimits.Default
+  isSpec: "True"
+  fullName: Utils.Parser.Runtime.ParserResourceLimits.Default
+  nameWithType: ParserResourceLimits.Default
+- uid: Utils.Parser.Runtime.ParserResourceLimits.DefaultMaxInputCharacters
+  name: DefaultMaxInputCharacters
+  href: api/Utils.Parser.Runtime.ParserResourceLimits.html#Utils_Parser_Runtime_ParserResourceLimits_DefaultMaxInputCharacters
+  commentId: F:Utils.Parser.Runtime.ParserResourceLimits.DefaultMaxInputCharacters
+  fullName: Utils.Parser.Runtime.ParserResourceLimits.DefaultMaxInputCharacters
+  nameWithType: ParserResourceLimits.DefaultMaxInputCharacters
+- uid: Utils.Parser.Runtime.ParserResourceLimits.DefaultMaxLexerDepth
+  name: DefaultMaxLexerDepth
+  href: api/Utils.Parser.Runtime.ParserResourceLimits.html#Utils_Parser_Runtime_ParserResourceLimits_DefaultMaxLexerDepth
+  commentId: F:Utils.Parser.Runtime.ParserResourceLimits.DefaultMaxLexerDepth
+  fullName: Utils.Parser.Runtime.ParserResourceLimits.DefaultMaxLexerDepth
+  nameWithType: ParserResourceLimits.DefaultMaxLexerDepth
+- uid: Utils.Parser.Runtime.ParserResourceLimits.DefaultMaxLexerSteps
+  name: DefaultMaxLexerSteps
+  href: api/Utils.Parser.Runtime.ParserResourceLimits.html#Utils_Parser_Runtime_ParserResourceLimits_DefaultMaxLexerSteps
+  commentId: F:Utils.Parser.Runtime.ParserResourceLimits.DefaultMaxLexerSteps
+  fullName: Utils.Parser.Runtime.ParserResourceLimits.DefaultMaxLexerSteps
+  nameWithType: ParserResourceLimits.DefaultMaxLexerSteps
+- uid: Utils.Parser.Runtime.ParserResourceLimits.DefaultMaxParseDepth
+  name: DefaultMaxParseDepth
+  href: api/Utils.Parser.Runtime.ParserResourceLimits.html#Utils_Parser_Runtime_ParserResourceLimits_DefaultMaxParseDepth
+  commentId: F:Utils.Parser.Runtime.ParserResourceLimits.DefaultMaxParseDepth
+  fullName: Utils.Parser.Runtime.ParserResourceLimits.DefaultMaxParseDepth
+  nameWithType: ParserResourceLimits.DefaultMaxParseDepth
+- uid: Utils.Parser.Runtime.ParserResourceLimits.DefaultMaxParseNodes
+  name: DefaultMaxParseNodes
+  href: api/Utils.Parser.Runtime.ParserResourceLimits.html#Utils_Parser_Runtime_ParserResourceLimits_DefaultMaxParseNodes
+  commentId: F:Utils.Parser.Runtime.ParserResourceLimits.DefaultMaxParseNodes
+  fullName: Utils.Parser.Runtime.ParserResourceLimits.DefaultMaxParseNodes
+  nameWithType: ParserResourceLimits.DefaultMaxParseNodes
+- uid: Utils.Parser.Runtime.ParserResourceLimits.DefaultMaxParserSteps
+  name: DefaultMaxParserSteps
+  href: api/Utils.Parser.Runtime.ParserResourceLimits.html#Utils_Parser_Runtime_ParserResourceLimits_DefaultMaxParserSteps
+  commentId: F:Utils.Parser.Runtime.ParserResourceLimits.DefaultMaxParserSteps
+  fullName: Utils.Parser.Runtime.ParserResourceLimits.DefaultMaxParserSteps
+  nameWithType: ParserResourceLimits.DefaultMaxParserSteps
+- uid: Utils.Parser.Runtime.ParserResourceLimits.DefaultMaxRetainedStates
+  name: DefaultMaxRetainedStates
+  href: api/Utils.Parser.Runtime.ParserResourceLimits.html#Utils_Parser_Runtime_ParserResourceLimits_DefaultMaxRetainedStates
+  commentId: F:Utils.Parser.Runtime.ParserResourceLimits.DefaultMaxRetainedStates
+  fullName: Utils.Parser.Runtime.ParserResourceLimits.DefaultMaxRetainedStates
+  nameWithType: ParserResourceLimits.DefaultMaxRetainedStates
+- uid: Utils.Parser.Runtime.ParserResourceLimits.DefaultMaxTokens
+  name: DefaultMaxTokens
+  href: api/Utils.Parser.Runtime.ParserResourceLimits.html#Utils_Parser_Runtime_ParserResourceLimits_DefaultMaxTokens
+  commentId: F:Utils.Parser.Runtime.ParserResourceLimits.DefaultMaxTokens
+  fullName: Utils.Parser.Runtime.ParserResourceLimits.DefaultMaxTokens
+  nameWithType: ParserResourceLimits.DefaultMaxTokens
+- uid: Utils.Parser.Runtime.ParserResourceLimits.MaxInputCharacters
+  name: MaxInputCharacters
+  href: api/Utils.Parser.Runtime.ParserResourceLimits.html#Utils_Parser_Runtime_ParserResourceLimits_MaxInputCharacters
+  commentId: P:Utils.Parser.Runtime.ParserResourceLimits.MaxInputCharacters
+  fullName: Utils.Parser.Runtime.ParserResourceLimits.MaxInputCharacters
+  nameWithType: ParserResourceLimits.MaxInputCharacters
+- uid: Utils.Parser.Runtime.ParserResourceLimits.MaxInputCharacters*
+  name: MaxInputCharacters
+  href: api/Utils.Parser.Runtime.ParserResourceLimits.html#Utils_Parser_Runtime_ParserResourceLimits_MaxInputCharacters_
+  commentId: Overload:Utils.Parser.Runtime.ParserResourceLimits.MaxInputCharacters
+  isSpec: "True"
+  fullName: Utils.Parser.Runtime.ParserResourceLimits.MaxInputCharacters
+  nameWithType: ParserResourceLimits.MaxInputCharacters
+- uid: Utils.Parser.Runtime.ParserResourceLimits.MaxLexerDepth
+  name: MaxLexerDepth
+  href: api/Utils.Parser.Runtime.ParserResourceLimits.html#Utils_Parser_Runtime_ParserResourceLimits_MaxLexerDepth
+  commentId: P:Utils.Parser.Runtime.ParserResourceLimits.MaxLexerDepth
+  fullName: Utils.Parser.Runtime.ParserResourceLimits.MaxLexerDepth
+  nameWithType: ParserResourceLimits.MaxLexerDepth
+- uid: Utils.Parser.Runtime.ParserResourceLimits.MaxLexerDepth*
+  name: MaxLexerDepth
+  href: api/Utils.Parser.Runtime.ParserResourceLimits.html#Utils_Parser_Runtime_ParserResourceLimits_MaxLexerDepth_
+  commentId: Overload:Utils.Parser.Runtime.ParserResourceLimits.MaxLexerDepth
+  isSpec: "True"
+  fullName: Utils.Parser.Runtime.ParserResourceLimits.MaxLexerDepth
+  nameWithType: ParserResourceLimits.MaxLexerDepth
+- uid: Utils.Parser.Runtime.ParserResourceLimits.MaxLexerSteps
+  name: MaxLexerSteps
+  href: api/Utils.Parser.Runtime.ParserResourceLimits.html#Utils_Parser_Runtime_ParserResourceLimits_MaxLexerSteps
+  commentId: P:Utils.Parser.Runtime.ParserResourceLimits.MaxLexerSteps
+  fullName: Utils.Parser.Runtime.ParserResourceLimits.MaxLexerSteps
+  nameWithType: ParserResourceLimits.MaxLexerSteps
+- uid: Utils.Parser.Runtime.ParserResourceLimits.MaxLexerSteps*
+  name: MaxLexerSteps
+  href: api/Utils.Parser.Runtime.ParserResourceLimits.html#Utils_Parser_Runtime_ParserResourceLimits_MaxLexerSteps_
+  commentId: Overload:Utils.Parser.Runtime.ParserResourceLimits.MaxLexerSteps
+  isSpec: "True"
+  fullName: Utils.Parser.Runtime.ParserResourceLimits.MaxLexerSteps
+  nameWithType: ParserResourceLimits.MaxLexerSteps
+- uid: Utils.Parser.Runtime.ParserResourceLimits.MaxParseDepth
+  name: MaxParseDepth
+  href: api/Utils.Parser.Runtime.ParserResourceLimits.html#Utils_Parser_Runtime_ParserResourceLimits_MaxParseDepth
+  commentId: P:Utils.Parser.Runtime.ParserResourceLimits.MaxParseDepth
+  fullName: Utils.Parser.Runtime.ParserResourceLimits.MaxParseDepth
+  nameWithType: ParserResourceLimits.MaxParseDepth
+- uid: Utils.Parser.Runtime.ParserResourceLimits.MaxParseDepth*
+  name: MaxParseDepth
+  href: api/Utils.Parser.Runtime.ParserResourceLimits.html#Utils_Parser_Runtime_ParserResourceLimits_MaxParseDepth_
+  commentId: Overload:Utils.Parser.Runtime.ParserResourceLimits.MaxParseDepth
+  isSpec: "True"
+  fullName: Utils.Parser.Runtime.ParserResourceLimits.MaxParseDepth
+  nameWithType: ParserResourceLimits.MaxParseDepth
+- uid: Utils.Parser.Runtime.ParserResourceLimits.MaxParseNodes
+  name: MaxParseNodes
+  href: api/Utils.Parser.Runtime.ParserResourceLimits.html#Utils_Parser_Runtime_ParserResourceLimits_MaxParseNodes
+  commentId: P:Utils.Parser.Runtime.ParserResourceLimits.MaxParseNodes
+  fullName: Utils.Parser.Runtime.ParserResourceLimits.MaxParseNodes
+  nameWithType: ParserResourceLimits.MaxParseNodes
+- uid: Utils.Parser.Runtime.ParserResourceLimits.MaxParseNodes*
+  name: MaxParseNodes
+  href: api/Utils.Parser.Runtime.ParserResourceLimits.html#Utils_Parser_Runtime_ParserResourceLimits_MaxParseNodes_
+  commentId: Overload:Utils.Parser.Runtime.ParserResourceLimits.MaxParseNodes
+  isSpec: "True"
+  fullName: Utils.Parser.Runtime.ParserResourceLimits.MaxParseNodes
+  nameWithType: ParserResourceLimits.MaxParseNodes
+- uid: Utils.Parser.Runtime.ParserResourceLimits.MaxParserSteps
+  name: MaxParserSteps
+  href: api/Utils.Parser.Runtime.ParserResourceLimits.html#Utils_Parser_Runtime_ParserResourceLimits_MaxParserSteps
+  commentId: P:Utils.Parser.Runtime.ParserResourceLimits.MaxParserSteps
+  fullName: Utils.Parser.Runtime.ParserResourceLimits.MaxParserSteps
+  nameWithType: ParserResourceLimits.MaxParserSteps
+- uid: Utils.Parser.Runtime.ParserResourceLimits.MaxParserSteps*
+  name: MaxParserSteps
+  href: api/Utils.Parser.Runtime.ParserResourceLimits.html#Utils_Parser_Runtime_ParserResourceLimits_MaxParserSteps_
+  commentId: Overload:Utils.Parser.Runtime.ParserResourceLimits.MaxParserSteps
+  isSpec: "True"
+  fullName: Utils.Parser.Runtime.ParserResourceLimits.MaxParserSteps
+  nameWithType: ParserResourceLimits.MaxParserSteps
+- uid: Utils.Parser.Runtime.ParserResourceLimits.MaxRetainedStates
+  name: MaxRetainedStates
+  href: api/Utils.Parser.Runtime.ParserResourceLimits.html#Utils_Parser_Runtime_ParserResourceLimits_MaxRetainedStates
+  commentId: P:Utils.Parser.Runtime.ParserResourceLimits.MaxRetainedStates
+  fullName: Utils.Parser.Runtime.ParserResourceLimits.MaxRetainedStates
+  nameWithType: ParserResourceLimits.MaxRetainedStates
+- uid: Utils.Parser.Runtime.ParserResourceLimits.MaxRetainedStates*
+  name: MaxRetainedStates
+  href: api/Utils.Parser.Runtime.ParserResourceLimits.html#Utils_Parser_Runtime_ParserResourceLimits_MaxRetainedStates_
+  commentId: Overload:Utils.Parser.Runtime.ParserResourceLimits.MaxRetainedStates
+  isSpec: "True"
+  fullName: Utils.Parser.Runtime.ParserResourceLimits.MaxRetainedStates
+  nameWithType: ParserResourceLimits.MaxRetainedStates
+- uid: Utils.Parser.Runtime.ParserResourceLimits.MaxTokens
+  name: MaxTokens
+  href: api/Utils.Parser.Runtime.ParserResourceLimits.html#Utils_Parser_Runtime_ParserResourceLimits_MaxTokens
+  commentId: P:Utils.Parser.Runtime.ParserResourceLimits.MaxTokens
+  fullName: Utils.Parser.Runtime.ParserResourceLimits.MaxTokens
+  nameWithType: ParserResourceLimits.MaxTokens
+- uid: Utils.Parser.Runtime.ParserResourceLimits.MaxTokens*
+  name: MaxTokens
+  href: api/Utils.Parser.Runtime.ParserResourceLimits.html#Utils_Parser_Runtime_ParserResourceLimits_MaxTokens_
+  commentId: Overload:Utils.Parser.Runtime.ParserResourceLimits.MaxTokens
+  isSpec: "True"
+  fullName: Utils.Parser.Runtime.ParserResourceLimits.MaxTokens
+  nameWithType: ParserResourceLimits.MaxTokens
+- uid: Utils.Parser.Runtime.ParserResourceLimits.Unlimited
+  name: Unlimited
+  href: api/Utils.Parser.Runtime.ParserResourceLimits.html#Utils_Parser_Runtime_ParserResourceLimits_Unlimited
+  commentId: P:Utils.Parser.Runtime.ParserResourceLimits.Unlimited
+  fullName: Utils.Parser.Runtime.ParserResourceLimits.Unlimited
+  nameWithType: ParserResourceLimits.Unlimited
+- uid: Utils.Parser.Runtime.ParserResourceLimits.Unlimited*
+  name: Unlimited
+  href: api/Utils.Parser.Runtime.ParserResourceLimits.html#Utils_Parser_Runtime_ParserResourceLimits_Unlimited_
+  commentId: Overload:Utils.Parser.Runtime.ParserResourceLimits.Unlimited
+  isSpec: "True"
+  fullName: Utils.Parser.Runtime.ParserResourceLimits.Unlimited
+  nameWithType: ParserResourceLimits.Unlimited
+- uid: Utils.Parser.Runtime.ParserResourcePhase
+  name: ParserResourcePhase
+  href: api/Utils.Parser.Runtime.ParserResourcePhase.html
+  commentId: T:Utils.Parser.Runtime.ParserResourcePhase
+  fullName: Utils.Parser.Runtime.ParserResourcePhase
+  nameWithType: ParserResourcePhase
+- uid: Utils.Parser.Runtime.ParserResourcePhase.Lexer
+  name: Lexer
+  href: api/Utils.Parser.Runtime.ParserResourcePhase.html#Utils_Parser_Runtime_ParserResourcePhase_Lexer
+  commentId: F:Utils.Parser.Runtime.ParserResourcePhase.Lexer
+  fullName: Utils.Parser.Runtime.ParserResourcePhase.Lexer
+  nameWithType: ParserResourcePhase.Lexer
+- uid: Utils.Parser.Runtime.ParserResourcePhase.Parser
+  name: Parser
+  href: api/Utils.Parser.Runtime.ParserResourcePhase.html#Utils_Parser_Runtime_ParserResourcePhase_Parser
+  commentId: F:Utils.Parser.Runtime.ParserResourcePhase.Parser
+  fullName: Utils.Parser.Runtime.ParserResourcePhase.Parser
+  nameWithType: ParserResourcePhase.Parser
+- uid: Utils.Parser.Runtime.ParserResourcePhase.TreeCompilation
+  name: TreeCompilation
+  href: api/Utils.Parser.Runtime.ParserResourcePhase.html#Utils_Parser_Runtime_ParserResourcePhase_TreeCompilation
+  commentId: F:Utils.Parser.Runtime.ParserResourcePhase.TreeCompilation
+  fullName: Utils.Parser.Runtime.ParserResourcePhase.TreeCompilation
+  nameWithType: ParserResourcePhase.TreeCompilation
 - uid: Utils.Parser.Runtime.ParserRuleCallBindingException
   name: ParserRuleCallBindingException
   href: api/Utils.Parser.Runtime.ParserRuleCallBindingException.html

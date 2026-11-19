@@ -285,6 +285,81 @@ using the lexer rules in a <a class="xref" href="Utils.Parser.Model.ParserDefini
 
 
 
+  <a id="Utils_Parser_Runtime_LexerEngine__ctor_" data-uid="Utils.Parser.Runtime.LexerEngine.#ctor*"></a>
+
+  <h3 id="Utils_Parser_Runtime_LexerEngine__ctor_Utils_Parser_Model_ParserDefinition_Utils_Parser_Runtime_ParserRuntimeFeaturePolicy_Utils_Parser_Runtime_ParserResourceLimits_" data-uid="Utils.Parser.Runtime.LexerEngine.#ctor(Utils.Parser.Model.ParserDefinition,Utils.Parser.Runtime.ParserRuntimeFeaturePolicy,Utils.Parser.Runtime.ParserResourceLimits)">
+  LexerEngine(ParserDefinition, ParserRuntimeFeaturePolicy?, ParserResourceLimits)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/LexerEngine.cs/#L25"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Initializes a lexer engine with an optional runtime policy and explicit resource limits.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public LexerEngine(ParserDefinition definition, ParserRuntimeFeaturePolicy? runtimeFeaturePolicy, ParserResourceLimits resourceLimits)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>definition</code> <a class="xref" href="Utils.Parser.Model.ParserDefinition.html">ParserDefinition</a></dt>
+    <dd><p>Resolved grammar definition.</p>
+</dd>
+    <dt><code>runtimeFeaturePolicy</code> <a class="xref" href="Utils.Parser.Runtime.ParserRuntimeFeaturePolicy.html">ParserRuntimeFeaturePolicy</a></dt>
+    <dd><p>Optional runtime policy; <a class="xref" href="Utils.Parser.Runtime.ParserRuntimeFeaturePolicy.html#Utils_Parser_Runtime_ParserRuntimeFeaturePolicy_Default">Default</a> when <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+    <dt><code>resourceLimits</code> <a class="xref" href="Utils.Parser.Runtime.ParserResourceLimits.html">ParserResourceLimits</a></dt>
+    <dd><p>Limits applied to each tokenization; every tokenization owns a private budget.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+  <h2 class="section" id="properties">Properties
+</h2>
+
+
+  <a id="Utils_Parser_Runtime_LexerEngine_ResourceLimits_" data-uid="Utils.Parser.Runtime.LexerEngine.ResourceLimits*"></a>
+
+  <h3 id="Utils_Parser_Runtime_LexerEngine_ResourceLimits" data-uid="Utils.Parser.Runtime.LexerEngine.ResourceLimits">
+  ResourceLimits
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/LexerEngine.cs/#L47"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the resource limits applied to every tokenization of this engine.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ParserResourceLimits ResourceLimits { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Runtime.ParserResourceLimits.html">ParserResourceLimits</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
+
+
   <h2 class="section" id="methods">Methods
 </h2>
 
@@ -293,7 +368,7 @@ using the lexer rules in a <a class="xref" href="Utils.Parser.Model.ParserDefini
 
   <h3 id="Utils_Parser_Runtime_LexerEngine_Tokenize_System_IO_TextReader_Utils_Parser_Runtime_LexerEngineOptions_Utils_Parser_Diagnostics_DiagnosticBag_System_String_" data-uid="Utils.Parser.Runtime.LexerEngine.Tokenize(System.IO.TextReader,Utils.Parser.Runtime.LexerEngineOptions,Utils.Parser.Diagnostics.DiagnosticBag,System.String)">
   Tokenize(TextReader, LexerEngineOptions?, DiagnosticBag?, string?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/LexerEngine.cs/#L39"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/LexerEngine.cs/#L68"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Tokenizes the full input stream with a strict forward-only reader.</p>
@@ -334,6 +409,14 @@ using the lexer rules in a <a class="xref" href="Utils.Parser.Model.ParserDefini
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Parser.Runtime.ParserResourceLimitException.html">ParserResourceLimitException</a></dt>
+    <dd><p>Thrown during enumeration when the tokenization exceeds one of <a class="xref" href="Utils.Parser.Runtime.LexerEngine.html#Utils_Parser_Runtime_LexerEngine_ResourceLimits">ResourceLimits</a> (input characters,
+emitted tokens, matching steps, matching depth) or the remaining execution stack is insufficient. Each
+enumeration owns a private budget, enforced while tokens are produced rather than after they are materialized.</p>
+</dd>
+  </dl>
 
 
 

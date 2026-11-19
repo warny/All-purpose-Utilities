@@ -207,6 +207,21 @@ Use this file for implementation-oriented usage guidance when behavior differs f
 <h2 id="supported--behaviour-differs-from-standard-antlr4">Supported — behaviour differs from standard ANTLR4</h2>
 <p>These features are supported but work differently. Read the <strong>Usage</strong> section before using them.</p>
 <hr>
+<h3 id="runtime-resource-limits-s-06">Runtime resource limits (S-06)</h3>
+<p><strong>Standard ANTLR4</strong>: the reference runtimes impose no input-size, nesting-depth or work limit; deeply nested input can
+end the process with a stack overflow (<code>StackOverflowError</code> in Java, an uncatchable stack overflow in .NET).</p>
+<p><strong>Utils.Parser</strong>: every tokenization, parse and parse-tree compilation runs under <code>ParserResourceLimits</code> (input
+characters, tokens, lexer steps and depth, parse depth, parser steps, constructed nodes, retained states) plus an
+always-on execution-stack guard. An excess ends the operation with <code>ParserResourceLimitException</code> instead of a result.
+This is an intentional divergence: an input that standard ANTLR4 accepts may be refused when it exceeds a limit. It is
+never a syntax error, never produces diagnostics or an <code>ErrorNode</code>, and never changes the tree, spans, diagnostics or
+action/predicate order of an input that stays within the limits. Grammars, generated code and the ANTLR4 feature
+matrix are unchanged.</p>
+<p><strong>Usage</strong>: the defaults apply everywhere (<code>CompiledGrammar</code>, <code>LexerEngine</code>, <code>ParserEngine</code>, generated grammars,
+<code>Antlr4GrammarConverter</code>). Trusted callers that need larger inputs pass explicit limits, for example
+<code>new CompiledGrammar(definition, policy, ParserResourceLimits.Unlimited)</code>. Defaults, charging rules and measurements:
+<a href="ParserResourceSafety.html"><code>ParserResourceSafety.md</code></a>.</p>
+<hr>
 <h3 id="superclass-option"><code>superClass</code> option</h3>
 <p><strong>Standard ANTLR4</strong>: <code>options { superClass = MyBase; }</code> sets the generated parser or lexer class's base class.</p>
 <p><strong>Utils.Parser</strong>: <code>superClass</code> is parsed and stored as metadata in <code>EffectiveGrammarOptions.ParserSuperClass</code> / <code>LexerSuperClass</code> and in <code>GrammarExtensionBinding</code>. It has no effect on class inheritance.</p>

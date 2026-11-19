@@ -13813,7 +13813,7 @@
       "Uid": null,
       "IsMRef": true,
       "Title": "Utils.Parser.Runtime.CompiledGrammar",
-      "Summary": "<p sourcefile=\"api/Utils.Parser.Runtime.CompiledGrammar.yml\" sourcestartlinenumber=\"1\">A ready-to-use grammar instance that encapsulates the full parse pipeline:\n<xref href=\"Utils.Parser.Runtime.LexerEngine\" data-throw-if-not-resolved=\"false\"></xref> tokenization followed by <xref href=\"Utils.Parser.Runtime.ParserEngine\" data-throw-if-not-resolved=\"false\"></xref> parsing.</p>\n<p>\nObtain an instance from a resolved <xref href=\"Utils.Parser.Model.ParserDefinition\" data-throw-if-not-resolved=\"false\"></xref> via the constructor,\nor compile directly from an ANTLR4 grammar source string via\n<code>Antlr4GrammarConverter.Compile(grammarText)</code>.\n</p>\n"
+      "Summary": "<p sourcefile=\"api/Utils.Parser.Runtime.CompiledGrammar.yml\" sourcestartlinenumber=\"1\">A ready-to-use grammar instance that encapsulates the full parse pipeline:\n<xref href=\"Utils.Parser.Runtime.LexerEngine\" data-throw-if-not-resolved=\"false\"></xref> tokenization followed by <xref href=\"Utils.Parser.Runtime.ParserEngine\" data-throw-if-not-resolved=\"false\"></xref> parsing.</p>\n<p>\nObtain an instance from a resolved <xref href=\"Utils.Parser.Model.ParserDefinition\" data-throw-if-not-resolved=\"false\"></xref> via the constructor,\nor compile directly from an ANTLR4 grammar source string via\n<code>Antlr4GrammarConverter.Compile(grammarText)</code>.\n</p>\n<p>\nEvery <xref href=\"Utils.Parser.Runtime.CompiledGrammar.Tokenize(System.String)\" data-throw-if-not-resolved=\"false\"></xref> and <xref href=\"Utils.Parser.Runtime.CompiledGrammar.Parse(System.String)\" data-throw-if-not-resolved=\"false\"></xref> call runs under <xref href=\"Utils.Parser.Runtime.CompiledGrammar.ResourceLimits\" data-throw-if-not-resolved=\"false\"></xref> with a private,\nper-call budget; an excess ends the call with a <xref href=\"Utils.Parser.Runtime.ParserResourceLimitException\" data-throw-if-not-resolved=\"false\"></xref>.\n</p>\n"
     },
     {
       "type": "ManagedReference",
@@ -14556,6 +14556,62 @@
       "IsMRef": true,
       "Title": "Utils.Parser.Runtime.ParserRawNamedArgumentSplitter",
       "Summary": "<p sourcefile=\"api/Utils.Parser.Runtime.ParserRawNamedArgumentSplitter.yml\" sourcestartlinenumber=\"1\">Provides syntactic top-level splitting of raw rule-call argument text into named key–value pairs,\nsupporting forms such as <code>value: 42</code> and <code>value = 42</code>.\nSplitting is purely syntactic: no value is evaluated, no parameter is bound.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Parser.Runtime.ParserResourceLimitException.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Parser.Runtime.ParserResourceLimitException.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Parser.Runtime.ParserResourceLimitException",
+      "Summary": "<p sourcefile=\"api/Utils.Parser.Runtime.ParserResourceLimitException.yml\" sourcestartlinenumber=\"1\">Thrown when a tokenization, parse or parse-tree compilation exceeds one of its <xref href=\"Utils.Parser.Runtime.ParserResourceLimits\" data-throw-if-not-resolved=\"false\"></xref>, or\nwhen the remaining execution stack is insufficient to continue it safely.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Parser.Runtime.ParserResourceLimitKind.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Parser.Runtime.ParserResourceLimitKind.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Parser.Runtime.ParserResourceLimitKind",
+      "Summary": "<p sourcefile=\"api/Utils.Parser.Runtime.ParserResourceLimitKind.yml\" sourcestartlinenumber=\"1\">The resource dimension whose limit a lexer, parser or parse-tree compilation operation exceeded.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Parser.Runtime.ParserResourceLimits.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Parser.Runtime.ParserResourceLimits.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Parser.Runtime.ParserResourceLimits",
+      "Summary": "<p sourcefile=\"api/Utils.Parser.Runtime.ParserResourceLimits.yml\" sourcestartlinenumber=\"1\">Immutable resource limits applied by <xref href=\"Utils.Parser.Runtime.LexerEngine\" data-throw-if-not-resolved=\"false\"></xref>, <xref href=\"Utils.Parser.Runtime.ParserEngine\" data-throw-if-not-resolved=\"false\"></xref>,\n<xref href=\"Utils.Parser.Runtime.CompiledGrammar\" data-throw-if-not-resolved=\"false\"></xref> and <xref href=\"Utils.Parser.Runtime.ParseTreeCompiler%602\" data-throw-if-not-resolved=\"false\"></xref> to one operation\n(one tokenization, one parse, or one parse-tree compilation).</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Utils.Parser.Runtime.ParserResourcePhase.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Utils.Parser.Runtime.ParserResourcePhase.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "Utils.Parser.Runtime.ParserResourcePhase",
+      "Summary": "<p sourcefile=\"api/Utils.Parser.Runtime.ParserResourcePhase.yml\" sourcestartlinenumber=\"1\">The operation phase in which a parser resource limit was exceeded.</p>\n"
     },
     {
       "type": "ManagedReference",
@@ -17000,6 +17056,16 @@
       "output": {
         ".html": {
           "relative_path": "docs/parser/ParserMetadataAndRuntimeLimitations.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/parser/ParserResourceSafety.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/parser/ParserResourceSafety.html"
         }
       },
       "version": ""

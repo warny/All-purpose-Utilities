@@ -215,6 +215,23 @@ Implementation accident != supported contract.</p>
 <li>no exactly-once guarantee exists across backtracked attempts;</li>
 <li>no transactional isolation exists across competing alternatives.</li>
 </ul>
+<h2 id="resource-limits-boundaries-s-06">Resource limits boundaries (S-06)</h2>
+<p>Every tokenization, parse and parse-tree compilation runs under <code>ParserResourceLimits</code> with a private per-operation
+budget and an always-on execution-stack guard; an excess ends the operation with <code>ParserResourceLimitException</code>.
+Canonical reference: <a href="ParserResourceSafety.html"><code>ParserResourceSafety.md</code></a>.</p>
+<p>Limitation boundaries:</p>
+<ul>
+<li>a resource refusal is not a syntax failure and is never converted into an <code>ErrorNode</code> or diagnostics;</li>
+<li>limits bound parser-managed work (steps, nodes, retained states, depth), not wall-clock time, not total process memory
+and not user code running inside policy callbacks;</li>
+<li>steps and nodes consumed by backtracked or pruned branches are never refunded;</li>
+<li>a refused retained-state insertion refuses the whole parse; memoized results and metadata are never evicted;</li>
+<li>registry, memo and look-ahead state is released when each parse ends (successfully or not);</li>
+<li>the stack guard keeps a fixed headroom: user code that recurses deeply inside a callback is not protected by it;</li>
+<li><code>CompiledGrammar</code>, <code>LexerEngine</code> and <code>ParserEngine</code> remain non-thread-safe; budgets are per operation, but concurrent
+operations on one shared instance still corrupt each other's engine state (see the concurrency section of
+<code>ParserResourceSafety.md</code>).</li>
+</ul>
 <h2 id="antlr-parametersreturns-parsed-metadata-vs-runtime-support">ANTLR parameters/returns: parsed metadata vs runtime support</h2>
 <p>ANTLR4-style parameter and <code>returns</code> signatures are parsed and preserved as metadata text.</p>
 <p>Current runtime does <strong>not</strong> provide:</p>

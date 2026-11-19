@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Parser Resource Safety (S-06: ETC-16 / ETC-18) | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Parser Resource Safety (S-06: ETC-16 / ETC-18) | omy.Utils Documentation ">
+      
+      
+      <link rel="icon" href="../../favicon.ico">
+      <link rel="stylesheet" href="../../public/docfx.min.css">
+      <link rel="stylesheet" href="../../public/main.css">
+      <meta name="docfx:navrel" content="../../toc.html">
+      <meta name="docfx:tocrel" content="../../toc.html">
+      
+      <meta name="docfx:rel" content="../../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/blob/master/docs/parser/ParserResourceSafety.md/#L1">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../../index.html">
+            <img id="logo" class="svg" src="../../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+
+      <div class="content">
+        <div class="actionbar">
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="parser-resource-safety-s-06-etc-16--etc-18">Parser Resource Safety (S-06: ETC-16 / ETC-18)</h1>
+
+<h2 id="purpose">Purpose</h2>
+<p>Canonical reference for the resource safety of <code>Utils.Parser</code> before an expression tree exists: recursion depth and
+execution-stack safety (ETC-16), bounded work, bounded node and state growth, and allocation volume (ETC-18). The
+expression-tree engine budgets of the ETC roadmap (<code>ExpressionResourceLimits</code>) do not cover parsing.</p>
+<p>Raw measurements: <code>tests/ExpressionResourceProbe/results/2026-11-19/</code> (probe: <code>tests/ExpressionResourceProbe/ParserProbe.cs</code>).</p>
+<h2 id="1-recursive-call-graph">1. Recursive call graph</h2>
+<p>Every recursive path of the runtime goes through one of the following cycles. Method names are those of
+<code>Utils.Parser/Runtime</code>.</p>
+<h3 id="parser-parserengine">Parser (<code>ParserEngine</code>)</h3>
+<pre><code>C1  rule recursion
+    ParseRule
+      -&gt; TryParseScheduledAlternatives                 (also ParseLeftRecursiveRule for the seed)
+           -&gt; SchedulingPreparation.Prepare             (non-recursive: probes, descriptors, metadata)
+           -&gt; AlternativeScheduler.Run
+                -&gt; parseAlternative lambda
+                     -&gt; ScheduledAlternativeExecutor.Execute
+                          -&gt; parseAlternative lambda
+                               -&gt; TryParseContent -&gt; ContentParsers[type]
+                                    -&gt; TryParseSequence / TryParseQuantifier / TryParseNegation -&gt; TryParseContent ...
+                                    -&gt; TryParseRuleRef -&gt; ParseParserRuleReference -&gt; ParseRule        (cycle)
+
+C2  content nesting inside one rule (no rule invocation)
+    TryParseContent -&gt; TryParseSequence | TryParseQuantifier | TryParseNegation | TryParseAlternative -&gt; TryParseContent
+    TryParseContent -&gt; TryParseAlternation -&gt; TryParseScheduledAlternatives -&gt; ... -&gt; TryParseContent
+
+C3  direct left recursion
+    ParseRule -&gt; ParseLeftRecursiveRule -&gt; TryExtendLeft (loop)
+      -&gt; TryParseRecursiveAlternative -&gt; TryParseLeftRecursiveTail
+           -&gt; ParseParserRuleReference -&gt; ParseRule      (right operand: bypasses TryParseContent)
+           -&gt; TryParseContent                            (other tail items)
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Cycle</th>
+<th>Consumes a token per level?</th>
+<th>Same rule re-entered?</th>
+<th>State acquired per level</th>
+<th>Released in <code>finally</code>?</th>
+<th>Recursion without rule depth?</th>
+<th>Repeated by failed branches?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>C1</td>
+<td>no (rule chains and zero-width rules recurse without consuming)</td>
+<td>only blocked at the same token position (<code>_activeRuleFrames</code>)</td>
+<td><code>_activeRuleFrames</code> entry, invocation frame, rule-call policy context, execution-state snapshots, registry/memo/look-ahead entries</td>
+<td>frame entry, invocation frame (<code>Exit</code>), rule-call policy (<code>AfterRuleCall</code>): yes; registry entries: kept until the parse ends</td>
+<td>no</td>
+<td>yes: every alternative is attempted; rule results are memoized per (rule, position, precedence, state key)</td>
+</tr>
+<tr>
+<td>C2</td>
+<td>no</td>
+<td>no rule involved</td>
+<td>execution-state snapshots, per-sequence visited-state set</td>
+<td>snapshots restored on failure</td>
+<td><strong>yes</strong></td>
+<td>yes (inline content is not memoized)</td>
+</tr>
+<tr>
+<td>C3</td>
+<td>the tail usually consumes an operator; the right operand re-enters <code>ParseRule</code></td>
+<td>yes, at a later position</td>
+<td>as C1</td>
+<td>as C1</td>
+<td>no</td>
+<td>yes (every recursive alternative is attempted at each extension)</td>
+</tr>
+</tbody>
+</table>
+<p><code>_activeRuleFrames</code> detects re-entry of the same rule at the same token position only. It bounds neither ordinary
+recursion where successive invocations advance (<code>'(' e ')'</code>), nor recursion through different rule names, nor C2.</p>
+<h3 id="lexer-lexerengine">Lexer (<code>LexerEngine</code>)</h3>
+<pre><code>L1  MatchLongest -&gt; TryMatchContent -&gt; ContentMatchers[type]
+      -&gt; MatchSequenceContent | MatchAlternationContent | MatchAlternativeContent | MatchQuantifierContent
+         | MatchNegationContent | MatchRuleRefContent -&gt; TryMatchContent              (cycle)
+</code></pre>
+<p><code>_activeRuleRefs</code> blocks the same lexer rule at the same character offset only: a recursive lexer rule such as
+<code>NEST : '(' NEST? ')' ;</code> recurses once per input character.</p>
+<h3 id="parse-tree-consumers">Parse-tree consumers</h3>
+<pre><code>T1  ParseTreeCompiler.Visit -&gt; Visit (one level per tree level)
+T2  ParseTreeNavigator.Descendants -&gt; child.Descendants (one nested iterator per tree level)
+</code></pre>
+<h3 id="guard-placement">Guard placement</h3>
+<p>Every parser cycle (C1, C2, C3) contains <code>ParseRule</code> or <code>TryParseContent</code>; every lexer cycle contains
+<code>TryMatchContent</code>; T1 contains <code>Visit</code>. Between two consecutive passes through these methods, the number of frames is a
+constant of the runtime (at most the C1 chain above, about a dozen frames), independent of the grammar and of the input.
+These methods are therefore the guarded recursion boundaries. Non-guarded recursive helpers (<code>ContainsPredicateOrAction</code>,
+<code>FindPrecedenceLevel</code>, <code>ParserLookaheadProbe.ProbeContent</code>, structural prefix extraction) recurse over the grammar AST
+only, never over input, and never follow parser rule references.</p>
+<h2 id="2-baseline-before-s-06">2. Baseline (before S-06)</h2>
+<p>Environment: base <code>e0013a11</code>, Windows 11 Pro 10.0.26300 x64 (i7-12700KF, 20 logical CPUs, 64 GB), WSL2 Ubuntu (same
+machine) for Linux, .NET 8.0.34 runtime (probe target <code>net8.0</code>, <code>Utils.Parser</code> targets <code>net8.0</code>), SDK 11.0.100, Release
+unless stated, default thread stacks (Windows main thread 1 MiB, Linux main thread 8 MiB) and dedicated 256 KiB threads.</p>
+<h3 id="etc-16-nesting">ETC-16: nesting</h3>
+<p>Largest size completed before the process was terminated by a stack overflow (the next size of the campaign crashed;
+sizes 5, 10, 15, 20, 25, 30, 40, 50, 75, 100, 150, 200, 300, 500, 1000, 2000, ...):</p>
+<table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>Win main</th>
+<th>Win pool</th>
+<th>Win 256 KiB</th>
+<th>Win Debug main</th>
+<th>Linux main</th>
+<th>Linux 256 KiB</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>P-csyntax-parens</code> (pairs)</td>
+<td>15</td>
+<td>15</td>
+<td>&lt; 5</td>
+<td>15</td>
+<td>100</td>
+<td>&lt; 5</td>
+</tr>
+<tr>
+<td><code>P-csyntax-unary</code> (operators)</td>
+<td>200</td>
+<td>200</td>
+<td>20</td>
+<td>150</td>
+<td>1000</td>
+<td>30</td>
+</tr>
+<tr>
+<td><code>P-vbsyntax-parens</code></td>
+<td>15</td>
+<td>15</td>
+<td>&lt; 5</td>
+<td>10</td>
+<td>100</td>
+<td>&lt; 5</td>
+</tr>
+<tr>
+<td><code>P-vbsyntax-unary</code></td>
+<td>200</td>
+<td>200</td>
+<td>20</td>
+<td>150</td>
+<td>1000</td>
+<td>25</td>
+</tr>
+<tr>
+<td><code>P-g-unary</code> (<code>e : '-' e</code>)</td>
+<td>200</td>
+<td>200</td>
+<td>30</td>
+<td>150</td>
+<td>1000</td>
+<td>40</td>
+</tr>
+<tr>
+<td><code>P-g-rulechain</code> (3 rules/level)</td>
+<td>75</td>
+<td>75</td>
+<td>10</td>
+<td>50</td>
+<td>500</td>
+<td>15</td>
+</tr>
+<tr>
+<td><code>P-g-quantifier</code></td>
+<td>100</td>
+<td>100</td>
+<td>15</td>
+<td>75</td>
+<td>500</td>
+<td>20</td>
+</tr>
+<tr>
+<td><code>P-g-alternation</code> (inline)</td>
+<td>100</td>
+<td>100</td>
+<td>15</td>
+<td>75</td>
+<td>500</td>
+<td>15</td>
+</tr>
+<tr>
+<td><code>P-g-leftrec</code> (parenthesized)</td>
+<td>200</td>
+<td>200</td>
+<td>30</td>
+<td>150</td>
+<td>1000</td>
+<td>40</td>
+</tr>
+<tr>
+<td><code>P-g-epsilon</code> (zero-width levels)</td>
+<td>200</td>
+<td>200</td>
+<td>30</td>
+<td>150</td>
+<td>1000</td>
+<td>40</td>
+</tr>
+<tr>
+<td><code>P-g-lexrec</code> (lexer recursion)</td>
+<td>500</td>
+<td>500</td>
+<td>100</td>
+<td>500</td>
+<td>2000</td>
+<td>100</td>
+</tr>
+<tr>
+<td><code>P-g-ambiguous</code> (tokens, <code>parse</code>)</td>
+<td>100 (misc campaign, 1000 crashed)</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<p>Every family ends with an uncatchable stack overflow; no family ends with a controlled exception. One CSyntax
+parenthesis level costs about 12 rule invocations (rule depth 73 at 5 pairs, 193 at 15) and roughly 50 KB of stack; a
+plain right-recursive rule level costs about 4 KB on Windows Release.</p>
+<h3 id="etc-18-flat-sums">ETC-18: flat sums</h3>
+<p><code>x0 + x1 + ... + x(n-1)</code>, Windows Release, fresh grammar per process:</p>
+<table>
+<thead>
+<tr>
+<th>Terms</th>
+<th>Characters</th>
+<th>Operation</th>
+<th>Time (ms)</th>
+<th>Allocated</th>
+<th>Live after parse</th>
+<th>Peak working set</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1,000</td>
+<td>6,887</td>
+<td>CSyntax tokenize</td>
+<td>55</td>
+<td>34 MB</td>
+<td>0.3 MB</td>
+<td>57 MB</td>
+</tr>
+<tr>
+<td>1,000</td>
+<td>6,887</td>
+<td>CSyntax parse</td>
+<td>523</td>
+<td>274 MB</td>
+<td>23 MB</td>
+<td>90 MB</td>
+</tr>
+<tr>
+<td>20,000</td>
+<td>168,887</td>
+<td>CSyntax tokenize</td>
+<td>706</td>
+<td>682 MB</td>
+<td>5.6 MB</td>
+<td>69 MB</td>
+</tr>
+<tr>
+<td>20,000</td>
+<td>168,887</td>
+<td>CSyntax parse</td>
+<td>4,842</td>
+<td>5,436 MB</td>
+<td>437 MB</td>
+<td>595 MB</td>
+</tr>
+<tr>
+<td>20,000</td>
+<td>168,887</td>
+<td>CSyntax compile</td>
+<td>5,994</td>
+<td>5,861 MB</td>
+<td>439 MB</td>
+<td>602 MB</td>
+</tr>
+<tr>
+<td>20,000</td>
+<td>168,887</td>
+<td>VBSyntax parse</td>
+<td>4,332</td>
+<td>4,589 MB</td>
+<td>390 MB</td>
+<td>556 MB</td>
+</tr>
+<tr>
+<td>20,000</td>
+<td>168,887</td>
+<td>VBSyntax compile</td>
+<td>7,982</td>
+<td>4,655 MB</td>
+<td>392 MB</td>
+<td>553 MB</td>
+</tr>
+</tbody>
+</table>
+<p>Allocation and retained memory are linear in the input (about 32 KB allocated and 2.6 KB retained per character for
+CSyntax parse); tokenization alone allocates about 4 KB per character. For the 20,000-term CSyntax parse (40,000
+tokens) the engine performed 300,036 rule invocations and 1,140,099 alternative attempts, and retained 300,036 memo
+results, 1,060,095 visited-state keys, 560,059 continuation entries and 1,080,089 look-ahead entries until the next
+parse on the same engine (about 3 million entries, about 145 bytes each). Cumulative allocation (5.4 GB) is an order of
+magnitude above the live peak (0.6 GB working set).</p>
+<h2 id="3-resource-limits-s-06-design">3. Resource limits (S-06 design)</h2>
+<h3 id="public-surface">Public surface</h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ParserResourceLimits</code> (immutable record)</td>
+<td>Eight positive limits, <code>Default</code>, <code>Unlimited</code>, validated <code>init</code> setters (<code>ArgumentOutOfRangeException</code> below 1).</td>
+</tr>
+<tr>
+<td><code>ParserResourceLimitException : InvalidOperationException</code></td>
+<td>Controlled refusal: <code>Kind</code>, <code>Phase</code>, <code>Limit</code>, <code>Observed</code> (first attempted value over the limit, or the recursion depth for <code>Stack</code>), <code>Offset</code> (input character offset when known). No input text.</td>
+</tr>
+<tr>
+<td><code>ParserResourceLimitKind</code></td>
+<td><code>InputCharacters</code>, <code>Tokens</code>, <code>LexerSteps</code>, <code>LexerDepth</code>, <code>ParseDepth</code>, <code>ParserSteps</code>, <code>ParseNodes</code>, <code>RetainedStates</code>, <code>Stack</code>.</td>
+</tr>
+<tr>
+<td><code>ParserResourcePhase</code></td>
+<td><code>Lexer</code>, <code>Parser</code>, <code>TreeCompilation</code>.</td>
+</tr>
+<tr>
+<td><code>LexerEngine(definition, policy, limits)</code>, <code>ParserEngine(definition, policy, limits)</code>, <code>CompiledGrammar(definition, policy, limits)</code></td>
+<td>Additive constructors; every existing constructor keeps its signature and uses <code>ParserResourceLimits.Default</code>. Each type exposes <code>ResourceLimits</code>.</td>
+</tr>
+</tbody>
+</table>
+<p>Generated grammars (<code>XGrammar.Grammar</code>, <code>Parse</code>, <code>ParseWithEmbeddedCode</code>), <code>Antlr4GrammarConverter</code>,
+<code>SyntaxColorisationGrammar</code> and the CSyntax/VBSyntax front ends use the defaults. A trusted caller that needs more builds
+its own <code>new CompiledGrammar(XGrammar.Build(), policy, ParserResourceLimits.Unlimited)</code> (or any <code>with</code> variant).</p>
+<h3 id="budget-ownership">Budget ownership</h3>
+<ul>
+<li>One private <code>ParserResourceBudget</code> per tokenization (created when the <code>Tokenize</code> enumeration starts) and per parse
+(owned by the per-parse <code>ParseContext</code>). It is never stored in a static, never shared between engines, threads or
+operations, and is discarded when the operation ends; the engines' internal <code>LastResourceUsage</code> snapshots are
+diagnostics only.</li>
+<li>Counters only grow. Backtracking restores token positions and managed semantic state, never consumed budget: steps,
+nodes and retained states charged by a rejected or pruned branch stay charged.</li>
+<li>The current depth is restored by <code>finally</code> blocks on every path, so a speculative branch never leaves depth behind.</li>
+<li>Every check runs before its counter would cross the limit, so no counter overflows (<code>long</code> counters, <code>int</code> depth).</li>
+<li>Limits never depend on wall-clock time.</li>
+</ul>
+<h3 id="what-is-charged">What is charged</h3>
+<table>
+<thead>
+<tr>
+<th>Dimension</th>
+<th>Charged at</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Lexer step</td>
+<td>every <code>TryMatchContent</code> dispatch (one per candidate rule at a token start, then one per literal, range, set, rule reference, sequence, alternation, alternative, quantifier iteration, negation, command, action and predicate match attempt). Skipped tokens are charged as steps only.</td>
+</tr>
+<tr>
+<td>Lexer depth</td>
+<td>every active <code>TryMatchContent</code> dispatch (recursive lexer rules and fragments).</td>
+</tr>
+<tr>
+<td>Input characters</td>
+<td>every character read from the <code>TextReader</code> (end of input is not charged); <code>CompiledGrammar</code> also refuses an oversized string before any work.</td>
+</tr>
+<tr>
+<td>Tokens</td>
+<td>every emitted token, any channel, lexer-extension and <code>ERROR</code> tokens included, before it is yielded; and every token supplied directly to <code>ParserEngine.Parse(IEnumerable&lt;Token&gt;)</code>, any channel (phase <code>Parser</code>): a list longer than the limit is refused from its count, a lazy sequence before the first token over the limit is examined or stored.</td>
+</tr>
+<tr>
+<td>Parser step</td>
+<td>every <code>ParseRule</code> (memo hits included), every <code>TryParseContent</code> dispatch, every scheduled alternative attempt, every look-ahead probe (preparation and execution), every quantifier iteration attempt, every left-recursive extension attempt. Negation probes are charged through the dispatch of the probed content.</td>
+</tr>
+<tr>
+<td>Parse depth</td>
+<td>every active <code>ParseRule</code> and <code>TryParseContent</code> (rule invocations and content nesting alike).</td>
+</tr>
+<tr>
+<td>Parse nodes</td>
+<td>every <code>ParserNode</code>, <code>QuantifierNode</code> and <code>LexerNode</code> built by the engine, empty predicate/action nodes included, in accepted and rejected branches alike.</td>
+</tr>
+<tr>
+<td>Retained states</td>
+<td>every new visited-state key, continuation entry, completed (memoized) result and look-ahead cache entry, charged before insertion. A refused insertion stores nothing and refuses the whole parse; nothing is evicted or silently dropped, so cached results never change meaning.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="stack-guard">Stack guard</h3>
+<p><code>RuntimeHelpers.TryEnsureSufficientExecutionStack()</code> runs at every guarded recursion boundary (<code>ParseRule</code>,
+<code>TryParseContent</code>, <code>TryMatchContent</code>, <code>ParseTreeCompiler.Visit</code>). Between two boundaries the runtime executes a bounded
+number of frames (section 1), so the guard's fixed headroom covers them. <code>StackOverflowException</code> is never caught. The
+guard cannot be disabled. <code>ParseTreeNavigator.Descendants()</code> was converted to an explicit-stack traversal (same
+depth-first pre-order) so it no longer nests one iterator per tree level.</p>
+<h3 id="exception-and-state-semantics">Exception and state semantics</h3>
+<ul>
+<li>A refusal is never a syntax error: it is not converted into an <code>ErrorNode</code>, no truncated tree is returned.</li>
+<li>Exceptions thrown by injected policies (predicate evaluators, action executors, state managers, lifecycle executors,
+frame managers, rule-call policies, lexer extensions) propagate unchanged; they are never wrapped into a refusal.</li>
+<li>On a refusal every entered invocation frame is exited (<code>Exit</code>), every rule call gets <code>AfterRuleCall</code>, the active
+rule-frame set and the lexer's active rule references are released by the existing <code>finally</code> blocks, and the parse's
+registry, memo and look-ahead state is cleared. The next operation on the same engine starts clean.</li>
+<li><strong>Lifecycle change:</strong> registry, memo and look-ahead state is now released when every parse ends, not only when the next
+parse starts. Before S-06 a long-lived engine (for example the shared CSyntax grammar) kept the state of its last
+parse alive (437 MB after the historical 20,000-term input).</li>
+<li>Limits count parser-managed work only. They cannot interrupt user code running inside a policy callback; such code is
+charged only for the parser work it causes. No <code>Thread.Abort</code>, asynchronous cancellation or broad catch is used.</li>
+</ul>
+<h2 id="4-default-thresholds-and-rationale">4. Default thresholds and rationale</h2>
+<table>
+<thead>
+<tr>
+<th>Limit</th>
+<th>Default</th>
+<th>Rationale (measured)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>MaxInputCharacters</code></td>
+<td>1,000,000</td>
+<td>Coarse input-size bound; the historical 20,000-term input has 168,887 characters.</td>
+</tr>
+<tr>
+<td><code>MaxTokens</code></td>
+<td>500,000</td>
+<td>At most one token per character in practice; 12.5 times the historical input's 39,999 tokens.</td>
+</tr>
+<tr>
+<td><code>MaxLexerSteps</code></td>
+<td>50,000,000</td>
+<td>CSyntax needs about 14.5 steps per character (2.45 M for the historical input), so ordinary input meets <code>MaxInputCharacters</code> first; quadratic lexer patterns are stopped after a few thousand characters.</td>
+</tr>
+<tr>
+<td><code>MaxLexerDepth</code></td>
+<td>4,000</td>
+<td>Ordinary tokens need depth 4 to 5; a recursive lexer rule needs about 4 levels per nesting level, so 4,000 accepts about 1,000 nested levels (the Windows 1 MiB stack guard refuses at about 2,600).</td>
+</tr>
+<tr>
+<td><code>MaxParseDepth</code></td>
+<td>4,000</td>
+<td>One right-recursive rule level costs 3 depth units, one CSyntax parenthesis level about 33. On Windows 1 MiB stacks the stack guard refuses first (about 620–665 units: CSyntax 19 pairs accepted in Release, baseline crashed at 20); on Linux 8 MiB main threads the stack guard would refuse at about 4,100–4,350 units, so 4,000 makes that refusal deterministic while keeping the baseline capacity (CSyntax 110 pairs accepted; baseline crashed at 150).</td>
+</tr>
+<tr>
+<td><code>MaxParserSteps</code></td>
+<td>10,000,000</td>
+<td>The historical input needs 3.94 M steps (about 98 per token).</td>
+</tr>
+<tr>
+<td><code>MaxParseNodes</code></td>
+<td>5,000,000</td>
+<td>The historical input builds 260,021 nodes, failed branches included.</td>
+</tr>
+<tr>
+<td><code>MaxRetainedStates</code></td>
+<td>5,000,000</td>
+<td>The historical input retains 3.0 M states (about 75 per token, about 145 bytes each before S-06), which bounds the live registry memory of one parse.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="5-stack-safety-results-after-s-06">5. Stack-safety results (after S-06)</h2>
+<p>Campaign <code>results/2026-11-19/final-{default,unlimited}-*-nesting-*.csv</code>: 12 families × 20 sizes (5 to 50,000) in one
+process per run, <code>-ContinueAfterRefusal</code> so every larger size runs too, Windows Release (main, pool, 256 KiB), Windows
+Debug (main, 256 KiB), Linux Release (main, 256 KiB) and Linux Debug (main), with default and unlimited limits:
+<strong>3,948 isolated runs including the flat and miscellaneous families, 1,590 <code>ok</code>, 2,358 <code>resource-limit</code>, 0 stack
+overflows, 0 crashes, 0 timeouts.</strong></p>
+<p>Largest size accepted with the default limits, and the kind of the first refusal:</p>
+<table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>Win main / pool</th>
+<th>Win 256 KiB</th>
+<th>Win Debug main</th>
+<th>Win Debug 256 KiB</th>
+<th>Linux main</th>
+<th>Linux 256 KiB</th>
+<th>Linux Debug main</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>P-csyntax-parens</code></td>
+<td>15 / Stack</td>
+<td>&lt; 5 / Stack</td>
+<td>10 / Stack</td>
+<td>&lt; 5 / Stack</td>
+<td>100 / ParseDepth</td>
+<td>&lt; 5 / Stack</td>
+<td>100 / Stack</td>
+</tr>
+<tr>
+<td><code>P-csyntax-unary</code></td>
+<td>200 / Stack</td>
+<td>5 / Stack</td>
+<td>150 / Stack</td>
+<td>&lt; 5 / Stack</td>
+<td>1000 / ParseDepth</td>
+<td>5 / Stack</td>
+<td>1000 / Stack</td>
+</tr>
+<tr>
+<td><code>P-vbsyntax-parens</code></td>
+<td>15 / Stack</td>
+<td>&lt; 5 / Stack</td>
+<td>10 / Stack</td>
+<td>&lt; 5 / Stack</td>
+<td>100 / ParseDepth</td>
+<td>&lt; 5 / Stack</td>
+<td>75 / Stack</td>
+</tr>
+<tr>
+<td><code>P-vbsyntax-unary</code></td>
+<td>200 / Stack</td>
+<td>5 / Stack</td>
+<td>150 / Stack</td>
+<td>&lt; 5 / Stack</td>
+<td>1000 / ParseDepth</td>
+<td>5 / Stack</td>
+<td>1000 / Stack</td>
+</tr>
+<tr>
+<td><code>P-g-unary</code></td>
+<td>200 / Stack</td>
+<td>15 / Stack</td>
+<td>150 / Stack</td>
+<td>15 / Stack</td>
+<td>1000 / ParseDepth</td>
+<td>20 / Stack</td>
+<td>1000 / Stack</td>
+</tr>
+<tr>
+<td><code>P-g-rulechain</code></td>
+<td>75 / Stack</td>
+<td>5 / Stack</td>
+<td>50 / Stack</td>
+<td>&lt; 5 / Stack</td>
+<td>500 / Stack</td>
+<td>5 / Stack</td>
+<td>300 / Stack</td>
+</tr>
+<tr>
+<td><code>P-g-quantifier</code></td>
+<td>100 / Stack</td>
+<td>5 / Stack</td>
+<td>75 / Stack</td>
+<td>5 / Stack</td>
+<td>500 / ParseDepth</td>
+<td>10 / Stack</td>
+<td>500 / Stack</td>
+</tr>
+<tr>
+<td><code>P-g-alternation</code></td>
+<td>75 / Stack</td>
+<td>5 / Stack</td>
+<td>75 / Stack</td>
+<td>5 / Stack</td>
+<td>500 / Stack</td>
+<td>5 / Stack</td>
+<td>500 / Stack</td>
+</tr>
+<tr>
+<td><code>P-g-leftrec</code></td>
+<td>200 / Stack</td>
+<td>15 / Stack</td>
+<td>150 / Stack</td>
+<td>10 / Stack</td>
+<td>1000 / ParseDepth</td>
+<td>20 / Stack</td>
+<td>1000 / Stack</td>
+</tr>
+<tr>
+<td><code>P-g-epsilon</code></td>
+<td>200 / Stack</td>
+<td>15 / Stack</td>
+<td>150 / Stack</td>
+<td>10 / Stack</td>
+<td>1000 / ParseDepth</td>
+<td>20 / Stack</td>
+<td>1000 / Stack</td>
+</tr>
+<tr>
+<td><code>P-g-lexrec</code></td>
+<td>500 / Stack (lexer)</td>
+<td>50 / Stack</td>
+<td>500 / Stack</td>
+<td>40 / Stack</td>
+<td>500 / LexerDepth</td>
+<td>50 / Stack</td>
+<td>500 / LexerDepth</td>
+</tr>
+<tr>
+<td><code>P-g-ambiguous</code></td>
+<td>100 / Stack</td>
+<td>5 / Stack</td>
+<td>75 / Stack</td>
+<td>5 / Stack</td>
+<td>500 / ParseDepth</td>
+<td>10 / Stack</td>
+<td>500 / Stack</td>
+</tr>
+</tbody>
+</table>
+<p>Compared with the baseline (section 2), the accepted sizes on 1 MiB and 8 MiB main threads are unchanged except
+<code>P-g-alternation</code> on Windows (100 → 75), CSyntax parentheses on Windows Debug (15 → 10) and <code>P-g-lexrec</code> on Linux (2,000 → 500, the deterministic <code>MaxLexerDepth</code>): the guard's headroom costs the last levels before the physical limit;
+every size above them is now refused instead of crashing. 256 KiB threads lose most of their former capacity to the
+guard's fixed headroom (for example <code>P-g-unary</code> 30 → 15 on Windows), but no longer crash. With unlimited limits the
+stack guard alone stops every family on every configuration (<code>final-unlimited-*</code>). The stack guard is the first refusal
+wherever the depth limit is above the physical capacity (all Windows configurations, all 256 KiB threads, Linux Debug);
+<code>ParseDepth</code>/<code>LexerDepth</code> refusals are deterministic and platform-independent.</p>
+<p>The 42-character ETC-16 reproducer (<code>P-csyntax-parens</code> 20) is refused with <code>Parser/Stack</code> on Windows 1 MiB threads and
+accepted on Linux 8 MiB threads. The ANTLR4 meta-grammar (<code>Antlr4GrammarConverter</code>) is refused on 256 KiB threads even
+for small grammar texts (controlled; the probe converts grammars on a 16 MiB helper thread).</p>
+<h2 id="6-allocation-results-after-s-06">6. Allocation results (after S-06)</h2>
+<p>Allocation profile (probe <code>--alloc-profile</code>, <code>GCAllocationTick</code> sampling, CSyntax sum of 1,000 terms): before S-06 the
+lexer spent about 90 % of tokenization allocations re-filtering and re-sorting every mode's rules for every token
+(boxed enumerators in <code>IsPureLiteralRule</code>, <code>OrderBy</code> buffers, per-candidate command/action lists); the parser's volume
+was spread over scheduling records (<code>ActiveParseState</code>, 9 %), repeated sorts and enumerators, look-ahead/registry
+dictionary growth, structural/continuation metadata arrays, observation payloads and per-call delegates. The measured,
+behavior-neutral changes are listed in <code>Utils.Parser/ROADMAP.md</code> Phase 9. Work counters (steps, nodes, retained states)
+are identical before and after, which confirms the same parse was performed.</p>
+<p>Cumulative allocation, Windows Release, fresh grammar per process (<code>baseline-win-flat.csv</code> → <code>final-default-win-flat.csv</code>):</p>
+<table>
+<thead>
+<tr>
+<th>Terms</th>
+<th>Operation</th>
+<th>Before</th>
+<th>After</th>
+<th>Change</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1,000</td>
+<td>CSyntax tokenize</td>
+<td>34 MB</td>
+<td>8.5 MB</td>
+<td>−75 %</td>
+</tr>
+<tr>
+<td>20,000</td>
+<td>CSyntax tokenize</td>
+<td>682 MB</td>
+<td>174 MB</td>
+<td>−75 %</td>
+</tr>
+<tr>
+<td>1,000</td>
+<td>CSyntax compile</td>
+<td>294 MB</td>
+<td>181 MB</td>
+<td>−38 %</td>
+</tr>
+<tr>
+<td>5,000</td>
+<td>CSyntax compile</td>
+<td>1,457 MB</td>
+<td>895 MB</td>
+<td>−39 %</td>
+</tr>
+<tr>
+<td>20,000</td>
+<td>CSyntax compile</td>
+<td>5,861 MB</td>
+<td>3,613 MB</td>
+<td>−38 %</td>
+</tr>
+<tr>
+<td>20,000</td>
+<td>VBSyntax compile</td>
+<td>4,655 MB</td>
+<td>2,741 MB</td>
+<td>−41 %</td>
+</tr>
+<tr>
+<td>100,000 tokens</td>
+<td>CSyntax tokenize, invalid input</td>
+<td>1,727 MB</td>
+<td>458 MB</td>
+<td>−73 %</td>
+</tr>
+</tbody>
+</table>
+<p>The reduction is a constant factor at every size; allocation stays linear (about 21 KB per character for CSyntax
+compile, 16 KB for VBSyntax). Peak working set is unchanged (about 600 MB for the 20,000-term CSyntax input): the live
+peak is the registry state retained during the parse (3.0 M entries), which <code>MaxRetainedStates</code> now bounds and which is
+released when the parse ends (live memory after the parse: 437 MB → about 230 MB including the result tree). Parse
+counters and allocations are identical on Linux (<code>final-default-linux-flat.csv</code>). Elapsed times are indicative only
+(the final campaign shared the machine with test runs); the 20,000-term CSyntax compile took 6.0 s before and 4.5 s
+after in an undisturbed run.</p>
+<h2 id="7-shared-grammar-concurrency-independent-issue-709">7. Shared-grammar concurrency (independent issue #709)</h2>
+<p><code>CSyntaxTokenParser</code> and <code>VBSyntaxTokenParser</code> share one lazily-initialized static <code>CompiledGrammar</code> per dialect, while
+<code>CompiledGrammar</code>, <code>LexerEngine</code> and <code>ParserEngine</code> are documented as not thread-safe (per-parse engine state:
+<code>_activeRuleFrames</code>, registry/memo/look-ahead, lexer mode stack and active rule references). The probe
+<code>ExpressionResourceProbe parser-concurrency 8 400</code> (8 threads × 400 alternating <code>Parse</code>/<code>Tokenize</code> calls compared with
+single-threaded references) measured:</p>
+<table>
+<thead>
+<tr>
+<th>Build</th>
+<th>Corrupted trees</th>
+<th>Corrupted token lists</th>
+<th>Exceptions</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>base <code>e0013a11</code></td>
+<td>893</td>
+<td>0</td>
+<td>668 (<code>InvalidOperationException</code> 381, <code>IndexOutOfRangeException</code> 263, <code>ArgumentException</code> 15, <code>NullReferenceException</code> 8, <code>ArgumentNullException</code> 1)</td>
+</tr>
+<tr>
+<td>S-06</td>
+<td>818</td>
+<td>0</td>
+<td>730 (<code>InvalidOperationException</code> 407, <code>IndexOutOfRangeException</code> 283, <code>NullReferenceException</code> 22, <code>ArgumentException</code> 18)</td>
+</tr>
+<tr>
+<td>1 thread</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+<p>The defect is pre-existing and independent of S-06: budgets are owned by each operation (<code>ParseContext</code>, per-enumeration
+lexer budget) and stay enforced under concurrent misuse. Corrupted trees are returned silently. Fixing it (per-call or
+per-thread engines, per-operation engine state, or synchronization) needs throughput measurements and is tracked
+separately as issue #709; S-06 does not add locking. Until then, callers must not use the CSyntax/VBSyntax front ends
+from several threads at once.</p>
+<h2 id="8-remaining-limitations-and-follow-up">8. Remaining limitations and follow-up</h2>
+<ul>
+<li><strong>Small stacks are not supported for useful work.</strong> The parser guarantees a controlled refusal, not successful parsing, on small stacks: on a 256 KiB thread even <code>(x0)</code> is refused by CSyntax/VBSyntax and <code>Antlr4GrammarConverter</code> refuses small grammar texts. Run parsing on threads of at least 1 MiB (the .NET default on Windows) when inputs must succeed.</li>
+<li><strong>Stack capacity.</strong> About 1.3 KB of stack per depth unit (Windows Release): a 1 MiB thread accepts 19 CSyntax
+parenthesis levels and a 256 KiB thread accepts unparenthesized CSyntax expressions but refuses <code>(x0)</code> (the baseline parsed 2 levels there and crashed at 3: the guard's fixed headroom, reserved by <code>TryEnsureSufficientExecutionStack</code>, costs the remaining capacity of very small stacks); the ANTLR4 meta-grammar used by <code>Antlr4GrammarConverter</code> is
+refused (controlled <code>Stack</code>) on a 256 KiB thread even for small grammar texts. These are controlled refusals, not
+crashes; raising capacity needs fewer frames per recursion cycle or an explicit-stack execution model (not attempted:
+it would replace the parser execution model).</li>
+<li><strong>Exception filters.</strong> A <code>ParserResourceLimitException</code> of kind <code>Stack</code> is thrown with only the guard's headroom left.
+<code>catch</code> blocks run after unwinding and are safe; an exception <em>filter</em> (<code>catch ... when (...)</code>) on the caller's side runs
+before unwinding, on the nearly exhausted stack: keep such filters trivial (the S-06 probe was itself caught by this).</li>
+<li><strong>Allocation.</strong> Parsing remains linear at about 21 KB allocated per input character (CSyntax compile); live memory is
+dominated by retained registry metadata (visited states and continuations are write-only in production). Bounding or
+removing that metadata needs a metadata-lifecycle design.</li>
+<li><strong>Grammar immutability assumption.</strong> <code>ParserEngine</code> precomputes scheduling shapes (priority order, structural descriptors) and <code>LexerEngine</code> precomputes candidate rules from the definition at construction. This relies on the documented immutability of the grammar model (<code>Rule</code>, <code>Alternation</code>, <code>LeftRecursiveRuleInfo</code> capture immutable snapshots); a future mutable model would have to invalidate these tables.</li>
+<li><strong>Wall-clock time and process memory</strong> are not limited; the budgets bound parser-managed work and retained states.</li>
+<li><strong>User code</strong> inside policy callbacks is not interrupted and not covered by the stack guard beyond its headroom.</li>
+<li><strong>Concurrency</strong>: see section 7.</li>
+</ul>
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/docs/parser/ParserResourceSafety.md/#L1" class="edit-link">Edit this page</a>
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

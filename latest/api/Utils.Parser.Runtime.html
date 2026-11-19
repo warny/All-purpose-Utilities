@@ -109,6 +109,10 @@ Obtain an instance from a resolved <a class="xref" href="Utils.Parser.Model.Pars
 or compile directly from an ANTLR4 grammar source string via
 <code>Antlr4GrammarConverter.Compile(grammarText)</code>.
 </p>
+<p>
+Every <a class="xref" href="Utils.Parser.Runtime.CompiledGrammar.html#Utils_Parser_Runtime_CompiledGrammar_Tokenize_System_String_">Tokenize(string)</a> and <a class="xref" href="Utils.Parser.Runtime.CompiledGrammar.html#Utils_Parser_Runtime_CompiledGrammar_Parse_System_String_">Parse(string)</a> call runs under <a class="xref" href="Utils.Parser.Runtime.CompiledGrammar.html#Utils_Parser_Runtime_CompiledGrammar_ResourceLimits">ResourceLimits</a> with a private,
+per-call budget; an excess ends the call with a <a class="xref" href="Utils.Parser.Runtime.ParserResourceLimitException.html">ParserResourceLimitException</a>.
+</p>
 </dd>
     </dl>
     <dl class="jumplist">
@@ -351,6 +355,19 @@ same lexical label with both operators; callers must use the helper matching the
       <dd><p>Provides syntactic top-level splitting of raw rule-call argument text into named key–value pairs,
 supporting forms such as <code>value: 42</code> and <code>value = 42</code>.
 Splitting is purely syntactic: no value is evaluated, no parameter is bound.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.ParserResourceLimitException.html">ParserResourceLimitException</a></dt>
+      <dd><p>Thrown when a tokenization, parse or parse-tree compilation exceeds one of its <a class="xref" href="Utils.Parser.Runtime.ParserResourceLimits.html">ParserResourceLimits</a>, or
+when the remaining execution stack is insufficient to continue it safely.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.ParserResourceLimits.html">ParserResourceLimits</a></dt>
+      <dd><p>Immutable resource limits applied by <a class="xref" href="Utils.Parser.Runtime.LexerEngine.html">LexerEngine</a>, <a class="xref" href="Utils.Parser.Runtime.ParserEngine.html">ParserEngine</a>,
+<a class="xref" href="Utils.Parser.Runtime.CompiledGrammar.html">CompiledGrammar</a> and <a class="xref" href="Utils.Parser.Runtime.ParseTreeCompiler-2.html">ParseTreeCompiler&lt;TContext, TResult&gt;</a> to one operation
+(one tokenization, one parse, or one parse-tree compilation).</p>
 </dd>
     </dl>
     <dl class="jumplist">
@@ -671,6 +688,16 @@ Enums
     <dl class="jumplist">
       <dt><a class="xref" href="Utils.Parser.Runtime.ParserRawNamedArgumentSeparatorMode.html">ParserRawNamedArgumentSeparatorMode</a></dt>
       <dd><p>Specifies which separator characters are recognized when parsing named raw rule-call argument slices.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.ParserResourceLimitKind.html">ParserResourceLimitKind</a></dt>
+      <dd><p>The resource dimension whose limit a lexer, parser or parse-tree compilation operation exceeded.</p>
+</dd>
+    </dl>
+    <dl class="jumplist">
+      <dt><a class="xref" href="Utils.Parser.Runtime.ParserResourcePhase.html">ParserResourcePhase</a></dt>
+      <dd><p>The operation phase in which a parser resource limit was exceeded.</p>
 </dd>
     </dl>
     <dl class="jumplist">

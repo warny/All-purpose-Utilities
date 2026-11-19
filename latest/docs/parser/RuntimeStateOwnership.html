@@ -196,7 +196,8 @@ It is conservative, documentation-only, and describes current contracts only.</p
 </ul>
 <p>Boundaries:</p>
 <ul>
-<li><code>Clear()</code> resets registry-owned state for a new parse lifecycle;</li>
+<li><code>Clear()</code> resets registry-owned state for a new parse lifecycle; <code>ParserEngine.Parse</code> clears it both when a parse starts and when it ends (successfully, with an <code>ErrorNode</code>, or with an exception), so no parse state outlives its parse (S-06);</li>
+<li>every insertion of a new visited state, continuation, completed result or look-ahead entry is charged to the running parse's <code>MaxRetainedStates</code> budget before it is stored; an exhausted budget refuses the whole parse instead of dropping or evicting an entry;</li>
 <li>reusable results are invocation-local completion artifacts;</li>
 <li>reusable result selection is not final parse acceptance;</li>
 <li>invocation reuse != execution reuse;</li>

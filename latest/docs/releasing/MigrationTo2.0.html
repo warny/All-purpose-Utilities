@@ -456,6 +456,21 @@ breaks requiring recompilation: see the &quot;Second audit pass&quot; entry unde
 <code>Length</code> with <code>Count</code>, and make any required mutable copy explicit, for example:</p>
 <pre><code class="lang-csharp">var copy = FontSupport.StdNames.ToArray();
 </code></pre>
+<p><a id="omy-utils-parser-resource-limits"></a></p>
+<h2 id="utilsparser-resource-limits-and-stack-guards-s-06">Utils.Parser: resource limits and stack guards (S-06)</h2>
+<p>Tokenization, parsing and parse-tree compilation now run under <code>ParserResourceLimits.Default</code> and an always-on
+execution-stack guard. Inputs that stay within the limits are parsed exactly as before (same tokens, trees, spans and
+diagnostics). Inputs that exceed them, which previously ended the process with a stack overflow (deep nesting) or ran
+unbounded work, now throw <code>ParserResourceLimitException</code>; it derives from <code>InvalidOperationException</code>, is never an
+<code>ErrorNode</code>, and names the exceeded <code>Kind</code>, the <code>Phase</code> (<code>Lexer</code>, <code>Parser</code>, <code>TreeCompilation</code>), the configured <code>Limit</code>,
+the attempted value (<code>Observed</code>) and the input <code>Offset</code>. Callers of <code>CompiledGrammar.Parse</code>, generated <code>Parse</code> methods,
+<code>Antlr4GrammarConverter</code> and the CSyntax/VBSyntax front ends that must handle hostile input should catch it next to
+their existing syntax-error handling.</p>
+<p>Trusted callers that need larger inputs construct their engines with explicit limits, for example
+<code>new CompiledGrammar(XGrammar.Build(), ParserRuntimeFeaturePolicy.Default, ParserResourceLimits.Unlimited)</code> or
+<code>ParserResourceLimits.Default with { MaxParseDepth = 10_000 }</code>; the stack guard cannot be disabled. The engines also
+release their registry state when each parse ends. No existing signature changed. Defaults and measurements:
+<code>docs/parser/ParserResourceSafety.md</code>.</p>
 
 </article>
 
