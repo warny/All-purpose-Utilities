@@ -215,6 +215,58 @@ public class VBSyntaxNumericPromotionTests
     }
 
     /// <summary>
+    /// Comparisons with nullable operands follow the lifted LINQ comparison semantics, operator by operator, and return
+    /// a non-nullable Boolean: <c>=</c> is true when both operands are null and false when only one is, <c>&lt;&gt;</c>
+    /// is its negation (so a null operand compared with a value is different), and <c>&lt;</c>, <c>&lt;=</c>,
+    /// <c>&gt;</c>, <c>&gt;=</c> are false as soon as one operand is null (including null &lt;= null). Constants are used
+    /// because <c>=</c> with an assignable left operand is an assignment.
+    /// </summary>
+    [TestMethod]
+    public void Nullable_ComparisonsFollowLiftedSemanticsPerOperator()
+    {
+        var cases = new (string Op, int? Left, double? Right, bool Expected)[]
+        {
+            ("=", null, 5d, false), ("=", 5, null, false), ("=", null, null, true), ("=", 5, 5d, true),
+            ("<>", null, 5d, true), ("<>", 5, null, true), ("<>", null, null, false), ("<>", 5, 5d, false),
+            ("<", null, 5d, false), ("<", 5, null, false), ("<", null, null, false), ("<", 4, 5d, true),
+            ("<=", null, 5d, false), ("<=", 5, null, false), ("<=", null, null, false), ("<=", 5, 5d, true),
+            (">", null, 5d, false), (">", 5, null, false), (">", null, null, false), (">", 6, 5d, true),
+            (">=", null, 5d, false), (">=", 5, null, false), (">=", null, null, false), (">=", 5, 5d, true),
+        };
+
+        foreach (var (op, left, right, expected) in cases)
+        {
+            string label = $"a {op} b with a = {left?.ToString() ?? "null"} (Int32?), b = {right?.ToString(CultureInfo.InvariantCulture) ?? "null"} (Double?)";
+            AssertNullableComparison(expected, op, Expression.Constant(left, typeof(int?)), Expression.Constant(right, typeof(double?)), label);
+        }
+
+        // Nullable on one side only: the other operand is lifted, and null compared with a value is still different.
+        AssertNullableComparison(true, "<>", Expression.Constant(5), Expression.Constant(null, typeof(double?)), "5 <> null");
+        AssertNullableComparison(false, "=", Expression.Constant(5), Expression.Constant(null, typeof(double?)), "5 = null");
+        AssertNullableComparison(false, ">=", Expression.Constant(null, typeof(long?)), Expression.Constant((short)1), "null >= 1");
+    }
+
+    /// <summary>
+    /// Compiles <c>a op b</c> over constant operands and checks that the comparison works on the nullable common type and
+    /// returns the expected non-nullable Boolean.
+    /// </summary>
+    /// <param name="expected">The expected result.</param>
+    /// <param name="op">The comparison operator.</param>
+    /// <param name="left">The left constant.</param>
+    /// <param name="right">The right constant.</param>
+    /// <param name="label">The assertion label.</param>
+    private static void AssertNullableComparison(bool expected, string op, Expression left, Expression right, string label)
+    {
+        var symbols = new Dictionary<string, Expression>(StringComparer.OrdinalIgnoreCase) { ["a"] = left, ["b"] = right };
+        Expression body = new VBSyntaxExpressionCompiler().CompileExpression($"a {op} b", symbols);
+        var comparison = (BinaryExpression)body;
+        Assert.AreEqual(typeof(bool), body.Type, label);
+        Assert.IsTrue(Nullable.GetUnderlyingType(comparison.Left.Type) is not null, label);
+        Assert.AreEqual(comparison.Left.Type, comparison.Right.Type, label);
+        Assert.AreEqual(expected, Expression.Lambda<Func<bool>>(body).Compile()(), label);
+    }
+
+    /// <summary>
     /// SByte, UInt16, UInt32, UInt64 and Decimal are outside the promotion hierarchy: operations on one same type keep
     /// their previous behavior, mixed combinations are refused explicitly instead of being converted silently.
     /// </summary>
