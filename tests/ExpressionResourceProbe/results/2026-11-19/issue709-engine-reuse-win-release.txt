@@ -1,0 +1,16 @@
+CENGINE input=short variant=reused ops=2812 usPerOp=533.5 bytesPerOp=642260
+CENGINE input=short variant=fresh ops=1905 usPerOp=787.7 bytesPerOp=931488
+CENGINE input=short variant=reused ops=2367 usPerOp=633.8 bytesPerOp=642256
+CENGINE input=short variant=fresh ops=1789 usPerOp=838.8 bytesPerOp=931488
+CENGINE input=medium variant=reused ops=475 usPerOp=3163.4 bytesPerOp=2914721
+CENGINE input=medium variant=fresh ops=426 usPerOp=3525.0 bytesPerOp=3611702
+CENGINE input=medium variant=reused ops=486 usPerOp=3091.1 bytesPerOp=2914720
+CENGINE input=medium variant=fresh ops=419 usPerOp=3585.8 bytesPerOp=3611703
+CENGINE input=deep variant=reused ops=226 usPerOp=6640.0 bytesPerOp=5615256
+CENGINE input=deep variant=fresh ops=177 usPerOp=8475.1 bytesPerOp=6899489
+CENGINE input=deep variant=reused ops=218 usPerOp=6888.4 bytesPerOp=5615257
+CENGINE input=deep variant=fresh ops=185 usPerOp=8130.8 bytesPerOp=6899486
+CENGINE input=flat variant=reused ops=44 usPerOp=34629.2 bytesPerOp=26376148
+CENGINE input=flat variant=fresh ops=34 usPerOp=45363.4 bytesPerOp=31369350
+CENGINE input=flat variant=reused ops=44 usPerOp=34558.1 bytesPerOp=26376141
+CENGINE input=flat variant=fresh ops=35 usPerOp=42962.7 bytesPerOp=31369127

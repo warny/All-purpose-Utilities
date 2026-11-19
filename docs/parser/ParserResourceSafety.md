@@ -268,26 +268,93 @@ released when the parse ends (live memory after the parse: 437 MB → about 230 
 counters and allocations are identical on Linux (`final-default-linux-flat.csv`). Elapsed times are indicative only
 (the final campaign shared the machine with test runs); the 20,000-term CSyntax compile took 6.0 s before and 4.5 s
 after in an undisturbed run.
-## 7. Shared-grammar concurrency (independent issue #709)
+## 7. Shared-grammar concurrency (issue #709)
 
-`CSyntaxTokenParser` and `VBSyntaxTokenParser` share one lazily-initialized static `CompiledGrammar` per dialect, while
-`CompiledGrammar`, `LexerEngine` and `ParserEngine` are documented as not thread-safe (per-parse engine state:
-`_activeRuleFrames`, registry/memo/look-ahead, lexer mode stack and active rule references). The probe
-`ExpressionResourceProbe parser-concurrency 8 400` (8 threads × 400 alternating `Parse`/`Tokenize` calls compared with
-single-threaded references) measured:
+### Defect
 
-| Build | Corrupted trees | Corrupted token lists | Exceptions |
+`CSyntaxTokenParser` and `VBSyntaxTokenParser` share one lazily-initialized static `CompiledGrammar` per dialect, and
+every generated grammar class shares one static `Grammar`. Before #709 a `CompiledGrammar` owned a single `LexerEngine`
+and a single `ParserEngine`, whose per-operation state (`_activeRuleFrames`, the `ParserStateRegistry` visited states,
+continuations and memoized results, the `ParserLookaheadCache`, the lexer mode stack, pending `more` text and active
+rule references) was cleared and refilled by every call. Concurrent calls cleared each other's state, selected memoized
+results computed for another input, and corrupted the non-thread-safe collections themselves. The S-06 probe
+(`ExpressionResourceProbe parser-concurrency 8 400`) first measured it on `e0013a11` and S-06: 818–893 silently
+corrupted trees and 668–730 exceptions out of 3,200 operations.
+
+### Reproduction campaign
+
+`ExpressionResourceProbe parser-concurrency-campaign` (see `tests/ExpressionResourceProbe/README.md`) compares every
+concurrent result with a sequential oracle computed on fresh `CompiledGrammar` instances: canonical tree rendering (node
+types, rule names, modes, spans with line and column, token rule/channel/text, error messages), full token metadata,
+refusal classification (kind, phase, limit, observed value, offset) and, for the compile surfaces, the values of the
+compiled delegate. Seven surfaces (CSyntax and VBSyntax token parsers, the generated static CSyntax grammar, a shared
+ANTLR4 grammar with lexer modes, `more`, a hidden channel and left recursion, the same grammar under tight limits, and
+shared CSyntax/VBSyntax expression compilers), three workloads (parse, tokenize, mixed), 2/4/8/16 dedicated threads
+re-synchronized by a barrier every 25 operations, deterministic per-worker seeds, one process per surface. Windows
+Release, 200 operations per worker, 3 seeds (252 runs, 378,000 operations):
+
+| Build | Clean runs | Wrong trees | Wrong token lists | Wrong failures (refusal or compile error differs) | Unexpected exceptions | Runs leaving the shared surface corrupted |
+|---|---|---|---|---|---|---|
+| base `4200e0c3` | 0 / 252 | 40,328 | 31,337 | 16,369 | 198,323 | 172 |
+| #709 | 252 / 252 | 0 | 0 | 0 | 0 | 0 |
+
+Baseline exceptions: `InvalidOperationException` 167,360, `NullReferenceException` 25,891, `IndexOutOfRangeException`
+3,542, `LexerValidationException` 1,145, `ArgumentException` 383, `NotSupportedException` 2. Wrong results appear from
+2 threads on and grow with the thread count; in most runs the shared grammar stayed corrupted after the concurrent phase
+(sequential calls kept failing), so the defect was not limited to the overlapping calls. The corrected build also
+returns every expected refusal and compile error exactly (17,635 expected failures). Debug and Linux campaigns:
+every configuration below is clean for the fix and never clean for the base (Windows Debug and both Linux runs
+through WSL2 Ubuntu with self-contained `linux-x64` probes; Debug runs use 120 operations per worker and 2 seeds):
+
+| Configuration | Runs | Base: clean / wrong trees / wrong token lists / wrong failures / unexpected exceptions / corrupted after | #709: clean, all other counters |
 |---|---|---|---|
-| base `e0013a11` | 893 | 0 | 668 (`InvalidOperationException` 381, `IndexOutOfRangeException` 263, `ArgumentException` 15, `NullReferenceException` 8, `ArgumentNullException` 1) |
-| S-06 | 818 | 0 | 730 (`InvalidOperationException` 407, `IndexOutOfRangeException` 283, `NullReferenceException` 22, `ArgumentException` 18) |
-| 1 thread | 0 | 0 | 0 |
+| Windows Release | 252 | 0 / 40,328 / 31,337 / 16,369 / 198,323 / 172 | 252 / 252, 0 |
+| Windows Debug | 168 | 0 / 20,457 / 17,642 / 6,370 / 56,049 / 52 | 168 / 168, 0 |
+| Linux Release | 252 | 0 / 48,634 / 28,890 / 16,618 / 172,641 / 141 | 252 / 252, 0 |
+| Linux Debug | 168 | 0 / 22,353 / 20,952 / 6,158 / 52,272 / 48 | 168 / 168, 0 |
 
-The defect is pre-existing and independent of S-06: budgets are owned by each operation (`ParseContext`, per-enumeration
-lexer budget) and stay enforced under concurrent misuse. Corrupted trees are returned silently. Fixing it (per-call or
-per-thread engines, per-operation engine state, or synchronization) needs throughput measurements and is tracked
-separately as issue #709; S-06 does not add locking. Until then, callers must not use the CSyntax/VBSyntax front ends
-from several threads at once.
+The expected failures of the corrected build are identical on Windows and Linux (17,635 in the Release
+configurations, 6,918 in the Debug ones). Raw results: `tests/ExpressionResourceProbe/results/2026-11-19/issue709-*`.
+### Fix
 
+Every `Tokenize` / `Parse` call now creates its own `LexerEngine` and `ParserEngine` over two internal preparations
+built once by the `CompiledGrammar` constructor and never mutated: `LexerEngine.Preparation` (case sensitivity, keyword
+trie and candidate rules of every mode) and `ParserEngine.Preparation` (scheduling shapes keyed by alternative-list
+reference, stable priority order). The grammar model is immutable (immutable arrays and init-only records), so sharing
+the preparations cannot make them stale. No lock, `ThreadLocal`, pool or static mutable state is used, the public
+constructors of the engines build their own preparation as before, and the internal `CompiledGrammar.Lexer` / `Parser`
+diagnostic accessors return the engines of the last call that started. Each operation still owns its S-06 budget;
+`SharedGrammarResourceIsolationTests` (Security) checks that concurrent refusals on one shared grammar keep their exact
+classification and that an operation after a refusal starts from a clean budget. Ownership table:
+`RuntimeStateOwnership.md`.
+
+### Cost
+
+Windows Release, CSyntax grammar, `parser-concurrency-bench`, two rounds in opposite order (machine otherwise lightly
+loaded, about 20 % CPU from other processes). Construction: one `CompiledGrammar` 258 µs / 280 KB, unchanged (lexer
+preparation about 41 µs / 102 KB, parser preparation about 186 µs / 177 KB, built once per grammar). The sequentially
+correct reference for parallel throughput on the base is one grammar per thread (`perthread`); the corrected build is
+measured with one grammar shared by every thread (`shared`). Operations per second (mean of the two rounds) and bytes
+allocated per operation:
+
+| Workload | 1 thread base → #709 | 8 threads base → #709 | 16 threads base → #709 | Bytes / op base → #709 |
+|---|---|---|---|---|
+| short `a + b * c` | 1,620 → 1,568 | 2,696 → 2,592 | 2,377 → 2,047 | 662 K → 775 K (+17 %) |
+| medium (call, index, member, ternary) | 284 → 261 | 404 → 370 | 334 → 280 | 3.03 M → 3.55 M (+17 %) |
+| deep (15 nested parentheses) | 132 → 106 | 94 → 86 | 66 → 58 | 5.69 M → 6.80 M (+19 %) |
+| flat (200-term sum) | 28 → 23 | 36 → 33 | 32 → 30 | 28.2 M → 32.9 M (+17 %) |
+| tokenize (200-term sum) | 575 → 518 | 1,554 → 1,513 | 1,456 → 1,417 | 1,698,648 → 1,699,000 |
+| mixed parse / tokenize | 700 → 620 | 1,154 → 973 | 906 → 817 | 1.32 M → 1.47 M (+12 %) |
+
+Throughput peaks at 2–4 threads in both builds (allocation and GC bound) and is otherwise within the noise of the two
+rounds for tokenization; parsing is 3–20 % slower per call. The cause is measured, not the engine objects themselves:
+`parser-engine-reuse` parses the same tokens with one reused engine and with a fresh engine per call, and the difference
+(short input +112 KB, medium +0.5 MB, deep +1.1 MB, flat +4.8 MB once the 177 KB preparation of the public constructor
+is subtracted) is the regrowth of the registry and look-ahead collections, which a reused engine kept at their previous
+capacity after `Clear()`. One `CompiledGrammar` per call (the naive strategy, `percall`) costs the full construction on
+every call: short 1,060 operations per second and 1.06 MB per operation. Reusing collection capacity (for example a
+bounded per-grammar engine pool) would remove the regression but adds a state-reuse path that needs its own leakage
+audit; it is left to a separate change.
 ## 8. Remaining limitations and follow-up
 
 - **Small stacks are not supported for useful work.** The parser guarantees a controlled refusal, not successful parsing, on small stacks: on a 256 KiB thread even `(x0)` is refused by CSyntax/VBSyntax and `Antlr4GrammarConverter` refuses small grammar texts. Run parsing on threads of at least 1 MiB (the .NET default on Windows) when inputs must succeed.
@@ -302,7 +369,7 @@ from several threads at once.
 - **Allocation.** Parsing remains linear at about 21 KB allocated per input character (CSyntax compile); live memory is
   dominated by retained registry metadata (visited states and continuations are write-only in production). Bounding or
   removing that metadata needs a metadata-lifecycle design.
-- **Grammar immutability assumption.** `ParserEngine` precomputes scheduling shapes (priority order, structural descriptors) and `LexerEngine` precomputes candidate rules from the definition at construction. This relies on the documented immutability of the grammar model (`Rule`, `Alternation`, `LeftRecursiveRuleInfo` capture immutable snapshots); a future mutable model would have to invalidate these tables.
+- **Grammar immutability assumption.** `ParserEngine` precomputes scheduling shapes (priority order, structural descriptors) and `LexerEngine` precomputes candidate rules and keyword tries from the definition, once per `CompiledGrammar` (shared by the engines of every call, #709) or once per directly constructed engine. This relies on the documented immutability of the grammar model (`Rule`, `Alternation`, `LeftRecursiveRuleInfo` capture immutable snapshots); a future mutable model would have to invalidate these tables.
 - **Wall-clock time and process memory** are not limited; the budgets bound parser-managed work and retained states.
 - **User code** inside policy callbacks is not interrupted and not covered by the stack guard beyond its headroom.
-- **Concurrency**: see section 7.
+- **Concurrency**: shared grammars are safe since #709 (section 7); the per-call engines cost 12–19 % more parse allocation than a reused engine, and directly constructed engines and stateful policy components remain caller-owned.

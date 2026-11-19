@@ -138,9 +138,12 @@ Limitation boundaries:
 - a refused retained-state insertion refuses the whole parse; memoized results and metadata are never evicted;
 - registry, memo and look-ahead state is released when each parse ends (successfully or not);
 - the stack guard keeps a fixed headroom: user code that recurses deeply inside a callback is not protected by it;
-- `CompiledGrammar`, `LexerEngine` and `ParserEngine` remain non-thread-safe; budgets are per operation, but concurrent
-  operations on one shared instance still corrupt each other's engine state (see the concurrency section of
-  `ParserResourceSafety.md`).
+- budgets are per operation: concurrent operations on one shared `CompiledGrammar` each run on private engines with a
+  private budget, so a refusal never changes another operation's counters or result (issue #709; see the concurrency
+  section of `ParserResourceSafety.md` and the ownership table of `RuntimeStateOwnership.md`);
+- directly constructed `LexerEngine` and `ParserEngine` instances remain non-thread-safe and non-re-entrant, and policy
+  components with mutable state remain caller-owned: a grammar whose policy holds such a component is safe for
+  concurrent use only if that component is thread-safe.
 
 ## ANTLR parameters/returns: parsed metadata vs runtime support
 
