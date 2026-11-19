@@ -98,7 +98,13 @@ public sealed partial class VBSyntaxExpressionCompiler
             || target is IndexExpression;
 
         if (!isWriteable)
-            return Expression.Equal(target, value);
+        {
+            // A numeric comparison promotes both operands to their common type instead of converting the right
+            // operand to the left operand's type (which made 2 = 2.5 true).
+            return TryPromoteNumericOperands(target, operands[1], out Expression left, out Expression right, out _)
+                ? Expression.Equal(left, right)
+                : Expression.Equal(target, value);
+        }
 
         return Expression.Assign(target, value);
     }

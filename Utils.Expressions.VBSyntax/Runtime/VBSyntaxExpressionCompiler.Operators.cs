@@ -98,33 +98,41 @@ public sealed partial class VBSyntaxExpressionCompiler
     // ── Equality: = and <> ────────────────────────────────────────────────────
 
     /// <summary>
-    /// Compiles <c>=</c> (equality) and <c>&lt;&gt;</c> (inequality) comparisons.
+    /// Compiles <c>=</c> (equality) and <c>&lt;&gt;</c> (inequality) comparisons. Numeric operands are first promoted to
+    /// their common type (<see cref="TryPromoteNumericOperands"/>); other operands are compared unchanged.
     /// </summary>
     private static Expression? CompileEquality(
         ParseTreeNavigator nav,
         CompilationContext context,
         IReadOnlyList<Expression?> children)
         => CompileOperatorChain(nav, children, EqualityOperators,
-            static (op, left, right) => op == "<>"
-                ? Expression.NotEqual(left, right)
-                : Expression.Equal(left, right));
+            static (op, left, right) =>
+            {
+                (Expression l, Expression r) = PromoteForComparison(left, right);
+                return op == "<>" ? Expression.NotEqual(l, r) : Expression.Equal(l, r);
+            });
 
     // ── Relational: < <= > >= ─────────────────────────────────────────────────
 
     /// <summary>
-    /// Compiles relational comparison operators.
+    /// Compiles relational comparison operators. Numeric operands are first promoted to their common type
+    /// (<see cref="TryPromoteNumericOperands"/>); other operands are compared unchanged.
     /// </summary>
     private static Expression? CompileRelational(
         ParseTreeNavigator nav,
         CompilationContext context,
         IReadOnlyList<Expression?> children)
         => CompileOperatorChain(nav, children, RelationalOperators,
-            static (op, l, r) => op switch
+            static (op, left, right) =>
             {
-                "<=" => Expression.LessThanOrEqual(l, r),
-                ">=" => Expression.GreaterThanOrEqual(l, r),
-                ">"  => Expression.GreaterThan(l, r),
-                _    => Expression.LessThan(l, r),
+                (Expression l, Expression r) = PromoteForComparison(left, right);
+                return op switch
+                {
+                    "<=" => Expression.LessThanOrEqual(l, r),
+                    ">=" => Expression.GreaterThanOrEqual(l, r),
+                    ">"  => Expression.GreaterThan(l, r),
+                    _    => Expression.LessThan(l, r),
+                };
             });
 
     // ── String concatenation: & ───────────────────────────────────────────────
@@ -173,7 +181,7 @@ public sealed partial class VBSyntaxExpressionCompiler
     // ── Addition / Subtraction ────────────────────────────────────────────────
 
     /// <summary>
-    /// Compiles <c>+</c> and <c>-</c> additive operators.
+    /// Compiles <c>+</c> and <c>-</c> additive operators on operands promoted to their common numeric type.
     /// </summary>
     private static Expression? CompileAddSub(
         ParseTreeNavigator nav,
@@ -181,13 +189,14 @@ public sealed partial class VBSyntaxExpressionCompiler
         IReadOnlyList<Expression?> children)
         => CompileOperatorChain(nav, children, AdditiveOperators,
             static (op, l, r) => op == "-"
-                ? Expression.Subtract(l, ConvertNumeric(r, l.Type))
-                : Expression.Add(l, ConvertNumeric(r, l.Type)));
+                ? BuildArithmetic(Expression.Subtract, l, r)
+                : BuildArithmetic(Expression.Add, l, r));
 
     // ── Multiplication / Division / Mod ───────────────────────────────────────
 
     /// <summary>
-    /// Compiles <c>*</c>, <c>/</c>, and <c>Mod</c> operators.
+    /// Compiles <c>*</c>, <c>/</c>, and <c>Mod</c> operators. <c>*</c> and <c>Mod</c> work on operands promoted to their
+    /// common numeric type; <c>/</c> is a real division (<see cref="BuildDivision"/>).
     /// </summary>
     private static Expression? CompileMulDivMod(
         ParseTreeNavigator nav,
@@ -196,9 +205,9 @@ public sealed partial class VBSyntaxExpressionCompiler
         => CompileOperatorChain(nav, children, MultiplicativeOperators,
             static (op, l, r) => op switch
             {
-                "/"   => Expression.Divide(l, ConvertNumeric(r, l.Type)),
-                "Mod" => Expression.Modulo(l, ConvertNumeric(r, l.Type)),
-                _     => Expression.Multiply(l, ConvertNumeric(r, l.Type)),
+                "/"   => BuildDivision(l, r),
+                "Mod" => BuildArithmetic(Expression.Modulo, l, r),
+                _     => BuildArithmetic(Expression.Multiply, l, r),
             });
 
     // ── Unary negate / plus ───────────────────────────────────────────────────
@@ -379,10 +388,132 @@ public sealed partial class VBSyntaxExpressionCompiler
         /// <inheritdoc />
         public override Type Type => typeof(void);
     }
+
+    // ── Numeric promotion ─────────────────────────────────────────────────────
+
+    /// <summary>
+    /// The numeric types that take part in promotion, in ascending rank: Byte &lt; Int16 &lt; Int32 &lt; Int64 &lt;
+    /// Single &lt; Double. This is a deliberate compiler policy, not the complete VB.NET widening table: Int64 to Single
+    /// or Double can lose integer precision, and SByte, UInt16, UInt32, UInt64 and Decimal are not ranked.
+    /// </summary>
+    private static readonly Type[] NumericPromotionOrder =
+        [typeof(byte), typeof(short), typeof(int), typeof(long), typeof(float), typeof(double)];
+
+    /// <summary>
+    /// Promotes two numeric operands to their common type, symmetrically: the operand of lower rank is converted to the
+    /// type of the operand of higher rank, whichever side it is on. When either operand is <see cref="Nullable{T}"/>,
+    /// both are converted to the nullable common type, so a null operand still propagates through lifted operators.
+    /// Operands of the same underlying type are kept as they are (apart from lifting), including types outside
+    /// <see cref="NumericPromotionOrder"/>. Only <see cref="Expression.Convert(Expression, Type)"/> nodes are added
+    /// around the operands: each is still evaluated exactly once, left before right, and no user code runs here.
+    /// </summary>
+    /// <param name="left">The left operand.</param>
+    /// <param name="right">The right operand.</param>
+    /// <param name="promotedLeft">The converted left operand (or <paramref name="left"/>).</param>
+    /// <param name="promotedRight">The converted right operand (or <paramref name="right"/>).</param>
+    /// <param name="promotedType">The common type, nullable when an operand is.</param>
+    /// <returns><see langword="true"/> when both operands are numeric; otherwise <see langword="false"/> and the operands are returned unchanged.</returns>
+    /// <exception cref="NotSupportedException">
+    /// The operands have different numeric types and at least one of them is not in <see cref="NumericPromotionOrder"/>.
+    /// </exception>
+    private static bool TryPromoteNumericOperands(
+        Expression left,
+        Expression right,
+        out Expression promotedLeft,
+        out Expression promotedRight,
+        out Type? promotedType)
+    {
+        promotedLeft = left;
+        promotedRight = right;
+        promotedType = null;
+        if (!IsNumericType(left.Type) || !IsNumericType(right.Type)) return false;
+
+        Type leftType = Nullable.GetUnderlyingType(left.Type) ?? left.Type;
+        Type rightType = Nullable.GetUnderlyingType(right.Type) ?? right.Type;
+        Type common;
+        if (leftType == rightType)
+        {
+            common = leftType;
+        }
+        else
+        {
+            int leftRank = Array.IndexOf(NumericPromotionOrder, leftType);
+            int rightRank = Array.IndexOf(NumericPromotionOrder, rightType);
+            if (leftRank < 0 || rightRank < 0)
+            {
+                throw new NotSupportedException(
+                    $"VBSyntax does not combine numeric operands of types '{left.Type}' and '{right.Type}': only Byte, Int16, Int32, Int64, Single and Double are promoted to a common type. Convert one operand explicitly.");
+            }
+
+            common = leftRank >= rightRank ? leftType : rightType;
+        }
+
+        bool lifted = left.Type != leftType || right.Type != rightType;
+        promotedType = lifted ? typeof(Nullable<>).MakeGenericType(common) : common;
+        promotedLeft = ConvertTo(left, promotedType);
+        promotedRight = ConvertTo(right, promotedType);
+        return true;
+    }
+
+    /// <summary>
+    /// Builds an arithmetic operation (<c>+</c>, <c>-</c>, <c>*</c>, <c>Mod</c>) on promoted operands. LINQ defines no
+    /// arithmetic on <see cref="byte"/>, so a Byte operation is computed in Int32 and converted back to Byte (unchecked,
+    /// like every other integral operation of the compiler). Non-numeric operands are passed through unchanged.
+    /// </summary>
+    /// <param name="make">The LINQ factory of the operation.</param>
+    /// <param name="left">The left operand.</param>
+    /// <param name="right">The right operand.</param>
+    /// <returns>The operation.</returns>
+    private static Expression BuildArithmetic(Func<Expression, Expression, Expression> make, Expression left, Expression right)
+    {
+        if (!TryPromoteNumericOperands(left, right, out Expression l, out Expression r, out Type? type)) return make(left, right);
+        if ((Nullable.GetUnderlyingType(type!) ?? type) != typeof(byte)) return make(l, r);
+
+        Type work = type == typeof(byte) ? typeof(int) : typeof(int?);
+        return Expression.Convert(make(Expression.Convert(l, work), Expression.Convert(r, work)), type!);
+    }
+
+    /// <summary>
+    /// Builds the <c>/</c> operator: a real division. Operands of the promotion hierarchy are promoted, then divided as
+    /// <see cref="double"/> (the result type is <c>max(Promote(left, right), Double)</c>, so always Double, nullable when an
+    /// operand is): <c>3 / 4</c> is 0.75. Operands of one same type outside the hierarchy (Decimal, unsigned types) keep
+    /// the division of that type; non-numeric operands are passed through unchanged.
+    /// </summary>
+    /// <param name="left">The dividend.</param>
+    /// <param name="right">The divisor.</param>
+    /// <returns>The division.</returns>
+    private static Expression BuildDivision(Expression left, Expression right)
+    {
+        if (!TryPromoteNumericOperands(left, right, out Expression l, out Expression r, out Type? type)) return Expression.Divide(left, right);
+        Type underlying = Nullable.GetUnderlyingType(type!) ?? type!;
+        if (Array.IndexOf(NumericPromotionOrder, underlying) < 0) return Expression.Divide(l, r);
+
+        Type target = underlying == type ? typeof(double) : typeof(double?);
+        return Expression.Divide(ConvertTo(l, target), ConvertTo(r, target));
+    }
+
+    /// <summary>Promotes numeric comparison operands to their common type; other operands are returned unchanged.</summary>
+    /// <param name="left">The left operand.</param>
+    /// <param name="right">The right operand.</param>
+    /// <returns>The operands to compare.</returns>
+    private static (Expression Left, Expression Right) PromoteForComparison(Expression left, Expression right)
+    {
+        TryPromoteNumericOperands(left, right, out Expression l, out Expression r, out _);
+        return (l, r);
+    }
+
+    /// <summary>Converts an expression to a type, without adding a conversion when it already has that type.</summary>
+    /// <param name="expression">The expression.</param>
+    /// <param name="type">The target type.</param>
+    /// <returns>The expression of type <paramref name="type"/>.</returns>
+    private static Expression ConvertTo(Expression expression, Type type)
+        => expression.Type == type ? expression : Expression.Convert(expression, type);
+
     // ── Numeric type conversion ───────────────────────────────────────────────
 
     /// <summary>
-    /// Converts <paramref name="expr"/> to <paramref name="targetType"/> when both are numeric.
+    /// Converts <paramref name="expr"/> to <paramref name="targetType"/> when both are numeric (used by <c>^</c>, whose
+    /// operands are always converted to Double).
     /// </summary>
     private static Expression ConvertNumeric(Expression expr, Type targetType)
     {
