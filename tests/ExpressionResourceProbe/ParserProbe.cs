@@ -166,8 +166,17 @@ internal static class ParserProbe
             ?? throw new ArgumentException($"Unknown parser scenario '{scenarioName}'.");
 
         // Warm-up on a tiny instance so JIT time is not measured; it runs the same code paths.
+        // A refusal during the warm-up (possible on very small stacks) is not the measured outcome: the measured run
+        // below reports it in its own RESULT line.
         ParserScenarioInstance warmUp = scenario.Create(Math.Min(size, 2));
-        Execute(warmUp, operation, operation == "compile" ? null : CreateGrammar(warmUp, new Counters(), limits));
+        try
+        {
+            Execute(warmUp, operation, operation == "compile" ? null : CreateGrammar(warmUp, new Counters(), limits));
+        }
+        catch (Exception exception) when (exception.GetType().Name == "ParserResourceLimitException")
+        {
+            // The filter only compares a type name: exception filters run before unwinding, on the exhausted stack.
+        }
 
         ParserScenarioInstance instance = scenario.Create(size);
         var counters = new Counters();
@@ -201,15 +210,20 @@ internal static class ParserProbe
             outcome = "out-of-memory";
             exitCode = ExitOutOfMemory;
         }
-        catch (Exception exception) when (ResourceLimitOutcome(exception) is { } resourceOutcome)
-        {
-            outcome = resourceOutcome;
-            exitCode = ExitResourceLimit;
-        }
         catch (Exception exception)
         {
-            outcome = "exception:" + exception.GetType().Name;
-            exitCode = ExitOtherException;
+            // Classified in the handler, after unwinding: a filter would run on the nearly exhausted stack of a
+            // stack-guard refusal, and a failing filter would let the refusal escape as an unhandled exception.
+            if (ResourceLimitOutcome(exception) is { } resourceOutcome)
+            {
+                outcome = resourceOutcome;
+                exitCode = ExitResourceLimit;
+            }
+            else
+            {
+                outcome = "exception:" + exception.GetType().Name;
+                exitCode = ExitOtherException;
+            }
         }
 
         stopwatch.Stop();
@@ -302,7 +316,7 @@ internal static class ParserProbe
         {
             "CSyntax" => SharedDefinition(typeof(CSyntaxTokenParser)),
             "VBSyntax" => SharedDefinition(typeof(VBSyntaxTokenParser)),
-            _ => Antlr4GrammarConverter.Parse(instance.Grammar!),
+            _ => ConvertOnLargeStack(instance.Grammar!),
         };
 
         ParserRuntimeFeaturePolicy policy = ParserRuntimeFeaturePolicy.Default with
@@ -311,6 +325,32 @@ internal static class ParserProbe
             RuntimeObserver = new CountingObserver(counters),
         };
         return ParserLimitsAdapter.Create(definition, policy, limits);
+    }
+
+    /// <summary>
+    /// Converts a grammar text on a dedicated 16 MiB thread: grammar preparation is not the measured operation, and the
+    /// ANTLR4 meta-grammar parse itself needs more than a 256 KiB stack (it is refused by the S-06 stack guard there).
+    /// </summary>
+    /// <param name="grammar">The ANTLR4 grammar text.</param>
+    /// <returns>The resolved definition.</returns>
+    private static Utils.Parser.Model.ParserDefinition ConvertOnLargeStack(string grammar)
+    {
+        Utils.Parser.Model.ParserDefinition? definition = null;
+        Exception? failure = null;
+        var thread = new System.Threading.Thread(() =>
+        {
+            try
+            {
+                definition = Antlr4GrammarConverter.Parse(grammar);
+            }
+            catch (Exception exception)
+            {
+                failure = exception;
+            }
+        }, 16 * 1024 * 1024);
+        thread.Start();
+        thread.Join();
+        return definition ?? throw new InvalidOperationException("Grammar conversion failed.", failure);
     }
 
     /// <summary>Reads the parser definition of a dialect's shared lazily-initialized grammar.</summary>

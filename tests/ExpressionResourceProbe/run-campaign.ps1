@@ -7,7 +7,8 @@ Each run starts ExpressionResourceProbe in its own process, with a wall-clock ti
 limit, and classifies the result: ok, insufficient-stack (controlled), out-of-memory (caught), exception,
 stack-overflow (process killed by the runtime), timeout, memory-limit, or crash. -Parser runs the S-06 parser scenarios
 (ExpressionResourceProbe parser-list) with the -ParserLimits selector instead of the expression scenarios. Sizes are tried in ascending order and a
-(scenario, operation) pair stops at its first non-ok outcome, so a failure is never retried at a larger size.
+(scenario, operation) pair stops at its first non-ok outcome, so a failure is never retried at a larger size;
+-ContinueAfterRefusal keeps going after a controlled refusal (resource-limit) to show that every larger size is refused too.
 
 Compatible with Windows PowerShell 5.1. On Linux the probe is run through WSL from a self-contained linux-x64 publish
 (see README.md); no memory limit is applied there.
@@ -30,6 +31,7 @@ param(
     [int] $MemoryLimitMB = 4096,
     [switch] $Counters,
     [switch] $Parser,
+    [switch] $ContinueAfterRefusal,
     [ValidateSet('default', 'unlimited')] [string] $ParserLimits = 'default',
     [switch] $Linux,
     [Parameter(Mandatory = $true)] [string] $Output
@@ -132,7 +134,7 @@ foreach ($scenario in $Scenarios) {
             $row = Invoke-ProbeRun -Scenario $scenario -Operation $operation -Size $size
             $rows.Add($row)
             Write-Host ("{0,-18} {1,-10} {2,7} {3,-18} {4}" -f $scenario, $operation, $size, $row.classification, ($row.result -replace '^RESULT .*? nodes=', 'nodes=' -replace '^PRESULT .*? chars=', 'chars='))
-            if ($row.classification -ne 'ok') { break }
+            if ($row.classification -ne 'ok' -and -not ($ContinueAfterRefusal -and $row.classification -eq 'resource-limit')) { break }
         }
     }
 }

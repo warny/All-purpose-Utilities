@@ -223,10 +223,12 @@ public class ParserResourceLimitTests
             });
         }
 
+        // Shallow nesting still compiles on a 1 MiB thread in Release and Debug (Debug frames are larger: the stack guard
+        // refuses about 10 CSyntax levels there, 19 in Release).
         RunOnThread(1024 * 1024, () =>
         {
-            Assert.IsNotNull(new CSyntaxExpressionCompiler().CompileExpression(Nest(10), symbols));
-            Assert.IsNotNull(new VBSyntaxExpressionCompiler().CompileExpression(Nest(10), symbols));
+            Assert.IsNotNull(new CSyntaxExpressionCompiler().CompileExpression(Nest(5), symbols));
+            Assert.IsNotNull(new VBSyntaxExpressionCompiler().CompileExpression(Nest(5), symbols));
         });
     }
 
