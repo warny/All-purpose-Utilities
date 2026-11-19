@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Parser_Runtime_LexerEngine" data-uid="Utils.Parser.Runtime.LexerEngine" class="text-break">
-Class LexerEngine  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/LexerEngine.cs/#L17"><i class="bi bi-code-slash"></i></a>
+Class LexerEngine  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/LexerEngine.cs/#L18"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -237,8 +237,9 @@ using the lexer rules in a <a class="xref" href="Utils.Parser.Model.ParserDefini
 
 
   <h2 id="Utils_Parser_Runtime_LexerEngine_remarks">Remarks</h2>
-  <div class="markdown level0 remarks"><p>This class is not thread-safe. Each concurrent tokenization must use a separate
-<a class="xref" href="Utils.Parser.Runtime.LexerEngine.html">LexerEngine</a> instance.</p>
+  <div class="markdown level0 remarks"><p>This class is not thread-safe: the mode stack, the pending <code>more</code> text and the active rule references belong
+to the engine and are reset by every tokenization. Each concurrent tokenization must use a separate
+<a class="xref" href="Utils.Parser.Runtime.LexerEngine.html">LexerEngine</a> instance; <a class="xref" href="Utils.Parser.Runtime.CompiledGrammar.html">CompiledGrammar</a> does so for every call.</p>
 </div>
 
 
@@ -250,11 +251,10 @@ using the lexer rules in a <a class="xref" href="Utils.Parser.Model.ParserDefini
 
   <h3 id="Utils_Parser_Runtime_LexerEngine__ctor_Utils_Parser_Model_ParserDefinition_Utils_Parser_Runtime_ParserRuntimeFeaturePolicy_" data-uid="Utils.Parser.Runtime.LexerEngine.#ctor(Utils.Parser.Model.ParserDefinition,Utils.Parser.Runtime.ParserRuntimeFeaturePolicy)">
   LexerEngine(ParserDefinition, ParserRuntimeFeaturePolicy?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/LexerEngine.cs/#L17"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/LexerEngine.cs/#L25"><i class="bi bi-code-slash"></i></a>
   </h3>
 
-  <div class="markdown level1 summary"><p>Converts a <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.io.textreader">TextReader</a> into a sequence of <a class="xref" href="Utils.Parser.Runtime.Token.html">Token</a> values
-using the lexer rules in a <a class="xref" href="Utils.Parser.Model.ParserDefinition.html">ParserDefinition</a>.</p>
+  <div class="markdown level1 summary"><p>Initializes a lexer engine with an optional runtime policy and <a class="xref" href="Utils.Parser.Runtime.ParserResourceLimits.html#Utils_Parser_Runtime_ParserResourceLimits_Default">Default</a>.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -265,9 +265,11 @@ using the lexer rules in a <a class="xref" href="Utils.Parser.Model.ParserDefini
   <h4 class="section">Parameters</h4>
   <dl class="parameters">
     <dt><code>definition</code> <a class="xref" href="Utils.Parser.Model.ParserDefinition.html">ParserDefinition</a></dt>
-    <dd></dd>
+    <dd><p>Resolved grammar definition.</p>
+</dd>
     <dt><code>runtimeFeaturePolicy</code> <a class="xref" href="Utils.Parser.Runtime.ParserRuntimeFeaturePolicy.html">ParserRuntimeFeaturePolicy</a></dt>
-    <dd></dd>
+    <dd><p>Optional runtime policy; <a class="xref" href="Utils.Parser.Runtime.ParserRuntimeFeaturePolicy.html#Utils_Parser_Runtime_ParserRuntimeFeaturePolicy_Default">Default</a> when <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
   </dl>
 
 
@@ -277,10 +279,6 @@ using the lexer rules in a <a class="xref" href="Utils.Parser.Model.ParserDefini
 
 
 
-  <h4 class="section" id="Utils_Parser_Runtime_LexerEngine__ctor_Utils_Parser_Model_ParserDefinition_Utils_Parser_Runtime_ParserRuntimeFeaturePolicy__remarks">Remarks</h4>
-  <div class="markdown level1 remarks"><p>This class is not thread-safe. Each concurrent tokenization must use a separate
-<a class="xref" href="Utils.Parser.Runtime.LexerEngine.html">LexerEngine</a> instance.</p>
-</div>
 
 
 
@@ -289,7 +287,7 @@ using the lexer rules in a <a class="xref" href="Utils.Parser.Model.ParserDefini
 
   <h3 id="Utils_Parser_Runtime_LexerEngine__ctor_Utils_Parser_Model_ParserDefinition_Utils_Parser_Runtime_ParserRuntimeFeaturePolicy_Utils_Parser_Runtime_ParserResourceLimits_" data-uid="Utils.Parser.Runtime.LexerEngine.#ctor(Utils.Parser.Model.ParserDefinition,Utils.Parser.Runtime.ParserRuntimeFeaturePolicy,Utils.Parser.Runtime.ParserResourceLimits)">
   LexerEngine(ParserDefinition, ParserRuntimeFeaturePolicy?, ParserResourceLimits)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/LexerEngine.cs/#L25"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/LexerEngine.cs/#L36"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a lexer engine with an optional runtime policy and explicit resource limits.</p>
@@ -332,7 +330,7 @@ using the lexer rules in a <a class="xref" href="Utils.Parser.Model.ParserDefini
 
   <h3 id="Utils_Parser_Runtime_LexerEngine_ResourceLimits" data-uid="Utils.Parser.Runtime.LexerEngine.ResourceLimits">
   ResourceLimits
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/LexerEngine.cs/#L47"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/LexerEngine.cs/#L119"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the resource limits applied to every tokenization of this engine.</p>
@@ -368,7 +366,7 @@ using the lexer rules in a <a class="xref" href="Utils.Parser.Model.ParserDefini
 
   <h3 id="Utils_Parser_Runtime_LexerEngine_Tokenize_System_IO_TextReader_Utils_Parser_Runtime_LexerEngineOptions_Utils_Parser_Diagnostics_DiagnosticBag_System_String_" data-uid="Utils.Parser.Runtime.LexerEngine.Tokenize(System.IO.TextReader,Utils.Parser.Runtime.LexerEngineOptions,Utils.Parser.Diagnostics.DiagnosticBag,System.String)">
   Tokenize(TextReader, LexerEngineOptions?, DiagnosticBag?, string?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/LexerEngine.cs/#L68"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/LexerEngine.cs/#L140"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Tokenizes the full input stream with a strict forward-only reader.</p>
@@ -424,7 +422,7 @@ enumeration owns a private budget, enforced while tokens are produced rather tha
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/LexerEngine.cs/#L17" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/LexerEngine.cs/#L18" class="edit-link">Edit this page</a>
         </div>
 
 

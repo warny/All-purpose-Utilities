@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Parser_Runtime_ParserEngine" data-uid="Utils.Parser.Runtime.ParserEngine" class="text-break">
-Class ParserEngine  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParserEngine.cs/#L44"><i class="bi bi-code-slash"></i></a>
+Class ParserEngine  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParserEngine.cs/#L45"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -266,8 +266,9 @@ and neither metadata pipeline executes runtime continuations.
 
 
   <h2 id="Utils_Parser_Runtime_ParserEngine_remarks">Remarks</h2>
-  <div class="markdown level0 remarks"><p>This class is not thread-safe. Each concurrent parse must use a separate
-<a class="xref" href="Utils.Parser.Runtime.ParserEngine.html">ParserEngine</a> instance.</p>
+  <div class="markdown level0 remarks"><p>This class is not thread-safe: the recursion frames, the state registry and the look-ahead cache belong to the
+engine and are reset by every parse. Each concurrent parse must use a separate <a class="xref" href="Utils.Parser.Runtime.ParserEngine.html">ParserEngine</a> instance;
+<a class="xref" href="Utils.Parser.Runtime.CompiledGrammar.html">CompiledGrammar</a> does so for every call.</p>
 </div>
 
 
@@ -279,7 +280,7 @@ and neither metadata pipeline executes runtime continuations.
 
   <h3 id="Utils_Parser_Runtime_ParserEngine__ctor_Utils_Parser_Model_ParserDefinition_" data-uid="Utils.Parser.Runtime.ParserEngine.#ctor(Utils.Parser.Model.ParserDefinition)">
   ParserEngine(ParserDefinition)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParserEngine.cs/#L123"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParserEngine.cs/#L124"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a parser engine with the conservative default runtime feature policy.</p>
@@ -312,7 +313,7 @@ and neither metadata pipeline executes runtime continuations.
 
   <h3 id="Utils_Parser_Runtime_ParserEngine__ctor_Utils_Parser_Model_ParserDefinition_Utils_Parser_Runtime_ParserRuntimeFeaturePolicy_" data-uid="Utils.Parser.Runtime.ParserEngine.#ctor(Utils.Parser.Model.ParserDefinition,Utils.Parser.Runtime.ParserRuntimeFeaturePolicy)">
   ParserEngine(ParserDefinition, ParserRuntimeFeaturePolicy)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParserEngine.cs/#L133"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParserEngine.cs/#L134"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a parser engine with an explicit runtime feature policy and <a class="xref" href="Utils.Parser.Runtime.ParserResourceLimits.html#Utils_Parser_Runtime_ParserResourceLimits_Default">Default</a>.</p>
@@ -348,7 +349,7 @@ and neither metadata pipeline executes runtime continuations.
 
   <h3 id="Utils_Parser_Runtime_ParserEngine__ctor_Utils_Parser_Model_ParserDefinition_Utils_Parser_Runtime_ParserRuntimeFeaturePolicy_Utils_Parser_Runtime_ParserResourceLimits_" data-uid="Utils.Parser.Runtime.ParserEngine.#ctor(Utils.Parser.Model.ParserDefinition,Utils.Parser.Runtime.ParserRuntimeFeaturePolicy,Utils.Parser.Runtime.ParserResourceLimits)">
   ParserEngine(ParserDefinition, ParserRuntimeFeaturePolicy, ParserResourceLimits)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParserEngine.cs/#L144"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParserEngine.cs/#L145"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initializes a parser engine with an explicit runtime feature policy and explicit resource limits.</p>
@@ -391,7 +392,7 @@ and neither metadata pipeline executes runtime continuations.
 
   <h3 id="Utils_Parser_Runtime_ParserEngine_ResourceLimits" data-uid="Utils.Parser.Runtime.ParserEngine.ResourceLimits">
   ResourceLimits
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParserEngine.cs/#L276"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParserEngine.cs/#L327"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the resource limits applied to every parse operation of this engine.</p>
@@ -427,7 +428,7 @@ and neither metadata pipeline executes runtime continuations.
 
   <h3 id="Utils_Parser_Runtime_ParserEngine_Parse_System_Collections_Generic_IEnumerable_Utils_Parser_Runtime_Token__Utils_Parser_Model_Rule_Utils_Parser_Diagnostics_DiagnosticBag_" data-uid="Utils.Parser.Runtime.ParserEngine.Parse(System.Collections.Generic.IEnumerable{Utils.Parser.Runtime.Token},Utils.Parser.Model.Rule,Utils.Parser.Diagnostics.DiagnosticBag)">
   Parse(IEnumerable&lt;Token&gt;, Rule?, DiagnosticBag?)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParserEngine.cs/#L302"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParserEngine.cs/#L353"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Parses <code class="paramref">tokens</code> starting from <code class="paramref">startRule</code>
@@ -486,7 +487,7 @@ It is never converted into an <a class="xref" href="Utils.Parser.Runtime.ErrorNo
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParserEngine.cs/#L44" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/ParserEngine.cs/#L45" class="edit-link">Edit this page</a>
         </div>
 
 

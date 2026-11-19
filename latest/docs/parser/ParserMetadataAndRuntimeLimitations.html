@@ -228,9 +228,12 @@ and not user code running inside policy callbacks;</li>
 <li>a refused retained-state insertion refuses the whole parse; memoized results and metadata are never evicted;</li>
 <li>registry, memo and look-ahead state is released when each parse ends (successfully or not);</li>
 <li>the stack guard keeps a fixed headroom: user code that recurses deeply inside a callback is not protected by it;</li>
-<li><code>CompiledGrammar</code>, <code>LexerEngine</code> and <code>ParserEngine</code> remain non-thread-safe; budgets are per operation, but concurrent
-operations on one shared instance still corrupt each other's engine state (see the concurrency section of
-<code>ParserResourceSafety.md</code>).</li>
+<li>budgets are per operation: concurrent operations on one shared <code>CompiledGrammar</code> each run on private engines with a
+private budget, so a refusal never changes another operation's counters or result (issue #709; see the concurrency
+section of <code>ParserResourceSafety.md</code> and the ownership table of <code>RuntimeStateOwnership.md</code>);</li>
+<li>directly constructed <code>LexerEngine</code> and <code>ParserEngine</code> instances remain non-thread-safe and non-re-entrant, and policy
+components with mutable state remain caller-owned: a grammar whose policy holds such a component is safe for
+concurrent use only if that component is thread-safe.</li>
 </ul>
 <h2 id="antlr-parametersreturns-parsed-metadata-vs-runtime-support">ANTLR parameters/returns: parsed metadata vs runtime support</h2>
 <p>ANTLR4-style parameter and <code>returns</code> signatures are parsed and preserved as metadata text.</p>

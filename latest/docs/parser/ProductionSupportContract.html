@@ -222,10 +222,10 @@
 </tr>
 <tr>
 <td>Concurrent execution</td>
-<td>A separate <code>CompiledGrammar</code> may be created for each concurrent operation; every individual parse remains sequential</td>
-<td>The generated static <code>Grammar</code> facade caches one <code>CompiledGrammar</code>, including one <code>LexerEngine</code> and one <code>ParserEngine</code>; concurrent <code>Parse(...)</code> or <code>Tokenize(...)</code> calls on that shared instance are not safe</td>
-<td>Callers must synchronize access to the static facade or create a distinct <code>CompiledGrammar</code> per concurrent operation; supplied execution contexts and reusable generated policies also carry mutable state and must not be shared concurrently</td>
-<td>Parsing-internal parallelism is <strong>out of scope</strong>; no shared runtime engine or mutable execution context has a thread-safety guarantee</td>
+<td><code>CompiledGrammar.Parse(...)</code> and <code>Tokenize(...)</code> may be called concurrently (and re-entrantly) on one shared instance under <code>ParserRuntimeFeaturePolicy.Default</code> or a policy whose components are stateless or thread-safe: every call runs on a private <code>LexerEngine</code> / <code>ParserEngine</code> with a private resource budget, over immutable grammar data and preparations built once; every individual parse remains sequential</td>
+<td>The generated static <code>Grammar</code> facade, <code>Parse(...)</code> and <code>Tokenize(...)</code> share one <code>CompiledGrammar</code> with the default policy and are safe for concurrent calls; <code>ParseWithEmbeddedCode(string)</code> creates a fresh context and grammar per call</td>
+<td>Each <code>ParseWithEmbeddedCode(input, executionContext)</code> call needs its own execution context: a supplied context, a policy bound to it (<code>CreateRuntimePolicy</code>) or any other policy component with mutable state is caller-owned and must not be shared by concurrent calls unless the caller makes it thread-safe; directly constructed <code>LexerEngine</code> / <code>ParserEngine</code> instances are not thread-safe</td>
+<td>Concurrent use of shared grammars is <strong>Stable</strong> under the default policy (issue #709); parsing-internal parallelism is <strong>out of scope</strong>; no lock, pool or thread-local engine is involved</td>
 </tr>
 <tr>
 <td>Rollback and external effects</td>

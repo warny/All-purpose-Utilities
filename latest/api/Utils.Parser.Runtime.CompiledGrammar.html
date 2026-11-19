@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Parser_Runtime_CompiledGrammar" data-uid="Utils.Parser.Runtime.CompiledGrammar" class="text-break">
-Class CompiledGrammar  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/CompiledGrammar.cs/#L23"><i class="bi bi-code-slash"></i></a>
+Class CompiledGrammar  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/CompiledGrammar.cs/#L39"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -246,8 +246,23 @@ per-call budget; an excess ends the call with a <a class="xref" href="Utils.Pars
 
 
   <h2 id="Utils_Parser_Runtime_CompiledGrammar_remarks">Remarks</h2>
-  <div class="markdown level0 remarks"><p>This class is not thread-safe: it owns one <a class="xref" href="Utils.Parser.Runtime.LexerEngine.html">LexerEngine</a> and one <a class="xref" href="Utils.Parser.Runtime.ParserEngine.html">ParserEngine</a>, whose
-per-operation registries are reset by every call. Concurrent calls must use separate instances.</p>
+  <div class="markdown level0 remarks"><p>
+<a class="xref" href="Utils.Parser.Runtime.CompiledGrammar.html#Utils_Parser_Runtime_CompiledGrammar_Tokenize_System_String_">Tokenize(string)</a> and <a class="xref" href="Utils.Parser.Runtime.CompiledGrammar.html#Utils_Parser_Runtime_CompiledGrammar_Parse_System_String_">Parse(string)</a> may be called concurrently on one shared instance, from any number of
+threads and without external locking, when the runtime feature policy is <a class="xref" href="Utils.Parser.Runtime.ParserRuntimeFeaturePolicy.html#Utils_Parser_Runtime_ParserRuntimeFeaturePolicy_Default">Default</a>
+or any policy whose components are stateless or themselves thread-safe. Every call runs on a private
+<a class="xref" href="Utils.Parser.Runtime.LexerEngine.html">LexerEngine</a> and a private <a class="xref" href="Utils.Parser.Runtime.ParserEngine.html">ParserEngine</a>, so the mode stack, recursion frames, state
+registry, memoized results, look-ahead cache and resource budget of one operation are never visible to another one.
+Only grammar-invariant data is shared: the immutable <a class="xref" href="Utils.Parser.Runtime.CompiledGrammar.html#Utils_Parser_Runtime_CompiledGrammar_Definition">Definition</a>, <a class="xref" href="Utils.Parser.Runtime.CompiledGrammar.html#Utils_Parser_Runtime_CompiledGrammar_ResourceLimits">ResourceLimits</a>, and the
+lexer and parser preparations (keyword tries, candidate rules, scheduling shapes) built once by the constructor and
+never mutated afterwards.
+</p>
+<p>
+The policy components themselves are not copied: a custom policy whose components keep mutable state (for example
+a <a class="xref" href="Utils.Parser.Runtime.StackParserRuleInvocationFrameManager.html">StackParserRuleInvocationFrameManager</a>, a recording <a class="xref" href="Utils.Parser.Runtime.IParserRuntimeObserver.html">IParserRuntimeObserver</a> or a policy
+bound to a generated execution context) is shared by every call of this instance, and concurrent calls are then
+supported only if the caller guarantees that those components are thread-safe; otherwise use one instance per
+concurrent operation.
+</p>
 </div>
 
 
@@ -259,7 +274,7 @@ per-operation registries are reset by every call. Concurrent calls must use sepa
 
   <h3 id="Utils_Parser_Runtime_CompiledGrammar__ctor_Utils_Parser_Model_ParserDefinition_" data-uid="Utils.Parser.Runtime.CompiledGrammar.#ctor(Utils.Parser.Model.ParserDefinition)">
   CompiledGrammar(ParserDefinition)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/CompiledGrammar.cs/#L39"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/CompiledGrammar.cs/#L67"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initialises a <a class="xref" href="Utils.Parser.Runtime.CompiledGrammar.html">CompiledGrammar</a> from a fully resolved
@@ -293,7 +308,7 @@ per-operation registries are reset by every call. Concurrent calls must use sepa
 
   <h3 id="Utils_Parser_Runtime_CompiledGrammar__ctor_Utils_Parser_Model_ParserDefinition_Utils_Parser_Runtime_ParserRuntimeFeaturePolicy_" data-uid="Utils.Parser.Runtime.CompiledGrammar.#ctor(Utils.Parser.Model.ParserDefinition,Utils.Parser.Runtime.ParserRuntimeFeaturePolicy)">
   CompiledGrammar(ParserDefinition, ParserRuntimeFeaturePolicy)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/CompiledGrammar.cs/#L50"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/CompiledGrammar.cs/#L78"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initialises a <a class="xref" href="Utils.Parser.Runtime.CompiledGrammar.html">CompiledGrammar</a> from a fully resolved
@@ -330,7 +345,7 @@ per-operation registries are reset by every call. Concurrent calls must use sepa
 
   <h3 id="Utils_Parser_Runtime_CompiledGrammar__ctor_Utils_Parser_Model_ParserDefinition_Utils_Parser_Runtime_ParserRuntimeFeaturePolicy_Utils_Parser_Runtime_ParserResourceLimits_" data-uid="Utils.Parser.Runtime.CompiledGrammar.#ctor(Utils.Parser.Model.ParserDefinition,Utils.Parser.Runtime.ParserRuntimeFeaturePolicy,Utils.Parser.Runtime.ParserResourceLimits)">
   CompiledGrammar(ParserDefinition, ParserRuntimeFeaturePolicy, ParserResourceLimits)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/CompiledGrammar.cs/#L63"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/CompiledGrammar.cs/#L91"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Initialises a <a class="xref" href="Utils.Parser.Runtime.CompiledGrammar.html">CompiledGrammar</a> from a fully resolved
@@ -375,7 +390,7 @@ per-operation registries are reset by every call. Concurrent calls must use sepa
 
   <h3 id="Utils_Parser_Runtime_CompiledGrammar_Definition" data-uid="Utils.Parser.Runtime.CompiledGrammar.Definition">
   Definition
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/CompiledGrammar.cs/#L29"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/CompiledGrammar.cs/#L57"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>The resolved <a class="xref" href="Utils.Parser.Model.ParserDefinition.html">ParserDefinition</a> backing this grammar.</p>
@@ -407,7 +422,7 @@ per-operation registries are reset by every call. Concurrent calls must use sepa
 
   <h3 id="Utils_Parser_Runtime_CompiledGrammar_ResourceLimits" data-uid="Utils.Parser.Runtime.CompiledGrammar.ResourceLimits">
   ResourceLimits
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/CompiledGrammar.cs/#L32"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/CompiledGrammar.cs/#L60"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Gets the resource limits applied to every tokenization and parse of this grammar.</p>
@@ -443,12 +458,12 @@ per-operation registries are reset by every call. Concurrent calls must use sepa
 
   <h3 id="Utils_Parser_Runtime_CompiledGrammar_Parse_System_String_" data-uid="Utils.Parser.Runtime.CompiledGrammar.Parse(System.String)">
   Parse(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/CompiledGrammar.cs/#L106"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/CompiledGrammar.cs/#L148"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Runs the full parse pipeline on <code class="paramref">input</code>: tokenizes the text
-with the embedded <a class="xref" href="Utils.Parser.Runtime.LexerEngine.html">LexerEngine</a> and then builds a parse tree with the
-<a class="xref" href="Utils.Parser.Runtime.ParserEngine.html">ParserEngine</a>.</p>
+with a <a class="xref" href="Utils.Parser.Runtime.LexerEngine.html">LexerEngine</a> and then builds a parse tree with a
+<a class="xref" href="Utils.Parser.Runtime.ParserEngine.html">ParserEngine</a>, both private to this call.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
 
@@ -477,6 +492,9 @@ input does not conform to the grammar rather than throwing an exception.</p>
 
 
 
+  <h4 class="section" id="Utils_Parser_Runtime_CompiledGrammar_Parse_System_String__remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>Safe to call concurrently with other <a class="xref" href="Utils.Parser.Runtime.CompiledGrammar.html#Utils_Parser_Runtime_CompiledGrammar_Tokenize_System_String_">Tokenize(string)</a> and <a class="xref" href="Utils.Parser.Runtime.CompiledGrammar.html#Utils_Parser_Runtime_CompiledGrammar_Parse_System_String_">Parse(string)</a> calls; see the class remarks.</p>
+</div>
 
   <h4 class="section">Exceptions</h4>
   <dl class="parameters">
@@ -491,7 +509,7 @@ input does not conform to the grammar rather than throwing an exception.</p>
 
   <h3 id="Utils_Parser_Runtime_CompiledGrammar_Tokenize_System_String_" data-uid="Utils.Parser.Runtime.CompiledGrammar.Tokenize(System.String)">
   Tokenize(string)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/CompiledGrammar.cs/#L86"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/CompiledGrammar.cs/#L127"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Tokenizes <code class="paramref">input</code> and returns all tokens produced by the lexer,
@@ -524,6 +542,9 @@ excluded from the stream at this stage.</p>
 
 
 
+  <h4 class="section" id="Utils_Parser_Runtime_CompiledGrammar_Tokenize_System_String__remarks">Remarks</h4>
+  <div class="markdown level1 remarks"><p>Safe to call concurrently with other <a class="xref" href="Utils.Parser.Runtime.CompiledGrammar.html#Utils_Parser_Runtime_CompiledGrammar_Tokenize_System_String_">Tokenize(string)</a> and <a class="xref" href="Utils.Parser.Runtime.CompiledGrammar.html#Utils_Parser_Runtime_CompiledGrammar_Parse_System_String_">Parse(string)</a> calls; see the class remarks.</p>
+</div>
 
   <h4 class="section">Exceptions</h4>
   <dl class="parameters">
@@ -538,7 +559,7 @@ excluded from the stream at this stage.</p>
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/CompiledGrammar.cs/#L23" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils.Parser/Runtime/CompiledGrammar.cs/#L39" class="edit-link">Edit this page</a>
         </div>
 
 

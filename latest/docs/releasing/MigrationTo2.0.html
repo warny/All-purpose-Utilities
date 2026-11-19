@@ -471,6 +471,20 @@ their existing syntax-error handling.</p>
 <code>ParserResourceLimits.Default with { MaxParseDepth = 10_000 }</code>; the stack guard cannot be disabled. The engines also
 release their registry state when each parse ends. No existing signature changed. Defaults and measurements:
 <code>docs/parser/ParserResourceSafety.md</code>.</p>
+<p><a id="omy-utils-parser-concurrent-compiled-grammar"></a></p>
+<h2 id="utilsparser-concurrent-use-of-a-shared-compiledgrammar-issue-709">Utils.Parser: concurrent use of a shared <code>CompiledGrammar</code> (issue #709)</h2>
+<p><code>CompiledGrammar.Parse</code> and <code>CompiledGrammar.Tokenize</code> now run every call on a private <code>LexerEngine</code> / <code>ParserEngine</code>
+pair, over grammar-invariant tables prepared once by the constructor. One <code>CompiledGrammar</code> (including the generated
+static <code>XGrammar.Grammar</code>, <code>XGrammar.Parse</code> and <code>XGrammar.Tokenize</code> facades and the CSyntax/VBSyntax front ends) can
+therefore be shared by concurrent and re-entrant calls under <code>ParserRuntimeFeaturePolicy.Default</code>; callers that
+serialized access with a lock or created one grammar per thread only to work around the defect can drop that
+workaround. Sequential results are unchanged and no signature changed.</p>
+<p>Still caller-owned: a policy whose components keep mutable state (<code>StackParserRuleInvocationFrameManager</code>, a recording
+<code>IParserRuntimeObserver</code>, a policy returned by a generated <code>CreateRuntimePolicy(executionContext)</code>), the execution
+context passed to <code>ParseWithEmbeddedCode(input, executionContext)</code>, and directly constructed <code>LexerEngine</code> /
+<code>ParserEngine</code> instances. Use one of each per concurrent operation unless you make them thread-safe yourself.
+<code>ParseWithEmbeddedCode(string)</code> already creates a fresh context per call. Details: <code>docs/parser/RuntimeStateOwnership.md</code>
+(ownership table) and <code>docs/parser/ParserResourceSafety.md</code> section 7.</p>
 
 </article>
 

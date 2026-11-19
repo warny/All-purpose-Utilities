@@ -205,6 +205,115 @@ It is conservative, documentation-only, and describes current contracts only.</p
 <li>semantic evaluator external state is not modeled by memoization keys;</li>
 <li>parser action side effects are not modeled by memoization keys.</li>
 </ul>
+<h2 id="operation-ownership-and-concurrent-use-issue-709">Operation ownership and concurrent use (issue #709)</h2>
+<p>A <code>CompiledGrammar</code> separates what one grammar shares from what one operation owns. Every <code>Tokenize(string)</code> and
+<code>Parse(string)</code> call creates its own <code>LexerEngine</code> and <code>ParserEngine</code>; the grammar-invariant tables those engines need
+are built once by the <code>CompiledGrammar</code> constructor (internal <code>LexerEngine.Preparation</code> and
+<code>ParserEngine.Preparation</code>) and are never mutated afterwards.</p>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Owner</th>
+<th>Classification</th>
+<th>Shared between operations?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ParserDefinition</code> (rules, modes, options; immutable arrays and init-only records)</td>
+<td>grammar</td>
+<td>immutable grammar data</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>ParserResourceLimits</code></td>
+<td>grammar</td>
+<td>immutable configuration</td>
+<td>yes (each operation builds its own budget from it)</td>
+</tr>
+<tr>
+<td>lexer keyword tries (<code>KeywordLookup</code> per mode), candidate rules per mode, case sensitivity</td>
+<td><code>LexerEngine.Preparation</code></td>
+<td>precomputed execution metadata, read-only after construction</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>parser scheduling shapes (stable priority order and structural descriptors per alternative list, keyed by list reference)</td>
+<td><code>ParserEngine.Preparation</code></td>
+<td>precomputed execution metadata, read-only after construction</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>lexer <code>_modeStack</code>, <code>_moreTextBuilder</code>, <code>_moreStartPos</code>, <code>_activeRuleRefs</code></td>
+<td><code>LexerEngine</code></td>
+<td>mutable per-operation state</td>
+<td>no: one engine per call</td>
+</tr>
+<tr>
+<td>lexer resource budget (<code>ParserResourceBudget</code>)</td>
+<td>tokenization enumeration</td>
+<td>mutable per-operation state</td>
+<td>no</td>
+</tr>
+<tr>
+<td>parser <code>_activeRuleFrames</code>, <code>ParserStateRegistry</code> (visited states, continuations, completed results), <code>ParserLookaheadCache</code></td>
+<td><code>ParserEngine</code></td>
+<td>mutable per-operation state</td>
+<td>no: one engine per call</td>
+</tr>
+<tr>
+<td><code>AlternativeScheduler</code>, <code>ScheduledAlternativeExecutor</code>, <code>SchedulingPreparation</code>, <code>ParserLookaheadProbe</code></td>
+<td><code>ParserEngine</code></td>
+<td>per-engine helpers bound to that engine's registry and cache</td>
+<td>no</td>
+</tr>
+<tr>
+<td>parse budget and token position (<code>ParseContext</code>)</td>
+<td>parse operation</td>
+<td>mutable per-operation state</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>LexerEngine.LastResourceBudget</code>, <code>ParserEngine.LastResourceUsage</code>, internal <code>CompiledGrammar.Lexer</code> / <code>Parser</code></td>
+<td>engine / grammar</td>
+<td>diagnostic-only, last operation that started</td>
+<td>written by every call; meaningful only in sequential use</td>
+</tr>
+<tr>
+<td><code>ParserRuntimeFeaturePolicy</code> components</td>
+<td>caller</td>
+<td>external policy state</td>
+<td>yes: the same instances serve every call</td>
+</tr>
+</tbody>
+</table>
+<p>Before #709 a <code>CompiledGrammar</code> owned one engine pair, and every call reset the shared engine state: <code>ParserEngine.Parse</code>
+cleared <code>_activeRuleFrames</code>, the state registry and the look-ahead cache at its start and end, and
+<code>LexerEngine.Tokenize</code> reset the mode stack and pending <code>more</code> text. Concurrent calls therefore cleared or reused each
+other's state: a memoized completed result computed for another input could be selected as a reusable result (silent
+wrong tree or wrong branch selection), visited-state and frame guards could reject or accept alternatives for another
+input (wrong acceptance), a mode switch of one tokenization could apply to another (wrong tokens), and concurrent writes
+to the non-thread-safe collections could corrupt them permanently (exceptions and wrong results even after the
+concurrent phase).</p>
+<p>Contract:</p>
+<ul>
+<li><code>CompiledGrammar.Tokenize</code> and <code>CompiledGrammar.Parse</code> may be called concurrently on one shared instance, and
+re-entrantly (for example from a lexer action or a predicate of another call on the same grammar), when the runtime
+policy is <code>ParserRuntimeFeaturePolicy.Default</code> or another policy whose components are stateless or thread-safe;</li>
+<li>the components of <code>ParserRuntimeFeaturePolicy.Default</code> keep no instance state;</li>
+<li>policy components are never cloned; a custom component with mutable state (for example
+<code>StackParserRuleInvocationFrameManager</code>, a recording observer, or a policy bound to a generated execution context) is
+shared by every call of the grammar, so concurrent use of such a grammar is supported only when the caller guarantees
+the component is thread-safe; otherwise one <code>CompiledGrammar</code> per concurrent operation is required;</li>
+<li>a directly constructed <code>LexerEngine</code> or <code>ParserEngine</code> remains non-thread-safe and non-re-entrant;</li>
+<li>the CSyntax/VBSyntax front ends inherit the guarantee: <code>CSyntaxTokenParser</code>, <code>VBSyntaxTokenParser</code>,
+<code>CSyntaxExpressionCompiler</code> and <code>VBSyntaxExpressionCompiler</code> keep no mutable instance state (a compilation builds its
+own <code>ParseTreeCompiler</code> and compilation context), so one instance may serve concurrent calls; an
+<code>ExpressionCompilerContext</code> or <code>VBSyntaxCompilerContext</code> passed explicitly to <code>CompileExpression</code> is read and mutated by
+that compilation and must not be shared by concurrent compilations;</li>
+<li>no lock, thread-local engine or pool is used; resource budgets stay owned by each operation (S-06).</li>
+</ul>
 <h2 id="continuation-and-shared-prefix-ownership-boundaries">Continuation and shared-prefix ownership boundaries</h2>
 <p>Ownership view only (limitations remain canonical in companion file):</p>
 <ul>
