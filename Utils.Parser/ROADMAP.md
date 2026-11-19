@@ -630,12 +630,19 @@ Completed:
 - Measured, behavior-neutral allocation reductions (grammar-invariant scheduling shapes and lexer candidate rules
   precomputed at construction, observer-free scheduler fast paths, cached delegates, reused lexer scratch buffers):
   tokenization about −75 %, CSyntax compilation about −38 % on 100–20,000-term inputs, with identical work counters.
+- Concurrent use of a shared `CompiledGrammar` (issue #709): every `Parse` / `Tokenize` call runs on a private
+  `LexerEngine` / `ParserEngine` pair built over grammar-invariant preparations (keyword tries, candidate rules,
+  scheduling shapes) that the grammar builds once and never mutates. Generated static facades and the CSyntax/VBSyntax
+  front ends are safe for concurrent and re-entrant calls under the default policy, without locks, thread-local engines
+  or pools; sequential results are unchanged. Directly constructed engines and policy components with mutable state stay
+  caller-owned. Ownership table: `docs/parser/RuntimeStateOwnership.md`; campaigns and measurements:
+  `docs/parser/ParserResourceSafety.md` section 7.
 
 Remaining (separate PRs):
 
-- the shared `CompiledGrammar` of the CSyntax/VBSyntax front ends is used concurrently although engines are not
-  thread-safe (pre-existing; corrupted trees and exceptions under concurrent calls, measured on the base commit too;
-  tracked as issue #709);
+- per-call engines regrow their registry and look-ahead collections, so parsing allocates 12–19 % more than with a
+  reused engine (issue #709 measurements); reusing collection capacity, for example through a bounded per-grammar engine
+  pool, needs its own state-leakage audit;
 - the retained registry metadata (visited states, continuations) is write-only in production and dominates live memory;
   removing or bounding it needs a metadata-lifecycle design;
 - a deeper reduction of stack use per rule level (currently about 1.3 KB per depth unit on Windows, so a 1 MiB thread

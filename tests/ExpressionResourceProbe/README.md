@@ -103,3 +103,33 @@ $probe = Join-Path $env:TEMP 'etc-probe\win\ExpressionResourceProbe.exe'
 .\tests\ExpressionResourceProbe\run-campaign.ps1 -ProbePath $probe -Parser -Scenarios P-csyntax-sum -Operations tokenize,parse `
     -Sizes 100,1000,20000 -TimeoutSeconds 300 -MemoryLimitMB 16384 -Output (Join-Path $env:TEMP 'etc-probe\p-sum.csv')
 ```
+
+## Shared-grammar concurrency (issue #709)
+
+`parser-concurrency-campaign [--ops <per worker>] [--seeds <count>] [--threads 2,4,8,16] [--surfaces a,b] [--show-oracle]`
+(`ParserConcurrencyCampaign.cs`) runs concurrent operations on shared surfaces and compares every result with a
+sequential oracle computed beforehand on independent, freshly built `CompiledGrammar` instances. Surfaces:
+`csyntax` / `vbsyntax` (distinct token parsers sharing the static dialect grammar), `generated-static` (the generated
+`CSyntaxTokenizerGrammar.Grammar` with full token metadata), `modes` (a shared ANTLR4 grammar with lexer modes, `more`, a
+hidden channel and left recursion), `limits` (the same grammar under tight limits: refusals must match the oracle
+exactly, kind, phase, limit, observed value and offset) and `compile-csyntax` / `compile-vbsyntax` (one shared
+expression compiler, compile then evaluate). Workloads `parse`, `tokenize` and `mixed` run on 2, 4, 8 and 16 dedicated
+threads that re-synchronize on a barrier every 25 operations, with a deterministic per-worker seed. Each run prints one
+`CCAMPAIGN` line (wrong trees, wrong token lists, wrong failures, expected failures, unexpected exceptions by type,
+whether the shared surface is still exact sequentially afterwards, throughput and bytes per operation). Run one surface
+per process (`--surfaces`) when comparing builds: a corrupted shared dialect grammar stays corrupted for the next
+surfaces of the same process.
+
+`parser-concurrency-bench [--ms <per measurement>] [--threads 1,2,4,8,16] [--mode shared|perthread|percall] [--label x]`
+measures `CompiledGrammar` construction costs and CSyntax throughput (`short`, `medium`, `deep`, `flat`, `tokenize`,
+`mixed`) with one shared grammar, one grammar per thread (the sequentially correct parallel baseline of builds where a
+shared grammar is not thread-safe) or one grammar per operation, and prints `CBENCH` lines. `grammar-check <file|->`
+converts an ANTLR4 grammar and reports conversion failures. Raw #709 results are in `results/2026-11-19/issue709-*`.
+
+**Environment:** Windows PowerShell 5.1
+
+```powershell
+$probe = Join-Path $env:TEMP 'etc-probe\win\ExpressionResourceProbe.exe'
+& $probe parser-concurrency-campaign --ops 200 --seeds 3 --surfaces csyntax
+& $probe parser-concurrency-bench --ms 1500 --mode shared --threads 1,2,4,8,16 --label fixed
+```

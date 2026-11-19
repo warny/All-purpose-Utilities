@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed — `omy.Utils.Parser` (concurrent use of a shared `CompiledGrammar`, issue #709)
+- **Behavior change under concurrency only.** `CompiledGrammar.Parse` and `CompiledGrammar.Tokenize` no longer share one
+  `LexerEngine` / `ParserEngine` pair between calls: every call runs on private engines built over grammar-invariant
+  tables (keyword tries, candidate rules, scheduling shapes) that the grammar prepares once and never mutates. Concurrent
+  calls on one shared instance previously returned silently corrupted trees and token lists, threw
+  `InvalidOperationException`, `NullReferenceException`, `IndexOutOfRangeException` and others, and could leave the shared
+  grammar permanently corrupted; they now return exactly what sequential calls return. This fixes the CSyntax/VBSyntax
+  front ends (`CSyntaxTokenParser`, `VBSyntaxTokenParser` and the expression compilers built on them) and every generated
+  static `Grammar` / `Parse` / `Tokenize` facade, which share one grammar per class. Sequential results (tokens, trees,
+  spans, error nodes, refusals and resource counters) are unchanged.
+- The guarantee covers `ParserRuntimeFeaturePolicy.Default` and policies whose components are stateless or thread-safe.
+  Policy components are not cloned: a component with mutable state (for example `StackParserRuleInvocationFrameManager`,
+  a recording observer or a policy bound to a generated execution context) remains caller-owned. Directly constructed
+  `LexerEngine` and `ParserEngine` instances remain non-thread-safe. No lock, thread-local engine or pool is used, and
+  every operation keeps its own S-06 resource budget.
+- No public signature changed. Measured cost (Windows Release, CSyntax): tokenization unchanged; parsing allocates
+  12–19 % more and is 3–20 % slower per call, because each fresh engine regrows its registry and look-ahead collections
+  that a reused engine kept at capacity; concurrent throughput on one shared grammar matches one grammar per thread on
+  the base within 3–16 %. See `docs/parser/ParserResourceSafety.md` section 7.
+
 ### Security — `omy.Utils.Parser` (parser resource safety, S-06: ETC-16 / ETC-18)
 - **Behavior change.** Every tokenization, parse and parse-tree compilation now runs under `ParserResourceLimits` (input
   characters 1,000,000; tokens 500,000; lexer steps 50,000,000; lexer depth 4,000; parse depth 4,000; parser steps
@@ -27,8 +47,8 @@ All notable changes to this project will be documented in this file.
 - Performance: measured, behavior-neutral allocation reductions (precomputed grammar-invariant scheduling shapes and lexer
   candidate rules, observer-free scheduler fast paths); CSyntax compilation of the historical 20,000-term input allocates
   3.61 GB instead of 5.86 GB, tokenization 174 MB instead of 682 MB.
-- Known, pre-existing and tracked separately: the CSyntax/VBSyntax token parsers share one non-thread-safe
-  `CompiledGrammar` across threads (issue #709). See `docs/parser/ParserResourceSafety.md`.
+- Pre-existing and fixed separately: the CSyntax/VBSyntax token parsers shared one non-thread-safe engine pair across
+  threads (issue #709, see the entry above). See `docs/parser/ParserResourceSafety.md`.
 
 ### Changed — `omy.Utils` (expression simplifier: arithmetic exceptions deferred to evaluation, S5A-04)
 - **Behavior change, every policy.** `ExpressionSimplifier.Simplify` (and `ExpressionComparer`, which simplifies first) no

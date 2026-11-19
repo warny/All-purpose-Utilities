@@ -11,11 +11,22 @@ namespace Utils.Parser.Runtime;
 /// using the lexer rules in a <see cref="ParserDefinition"/>.
 /// </summary>
 /// <remarks>
-/// This class is not thread-safe. Each concurrent tokenization must use a separate
-/// <see cref="LexerEngine"/> instance.
+/// This class is not thread-safe: the mode stack, the pending <c>more</c> text and the active rule references belong
+/// to the engine and are reset by every tokenization. Each concurrent tokenization must use a separate
+/// <see cref="LexerEngine"/> instance; <see cref="CompiledGrammar"/> does so for every call.
 /// </remarks>
-public sealed class LexerEngine(ParserDefinition definition, ParserRuntimeFeaturePolicy? runtimeFeaturePolicy = null)
+public sealed class LexerEngine
 {
+    /// <summary>
+    /// Initializes a lexer engine with an optional runtime policy and <see cref="ParserResourceLimits.Default"/>.
+    /// </summary>
+    /// <param name="definition">Resolved grammar definition.</param>
+    /// <param name="runtimeFeaturePolicy">Optional runtime policy; <see cref="ParserRuntimeFeaturePolicy.Default"/> when <see langword="null"/>.</param>
+    public LexerEngine(ParserDefinition definition, ParserRuntimeFeaturePolicy? runtimeFeaturePolicy = null)
+        : this(new Preparation(definition), runtimeFeaturePolicy, ParserResourceLimits.Default)
+    {
+    }
+
     /// <summary>
     /// Initializes a lexer engine with an optional runtime policy and explicit resource limits.
     /// </summary>
@@ -23,24 +34,85 @@ public sealed class LexerEngine(ParserDefinition definition, ParserRuntimeFeatur
     /// <param name="runtimeFeaturePolicy">Optional runtime policy; <see cref="ParserRuntimeFeaturePolicy.Default"/> when <see langword="null"/>.</param>
     /// <param name="resourceLimits">Limits applied to each tokenization; every tokenization owns a private budget.</param>
     public LexerEngine(ParserDefinition definition, ParserRuntimeFeaturePolicy? runtimeFeaturePolicy, ParserResourceLimits resourceLimits)
-        : this(definition, runtimeFeaturePolicy)
+        : this(new Preparation(definition), runtimeFeaturePolicy, resourceLimits ?? throw new ArgumentNullException(nameof(resourceLimits)))
     {
-        _resourceLimits = resourceLimits ?? throw new ArgumentNullException(nameof(resourceLimits));
     }
 
-    /// <summary>Resource limits applied to every tokenization of this engine.</summary>
-    private readonly ParserResourceLimits _resourceLimits = ParserResourceLimits.Default;
+    /// <summary>
+    /// Initializes a lexer engine over grammar-invariant tables prepared once and shared with other engines of the same
+    /// definition. The new engine owns its mutable tokenization state.
+    /// </summary>
+    /// <param name="preparation">The shared, immutable lexer preparation.</param>
+    /// <param name="runtimeFeaturePolicy">Optional runtime policy; <see cref="ParserRuntimeFeaturePolicy.Default"/> when <see langword="null"/>.</param>
+    /// <param name="resourceLimits">Limits applied to each tokenization.</param>
+    internal LexerEngine(Preparation preparation, ParserRuntimeFeaturePolicy? runtimeFeaturePolicy, ParserResourceLimits resourceLimits)
+    {
+        _definition = preparation.Definition;
+        _caseInsensitive = preparation.CaseInsensitive;
+        _keywordTrieByMode = preparation.KeywordTrieByMode;
+        _candidateRulesByMode = preparation.CandidateRulesByMode;
+        _runtimeFeaturePolicy = runtimeFeaturePolicy ?? ParserRuntimeFeaturePolicy.Default;
+        _resourceLimits = resourceLimits;
+    }
 
-    private readonly ParserRuntimeFeaturePolicy _runtimeFeaturePolicy = runtimeFeaturePolicy ?? ParserRuntimeFeaturePolicy.Default;
+    /// <summary>
+    /// The grammar-invariant lexer tables of one definition: the case sensitivity, the keyword trie of every mode and the
+    /// non-literal candidate rules of every mode. They are pure functions of the immutable definition, built once and
+    /// never mutated afterwards, so one preparation can be shared by any number of engines, including engines used
+    /// concurrently on different threads.
+    /// </summary>
+    internal sealed class Preparation
+    {
+        /// <summary>Builds the tables of <paramref name="definition"/>.</summary>
+        /// <param name="definition">The resolved definition.</param>
+        public Preparation(ParserDefinition definition)
+        {
+            Definition = definition;
+            CaseInsensitive = definition.EffectiveOptions.CaseInsensitive;
+            KeywordTrieByMode = BuildKeywordTries(definition, CaseInsensitive);
+            CandidateRulesByMode = BuildCandidateRules(definition);
+        }
+
+        /// <summary>Gets the definition the tables were built from.</summary>
+        public ParserDefinition Definition { get; }
+
+        /// <summary>Gets whether literal matching ignores case.</summary>
+        public bool CaseInsensitive { get; }
+
+        /// <summary>Gets the keyword trie of every mode (read-only after construction).</summary>
+        public IReadOnlyDictionary<string, KeywordLookup> KeywordTrieByMode { get; }
+
+        /// <summary>Gets the candidate rules of every mode (read-only after construction).</summary>
+        public IReadOnlyDictionary<string, Rule[]> CandidateRulesByMode { get; }
+    }
+
+    /// <summary>The resolved grammar definition.</summary>
+    private readonly ParserDefinition _definition;
+
+    /// <summary>Resource limits applied to every tokenization of this engine.</summary>
+    private readonly ParserResourceLimits _resourceLimits;
+
+    /// <summary>The runtime policy whose lexer action executor and predicate evaluator this engine invokes.</summary>
+    private readonly ParserRuntimeFeaturePolicy _runtimeFeaturePolicy;
     private const string DefaultChannel = "DEFAULT_CHANNEL";
     private const string HiddenChannel = "HIDDEN";
 
+    /// <summary>The mode stack of the current tokenization (per-engine mutable state).</summary>
     private readonly Stack<LexerMode> _modeStack = [];
-    private readonly bool _caseInsensitive = definition.EffectiveOptions.CaseInsensitive;
-    private readonly IReadOnlyDictionary<string, KeywordLookup> _keywordTrieByMode =
-        BuildKeywordTries(definition, definition.EffectiveOptions.CaseInsensitive);
+
+    /// <summary>Whether literal matching ignores case (shared preparation).</summary>
+    private readonly bool _caseInsensitive;
+
+    /// <summary>The keyword trie of every mode (shared preparation, never mutated).</summary>
+    private readonly IReadOnlyDictionary<string, KeywordLookup> _keywordTrieByMode;
+
+    /// <summary>The text accumulated by <c>more</c> commands in the current tokenization (per-engine mutable state).</summary>
     private readonly StringBuilder _moreTextBuilder = new();
+
+    /// <summary>The rule references being matched, by rule and offset, in the current tokenization (per-engine mutable state).</summary>
     private readonly HashSet<(string RuleName, int Offset)> _activeRuleRefs = [];
+
+    /// <summary>The start position of the pending <c>more</c> text, or -1 (per-engine mutable state).</summary>
     private int _moreStartPos = -1;
 
     /// <summary>Gets the resource limits applied to every tokenization of this engine.</summary>
@@ -162,12 +234,12 @@ public sealed class LexerEngine(ParserDefinition definition, ParserRuntimeFeatur
 
     private void ValidateExtensions(IReadOnlyList<ILexerExtension> extensions, DiagnosticBag? diagnostics, string? filePath)
     {
-        if (definition.DeclaredTokens.Count > 0 && definition.ExtensionBindings.Count == 0)
+        if (_definition.DeclaredTokens.Count > 0 && _definition.ExtensionBindings.Count == 0)
         {
             ThrowValidation(diagnostics, filePath, 1, 1, null, "UP2001", "tokens { ... } requires superClass / extension binding.");
         }
 
-        if (definition.ExtensionBindings.Count > 0 && extensions.Count == 0)
+        if (_definition.ExtensionBindings.Count > 0 && extensions.Count == 0)
         {
             ThrowValidation(diagnostics, filePath, 1, 1, null, "UP2002", "superClass extension binding exists but no ILexerExtension is configured.");
         }
@@ -178,7 +250,7 @@ public sealed class LexerEngine(ParserDefinition definition, ParserRuntimeFeatur
         foreach (ILexerExtension extension in extensions)
         {
             int startPosition = input.Position;
-            var context = new LexerExtensionContext(definition, input, emittedTokens, modeName);
+            var context = new LexerExtensionContext(_definition, input, emittedTokens, modeName);
             var tokens = extension.TryReadTokens(context);
             if (tokens is null)
             {
@@ -212,7 +284,7 @@ public sealed class LexerEngine(ParserDefinition definition, ParserRuntimeFeatur
     {
         foreach (ILexerExtension extension in extensions)
         {
-            var context = new LexerExtensionContext(definition, input, emittedTokens, modeName);
+            var context = new LexerExtensionContext(_definition, input, emittedTokens, modeName);
             var extra = extension.OnAfterToken(token, context);
             if (extra is null)
             {
@@ -231,7 +303,7 @@ public sealed class LexerEngine(ParserDefinition definition, ParserRuntimeFeatur
     {
         foreach (ILexerExtension extension in extensions)
         {
-            var context = new LexerExtensionContext(definition, input, emittedTokens, _modeStack.Peek().Name);
+            var context = new LexerExtensionContext(_definition, input, emittedTokens, _modeStack.Peek().Name);
             var extra = extension.OnEndOfInput(context);
             if (extra is null)
             {
@@ -253,12 +325,12 @@ public sealed class LexerEngine(ParserDefinition definition, ParserRuntimeFeatur
             ThrowValidation(diagnostics, filePath, Math.Max(1, token.Span.Line), Math.Max(1, token.Span.Column), token.Span, "UP2106", $"Invalid token span for '{token.RuleName}'.");
         }
 
-        if (!definition.AllRules.ContainsKey(token.RuleName) && !definition.DeclaredTokens.Contains(token.RuleName) && token.RuleName != "ERROR")
+        if (!_definition.AllRules.ContainsKey(token.RuleName) && !_definition.DeclaredTokens.Contains(token.RuleName) && token.RuleName != "ERROR")
         {
             ThrowValidation(diagnostics, filePath, token.Span.Line, token.Span.Column, token.Span, "UP2100", $"Unknown emitted token '{token.RuleName}'.");
         }
 
-        if (!definition.DeclaredChannels.Contains(token.Channel) && token.Channel is not (DefaultChannel or HiddenChannel))
+        if (!_definition.DeclaredChannels.Contains(token.Channel) && token.Channel is not (DefaultChannel or HiddenChannel))
         {
             ThrowValidation(diagnostics, filePath, token.Span.Line, token.Span.Column, token.Span, "UP2101", $"Unknown channel '{token.Channel}'.");
         }
@@ -266,10 +338,10 @@ public sealed class LexerEngine(ParserDefinition definition, ParserRuntimeFeatur
 
     /// <summary>
     /// The candidate rules of every mode, in declaration order, without fragments and pure-literal rules (those are
-    /// matched by the keyword trie). Built once from the immutable definition instead of being filtered and sorted again
-    /// for every token.
+    /// matched by the keyword trie). Built once from the immutable definition (see <see cref="Preparation"/>) instead of
+    /// being filtered and sorted again for every token.
     /// </summary>
-    private readonly IReadOnlyDictionary<string, Rule[]> _candidateRulesByMode = BuildCandidateRules(definition);
+    private readonly IReadOnlyDictionary<string, Rule[]> _candidateRulesByMode;
 
     /// <summary>Builds <see cref="_candidateRulesByMode"/>.</summary>
     /// <param name="parserDefinition">The definition.</param>
@@ -489,7 +561,7 @@ public sealed class LexerEngine(ParserDefinition definition, ParserRuntimeFeatur
     /// </summary>
     private LexerMatchResult MatchRuleRefContent(TextReaderBuffer input, RuleRef ruleRef, int offset, List<Model.LexerCommand>? commands, List<LexerActionOccurrence>? actions, ParserResourceBudget budget)
     {
-        if (!definition.AllRules.TryGetValue(ruleRef.RuleName, out var referenced))
+        if (!_definition.AllRules.TryGetValue(ruleRef.RuleName, out var referenced))
         {
             return new(false, 0);
         }
@@ -658,7 +730,7 @@ public sealed class LexerEngine(ParserDefinition definition, ParserRuntimeFeatur
     /// <summary>Replaces the current lexer mode after validating that the requested mode exists.</summary>
     private void SetCurrentMode(string modeName, Token token, DiagnosticBag? diagnostics, string commandName)
     {
-        var mode = definition.Modes.FirstOrDefault(m => m.Name == modeName);
+        var mode = _definition.Modes.FirstOrDefault(m => m.Name == modeName);
         if (mode is null)
         {
             diagnostics?.AddWithContext(ParserDiagnostics.UnknownLexerMode, token.Span.Position, token.Span.Length, null, null, modeName, commandName);
@@ -696,7 +768,7 @@ public sealed class LexerEngine(ParserDefinition definition, ParserRuntimeFeatur
                 case LexerCommandType.PushMode:
                     if (cmd.Argument is not null)
                     {
-                        var mode = definition.Modes.FirstOrDefault(m => m.Name == cmd.Argument);
+                        var mode = _definition.Modes.FirstOrDefault(m => m.Name == cmd.Argument);
                         if (mode is null)
                         {
                             diagnostics?.AddWithContext(ParserDiagnostics.UnknownLexerMode, token.Span.Position, token.Span.Length, null, null, cmd.Argument, "pushMode");
@@ -754,7 +826,7 @@ public sealed class LexerEngine(ParserDefinition definition, ParserRuntimeFeatur
     }
 
     private LexerMode GetDefaultMode() =>
-        definition.Modes.FirstOrDefault(static mode => mode.Name == "DEFAULT_MODE") ?? definition.Modes[0];
+        _definition.Modes.FirstOrDefault(static mode => mode.Name == "DEFAULT_MODE") ?? _definition.Modes[0];
 
     private static bool IsPureLiteralRule(Rule rule) => rule.Content.Alternatives.All(static alternative => alternative.Content is LiteralMatch);
 

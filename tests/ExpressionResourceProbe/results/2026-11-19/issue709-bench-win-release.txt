@@ -1,0 +1,246 @@
+CBENCH-CTOR label=baseline-r1 construct=compiled-grammar usPerConstruct=264.90 bytesPerConstruct=279941
+CBENCH-CTOR label=baseline-r1 construct=lexer-engine usPerConstruct=42.60 bytesPerConstruct=102504
+CBENCH-CTOR label=baseline-r1 construct=parser-engine usPerConstruct=188.86 bytesPerConstruct=177384
+CBENCH label=baseline-r1 mode=shared workload=short threads=1 ops=2336 opsPerSec=1542 usPerOpPerThread=648.38 bytesPerOp=661964 peakWorkingSetMiB=62
+CBENCH label=baseline-r1 mode=shared workload=medium threads=1 ops=836 opsPerSec=554 usPerOpPerThread=1804.19 bytesPerOp=3029937 peakWorkingSetMiB=62
+CBENCH label=baseline-r1 mode=shared workload=deep threads=1 ops=198 opsPerSec=131 usPerOpPerThread=7624.13 bytesPerOp=5689855 peakWorkingSetMiB=63
+CBENCH label=baseline-r1 mode=shared workload=flat threads=1 ops=34 opsPerSec=22 usPerOpPerThread=45144.03 bytesPerOp=28184133 peakWorkingSetMiB=72
+CBENCH label=baseline-r1 mode=shared workload=tokenize threads=1 ops=968 opsPerSec=640 usPerOpPerThread=1563.13 bytesPerOp=1698648 peakWorkingSetMiB=72
+CBENCH label=baseline-r1 mode=shared workload=mixed threads=1 ops=989 opsPerSec=658 usPerOpPerThread=1519.46 bytesPerOp=1316218 peakWorkingSetMiB=72
+CBENCH-CTOR label=fixed-r1 construct=compiled-grammar usPerConstruct=275.40 bytesPerConstruct=280045
+CBENCH-CTOR label=fixed-r1 construct=lexer-engine usPerConstruct=45.77 bytesPerConstruct=102552
+CBENCH-CTOR label=fixed-r1 construct=parser-engine usPerConstruct=211.79 bytesPerConstruct=177416
+CBENCH label=fixed-r1 mode=shared workload=short threads=1 ops=2328 opsPerSec=1538 usPerOpPerThread=650.12 bytesPerOp=775204 peakWorkingSetMiB=62
+CBENCH label=fixed-r1 mode=shared workload=short threads=2 ops=6764 opsPerSec=4464 usPerOpPerThread=448.01 bytesPerOp=775192 peakWorkingSetMiB=65
+CBENCH label=fixed-r1 mode=shared workload=short threads=4 ops=4996 opsPerSec=3313 usPerOpPerThread=1207.33 bytesPerOp=775192 peakWorkingSetMiB=65
+CBENCH label=fixed-r1 mode=shared workload=short threads=8 ops=3660 opsPerSec=2404 usPerOpPerThread=3327.91 bytesPerOp=775193 peakWorkingSetMiB=67
+CBENCH label=fixed-r1 mode=shared workload=short threads=16 ops=3058 opsPerSec=2026 usPerOpPerThread=7898.98 bytesPerOp=775194 peakWorkingSetMiB=67
+CBENCH label=fixed-r1 mode=shared workload=medium threads=1 ops=377 opsPerSec=250 usPerOpPerThread=4007.30 bytesPerOp=3550490 peakWorkingSetMiB=67
+CBENCH label=fixed-r1 mode=shared workload=medium threads=2 ops=660 opsPerSec=437 usPerOpPerThread=4575.62 bytesPerOp=3550488 peakWorkingSetMiB=67
+CBENCH label=fixed-r1 mode=shared workload=medium threads=4 ops=761 opsPerSec=503 usPerOpPerThread=7954.93 bytesPerOp=3550493 peakWorkingSetMiB=67
+CBENCH label=fixed-r1 mode=shared workload=medium threads=8 ops=561 opsPerSec=369 usPerOpPerThread=21666.11 bytesPerOp=3550520 peakWorkingSetMiB=67
+CBENCH label=fixed-r1 mode=shared workload=medium threads=16 ops=405 opsPerSec=260 usPerOpPerThread=61507.52 bytesPerOp=3550615 peakWorkingSetMiB=76
+CBENCH label=fixed-r1 mode=shared workload=deep threads=1 ops=155 opsPerSec=102 usPerOpPerThread=9777.00 bytesPerOp=6795174 peakWorkingSetMiB=76
+CBENCH label=fixed-r1 mode=shared workload=deep threads=2 ops=243 opsPerSec=160 usPerOpPerThread=12476.83 bytesPerOp=6795175 peakWorkingSetMiB=76
+CBENCH label=fixed-r1 mode=shared workload=deep threads=4 ops=213 opsPerSec=139 usPerOpPerThread=28776.39 bytesPerOp=6795303 peakWorkingSetMiB=76
+CBENCH label=fixed-r1 mode=shared workload=deep threads=8 ops=132 opsPerSec=83 usPerOpPerThread=95842.59 bytesPerOp=6795520 peakWorkingSetMiB=76
+CBENCH label=fixed-r1 mode=shared workload=deep threads=16 ops=93 opsPerSec=57 usPerOpPerThread=280532.09 bytesPerOp=6795205 peakWorkingSetMiB=126
+CBENCH label=fixed-r1 mode=shared workload=flat threads=1 ops=35 opsPerSec=23 usPerOpPerThread=43349.63 bytesPerOp=32891937 peakWorkingSetMiB=126
+CBENCH label=fixed-r1 mode=shared workload=flat threads=2 ops=44 opsPerSec=27 usPerOpPerThread=73102.29 bytesPerOp=32892234 peakWorkingSetMiB=126
+CBENCH label=fixed-r1 mode=shared workload=flat threads=4 ops=47 opsPerSec=29 usPerOpPerThread=137430.58 bytesPerOp=32891538 peakWorkingSetMiB=126
+CBENCH label=fixed-r1 mode=shared workload=flat threads=8 ops=56 opsPerSec=34 usPerOpPerThread=232825.04 bytesPerOp=32891376 peakWorkingSetMiB=126
+CBENCH label=fixed-r1 mode=shared workload=flat threads=16 ops=54 opsPerSec=30 usPerOpPerThread=528824.65 bytesPerOp=32891274 peakWorkingSetMiB=206
+CBENCH label=fixed-r1 mode=shared workload=tokenize threads=1 ops=739 opsPerSec=492 usPerOpPerThread=2033.33 bytesPerOp=1699000 peakWorkingSetMiB=206
+CBENCH label=fixed-r1 mode=shared workload=tokenize threads=2 ops=1714 opsPerSec=1131 usPerOpPerThread=1768.44 bytesPerOp=1699000 peakWorkingSetMiB=206
+CBENCH label=fixed-r1 mode=shared workload=tokenize threads=4 ops=2476 opsPerSec=1634 usPerOpPerThread=2447.59 bytesPerOp=1699000 peakWorkingSetMiB=206
+CBENCH label=fixed-r1 mode=shared workload=tokenize threads=8 ops=2109 opsPerSec=1401 usPerOpPerThread=5712.00 bytesPerOp=1699000 peakWorkingSetMiB=206
+CBENCH label=fixed-r1 mode=shared workload=tokenize threads=16 ops=2123 opsPerSec=1395 usPerOpPerThread=11471.53 bytesPerOp=1699000 peakWorkingSetMiB=206
+CBENCH label=fixed-r1 mode=shared workload=mixed threads=1 ops=953 opsPerSec=629 usPerOpPerThread=1589.02 bytesPerOp=1468914 peakWorkingSetMiB=206
+CBENCH label=fixed-r1 mode=shared workload=mixed threads=2 ops=1758 opsPerSec=1160 usPerOpPerThread=1724.39 bytesPerOp=1469014 peakWorkingSetMiB=206
+CBENCH label=fixed-r1 mode=shared workload=mixed threads=4 ops=2205 opsPerSec=1451 usPerOpPerThread=2756.43 bytesPerOp=1469267 peakWorkingSetMiB=206
+CBENCH label=fixed-r1 mode=shared workload=mixed threads=8 ops=1442 opsPerSec=956 usPerOpPerThread=8369.07 bytesPerOp=1474014 peakWorkingSetMiB=206
+CBENCH label=fixed-r1 mode=shared workload=mixed threads=16 ops=1206 opsPerSec=782 usPerOpPerThread=20458.75 bytesPerOp=1480894 peakWorkingSetMiB=206
+CBENCH-CTOR label=baseline-r1 construct=compiled-grammar usPerConstruct=272.54 bytesPerConstruct=279941
+CBENCH-CTOR label=baseline-r1 construct=lexer-engine usPerConstruct=42.17 bytesPerConstruct=102504
+CBENCH-CTOR label=baseline-r1 construct=parser-engine usPerConstruct=186.39 bytesPerConstruct=177384
+CBENCH label=baseline-r1 mode=perthread workload=short threads=1 ops=2373 opsPerSec=1572 usPerOpPerThread=636.03 bytesPerOp=662082 peakWorkingSetMiB=62
+CBENCH label=baseline-r1 mode=perthread workload=short threads=2 ops=7174 opsPerSec=4777 usPerOpPerThread=418.66 bytesPerOp=661974 peakWorkingSetMiB=62
+CBENCH label=baseline-r1 mode=perthread workload=short threads=4 ops=5170 opsPerSec=3431 usPerOpPerThread=1165.98 bytesPerOp=661990 peakWorkingSetMiB=62
+CBENCH label=baseline-r1 mode=perthread workload=short threads=8 ops=4072 opsPerSec=2664 usPerOpPerThread=3002.91 bytesPerOp=662123 peakWorkingSetMiB=64
+CBENCH label=baseline-r1 mode=perthread workload=short threads=16 ops=3485 opsPerSec=2293 usPerOpPerThread=6977.68 bytesPerOp=662417 peakWorkingSetMiB=64
+CBENCH label=baseline-r1 mode=perthread workload=medium threads=1 ops=418 opsPerSec=276 usPerOpPerThread=3618.24 bytesPerOp=3031107 peakWorkingSetMiB=64
+CBENCH label=baseline-r1 mode=perthread workload=medium threads=2 ops=650 opsPerSec=428 usPerOpPerThread=4671.96 bytesPerOp=3031304 peakWorkingSetMiB=64
+CBENCH label=baseline-r1 mode=perthread workload=medium threads=4 ops=893 opsPerSec=591 usPerOpPerThread=6766.81 bytesPerOp=3031780 peakWorkingSetMiB=64
+CBENCH label=baseline-r1 mode=perthread workload=medium threads=8 ops=598 opsPerSec=390 usPerOpPerThread=20525.87 bytesPerOp=3036624 peakWorkingSetMiB=64
+CBENCH label=baseline-r1 mode=perthread workload=medium threads=16 ops=501 opsPerSec=329 usPerOpPerThread=48695.79 bytesPerOp=3046108 peakWorkingSetMiB=74
+CBENCH label=baseline-r1 mode=perthread workload=deep threads=1 ops=207 opsPerSec=138 usPerOpPerThread=7257.27 bytesPerOp=5692235 peakWorkingSetMiB=74
+CBENCH label=baseline-r1 mode=perthread workload=deep threads=2 ops=294 opsPerSec=194 usPerOpPerThread=10312.28 bytesPerOp=5694417 peakWorkingSetMiB=74
+CBENCH label=baseline-r1 mode=perthread workload=deep threads=4 ops=235 opsPerSec=153 usPerOpPerThread=26123.93 bytesPerOp=5706513 peakWorkingSetMiB=74
+CBENCH label=baseline-r1 mode=perthread workload=deep threads=8 ops=135 opsPerSec=88 usPerOpPerThread=90867.29 bytesPerOp=5753836 peakWorkingSetMiB=74
+CBENCH label=baseline-r1 mode=perthread workload=deep threads=16 ops=103 opsPerSec=62 usPerOpPerThread=256218.59 bytesPerOp=5861255 peakWorkingSetMiB=100
+CBENCH label=baseline-r1 mode=perthread workload=flat threads=1 ops=42 opsPerSec=28 usPerOpPerThread=36113.61 bytesPerOp=28194222 peakWorkingSetMiB=100
+CBENCH label=baseline-r1 mode=perthread workload=flat threads=2 ops=60 opsPerSec=39 usPerOpPerThread=51017.16 bytesPerOp=28235412 peakWorkingSetMiB=100
+CBENCH label=baseline-r1 mode=perthread workload=flat threads=4 ops=55 opsPerSec=36 usPerOpPerThread=112481.45 bytesPerOp=28427849 peakWorkingSetMiB=100
+CBENCH label=baseline-r1 mode=perthread workload=flat threads=8 ops=55 opsPerSec=35 usPerOpPerThread=229445.72 bytesPerOp=28775470 peakWorkingSetMiB=109
+CBENCH label=baseline-r1 mode=perthread workload=flat threads=16 ops=55 opsPerSec=32 usPerOpPerThread=504041.05 bytesPerOp=29475728 peakWorkingSetMiB=171
+CBENCH label=baseline-r1 mode=perthread workload=tokenize threads=1 ops=843 opsPerSec=559 usPerOpPerThread=1790.49 bytesPerOp=1698648 peakWorkingSetMiB=171
+CBENCH label=baseline-r1 mode=perthread workload=tokenize threads=2 ops=1669 opsPerSec=1103 usPerOpPerThread=1813.54 bytesPerOp=1698648 peakWorkingSetMiB=171
+CBENCH label=baseline-r1 mode=perthread workload=tokenize threads=4 ops=2790 opsPerSec=1840 usPerOpPerThread=2173.50 bytesPerOp=1698648 peakWorkingSetMiB=171
+CBENCH label=baseline-r1 mode=perthread workload=tokenize threads=8 ops=2541 opsPerSec=1684 usPerOpPerThread=4749.41 bytesPerOp=1698648 peakWorkingSetMiB=171
+CBENCH label=baseline-r1 mode=perthread workload=tokenize threads=16 ops=2223 opsPerSec=1462 usPerOpPerThread=10945.13 bytesPerOp=1698717 peakWorkingSetMiB=171
+CBENCH label=baseline-r1 mode=perthread workload=mixed threads=1 ops=1097 opsPerSec=727 usPerOpPerThread=1375.93 bytesPerOp=1316419 peakWorkingSetMiB=171
+CBENCH label=baseline-r1 mode=perthread workload=mixed threads=2 ops=1796 opsPerSec=1188 usPerOpPerThread=1682.94 bytesPerOp=1316655 peakWorkingSetMiB=171
+CBENCH label=baseline-r1 mode=perthread workload=mixed threads=4 ops=2224 opsPerSec=1473 usPerOpPerThread=2715.78 bytesPerOp=1317635 peakWorkingSetMiB=171
+CBENCH label=baseline-r1 mode=perthread workload=mixed threads=8 ops=1709 opsPerSec=1128 usPerOpPerThread=7090.89 bytesPerOp=1320667 peakWorkingSetMiB=171
+CBENCH label=baseline-r1 mode=perthread workload=mixed threads=16 ops=1424 opsPerSec=931 usPerOpPerThread=17182.72 bytesPerOp=1327028 peakWorkingSetMiB=171
+CBENCH-CTOR label=fixed-r1 construct=compiled-grammar usPerConstruct=269.08 bytesPerConstruct=280045
+CBENCH-CTOR label=fixed-r1 construct=lexer-engine usPerConstruct=42.19 bytesPerConstruct=102552
+CBENCH-CTOR label=fixed-r1 construct=parser-engine usPerConstruct=185.67 bytesPerConstruct=177416
+CBENCH label=fixed-r1 mode=perthread workload=short threads=1 ops=2261 opsPerSec=1494 usPerOpPerThread=669.50 bytesPerOp=775205 peakWorkingSetMiB=62
+CBENCH label=fixed-r1 mode=perthread workload=short threads=2 ops=6491 opsPerSec=4313 usPerOpPerThread=463.71 bytesPerOp=775261 peakWorkingSetMiB=62
+CBENCH label=fixed-r1 mode=perthread workload=short threads=4 ops=4531 opsPerSec=2997 usPerOpPerThread=1334.73 bytesPerOp=775249 peakWorkingSetMiB=63
+CBENCH label=fixed-r1 mode=perthread workload=short threads=8 ops=4075 opsPerSec=2691 usPerOpPerThread=2972.83 bytesPerOp=775228 peakWorkingSetMiB=68
+CBENCH label=fixed-r1 mode=perthread workload=short threads=16 ops=2932 opsPerSec=1935 usPerOpPerThread=8270.20 bytesPerOp=775196 peakWorkingSetMiB=68
+CBENCH label=fixed-r1 mode=perthread workload=medium threads=1 ops=429 opsPerSec=283 usPerOpPerThread=3528.34 bytesPerOp=3550489 peakWorkingSetMiB=68
+CBENCH label=fixed-r1 mode=perthread workload=medium threads=2 ops=668 opsPerSec=441 usPerOpPerThread=4537.97 bytesPerOp=3550488 peakWorkingSetMiB=68
+CBENCH label=fixed-r1 mode=perthread workload=medium threads=4 ops=742 opsPerSec=491 usPerOpPerThread=8150.23 bytesPerOp=3550836 peakWorkingSetMiB=68
+CBENCH label=fixed-r1 mode=perthread workload=medium threads=8 ops=525 opsPerSec=342 usPerOpPerThread=23418.04 bytesPerOp=3551008 peakWorkingSetMiB=68
+CBENCH label=fixed-r1 mode=perthread workload=medium threads=16 ops=396 opsPerSec=260 usPerOpPerThread=61591.64 bytesPerOp=3550613 peakWorkingSetMiB=76
+CBENCH label=fixed-r1 mode=perthread workload=deep threads=1 ops=133 opsPerSec=87 usPerOpPerThread=11449.87 bytesPerOp=6795176 peakWorkingSetMiB=76
+CBENCH label=fixed-r1 mode=perthread workload=deep threads=2 ops=236 opsPerSec=156 usPerOpPerThread=12825.77 bytesPerOp=6795175 peakWorkingSetMiB=76
+CBENCH label=fixed-r1 mode=perthread workload=deep threads=4 ops=184 opsPerSec=120 usPerOpPerThread=33259.53 bytesPerOp=6796181 peakWorkingSetMiB=76
+CBENCH label=fixed-r1 mode=perthread workload=deep threads=8 ops=135 opsPerSec=87 usPerOpPerThread=92225.36 bytesPerOp=6796708 peakWorkingSetMiB=76
+CBENCH label=fixed-r1 mode=perthread workload=deep threads=16 ops=105 opsPerSec=64 usPerOpPerThread=251159.76 bytesPerOp=6795380 peakWorkingSetMiB=118
+CBENCH label=fixed-r1 mode=perthread workload=flat threads=1 ops=34 opsPerSec=23 usPerOpPerThread=44295.00 bytesPerOp=32891483 peakWorkingSetMiB=118
+CBENCH label=fixed-r1 mode=perthread workload=flat threads=2 ops=47 opsPerSec=30 usPerOpPerThread=65940.19 bytesPerOp=32896431 peakWorkingSetMiB=118
+CBENCH label=fixed-r1 mode=perthread workload=flat threads=4 ops=53 opsPerSec=34 usPerOpPerThread=116954.05 bytesPerOp=32891244 peakWorkingSetMiB=118
+CBENCH label=fixed-r1 mode=perthread workload=flat threads=8 ops=51 opsPerSec=32 usPerOpPerThread=249616.50 bytesPerOp=32891192 peakWorkingSetMiB=118
+CBENCH label=fixed-r1 mode=perthread workload=flat threads=16 ops=53 opsPerSec=29 usPerOpPerThread=555789.55 bytesPerOp=32891844 peakWorkingSetMiB=201
+CBENCH label=fixed-r1 mode=perthread workload=tokenize threads=1 ops=832 opsPerSec=552 usPerOpPerThread=1810.11 bytesPerOp=1699029 peakWorkingSetMiB=201
+CBENCH label=fixed-r1 mode=perthread workload=tokenize threads=2 ops=1716 opsPerSec=1138 usPerOpPerThread=1757.63 bytesPerOp=1699000 peakWorkingSetMiB=201
+CBENCH label=fixed-r1 mode=perthread workload=tokenize threads=4 ops=2396 opsPerSec=1582 usPerOpPerThread=2528.82 bytesPerOp=1699059 peakWorkingSetMiB=201
+CBENCH label=fixed-r1 mode=perthread workload=tokenize threads=8 ops=2279 opsPerSec=1509 usPerOpPerThread=5302.99 bytesPerOp=1699104 peakWorkingSetMiB=201
+CBENCH label=fixed-r1 mode=perthread workload=tokenize threads=16 ops=2029 opsPerSec=1330 usPerOpPerThread=12033.00 bytesPerOp=1699000 peakWorkingSetMiB=201
+CBENCH label=fixed-r1 mode=perthread workload=mixed threads=1 ops=1083 opsPerSec=715 usPerOpPerThread=1398.33 bytesPerOp=1468772 peakWorkingSetMiB=201
+CBENCH label=fixed-r1 mode=perthread workload=mixed threads=2 ops=1762 opsPerSec=1170 usPerOpPerThread=1709.06 bytesPerOp=1469011 peakWorkingSetMiB=201
+CBENCH label=fixed-r1 mode=perthread workload=mixed threads=4 ops=2230 opsPerSec=1481 usPerOpPerThread=2700.97 bytesPerOp=1469797 peakWorkingSetMiB=201
+CBENCH label=fixed-r1 mode=perthread workload=mixed threads=8 ops=1347 opsPerSec=840 usPerOpPerThread=9521.51 bytesPerOp=1473637 peakWorkingSetMiB=201
+CBENCH label=fixed-r1 mode=perthread workload=mixed threads=16 ops=1284 opsPerSec=826 usPerOpPerThread=19364.33 bytesPerOp=1481933 peakWorkingSetMiB=201
+CBENCH-CTOR label=fixed-r1 construct=compiled-grammar usPerConstruct=257.17 bytesPerConstruct=280045
+CBENCH-CTOR label=fixed-r1 construct=lexer-engine usPerConstruct=40.10 bytesPerConstruct=102552
+CBENCH-CTOR label=fixed-r1 construct=parser-engine usPerConstruct=186.03 bytesPerConstruct=177416
+CBENCH label=fixed-r1 mode=percall workload=short threads=1 ops=1635 opsPerSec=1089 usPerOpPerThread=918.24 bytesPerOp=1055250 peakWorkingSetMiB=63
+CBENCH label=fixed-r1 mode=percall workload=short threads=8 ops=4322 opsPerSec=2851 usPerOpPerThread=2805.70 bytesPerOp=1055234 peakWorkingSetMiB=68
+CBENCH label=fixed-r1 mode=percall workload=medium threads=1 ops=360 opsPerSec=240 usPerOpPerThread=4175.06 bytesPerOp=3830532 peakWorkingSetMiB=68
+CBENCH label=fixed-r1 mode=percall workload=medium threads=8 ops=441 opsPerSec=288 usPerOpPerThread=27775.06 bytesPerOp=3830610 peakWorkingSetMiB=68
+CBENCH label=fixed-r1 mode=percall workload=deep threads=1 ops=169 opsPerSec=112 usPerOpPerThread=8950.85 bytesPerOp=7075219 peakWorkingSetMiB=68
+CBENCH label=fixed-r1 mode=percall workload=deep threads=8 ops=107 opsPerSec=68 usPerOpPerThread=117278.49 bytesPerOp=7075624 peakWorkingSetMiB=78
+CBENCH label=fixed-r1 mode=percall workload=flat threads=1 ops=36 opsPerSec=23 usPerOpPerThread=42698.34 bytesPerOp=33172444 peakWorkingSetMiB=78
+CBENCH label=fixed-r1 mode=percall workload=flat threads=8 ops=51 opsPerSec=31 usPerOpPerThread=259385.77 bytesPerOp=33171613 peakWorkingSetMiB=133
+CBENCH label=fixed-r1 mode=percall workload=tokenize threads=1 ops=719 opsPerSec=474 usPerOpPerThread=2108.92 bytesPerOp=1979041 peakWorkingSetMiB=133
+CBENCH label=fixed-r1 mode=percall workload=tokenize threads=8 ops=1282 opsPerSec=843 usPerOpPerThread=9493.50 bytesPerOp=1979057 peakWorkingSetMiB=133
+CBENCH label=fixed-r1 mode=percall workload=mixed threads=1 ops=799 opsPerSec=530 usPerOpPerThread=1886.29 bytesPerOp=1749184 peakWorkingSetMiB=133
+CBENCH label=fixed-r1 mode=percall workload=mixed threads=8 ops=785 opsPerSec=519 usPerOpPerThread=15413.97 bytesPerOp=1757874 peakWorkingSetMiB=133
+CBENCH-CTOR label=fixed-r2 construct=compiled-grammar usPerConstruct=264.79 bytesPerConstruct=280045
+CBENCH-CTOR label=fixed-r2 construct=lexer-engine usPerConstruct=38.99 bytesPerConstruct=102552
+CBENCH-CTOR label=fixed-r2 construct=parser-engine usPerConstruct=186.63 bytesPerConstruct=177416
+CBENCH label=fixed-r2 mode=percall workload=short threads=1 ops=1550 opsPerSec=1032 usPerOpPerThread=968.90 bytesPerOp=1055251 peakWorkingSetMiB=63
+CBENCH label=fixed-r2 mode=percall workload=short threads=8 ops=4276 opsPerSec=2831 usPerOpPerThread=2826.03 bytesPerOp=1055234 peakWorkingSetMiB=68
+CBENCH label=fixed-r2 mode=percall workload=medium threads=1 ops=356 opsPerSec=237 usPerOpPerThread=4225.87 bytesPerOp=3830531 peakWorkingSetMiB=68
+CBENCH label=fixed-r2 mode=percall workload=medium threads=8 ops=434 opsPerSec=286 usPerOpPerThread=27998.30 bytesPerOp=3830614 peakWorkingSetMiB=68
+CBENCH label=fixed-r2 mode=percall workload=deep threads=1 ops=166 opsPerSec=110 usPerOpPerThread=9117.64 bytesPerOp=7075218 peakWorkingSetMiB=68
+CBENCH label=fixed-r2 mode=percall workload=deep threads=8 ops=114 opsPerSec=72 usPerOpPerThread=111089.12 bytesPerOp=7075466 peakWorkingSetMiB=77
+CBENCH label=fixed-r2 mode=percall workload=flat threads=1 ops=34 opsPerSec=22 usPerOpPerThread=45217.61 bytesPerOp=33171869 peakWorkingSetMiB=77
+CBENCH label=fixed-r2 mode=percall workload=flat threads=8 ops=51 opsPerSec=31 usPerOpPerThread=255467.53 bytesPerOp=33171556 peakWorkingSetMiB=107
+CBENCH label=fixed-r2 mode=percall workload=tokenize threads=1 ops=770 opsPerSec=513 usPerOpPerThread=1950.85 bytesPerOp=1979040 peakWorkingSetMiB=107
+CBENCH label=fixed-r2 mode=percall workload=tokenize threads=8 ops=1245 opsPerSec=814 usPerOpPerThread=9829.84 bytesPerOp=1979056 peakWorkingSetMiB=107
+CBENCH label=fixed-r2 mode=percall workload=mixed threads=1 ops=817 opsPerSec=541 usPerOpPerThread=1848.57 bytesPerOp=1749153 peakWorkingSetMiB=107
+CBENCH label=fixed-r2 mode=percall workload=mixed threads=8 ops=1000 opsPerSec=658 usPerOpPerThread=12165.65 bytesPerOp=1754580 peakWorkingSetMiB=107
+CBENCH-CTOR label=fixed-r2 construct=compiled-grammar usPerConstruct=257.21 bytesPerConstruct=280045
+CBENCH-CTOR label=fixed-r2 construct=lexer-engine usPerConstruct=43.50 bytesPerConstruct=102552
+CBENCH-CTOR label=fixed-r2 construct=parser-engine usPerConstruct=186.11 bytesPerConstruct=177416
+CBENCH label=fixed-r2 mode=perthread workload=short threads=1 ops=1996 opsPerSec=1323 usPerOpPerThread=756.04 bytesPerOp=775347 peakWorkingSetMiB=62
+CBENCH label=fixed-r2 mode=perthread workload=short threads=2 ops=6655 opsPerSec=4432 usPerOpPerThread=451.24 bytesPerOp=775245 peakWorkingSetMiB=62
+CBENCH label=fixed-r2 mode=perthread workload=short threads=4 ops=5032 opsPerSec=3326 usPerOpPerThread=1202.56 bytesPerOp=775192 peakWorkingSetMiB=66
+CBENCH label=fixed-r2 mode=perthread workload=short threads=8 ops=4032 opsPerSec=2678 usPerOpPerThread=2986.75 bytesPerOp=775192 peakWorkingSetMiB=67
+CBENCH label=fixed-r2 mode=perthread workload=short threads=16 ops=3122 opsPerSec=2052 usPerOpPerThread=7797.52 bytesPerOp=775221 peakWorkingSetMiB=67
+CBENCH label=fixed-r2 mode=perthread workload=medium threads=1 ops=411 opsPerSec=274 usPerOpPerThread=3654.37 bytesPerOp=3550490 peakWorkingSetMiB=67
+CBENCH label=fixed-r2 mode=perthread workload=medium threads=2 ops=646 opsPerSec=428 usPerOpPerThread=4671.68 bytesPerOp=3550744 peakWorkingSetMiB=67
+CBENCH label=fixed-r2 mode=perthread workload=medium threads=4 ops=637 opsPerSec=417 usPerOpPerThread=9582.27 bytesPerOp=3550493 peakWorkingSetMiB=67
+CBENCH label=fixed-r2 mode=perthread workload=medium threads=8 ops=521 opsPerSec=344 usPerOpPerThread=23237.91 bytesPerOp=3550721 peakWorkingSetMiB=67
+CBENCH label=fixed-r2 mode=perthread workload=medium threads=16 ops=471 opsPerSec=305 usPerOpPerThread=52406.60 bytesPerOp=3550630 peakWorkingSetMiB=85
+CBENCH label=fixed-r2 mode=perthread workload=deep threads=1 ops=161 opsPerSec=107 usPerOpPerThread=9380.57 bytesPerOp=6795176 peakWorkingSetMiB=85
+CBENCH label=fixed-r2 mode=perthread workload=deep threads=2 ops=235 opsPerSec=155 usPerOpPerThread=12901.60 bytesPerOp=6795176 peakWorkingSetMiB=85
+CBENCH label=fixed-r2 mode=perthread workload=deep threads=4 ops=199 opsPerSec=131 usPerOpPerThread=30471.76 bytesPerOp=6796206 peakWorkingSetMiB=85
+CBENCH label=fixed-r2 mode=perthread workload=deep threads=8 ops=132 opsPerSec=84 usPerOpPerThread=95806.10 bytesPerOp=6795307 peakWorkingSetMiB=85
+CBENCH label=fixed-r2 mode=perthread workload=deep threads=16 ops=93 opsPerSec=57 usPerOpPerThread=279737.55 bytesPerOp=6795358 peakWorkingSetMiB=110
+CBENCH label=fixed-r2 mode=perthread workload=flat threads=1 ops=34 opsPerSec=22 usPerOpPerThread=44915.36 bytesPerOp=32891817 peakWorkingSetMiB=110
+CBENCH label=fixed-r2 mode=perthread workload=flat threads=2 ops=50 opsPerSec=32 usPerOpPerThread=62003.69 bytesPerOp=32893874 peakWorkingSetMiB=110
+CBENCH label=fixed-r2 mode=perthread workload=flat threads=4 ops=45 opsPerSec=28 usPerOpPerThread=142530.50 bytesPerOp=32891614 peakWorkingSetMiB=110
+CBENCH label=fixed-r2 mode=perthread workload=flat threads=8 ops=54 opsPerSec=33 usPerOpPerThread=246084.74 bytesPerOp=32891688 peakWorkingSetMiB=112
+CBENCH label=fixed-r2 mode=perthread workload=flat threads=16 ops=52 opsPerSec=29 usPerOpPerThread=546401.20 bytesPerOp=32892563 peakWorkingSetMiB=200
+CBENCH label=fixed-r2 mode=perthread workload=tokenize threads=1 ops=860 opsPerSec=571 usPerOpPerThread=1750.73 bytesPerOp=1699000 peakWorkingSetMiB=200
+CBENCH label=fixed-r2 mode=perthread workload=tokenize threads=2 ops=1775 opsPerSec=1172 usPerOpPerThread=1706.81 bytesPerOp=1699000 peakWorkingSetMiB=200
+CBENCH label=fixed-r2 mode=perthread workload=tokenize threads=4 ops=2734 opsPerSec=1803 usPerOpPerThread=2219.09 bytesPerOp=1699000 peakWorkingSetMiB=200
+CBENCH label=fixed-r2 mode=perthread workload=tokenize threads=8 ops=2431 opsPerSec=1608 usPerOpPerThread=4976.63 bytesPerOp=1699028 peakWorkingSetMiB=200
+CBENCH label=fixed-r2 mode=perthread workload=tokenize threads=16 ops=2140 opsPerSec=1417 usPerOpPerThread=11294.81 bytesPerOp=1699002 peakWorkingSetMiB=200
+CBENCH label=fixed-r2 mode=perthread workload=mixed threads=1 ops=949 opsPerSec=628 usPerOpPerThread=1591.67 bytesPerOp=1468919 peakWorkingSetMiB=200
+CBENCH label=fixed-r2 mode=perthread workload=mixed threads=2 ops=1752 opsPerSec=1155 usPerOpPerThread=1731.02 bytesPerOp=1469019 peakWorkingSetMiB=200
+CBENCH label=fixed-r2 mode=perthread workload=mixed threads=4 ops=1838 opsPerSec=1212 usPerOpPerThread=3299.00 bytesPerOp=1468959 peakWorkingSetMiB=200
+CBENCH label=fixed-r2 mode=perthread workload=mixed threads=8 ops=1458 opsPerSec=959 usPerOpPerThread=8345.70 bytesPerOp=1474040 peakWorkingSetMiB=200
+CBENCH label=fixed-r2 mode=perthread workload=mixed threads=16 ops=1122 opsPerSec=736 usPerOpPerThread=21727.20 bytesPerOp=1481859 peakWorkingSetMiB=200
+CBENCH-CTOR label=baseline-r2 construct=compiled-grammar usPerConstruct=258.31 bytesPerConstruct=279941
+CBENCH-CTOR label=baseline-r2 construct=lexer-engine usPerConstruct=42.61 bytesPerConstruct=102504
+CBENCH-CTOR label=baseline-r2 construct=parser-engine usPerConstruct=188.04 bytesPerConstruct=177384
+CBENCH label=baseline-r2 mode=perthread workload=short threads=1 ops=2520 opsPerSec=1669 usPerOpPerThread=599.24 bytesPerOp=662071 peakWorkingSetMiB=62
+CBENCH label=baseline-r2 mode=perthread workload=short threads=2 ops=7379 opsPerSec=4867 usPerOpPerThread=410.92 bytesPerOp=661985 peakWorkingSetMiB=62
+CBENCH label=baseline-r2 mode=perthread workload=short threads=4 ops=5788 opsPerSec=3815 usPerOpPerThread=1048.36 bytesPerOp=661981 peakWorkingSetMiB=62
+CBENCH label=baseline-r2 mode=perthread workload=short threads=8 ops=4132 opsPerSec=2727 usPerOpPerThread=2933.50 bytesPerOp=662120 peakWorkingSetMiB=63
+CBENCH label=baseline-r2 mode=perthread workload=short threads=16 ops=3706 opsPerSec=2461 usPerOpPerThread=6501.75 bytesPerOp=662387 peakWorkingSetMiB=64
+CBENCH label=baseline-r2 mode=perthread workload=medium threads=1 ops=438 opsPerSec=292 usPerOpPerThread=3426.85 bytesPerOp=3030926 peakWorkingSetMiB=64
+CBENCH label=baseline-r2 mode=perthread workload=medium threads=2 ops=756 opsPerSec=502 usPerOpPerThread=3981.36 bytesPerOp=3030855 peakWorkingSetMiB=64
+CBENCH label=baseline-r2 mode=perthread workload=medium threads=4 ops=901 opsPerSec=593 usPerOpPerThread=6744.28 bytesPerOp=3031759 peakWorkingSetMiB=64
+CBENCH label=baseline-r2 mode=perthread workload=medium threads=8 ops=633 opsPerSec=417 usPerOpPerThread=19168.45 bytesPerOp=3036070 peakWorkingSetMiB=64
+CBENCH label=baseline-r2 mode=perthread workload=medium threads=16 ops=521 opsPerSec=339 usPerOpPerThread=47258.84 bytesPerOp=3045521 peakWorkingSetMiB=73
+CBENCH label=baseline-r2 mode=perthread workload=deep threads=1 ops=191 opsPerSec=126 usPerOpPerThread=7943.12 bytesPerOp=5692684 peakWorkingSetMiB=73
+CBENCH label=baseline-r2 mode=perthread workload=deep threads=2 ops=298 opsPerSec=196 usPerOpPerThread=10203.15 bytesPerOp=5694317 peakWorkingSetMiB=73
+CBENCH label=baseline-r2 mode=perthread workload=deep threads=4 ops=226 opsPerSec=148 usPerOpPerThread=26997.56 bytesPerOp=5707174 peakWorkingSetMiB=73
+CBENCH label=baseline-r2 mode=perthread workload=deep threads=8 ops=154 opsPerSec=100 usPerOpPerThread=79736.16 bytesPerOp=5744484 peakWorkingSetMiB=74
+CBENCH label=baseline-r2 mode=perthread workload=deep threads=16 ops=114 opsPerSec=70 usPerOpPerThread=228311.35 bytesPerOp=5843033 peakWorkingSetMiB=103
+CBENCH label=baseline-r2 mode=perthread workload=flat threads=1 ops=42 opsPerSec=28 usPerOpPerThread=36143.51 bytesPerOp=28189612 peakWorkingSetMiB=103
+CBENCH label=baseline-r2 mode=perthread workload=flat threads=2 ops=48 opsPerSec=31 usPerOpPerThread=64185.63 bytesPerOp=28275744 peakWorkingSetMiB=103
+CBENCH label=baseline-r2 mode=perthread workload=flat threads=4 ops=61 opsPerSec=38 usPerOpPerThread=104347.58 bytesPerOp=28392491 peakWorkingSetMiB=103
+CBENCH label=baseline-r2 mode=perthread workload=flat threads=8 ops=59 opsPerSec=36 usPerOpPerThread=221406.59 bytesPerOp=28731692 peakWorkingSetMiB=111
+CBENCH label=baseline-r2 mode=perthread workload=flat threads=16 ops=57 opsPerSec=31 usPerOpPerThread=519404.04 bytesPerOp=29426639 peakWorkingSetMiB=168
+CBENCH label=baseline-r2 mode=perthread workload=tokenize threads=1 ops=896 opsPerSec=591 usPerOpPerThread=1691.55 bytesPerOp=1698648 peakWorkingSetMiB=168
+CBENCH label=baseline-r2 mode=perthread workload=tokenize threads=2 ops=1774 opsPerSec=1173 usPerOpPerThread=1705.31 bytesPerOp=1698648 peakWorkingSetMiB=168
+CBENCH label=baseline-r2 mode=perthread workload=tokenize threads=4 ops=2811 opsPerSec=1857 usPerOpPerThread=2154.28 bytesPerOp=1698648 peakWorkingSetMiB=168
+CBENCH label=baseline-r2 mode=perthread workload=tokenize threads=8 ops=2147 opsPerSec=1423 usPerOpPerThread=5623.06 bytesPerOp=1698648 peakWorkingSetMiB=168
+CBENCH label=baseline-r2 mode=perthread workload=tokenize threads=16 ops=2188 opsPerSec=1449 usPerOpPerThread=11044.38 bytesPerOp=1698648 peakWorkingSetMiB=168
+CBENCH label=baseline-r2 mode=perthread workload=mixed threads=1 ops=1019 opsPerSec=672 usPerOpPerThread=1487.83 bytesPerOp=1316510 peakWorkingSetMiB=168
+CBENCH label=baseline-r2 mode=perthread workload=mixed threads=2 ops=1850 opsPerSec=1232 usPerOpPerThread=1623.43 bytesPerOp=1316614 peakWorkingSetMiB=168
+CBENCH label=baseline-r2 mode=perthread workload=mixed threads=4 ops=2314 opsPerSec=1524 usPerOpPerThread=2625.05 bytesPerOp=1317444 peakWorkingSetMiB=168
+CBENCH label=baseline-r2 mode=perthread workload=mixed threads=8 ops=1788 opsPerSec=1180 usPerOpPerThread=6778.36 bytesPerOp=1319975 peakWorkingSetMiB=168
+CBENCH label=baseline-r2 mode=perthread workload=mixed threads=16 ops=1339 opsPerSec=880 usPerOpPerThread=18175.43 bytesPerOp=1328360 peakWorkingSetMiB=168
+CBENCH-CTOR label=fixed-r2 construct=compiled-grammar usPerConstruct=258.03 bytesPerConstruct=280045
+CBENCH-CTOR label=fixed-r2 construct=lexer-engine usPerConstruct=40.92 bytesPerConstruct=102552
+CBENCH-CTOR label=fixed-r2 construct=parser-engine usPerConstruct=185.40 bytesPerConstruct=177416
+CBENCH label=fixed-r2 mode=shared workload=short threads=1 ops=2409 opsPerSec=1597 usPerOpPerThread=626.15 bytesPerOp=775204 peakWorkingSetMiB=62
+CBENCH label=fixed-r2 mode=shared workload=short threads=2 ops=6787 opsPerSec=4515 usPerOpPerThread=443.01 bytesPerOp=775192 peakWorkingSetMiB=62
+CBENCH label=fixed-r2 mode=shared workload=short threads=4 ops=5194 opsPerSec=3421 usPerOpPerThread=1169.12 bytesPerOp=775192 peakWorkingSetMiB=62
+CBENCH label=fixed-r2 mode=shared workload=short threads=8 ops=4193 opsPerSec=2780 usPerOpPerThread=2877.43 bytesPerOp=775193 peakWorkingSetMiB=65
+CBENCH label=fixed-r2 mode=shared workload=short threads=16 ops=3124 opsPerSec=2068 usPerOpPerThread=7736.24 bytesPerOp=775194 peakWorkingSetMiB=65
+CBENCH label=fixed-r2 mode=shared workload=medium threads=1 ops=413 opsPerSec=272 usPerOpPerThread=3674.52 bytesPerOp=3550490 peakWorkingSetMiB=65
+CBENCH label=fixed-r2 mode=shared workload=medium threads=2 ops=657 opsPerSec=436 usPerOpPerThread=4584.03 bytesPerOp=3550488 peakWorkingSetMiB=65
+CBENCH label=fixed-r2 mode=shared workload=medium threads=4 ops=772 opsPerSec=512 usPerOpPerThread=7810.31 bytesPerOp=3550493 peakWorkingSetMiB=65
+CBENCH label=fixed-r2 mode=shared workload=medium threads=8 ops=562 opsPerSec=370 usPerOpPerThread=21604.71 bytesPerOp=3550520 peakWorkingSetMiB=65
+CBENCH label=fixed-r2 mode=shared workload=medium threads=16 ops=460 opsPerSec=299 usPerOpPerThread=53441.48 bytesPerOp=3550608 peakWorkingSetMiB=71
+CBENCH label=fixed-r2 mode=shared workload=deep threads=1 ops=167 opsPerSec=110 usPerOpPerThread=9076.55 bytesPerOp=6795174 peakWorkingSetMiB=71
+CBENCH label=fixed-r2 mode=shared workload=deep threads=2 ops=240 opsPerSec=158 usPerOpPerThread=12681.75 bytesPerOp=6795176 peakWorkingSetMiB=71
+CBENCH label=fixed-r2 mode=shared workload=deep threads=4 ops=212 opsPerSec=140 usPerOpPerThread=28566.74 bytesPerOp=6795217 peakWorkingSetMiB=71
+CBENCH label=fixed-r2 mode=shared workload=deep threads=8 ops=139 opsPerSec=89 usPerOpPerThread=89941.58 bytesPerOp=6795429 peakWorkingSetMiB=77
+CBENCH label=fixed-r2 mode=shared workload=deep threads=16 ops=95 opsPerSec=58 usPerOpPerThread=276004.24 bytesPerOp=6795220 peakWorkingSetMiB=108
+CBENCH label=fixed-r2 mode=shared workload=flat threads=1 ops=35 opsPerSec=23 usPerOpPerThread=43222.02 bytesPerOp=32891647 peakWorkingSetMiB=108
+CBENCH label=fixed-r2 mode=shared workload=flat threads=2 ops=47 opsPerSec=31 usPerOpPerThread=64973.48 bytesPerOp=32891638 peakWorkingSetMiB=108
+CBENCH label=fixed-r2 mode=shared workload=flat threads=4 ops=56 opsPerSec=35 usPerOpPerThread=114476.88 bytesPerOp=32891514 peakWorkingSetMiB=108
+CBENCH label=fixed-r2 mode=shared workload=flat threads=8 ops=54 opsPerSec=32 usPerOpPerThread=252809.41 bytesPerOp=32891433 peakWorkingSetMiB=109
+CBENCH label=fixed-r2 mode=shared workload=flat threads=16 ops=53 opsPerSec=29 usPerOpPerThread=549102.25 bytesPerOp=32891159 peakWorkingSetMiB=173
+CBENCH label=fixed-r2 mode=shared workload=tokenize threads=1 ops=821 opsPerSec=544 usPerOpPerThread=1837.04 bytesPerOp=1699000 peakWorkingSetMiB=173
+CBENCH label=fixed-r2 mode=shared workload=tokenize threads=2 ops=1706 opsPerSec=1125 usPerOpPerThread=1778.36 bytesPerOp=1699000 peakWorkingSetMiB=173
+CBENCH label=fixed-r2 mode=shared workload=tokenize threads=4 ops=2770 opsPerSec=1827 usPerOpPerThread=2188.88 bytesPerOp=1699000 peakWorkingSetMiB=173
+CBENCH label=fixed-r2 mode=shared workload=tokenize threads=8 ops=2470 opsPerSec=1625 usPerOpPerThread=4923.06 bytesPerOp=1699000 peakWorkingSetMiB=173
+CBENCH label=fixed-r2 mode=shared workload=tokenize threads=16 ops=2184 opsPerSec=1439 usPerOpPerThread=11120.27 bytesPerOp=1699001 peakWorkingSetMiB=173
+CBENCH label=fixed-r2 mode=shared workload=mixed threads=1 ops=957 opsPerSec=610 usPerOpPerThread=1640.20 bytesPerOp=1468909 peakWorkingSetMiB=173
+CBENCH label=fixed-r2 mode=shared workload=mixed threads=2 ops=1750 opsPerSec=1165 usPerOpPerThread=1716.59 bytesPerOp=1469020 peakWorkingSetMiB=173
+CBENCH label=fixed-r2 mode=shared workload=mixed threads=4 ops=2224 opsPerSec=1470 usPerOpPerThread=2720.64 bytesPerOp=1469762 peakWorkingSetMiB=173
+CBENCH label=fixed-r2 mode=shared workload=mixed threads=8 ops=1506 opsPerSec=989 usPerOpPerThread=8089.41 bytesPerOp=1473747 peakWorkingSetMiB=173
+CBENCH label=fixed-r2 mode=shared workload=mixed threads=16 ops=1308 opsPerSec=852 usPerOpPerThread=18787.32 bytesPerOp=1479875 peakWorkingSetMiB=173
+CBENCH-CTOR label=baseline-r2 construct=compiled-grammar usPerConstruct=260.62 bytesPerConstruct=279941
+CBENCH-CTOR label=baseline-r2 construct=lexer-engine usPerConstruct=42.81 bytesPerConstruct=102504
+CBENCH-CTOR label=baseline-r2 construct=parser-engine usPerConstruct=189.76 bytesPerConstruct=177384
+CBENCH label=baseline-r2 mode=shared workload=short threads=1 ops=2352 opsPerSec=1562 usPerOpPerThread=640.29 bytesPerOp=661964 peakWorkingSetMiB=62
+CBENCH label=baseline-r2 mode=shared workload=medium threads=1 ops=949 opsPerSec=630 usPerOpPerThread=1586.19 bytesPerOp=3029879 peakWorkingSetMiB=62
+CBENCH label=baseline-r2 mode=shared workload=deep threads=1 ops=200 opsPerSec=132 usPerOpPerThread=7568.87 bytesPerOp=5689824 peakWorkingSetMiB=63
+CBENCH label=baseline-r2 mode=shared workload=flat threads=1 ops=43 opsPerSec=28 usPerOpPerThread=35405.63 bytesPerOp=28161245 peakWorkingSetMiB=72
+CBENCH label=baseline-r2 mode=shared workload=tokenize threads=1 ops=982 opsPerSec=648 usPerOpPerThread=1542.66 bytesPerOp=1698648 peakWorkingSetMiB=72
+CBENCH label=baseline-r2 mode=shared workload=mixed threads=1 ops=1051 opsPerSec=696 usPerOpPerThread=1437.27 bytesPerOp=1316159 peakWorkingSetMiB=72

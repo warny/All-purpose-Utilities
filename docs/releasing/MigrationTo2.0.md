@@ -447,3 +447,20 @@ Trusted callers that need larger inputs construct their engines with explicit li
 `ParserResourceLimits.Default with { MaxParseDepth = 10_000 }`; the stack guard cannot be disabled. The engines also
 release their registry state when each parse ends. No existing signature changed. Defaults and measurements:
 `docs/parser/ParserResourceSafety.md`.
+
+<a id="omy-utils-parser-concurrent-compiled-grammar"></a>
+## Utils.Parser: concurrent use of a shared `CompiledGrammar` (issue #709)
+
+`CompiledGrammar.Parse` and `CompiledGrammar.Tokenize` now run every call on a private `LexerEngine` / `ParserEngine`
+pair, over grammar-invariant tables prepared once by the constructor. One `CompiledGrammar` (including the generated
+static `XGrammar.Grammar`, `XGrammar.Parse` and `XGrammar.Tokenize` facades and the CSyntax/VBSyntax front ends) can
+therefore be shared by concurrent and re-entrant calls under `ParserRuntimeFeaturePolicy.Default`; callers that
+serialized access with a lock or created one grammar per thread only to work around the defect can drop that
+workaround. Sequential results are unchanged and no signature changed.
+
+Still caller-owned: a policy whose components keep mutable state (`StackParserRuleInvocationFrameManager`, a recording
+`IParserRuntimeObserver`, a policy returned by a generated `CreateRuntimePolicy(executionContext)`), the execution
+context passed to `ParseWithEmbeddedCode(input, executionContext)`, and directly constructed `LexerEngine` /
+`ParserEngine` instances. Use one of each per concurrent operation unless you make them thread-safe yourself.
+`ParseWithEmbeddedCode(string)` already creates a fresh context per call. Details: `docs/parser/RuntimeStateOwnership.md`
+(ownership table) and `docs/parser/ParserResourceSafety.md` section 7.

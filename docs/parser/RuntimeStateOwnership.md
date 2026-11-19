@@ -108,6 +108,54 @@ Boundaries:
 - semantic evaluator external state is not modeled by memoization keys;
 - parser action side effects are not modeled by memoization keys.
 
+## Operation ownership and concurrent use (issue #709)
+
+A `CompiledGrammar` separates what one grammar shares from what one operation owns. Every `Tokenize(string)` and
+`Parse(string)` call creates its own `LexerEngine` and `ParserEngine`; the grammar-invariant tables those engines need
+are built once by the `CompiledGrammar` constructor (internal `LexerEngine.Preparation` and
+`ParserEngine.Preparation`) and are never mutated afterwards.
+
+| State | Owner | Classification | Shared between operations? |
+|---|---|---|---|
+| `ParserDefinition` (rules, modes, options; immutable arrays and init-only records) | grammar | immutable grammar data | yes |
+| `ParserResourceLimits` | grammar | immutable configuration | yes (each operation builds its own budget from it) |
+| lexer keyword tries (`KeywordLookup` per mode), candidate rules per mode, case sensitivity | `LexerEngine.Preparation` | precomputed execution metadata, read-only after construction | yes |
+| parser scheduling shapes (stable priority order and structural descriptors per alternative list, keyed by list reference) | `ParserEngine.Preparation` | precomputed execution metadata, read-only after construction | yes |
+| lexer `_modeStack`, `_moreTextBuilder`, `_moreStartPos`, `_activeRuleRefs` | `LexerEngine` | mutable per-operation state | no: one engine per call |
+| lexer resource budget (`ParserResourceBudget`) | tokenization enumeration | mutable per-operation state | no |
+| parser `_activeRuleFrames`, `ParserStateRegistry` (visited states, continuations, completed results), `ParserLookaheadCache` | `ParserEngine` | mutable per-operation state | no: one engine per call |
+| `AlternativeScheduler`, `ScheduledAlternativeExecutor`, `SchedulingPreparation`, `ParserLookaheadProbe` | `ParserEngine` | per-engine helpers bound to that engine's registry and cache | no |
+| parse budget and token position (`ParseContext`) | parse operation | mutable per-operation state | no |
+| `LexerEngine.LastResourceBudget`, `ParserEngine.LastResourceUsage`, internal `CompiledGrammar.Lexer` / `Parser` | engine / grammar | diagnostic-only, last operation that started | written by every call; meaningful only in sequential use |
+| `ParserRuntimeFeaturePolicy` components | caller | external policy state | yes: the same instances serve every call |
+
+Before #709 a `CompiledGrammar` owned one engine pair, and every call reset the shared engine state: `ParserEngine.Parse`
+cleared `_activeRuleFrames`, the state registry and the look-ahead cache at its start and end, and
+`LexerEngine.Tokenize` reset the mode stack and pending `more` text. Concurrent calls therefore cleared or reused each
+other's state: a memoized completed result computed for another input could be selected as a reusable result (silent
+wrong tree or wrong branch selection), visited-state and frame guards could reject or accept alternatives for another
+input (wrong acceptance), a mode switch of one tokenization could apply to another (wrong tokens), and concurrent writes
+to the non-thread-safe collections could corrupt them permanently (exceptions and wrong results even after the
+concurrent phase).
+
+Contract:
+
+- `CompiledGrammar.Tokenize` and `CompiledGrammar.Parse` may be called concurrently on one shared instance, and
+  re-entrantly (for example from a lexer action or a predicate of another call on the same grammar), when the runtime
+  policy is `ParserRuntimeFeaturePolicy.Default` or another policy whose components are stateless or thread-safe;
+- the components of `ParserRuntimeFeaturePolicy.Default` keep no instance state;
+- policy components are never cloned; a custom component with mutable state (for example
+  `StackParserRuleInvocationFrameManager`, a recording observer, or a policy bound to a generated execution context) is
+  shared by every call of the grammar, so concurrent use of such a grammar is supported only when the caller guarantees
+  the component is thread-safe; otherwise one `CompiledGrammar` per concurrent operation is required;
+- a directly constructed `LexerEngine` or `ParserEngine` remains non-thread-safe and non-re-entrant;
+- the CSyntax/VBSyntax front ends inherit the guarantee: `CSyntaxTokenParser`, `VBSyntaxTokenParser`,
+  `CSyntaxExpressionCompiler` and `VBSyntaxExpressionCompiler` keep no mutable instance state (a compilation builds its
+  own `ParseTreeCompiler` and compilation context), so one instance may serve concurrent calls; an
+  `ExpressionCompilerContext` or `VBSyntaxCompilerContext` passed explicitly to `CompileExpression` is read and mutated by
+  that compilation and must not be shared by concurrent compilations;
+- no lock, thread-local engine or pool is used; resource budgets stay owned by each operation (S-06).
+
 ## Continuation and shared-prefix ownership boundaries
 
 Ownership view only (limitations remain canonical in companion file):
