@@ -48,12 +48,31 @@ internal sealed class SchedulingPreparation
         Rule rule,
         IReadOnlyList<Alternative> orderedAlternatives,
         SchedulingPreparationContext context)
+        => Prepare(rule, orderedAlternatives, context, null);
+
+    /// <summary>
+    /// Prepares scheduler inputs, reusing grammar-invariant structural descriptors precomputed for
+    /// <paramref name="orderedAlternatives"/> when they are supplied.
+    /// </summary>
+    /// <param name="rule">Owning rule for the alternatives being prepared.</param>
+    /// <param name="orderedAlternatives">Alternatives ordered by priority for deterministic preparation.</param>
+    /// <param name="context">Minimal context carrying parse cursor and scheduling metadata keys.</param>
+    /// <param name="structuralDescriptors">
+    /// Descriptors previously extracted from exactly <paramref name="orderedAlternatives"/> (a pure function of the
+    /// immutable grammar), or <see langword="null"/> to extract them now.
+    /// </param>
+    /// <returns>Immutable aggregate of precomputed scheduler inputs.</returns>
+    public PreparedSchedulingInputs Prepare(
+        Rule rule,
+        IReadOnlyList<Alternative> orderedAlternatives,
+        SchedulingPreparationContext context,
+        IReadOnlyList<AlternativeStructuralDescriptor>? structuralDescriptors)
     {
         ArgumentNullException.ThrowIfNull(rule);
         ArgumentNullException.ThrowIfNull(orderedAlternatives);
         ArgumentNullException.ThrowIfNull(context);
 
-        var structuralDescriptors = _structuralPrefixExtractor.ExtractAll(orderedAlternatives);
+        structuralDescriptors ??= _structuralPrefixExtractor.ExtractAll(orderedAlternatives);
         var precomputedLookaheadProbes = PrepareSchedulingLookaheadProbes(rule, orderedAlternatives, context);
         var sharedPrefixCandidates = _sharedPrefixDetector.Detect(precomputedLookaheadProbes);
         var continuationDescriptors = _continuationMetadataPreparation.Prepare(rule, orderedAlternatives, precomputedLookaheadProbes, sharedPrefixCandidates);
@@ -88,11 +107,13 @@ internal sealed class SchedulingPreparation
                 continue;
             }
 
+            var budget = context.ParseContext.Budget;
+            budget.ChargeStep();
             var probe = _lookaheadProbe.Probe(alternative, token, _resolveRule, context.CaseInsensitive);
             probes[index] = probe;
             if (probe.Kind != ParserLookaheadProbeKind.Unknown)
             {
-                _lookaheadCache.TryAdd(lookaheadKey, probe);
+                _lookaheadCache.TryAdd(lookaheadKey, probe, budget);
             }
         }
 

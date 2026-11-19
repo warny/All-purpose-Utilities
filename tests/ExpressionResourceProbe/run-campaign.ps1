@@ -5,11 +5,16 @@ Runs the ETC R0 expression resource campaign: one isolated process per (scenario
 .DESCRIPTION
 Each run starts ExpressionResourceProbe in its own process, with a wall-clock timeout and (Windows only) a working-set
 limit, and classifies the result: ok, insufficient-stack (controlled), out-of-memory (caught), exception,
-stack-overflow (process killed by the runtime), timeout, memory-limit, or crash. Sizes are tried in ascending order and a
-(scenario, operation) pair stops at its first non-ok outcome, so a failure is never retried at a larger size.
+stack-overflow (process killed by the runtime), timeout, memory-limit, or crash. -Parser runs the S-06 parser scenarios
+(ExpressionResourceProbe parser-list) with the -ParserLimits selector instead of the expression scenarios. Sizes are tried in ascending order and a
+(scenario, operation) pair stops at its first non-ok outcome, so a failure is never retried at a larger size;
+-ContinueAfterRefusal keeps going after a controlled refusal (resource-limit) to show that every larger size is refused too.
 
 Compatible with Windows PowerShell 5.1. On Linux the probe is run through WSL from a self-contained linux-x64 publish
 (see README.md); no memory limit is applied there.
+
+.EXAMPLE
+.\run-campaign.ps1 -ProbePath "$env:TEMP\probe-win\ExpressionResourceProbe.exe" -Parser -Scenarios P-csyntax-parens -Operations parse -Sizes 5,10,20 -Output p.csv
 
 .EXAMPLE
 .\run-campaign.ps1 -ProbePath "$env:TEMP\probe-win\ExpressionResourceProbe.exe" -Scenarios A-left-sum -Operations rawhash -Output a.csv
@@ -25,6 +30,9 @@ param(
     [int] $TimeoutSeconds = 60,
     [int] $MemoryLimitMB = 4096,
     [switch] $Counters,
+    [switch] $Parser,
+    [switch] $ContinueAfterRefusal,
+    [ValidateSet('default', 'unlimited')] [string] $ParserLimits = 'default',
     [switch] $Linux,
     [Parameter(Mandatory = $true)] [string] $Output
 )
@@ -45,8 +53,13 @@ Starts one probe process and returns its classified outcome and RESULT line.
 function Invoke-ProbeRun {
     param([string] $Scenario, [string] $Operation, [int] $Size)
 
-    $probeArguments = @('run', $Scenario, $Size, $Operation, '--thread', $Thread, '--limits', $Limits)
-    if ($Counters) { $probeArguments += '--counters' }
+    if ($Parser) {
+        $probeArguments = @('parser', $Scenario, $Size, $Operation, '--thread', $Thread, '--plimits', $ParserLimits)
+    }
+    else {
+        $probeArguments = @('run', $Scenario, $Size, $Operation, '--thread', $Thread, '--limits', $Limits)
+        if ($Counters) { $probeArguments += '--counters' }
+    }
 
     $stdout = [System.IO.Path]::GetTempFileName()
     $stderr = [System.IO.Path]::GetTempFileName()
@@ -88,7 +101,7 @@ function Invoke-ProbeRun {
 
         $process.WaitForExit()
         $exitCode = $process.ExitCode
-        $resultLine = Get-Content -Path $stdout | Where-Object { $_ -like 'RESULT *' } | Select-Object -First 1
+        $resultLine = Get-Content -Path $stdout | Where-Object { $_ -like 'RESULT *' -or $_ -like 'PRESULT *' } | Select-Object -First 1
         $errorText = (Get-Content -Path $stderr -Raw)
         if ($null -eq $errorText) { $errorText = '' }
 
@@ -103,7 +116,7 @@ function Invoke-ProbeRun {
             else { 'crash' }
 
         [pscustomobject]@{
-            scenario = $Scenario; operation = $Operation; size = $Size; thread = $Thread; limits = $Limits
+            scenario = $Scenario; operation = $Operation; size = $Size; thread = $Thread; limits = $(if ($Parser) { $ParserLimits } else { $Limits })
             platform = $(if ($Linux) { 'linux' } else { 'windows' })
             classification = $classification; exitCode = $exitCode; peakWorkingSetMB = $peakMB
             result = $(if ($null -eq $resultLine) { '' } else { $resultLine })
@@ -120,8 +133,8 @@ foreach ($scenario in $Scenarios) {
         foreach ($size in $Sizes) {
             $row = Invoke-ProbeRun -Scenario $scenario -Operation $operation -Size $size
             $rows.Add($row)
-            Write-Host ("{0,-18} {1,-10} {2,7} {3,-18} {4}" -f $scenario, $operation, $size, $row.classification, ($row.result -replace '^RESULT .*? nodes=', 'nodes='))
-            if ($row.classification -ne 'ok') { break }
+            Write-Host ("{0,-18} {1,-10} {2,7} {3,-18} {4}" -f $scenario, $operation, $size, $row.classification, ($row.result -replace '^RESULT .*? nodes=', 'nodes=' -replace '^PRESULT .*? chars=', 'chars='))
+            if ($row.classification -ne 'ok' -and -not ($ContinueAfterRefusal -and $row.classification -eq 'resource-limit')) { break }
         }
     }
 }

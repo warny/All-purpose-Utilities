@@ -112,6 +112,11 @@ public sealed class ParserEngine
     private readonly IParserRuleCallExecutionPolicy _ruleCallExecutionPolicy;
 
     /// <summary>
+    /// Resource limits applied to every parse operation of this engine.
+    /// </summary>
+    private readonly ParserResourceLimits _resourceLimits;
+
+    /// <summary>
     /// Initializes a parser engine with the conservative default runtime feature policy.
     /// </summary>
     /// <param name="definition">Resolved parser definition.</param>
@@ -121,12 +126,24 @@ public sealed class ParserEngine
     }
 
     /// <summary>
-    /// Initializes a parser engine with an explicit runtime feature policy.
+    /// Initializes a parser engine with an explicit runtime feature policy and <see cref="ParserResourceLimits.Default"/>.
     /// </summary>
     /// <param name="definition">Resolved parser definition.</param>
     /// <param name="runtimeFeaturePolicy">Runtime feature policy for optional parser behavior.</param>
     public ParserEngine(ParserDefinition definition, ParserRuntimeFeaturePolicy runtimeFeaturePolicy)
+        : this(definition, runtimeFeaturePolicy, ParserResourceLimits.Default)
     {
+    }
+
+    /// <summary>
+    /// Initializes a parser engine with an explicit runtime feature policy and explicit resource limits.
+    /// </summary>
+    /// <param name="definition">Resolved parser definition.</param>
+    /// <param name="runtimeFeaturePolicy">Runtime feature policy for optional parser behavior.</param>
+    /// <param name="resourceLimits">Limits applied to each parse operation; every operation owns a private budget.</param>
+    public ParserEngine(ParserDefinition definition, ParserRuntimeFeaturePolicy runtimeFeaturePolicy, ParserResourceLimits resourceLimits)
+    {
+        _resourceLimits = resourceLimits ?? throw new ArgumentNullException(nameof(resourceLimits));
         _definition = definition ?? throw new ArgumentNullException(nameof(definition));
         var effectivePolicy = runtimeFeaturePolicy ?? throw new ArgumentNullException(nameof(runtimeFeaturePolicy));
         _semanticPredicateEvaluator = effectivePolicy.SemanticPredicateEvaluator ?? throw new ArgumentNullException(nameof(runtimeFeaturePolicy));
@@ -138,8 +155,131 @@ public sealed class ParserEngine
         _caseInsensitive = IsCaseInsensitive(_definition);
         _alternativeScheduler = new AlternativeScheduler(effectivePolicy.RuntimeObserver);
         _scheduledAlternativeExecutor = new ScheduledAlternativeExecutor(_stateRegistry, _lookaheadCache, _lookaheadProbe);
-        _schedulingPreparation = new SchedulingPreparation(_lookaheadProbe, _lookaheadCache, ResolveRule);
+        _resolveRule = ResolveRule;
+        _captureAttempt = CaptureAttempt;
+        _restoreAttempt = RestoreAttempt;
+        _schedulingPreparation = new SchedulingPreparation(_lookaheadProbe, _lookaheadCache, _resolveRule);
+        _schedulingShapes = BuildSchedulingShapes(_definition);
     }
+
+    /// <summary>Cached delegate of <see cref="ResolveRule"/>, so scheduling does not allocate one per invocation.</summary>
+    private readonly Func<string, Rule?> _resolveRule;
+
+    /// <summary>Cached delegate of <see cref="CaptureAttempt"/>.</summary>
+    private readonly Func<ParseContext, ParserAttemptSnapshot> _captureAttempt;
+
+    /// <summary>Cached delegate of <see cref="RestoreAttempt"/>.</summary>
+    private readonly Action<ParseContext, ParserAttemptSnapshot> _restoreAttempt;
+
+    /// <summary>
+    /// Grammar-invariant scheduling inputs of every alternative list of the definition, keyed by list reference and built
+    /// once at construction. The map is never mutated afterwards; input-dependent and state-dependent scheduling data
+    /// (look-ahead probes, shared-prefix candidates, continuation descriptors) are still prepared per invocation.
+    /// </summary>
+    private readonly IReadOnlyDictionary<object, SchedulingShape> _schedulingShapes;
+
+    /// <summary>
+    /// The grammar-invariant part of scheduling one alternative list: its stable priority order and the structural
+    /// descriptors of that order. Both are pure functions of the immutable grammar model.
+    /// </summary>
+    /// <param name="Ordered">The alternatives in ascending priority order (stable).</param>
+    /// <param name="StructuralDescriptors">The structural descriptors of <paramref name="Ordered"/>.</param>
+    private sealed record SchedulingShape(IReadOnlyList<Alternative> Ordered, IReadOnlyList<AlternativeStructuralDescriptor> StructuralDescriptors);
+
+    /// <summary>
+    /// Builds the scheduling shape of every alternative list reachable from the definition: rule bodies, nested
+    /// alternations and the base and recursive alternatives of left-recursive rules.
+    /// </summary>
+    /// <param name="definition">The resolved definition.</param>
+    /// <returns>The shapes keyed by alternative-list reference.</returns>
+    private static IReadOnlyDictionary<object, SchedulingShape> BuildSchedulingShapes(ParserDefinition definition)
+    {
+        var shapes = new Dictionary<object, SchedulingShape>(ReferenceEqualityComparer.Instance);
+        var extractor = new AlternativeStructuralPrefixExtractor();
+        var pending = new Stack<RuleContent>();
+
+        void AddShape(IReadOnlyList<Alternative> alternatives)
+        {
+            if (shapes.ContainsKey(alternatives))
+            {
+                return;
+            }
+
+            var ordered = alternatives.OrderBy(static a => a.Priority).ToList().AsReadOnly();
+            shapes.Add(alternatives, new SchedulingShape(ordered, extractor.ExtractAll(ordered)));
+            foreach (var alternative in alternatives)
+            {
+                pending.Push(alternative.Content);
+            }
+        }
+
+        foreach (var rule in definition.AllRules.Values)
+        {
+            AddShape(rule.Content.Alternatives);
+        }
+
+        foreach (var info in definition.LeftRecursiveRules.Values)
+        {
+            AddShape(info.BaseAlternatives);
+            AddShape(info.RecursiveAlternatives);
+        }
+
+        while (pending.Count > 0)
+        {
+            switch (pending.Pop())
+            {
+                case Alternation alternation:
+                    AddShape(alternation.Alternatives);
+                    break;
+                case Alternative alternative:
+                    pending.Push(alternative.Content);
+                    break;
+                case Sequence sequence:
+                    foreach (var item in sequence.Items)
+                    {
+                        pending.Push(item);
+                    }
+
+                    break;
+                case Quantifier quantifier:
+                    pending.Push(quantifier.Inner);
+                    break;
+                case Negation negation:
+                    pending.Push(negation.Inner);
+                    break;
+            }
+        }
+
+        return shapes;
+    }
+
+    /// <summary>
+    /// Gets the scheduling shape of an alternative list: the precomputed one for lists of the definition, otherwise a
+    /// freshly computed one (never stored, so the shared map stays immutable).
+    /// </summary>
+    /// <param name="alternatives">The alternatives.</param>
+    /// <returns>The shape.</returns>
+    private SchedulingShape GetSchedulingShape(IEnumerable<Alternative> alternatives)
+    {
+        if (_schedulingShapes.TryGetValue(alternatives, out var shape))
+        {
+            return shape;
+        }
+
+        var ordered = alternatives.OrderBy(static a => a.Priority).ToList();
+        return new SchedulingShape(ordered, new AlternativeStructuralPrefixExtractor().ExtractAll(ordered));
+    }
+
+    /// <summary>
+    /// Gets the resource limits applied to every parse operation of this engine.
+    /// </summary>
+    public ParserResourceLimits ResourceLimits => _resourceLimits;
+
+    /// <summary>
+    /// Gets the resource counters of the last parse operation that ended on this engine, for internal diagnostics and
+    /// resource probes only.
+    /// </summary>
+    internal ParserResourceUsage? LastResourceUsage { get; private set; }
 
     /// <summary>
     /// Parses <paramref name="tokens"/> starting from <paramref name="startRule"/>
@@ -155,16 +295,111 @@ public sealed class ParserEngine
     /// Thrown when no start rule is available (neither <paramref name="startRule"/>
     /// nor <see cref="ParserDefinition.RootRule"/> is set).
     /// </exception>
+    /// <exception cref="ParserResourceLimitException">
+    /// Thrown when the parse exceeds one of <see cref="ResourceLimits"/> or the remaining execution stack is insufficient.
+    /// It is never converted into an <see cref="ErrorNode"/>; the engine releases its per-parse state before it propagates.
+    /// </exception>
     public ParseNode Parse(IEnumerable<Token> tokens, Rule? startRule = null, DiagnosticBag? diagnostics = null)
     {
-        var tokenList = tokens.Where(static token => token.Channel == "DEFAULT_CHANNEL").ToList();
+        var tokenList = FilterDefaultChannel(tokens);
         var root = startRule ?? _definition.RootRule
             ?? throw new InvalidOperationException("No root rule defined");
 
         _activeRuleFrames.Clear();
         _stateRegistry.Clear();
         _lookaheadCache.Clear();
-        var context = new ParseContext(tokenList);
+        var context = new ParseContext(tokenList, _resourceLimits);
+        try
+        {
+            return ParseFromRoot(context, root, diagnostics);
+        }
+        finally
+        {
+            // Per-parse state is released when the operation ends, successfully or not: the registry, memo and look-ahead
+            // entries are parse-lifecycle scoped and must not keep the input's parse states alive after the parse.
+            LastResourceUsage = context.Budget.Snapshot();
+            _activeRuleFrames.Clear();
+            _stateRegistry.Clear();
+            _lookaheadCache.Clear();
+        }
+    }
+
+    /// <summary>
+    /// Returns the default-channel tokens of <paramref name="tokens"/> in order, reusing the caller's list when it is
+    /// already a read-only list of default-channel tokens only.
+    /// </summary>
+    /// <remarks>
+    /// Tokens supplied directly to the parser are bounded by <see cref="ParserResourceLimits.MaxTokens"/>, like the
+    /// tokens a tokenization emits: every received token counts, whatever its channel, so the work spent examining the
+    /// input is bounded too. A list is refused from its count before it is examined; a lazy sequence is counted while it
+    /// is enumerated and refused before the first token over the limit is examined or stored, so it is never fully
+    /// materialized first.
+    /// </remarks>
+    /// <param name="tokens">The token stream.</param>
+    /// <returns>The default-channel tokens.</returns>
+    /// <exception cref="ParserResourceLimitException">More tokens than <see cref="ParserResourceLimits.MaxTokens"/> were supplied.</exception>
+    private IReadOnlyList<Token> FilterDefaultChannel(IEnumerable<Token> tokens)
+    {
+        ArgumentNullException.ThrowIfNull(tokens);
+        var maxTokens = _resourceLimits.MaxTokens;
+        if (tokens is IReadOnlyList<Token> list)
+        {
+            if (list.Count > maxTokens)
+            {
+                throw RefuseSuppliedTokens(maxTokens, list[maxTokens]);
+            }
+
+            var allDefault = true;
+            for (var index = 0; index < list.Count; index++)
+            {
+                if (list[index].Channel != "DEFAULT_CHANNEL")
+                {
+                    allDefault = false;
+                    break;
+                }
+            }
+
+            if (allDefault)
+            {
+                return list;
+            }
+        }
+
+        var filtered = new List<Token>();
+        var received = 0;
+        foreach (var token in tokens)
+        {
+            if (received >= maxTokens)
+            {
+                throw RefuseSuppliedTokens(maxTokens, token);
+            }
+
+            received++;
+            if (token.Channel == "DEFAULT_CHANNEL")
+            {
+                filtered.Add(token);
+            }
+        }
+
+        return filtered;
+    }
+
+    /// <summary>Builds the refusal of a token input longer than <see cref="ParserResourceLimits.MaxTokens"/>.</summary>
+    /// <param name="maxTokens">The limit.</param>
+    /// <param name="firstOverLimit">The first token over the limit, whose start is reported as the offset.</param>
+    /// <returns>The exception to throw.</returns>
+    private static ParserResourceLimitException RefuseSuppliedTokens(int maxTokens, Token firstOverLimit)
+        => new(ParserResourceLimitKind.Tokens, ParserResourcePhase.Parser, maxTokens, (long)maxTokens + 1, firstOverLimit?.Span.Position);
+
+    /// <summary>
+    /// Parses from the root rule and applies the global outcome gates (root failure and trailing tokens).
+    /// </summary>
+    /// <param name="context">The cursor and budget of the parse operation.</param>
+    /// <param name="root">The start rule.</param>
+    /// <param name="diagnostics">Optional diagnostic sink.</param>
+    /// <returns>The root node, or an <see cref="ErrorNode"/>.</returns>
+    private ParseNode ParseFromRoot(ParseContext context, Rule root, DiagnosticBag? diagnostics)
+    {
         var result = ParseRule(context, root, precedence: 0, diagnostics);
 
         if (result is null)
@@ -207,90 +442,103 @@ public sealed class ParserEngine
     /// <param name="precedence">Minimum precedence level accepted for this parse attempt.</param>
     private ParseNode? ParseRule(ParseContext context, Rule rule, int precedence, DiagnosticBag? diagnostics = null)
     {
-        diagnostics?.AddWithContext(ParserDiagnostics.EnteringRule, null, null, rule.Name, null, rule.Name);
-        var initialPosition = context.Position;
-        // Registry-backed completion cache:
-        // this supersedes the previous local parse-memo dictionary and keeps reuse decisions centralized.
-        // Safety depends on RuleInvocationKey identity:
-        //   (rule name, input position, minimum precedence, semantic execution-state key).
-        // The semantic execution-state key isolates completed-result reuse for stateful generated contexts.
-        // Parser attempt-boundary rollback restores this key before later parser work probes the cache.
-        // Completed rule results also carry post-rule snapshots so memoization hits can restore the state
-        // produced by the original invocation without replaying actions. Action buffering, quantifier rollback,
-        // left-recursive extension rollback, and negation-probe isolation are all active. Lifecycle hooks fire
-        // at rule entry (@init) and after a successful result (@after) through the configured RuleLifecycleExecutor.
-        var invocationKey = new RuleInvocationKey(rule.Name, initialPosition, precedence, _executionStateManager.GetCurrentStateKey());
-        if (_stateRegistry.TryGetReusableResult(invocationKey, out var reusableResult))
-        {
-            context.RestorePosition(reusableResult.EndPosition);
-            if (reusableResult.ExecutionStateSnapshot is not null)
-            {
-                _executionStateManager.Restore(reusableResult.ExecutionStateSnapshot);
-            }
-
-            diagnostics?.AddWithContext(ParserDiagnostics.ParseMemoHit, null, null, rule.Name, null, rule.Name);
-            return reusableResult.IsFailure ? null : reusableResult.Node;
-        }
-        diagnostics?.AddWithContext(ParserDiagnostics.ParseMemoMiss, null, null, rule.Name, null, rule.Name);
-        var frameKey = new ParserFrameKey(rule.Name, context.Position);
-        if (!_activeRuleFrames.Add(frameKey))
-        {
-            return null;
-        }
-
+        // Guarded recursion boundary: every recursive parser cycle passes through ParseRule or TryParseContent, so the
+        // stack and depth checks here bound the frames between two checks by a grammar-independent constant.
+        // The level is entered here rather than in a wrapper method so the guard adds no stack frame per rule level.
+        var budget = context.Budget;
+        budget.ChargeStep();
+        budget.EnterDepth();
         try
         {
-            var invocationDescriptor = ParserRuleInvocationDescriptor.FromRule(rule);
-            var invocationFrame = _ruleInvocationFrameManager.Enter(rule.Name, initialPosition, invocationDescriptor);
-            var lifecycleContext = new ParserRuleLifecycleContext(rule.Name, initialPosition, invocationFrame);
-            var succeeded = false;
+            diagnostics?.AddWithContext(ParserDiagnostics.EnteringRule, null, null, rule.Name, null, rule.Name);
+            var initialPosition = context.Position;
+            // Registry-backed completion cache:
+            // this supersedes the previous local parse-memo dictionary and keeps reuse decisions centralized.
+            // Safety depends on RuleInvocationKey identity:
+            //   (rule name, input position, minimum precedence, semantic execution-state key).
+            // The semantic execution-state key isolates completed-result reuse for stateful generated contexts.
+            // Parser attempt-boundary rollback restores this key before later parser work probes the cache.
+            // Completed rule results also carry post-rule snapshots so memoization hits can restore the state
+            // produced by the original invocation without replaying actions. Action buffering, quantifier rollback,
+            // left-recursive extension rollback, and negation-probe isolation are all active. Lifecycle hooks fire
+            // at rule entry (@init) and after a successful result (@after) through the configured RuleLifecycleExecutor.
+            var invocationKey = new RuleInvocationKey(rule.Name, initialPosition, precedence, _executionStateManager.GetCurrentStateKey());
+            if (_stateRegistry.TryGetReusableResult(invocationKey, out var reusableResult))
+            {
+                context.RestorePosition(reusableResult.EndPosition);
+                if (reusableResult.ExecutionStateSnapshot is not null)
+                {
+                    _executionStateManager.Restore(reusableResult.ExecutionStateSnapshot);
+                }
+
+                diagnostics?.AddWithContext(ParserDiagnostics.ParseMemoHit, null, null, rule.Name, null, rule.Name);
+                return reusableResult.IsFailure ? null : reusableResult.Node;
+            }
+            diagnostics?.AddWithContext(ParserDiagnostics.ParseMemoMiss, null, null, rule.Name, null, rule.Name);
+            var frameKey = new ParserFrameKey(rule.Name, context.Position);
+            if (!_activeRuleFrames.Add(frameKey))
+            {
+                return null;
+            }
 
             try
             {
-                _ruleLifecycleExecutor.Execute(ParserRuleLifecyclePhase.Init, rule.Name, lifecycleContext);
+                var invocationDescriptor = ParserRuleInvocationDescriptor.FromRule(rule);
+                var invocationFrame = _ruleInvocationFrameManager.Enter(rule.Name, initialPosition, invocationDescriptor);
+                var lifecycleContext = new ParserRuleLifecycleContext(rule.Name, initialPosition, invocationFrame);
+                var succeeded = false;
 
-                ParseNode? parsed;
-                if (_definition.LeftRecursiveRules.TryGetValue(rule.Name, out var leftRecursiveInfo))
+                try
                 {
-                    diagnostics?.AddWithContext(
-                        ParserDiagnostics.LeftRecursivePrecedencePartiallySupported,
-                        null,
-                        null,
-                        rule.Name,
-                        null,
-                        rule.Name);
-                    parsed = ParseLeftRecursiveRule(context, leftRecursiveInfo, precedence, diagnostics);
+                    _ruleLifecycleExecutor.Execute(ParserRuleLifecyclePhase.Init, rule.Name, lifecycleContext);
+
+                    ParseNode? parsed;
+                    if (_definition.LeftRecursiveRules.TryGetValue(rule.Name, out var leftRecursiveInfo))
+                    {
+                        diagnostics?.AddWithContext(
+                            ParserDiagnostics.LeftRecursivePrecedencePartiallySupported,
+                            null,
+                            null,
+                            rule.Name,
+                            null,
+                            rule.Name);
+                        parsed = ParseLeftRecursiveRule(context, leftRecursiveInfo, precedence, diagnostics);
+                    }
+                    else
+                    {
+                        parsed = TryParseScheduledAlternatives(context, rule.Content.Alternatives, rule, precedence, diagnostics, ScheduledAlternativeCursorKinds.RuleRoot, -1);
+                    }
+
+                    if (parsed is not null)
+                    {
+                        _ruleLifecycleExecutor.Execute(ParserRuleLifecyclePhase.After, rule.Name, lifecycleContext);
+                        succeeded = true;
+                    }
+
+                    _ruleInvocationFrameManager.PrepareCallResultForSnapshot(invocationFrame, succeeded);
+                    var resultExecutionStateSnapshot = _executionStateManager.Capture();
+                    _stateRegistry.AddCompletedResult(invocationKey, new ParserRuleResult(parsed, context.Position, parsed is null, resultExecutionStateSnapshot), context.Budget);
+
+                    return parsed;
                 }
-                else
+                finally
                 {
-                    parsed = TryParseScheduledAlternatives(context, rule.Content.Alternatives, rule, precedence, diagnostics, ScheduledAlternativeCursorKinds.RuleRoot, -1);
+                    _ruleInvocationFrameManager.Exit(invocationFrame, succeeded);
                 }
-
-                if (parsed is not null)
-                {
-                    _ruleLifecycleExecutor.Execute(ParserRuleLifecyclePhase.After, rule.Name, lifecycleContext);
-                    succeeded = true;
-                }
-
-                _ruleInvocationFrameManager.PrepareCallResultForSnapshot(invocationFrame, succeeded);
-                var resultExecutionStateSnapshot = _executionStateManager.Capture();
-                _stateRegistry.AddCompletedResult(invocationKey, new ParserRuleResult(parsed, context.Position, parsed is null, resultExecutionStateSnapshot));
-
-                return parsed;
             }
             finally
             {
-                _ruleInvocationFrameManager.Exit(invocationFrame, succeeded);
+                _activeRuleFrames.Remove(frameKey);
+                if (context.Position < initialPosition)
+                {
+                    context.RestorePosition(initialPosition);
+                }
+                diagnostics?.AddWithContext(ParserDiagnostics.LeavingRule, null, null, rule.Name, null, rule.Name);
             }
         }
         finally
         {
-            _activeRuleFrames.Remove(frameKey);
-            if (context.Position < initialPosition)
-            {
-                context.RestorePosition(initialPosition);
-            }
-            diagnostics?.AddWithContext(ParserDiagnostics.LeavingRule, null, null, rule.Name, null, rule.Name);
+            budget.ExitDepth();
         }
     }
 
@@ -369,10 +617,12 @@ public sealed class ParserEngine
     {
         var startPosition = context.Position;
         ParseBranch? bestBranch = null;
-        var recursiveAlternatives = info.RecursiveAlternatives.OrderBy(a => a.Priority).ToList();
+        var recursiveAlternatives = GetSchedulingShape(info.RecursiveAlternatives).Ordered;
 
         for (int index = 0; index < recursiveAlternatives.Count; index++)
         {
+            // Each left-recursive extension attempt consumes parser work, whether or not it extends the seed.
+            context.Budget.ChargeStep();
             var alternative = recursiveAlternatives[index];
             var stateKey = new ParserStateKey(info.Rule.Name, startPosition, index, index, minimumPrecedence);
             // Registry state is currently preparatory for future active-state parsing.
@@ -383,7 +633,7 @@ public sealed class ParserEngine
                 startPosition,
                 index,
                 index,
-                minimumPrecedence));
+                minimumPrecedence), context.Budget);
             if (!visitedStates.Add(stateKey))
             {
                 var span = ResolveDiagnosticSpan(context);
@@ -508,6 +758,7 @@ public sealed class ParserEngine
         var endToken = context.Peek(-1);
         var end = endToken is null ? leftSeed.Span.Position + leftSeed.Span.Length : endToken.Span.Position + endToken.Span.Length;
         var span = new SourceSpan(leftSeed.Span.Position, Math.Max(0, end - leftSeed.Span.Position));
+        context.Budget.ChargeNode();
         return new ParserNode(span, leftSeed.ModeName, ownerRule, children);
     }
 
@@ -630,9 +881,24 @@ public sealed class ParserEngine
         int elementIndex = -1,
         DiagnosticBag? diagnostics = null)
     {
-        return ContentParsers.TryGetValue(content.GetType(), out var parser)
-            ? parser(this, context, content, rule, precedence, alternativeIndex, elementIndex, diagnostics)
-            : null;
+        if (!ContentParsers.TryGetValue(content.GetType(), out var parser))
+        {
+            return null;
+        }
+
+        // Guarded recursion boundary for content nesting (sequence, alternation, quantifier, negation, rule
+        // reference): it bounds recursion that does not go through ParseRule and recursion that consumes no input.
+        var budget = context.Budget;
+        budget.ChargeStep();
+        budget.EnterDepth();
+        try
+        {
+            return parser(this, context, content, rule, precedence, alternativeIndex, elementIndex, diagnostics);
+        }
+        finally
+        {
+            budget.ExitDepth();
+        }
     }
 
 
@@ -750,7 +1016,8 @@ public sealed class ParserEngine
         // We therefore keep lightweight continuation metadata for future state-based parsing.
         _stateRegistry.AddContinuation(
             new RuleInvocationKey(ruleRef.RuleName, context.Position, minimumPrecedence, _executionStateManager.GetCurrentStateKey()),
-            new ContinuationKey(parentRule.Name, alternativeIndex, elementIndex, context.Position, minimumPrecedence));
+            new ContinuationKey(parentRule.Name, alternativeIndex, elementIndex, context.Position, minimumPrecedence),
+            context.Budget);
 
         if (referencedRule.Kind == RuleKind.Lexer)
         {
@@ -769,6 +1036,7 @@ public sealed class ParserEngine
                     null,
                     ruleRef.RuleName,
                     token.Text);
+                context.Budget.ChargeNode();
                 return new LexerNode(token.Span, token.ModeName, referencedRule, token);
             }
             return null;
@@ -892,7 +1160,6 @@ public sealed class ParserEngine
         var children = new List<ParseNode>();
         var startPos = context.Position;
         var startToken = context.Peek();
-        var visitedStates = new HashSet<ParserStateKey>();
 
         for (int itemIndex = 0; itemIndex < seq.Items.Count; itemIndex++)
         {
@@ -906,32 +1173,10 @@ public sealed class ParserEngine
             if (item is Model.LexerCommand)
                 continue;
 
-            var itemStartPosition = context.Position;
-            var stateKey = new ParserStateKey(
-                rule.Name,
-                itemStartPosition,
-                alternativeIndex,
-                itemIndex,
-                minimumPrecedence);
-            if (!visitedStates.Add(stateKey))
-            {
-                var diagnosticSpan = ResolveDiagnosticSpan(context);
-                diagnostics?.AddWithContext(
-                    ParserDiagnostics.ParserStateCycleDetected,
-                    diagnosticSpan.Start,
-                    diagnosticSpan.Length,
-                    rule.Name,
-                    null);
-                diagnostics?.AddWithContext(
-                    ParserDiagnostics.ParserStateRejected,
-                    diagnosticSpan.Start,
-                    diagnosticSpan.Length,
-                    rule.Name,
-                    null,
-                    rule.Name,
-                    $"repeated sequence item state {stateKey}");
-                return null;
-            }
+            // S-06: the former per-call visited-state set keyed by (rule, position, alternative, itemIndex, precedence)
+            // was removed: itemIndex strictly increases within one call, so a key could never repeat and the check
+            // could never reject; it only allocated one hash set per sequence attempt. Non-progressive repetition is
+            // still stopped by the quantifier and left-recursion guards, and recursion by the depth budget.
             var node = TryParseContent(context, item, rule, minimumPrecedence, alternativeIndex, itemIndex, diagnostics);
             if (node is null)
                 return null;
@@ -942,6 +1187,7 @@ public sealed class ParserEngine
         }
 
         var span = ComputeSpan(startToken, context, startPos);
+        context.Budget.ChargeNode();
         return new ParserNode(span, startToken?.ModeName ?? "DEFAULT_MODE", rule, children);
     }
 
@@ -979,7 +1225,11 @@ public sealed class ParserEngine
     {
         var startPosition = context.Position;
         var startToken = context.Peek();
-        var orderedAlternatives = alternatives.OrderBy(static a => a.Priority).ToList();
+        // The priority order and structural descriptors are grammar-invariant and precomputed at construction;
+        // look-ahead probes and the metadata derived from them still depend on the input position and are prepared here.
+        var shape = GetSchedulingShape(alternatives);
+        var orderedAlternatives = shape.Ordered;
+        Func<Alternative, bool> checkPrecedence = candidate => CheckPrecedence(candidate, precedence);
         var prepared = _schedulingPreparation.Prepare(
             rule,
             orderedAlternatives,
@@ -990,7 +1240,8 @@ public sealed class ParserEngine
                 cursorKind,
                 cursorIndex,
                 _caseInsensitive,
-                candidate => CheckPrecedence(candidate, precedence)));
+                checkPrecedence),
+            shape.StructuralDescriptors);
         var scheduling = _alternativeScheduler.Run(
             rule,
             orderedAlternatives,
@@ -1011,13 +1262,13 @@ public sealed class ParserEngine
                 cursorKind,
                 cursorIndex,
                 diagnostics,
-                checkPrecedence: candidate => CheckPrecedence(candidate, precedence),
-                resolveRule: ResolveRule,
+                checkPrecedence: checkPrecedence,
+                resolveRule: _resolveRule,
                 caseInsensitive: _caseInsensitive,
                 containsPredicateOrAction: ContainsPredicateOrAction,
                 resolveDiagnosticSpan: ResolveDiagnosticSpan,
-                captureAttempt: CaptureAttempt,
-                restoreAttempt: RestoreAttempt,
+                captureAttempt: _captureAttempt,
+                restoreAttempt: _restoreAttempt,
                 parseAlternative: candidate => TryParseContent(context, candidate.Content, rule, precedence, alternativeIndex, -1, diagnostics)));
 
         if (scheduling.SelectedState is null)
@@ -1041,6 +1292,7 @@ public sealed class ParserEngine
         }
 
         var span = ComputeSpan(startToken, context, startPosition);
+        context.Budget.ChargeNode();
         return new ParserNode(span, winner.PartialNode.ModeName, rule, [winner.PartialNode]);
     }
 
@@ -1136,6 +1388,8 @@ public sealed class ParserEngine
         int previousPosition = context.Position;
         while (quant.Max is null || count < quant.Max.Value)
         {
+            // Each quantifier iteration attempt consumes parser work, including the final failing attempt.
+            context.Budget.ChargeStep();
             var saved = CaptureAttempt(context);
             var node = TryParseContent(context, quant.Inner, rule, minimumPrecedence, alternativeIndex, alternativeIndex, diagnostics);
             if (node is null)
@@ -1181,6 +1435,7 @@ public sealed class ParserEngine
         }
 
         var span = ComputeSpan(startToken, context, startPos);
+        context.Budget.ChargeNode();
         return new QuantifierNode(span, startToken?.ModeName ?? "DEFAULT_MODE", rule, children);
     }
 
@@ -1201,6 +1456,7 @@ public sealed class ParserEngine
             _caseInsensitive ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal))
         {
             context.Consume();
+            context.Budget.ChargeNode();
             return new LexerNode(token.Span, token.ModeName, rule, token);
         }
 
@@ -1237,6 +1493,7 @@ public sealed class ParserEngine
         {
             // Negation succeeds: consume one token.
             var consumed = context.Consume();
+            context.Budget.ChargeNode();
             return new LexerNode(consumed.Span, consumed.ModeName, rule, consumed);
         }
 
@@ -1339,6 +1596,7 @@ public sealed class ParserEngine
     /// <param name="rule">Owning rule for the returned node.</param>
     private static ParseNode CreateEmptyNode(ParseContext context, Rule rule)
     {
+        context.Budget.ChargeNode();
         var token = context.Peek();
         var pos = token?.Span.Position ?? 0;
         var modeName = token?.ModeName ?? "DEFAULT_MODE";

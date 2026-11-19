@@ -37,17 +37,55 @@ internal sealed class ParserStateRegistry
     public bool TryEnterState(ParserStateKey key) => _visitedStates.Add(key);
 
     /// <summary>
+    /// Marks a state as visited for a budgeted parse operation, charging one retained state before a new key is stored.
+    /// </summary>
+    /// <param name="key">Visited-state identity.</param>
+    /// <param name="budget">The budget of the running parse operation.</param>
+    /// <returns><c>true</c> when the state was not seen before.</returns>
+    /// <exception cref="ParserResourceLimitException">The retained-state budget is exhausted; nothing is stored.</exception>
+    public bool TryEnterState(ParserStateKey key, ParserResourceBudget budget)
+    {
+        if (_visitedStates.Contains(key))
+        {
+            return false;
+        }
+
+        budget.ChargeRetainedState();
+        return _visitedStates.Add(key);
+    }
+
+    /// <summary>
     /// Adds continuation metadata for a shared rule invocation.
     /// The recorded continuation key is observational transport data only and is not executable resume authority.
     /// </summary>
     public bool AddContinuation(RuleInvocationKey invocation, ContinuationKey continuation)
+        => AddContinuation(invocation, continuation, null);
+
+    /// <summary>
+    /// Adds continuation metadata for a shared rule invocation of a budgeted parse operation, charging one retained state
+    /// before a new entry is stored.
+    /// </summary>
+    /// <param name="invocation">Invocation identity.</param>
+    /// <param name="continuation">Observational continuation key.</param>
+    /// <param name="budget">The budget of the running parse operation, or <see langword="null"/> when unbudgeted.</param>
+    /// <returns><c>true</c> when the continuation was not recorded before.</returns>
+    /// <exception cref="ParserResourceLimitException">The retained-state budget is exhausted; nothing is stored.</exception>
+    public bool AddContinuation(RuleInvocationKey invocation, ContinuationKey continuation, ParserResourceBudget? budget)
     {
         if (!_continuations.TryGetValue(invocation, out var set))
         {
+            budget?.ChargeRetainedState();
             set = [];
             _continuations[invocation] = set;
+            return set.Add(continuation);
         }
 
+        if (set.Contains(continuation))
+        {
+            return false;
+        }
+
+        budget?.ChargeRetainedState();
         return set.Add(continuation);
     }
 
@@ -58,18 +96,38 @@ internal sealed class ParserStateRegistry
     /// Result execution-state snapshots are opaque post-rule restoration data for memoization hits, not action replay authority.
     /// </summary>
     public bool AddCompletedResult(RuleInvocationKey invocation, ParserRuleResult result)
+        => AddCompletedResult(invocation, result, null);
+
+    /// <summary>
+    /// Adds a completed result for a shared rule invocation of a budgeted parse operation, charging one retained state
+    /// before a new result is stored. A refused insertion stores nothing and ends the whole parse: completed results are
+    /// never evicted or silently dropped.
+    /// </summary>
+    /// <param name="invocation">State-aware invocation identity.</param>
+    /// <param name="result">Completed result.</param>
+    /// <param name="budget">The budget of the running parse operation, or <see langword="null"/> when unbudgeted.</param>
+    /// <returns><c>true</c> when the result was stored.</returns>
+    /// <exception cref="ParserResourceLimitException">The retained-state budget is exhausted; nothing is stored.</exception>
+    public bool AddCompletedResult(RuleInvocationKey invocation, ParserRuleResult result, ParserResourceBudget? budget)
     {
-        if (!_completedResults.TryGetValue(invocation, out var list))
+        if (_completedResults.TryGetValue(invocation, out var list))
+        {
+            foreach (var existing in list)
+            {
+                if (existing.EndPosition == result.EndPosition
+                    && existing.IsFailure == result.IsFailure
+                    && ReferenceEquals(existing.Node, result.Node))
+                {
+                    return false;
+                }
+            }
+        }
+
+        budget?.ChargeRetainedState();
+        if (list is null)
         {
             list = [];
             _completedResults[invocation] = list;
-        }
-
-        if (list.Any(existing => existing.EndPosition == result.EndPosition
-            && existing.IsFailure == result.IsFailure
-            && ReferenceEquals(existing.Node, result.Node)))
-        {
-            return false;
         }
 
         list.Add(result);

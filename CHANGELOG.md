@@ -4,6 +4,32 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Security — `omy.Utils.Parser` (parser resource safety, S-06: ETC-16 / ETC-18)
+- **Behavior change.** Every tokenization, parse and parse-tree compilation now runs under `ParserResourceLimits` (input
+  characters 1,000,000; tokens 500,000; lexer steps 50,000,000; lexer depth 4,000; parse depth 4,000; parser steps
+  10,000,000; constructed nodes 5,000,000; retained states 5,000,000) and an always-on execution-stack guard. An excess
+  ends the operation with the new `ParserResourceLimitException` (`Kind`, `Phase`, `Limit`, `Observed`, `Offset`; no
+  input text) instead of a process-terminating stack overflow or unbounded work. A refusal is never a syntax error and
+  never an `ErrorNode`; inputs within the limits keep their tokens, trees, spans and diagnostics. This also covers the
+  CSyntax/VBSyntax front ends (`Utils.Expressions.CSyntax`, `Utils.Expressions.VBSyntax`), generated grammars and
+  `Antlr4GrammarConverter`, which use the defaults.
+- New public API (additive): `ParserResourceLimits` (`Default`, `Unlimited`), `ParserResourceLimitException`,
+  `ParserResourceLimitKind`, `ParserResourcePhase`; constructors `LexerEngine(definition, policy, limits)`,
+  `ParserEngine(definition, policy, limits)`, `CompiledGrammar(definition, policy, limits)` and a `ResourceLimits`
+  property on the three types. Existing constructors are unchanged and use the defaults. Trusted callers needing larger
+  inputs pass explicit limits, e.g. `new CompiledGrammar(XGrammar.Build(), policy, ParserResourceLimits.Unlimited)`.
+- Tokens supplied directly to `ParserEngine.Parse(IEnumerable<Token>)` are bounded by `MaxTokens` too (every received token, any channel; lazy sequences are counted while enumerated and never fully materialized first).
+- Small stacks: a controlled refusal is guaranteed, successful parsing is not (on a 256 KiB thread even `(x0)` is refused); parse on threads of at least 1 MiB.
+- Each operation owns a private budget; backtracking never refunds consumed work; registry, memo and look-ahead entries
+  are charged before insertion and an exhausted budget refuses the whole parse. Registry state is now released when each
+  parse ends (it previously stayed alive until the next parse on the same engine).
+- `ParseTreeNavigator.Descendants()` uses an explicit stack (same pre-order) and `ParseTreeCompiler` checks the stack.
+- Performance: measured, behavior-neutral allocation reductions (precomputed grammar-invariant scheduling shapes and lexer
+  candidate rules, observer-free scheduler fast paths); CSyntax compilation of the historical 20,000-term input allocates
+  3.61 GB instead of 5.86 GB, tokenization 174 MB instead of 682 MB.
+- Known, pre-existing and tracked separately: the CSyntax/VBSyntax token parsers share one non-thread-safe
+  `CompiledGrammar` across threads (issue #709). See `docs/parser/ParserResourceSafety.md`.
+
 ### Changed — `omy.Utils` (expression simplifier: arithmetic exceptions deferred to evaluation, S5A-04)
 - **Behavior change, every policy.** `ExpressionSimplifier.Simplify` (and `ExpressionComparer`, which simplifies first) no
   longer throws `DivideByZeroException` or `OverflowException` on a constant fold that would throw: an integral or `decimal`

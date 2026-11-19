@@ -429,3 +429,21 @@ The static `FontSupport` name, charset, and encoding tables now expose `IReadOnl
 ```csharp
 var copy = FontSupport.StdNames.ToArray();
 ```
+
+<a id="omy-utils-parser-resource-limits"></a>
+## Utils.Parser: resource limits and stack guards (S-06)
+
+Tokenization, parsing and parse-tree compilation now run under `ParserResourceLimits.Default` and an always-on
+execution-stack guard. Inputs that stay within the limits are parsed exactly as before (same tokens, trees, spans and
+diagnostics). Inputs that exceed them, which previously ended the process with a stack overflow (deep nesting) or ran
+unbounded work, now throw `ParserResourceLimitException`; it derives from `InvalidOperationException`, is never an
+`ErrorNode`, and names the exceeded `Kind`, the `Phase` (`Lexer`, `Parser`, `TreeCompilation`), the configured `Limit`,
+the attempted value (`Observed`) and the input `Offset`. Callers of `CompiledGrammar.Parse`, generated `Parse` methods,
+`Antlr4GrammarConverter` and the CSyntax/VBSyntax front ends that must handle hostile input should catch it next to
+their existing syntax-error handling.
+
+Trusted callers that need larger inputs construct their engines with explicit limits, for example
+`new CompiledGrammar(XGrammar.Build(), ParserRuntimeFeaturePolicy.Default, ParserResourceLimits.Unlimited)` or
+`ParserResourceLimits.Default with { MaxParseDepth = 10_000 }`; the stack guard cannot be disabled. The engines also
+release their registry state when each parse ends. No existing signature changed. Defaults and measurements:
+`docs/parser/ParserResourceSafety.md`.

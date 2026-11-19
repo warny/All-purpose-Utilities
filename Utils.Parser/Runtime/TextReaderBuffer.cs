@@ -6,7 +6,12 @@ namespace Utils.Parser.Runtime;
 /// <summary>
 /// Internal forward-only character buffer over a <see cref="TextReader"/>.
 /// </summary>
-internal sealed class TextReaderBuffer(TextReader reader) : TextReaderLookahead
+/// <param name="reader">The source reader.</param>
+/// <param name="budget">
+/// The budget of the tokenization reading this buffer, charged once per character actually read from
+/// <paramref name="reader"/> (end of input is never charged), or <see langword="null"/> for an unbudgeted buffer.
+/// </param>
+internal sealed class TextReaderBuffer(TextReader reader, ParserResourceBudget? budget = null) : TextReaderLookahead
 {
     /// <summary>Characters read ahead from the underlying reader.</summary>
     private readonly List<char> _buffer = [];
@@ -130,6 +135,8 @@ internal sealed class TextReaderBuffer(TextReader reader) : TextReaderLookahead
                 break;
             }
 
+            // The input-size limit is enforced while reading, before an oversized input is buffered.
+            budget?.ChargeInputCharacter();
             _buffer.Add((char)read);
         }
     }

@@ -99,7 +99,8 @@ For conceptual fallback lists and limitations detail, see [`ParserMetadataAndRun
 
 Boundaries:
 
-- `Clear()` resets registry-owned state for a new parse lifecycle;
+- `Clear()` resets registry-owned state for a new parse lifecycle; `ParserEngine.Parse` clears it both when a parse starts and when it ends (successfully, with an `ErrorNode`, or with an exception), so no parse state outlives its parse (S-06);
+- every insertion of a new visited state, continuation, completed result or look-ahead entry is charged to the running parse's `MaxRetainedStates` budget before it is stored; an exhausted budget refuses the whole parse instead of dropping or evicting an entry;
 - reusable results are invocation-local completion artifacts;
 - reusable result selection is not final parse acceptance;
 - invocation reuse != execution reuse;

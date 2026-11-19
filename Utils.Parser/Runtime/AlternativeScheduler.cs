@@ -44,7 +44,11 @@ internal sealed class AlternativeScheduler
         IReadOnlyList<ParserLookaheadProbeResult> precomputedLookaheadProbes,
         IReadOnlyList<ParserLookaheadSharedPrefixCandidate> precomputedSharedPrefixCandidates)
     {
-        var ordered = alternatives.OrderBy(static a => a.Priority).ToList();
+        // OrderBy is a stable sort: a list that is already in non-decreasing priority order (the engine always passes its
+        // precomputed order) keeps exactly its order, so it is used as is instead of being sorted again.
+        var ordered = alternatives is IReadOnlyList<Alternative> list && IsInPriorityOrder(list)
+            ? list
+            : alternatives.OrderBy(static a => a.Priority).ToList();
         if (precomputedLookaheadProbes.Count != ordered.Count)
         {
             throw new ArgumentException("Precomputed look-ahead probe count must match ordered alternatives count.", nameof(precomputedLookaheadProbes));
@@ -61,21 +65,26 @@ internal sealed class AlternativeScheduler
         for (int index = 0; index < ordered.Count; index++)
         {
             var alternative = ordered[index];
-            var initial = CreateInitialState(rule, alternative, originInputPosition, index);
-            NotifyObserver(observation => _runtimeObserver?.OnAlternativeStarted(observation), CreateObservation(ParserRuntimeObservationKind.AlternativeStarted, initial));
+            // The initial state is a pure projection of its inputs; it is only built when it is observed or failed.
+            var initial = _runtimeObserver is null ? null : CreateInitialState(rule, alternative, originInputPosition, index);
+            if (initial is not null)
+            {
+                Notify(ParserRuntimeObservationKind.AlternativeStarted, initial);
+            }
+
             var scheduled = parseAlternative(alternative, index);
             var parsed = scheduled.State;
             if (parsed is null)
             {
-                var failedState = initial.Fail();
+                var failedState = (initial ?? CreateInitialState(rule, alternative, originInputPosition, index)).Fail();
                 failedStates.Add(failedState);
-                NotifyObserver(observation => _runtimeObserver?.OnAlternativeFailed(observation), CreateObservation(ParserRuntimeObservationKind.AlternativeFailed, failedState));
+                Notify(ParserRuntimeObservationKind.AlternativeFailed, failedState);
                 continue;
             }
 
             var completedState = EnsureInitialized(parsed);
             completedStates.Add(completedState);
-            NotifyObserver(observation => _runtimeObserver?.OnAlternativeCompleted(observation), CreateObservation(ParserRuntimeObservationKind.AlternativeCompleted, completedState));
+            Notify(ParserRuntimeObservationKind.AlternativeCompleted, completedState);
         }
 
         if (completedStates.Count == 0)
@@ -83,17 +92,30 @@ internal sealed class AlternativeScheduler
             return new AlternativeSchedulingResult(null, [], failedStates, [], BuildMetadata(precomputedSharedPrefixCandidates, precomputedDescriptors, precomputedContinuationMetadata));
         }
 
-        // Deduplication uses scheduling identity (ActiveParseStateKey) and is intentionally
-        // separate from pruning equivalence (ActiveParseBranchEquivalenceKey).
-        // This is not the final parse selection contract; it only reduces equivalent local candidates.
-        var deduplicated = DeduplicateStates(completedStates, minimumPrecedence);
-        // Pruning is an orchestration optimization only; it is not a syntax-validity verdict.
-        var pruned = PruneEquivalentActiveStates(deduplicated, diagnostics);
-        var prunedSet = new HashSet<ActiveParseState>(pruned);
-        var prunedStates = deduplicated.Where(s => !prunedSet.Contains(s)).Select(static s => s.Prune()).ToList();
+        List<ActiveParseState> pruned;
+        List<ActiveParseState> prunedStates;
+        if (completedStates.Count == 1)
+        {
+            // A single completed state is its own deduplication and pruning result (one identity, one equivalence
+            // group, nothing pruned and no ambiguity diagnostic), so the general path's dictionaries and sorts are skipped.
+            pruned = completedStates;
+            prunedStates = [];
+        }
+        else
+        {
+            // Deduplication uses scheduling identity (ActiveParseStateKey) and is intentionally
+            // separate from pruning equivalence (ActiveParseBranchEquivalenceKey).
+            // This is not the final parse selection contract; it only reduces equivalent local candidates.
+            var deduplicated = DeduplicateStates(completedStates, minimumPrecedence);
+            // Pruning is an orchestration optimization only; it is not a syntax-validity verdict.
+            pruned = PruneEquivalentActiveStates(deduplicated, diagnostics);
+            var prunedSet = new HashSet<ActiveParseState>(pruned);
+            prunedStates = deduplicated.Where(s => !prunedSet.Contains(s)).Select(static s => s.Prune()).ToList();
+        }
+
         foreach (var prunedState in prunedStates)
         {
-            NotifyObserver(observation => _runtimeObserver?.OnAlternativePruned(observation), CreateObservation(ParserRuntimeObservationKind.AlternativePruned, prunedState));
+            Notify(ParserRuntimeObservationKind.AlternativePruned, prunedState);
         }
 
         // The selected state is the scheduler's best local candidate after orchestration filters.
@@ -109,7 +131,7 @@ internal sealed class AlternativeScheduler
 
         if (winner is not null)
         {
-            NotifyObserver(observation => _runtimeObserver?.OnAlternativeSelected(observation), CreateObservation(ParserRuntimeObservationKind.AlternativeSelected, winner));
+            Notify(ParserRuntimeObservationKind.AlternativeSelected, winner);
         }
 
         return new AlternativeSchedulingResult(winner, pruned, failedStates, prunedStates, BuildMetadata(precomputedSharedPrefixCandidates, precomputedDescriptors, precomputedContinuationMetadata));
@@ -167,25 +189,61 @@ internal sealed class AlternativeScheduler
 
 
     /// <summary>
-    /// Notifies a runtime observer callback while isolating observer exceptions from parser scheduling flow.
+    /// Notifies the runtime observer of a scheduling event while isolating observer exceptions from parser scheduling
+    /// flow. Without an observer nothing is built: no observation payload and no callback delegate are allocated.
     /// </summary>
-    /// <param name="callback">Observer callback to invoke.</param>
-    /// <param name="observation">Immutable observation payload passed to the callback.</param>
-    private static void NotifyObserver(Action<AlternativeRuntimeObservation>? callback, AlternativeRuntimeObservation observation)
+    /// <param name="kind">The observation kind, which selects the observer callback.</param>
+    /// <param name="state">The state to project to the observation payload.</param>
+    private void Notify(ParserRuntimeObservationKind kind, ActiveParseState state)
     {
-        if (callback is null)
+        var observer = _runtimeObserver;
+        if (observer is null)
         {
             return;
         }
 
+        var observation = CreateObservation(kind, state);
         try
         {
-            callback(observation);
+            switch (kind)
+            {
+                case ParserRuntimeObservationKind.AlternativeStarted:
+                    observer.OnAlternativeStarted(observation);
+                    break;
+                case ParserRuntimeObservationKind.AlternativeFailed:
+                    observer.OnAlternativeFailed(observation);
+                    break;
+                case ParserRuntimeObservationKind.AlternativeCompleted:
+                    observer.OnAlternativeCompleted(observation);
+                    break;
+                case ParserRuntimeObservationKind.AlternativePruned:
+                    observer.OnAlternativePruned(observation);
+                    break;
+                case ParserRuntimeObservationKind.AlternativeSelected:
+                    observer.OnAlternativeSelected(observation);
+                    break;
+            }
         }
         catch
         {
             // Observer callbacks are intentionally isolated from runtime control flow.
         }
+    }
+
+    /// <summary>Determines whether alternatives are already in non-decreasing priority order.</summary>
+    /// <param name="alternatives">The alternatives.</param>
+    /// <returns><see langword="true"/> when no alternative has a lower priority than its predecessor.</returns>
+    private static bool IsInPriorityOrder(IReadOnlyList<Alternative> alternatives)
+    {
+        for (var index = 1; index < alternatives.Count; index++)
+        {
+            if (alternatives[index].Priority < alternatives[index - 1].Priority)
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private static ActiveParseState CreateInitialState(Rule rule, Alternative alternative, int originInputPosition, int alternativeIndex)
@@ -210,6 +268,12 @@ internal sealed class AlternativeScheduler
 
     private static ActiveParseState EnsureInitialized(ActiveParseState state)
     {
+        // An already completed state with an end position is returned as is: the copy below would be equal to it.
+        if (state.Status != ActiveParseStateStatus.Active && state.EndPosition is not null)
+        {
+            return state;
+        }
+
         return state with
         {
             Status = state.Status == ActiveParseStateStatus.Active ? ActiveParseStateStatus.Completed : state.Status,

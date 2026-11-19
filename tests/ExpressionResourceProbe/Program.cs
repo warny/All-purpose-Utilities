@@ -73,6 +73,9 @@ internal static class Program
         return args[0] switch
         {
             "list" => List(),
+            "parser-list" => ParserProbe.List(),
+            "parser-concurrency" when args.Length >= 3 => SharedGrammarConcurrencyProbe.Run(int.Parse(args[1], CultureInfo.InvariantCulture), int.Parse(args[2], CultureInfo.InvariantCulture)),
+            "parser" when args.Length >= 4 => OnThread(thread, () => ParserProbe.Run(args[1], int.Parse(args[2], CultureInfo.InvariantCulture), args[3], thread, Option(args, "--plimits") ?? "default", Array.IndexOf(args, "--alloc-profile") >= 0)),
             "run" when args.Length >= 4 => OnThread(thread, () => Run(args[1], int.Parse(args[2], CultureInfo.InvariantCulture), args[3], thread, counters)),
             "ess" => OnThread(thread, () => MeasureStackGuard(thread)),
             _ => Usage(),
@@ -84,6 +87,7 @@ internal static class Program
     private static int Usage()
     {
         Console.Error.WriteLine("usage: list | run <scenario> <size> <operation> [--thread main|pool|stack:<KiB>] [--limits default|unlimited|budgets] [--counters] | ess [--thread ...]");
+        Console.Error.WriteLine("       parser-list | parser <scenario> <size> tokenize|parse|compile [--thread ...] [--plimits default|unlimited]");
         Console.Error.WriteLine("operations: build shape simplify transform substitute hash equals rawhash rawequals canonical tokenize parse compile");
         return ExitUsage;
     }

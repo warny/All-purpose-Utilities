@@ -8,6 +8,7 @@ This section is the **current planning summary**; dated implementation notes bel
 | --- | --- | --- |
 | S1–S4 | **Completed** | Structural equality and hashing, reconstruction fidelity, symbolic safety contract and canonical keys; ETC later extended the supported families. |
 | ETC R0, R1a, R1a-Security, R1b, R1c, R2, R3, R4, closure | **Completed for the ETC engine** | See the ETC roadmap and PRs #669–#678, #675–#677. Parser hardening S-06 is **not** part of that closure. |
+| Parser hardening S-06 (ETC-16, ETC-18) | **ETC-16 resolved, ETC-18 bounded (PR #710, not merged at writing)** | `Utils.Parser` per-operation `ParserResourceLimits`, stack guards, controlled `ParserResourceLimitException`; allocation constant reduced about 38 % but still about 21 KB per parsed character. `docs/parser/ParserResourceSafety.md`, `Utils.Parser/ROADMAP.md` Phase 9. |
 | S5 P1–P17 | **Completed / experiments explicitly rejected where documented** | Includes P16 and P17; do not re-open rejected performance experiments without new evidence. |
 | P18 Architecture A, A-10, B, C1/C2/C2b | **Implemented** | PRs #681–#687; default-policy compatibility constraints remain binding. |
 | P19d comparer memo | **Implemented; follow-up experiment rejected** | PRs #688–#690 and the regression tests; do not count as an unstarted PR. |

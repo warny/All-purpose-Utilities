@@ -31,12 +31,25 @@ internal sealed class ParserLookaheadCache
     /// Adds a look-ahead observation when no value exists for the same key.
     /// </summary>
     public bool TryAdd(ParserLookaheadKey key, ParserLookaheadProbeResult result)
+        => TryAdd(key, result, null);
+
+    /// <summary>
+    /// Adds a look-ahead observation for a budgeted parse operation when no value exists for the same key, charging one
+    /// retained state before the entry is stored.
+    /// </summary>
+    /// <param name="key">Look-ahead identity.</param>
+    /// <param name="result">Advisory probe result.</param>
+    /// <param name="budget">The budget of the running parse operation, or <see langword="null"/> when unbudgeted.</param>
+    /// <returns><c>true</c> when the entry was stored.</returns>
+    /// <exception cref="ParserResourceLimitException">The retained-state budget is exhausted; nothing is stored.</exception>
+    public bool TryAdd(ParserLookaheadKey key, ParserLookaheadProbeResult result, ParserResourceBudget? budget)
     {
         if (_results.ContainsKey(key))
         {
             return false;
         }
 
+        budget?.ChargeRetainedState();
         _results.Add(key, result);
         return true;
     }

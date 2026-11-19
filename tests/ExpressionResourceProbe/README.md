@@ -77,3 +77,29 @@ calls gated by an environment variable), copy this project into the worktree and
 
 Internal diagnostic members are read by reflection (`InternalDiagnostics.cs`), so no `InternalsVisibleTo` is added to the
 production project.
+
+## Parser scenarios (S-06)
+
+`parser-list` and `parser <scenario> <size> tokenize|parse|compile [--thread ...] [--plimits default|unlimited]` run the
+`Utils.Parser` resource scenarios (`ParserProbe.cs`): CSyntax/VBSyntax nesting, unary chains and flat sums, plus small
+ANTLR4 grammars isolating one recursion shape each (right recursion, rule chains, quantifier bodies, inline alternations,
+direct left recursion, zero-width levels, an ambiguous grammar, a recursive lexer rule, a hidden channel). Each run builds
+a fresh, instrumented `CompiledGrammar` (never the shared dialect instance) before the measurement starts and prints one
+`PRESULT` line: characters, tokens, rule invocations and maximum rule depth (counting invocation-frame manager),
+alternative attempts (passive runtime observer), tree nodes and depth, registry/memo/look-ahead sizes (read by reflection
+after the parse), elapsed time, cumulative allocated bytes, live-memory delta with the engine and the result still
+reachable, peak working set, the internal S-06 budget counters when the build has them, and the outcome
+(`resource-limit:<phase>/<kind>@<attempted>` for a controlled refusal, exit code 13).
+
+`--plimits` selects `ParserResourceLimits.Default` or `ParserResourceLimits.Unlimited` (the stack guard stays active).
+Campaigns use `run-campaign.ps1 -Parser [-ParserLimits unlimited]`; the S-06 raw results are in `results/2026-11-19/`.
+
+**Environment:** Windows PowerShell 5.1
+
+```powershell
+$probe = Join-Path $env:TEMP 'etc-probe\win\ExpressionResourceProbe.exe'
+& $probe parser-list
+& $probe parser P-csyntax-parens 15 parse --thread stack:256
+.\tests\ExpressionResourceProbe\run-campaign.ps1 -ProbePath $probe -Parser -Scenarios P-csyntax-sum -Operations tokenize,parse `
+    -Sizes 100,1000,20000 -TimeoutSeconds 300 -MemoryLimitMB 16384 -Output (Join-Path $env:TEMP 'etc-probe\p-sum.csv')
+```
