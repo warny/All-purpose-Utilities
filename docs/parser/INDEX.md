@@ -6,7 +6,8 @@ This index consolidates the parser documentation set and gives a short summary o
 
 - [`ProductionSupportContract.md`](./ProductionSupportContract.md): Normative `2.0.0-rc.2` product-support contract and first entry point for deciding what is guaranteed, including the explicit non-thread-safe generated static facade boundary; unlike the technical compatibility matrices, it defines the RC commitment rather than only describing implementation state.
 - [`RuntimeStateOwnership.md`](./RuntimeStateOwnership.md): Canonical authority map for runtime responsibilities (parse decisions, diagnostics, parse-tree ownership, scheduler/registry boundaries).
-- [`ParserMetadataAndRuntimeLimitations.md`](./ParserMetadataAndRuntimeLimitations.md): Limitations-first reference that clarifies metadata-only semantics, unsupported runtime semantics, and activation preconditions.
+- [`ParserMetadataAndRuntimeLimitations.md`](./ParserMetadataAndRuntimeLimitations.md): Limitations-first reference that clarifies metadata-only semantics, unsupported runtime semantics, resource-limit boundaries, and activation preconditions.
+- [`ParserResourceSafety.md`](./ParserResourceSafety.md): Canonical S-06 (ETC-16/ETC-18) reference: recursive call graph and guard placement, `ParserResourceLimits` / `ParserResourceLimitException` design, per-operation budget ownership, charging rules, measured default thresholds, stack-safety and allocation campaigns on Windows and Linux, shared-grammar concurrency findings, and remaining limitations.
 - [`RuntimeObservationAndExportContract.md`](./RuntimeObservationAndExportContract.md): Defines what runtime observations are allowed to emit and how exporters must remain passive and non-authoritative.
 - [`DiagnosticsObservationCorrelation.md`](./DiagnosticsObservationCorrelation.md): Conservative rules for linking diagnostics to runtime observations without changing runtime authority.
 

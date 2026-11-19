@@ -103,6 +103,8 @@ Current capabilities and responsibilities:
 - `QuantifierNode` is a public subtype of `ParserNode` produced by `TryParseQuantifier` when a sequence element is a quantifier (`?`, `*`, `+`). Its `Rule` carries the owning parser rule (same as the enclosing sequence), and its `Children` list contains one entry per matched repetition of the quantifier body. It is never produced by named-rule matching. `QuantifierNode` is a `ParserNode` subtype so that integer-index navigation (`nav[i]`) and `RawChildren` treat it as a transparent direct child.
 - `ParseTreeNavigator.TryChild(string)` and `Children(string)` navigate through `QuantifierNode` wrappers transparently using a two-pass strategy: direct children matching the requested name are returned first (highest priority); only when no direct match exists are `QuantifierNode` contents searched. Inside a `QuantifierNode`, the search recurses through synthetic same-rule `ParserNode` frames produced by `TryParseSequence` for grouped quantifiers such as `(a b)?`, so every named rule is reachable by name regardless of nesting depth. Nested `QuantifierNode` wrappers are also traversed recursively. Index-based navigation and `Descendants()` / `Descendants(string)` are unaffected.
 
+- Every tokenization, parse and parse-tree compilation runs under `ParserResourceLimits` with a private per-operation budget and an always-on execution-stack guard; an excess ends the operation with `ParserResourceLimitException` (never an `ErrorNode`). See Phase 9 and `docs/parser/ParserResourceSafety.md`.
+
 Clarifications that must remain true:
 
 - `ParserEngine` owns final parse acceptance.
@@ -591,7 +593,7 @@ Potential future research areas:
 
 These are not approved runtime features today.
 
-Before any such work, require:
+Before any such work, require (in addition to the resource-safety invariants of Phase 9):
 
 - complete invariant documentation,
 - explicit design document,
@@ -603,6 +605,41 @@ Before any such work, require:
 - diagnostic compatibility plan,
 - parse-tree compatibility plan,
 - small experimental branch or prototype when needed.
+
+### Phase 9 — Parser resource safety (S-06: ETC-16 / ETC-18)
+
+**Status: mostly complete. Ongoing maintenance required.**
+
+Goal: bounded depth, work, node and state growth with a controlled refusal before any expression tree exists, without
+changing accepted parses. Canonical reference: `docs/parser/ParserResourceSafety.md`.
+
+Completed:
+
+- `ParserResourceLimits` (input characters, tokens, lexer steps, lexer depth, parse depth, parser steps, constructed
+  nodes, retained states; `Default` and `Unlimited`) and `ParserResourceLimitException` (kind, phase, limit, attempted
+  value, input offset, no input text) are public; `LexerEngine`, `ParserEngine` and `CompiledGrammar` gained additive
+  constructors and a `ResourceLimits` property, existing constructors use the defaults.
+- Every tokenization and parse owns a private budget (lexer: per `Tokenize` enumeration; parser: per `ParseContext`);
+  nothing is shared between operations, and backtracking never refunds consumed budget.
+- `ParseRule`, `TryParseContent`, `TryMatchContent` and `ParseTreeCompiler.Visit` are the guarded recursion boundaries:
+  `RuntimeHelpers.TryEnsureSufficientExecutionStack` plus a depth level restored in `finally`. Every recursive cycle of the
+  call-graph audit passes through one of them, so ETC-16 ends with a controlled `Stack` or `ParseDepth` refusal on every
+  measured configuration (Windows/Linux, Debug/Release, 256 KiB to 8 MiB stacks) instead of a process crash.
+- Registry, memo and look-ahead insertions are charged before insertion; an exhausted budget refuses the whole parse,
+  nothing is evicted. Registry state is released when each parse ends.
+- Measured, behavior-neutral allocation reductions (grammar-invariant scheduling shapes and lexer candidate rules
+  precomputed at construction, observer-free scheduler fast paths, cached delegates, reused lexer scratch buffers):
+  tokenization about −75 %, CSyntax compilation about −38 % on 100–20,000-term inputs, with identical work counters.
+
+Remaining (separate PRs):
+
+- the shared `CompiledGrammar` of the CSyntax/VBSyntax front ends is used concurrently although engines are not
+  thread-safe (pre-existing; corrupted trees and exceptions under concurrent calls, measured on the base commit too;
+  tracked as issue #709);
+- the retained registry metadata (visited states, continuations) is write-only in production and dominates live memory;
+  removing or bounding it needs a metadata-lifecycle design;
+- a deeper reduction of stack use per rule level (currently about 1.3 KB per depth unit on Windows, so a 1 MiB thread
+  accepts 19 CSyntax parenthesis levels (Release)) would need fewer frames per cycle or an explicit-stack execution model.
 
 ## Required update policy
 

@@ -75,6 +75,26 @@ These features are supported but work differently. Read the **Usage** section be
 
 ---
 
+### Runtime resource limits (S-06)
+
+**Standard ANTLR4**: the reference runtimes impose no input-size, nesting-depth or work limit; deeply nested input can
+end the process with a stack overflow (`StackOverflowError` in Java, an uncatchable stack overflow in .NET).
+
+**Utils.Parser**: every tokenization, parse and parse-tree compilation runs under `ParserResourceLimits` (input
+characters, tokens, lexer steps and depth, parse depth, parser steps, constructed nodes, retained states) plus an
+always-on execution-stack guard. An excess ends the operation with `ParserResourceLimitException` instead of a result.
+This is an intentional divergence: an input that standard ANTLR4 accepts may be refused when it exceeds a limit. It is
+never a syntax error, never produces diagnostics or an `ErrorNode`, and never changes the tree, spans, diagnostics or
+action/predicate order of an input that stays within the limits. Grammars, generated code and the ANTLR4 feature
+matrix are unchanged.
+
+**Usage**: the defaults apply everywhere (`CompiledGrammar`, `LexerEngine`, `ParserEngine`, generated grammars,
+`Antlr4GrammarConverter`). Trusted callers that need larger inputs pass explicit limits, for example
+`new CompiledGrammar(definition, policy, ParserResourceLimits.Unlimited)`. Defaults, charging rules and measurements:
+[`ParserResourceSafety.md`](./ParserResourceSafety.md).
+
+---
+
 ### `superClass` option
 
 **Standard ANTLR4**: `options { superClass = MyBase; }` sets the generated parser or lexer class's base class.

@@ -290,6 +290,33 @@ var compiler = new ParseTreeCompiler<int, int>()
 | 2 | `OnDescend(Func<…,bool>, …)` / `OnAscend(Func<…,bool>, …)` | First predicate in registration order that returns `true` |
 | 3 (lowest) | `DefaultDescend` / `DefaultAscend` | Always (fallback) |
 
+### 6 — Resource limits for untrusted input
+
+Every tokenization, parse and parse-tree compilation runs under `ParserResourceLimits.Default` plus an execution-stack
+guard. Hostile input (deep nesting, huge or highly ambiguous input) ends with a `ParserResourceLimitException` instead of
+a stack overflow or unbounded work; it is a refusal, not a syntax error, and inputs within the limits parse unchanged.
+
+```csharp
+using Utils.Parser.Bootstrap;
+using Utils.Parser.Runtime;
+
+var definition = Antlr4GrammarConverter.Parse(grammarText);
+var strict = new CompiledGrammar(definition, ParserRuntimeFeaturePolicy.Default,
+    ParserResourceLimits.Default with { MaxInputCharacters = 10_000, MaxParseDepth = 500 });
+
+try
+{
+    ParseNode tree = strict.Parse(untrustedText);   // ErrorNode on syntax errors
+}
+catch (ParserResourceLimitException refusal)
+{
+    Console.WriteLine($"{refusal.Phase}/{refusal.Kind}: {refusal.Observed} > {refusal.Limit} at {refusal.Offset}");
+}
+```
+
+Use `ParserResourceLimits.Unlimited` only for trusted input; the stack guard stays active. Defaults and measurements:
+[`docs/parser/ParserResourceSafety.md`](../docs/parser/ParserResourceSafety.md).
+
 ---
 
 

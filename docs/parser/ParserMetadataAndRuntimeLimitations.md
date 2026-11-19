@@ -123,6 +123,25 @@ Runtime limitation boundaries remain explicit:
 - no exactly-once guarantee exists across backtracked attempts;
 - no transactional isolation exists across competing alternatives.
 
+## Resource limits boundaries (S-06)
+
+Every tokenization, parse and parse-tree compilation runs under `ParserResourceLimits` with a private per-operation
+budget and an always-on execution-stack guard; an excess ends the operation with `ParserResourceLimitException`.
+Canonical reference: [`ParserResourceSafety.md`](./ParserResourceSafety.md).
+
+Limitation boundaries:
+
+- a resource refusal is not a syntax failure and is never converted into an `ErrorNode` or diagnostics;
+- limits bound parser-managed work (steps, nodes, retained states, depth), not wall-clock time, not total process memory
+  and not user code running inside policy callbacks;
+- steps and nodes consumed by backtracked or pruned branches are never refunded;
+- a refused retained-state insertion refuses the whole parse; memoized results and metadata are never evicted;
+- registry, memo and look-ahead state is released when each parse ends (successfully or not);
+- the stack guard keeps a fixed headroom: user code that recurses deeply inside a callback is not protected by it;
+- `CompiledGrammar`, `LexerEngine` and `ParserEngine` remain non-thread-safe; budgets are per operation, but concurrent
+  operations on one shared instance still corrupt each other's engine state (see the concurrency section of
+  `ParserResourceSafety.md`).
+
 ## ANTLR parameters/returns: parsed metadata vs runtime support
 
 ANTLR4-style parameter and `returns` signatures are parsed and preserved as metadata text.
