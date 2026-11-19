@@ -6818,6 +6818,76 @@ public class Antlr4GeneratedEmbeddedCodeTests
     }
 
     /// <summary>
+    /// Issue #709: concurrent generated <c>ParseWithEmbeddedCode</c> calls keep their execution contexts independent.
+    /// Each worker owns one explicit context, reused only by its own sequential calls, and also calls the fresh-context
+    /// overload; trees match sequential calls and every explicit context counts exactly its own worker's lexer actions.
+    /// </summary>
+    [TestMethod]
+    public void ParseWithEmbeddedCode_ConcurrentCallsWithSeparateContexts_KeepContextsIndependent()
+    {
+        const string grammar = """
+            grammar P;
+
+            @lexer::members {
+                public int Count;
+            }
+
+            start : (A | B)+ ;
+
+            A : 'a' { Count++; } -> pushMode(SECOND) ;
+
+            mode SECOND;
+            B : 'b' { Count++; } -> popMode ;
+            """;
+
+        static string Render(ParseNode node) => node switch
+        {
+            ParserNode parser => $"{parser.GetType().Name}:{parser.Rule?.Name}@{parser.Span.Position}+{parser.Span.Length}({string.Join(",", parser.Children.Select(Render))})",
+            _ => $"{node.GetType().Name}:{node.Rule?.Name}:{node.ModeName}@{node.Span.Position}+{node.Span.Length}",
+        };
+
+        var assembly = CompileGeneratedSource(Emit(grammar));
+        string[] inputs = ["ab", "abab", "ababab", string.Concat(Enumerable.Repeat("ab", 12)), "aa"];
+        var expected = new string[inputs.Length];
+        var actionCounts = new int[inputs.Length];
+        for (int i = 0; i < inputs.Length; i++)
+        {
+            object oracleContext = CreateExecutionContext(assembly);
+            expected[i] = Render(InvokeParseWithContext(assembly, inputs[i], oracleContext));
+            actionCounts[i] = ReadInstanceIntField(oracleContext, "Count");
+        }
+
+        const int Threads = 8;
+        const int Operations = 60;
+        var failures = new System.Collections.Concurrent.ConcurrentQueue<string>();
+        using var barrier = new Barrier(Threads);
+        var workers = Enumerable.Range(0, Threads).Select(worker => new Thread(() =>
+        {
+            object context = CreateExecutionContext(assembly);
+            int expectedCount = 0;
+            for (int i = 0; i < Operations; i++)
+            {
+                if (i % 5 == 0) barrier.SignalAndWait();
+                int index = (worker + i) % inputs.Length;
+                bool explicitContext = (i & 1) == 0;
+                ParseNode result = explicitContext
+                    ? InvokeParseWithContext(assembly, inputs[index], context)
+                    : InvokeParse(assembly, "ParseWithEmbeddedCode", inputs[index]);
+                if (explicitContext) expectedCount += actionCounts[index];
+                if (Render(result) != expected[index]) failures.Enqueue($"worker {worker}, input {index}: {Render(result)}");
+            }
+
+            int count = ReadInstanceIntField(context, "Count");
+            if (count != expectedCount) failures.Enqueue($"worker {worker}: context counted {count} actions, expected {expectedCount}");
+            barrier.RemoveParticipant();
+        }, 4 * 1024 * 1024)).ToArray();
+        foreach (Thread worker in workers) worker.Start();
+        foreach (Thread worker in workers) worker.Join();
+
+        Assert.IsTrue(failures.IsEmpty, string.Join("\n", failures.Take(5)));
+    }
+
+    /// <summary>
     /// Emits generated C# for the supplied grammar using the production grammar emitter.
     /// </summary>
     /// <param name="grammarText">ANTLR4 grammar source.</param>
