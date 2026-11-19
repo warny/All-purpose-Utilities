@@ -464,3 +464,14 @@ context passed to `ParseWithEmbeddedCode(input, executionContext)`, and directly
 `ParserEngine` instances. Use one of each per concurrent operation unless you make them thread-safe yourself.
 `ParseWithEmbeddedCode(string)` already creates a fresh context per call. Details: `docs/parser/RuntimeStateOwnership.md`
 (ownership table) and `docs/parser/ParserResourceSafety.md` section 7.
+
+<a id="omy-utils-expressions-operator-chains"></a>
+## Utils.Expressions.CSyntax / VBSyntax: binary operator chains (issue #711)
+
+Binary operator chains of three or more operands now fold left-associatively in both compilers, with each operator
+applied to the operands it separates: `x - 10 - 1` is `(x - 10) - 1`, `x * 2 / 4 * 3` is `((x * 2) / 4) * 3`, and
+VBSyntax `(x + 1) * (x - 1) / 2` divides by 2 instead of multiplying by 2. Previously such chains were grouped from
+the right (`x - (10 - 1)`), so expressions written like this computed different values; review stored formulas whose
+results were adjusted to the former behavior. Two-operand expressions, parenthesized expressions and `^` / `**`
+(still right-associative) are unchanged. VBSyntax no longer negates an identifier or literal whose name starts with
+`Not` (for example `Nothing`). No signature changed.

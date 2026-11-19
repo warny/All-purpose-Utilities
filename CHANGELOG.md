@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed — `omy.Utils.Expressions.VBSyntax`, `omy.Utils.Expressions.CSyntax` (binary operator chains, issue #711)
+- **Behavior change: compiled values change for affected expressions.** A binary operator chain of three or more
+  operands (`a op b op c ...`) was grouped from the right: `x - 10 - 1` compiled to `x - (10 - 1)`, `x / 100 / 2` to
+  `x / (100 / 2)`, `x * 2 / 4 * 3` to `x * ((2 * 4) / 3)` (VBSyntax) or `x * ((2 / 4) * 3)` (CSyntax). VBSyntax could
+  also apply the first operator of a chain to a later pair: `(x + 1) * (x - 1) / 2` compiled to
+  `(x + 1) * ((x - 1) * 2)`. Both compilers now fold chains left-associatively with each operator taken from the parse
+  tree between its two operands; `^` (VBSyntax) and `**` (CSyntax) stay right-associative. Affected levels: logical
+  (`OrElse`/`Or`/`Xor`, `AndAlso`/`And`, `||`, `&&`), equality, relational, shift, additive, multiplicative and
+  power (unchanged results for power).
+- The cause was in the compilers: the synthetic quantifier, repetition and operator-group nodes of a rule
+  `R : O (op O)*` carry the rule's name, so the rule's handler ran on them and folded partial chains; VBSyntax then
+  picked operators by searching the node's source text. Synthetic nodes now only pass their operands up, and the rule
+  node folds all operands with the operator tokens of the chain, never entering its operands. A chain whose operators do
+  not match its operands now throws `InvalidOperationException` instead of silently applying a default operator.
+- VBSyntax `Not` and unary `-` are read from the parse tree too: an identifier or literal starting with `Not` (for
+  example `Nothing` or a symbol named `notes`) is no longer negated.
+- No public API change; `ParseTreeCompiler` and the grammars are unchanged.
+
 ### Fixed — `omy.Utils.Parser` (concurrent use of a shared `CompiledGrammar`, issue #709)
 - **Behavior change under concurrency only.** `CompiledGrammar.Parse` and `CompiledGrammar.Tokenize` no longer share one
   `LexerEngine` / `ParserEngine` pair between calls: every call runs on private engines built over grammar-invariant
