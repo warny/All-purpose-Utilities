@@ -254,6 +254,6 @@ int result = sumValues(); // 10
 - The `=` operator means equality in expressions and assignment in statements; the compiler infers intent from whether the left-hand side is writeable.
 - Public `Function`/`Sub` declarations are registered as delegates in the `VBSyntaxCompilerContext` and can be retrieved with `context.Get(name)`.
 - For advanced scenarios, use `VBSyntaxCompilerContext` to pre-register symbols and delegates that the compiled code can call.
-- **Keyword operator disambiguation** — logical keyword operators are extracted using regex patterns with word-boundary anchors (`\b`). This guarantees that `OrElse` is never misidentified as `Or`, and `AndAlso` is never split into `And` + `Also`, even when multiple chained operators appear in a single expression.
+- **Operators come from the parse tree** — every binary operator chain (`OrElse`/`Or`/`Xor`, `AndAlso`/`And`, `=`/`<>`, relational, `&`, `<<`/`>>`, `+`/`-`, `*`/`/`/`Mod`, `^`) and the unary `Not` and `-` operators are read from the operator tokens of the parse tree, never from the source text. Chains fold left-associatively (`a - b - c` is `(a - b) - c`, `a * b / c` is `(a * b) / c`), `^` folds right-associatively (`a ^ b ^ c` is `a ^ (b ^ c)`), a parenthesized operand keeps its own operators, and an identifier or literal starting with `Not` (such as `Nothing`) is not negated.
 
 [Versioned API documentation](https://warny.github.io/All-purpose-Utilities/v2.0.0-rc.2/)

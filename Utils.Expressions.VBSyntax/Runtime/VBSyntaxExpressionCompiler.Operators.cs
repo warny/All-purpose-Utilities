@@ -1,11 +1,51 @@
 using System.Linq.Expressions;
-using System.Text.RegularExpressions;
 using Utils.Parser.Runtime;
 
 namespace Utils.Expressions.VBSyntax.Runtime;
 
 public sealed partial class VBSyntaxExpressionCompiler
 {
+    // ── Operator token tables (token rule name → operator) ──────────────────
+
+    /// <summary>Operators of <c>operation_or</c>.</summary>
+    private static readonly IReadOnlyDictionary<string, string> OrOperators =
+        new Dictionary<string, string>(StringComparer.Ordinal) { ["ORELSE"] = "OrElse", ["OR"] = "Or", ["XOR"] = "Xor" };
+
+    /// <summary>Operators of <c>operation_and</c>.</summary>
+    private static readonly IReadOnlyDictionary<string, string> AndOperators =
+        new Dictionary<string, string>(StringComparer.Ordinal) { ["ANDALSO"] = "AndAlso", ["AND"] = "And" };
+
+    /// <summary>Operators of <c>operation_equality</c>.</summary>
+    private static readonly IReadOnlyDictionary<string, string> EqualityOperators =
+        new Dictionary<string, string>(StringComparer.Ordinal) { ["OP_EQUAL"] = "=", ["OP_NOT_EQUAL"] = "<>" };
+
+    /// <summary>Operators of <c>operation_relational</c>.</summary>
+    private static readonly IReadOnlyDictionary<string, string> RelationalOperators =
+        new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["OP_LESS"] = "<", ["OP_LESS_EQUAL"] = "<=", ["OP_GREATER"] = ">", ["OP_GREATER_EQUAL"] = ">=",
+        };
+
+    /// <summary>Operators of <c>operation_concat</c>.</summary>
+    private static readonly IReadOnlyDictionary<string, string> ConcatOperators =
+        new Dictionary<string, string>(StringComparer.Ordinal) { ["OP_CONCAT"] = "&" };
+
+    /// <summary>Operators of <c>operation_shift</c>.</summary>
+    private static readonly IReadOnlyDictionary<string, string> ShiftOperators =
+        new Dictionary<string, string>(StringComparer.Ordinal) { ["OP_SHIFT_LEFT"] = "<<", ["OP_SHIFT_RIGHT"] = ">>" };
+
+    /// <summary>Operators of <c>operation_plus</c>.</summary>
+    private static readonly IReadOnlyDictionary<string, string> AdditiveOperators =
+        new Dictionary<string, string>(StringComparer.Ordinal) { ["OP_PLUS"] = "+", ["OP_MINUS"] = "-" };
+
+    /// <summary>Operators of <c>operation_mul</c>.</summary>
+    private static readonly IReadOnlyDictionary<string, string> MultiplicativeOperators =
+        new Dictionary<string, string>(StringComparer.Ordinal) { ["OP_MULTIPLY"] = "*", ["OP_DIVIDE"] = "/", ["MOD"] = "Mod" };
+
+    /// <summary>Operators of <c>operation_power</c>.</summary>
+    private static readonly IReadOnlyDictionary<string, string> PowerOperators =
+        new Dictionary<string, string>(StringComparer.Ordinal) { ["OP_POWER"] = "^" };
+
     // ── OrElse / Or / Xor ────────────────────────────────────────────────────
 
     /// <summary>
@@ -16,27 +56,13 @@ public sealed partial class VBSyntaxExpressionCompiler
         ParseTreeNavigator nav,
         CompilationContext context,
         IReadOnlyList<Expression?> children)
-    {
-        var operands = children.Where(static c => c is not null).Cast<Expression>().ToList();
-        if (operands.Count == 0) return null;
-        if (operands.Count == 1) return operands[0];
-
-        Expression result = operands[0];
-        var operators = ExtractOperatorsFromSource(GetNodeSourceText(context, nav), "OrElse", "Or", "Xor");
-        int pairCount = Math.Min(operators.Count, operands.Count - 1);
-        for (int i = 0; i < pairCount; i++)
-        {
-            string op = operators[i];
-            result = op switch
+        => CompileOperatorChain(nav, children, OrOperators,
+            static (op, left, right) => op switch
             {
-                "OrElse" => Expression.OrElse(result, operands[i + 1]),
-                "Xor" => Expression.ExclusiveOr(result, operands[i + 1]),
-                _ => Expression.Or(result, operands[i + 1]),
-            };
-        }
-
-        return result;
-    }
+                "OrElse" => Expression.OrElse(left, right),
+                "Xor" => Expression.ExclusiveOr(left, right),
+                _ => Expression.Or(left, right),
+            });
 
     // ── AndAlso / And ────────────────────────────────────────────────────────
 
@@ -47,29 +73,17 @@ public sealed partial class VBSyntaxExpressionCompiler
         ParseTreeNavigator nav,
         CompilationContext context,
         IReadOnlyList<Expression?> children)
-    {
-        var operands = children.Where(static c => c is not null).Cast<Expression>().ToList();
-        if (operands.Count == 0) return null;
-        if (operands.Count == 1) return operands[0];
-
-        Expression result = operands[0];
-        var operators = ExtractOperatorsFromSource(GetNodeSourceText(context, nav), "AndAlso", "And");
-        int pairCount = Math.Min(operators.Count, operands.Count - 1);
-        for (int i = 0; i < pairCount; i++)
-        {
-            string op = operators[i];
-            result = op == "AndAlso"
-                ? Expression.AndAlso(result, operands[i + 1])
-                : Expression.And(result, operands[i + 1]);
-        }
-
-        return result;
-    }
+        => CompileOperatorChain(nav, children, AndOperators,
+            static (op, left, right) => op == "AndAlso"
+                ? Expression.AndAlso(left, right)
+                : Expression.And(left, right));
 
     // ── Not ──────────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Compiles the unary <c>Not</c> operator.
+    /// Compiles the unary <c>Not</c> operator. The operator is read from the parse tree (a leading <c>NOT</c> token),
+    /// never from the source text, so an operand such as <c>Nothing</c> or an identifier starting with <c>Not</c> is
+    /// not negated.
     /// </summary>
     private static Expression? CompileLogicalNot(
         ParseTreeNavigator nav,
@@ -78,14 +92,7 @@ public sealed partial class VBSyntaxExpressionCompiler
     {
         Expression? inner = children.FirstOrDefault(static c => c is not null);
         if (inner is null) return null;
-
-        string source = GetNodeSourceText(context, nav).TrimStart();
-        if (!source.StartsWith("Not", StringComparison.OrdinalIgnoreCase))
-            return inner;
-
-        return inner.Type == typeof(bool)
-            ? Expression.Not(inner)
-            : Expression.Not(inner);
+        return StartsWithToken(nav, "NOT") ? Expression.Not(inner) : inner;
     }
 
     // ── Equality: = and <> ────────────────────────────────────────────────────
@@ -97,11 +104,10 @@ public sealed partial class VBSyntaxExpressionCompiler
         ParseTreeNavigator nav,
         CompilationContext context,
         IReadOnlyList<Expression?> children)
-        => CompileBinaryChain(nav, context, children,
-            op => op == "<>"
-                ? (Expression left, Expression right) => Expression.NotEqual(left, right)
-                : (Expression left, Expression right) => Expression.Equal(left, right),
-            ["<>", "="]);
+        => CompileOperatorChain(nav, children, EqualityOperators,
+            static (op, left, right) => op == "<>"
+                ? Expression.NotEqual(left, right)
+                : Expression.Equal(left, right));
 
     // ── Relational: < <= > >= ─────────────────────────────────────────────────
 
@@ -112,29 +118,31 @@ public sealed partial class VBSyntaxExpressionCompiler
         ParseTreeNavigator nav,
         CompilationContext context,
         IReadOnlyList<Expression?> children)
-        => CompileBinaryChain(nav, context, children,
-            op => op switch
+        => CompileOperatorChain(nav, children, RelationalOperators,
+            static (op, l, r) => op switch
             {
-                "<=" => (Expression l, Expression r) => Expression.LessThanOrEqual(l, r),
-                ">=" => (Expression l, Expression r) => Expression.GreaterThanOrEqual(l, r),
-                ">"  => (Expression l, Expression r) => Expression.GreaterThan(l, r),
-                _    => (Expression l, Expression r) => Expression.LessThan(l, r),
-            },
-            ["<=", ">=", "<>", "<", ">"]);
+                "<=" => Expression.LessThanOrEqual(l, r),
+                ">=" => Expression.GreaterThanOrEqual(l, r),
+                ">"  => Expression.GreaterThan(l, r),
+                _    => Expression.LessThan(l, r),
+            });
 
     // ── String concatenation: & ───────────────────────────────────────────────
 
     /// <summary>
-    /// Compiles the <c>&amp;</c> string concatenation operator.
+    /// Compiles the <c>&amp;</c> string concatenation operator into one <see cref="string.Concat(string[])"/> call over
+    /// every operand of the chain.
     /// </summary>
     private static Expression? CompileConcat(
         ParseTreeNavigator nav,
         CompilationContext context,
         IReadOnlyList<Expression?> children)
     {
-        var operands = children.Where(static c => c is not null).Cast<Expression>().ToList();
+        List<Expression> operands = FlattenChainOperands(children);
+        if (IsChainSegment(nav.Node)) return operands.Count == 0 ? null : new ChainOperands(operands);
         if (operands.Count == 0) return null;
         if (operands.Count == 1) return operands[0];
+        RequireOperatorCount(nav, ConcatOperators, operands.Count);
 
         var toStringMethod = typeof(object).GetMethod(nameof(ToString), Type.EmptyTypes)!;
         var concatMethod = typeof(string).GetMethod(nameof(string.Concat), [typeof(string[])])!;
@@ -157,11 +165,10 @@ public sealed partial class VBSyntaxExpressionCompiler
         ParseTreeNavigator nav,
         CompilationContext context,
         IReadOnlyList<Expression?> children)
-        => CompileBinaryChain(nav, context, children,
-            op => op == "<<"
-                ? (Expression l, Expression r) => Expression.LeftShift(l, r)
-                : (Expression l, Expression r) => Expression.RightShift(l, r),
-            ["<<", ">>"]);
+        => CompileOperatorChain(nav, children, ShiftOperators,
+            static (op, l, r) => op == "<<"
+                ? Expression.LeftShift(l, r)
+                : Expression.RightShift(l, r));
 
     // ── Addition / Subtraction ────────────────────────────────────────────────
 
@@ -172,11 +179,10 @@ public sealed partial class VBSyntaxExpressionCompiler
         ParseTreeNavigator nav,
         CompilationContext context,
         IReadOnlyList<Expression?> children)
-        => CompileBinaryChain(nav, context, children,
-            op => op == "-"
-                ? (Expression l, Expression r) => Expression.Subtract(l, ConvertNumeric(r, l.Type))
-                : (Expression l, Expression r) => Expression.Add(l, ConvertNumeric(r, l.Type)),
-            ["-", "+"]);
+        => CompileOperatorChain(nav, children, AdditiveOperators,
+            static (op, l, r) => op == "-"
+                ? Expression.Subtract(l, ConvertNumeric(r, l.Type))
+                : Expression.Add(l, ConvertNumeric(r, l.Type)));
 
     // ── Multiplication / Division / Mod ───────────────────────────────────────
 
@@ -187,19 +193,18 @@ public sealed partial class VBSyntaxExpressionCompiler
         ParseTreeNavigator nav,
         CompilationContext context,
         IReadOnlyList<Expression?> children)
-        => CompileBinaryChain(nav, context, children,
-            op => op switch
+        => CompileOperatorChain(nav, children, MultiplicativeOperators,
+            static (op, l, r) => op switch
             {
-                "/"   => (Expression l, Expression r) => Expression.Divide(l, ConvertNumeric(r, l.Type)),
-                "Mod" => (Expression l, Expression r) => Expression.Modulo(l, ConvertNumeric(r, l.Type)),
-                _     => (Expression l, Expression r) => Expression.Multiply(l, ConvertNumeric(r, l.Type)),
-            },
-            ["Mod", "/", "*"]);
+                "/"   => Expression.Divide(l, ConvertNumeric(r, l.Type)),
+                "Mod" => Expression.Modulo(l, ConvertNumeric(r, l.Type)),
+                _     => Expression.Multiply(l, ConvertNumeric(r, l.Type)),
+            });
 
     // ── Unary negate / plus ───────────────────────────────────────────────────
 
     /// <summary>
-    /// Compiles unary <c>-</c> and <c>+</c> operators.
+    /// Compiles unary <c>-</c> and <c>+</c> operators, read from the leading token of the node.
     /// </summary>
     private static Expression? CompileNegate(
         ParseTreeNavigator nav,
@@ -208,189 +213,172 @@ public sealed partial class VBSyntaxExpressionCompiler
     {
         Expression? inner = children.FirstOrDefault(static c => c is not null);
         if (inner is null) return null;
-        string source = GetNodeSourceText(context, nav).TrimStart();
-        if (source.StartsWith('-'))
-            return Expression.Negate(inner);
-        return inner;
+        return StartsWithToken(nav, "OP_MINUS") ? Expression.Negate(inner) : inner;
     }
 
     // ── Power: ^ ─────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Compiles the <c>^</c> exponentiation operator using <see cref="Math.Pow"/>.
+    /// Compiles the <c>^</c> exponentiation operator using <see cref="Math.Pow"/>. Chains are right-associative:
+    /// <c>a ^ b ^ c</c> is <c>a ^ (b ^ c)</c>.
     /// </summary>
     private static Expression? CompilePower(
         ParseTreeNavigator nav,
         CompilationContext context,
         IReadOnlyList<Expression?> children)
-    {
-        var operands = children.Where(static c => c is not null).Cast<Expression>().ToList();
-        if (operands.Count == 0) return null;
-        if (operands.Count == 1) return operands[0];
+        => CompileOperatorChain(nav, children, PowerOperators,
+            static (_, l, r) => Expression.Power(
+                ConvertNumeric(l, typeof(double)),
+                ConvertNumeric(r, typeof(double))),
+            rightAssociative: true);
 
-        // Right-associative: build from right
-        Expression result = operands[^1];
-        for (int i = operands.Count - 2; i >= 0; i--)
-            result = Expression.Power(
-                ConvertNumeric(operands[i], typeof(double)),
-                ConvertNumeric(result, typeof(double)));
-        return result;
-    }
-
-    // ── Generic binary chain helper ───────────────────────────────────────────
+    // ── Operator chains ───────────────────────────────────────────────────────
 
     /// <summary>
-    /// Folds a left-associative binary operator chain using a factory selected by operator token.
+    /// Compiles one node of a binary operator chain rule <c>R : O (op O)*</c>.
+    /// <para>
+    /// The parse tree of such a rule contains synthetic nodes that carry the rule's name: the quantifier wrapper, one
+    /// node per repetition (<c>op O</c>) and one node per operator group. The compiler visits them like the rule node
+    /// itself, so they must not fold anything: they only return their operands (<see cref="ChainOperands"/>). The rule
+    /// node then folds every operand of the chain with the operators read from the tokens of those synthetic nodes, in
+    /// source order, without looking inside the operands (a parenthesized operand keeps its own operators).
+    /// </para>
     /// </summary>
-    private static Expression? CompileBinaryChain(
+    /// <param name="nav">Current node.</param>
+    /// <param name="children">Compiled children.</param>
+    /// <param name="operatorTokens">Operator token rule names of the chain, mapped to the operator passed to <paramref name="combine"/>.</param>
+    /// <param name="combine">Builds the expression of one operator applied to its two operands.</param>
+    /// <param name="rightAssociative">Whether the chain folds from the right instead of the left.</param>
+    /// <returns>The folded expression, the operand carrier of a synthetic node, or <see langword="null"/>.</returns>
+    /// <exception cref="InvalidOperationException">The operators found do not match the operands of the chain.</exception>
+    private static Expression? CompileOperatorChain(
         ParseTreeNavigator nav,
-        CompilationContext context,
         IReadOnlyList<Expression?> children,
-        Func<string, Func<Expression, Expression, Expression>> factory,
-        IReadOnlyList<string> operators)
+        IReadOnlyDictionary<string, string> operatorTokens,
+        Func<string, Expression, Expression, Expression> combine,
+        bool rightAssociative = false)
     {
-        var operands = children.Where(static c => c is not null).Cast<Expression>().ToList();
+        List<Expression> operands = FlattenChainOperands(children);
+        if (IsChainSegment(nav.Node)) return operands.Count == 0 ? null : new ChainOperands(operands);
         if (operands.Count == 0) return null;
         if (operands.Count == 1) return operands[0];
 
-        string source = GetNodeSourceText(context, nav);
-        Expression result = operands[0];
-        int searchFrom = 0;
+        List<string> operators = RequireOperatorCount(nav, operatorTokens, operands.Count);
+        if (rightAssociative)
+        {
+            Expression right = operands[^1];
+            for (int i = operands.Count - 2; i >= 0; i--)
+                right = combine(operators[i], operands[i], right);
+            return right;
+        }
+
+        Expression left = operands[0];
         for (int i = 1; i < operands.Count; i++)
+            left = combine(operators[i - 1], left, operands[i]);
+        return left;
+    }
+
+    /// <summary>
+    /// Reads the operators of the chain rooted at <paramref name="nav"/> and checks that there is exactly one between
+    /// each pair of consecutive operands.
+    /// </summary>
+    /// <param name="nav">The chain rule node.</param>
+    /// <param name="operatorTokens">Operator token rule names of the chain.</param>
+    /// <param name="operandCount">The number of operands.</param>
+    /// <returns>The operators in source order.</returns>
+    /// <exception cref="InvalidOperationException">The operator count differs from <paramref name="operandCount"/> - 1.</exception>
+    private static List<string> RequireOperatorCount(ParseTreeNavigator nav, IReadOnlyDictionary<string, string> operatorTokens, int operandCount)
+    {
+        var operators = new List<string>();
+        CollectChainOperators(nav.Node, nav.RuleName, operatorTokens, operators);
+        if (operators.Count != operandCount - 1)
         {
-            string op = ExtractOperatorToken(source, searchFrom, operators);
-            int opIdx = source.IndexOf(op, searchFrom, StringComparison.OrdinalIgnoreCase);
-            if (opIdx >= 0) searchFrom = opIdx + op.Length;
-            result = factory(op)(result, operands[i]);
+            throw new InvalidOperationException(
+                $"Operator chain '{nav.RuleName}' at position {nav.Node.Span.Position} has {operandCount} operands but {operators.Count} operators.");
         }
 
-        return result;
+        return operators;
     }
 
-    // ── Operator scanning utilities ───────────────────────────────────────────
-
     /// <summary>
-    /// Scans <paramref name="source"/> starting at <paramref name="from"/> and returns
-    /// the first operator token found from <paramref name="candidates"/>.
+    /// Collects, in source order, the operator tokens of a chain: tokens that are direct children of the chain node or
+    /// of its synthetic nodes (quantifier, repetitions, operator groups). Operand nodes are not entered.
     /// </summary>
-    private static string ExtractOperatorToken(string source, int from, IReadOnlyList<string> candidates)
+    /// <param name="node">The chain node or one of its synthetic nodes.</param>
+    /// <param name="ruleName">The chain rule name.</param>
+    /// <param name="operatorTokens">Operator token rule names of the chain.</param>
+    /// <param name="operators">Receives the operators.</param>
+    private static void CollectChainOperators(ParseNode node, string ruleName, IReadOnlyDictionary<string, string> operatorTokens, List<string> operators)
     {
-        int best = int.MaxValue;
-        string found = candidates[^1];
-        foreach (string candidate in candidates)
+        if (node is not ParserNode parent) return;
+        foreach (ParseNode child in parent.Children)
         {
-            int idx = FindOperatorIndex(source, from, candidate);
-            if (idx >= 0 && idx < best)
+            switch (child)
             {
-                best = idx;
-                found = candidate;
-            }
-        }
-
-        return found;
-    }
-
-    /// <summary>
-    /// Finds the index of an operator token while enforcing word boundaries for keyword operators.
-    /// </summary>
-    /// <param name="source">Source text.</param>
-    /// <param name="from">Search start index.</param>
-    /// <param name="candidate">Operator candidate.</param>
-    /// <returns>Operator index, or <c>-1</c> when not found.</returns>
-    private static int FindOperatorIndex(string source, int from, string candidate)
-    {
-        int index = source.IndexOf(candidate, from, StringComparison.OrdinalIgnoreCase);
-        while (index >= 0)
-        {
-            if (!IsWordOperator(candidate) || IsWholeWordMatch(source, index, candidate.Length))
-            {
-                return index;
-            }
-
-            int nextStart = index + 1;
-            index = nextStart < source.Length
-                ? source.IndexOf(candidate, nextStart, StringComparison.OrdinalIgnoreCase)
-                : -1;
-        }
-
-        return -1;
-    }
-
-    /// <summary>
-    /// Determines whether an operator token is keyword-like (alphabetic).
-    /// </summary>
-    /// <param name="candidate">Operator candidate.</param>
-    /// <returns><c>true</c> for alphabetic operators; otherwise <c>false</c>.</returns>
-    private static bool IsWordOperator(string candidate)
-    {
-        return candidate.All(static c => char.IsLetter(c));
-    }
-
-    /// <summary>
-    /// Validates that an operator occurrence is delimited as a whole word.
-    /// </summary>
-    /// <param name="source">Source text.</param>
-    /// <param name="startIndex">Match start index.</param>
-    /// <param name="length">Match length.</param>
-    /// <returns><c>true</c> when boundaries are valid; otherwise <c>false</c>.</returns>
-    private static bool IsWholeWordMatch(string source, int startIndex, int length)
-    {
-        int before = startIndex - 1;
-        int after = startIndex + length;
-        bool beforeIsWord = before >= 0 && (char.IsLetterOrDigit(source[before]) || source[before] == '_');
-        bool afterIsWord = after < source.Length && (char.IsLetterOrDigit(source[after]) || source[after] == '_');
-        return !beforeIsWord && !afterIsWord;
-    }
-
-    /// <summary>
-    /// Collects operator tokens from the parse-tree children in traversal order.
-    /// </summary>
-    /// <param name="nodes">Nodes to inspect.</param>
-    /// <param name="allowedOperators">Allowed operator tokens.</param>
-    /// <returns>Operator tokens in encountered order.</returns>
-    private static IEnumerable<string> CollectOperatorTokens(IEnumerable<ParseNode> nodes, ISet<string> allowedOperators)
-    {
-        foreach (ParseNode node in nodes)
-        {
-            if (node is LexerNode lexerNode)
-            {
-                if (allowedOperators.Contains(lexerNode.Token.Text))
-                {
-                    yield return lexerNode.Token.Text;
-                }
-
-                continue;
-            }
-
-            if (node is ParserNode parserNode)
-            {
-                foreach (string token in CollectOperatorTokens(parserNode.Children, allowedOperators))
-                {
-                    yield return token;
-                }
+                case LexerNode lexer when operatorTokens.TryGetValue(lexer.Token.RuleName, out string? op):
+                    operators.Add(op);
+                    break;
+                case QuantifierNode:
+                case ParserNode when child.Rule?.Name == ruleName:
+                    // Synthetic node of the same chain (a real rule invocation is always below an operand rule).
+                    CollectChainOperators(child, ruleName, operatorTokens, operators);
+                    break;
             }
         }
     }
 
     /// <summary>
-    /// Extracts operators from source text in lexical order using whole-word matching.
+    /// Determines whether a node of a chain rule is one of its synthetic nodes rather than the rule invocation itself:
+    /// the quantifier wrapper, a repetition (starting with its operator) or an operator group. The rule invocation
+    /// always starts with an operand node of another rule.
     /// </summary>
-    /// <param name="source">Source text to scan.</param>
-    /// <param name="operators">Supported operators.</param>
-    /// <returns>Operators in source order.</returns>
-    private static List<string> ExtractOperatorsFromSource(string source, params string[] operators)
+    /// <param name="node">A node carrying the chain rule's name.</param>
+    /// <returns><see langword="true"/> for a synthetic node.</returns>
+    private static bool IsChainSegment(ParseNode node)
     {
-        if (string.IsNullOrWhiteSpace(source))
-        {
-            return [];
-        }
-
-        string pattern = @"\b(?:" + string.Join("|", operators.Select(Regex.Escape)) + @")\b";
-        return Regex.Matches(source, pattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)
-            .Select(static match => match.Value)
-            .ToList();
+        if (node is QuantifierNode) return true;
+        if (node is not ParserNode { Children.Count: > 0 } parserNode) return false;
+        ParseNode first = parserNode.Children[0];
+        return first is LexerNode || (first is ParserNode && first.Rule?.Name == node.Rule?.Name);
     }
 
+    /// <summary>Flattens compiled children into operands, expanding the carriers returned by synthetic chain nodes.</summary>
+    /// <param name="children">Compiled children.</param>
+    /// <returns>The operands in source order.</returns>
+    private static List<Expression> FlattenChainOperands(IReadOnlyList<Expression?> children)
+    {
+        var operands = new List<Expression>(children.Count);
+        foreach (Expression? child in children)
+        {
+            if (child is ChainOperands segment) operands.AddRange(segment.Operands);
+            else if (child is not null) operands.Add(child);
+        }
+
+        return operands;
+    }
+
+    /// <summary>Determines whether the first raw child of a node is a token of the given rule.</summary>
+    /// <param name="nav">The node.</param>
+    /// <param name="tokenRuleName">The token rule name.</param>
+    /// <returns><see langword="true"/> when the node starts with that token.</returns>
+    private static bool StartsWithToken(ParseTreeNavigator nav, string tokenRuleName)
+        => nav.RawChildren is [LexerNode { Token.RuleName: var name }, ..] && name == tokenRuleName;
+
+    /// <summary>
+    /// Operands of a synthetic chain node, handed to the enclosing chain node. It never reaches a compiled expression:
+    /// the chain node always flattens it.
+    /// </summary>
+    private sealed class ChainOperands(IReadOnlyList<Expression> operands) : Expression
+    {
+        /// <summary>Gets the operands in source order.</summary>
+        public IReadOnlyList<Expression> Operands { get; } = operands;
+
+        /// <inheritdoc />
+        public override ExpressionType NodeType => ExpressionType.Extension;
+
+        /// <inheritdoc />
+        public override Type Type => typeof(void);
+    }
     // ── Numeric type conversion ───────────────────────────────────────────────
 
     /// <summary>

@@ -66,28 +66,40 @@ public sealed partial class CSyntaxExpressionCompiler
     }
 
     /// <summary>
-    /// Folds a binary chain rule using operator tokens found between operands.
+    /// Folds one node of a binary operator chain rule <c>R : O (op O)*</c>.
+    /// <para>
+    /// The parse tree of such a rule contains synthetic nodes that carry the rule's name: the quantifier wrapper, one
+    /// node per repetition (<c>op O</c>) and one node per operator group. The compiler visits them like the rule node
+    /// itself, so they must not fold anything: they only return their operands (<see cref="ChainOperands"/>). The rule
+    /// node then folds every operand of the chain with the operators read from the tokens of those synthetic nodes, in
+    /// source order, without looking inside the operands (a parenthesized operand keeps its own operators).
+    /// </para>
     /// </summary>
     /// <param name="nav">Current parser navigator.</param>
     /// <param name="children">Compiled child expressions.</param>
     /// <param name="factory">Operator-aware binary expression factory.</param>
     /// <param name="allowedOperators">Optional operator whitelist.</param>
-    /// <returns>Compiled folded expression.</returns>
+    /// <param name="rightAssociative">Whether the chain folds from the right instead of the left.</param>
+    /// <returns>The folded expression, the operand carrier of a synthetic node, or <see langword="null"/>.</returns>
+    /// <exception cref="InvalidOperationException">The operators found do not match the operands of the chain.</exception>
     private static Expression? FoldBinary(
         ParseTreeNavigator nav,
         IReadOnlyList<Expression?> children,
         Func<string, Expression, Expression, Expression> factory,
-        IReadOnlyCollection<string>? allowedOperators = null)
+        IReadOnlyCollection<string>? allowedOperators = null,
+        bool rightAssociative = false)
     {
         if (nav.RawChildren is null || nav.RawChildren.Count == 0)
         {
             return null;
         }
 
-        List<Expression> operands = children
-            .Where(static child => child is not null)
-            .Cast<Expression>()
-            .ToList();
+        List<Expression> operands = FlattenChainOperands(children);
+        if (IsChainSegment(nav.Node))
+        {
+            return operands.Count == 0 ? null : new ChainOperands(operands);
+        }
+
         if (operands.Count == 0)
         {
             return null;
@@ -101,23 +113,123 @@ public sealed partial class CSyntaxExpressionCompiler
         HashSet<string> allowed = allowedOperators is null
             ? new HashSet<string>(GetAllBinaryOperators(), StringComparer.Ordinal)
             : new HashSet<string>(allowedOperators, StringComparer.Ordinal);
-        List<string> operators = CollectOperatorTokens(nav.RawChildren.Skip(1), allowed)
-            .ToList();
-        if (operators.Count == 0)
+        var operators = new List<string>();
+        CollectChainOperators(nav.Node, nav.RuleName, allowed, operators);
+        if (operators.Count != operands.Count - 1)
         {
-            return operands[0];
+            throw new InvalidOperationException(
+                $"Operator chain '{nav.RuleName}' at position {nav.Node.Span.Position} has {operands.Count} operands but {operators.Count} operators.");
+        }
+
+        if (rightAssociative)
+        {
+            Expression right = operands[^1];
+            for (int i = operands.Count - 2; i >= 0; i--)
+            {
+                right = factory(operators[i], operands[i], right);
+            }
+
+            return right;
         }
 
         Expression current = operands[0];
-        int pairCount = Math.Min(operators.Count, operands.Count - 1);
-        for (int i = 0; i < pairCount; i++)
+        for (int i = 1; i < operands.Count; i++)
         {
-            string op = operators[i];
-            Expression right = operands[i + 1];
-            current = factory(op, current, right);
+            current = factory(operators[i - 1], current, operands[i]);
         }
 
         return current;
+    }
+
+    /// <summary>
+    /// Collects, in source order, the operator tokens of a chain: tokens that are direct children of the chain node or
+    /// of its synthetic nodes (quantifier, repetitions, operator groups). Operand nodes are not entered.
+    /// </summary>
+    /// <param name="node">The chain node or one of its synthetic nodes.</param>
+    /// <param name="ruleName">The chain rule name.</param>
+    /// <param name="allowedOperators">Operator token texts of the chain.</param>
+    /// <param name="operators">Receives the operators.</param>
+    private static void CollectChainOperators(ParseNode node, string ruleName, HashSet<string> allowedOperators, List<string> operators)
+    {
+        if (node is not ParserNode parent)
+        {
+            return;
+        }
+
+        foreach (ParseNode child in parent.Children)
+        {
+            switch (child)
+            {
+                case LexerNode lexer when allowedOperators.Contains(lexer.Token.Text):
+                    operators.Add(lexer.Token.Text);
+                    break;
+                case QuantifierNode:
+                case ParserNode when child.Rule?.Name == ruleName:
+                    // Synthetic node of the same chain (a real rule invocation is always below an operand rule).
+                    CollectChainOperators(child, ruleName, allowedOperators, operators);
+                    break;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Determines whether a node of a chain rule is one of its synthetic nodes rather than the rule invocation itself:
+    /// the quantifier wrapper, a repetition (starting with its operator) or an operator group. The rule invocation
+    /// always starts with an operand node of another rule.
+    /// </summary>
+    /// <param name="node">A node carrying the chain rule's name.</param>
+    /// <returns><see langword="true"/> for a synthetic node.</returns>
+    private static bool IsChainSegment(ParseNode node)
+    {
+        if (node is QuantifierNode)
+        {
+            return true;
+        }
+
+        if (node is not ParserNode { Children.Count: > 0 } parserNode)
+        {
+            return false;
+        }
+
+        ParseNode first = parserNode.Children[0];
+        return first is LexerNode || (first is ParserNode && first.Rule?.Name == node.Rule?.Name);
+    }
+
+    /// <summary>Flattens compiled children into operands, expanding the carriers returned by synthetic chain nodes.</summary>
+    /// <param name="children">Compiled children.</param>
+    /// <returns>The operands in source order.</returns>
+    private static List<Expression> FlattenChainOperands(IReadOnlyList<Expression?> children)
+    {
+        var operands = new List<Expression>(children.Count);
+        foreach (Expression? child in children)
+        {
+            if (child is ChainOperands segment)
+            {
+                operands.AddRange(segment.Operands);
+            }
+            else if (child is not null)
+            {
+                operands.Add(child);
+            }
+        }
+
+        return operands;
+    }
+
+    /// <summary>
+    /// Operands of a synthetic chain node, handed to the enclosing chain node. It never reaches a compiled expression:
+    /// the chain node always flattens it.
+    /// </summary>
+    private sealed class ChainOperands(IReadOnlyList<Expression> operands) : Expression
+    {
+        /// <summary>Gets the operands in source order.</summary>
+        public IReadOnlyList<Expression> Operands { get; } = operands;
+
+        /// <inheritdoc />
+        public override ExpressionType NodeType => ExpressionType.Extension;
+
+        /// <inheritdoc />
+        public override Type Type => typeof(void);
     }
 
     private static IReadOnlyList<string> GetAllBinaryOperators() =>

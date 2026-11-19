@@ -154,7 +154,7 @@ public sealed partial class CSyntaxExpressionCompiler
     }
 
     /// <summary>
-    /// Compiles exponentiation operators.
+    /// Compiles exponentiation operators. Chains are right-associative: <c>a ** b ** c</c> is <c>a ** (b ** c)</c>.
     /// </summary>
     /// <param name="nav">Current parser navigator.</param>
     /// <param name="context">Current compilation context.</param>
@@ -173,7 +173,7 @@ public sealed partial class CSyntaxExpressionCompiler
                 typeof(Math).GetMethod(nameof(Math.Pow), [typeof(double), typeof(double)])!,
                 EnsureNumeric(left),
                 EnsureNumeric(right));
-        }, ["**"]);
+        }, ["**"], rightAssociative: true);
     }
 
     /// <summary>
