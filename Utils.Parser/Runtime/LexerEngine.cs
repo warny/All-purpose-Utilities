@@ -264,12 +264,52 @@ public sealed class LexerEngine(ParserDefinition definition, ParserRuntimeFeatur
         }
     }
 
+    /// <summary>
+    /// The candidate rules of every mode, in declaration order, without fragments and pure-literal rules (those are
+    /// matched by the keyword trie). Built once from the immutable definition instead of being filtered and sorted again
+    /// for every token.
+    /// </summary>
+    private readonly IReadOnlyDictionary<string, Rule[]> _candidateRulesByMode = BuildCandidateRules(definition);
+
+    /// <summary>Builds <see cref="_candidateRulesByMode"/>.</summary>
+    /// <param name="parserDefinition">The definition.</param>
+    /// <returns>The candidate rules per mode name.</returns>
+    private static IReadOnlyDictionary<string, Rule[]> BuildCandidateRules(ParserDefinition parserDefinition)
+    {
+        var result = new Dictionary<string, Rule[]>(StringComparer.Ordinal);
+        foreach (var mode in parserDefinition.Modes)
+        {
+            // The first mode of a name wins, as in GetDefaultMode and SetCurrentMode.
+            if (result.ContainsKey(mode.Name))
+            {
+                continue;
+            }
+
+            result[mode.Name] = mode.Rules
+                .OrderBy(static r => r.DeclarationOrder)
+                .Where(static r => !r.IsFragment && !IsPureLiteralRule(r))
+                .ToArray();
+        }
+
+        return result;
+    }
+
     private (SourceSpan? Span, Rule? Rule, List<Model.LexerCommand> Commands, List<LexerActionOccurrence> Actions) MatchLongest(TextReaderBuffer input, LexerMode mode, string? filePath, ParserResourceBudget budget)
     {
         SourceSpan? best = null;
         Rule? bestRule = null;
         List<Model.LexerCommand> bestCommands = [];
         List<LexerActionOccurrence> bestActions = [];
+        // Every mode on the mode stack comes from definition.Modes (default mode, mode, pushMode), so its name selects
+        // exactly its precomputed candidates.
+        Rule[] candidates = _candidateRulesByMode.TryGetValue(mode.Name, out var precomputed)
+            ? precomputed
+            : mode.Rules.OrderBy(static r => r.DeclarationOrder).Where(static r => !r.IsFragment && !IsPureLiteralRule(r)).ToArray();
+
+        // One pair of scratch buffers serves every candidate rule: a failed candidate's commands and actions are cleared
+        // before the next one, and only the current best candidate's entries are copied out, so no failed branch leaks.
+        var commands = new List<Model.LexerCommand>();
+        var actions = new List<LexerActionOccurrence>();
 
         if (_keywordTrieByMode.TryGetValue(mode.Name, out var trie) && !trie.IsEmpty)
         {
@@ -281,23 +321,18 @@ public sealed class LexerEngine(ParserDefinition definition, ParserRuntimeFeatur
             }
         }
 
-        foreach (var rule in mode.Rules.OrderBy(static r => r.DeclarationOrder))
+        foreach (var rule in candidates) // array foreach: no enumerator allocation
         {
-            if (rule.IsFragment || IsPureLiteralRule(rule))
-            {
-                continue;
-            }
-
-            var commands = new List<Model.LexerCommand>();
-            var actions = new List<LexerActionOccurrence>();
+            commands.Clear();
+            actions.Clear();
             if (TryMatchContent(input, rule.Content, 0, commands, actions, rule, budget, out int length) && length > 0)
             {
                 if (best is null || length > best.Length)
                 {
                     best = new SourceSpan(input.Position, length, input.Line, input.Column, filePath);
                     bestRule = rule;
-                    bestCommands = commands;
-                    bestActions = actions;
+                    bestCommands = new List<Model.LexerCommand>(commands);
+                    bestActions = new List<LexerActionOccurrence>(actions);
                 }
             }
         }

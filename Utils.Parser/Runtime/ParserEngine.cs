@@ -155,7 +155,119 @@ public sealed class ParserEngine
         _caseInsensitive = IsCaseInsensitive(_definition);
         _alternativeScheduler = new AlternativeScheduler(effectivePolicy.RuntimeObserver);
         _scheduledAlternativeExecutor = new ScheduledAlternativeExecutor(_stateRegistry, _lookaheadCache, _lookaheadProbe);
-        _schedulingPreparation = new SchedulingPreparation(_lookaheadProbe, _lookaheadCache, ResolveRule);
+        _resolveRule = ResolveRule;
+        _captureAttempt = CaptureAttempt;
+        _restoreAttempt = RestoreAttempt;
+        _schedulingPreparation = new SchedulingPreparation(_lookaheadProbe, _lookaheadCache, _resolveRule);
+        _schedulingShapes = BuildSchedulingShapes(_definition);
+    }
+
+    /// <summary>Cached delegate of <see cref="ResolveRule"/>, so scheduling does not allocate one per invocation.</summary>
+    private readonly Func<string, Rule?> _resolveRule;
+
+    /// <summary>Cached delegate of <see cref="CaptureAttempt"/>.</summary>
+    private readonly Func<ParseContext, ParserAttemptSnapshot> _captureAttempt;
+
+    /// <summary>Cached delegate of <see cref="RestoreAttempt"/>.</summary>
+    private readonly Action<ParseContext, ParserAttemptSnapshot> _restoreAttempt;
+
+    /// <summary>
+    /// Grammar-invariant scheduling inputs of every alternative list of the definition, keyed by list reference and built
+    /// once at construction. The map is never mutated afterwards; input-dependent and state-dependent scheduling data
+    /// (look-ahead probes, shared-prefix candidates, continuation descriptors) are still prepared per invocation.
+    /// </summary>
+    private readonly IReadOnlyDictionary<object, SchedulingShape> _schedulingShapes;
+
+    /// <summary>
+    /// The grammar-invariant part of scheduling one alternative list: its stable priority order and the structural
+    /// descriptors of that order. Both are pure functions of the immutable grammar model.
+    /// </summary>
+    /// <param name="Ordered">The alternatives in ascending priority order (stable).</param>
+    /// <param name="StructuralDescriptors">The structural descriptors of <paramref name="Ordered"/>.</param>
+    private sealed record SchedulingShape(IReadOnlyList<Alternative> Ordered, IReadOnlyList<AlternativeStructuralDescriptor> StructuralDescriptors);
+
+    /// <summary>
+    /// Builds the scheduling shape of every alternative list reachable from the definition: rule bodies, nested
+    /// alternations and the base and recursive alternatives of left-recursive rules.
+    /// </summary>
+    /// <param name="definition">The resolved definition.</param>
+    /// <returns>The shapes keyed by alternative-list reference.</returns>
+    private static IReadOnlyDictionary<object, SchedulingShape> BuildSchedulingShapes(ParserDefinition definition)
+    {
+        var shapes = new Dictionary<object, SchedulingShape>(ReferenceEqualityComparer.Instance);
+        var extractor = new AlternativeStructuralPrefixExtractor();
+        var pending = new Stack<RuleContent>();
+
+        void AddShape(IReadOnlyList<Alternative> alternatives)
+        {
+            if (shapes.ContainsKey(alternatives))
+            {
+                return;
+            }
+
+            var ordered = alternatives.OrderBy(static a => a.Priority).ToList().AsReadOnly();
+            shapes.Add(alternatives, new SchedulingShape(ordered, extractor.ExtractAll(ordered)));
+            foreach (var alternative in alternatives)
+            {
+                pending.Push(alternative.Content);
+            }
+        }
+
+        foreach (var rule in definition.AllRules.Values)
+        {
+            AddShape(rule.Content.Alternatives);
+        }
+
+        foreach (var info in definition.LeftRecursiveRules.Values)
+        {
+            AddShape(info.BaseAlternatives);
+            AddShape(info.RecursiveAlternatives);
+        }
+
+        while (pending.Count > 0)
+        {
+            switch (pending.Pop())
+            {
+                case Alternation alternation:
+                    AddShape(alternation.Alternatives);
+                    break;
+                case Alternative alternative:
+                    pending.Push(alternative.Content);
+                    break;
+                case Sequence sequence:
+                    foreach (var item in sequence.Items)
+                    {
+                        pending.Push(item);
+                    }
+
+                    break;
+                case Quantifier quantifier:
+                    pending.Push(quantifier.Inner);
+                    break;
+                case Negation negation:
+                    pending.Push(negation.Inner);
+                    break;
+            }
+        }
+
+        return shapes;
+    }
+
+    /// <summary>
+    /// Gets the scheduling shape of an alternative list: the precomputed one for lists of the definition, otherwise a
+    /// freshly computed one (never stored, so the shared map stays immutable).
+    /// </summary>
+    /// <param name="alternatives">The alternatives.</param>
+    /// <returns>The shape.</returns>
+    private SchedulingShape GetSchedulingShape(IEnumerable<Alternative> alternatives)
+    {
+        if (_schedulingShapes.TryGetValue(alternatives, out var shape))
+        {
+            return shape;
+        }
+
+        var ordered = alternatives.OrderBy(static a => a.Priority).ToList();
+        return new SchedulingShape(ordered, new AlternativeStructuralPrefixExtractor().ExtractAll(ordered));
     }
 
     /// <summary>
@@ -467,7 +579,7 @@ public sealed class ParserEngine
     {
         var startPosition = context.Position;
         ParseBranch? bestBranch = null;
-        var recursiveAlternatives = info.RecursiveAlternatives.OrderBy(a => a.Priority).ToList();
+        var recursiveAlternatives = GetSchedulingShape(info.RecursiveAlternatives).Ordered;
 
         for (int index = 0; index < recursiveAlternatives.Count; index++)
         {
@@ -1010,7 +1122,6 @@ public sealed class ParserEngine
         var children = new List<ParseNode>();
         var startPos = context.Position;
         var startToken = context.Peek();
-        var visitedStates = new HashSet<ParserStateKey>();
 
         for (int itemIndex = 0; itemIndex < seq.Items.Count; itemIndex++)
         {
@@ -1024,32 +1135,10 @@ public sealed class ParserEngine
             if (item is Model.LexerCommand)
                 continue;
 
-            var itemStartPosition = context.Position;
-            var stateKey = new ParserStateKey(
-                rule.Name,
-                itemStartPosition,
-                alternativeIndex,
-                itemIndex,
-                minimumPrecedence);
-            if (!visitedStates.Add(stateKey))
-            {
-                var diagnosticSpan = ResolveDiagnosticSpan(context);
-                diagnostics?.AddWithContext(
-                    ParserDiagnostics.ParserStateCycleDetected,
-                    diagnosticSpan.Start,
-                    diagnosticSpan.Length,
-                    rule.Name,
-                    null);
-                diagnostics?.AddWithContext(
-                    ParserDiagnostics.ParserStateRejected,
-                    diagnosticSpan.Start,
-                    diagnosticSpan.Length,
-                    rule.Name,
-                    null,
-                    rule.Name,
-                    $"repeated sequence item state {stateKey}");
-                return null;
-            }
+            // S-06: the former per-call visited-state set keyed by (rule, position, alternative, itemIndex, precedence)
+            // was removed: itemIndex strictly increases within one call, so a key could never repeat and the check
+            // could never reject; it only allocated one hash set per sequence attempt. Non-progressive repetition is
+            // still stopped by the quantifier and left-recursion guards, and recursion by the depth budget.
             var node = TryParseContent(context, item, rule, minimumPrecedence, alternativeIndex, itemIndex, diagnostics);
             if (node is null)
                 return null;
@@ -1098,7 +1187,11 @@ public sealed class ParserEngine
     {
         var startPosition = context.Position;
         var startToken = context.Peek();
-        var orderedAlternatives = alternatives.OrderBy(static a => a.Priority).ToList();
+        // The priority order and structural descriptors are grammar-invariant and precomputed at construction;
+        // look-ahead probes and the metadata derived from them still depend on the input position and are prepared here.
+        var shape = GetSchedulingShape(alternatives);
+        var orderedAlternatives = shape.Ordered;
+        Func<Alternative, bool> checkPrecedence = candidate => CheckPrecedence(candidate, precedence);
         var prepared = _schedulingPreparation.Prepare(
             rule,
             orderedAlternatives,
@@ -1109,7 +1202,8 @@ public sealed class ParserEngine
                 cursorKind,
                 cursorIndex,
                 _caseInsensitive,
-                candidate => CheckPrecedence(candidate, precedence)));
+                checkPrecedence),
+            shape.StructuralDescriptors);
         var scheduling = _alternativeScheduler.Run(
             rule,
             orderedAlternatives,
@@ -1130,13 +1224,13 @@ public sealed class ParserEngine
                 cursorKind,
                 cursorIndex,
                 diagnostics,
-                checkPrecedence: candidate => CheckPrecedence(candidate, precedence),
-                resolveRule: ResolveRule,
+                checkPrecedence: checkPrecedence,
+                resolveRule: _resolveRule,
                 caseInsensitive: _caseInsensitive,
                 containsPredicateOrAction: ContainsPredicateOrAction,
                 resolveDiagnosticSpan: ResolveDiagnosticSpan,
-                captureAttempt: CaptureAttempt,
-                restoreAttempt: RestoreAttempt,
+                captureAttempt: _captureAttempt,
+                restoreAttempt: _restoreAttempt,
                 parseAlternative: candidate => TryParseContent(context, candidate.Content, rule, precedence, alternativeIndex, -1, diagnostics)));
 
         if (scheduling.SelectedState is null)
