@@ -475,3 +475,17 @@ the right (`x - (10 - 1)`), so expressions written like this computed different 
 results were adjusted to the former behavior. Two-operand expressions, parenthesized expressions and `^` / `**`
 (still right-associative) are unchanged. VBSyntax no longer negates an identifier or literal whose name starts with
 `Not` (for example `Nothing`). No signature changed.
+
+<a id="omy-utils-expressions-vbsyntax-numeric-promotion"></a>
+## Utils.Expressions.VBSyntax: symmetric numeric promotion and real division
+
+Mixed numeric operands are promoted to the type of higher rank in `Byte < Int16 < Int32 < Int64 < Single < Double`,
+whichever side they are on, for `+`, `-`, `*`, `Mod` and comparisons; `/` always produces a `Double`. Expressions such
+as `10 - x` (`x` a `Double`), `3 / 4` or `7 * 5 / 2 * 3` now compute `7.5`, `0.75` and `52.5` instead of `8`, `0` and
+`51`, and their compiled types change accordingly (`Double` instead of `Int32`). A typed delegate such as `Func<int>`
+still compiles (the body is converted to the return type), but the `Double` result is truncated once at the end
+instead of after each integer division (`7 * 5 / 2 * 3` gives `52` instead of `51`). Mixed-type comparisons that used
+to throw now compile, and `2 = 2.5` with constant operands is `False`. Mixing `SByte`, `UInt16`, `UInt32`, `UInt64` or
+`Decimal` with another numeric type now throws `NotSupportedException`: convert one operand explicitly to the type
+you want (operations between two operands of the same such type are unchanged). A nullable operand on either side
+now keeps the result nullable.
