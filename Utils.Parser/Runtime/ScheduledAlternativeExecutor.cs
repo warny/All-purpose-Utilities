@@ -62,8 +62,11 @@ internal sealed class ScheduledAlternativeExecutor
         Action<ParseContext, ParserAttemptSnapshot> restoreAttempt,
         Func<Alternative, ParseNode?> parseAlternative)
     {
+        // Every scheduled attempt consumes parser work, even when it is later rejected or backtracked.
+        var budget = context.Budget;
+        budget.ChargeStep();
         var stateKey = new ParserStateKey(rule.Name, startPosition, alternativeIndex, alternativeIndex, precedence);
-        _stateRegistry.TryEnterState(stateKey);
+        _stateRegistry.TryEnterState(stateKey, budget);
 
         if (!checkPrecedence(alternative))
         {
@@ -85,10 +88,11 @@ internal sealed class ScheduledAlternativeExecutor
         }
         else
         {
+            budget.ChargeStep();
             effectiveLookahead = _lookaheadProbe.Probe(alternative, token, resolveRule, caseInsensitive);
             if (effectiveLookahead.Kind != ParserLookaheadProbeKind.Unknown)
             {
-                _lookaheadCache.TryAdd(lookaheadKey, effectiveLookahead);
+                _lookaheadCache.TryAdd(lookaheadKey, effectiveLookahead, budget);
             }
         }
 
@@ -115,7 +119,8 @@ internal sealed class ScheduledAlternativeExecutor
                     new ParserLookaheadProbeResult(
                         ParserLookaheadProbeKind.ImmediateReject,
                         token?.RuleName,
-                        token?.Text));
+                        token?.Text),
+                    budget);
             }
 
             var diagnosticSpan = resolveDiagnosticSpan(context);
@@ -131,7 +136,8 @@ internal sealed class ScheduledAlternativeExecutor
             new ParserLookaheadProbeResult(
                 ParserLookaheadProbeKind.RequiresParse,
                 token?.RuleName,
-                token?.Text));
+                token?.Text),
+            budget);
 
         var state = new ActiveParseState
         {

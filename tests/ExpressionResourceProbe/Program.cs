@@ -74,7 +74,8 @@ internal static class Program
         {
             "list" => List(),
             "parser-list" => ParserProbe.List(),
-            "parser" when args.Length >= 4 => OnThread(thread, () => ParserProbe.Run(args[1], int.Parse(args[2], CultureInfo.InvariantCulture), args[3], thread, Option(args, "--plimits") ?? "default")),
+            "parser-concurrency" when args.Length >= 3 => SharedGrammarConcurrencyProbe.Run(int.Parse(args[1], CultureInfo.InvariantCulture), int.Parse(args[2], CultureInfo.InvariantCulture)),
+            "parser" when args.Length >= 4 => OnThread(thread, () => ParserProbe.Run(args[1], int.Parse(args[2], CultureInfo.InvariantCulture), args[3], thread, Option(args, "--plimits") ?? "default", Array.IndexOf(args, "--alloc-profile") >= 0)),
             "run" when args.Length >= 4 => OnThread(thread, () => Run(args[1], int.Parse(args[2], CultureInfo.InvariantCulture), args[3], thread, counters)),
             "ess" => OnThread(thread, () => MeasureStackGuard(thread)),
             _ => Usage(),

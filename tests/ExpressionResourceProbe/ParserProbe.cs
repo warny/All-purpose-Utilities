@@ -158,8 +158,9 @@ internal static class ParserProbe
     /// <param name="operation"><c>tokenize</c>, <c>parse</c> or <c>compile</c> (dialect scenarios only).</param>
     /// <param name="thread">The thread kind, echoed in the result.</param>
     /// <param name="limits">The parser limits selector, echoed in the result.</param>
+    /// <param name="allocationProfile">Whether to sample allocations by type (<c>--alloc-profile</c>; inflates the allocation count).</param>
     /// <returns>The exit code.</returns>
-    public static int Run(string scenarioName, int size, string operation, string thread, string limits)
+    public static int Run(string scenarioName, int size, string operation, string thread, string limits, bool allocationProfile = false)
     {
         ParserScenario scenario = Catalog.FirstOrDefault(s => s.Name == scenarioName)
             ?? throw new ArgumentException($"Unknown parser scenario '{scenarioName}'.");
@@ -177,6 +178,8 @@ internal static class ParserProbe
         GC.WaitForPendingFinalizers();
         GC.Collect();
         long liveBefore = GC.GetTotalMemory(forceFullCollection: true);
+        using var sampler = allocationProfile ? new AllocationSampler() : null;
+        sampler?.Start();
         long allocatedBefore = GC.GetAllocatedBytesForCurrentThread();
         var stopwatch = Stopwatch.StartNew();
         string outcome;
@@ -210,6 +213,7 @@ internal static class ParserProbe
         }
 
         stopwatch.Stop();
+        sampler?.Stop();
         long allocated = GC.GetAllocatedBytesForCurrentThread() - allocatedBefore;
 
         // Live memory retained by the engine (registry, memo, caches) and by the result tree, measured while both are reachable.
@@ -232,6 +236,7 @@ internal static class ParserProbe
             "liveDelta=" + (liveAfter - liveBefore).ToString(CultureInfo.InvariantCulture),
             "peakWorkingSet=" + peakWorkingSet.ToString(CultureInfo.InvariantCulture),
             "outcome=" + outcome));
+        if (sampler is not null) Console.WriteLine(sampler.Format(40));
         return exitCode;
     }
 

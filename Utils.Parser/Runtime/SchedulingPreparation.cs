@@ -88,11 +88,13 @@ internal sealed class SchedulingPreparation
                 continue;
             }
 
+            var budget = context.ParseContext.Budget;
+            budget.ChargeStep();
             var probe = _lookaheadProbe.Probe(alternative, token, _resolveRule, context.CaseInsensitive);
             probes[index] = probe;
             if (probe.Kind != ParserLookaheadProbeKind.Unknown)
             {
-                _lookaheadCache.TryAdd(lookaheadKey, probe);
+                _lookaheadCache.TryAdd(lookaheadKey, probe, budget);
             }
         }
 

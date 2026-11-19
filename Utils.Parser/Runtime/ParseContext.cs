@@ -5,11 +5,35 @@ namespace Utils.Parser.Runtime;
 /// building a parse tree.
 /// Supports position save/restore so that the parser can speculatively try alternatives
 /// and backtrack on failure without copying the token list.
+/// It also owns the private resource budget of the parse operation it belongs to: restoring a
+/// position never refunds consumed budget.
 /// </summary>
-internal sealed class ParseContext(IReadOnlyList<Token> tokens)
+internal sealed class ParseContext
 {
+    /// <summary>The flat default-channel token list being parsed.</summary>
+    private readonly IReadOnlyList<Token> tokens;
+
     /// <summary>Zero-based index of the next token to be consumed.</summary>
     private int _position;
+
+    /// <summary>Initializes a cursor whose parse runs under <see cref="ParserResourceLimits.Default"/>.</summary>
+    /// <param name="tokens">The tokens to parse.</param>
+    public ParseContext(IReadOnlyList<Token> tokens)
+        : this(tokens, ParserResourceLimits.Default)
+    {
+    }
+
+    /// <summary>Initializes a cursor and the resource budget of its parse operation.</summary>
+    /// <param name="tokens">The tokens to parse.</param>
+    /// <param name="limits">The limits of the parse operation.</param>
+    public ParseContext(IReadOnlyList<Token> tokens, ParserResourceLimits limits)
+    {
+        this.tokens = tokens;
+        Budget = new ParserResourceBudget(limits, ParserResourcePhase.Parser, CurrentCharacterOffset);
+    }
+
+    /// <summary>Gets the private resource budget of the parse operation.</summary>
+    public ParserResourceBudget Budget { get; }
 
     /// <summary>Current zero-based index into the token list.</summary>
     public int Position => _position;
@@ -48,4 +72,19 @@ internal sealed class ParseContext(IReadOnlyList<Token> tokens)
     /// </summary>
     /// <param name="savedPosition">Position snapshot captured before an operation.</param>
     public bool HasStrictProgress(int savedPosition) => _position > savedPosition;
+
+    /// <summary>
+    /// Gets the input character offset of the current token, or the end of the last token at end of input, for
+    /// resource-refusal reporting.
+    /// </summary>
+    /// <returns>The offset, or <see langword="null"/> when the token list is empty.</returns>
+    private int? CurrentCharacterOffset()
+    {
+        if (Peek() is { } current)
+        {
+            return current.Span.Position;
+        }
+
+        return Peek(-1) is { } last ? last.Span.Position + last.Span.Length : null;
+    }
 }

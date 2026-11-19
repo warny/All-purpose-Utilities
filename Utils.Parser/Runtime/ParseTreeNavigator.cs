@@ -212,13 +212,34 @@ public sealed class ParseTreeNavigator
     /// Returns navigators for every descendant of the current node in depth-first
     /// pre-order (the current node itself is excluded).
     /// </summary>
+    /// <remarks>
+    /// The traversal keeps an explicit stack of child enumerators instead of nesting one iterator per level, so its stack
+    /// use and its cost per yielded node do not grow with the depth of the tree.
+    /// </remarks>
     public IEnumerable<ParseTreeNavigator> Descendants()
     {
-        foreach (var child in Children())
+        var pending = new Stack<IEnumerator<ParseTreeNavigator>>();
+        pending.Push(Children().GetEnumerator());
+        try
         {
-            yield return child;
-            foreach (var grandchild in child.Descendants())
-                yield return grandchild;
+            while (pending.Count > 0)
+            {
+                var current = pending.Peek();
+                if (!current.MoveNext())
+                {
+                    pending.Pop().Dispose();
+                    continue;
+                }
+
+                var child = current.Current;
+                yield return child;
+                pending.Push(child.Children().GetEnumerator());
+            }
+        }
+        finally
+        {
+            while (pending.Count > 0)
+                pending.Pop().Dispose();
         }
     }
 

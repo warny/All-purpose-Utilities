@@ -1,3 +1,5 @@
+using System.Runtime.CompilerServices;
+
 namespace Utils.Parser.Runtime;
 
 /// <summary>
@@ -262,13 +264,33 @@ public sealed class ParseTreeCompiler<TContext, TResult>
     /// <param name="root">Root node of the parse tree.</param>
     /// <param name="initialContext">Context to pass to the root node's descent handler.</param>
     /// <returns>The result produced by the root node's ascent handler.</returns>
+    /// <exception cref="ParserResourceLimitException">
+    /// The remaining execution stack is insufficient to visit the tree (kind <see cref="ParserResourceLimitKind.Stack"/>,
+    /// phase <see cref="ParserResourcePhase.TreeCompilation"/>), instead of a process-terminating stack overflow.
+    /// </exception>
     public TResult? Compile(ParseNode root, TContext initialContext)
-        => Visit(new ParseTreeNavigator(root), initialContext);
+        => Visit(new ParseTreeNavigator(root), initialContext, 1);
 
     // ── Recursive traversal ──────────────────────────────────────────
 
-    private TResult? Visit(ParseTreeNavigator nav, TContext context)
+    /// <summary>Visits one node and its subtree; checks the execution stack before every level.</summary>
+    /// <param name="nav">The node.</param>
+    /// <param name="context">The context of the node.</param>
+    /// <param name="depth">The depth of the node (the root has depth 1).</param>
+    /// <returns>The compiled result.</returns>
+    private TResult? Visit(ParseTreeNavigator nav, TContext context, int depth)
     {
+        if (!RuntimeHelpers.TryEnsureSufficientExecutionStack())
+        {
+            throw new ParserResourceLimitException(
+                ParserResourceLimitKind.Stack,
+                ParserResourcePhase.TreeCompilation,
+                0,
+                depth,
+                nav.Node.Span.Position,
+                new InsufficientExecutionStackException());
+        }
+
         // Error nodes are not traversed further.
         if (nav.IsError)
             return _errorHandler is not null ? _errorHandler(nav, context) : default;
@@ -283,7 +305,7 @@ public sealed class ParseTreeCompiler<TContext, TResult>
         {
             var results = new List<TResult?>();
             foreach (var child in nav.Children())
-                results.Add(Visit(child, childContext));
+                results.Add(Visit(child, childContext, depth + 1));
             childResults = results;
         }
         else
