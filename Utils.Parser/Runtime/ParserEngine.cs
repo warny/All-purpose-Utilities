@@ -38,8 +38,9 @@ namespace Utils.Parser.Runtime;
 /// </para>
 /// </summary>
 /// <remarks>
-/// This class is not thread-safe. Each concurrent parse must use a separate
-/// <see cref="ParserEngine"/> instance.
+/// This class is not thread-safe: the recursion frames, the state registry and the look-ahead cache belong to the
+/// engine and are reset by every parse. Each concurrent parse must use a separate <see cref="ParserEngine"/> instance;
+/// <see cref="CompiledGrammar"/> does so for every call.
 /// </remarks>
 public sealed class ParserEngine
 {
@@ -142,9 +143,22 @@ public sealed class ParserEngine
     /// <param name="runtimeFeaturePolicy">Runtime feature policy for optional parser behavior.</param>
     /// <param name="resourceLimits">Limits applied to each parse operation; every operation owns a private budget.</param>
     public ParserEngine(ParserDefinition definition, ParserRuntimeFeaturePolicy runtimeFeaturePolicy, ParserResourceLimits resourceLimits)
+        : this(Prepare(definition, resourceLimits), runtimeFeaturePolicy, resourceLimits)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a parser engine over grammar-invariant scheduling data prepared once and shared with other engines of
+    /// the same definition. The new engine owns its mutable per-parse state (recursion frames, state registry, memo and
+    /// look-ahead cache).
+    /// </summary>
+    /// <param name="preparation">The shared, immutable parser preparation.</param>
+    /// <param name="runtimeFeaturePolicy">Runtime feature policy for optional parser behavior.</param>
+    /// <param name="resourceLimits">Limits applied to each parse operation.</param>
+    internal ParserEngine(Preparation preparation, ParserRuntimeFeaturePolicy runtimeFeaturePolicy, ParserResourceLimits resourceLimits)
     {
         _resourceLimits = resourceLimits ?? throw new ArgumentNullException(nameof(resourceLimits));
-        _definition = definition ?? throw new ArgumentNullException(nameof(definition));
+        _definition = preparation.Definition;
         var effectivePolicy = runtimeFeaturePolicy ?? throw new ArgumentNullException(nameof(runtimeFeaturePolicy));
         _semanticPredicateEvaluator = effectivePolicy.SemanticPredicateEvaluator ?? throw new ArgumentNullException(nameof(runtimeFeaturePolicy));
         _parserActionExecutor = effectivePolicy.ParserActionExecutor ?? throw new ArgumentNullException(nameof(runtimeFeaturePolicy));
@@ -159,7 +173,43 @@ public sealed class ParserEngine
         _captureAttempt = CaptureAttempt;
         _restoreAttempt = RestoreAttempt;
         _schedulingPreparation = new SchedulingPreparation(_lookaheadProbe, _lookaheadCache, _resolveRule);
-        _schedulingShapes = BuildSchedulingShapes(_definition);
+        _schedulingShapes = preparation.SchedulingShapes;
+    }
+
+    /// <summary>
+    /// Validates the arguments of the public constructor in their historical order (limits, then definition) and builds
+    /// the preparation of <paramref name="definition"/>.
+    /// </summary>
+    /// <param name="definition">The resolved definition.</param>
+    /// <param name="resourceLimits">The resource limits.</param>
+    /// <returns>The preparation.</returns>
+    private static Preparation Prepare(ParserDefinition definition, ParserResourceLimits resourceLimits)
+    {
+        ArgumentNullException.ThrowIfNull(resourceLimits);
+        return new Preparation(definition);
+    }
+
+    /// <summary>
+    /// The grammar-invariant scheduling data of one definition: the scheduling shape of every alternative list, keyed by
+    /// list reference. It is a pure function of the immutable definition, built once and never mutated afterwards, so one
+    /// preparation can be shared by any number of engines, including engines used concurrently on different threads.
+    /// </summary>
+    internal sealed class Preparation
+    {
+        /// <summary>Builds the scheduling shapes of <paramref name="definition"/>.</summary>
+        /// <param name="definition">The resolved definition.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="definition"/> is <see langword="null"/>.</exception>
+        public Preparation(ParserDefinition definition)
+        {
+            Definition = definition ?? throw new ArgumentNullException(nameof(definition));
+            SchedulingShapes = BuildSchedulingShapes(definition);
+        }
+
+        /// <summary>Gets the definition the shapes were built from.</summary>
+        public ParserDefinition Definition { get; }
+
+        /// <summary>Gets the scheduling shapes keyed by alternative-list reference (read-only after construction).</summary>
+        public IReadOnlyDictionary<object, SchedulingShape> SchedulingShapes { get; }
     }
 
     /// <summary>Cached delegate of <see cref="ResolveRule"/>, so scheduling does not allocate one per invocation.</summary>
@@ -173,8 +223,9 @@ public sealed class ParserEngine
 
     /// <summary>
     /// Grammar-invariant scheduling inputs of every alternative list of the definition, keyed by list reference and built
-    /// once at construction. The map is never mutated afterwards; input-dependent and state-dependent scheduling data
-    /// (look-ahead probes, shared-prefix candidates, continuation descriptors) are still prepared per invocation.
+    /// once per <see cref="Preparation"/> (possibly shared with other engines). The map is never mutated afterwards;
+    /// input-dependent and state-dependent scheduling data (look-ahead probes, shared-prefix candidates, continuation
+    /// descriptors) are still prepared per invocation.
     /// </summary>
     private readonly IReadOnlyDictionary<object, SchedulingShape> _schedulingShapes;
 
@@ -184,7 +235,7 @@ public sealed class ParserEngine
     /// </summary>
     /// <param name="Ordered">The alternatives in ascending priority order (stable).</param>
     /// <param name="StructuralDescriptors">The structural descriptors of <paramref name="Ordered"/>.</param>
-    private sealed record SchedulingShape(IReadOnlyList<Alternative> Ordered, IReadOnlyList<AlternativeStructuralDescriptor> StructuralDescriptors);
+    internal sealed record SchedulingShape(IReadOnlyList<Alternative> Ordered, IReadOnlyList<AlternativeStructuralDescriptor> StructuralDescriptors);
 
     /// <summary>
     /// Builds the scheduling shape of every alternative list reachable from the definition: rule bodies, nested
