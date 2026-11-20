@@ -99,7 +99,7 @@ For conceptual fallback lists and limitations detail, see [`ParserMetadataAndRun
 
 Boundaries:
 
-- `Clear()` resets registry-owned state for a new parse lifecycle; `ParserEngine.Parse` clears it both when a parse starts and when it ends (successfully, with an `ErrorNode`, or with an exception), so no parse state outlives its parse (S-06);
+- `Clear()` resets registry-owned state for a new parse lifecycle; `ParserEngine.Parse` clears it both when a parse starts and when it ends (successfully, with an `ErrorNode`, or with an exception), so no parse state outlives its parse (S-06); a collection that held more than `ParserStateRetention.MaxRetainedEntries` (1,024) entries is also shrunk, so a reused engine does not keep the capacity of its largest parse;
 - every insertion of a new visited state, continuation, completed result or look-ahead entry is charged to the running parse's `MaxRetainedStates` budget before it is stored; an exhausted budget refuses the whole parse instead of dropping or evicting an entry;
 - reusable results are invocation-local completion artifacts;
 - reusable result selection is not final parse acceptance;
@@ -121,7 +121,8 @@ are built once by the `CompiledGrammar` constructor (internal `LexerEngine.Prepa
 | `ParserResourceLimits` | grammar | immutable configuration | yes (each operation builds its own budget from it) |
 | lexer keyword tries (`KeywordLookup` per mode), candidate rules per mode, case sensitivity | `LexerEngine.Preparation` | precomputed execution metadata, read-only after construction | yes |
 | parser scheduling shapes (stable priority order and structural descriptors per alternative list, keyed by list reference) | `ParserEngine.Preparation` | precomputed execution metadata, read-only after construction | yes |
-| lexer `_modeStack`, `_moreTextBuilder`, `_moreStartPos`, `_activeRuleRefs` | `LexerEngine` | mutable per-operation state | no: one engine per call |
+| lexer mode stack and pending `more` text (`TokenizationState`) | tokenization enumeration | mutable per-operation state | no: one state per enumeration, even on one engine |
+| lexer `_activeRuleRefs` | `LexerEngine` | mutable per-match state, empty between two tokens | no: one engine per call |
 | lexer resource budget (`ParserResourceBudget`) | tokenization enumeration | mutable per-operation state | no |
 | parser `_activeRuleFrames`, `ParserStateRegistry` (visited states, continuations, completed results), `ParserLookaheadCache` | `ParserEngine` | mutable per-operation state | no: one engine per call |
 | `AlternativeScheduler`, `ScheduledAlternativeExecutor`, `SchedulingPreparation`, `ParserLookaheadProbe` | `ParserEngine` | per-engine helpers bound to that engine's registry and cache | no |
@@ -148,13 +149,36 @@ Contract:
   `StackParserRuleInvocationFrameManager`, a recording observer, or a policy bound to a generated execution context) is
   shared by every call of the grammar, so concurrent use of such a grammar is supported only when the caller guarantees
   the component is thread-safe; otherwise one `CompiledGrammar` per concurrent operation is required;
-- a directly constructed `LexerEngine` or `ParserEngine` remains non-thread-safe and non-re-entrant;
+- a directly constructed `LexerEngine` or `ParserEngine` remains non-thread-safe and non-re-entrant; several `LexerEngine.Tokenize` enumerations of one engine may however be interleaved on one thread or abandoned, since each owns its mode stack and pending `more` text;
 - the CSyntax/VBSyntax front ends inherit the guarantee: `CSyntaxTokenParser`, `VBSyntaxTokenParser`,
   `CSyntaxExpressionCompiler` and `VBSyntaxExpressionCompiler` keep no mutable instance state (a compilation builds its
   own `ParseTreeCompiler` and compilation context), so one instance may serve concurrent calls; an
   `ExpressionCompilerContext` or `VBSyntaxCompilerContext` passed explicitly to `CompileExpression` is read and mutated by
   that compilation and must not be shared by concurrent compilations;
 - no lock, thread-local engine or pool is used; resource budgets stay owned by each operation (S-06).
+
+## Engine reuse and retained memory (engine-reuse audit)
+
+The engine-reuse study deferred by #709 compared fresh engines per call, a bounded per-grammar pool and extracted
+immutable caches. Fresh engines are kept, and the pool is abandoned: a pooled engine would keep the capacity of the
+largest parse it served, which is exactly the retention this audit removed, while the measured cost of fresh engines is
+an allocation overhead of 12–19 % on parse.
+
+Retention guarantees, for a long-lived `CompiledGrammar` (a generated static `Grammar`, the CSyntax/VBSyntax shared
+grammars) and for a reused engine:
+
+- the input text is unreachable from the grammar and its engines once `Tokenize` or `Parse` returns, and from a
+  `LexerEngine` once an enumeration completes or is disposed (the diagnostic `LastResourceBudget` no longer reaches the
+  reader);
+- the per-parse collections of a `ParserEngine` (`_activeRuleFrames`, visited states, continuations, completed results,
+  look-ahead entries) are emptied after every parse and shrunk when they held more than 1,024 entries; smaller ones keep
+  their capacity, so sequential reuse on ordinary inputs does not regrow them;
+- sequential reuse of an engine, including after a `ParserResourceLimitException`, produces the same trees as a fresh
+  engine.
+
+Measured before the fix (Release, flat grammar): a `CompiledGrammar` kept its last input and about 250 MB after a
+400,000-token parse until its next call, and a reused `ParserEngine` kept 119 MB after a 200,000-token parse for as long
+as it lived; after the fix both retain a few kilobytes, with unchanged timings.
 
 ## Continuation and shared-prefix ownership boundaries
 

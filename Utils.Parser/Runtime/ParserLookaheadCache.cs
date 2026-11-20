@@ -12,11 +12,12 @@ internal sealed class ParserLookaheadCache
     private readonly Dictionary<ParserLookaheadKey, ParserLookaheadProbeResult> _results = [];
 
     /// <summary>
-    /// Clears all cached look-ahead observations.
+    /// Clears all cached look-ahead observations, releasing the capacity of a cache that grew large
+    /// (<see cref="ParserStateRetention"/>).
     /// </summary>
     public void Clear()
     {
-        _results.Clear();
+        ParserStateRetention.Clear(_results);
     }
 
     /// <summary>
