@@ -16,7 +16,7 @@ This section is the **current planning summary**; dated implementation notes bel
 | Two subsequent trigonometric/division-chain fixes | **Merged** | PR #705 (`ed3ea136`): S5A-01 trigonometric NRE and linear quotient chains, with S5, differential corpora and BDN validation (`docs/expressions/SimplifierFlatten.md` §15). |
 | Grouped quotient chains (`subdivR`, `subdivB`, mixed signs, distinct denominators, `float`) | **Fixed for the restricted family** (2026-11-18, branch `fix/expression-grouped-quotient-chains`) | `IsGroupedLinearQuotientChain` + one canonicalization, first-pass structure identical to the historical result; see `docs/expressions/SimplifierFlatten.md` §16 for the admitted family and the chains that keep the level by level cost. |
 | Remaining simplifier issues | **Open or requires re-audit** | Grouped quotient chains outside the restricted family of §16 (repeated or shared terms, two constants, other quotient shapes, integral/decimal); S5A-05/06/09/10 convergence (S5A-04 exception timing fixed on 2026-11-18, see "S5A-04 — deferred arithmetic exceptions" below), residual domain/determinism entries. Avoid assuming a finding is unresolved solely because the original audit used future tense. |
-| Execution optimizer O0–O5 | **Open, separate stream** | `ExpressionOptimiser` still needs its own effect/operator/exception correctness review (A10-C) and compiled-runtime benchmarks; C architecture does not complete this work. |
+| Execution optimizer O0–O5 | **O0 correctness audit done** (branch `fix/expression-optimiser-safety`, 2026-11-20); O1–O5 open | The effect/operator/exception correctness review (A10-C) is recorded in `docs/expressions/ExpressionOptimiser.md`; compiled-runtime benchmarks (O1) and benchmark-driven lowering (O2–O5) remain a separate stream. |
 
 **Closure accounting.** Do not count ETC R1–R4, P18 A/B, C1–C3, P19d or Flatten infrastructure as new PRs without revalidating an actual missing requirement. Audit remaining work by concrete reproducible gaps; count the optimizer separately. The previously suggested 6–9 PR total was a provisional estimate, **not** a verified remaining-PR count.
 
@@ -5352,6 +5352,8 @@ campaign line identical; permissive policy: the newly simplifiable seeds fall in
 These remain separate from the simplifier stages above.
 
 ### O0 — Audit the existing `ExpressionOptimiser` correctness boundary
+
+**Done 2026-11-20** (branch `fix/expression-optimiser-safety`, base `76bf0b55`): 14 proven defects fixed, every kept rule guarded (no operator method, exact constant in its own type, signed zeros, exact result type, `CanDiscard` for `x * 0`), shared resource session and R4 opacity integrated. Rule matrix, reproducers and limits: `docs/expressions/ExpressionOptimiser.md`.
 
 Before adding benchmark-driven lowering, audit the already-public `ExpressionOptimiser` for the same
 execution-semantic hazards that an optimizer must preserve rather than merely document away. At minimum

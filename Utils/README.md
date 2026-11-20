@@ -13,7 +13,7 @@ dotnet add package omy.Utils
 ## Features
 - **Arrays** — `Trim`, `Mid`, `PadLeft/Right`, `StartWith/EndWith`, `Replace`, `ConvertToArrayOf`
 - **Collections** — `EnumerableEx` extensions, `LRUCache<K,V>`, `IndexedList<K,V>`, `DoubleIndexedDictionary<T1,T2>`
-- **Expressions** — `ExpressionOptimiser` for constant-folding and algebraic rewrites
+- **Expressions** — `ExpressionOptimiser` for exact, behavior-preserving algebraic rewrites
 - **Mathematics** — `MathEx.Mod`, `Round`, `Deg2Rad`/`Rad2Deg` constants
 - **Objects** — `FluentResult<T>` chainable predicates, `ConstrainedValue<T>`, `Enumerators.Enumerate`
 - **Randomization** — `Random.RandomString` helpers
@@ -336,13 +336,20 @@ using System.Linq.Expressions;
 
 var optimiser = new ExpressionOptimiser();
 
-Expression<Func<int>> expr = () => (1 + 1) * 3 - 4 + 2;
-var optimised = (Expression<Func<int>>)optimiser.Optimize(expr);
-int result = optimised.Compile()(); // 4 — computed without any arithmetic at runtime
+Expression<Func<int, int>> expr = x => (x * 1 + 0) * (x - 0);
+var optimised = (Expression<Func<int, int>>)optimiser.Optimize(expr);
+Console.WriteLine(optimised); // x => (x * x)
 
-// Algebraic identities: x*1→x, x+0→x, x*0→0, !!x→x
-// Boolean short-circuits: expr || true → true, expr && false → expr (side effects preserved)
+// Only exact, behavior-preserving identities are applied:
+// x + 0, x - 0, x * 1, x / 1 (integral and floating, lifted included; floating zeros keep their sign: x + 0.0 is kept),
+// x * 0 → 0 for integral operands that are proven discardable (F(x) * 0 keeps the call),
+// -(-x), identity conversions, constant short circuits and conditionals, empty block statements.
+// Custom operators, checked and decimal arithmetic, quoted expressions and extension nodes are never rewritten,
+// the result always has the source type, and input size, work and stack are bounded by ExpressionResourceLimits.
+var trusted = new ExpressionOptimiser(ExpressionResourceLimits.Unlimited); // for trusted, very large trees
 ```
+
+The rules, their guards and the audit behind them are documented in `docs/expressions/ExpressionOptimiser.md`.
 
 ## Tracing expression transformations
 

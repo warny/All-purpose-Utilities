@@ -4,6 +4,31 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed — `omy.Utils` (`ExpressionOptimiser` safety audit, A10-C)
+- `ExpressionOptimiser` no longer applies identities that change the behavior of a tree: `F() * 0` keeps the call (an
+  integral product by zero is folded only when the dropped operand is proven discardable; lifted, floating-point and
+  decimal products by zero are kept), custom operator and conversion methods are never removed by `x + 0`, `x * 1`,
+  `x / 1`, `-(-x)` or an identity conversion, `x + 0.0` keeps `-0.0` (only `x + (-0.0)` and `x - 0.0` are removed for
+  floating point), decimal identities are no longer applied (a constant such as `1.0000000000000000000000000001m` was read as
+  one through `double`, and `x + 0.00m` changed the scale), and an enumeration operator by zero no longer throws
+  `InvalidCastException` while optimising.
+- The optimised tree always has the source type: `bool?` short circuits no longer return a `bool` constant (the enclosing
+  lambda threw), a constant conditional with an explicit `void` or reference type keeps its node, `Block(7, Empty())` stays
+  `void`, explicitly typed blocks keep their type, a block holding only a label is not unwrapped, and a constant conditional
+  whose discarded branch defines a label targeted by a jump is kept.
+- Extension nodes are passed through without any call into them (`Accept`, `VisitChildren`, `Reduce`, …), dynamic operations
+  are kept instead of being reduced to call-site invocations, and quoted expressions are no longer rewritten.
+- `ExpressionEffectAnalysis` no longer reads the `Type` of an extension operand of a conversion, `TypeAs` or field access
+  (ETC R4); every classification result is unchanged.
+
+### Added — `omy.Utils` (`ExpressionOptimiser` resource limits)
+- `ExpressionOptimiser(ExpressionResourceLimits)` and `ExpressionOptimiser.ResourceLimits`: each optimisation is an operation
+  of the shared expression resource session (input validated against depth and node limits, one structural visit per node,
+  binding, initializer, switch case and catch block, stack guard), so a hostile input ends with an
+  `ExpressionResourceLimitException` instead of a stack overflow. The parameterless constructor uses
+  `ExpressionResourceLimits.Default` (depth 512, 50,000 logical nodes): pass `ExpressionResourceLimits.Unlimited` for trusted,
+  larger trees. See `docs/expressions/ExpressionOptimiser.md`.
+
 ### Changed — `omy.Utils.Parser` (compact look-ahead cache)
 - The per-parse `ParserLookaheadCache` stores the same entries in less memory: keys are packed into 64 bits (rule name
   replaced by an index into a per-cache table), values keep only the kind, the expected-token-name collection and the

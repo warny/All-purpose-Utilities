@@ -11,17 +11,27 @@ namespace UtilsTest.Expressions;
 public class ExpressionOptimiserTests
 {
     /// <summary>
-    /// Ensures arithmetic identity rewrites are applied.
+    /// Ensures arithmetic identity rewrites are applied where they are exact: <c>x * 1.0</c> and <c>x - 0.0</c> are removed,
+    /// but <c>x + 0.0</c> is kept, because <c>-0.0 + 0.0</c> is <c>+0.0</c> (A10-C audit: the historical assertion expected
+    /// <c>x =&gt; x</c>, which returns <c>-0.0</c> for <c>x = -0.0</c>).
     /// </summary>
     [TestMethod]
     public void Optimize_AppliesArithmeticIdentities()
     {
-        Expression<Func<double, double>> expression = x => (x * 1.0) + 0.0;
+        Expression<Func<double, double>> exact = x => (x * 1.0) - 0.0;
+        Expression<Func<double, double>> signed = x => (x * 1.0) + 0.0;
         var optimiser = new ExpressionOptimiser();
 
-        var optimized = (Expression<Func<double, double>>)optimiser.Optimize(expression);
+        var optimizedExact = (Expression<Func<double, double>>)optimiser.Optimize(exact);
+        var optimizedSigned = (Expression<Func<double, double>>)optimiser.Optimize(signed);
 
-        Assert.AreEqual("x => x", optimized.ToString());
+        Assert.AreSame(exact.Parameters[0], optimizedExact.Body);
+        var sum = (BinaryExpression)optimizedSigned.Body;
+        Assert.AreEqual(ExpressionType.Add, sum.NodeType);
+        Assert.AreSame(signed.Parameters[0], sum.Left);
+        Assert.AreEqual(
+            BitConverter.DoubleToInt64Bits(signed.Compile()(-0.0)),
+            BitConverter.DoubleToInt64Bits(optimizedSigned.Compile()(-0.0)));
     }
 
     /// <summary>
@@ -88,7 +98,9 @@ public class ExpressionOptimiserTests
     }
 
     /// <summary>
-    /// Ensures multiply-by-zero optimisation handles nullable numeric types without throwing.
+    /// Ensures multiply-by-zero optimisation handles nullable numeric types without throwing and keeps the lifted semantics:
+    /// <c>x * 0</c> is <see langword="null"/> for <c>x = null</c>, so the product is not replaced by a zero constant (A10-C
+    /// audit: the historical assertion expected a constant, which returned <c>0</c> instead of <see langword="null"/>).
     /// </summary>
     [TestMethod]
     public void Optimize_MultiplyByZero_NullableType_DoesNotThrow()
@@ -99,7 +111,10 @@ public class ExpressionOptimiserTests
 
         Expression result = optimiser.Optimize(multiply);
 
-        Assert.IsInstanceOfType<ConstantExpression>(result);
         Assert.AreEqual(typeof(int?), result.Type);
+        Assert.IsNotInstanceOfType<ConstantExpression>(result);
+        Func<int?, int?> compiled = Expression.Lambda<Func<int?, int?>>(result, x).Compile();
+        Assert.IsNull(compiled(null));
+        Assert.AreEqual(0, compiled(5));
     }
 }

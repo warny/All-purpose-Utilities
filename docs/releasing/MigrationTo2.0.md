@@ -399,6 +399,25 @@ results, so code that does not set `Options` is unaffected, and so is `Expressio
 - Rules declared by a derived simplifier are unaffected (they keep the historical admission).
 
 <a id="omy-utils-fonts-2"></a>
+## Expression engine: `ExpressionOptimiser` safety audit (A10-C)
+
+Behavior changes of `ExpressionOptimiser`; one additive constructor `ExpressionOptimiser(ExpressionResourceLimits)` and the
+property `ResourceLimits`. The full record (rule matrix, reproducers, limits) is in `docs/expressions/ExpressionOptimiser.md`.
+
+- **Only exact identities.** `x * 0 -> 0` applies only to non-lifted integral products whose dropped operand is proven
+  discardable (`F() * 0`, `(v = 5) * 0`, `(10 / i) * 0` are kept; lifted, `float`/`double` and `decimal` products by zero are
+  kept). `x + 0`, `x - 0`, `x * 1`, `x / 1` and `-(-x)` no longer remove a custom operator method, and `x + 0.0` is kept
+  (`-0.0 + 0.0` is `+0.0`): use `x + (-0.0)` or `x - 0.0`, which are removed. `decimal` identities are no longer applied.
+- **Exact result types.** A rewritten node always has the type of its source: `bool?` short circuits, explicitly typed
+  conditionals and blocks, and blocks ending with `Empty()` keep their type (some of them threw or changed the enclosing
+  lambda before).
+- **Opaque and dynamic nodes, quotes.** Extension nodes are passed through without any call into them; a dynamic
+  operation stays a `DynamicExpression` (it was reduced to a call-site invocation); a quoted expression is not rewritten.
+- **Resource limits.** `new ExpressionOptimiser()` validates its input against `ExpressionResourceLimits.Default` (depth 512,
+  50,000 logical nodes) and counts its work: a larger trusted tree needs
+  `new ExpressionOptimiser(ExpressionResourceLimits.Unlimited)`. A hostile input ends with an
+  `ExpressionResourceLimitException` instead of a stack overflow.
+
 ## Utils.Fonts hostile-font parsing hardening
 
 `TrueTypeFont.ParseFont`/`ParseFontAsync` now accept an optional `TrueTypeFontParsingOptions`

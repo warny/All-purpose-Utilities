@@ -325,12 +325,18 @@ internal static class ExpressionEffectAnalysis
     /// <summary>Classifies the operator of a unary node alone, without its operand.</summary>
     /// <param name="unary">The node.</param>
     /// <returns>The effects of the operator.</returns>
+    /// <remarks>
+    /// ETC R4: a conversion or a <c>TypeAs</c> reads the type of its operand, which is never read on an extension node; such
+    /// an operator is classified as <see cref="ExpressionEffects.Observable"/>, which the operand's own classification makes the
+    /// result anyway.
+    /// </remarks>
     private static ExpressionEffects UnaryOwnEffects(UnaryExpression unary)
         => unary.NodeType switch
         {
             ExpressionType.Quote => ExpressionEffects.None,
             ExpressionType.Throw or ExpressionType.PreIncrementAssign or ExpressionType.PreDecrementAssign
                 or ExpressionType.PostIncrementAssign or ExpressionType.PostDecrementAssign => ExpressionEffects.Observable,
+            ExpressionType.Convert or ExpressionType.TypeAs when ExpressionOpacity.IsOpaque(unary.Operand) => ExpressionEffects.Observable,
             ExpressionType.Convert => ConversionEffects(unary),
             ExpressionType.ConvertChecked or ExpressionType.NegateChecked => unary.Method is null ? ExpressionEffects.MayThrow : ExpressionEffects.Observable,
             ExpressionType.ArrayLength or ExpressionType.Unbox => ExpressionEffects.MayThrow,
@@ -566,6 +572,8 @@ internal static class ExpressionEffectAnalysis
         Expression? receiver = member.Expression;
         if (receiver is null) return own;
 
+        // ETC R4: the type of an extension receiver is never read; the receiver is observable anyway.
+        if (ExpressionOpacity.IsOpaque(receiver)) return ExpressionEffects.Observable;
         if (!receiver.Type.IsValueType && receiver is not ConstantExpression { Value: not null }) own |= ExpressionEffects.MayThrow;
         return own | Analyze(receiver);
     }
