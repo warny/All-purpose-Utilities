@@ -969,14 +969,261 @@ it would replace the parser execution model).</li>
 <li><strong>Exception filters.</strong> A <code>ParserResourceLimitException</code> of kind <code>Stack</code> is thrown with only the guard's headroom left.
 <code>catch</code> blocks run after unwinding and are safe; an exception <em>filter</em> (<code>catch ... when (...)</code>) on the caller's side runs
 before unwinding, on the nearly exhausted stack: keep such filters trivial (the S-06 probe was itself caught by this).</li>
-<li><strong>Allocation.</strong> Parsing remains linear at about 21 KB allocated per input character (CSyntax compile); live memory is
-dominated by retained registry metadata (visited states and continuations are write-only in production). Bounding or
-removing that metadata needs a metadata-lifecycle design.</li>
+<li><strong>Allocation.</strong> Parsing remains linear at about 20 KB allocated per input character (CSyntax compile). Since the
+registry-metadata audit (section 9) the registry is stored compactly and the live peak of a parse is dominated by the
+look-ahead cache; the write-only registry metadata (visited states, continuations) is still stored and charged,
+because removing it changes the <code>RetainedStates</code> accounting (section 9, &quot;Contract change not made&quot;).</li>
 <li><strong>Grammar immutability assumption.</strong> <code>ParserEngine</code> precomputes scheduling shapes (priority order, structural descriptors) and <code>LexerEngine</code> precomputes candidate rules and keyword tries from the definition, once per <code>CompiledGrammar</code> (shared by the engines of every call, #709) or once per directly constructed engine. This relies on the documented immutability of the grammar model (<code>Rule</code>, <code>Alternation</code>, <code>LeftRecursiveRuleInfo</code> capture immutable snapshots); a future mutable model would have to invalidate these tables.</li>
 <li><strong>Wall-clock time and process memory</strong> are not limited; the budgets bound parser-managed work and retained states.</li>
 <li><strong>User code</strong> inside policy callbacks is not interrupted and not covered by the stack guard beyond its headroom.</li>
 <li><strong>Concurrency</strong>: shared grammars are safe since #709 (section 7); the per-call engines cost 12–19 % more parse allocation than a reused engine, and directly constructed engines and stateful policy components remain caller-owned.</li>
 </ul>
+<h2 id="9-registry-metadata-storage-registry-metadata-audit">9. Registry metadata storage (registry-metadata audit)</h2>
+<h3 id="question-and-audit">Question and audit</h3>
+<p><code>ParserStateRegistry</code> held three collections whose memory was proportional to the parse: visited states, continuations
+and completed (memoized) results. The audit (producer/consumer matrix in <code>RuntimeStateOwnership.md</code>, section
+&quot;Registry usage audit and compact storage&quot;) establishes, from the code of <code>6e7892a0</code>:</p>
+<ul>
+<li><strong>visited states</strong> are written by every scheduled attempt and every left-recursive extension attempt and never read
+in production (both callers ignore the result; the left-recursion cycle rejection uses a local set);</li>
+<li><strong>continuations</strong> are written for every rule reference, lexer tokens included, and never read in production;</li>
+<li><strong>completed results</strong> are the memoization: read by every <code>ParseRule</code>, they carry the post-rule execution-state
+snapshots restored on memo hits. In production each invocation key stores exactly one result;</li>
+<li>each new entry of the three collections and of the look-ahead cache costs one <code>RetainedStates</code> unit, charged before
+insertion; duplicates are free. A duplicate can only be recognized if the entry is kept, so every write-only entry
+still matters to S-06: it is the condition under which later identical writes are not charged.</li>
+</ul>
+<h3 id="strategies-studied">Strategies studied</h3>
+<table>
+<thead>
+<tr>
+<th>Strategy</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A. Compact exact structures</td>
+<td><strong>Retained.</strong> Same identities, same deduplication, same charges and refusals, less memory (below).</td>
+</tr>
+<tr>
+<td>B. Charge without materializing</td>
+<td>Not possible exactly: without the entry, a later duplicate cannot be recognized, so it would be charged (or never charged, with a counter per attempt). Exact deduplication without storing the full key needs a hash standing for the identity, which is excluded. B therefore reduces to A.</td>
+</tr>
+<tr>
+<td>C. Optional materialization</td>
+<td>Not materializing visited states or continuations by default changes the <code>RetainedStates</code> counts (see below): a contract change, not made here.</td>
+</tr>
+<tr>
+<td>D. Removing the unused writes</td>
+<td>No production read, no diagnostic and no policy depends on the two write-only collections; their only effect is their S-06 charge. Removing them is the same contract change as C.</td>
+</tr>
+</tbody>
+</table>
+<p>Strategy A, as implemented (<code>ParserStateRegistry</code> remarks):</p>
+<ul>
+<li>visited states whose element index equals their alternative index (every key the engine records) and whose alternative
+index is in <code>[0, 63]</code> are grouped by (rule, position, precedence) in one dictionary entry with one bit per alternative;
+any other key is kept whole in an overflow set. The partition depends on the key alone, so a key is always looked up
+where it would be stored;</li>
+<li>continuations are one flat set of (invocation, continuation) pairs instead of one nested set per invocation (a nested
+set holding a single pair cost about 200 bytes);</li>
+<li>completed results keep their first result inline in the dictionary value, with an overflow list only for later results
+of the same key, which the engine never stores (a one-element <code>List</code> cost about 150 bytes per memoized invocation).</li>
+</ul>
+<p>Rule names keep string value equality, as before (no interning, no reference identity), and no hash stands for an
+identity; there is no shared or static storage, so concurrent and sequential engines are unaffected.</p>
+<h3 id="method">Method</h3>
+<p>Probe <code>ExpressionResourceProbe parser-registry</code> (see <code>tests/ExpressionResourceProbe/README.md</code>): one scenario per
+process on a directly constructed <code>ParserEngine</code>, warm-up on the same input. <code>--peak</code> forces a full collection when the
+root rule invocation exits, the last point where every per-parse collection is complete (the engine clears them right
+after), and reports the managed live bytes released by the end of the parse (<code>peakRegistry</code> = live at root exit − live
+after the parse). Timing runs omit <code>--peak</code> and report the median of 7 parses. Tree, diagnostics and action/predicate
+trace are digested (SHA-256) for the differential comparison. Windows 11, .NET 8.0.34, Release; base <code>6e7892a0</code> built
+from a separate worktree with the same probe sources; campaigns in the order base, branch, branch, base.</p>
+<p>Scenarios: CSyntax and VBSyntax sums (1,000 and 5,000 terms), mixed CSyntax/VBSyntax expressions (calls, members,
+indexers, products, logical comparisons; 1,000 terms), CSyntax parentheses (15 pairs), 20 keyword-led alternatives
+(2,000 items), common prefixes with backtracking (2,000 items), a highly ambiguous grammar (150 tokens), left recursion
+(2,000-term sum; 1,000 terms with two precedence levels), a deep rule chain (300 levels), and a grammar with actions and
+semantic predicates driven by a counter execution state whose key changes with every action (1,000 items: memo hits
+restore snapshots). Every scenario runs with and without diagnostics, and refusals are measured at the exact threshold
+(N accepted, N − 1 refused) and far below it.</p>
+<h3 id="differential-results">Differential results</h3>
+<p>98 configurations, 4 runs each: <strong>0 differences</strong> in outcome, tokens, parser steps, nodes, retained states, depth,
+distinct visited states, continuations, memo keys and results, look-ahead entries, action count, tree digest,
+diagnostics digest and action/predicate trace digest. Refusals keep their phase, kind, limit, observed value and input
+offset. Linux (WSL2 Ubuntu, self-contained <code>linux-x64</code> probes, same .NET 8.0.34): 64 configurations, 0 differences,
+with the same digests, counters and registry peaks as on Windows. The shared-grammar concurrency campaign of #709
+(<code>parser-concurrency-campaign --ops 200 --seeds 3</code>, seven surfaces, Windows Release) is clean on the branch: 252 / 252
+runs, 378,000 operations, 0 wrong trees, token lists or failures, 0 unexpected exceptions, the 17,635 expected failures
+returned exactly. Raw results: <code>tests/ExpressionResourceProbe/results/2026-11-20/registry-*</code>.</p>
+<h3 id="memory-and-time">Memory and time</h3>
+<p>Registry peak = managed bytes released at the end of the parse (registry and look-ahead cache); allocated = mean of the
+timing runs (of the <code>--peak</code> runs for the diagnostics rows); time = mean of the two medians of 7 parses per build.</p>
+<table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>Retained states</th>
+<th>Registry peak base → branch</th>
+<th>Allocated base → branch</th>
+<th>Time base → branch</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CSyntax sum 1,000</td>
+<td>150,279</td>
+<td>21.2 → 12.7 MB (−40 %)</td>
+<td>151.7 → 142.6 MB (−6 %)</td>
+<td>157 → 127 ms</td>
+</tr>
+<tr>
+<td>CSyntax sum 1,000, diagnostics</td>
+<td>170,301</td>
+<td>29.4 → 15.0 MB (−49 %)</td>
+<td>198.4 → 178.7 MB (−10 %)</td>
+<td>–</td>
+</tr>
+<tr>
+<td>CSyntax sum 5,000</td>
+<td>750,279</td>
+<td>98.3 → 56.0 MB (−43 %)</td>
+<td>742.9 → 698.2 MB (−6 %)</td>
+<td>1,148 → 965 ms</td>
+</tr>
+<tr>
+<td>CSyntax sum 5,000, diagnostics</td>
+<td>850,301</td>
+<td>138.2 → 66.1 MB (−52 %)</td>
+<td>971.8 → 869.5 MB (−11 %)</td>
+<td>–</td>
+</tr>
+<tr>
+<td>CSyntax mixed 1,000</td>
+<td>682,265</td>
+<td>95.7 → 54.4 MB (−43 %)</td>
+<td>706.9 → 662.8 MB (−6 %)</td>
+<td>1,130 → 1,007 ms</td>
+</tr>
+<tr>
+<td>VBSyntax sum 5,000</td>
+<td>595,165</td>
+<td>86.5 → 51.4 MB (−41 %)</td>
+<td>624.8 → 585.4 MB (−6 %)</td>
+<td>894 → 596 ms (noisy)</td>
+</tr>
+<tr>
+<td>VBSyntax mixed 1,000</td>
+<td>435,743</td>
+<td>59.7 → 35.6 MB (−40 %)</td>
+<td>466.3 → 443.5 MB (−5 %)</td>
+<td>458 → 377 ms</td>
+</tr>
+<tr>
+<td>20 alternatives, 2,000 items</td>
+<td>92,047</td>
+<td>13.0 → 9.0 MB (−31 %)</td>
+<td>95.6 → 89.4 MB (−6 %)</td>
+<td>170 → 145 ms</td>
+</tr>
+<tr>
+<td>Common prefixes, 2,000 items</td>
+<td>20,013</td>
+<td>2.50 → 1.75 MB (−30 %)</td>
+<td>30.2 → 29.5 MB (−2 %)</td>
+<td>52 → 49 ms</td>
+</tr>
+<tr>
+<td>Ambiguous, 150 tokens</td>
+<td>1,816</td>
+<td>141 → 27 KB (−81 %)</td>
+<td>5.0 → 4.9 MB</td>
+<td>within noise</td>
+</tr>
+<tr>
+<td>Left recursion, 2,000 terms</td>
+<td>15,999</td>
+<td>1.94 → 1.35 MB (−30 %)</td>
+<td>15.7 → 15.3 MB</td>
+<td>25 → 22 ms</td>
+</tr>
+<tr>
+<td>Rule chain, 300 levels</td>
+<td>4,214</td>
+<td>590 → 181 KB (−69 %)</td>
+<td>4.6 → 4.2 MB</td>
+<td>within noise</td>
+</tr>
+<tr>
+<td>Actions and predicates, 1,000 items</td>
+<td>26,689</td>
+<td>3.91 → 2.32 MB (−41 %)</td>
+<td>31.3 → 30.0 MB (−4 %)</td>
+<td>within noise</td>
+</tr>
+</tbody>
+</table>
+<p>Live memory after a parse is unchanged (the registry is released when a parse ends since S-06). Times of the large
+inputs are lower because fewer objects are allocated and collected; the small scenarios were rerun three times
+alternately with 61 parses each and stay within the noise (best times equal or lower on the branch). Breakdown, each
+collection released in turn at the root exit, CSyntax sum of 2,000 terms:</p>
+<table>
+<thead>
+<tr>
+<th>Collection</th>
+<th>Entries</th>
+<th>Base</th>
+<th>Branch</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>visited states</td>
+<td>106,095 (36,042 groups)</td>
+<td>5.63 MB</td>
+<td>1.31 MB</td>
+</tr>
+<tr>
+<td>continuations</td>
+<td>56,059</td>
+<td>14.98 MB</td>
+<td>4.53 MB</td>
+</tr>
+<tr>
+<td>completed results (including nodes reachable only through the memo)</td>
+<td>30,036</td>
+<td>6.17 MB</td>
+<td>2.47 MB</td>
+</tr>
+<tr>
+<td>look-ahead cache (unchanged)</td>
+<td>108,089</td>
+<td>16.37 MB</td>
+<td>16.37 MB</td>
+</tr>
+<tr>
+<td>total</td>
+<td>300,279</td>
+<td>43.1 MB</td>
+<td>24.7 MB</td>
+</tr>
+</tbody>
+</table>
+<h3 id="contract-change-not-made-separate-proposal">Contract change not made (separate proposal)</h3>
+<p>After strategy A, the two write-only collections hold 5.8 MB of the 24.7 MB peak above (24 %) and 162,154 of the
+300,279 charged retained states (54 %). Not recording them in production (strategies C/D) would:</p>
+<ul>
+<li>lower <code>RetainedStates</code> for the same input (CSyntax 2,000 terms: 300,279 → 138,125), so <code>MaxRetainedStates</code> would
+refuse later and at other offsets, and every documented threshold and refusal measurement would move;</li>
+<li>remove the observations returned by the internal <code>GetContinuations</code> and the visited-state counts (tests only, no
+production consumer);</li>
+<li>change neither trees, diagnostics nor actions (no production read).</li>
+</ul>
+<p>Such a change needs its own PR: an explicit decision on the meaning of <code>MaxRetainedStates</code> (and possibly a lower
+default, to keep the same memory bound), an opt-in metadata recording for tools that read continuations, and new
+threshold measurements. The look-ahead cache, now the largest per-parse collection, is a separate candidate for the same
+kind of compact exact storage (its key repeats two strings and its value boxes the expected-token list).</p>
 
 </article>
 

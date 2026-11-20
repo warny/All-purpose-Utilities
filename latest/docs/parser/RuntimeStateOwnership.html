@@ -205,6 +205,71 @@ It is conservative, documentation-only, and describes current contracts only.</p
 <li>semantic evaluator external state is not modeled by memoization keys;</li>
 <li>parser action side effects are not modeled by memoization keys.</li>
 </ul>
+<h3 id="registry-usage-audit-and-compact-storage-registry-metadata-audit">Registry usage audit and compact storage (registry-metadata audit)</h3>
+<p>Verified producers and consumers of the three registry collections on <code>6e7892a0</code> (line numbers on that commit). No
+other assembly reaches the registry: it is internal, and <code>InternalsVisibleTo</code> names only the Unit and Security test
+projects. No runtime observer, invocation-frame manager, rule-call policy or lifecycle executor receives registry data.</p>
+<table>
+<thead>
+<tr>
+<th>Collection</th>
+<th>Producers</th>
+<th>Production consumers</th>
+<th>Test consumers</th>
+<th>Role</th>
+<th>S-06 charge</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>visited states</td>
+<td><code>ScheduledAlternativeExecutor.Execute</code> (<code>ScheduledAlternativeExecutor.cs:69</code>, every scheduled attempt, before the precedence check); <code>ParserEngine.TryExtendLeft</code> (<code>ParserEngine.cs:683</code>, every left-recursive extension attempt)</td>
+<td>none: both producers ignore the returned value; the repeated-state rejection of <code>TryExtendLeft</code> (<code>ParserStateCycleDetected</code>, <code>ParserStateRejected</code>) is decided by its local <code>visitedStates</code> set (<code>ParserEngine.cs:689</code>)</td>
+<td><code>ParserStateRegistryTests</code>, <code>ActiveParseStateTests</code>, <code>ParserStateRegistryCompactStorageTests</code>, <code>ParserStateRegistryBudgetTests</code>, <code>ParserEngineRetentionTests</code></td>
+<td>descriptive (write-only); not cycle detection</td>
+<td>one per distinct key</td>
+</tr>
+<tr>
+<td>continuations</td>
+<td><code>ParserEngine.TryParseRuleRef</code> (<code>ParserEngine.cs:1069</code>, every rule reference, lexer tokens included)</td>
+<td>none (<code>GetContinuations</code> is called by tests only)</td>
+<td><code>ParserStateRegistryTests</code>, <code>ParserRuntimeInvariantTests</code>, the two compact-storage test classes</td>
+<td>descriptive metadata, never executable</td>
+<td>one per distinct (invocation, continuation) pair</td>
+</tr>
+<tr>
+<td>completed results</td>
+<td><code>ParserEngine.ParseRule</code> after a memo miss (<code>ParserEngine.cs:572</code>)</td>
+<td><code>ParserEngine.ParseRule</code> (<code>TryGetReusableResult</code>, <code>ParserEngine.cs:518</code>): position, execution-state snapshot restoration and the <code>ParseMemoHit</code> / <code>ParseMemoMiss</code> diagnostics</td>
+<td>same as above</td>
+<td>memoization (runtime-authoritative)</td>
+<td>one per stored result</td>
+</tr>
+</tbody>
+</table>
+<p>All three live for one parse: <code>ParserEngine.Parse</code> clears them when a parse starts and when it ends
+(<code>ParserEngine.cs:360</code>, <code>:374</code>), and every call of a <code>CompiledGrammar</code> owns its engine. Custom policies reach the
+registry only through <code>IParserExecutionStateManager</code>: <code>GetCurrentStateKey()</code> is part of every <code>RuleInvocationKey</code>
+(memoization and continuation identity) and <code>Capture()</code> provides the snapshot stored with each completed result.</p>
+<p>In production the engine stores at most one result per invocation key: a key is stored only after a memo miss, a
+re-entrant call of the same key is stopped by <code>_activeRuleFrames</code> before it stores anything, and every stored result is
+reusable (<code>IsFailure == (Node is null)</code>). Every key recorded as a visited state has <code>ElementIndex == AlternativeIndex</code>.</p>
+<p>Since the registry-metadata audit the storage is compact but exact (<code>ParserStateRegistry</code> remarks):</p>
+<ul>
+<li>visited states with <code>ElementIndex == AlternativeIndex</code> and an alternative index in <code>[0, 63]</code> are grouped by
+(rule, position, precedence) with one bit per alternative; any other key goes to an overflow set of full keys;</li>
+<li>continuations are one flat set of (invocation, continuation) pairs instead of one set per invocation;</li>
+<li>completed results keep their first result inline, with an overflow list allocated only for later results of the same
+key (direct registry callers).</li>
+</ul>
+<p>Membership, duplicate detection, the insertion order of completed results, reuse preference, snapshots and therefore
+every S-06 charge and refusal are those of the historical sets and lists; the historical storage is kept as a reference
+model in <code>ParserStateRegistryBudgetTests</code>. Measurements: <code>ParserResourceSafety.md</code> section 9.</p>
+<p><code>GetContinuations</code> returns the exact set of distinct continuations of an invocation, in an unspecified order. No
+production code reads it, the historical per-invocation <code>HashSet</code> did not guarantee an order either, and the tests
+compare continuations as sets (including heavily interleaved invocations with duplicates). Completed results, read by
+the memoization, keep a guaranteed insertion order because the reuse preference (first success, then first failure)
+depends on it.</p>
 <h2 id="operation-ownership-and-concurrent-use-issue-709">Operation ownership and concurrent use (issue #709)</h2>
 <p>A <code>CompiledGrammar</code> separates what one grammar shares from what one operation owns. Every <code>Tokenize(string)</code> and
 <code>Parse(string)</code> call creates its own <code>LexerEngine</code> and <code>ParserEngine</code>; the grammar-invariant tables those engines need
