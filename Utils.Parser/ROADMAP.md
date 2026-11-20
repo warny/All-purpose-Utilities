@@ -637,12 +637,22 @@ Completed:
   or pools; sequential results are unchanged. Directly constructed engines and policy components with mutable state stay
   caller-owned. Ownership table: `docs/parser/RuntimeStateOwnership.md`; campaigns and measurements:
   `docs/parser/ParserResourceSafety.md` section 7.
+- Engine-reuse audit (state leakage and retained memory, follow-up of #709): sequential reuse of an engine, including
+  after a `ParserResourceLimitException`, was already sound; three defects were fixed. A long-lived `CompiledGrammar`
+  no longer retains its last input text (the lexer drops its budget's reference to the reader when an enumeration ends
+  or is disposed), a `ParserEngine` shrinks per-parse collections that held more than 1,024 entries instead of keeping
+  the capacity of its largest parse, and the lexer mode stack and pending `more` text belong to each `Tokenize`
+  enumeration. Decision: fresh engines per call are kept and no engine pool is planned; a pool was considered but not
+  prototyped, since it would by construction keep the high-water capacity this audit removed. The 12–19 % parse
+  allocation overhead of fresh engines measured for #709 is accepted. Details: `docs/parser/RuntimeStateOwnership.md`,
+  section "Engine reuse and retained memory".
 
 Remaining (separate PRs):
 
-- per-call engines regrow their registry and look-ahead collections, so parsing allocates 12–19 % more than with a
-  reused engine (issue #709 measurements); reusing collection capacity, for example through a bounded per-grammar engine
-  pool, needs its own state-leakage audit;
+- `ParserStateRetention` decides from the entry count at clearing time, not from the allocated capacity: a collection
+  that is already small when cleared keeps its capacity. `_activeRuleFrames` is the known case (frames are removed as
+  rules return, so it is always empty at the end of a parse); its capacity is bounded by `MaxParseDepth` (a few hundred
+  kilobytes at the default 4,000). A capacity-based threshold is a candidate for a later memory audit;
 - the retained registry metadata (visited states, continuations) is write-only in production and dominates live memory;
   removing or bounding it needs a metadata-lifecycle design;
 - a deeper reduction of stack use per rule level (currently about 1.3 KB per depth unit on Windows, so a 1 MiB thread

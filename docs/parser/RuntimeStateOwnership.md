@@ -159,10 +159,12 @@ Contract:
 
 ## Engine reuse and retained memory (engine-reuse audit)
 
-The engine-reuse study deferred by #709 compared fresh engines per call, a bounded per-grammar pool and extracted
-immutable caches. Fresh engines are kept, and the pool is abandoned: a pooled engine would keep the capacity of the
-largest parse it served, which is exactly the retention this audit removed, while the measured cost of fresh engines is
-an allocation overhead of 12–19 % on parse.
+The engine-reuse study deferred by #709 considered three strategies: fresh engines per call, a bounded per-grammar
+engine pool, and immutable caches extracted from the engines. Only fresh engines and a directly reused engine were
+measured; no pool prototype was built or benchmarked, and the immutable grammar-invariant data is already extracted into
+the shared preparations. Fresh engines are kept and the pool is abandoned on design grounds: a pooled engine would by
+construction keep the capacity of the largest parse it served, which is exactly the retention this audit removed, while
+the cost of fresh engines measured for #709 is an allocation overhead of 12–19 % on parse.
 
 Retention guarantees, for a long-lived `CompiledGrammar` (a generated static `Grammar`, the CSyntax/VBSyntax shared
 grammars) and for a reused engine:
@@ -171,8 +173,10 @@ grammars) and for a reused engine:
   `LexerEngine` once an enumeration completes or is disposed (the diagnostic `LastResourceBudget` no longer reaches the
   reader);
 - the per-parse collections of a `ParserEngine` (`_activeRuleFrames`, visited states, continuations, completed results,
-  look-ahead entries) are emptied after every parse and shrunk when they held more than 1,024 entries; smaller ones keep
-  their capacity, so sequential reuse on ordinary inputs does not regrow them;
+  look-ahead entries) are emptied after every parse and shrunk when they still held more than 1,024 entries at that
+  point; smaller ones keep their capacity, so sequential reuse on ordinary inputs does not regrow them. The decision uses
+  the entry count, not the allocated capacity: `_activeRuleFrames` is always empty when a parse ends, so it keeps the
+  capacity of the deepest recursion, which `MaxParseDepth` bounds (see `Utils.Parser/ROADMAP.md`);
 - sequential reuse of an engine, including after a `ParserResourceLimitException`, produces the same trees as a fresh
   engine.
 

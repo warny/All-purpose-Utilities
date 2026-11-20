@@ -862,6 +862,7 @@ manifested package as of this candidate.
 ### Source generators
 - All four generator packages are packaged under `analyzers/dotnet/cs`, restored by real consumers, and checked for Roslyn load errors.
 
+
 ### Changed — `omy.Utils.Mathematics` (BREAKING)
 - **`Matrix<T>.DiagonalizeLU()` now returns a 3-tuple `(L, U, P)` instead of `(L, U)`.** The previous
   two-factor result was mathematically unable to reconstruct the original matrix whenever partial
