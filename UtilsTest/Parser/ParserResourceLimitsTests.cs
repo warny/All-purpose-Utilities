@@ -204,7 +204,7 @@ public class ParserResourceLimitsTests
         Assert.AreEqual(0, registry.ContinuationCount);
         Assert.AreEqual(0L, registry.VisitedStateCount);
         Assert.AreEqual(0, registry.VisitedStateGroupCount);
-        Assert.AreEqual(0, ((System.Collections.ICollection)Field(Field(engine, "_lookaheadCache"), "_results")).Count);
+        Assert.AreEqual(0, ((ParserLookaheadCache)Field(engine, "_lookaheadCache")).Count);
         Assert.IsTrue(engine.LastResourceUsage!.RetainedStates > 0, "the parse did retain states while it ran");
     }
 

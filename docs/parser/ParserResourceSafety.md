@@ -367,8 +367,8 @@ audit; it is left to a separate change.
   `catch` blocks run after unwinding and are safe; an exception *filter* (`catch ... when (...)`) on the caller's side runs
   before unwinding, on the nearly exhausted stack: keep such filters trivial (the S-06 probe was itself caught by this).
 - **Allocation.** Parsing remains linear at about 20 KB allocated per input character (CSyntax compile). Since the
-  registry-metadata audit (section 9) the registry is stored compactly and the live peak of a parse is dominated by the
-  look-ahead cache; the write-only registry metadata (visited states, continuations) is still stored and charged,
+  registry-metadata audit (section 9) the registry is stored compactly, and since the look-ahead cache audit (section 10)
+  so is the look-ahead cache, whose remaining share is mostly one expected-name collection per entry; the write-only registry metadata (visited states, continuations) is still stored and charged,
   because removing it changes the `RetainedStates` accounting (section 9, "Contract change not made").
 - **Grammar immutability assumption.** `ParserEngine` precomputes scheduling shapes (priority order, structural descriptors) and `LexerEngine` precomputes candidate rules and keyword tries from the definition, once per `CompiledGrammar` (shared by the engines of every call, #709) or once per directly constructed engine. This relies on the documented immutability of the grammar model (`Rule`, `Alternation`, `LeftRecursiveRuleInfo` capture immutable snapshots); a future mutable model would have to invalidate these tables.
 - **Wall-clock time and process memory** are not limited; the budgets bound parser-managed work and retained states.
@@ -491,5 +491,116 @@ After strategy A, the two write-only collections hold 5.8 MB of the 24.7 MB peak
 
 Such a change needs its own PR: an explicit decision on the meaning of `MaxRetainedStates` (and possibly a lower
 default, to keep the same memory bound), an opt-in metadata recording for tools that read continuations, and new
-threshold measurements. The look-ahead cache, now the largest per-parse collection, is a separate candidate for the same
-kind of compact exact storage (its key repeats two strings and its value boxes the expected-token list).
+threshold measurements. The look-ahead cache, then the largest per-parse collection, received the same kind of compact
+exact storage in a later change (section 10).
+
+## 10. Look-ahead cache storage (look-ahead cache audit)
+
+### Question and audit
+
+After section 9 the `ParserLookaheadCache` was the largest per-parse collection (CSyntax 1,000-term sum: 7.98 of
+12.66 MB of parse-scoped memory). The producer/consumer matrix is in `RuntimeStateOwnership.md`, section "Look-ahead
+cache usage audit and compact storage". In short: two paths read the cache before probing (`SchedulingPreparation`,
+`ScheduledAlternativeExecutor`), a hit replaces a probe and its step charge, a new entry costs one `RetainedStates` unit
+charged before insertion, duplicates are free and never replace the first value. Production consumers read the kind
+and the expected-token names only, but the tests compare results by record equality, so the cache must return the same
+kind, token-string instances and expected-name collection instance.
+
+### Memory characterization (before)
+
+Probe `parser-registry --lookahead` (section 9 method; `LookaheadCacheStats.cs`) at the root exit, base `3abcb1f8`:
+
+| Scenario | Entries | Dictionary capacity | Kinds (reject / requires parse / epsilon) | Rules | Cursor kinds | Groups (rule, position, precedence, cursor kind, cursor index) | Expected names: `null` / one name / instances / distinct values |
+|---|---|---|---|---|---|---|---|
+| CSyntax sum 1,000 | 54,089 | 75,431 | 47,076 / 7,013 / 0 | 42 | 2 | 18,039 (9,028 singletons) | 14,033 / 40,056 / 40,056 / 68 |
+| CSyntax sum 1,000, diagnostics | 45,069 | 75,431 | 38,056 / 7,013 / 0 | 39 | 2 | 17,035 | 5,013 / 40,056 / 40,056 / 68 |
+| CSyntax mixed 1,000 | 235,218 | 324,449 | 203,642 / 31,576 / 0 | 48 | 2 | 90,523 (54,351 singletons) | 73,336 / 161,882 / 161,882 / 69 |
+| VBSyntax mixed 1,000 | 153,909 | 156,437 | 124,133 / 29,776 / 0 | 33 | 2 | 60,761 | 38,981 / 114,928 / 114,928 / 60 |
+| 20 alternatives, 2,000 items | 42,022 | 75,431 | 40,021 / 2,000 / 1 | 2 | 1 | 2,002 (21 entries each) | 1 / 42,021 / 42,021 / 21 |
+| Actions and predicates, 1,000 items | 6,339 | 8,419 | 1,339 / 4,999 / 1 | 5 | 1 | 3,670 | 4,004 / 2,335 / 2,335 / 1 |
+| Left recursion, two levels | 2,800 | 4,049 | 1,400 / 1,400 / 0 | 1 | 1 | 1,400 | 0 / 2,800 / 2,800 / 2 |
+
+Every entry has precedence ≤ 3, alternative index ≤ 20 and cursor index −1 or a small sequence position; the token
+rule name and text are the same instances for all entries of one origin position (every scenario); expected-name
+collections, when present, always hold exactly one name, and every entry holds its own instance.
+
+Composition, checked against the measured release of the collection: one dictionary slot costs 76 bytes (hash code,
+next index, 32-byte key with two string references and four integers, 32-byte value with three references and the kind,
+plus a 4-byte bucket) times the capacity, which is 1.02 to 1.79 times the count after the last doubling; each non-`null`
+expected-name collection costs 56 bytes (a 24-byte boxed `ImmutableArray<string>` and a 32-byte one-element array).
+CSyntax sum 1,000: 75,431 × 76 = 5.73 MB of dictionary and 40,056 × 56 = 2.24 MB of collections, total 7.976 MB
+(measured 7.976 MB). Token strings and rule names belong to the tokens and the grammar and are not counted.
+
+### Strategies studied
+
+| Strategy | Result |
+|---|---|
+| A. Grouping by (rule, position, precedence, cursor kind, cursor index) with a per-group alternative mask | Not retained. Half of the CSyntax groups hold a single entry and each group still needs one (kind, collection) slot per alternative, so a per-group array (24-byte header, regrown as alternatives arrive) replaces the per-entry key. Estimated from the distributions above: CSyntax mixed about 11.3 MB against 11.7 MB for D below, with one allocation per group and a regrowth per new alternative; only grammars with wide groups (20 alternatives: about 0.8 instead of 2.7 MB) would gain. Not prototyped. |
+| B. Compact values | **Retained in part.** The token snapshot is stored once per origin position (index in a per-cache table, a separate snapshot when an entry's instances differ) and the kind in 8 bits. The expected-name collection instance is kept: replacing it by a shared or rebuilt instance changes the instance returned (and allocates a box per hit if rebuilt). |
+| C. Numeric identities for repeated strings | **Retained.** Rule names map to a per-cache index (ordinal comparison, at most 1,024, `null` or overflow goes to the exact overflow store), the four `ScheduledAlternativeCursorKinds` to a 2-bit code; any other cursor kind is stored unchanged. Tables cost about 3 KB on CSyntax and are emptied by `Clear()`; no global or shared table. |
+| D. Minimal dictionary optimization | **Retained as the base layout**: one `Dictionary` keyed by a 64-bit packed key (32-bit origin, 8-bit alternative, 10-bit rule index, 2-bit cursor kind, 6-bit precedence, 6-bit cursor index + 1) with a multiplicative hash, values of 16 bytes: 36 bytes per slot instead of 76. Packing the key while keeping the full 32-byte value would cost 52 bytes per slot (CSyntax sum 1,000: 3.92 instead of 2.72 MB). `CollectionsMarshal.GetValueRefOrAddDefault` was not used: it inserts before the S-06 charge and would need a removal on refusal; the frequent duplicate path already costs a single lookup. |
+
+### Differential results
+
+Windows 11, .NET 8.0.34, Release; base `3abcb1f8` built from a separate worktree with the same probe sources; campaigns
+in the order base, branch, branch, base (`results/2026-11-20/lookahead-campaign.ps1`, compared by
+`lookahead-compare.ps1`). 15 scenarios (section 9 plus `g-epsilon`: optional items and an optional nested alternation),
+each in six peak modes (`--peak`, `--lookahead`, `--breakdown`, with and without diagnostics) and a timing run, and 28
+S-06 limits at and below the real thresholds with and without diagnostics: **161 configurations, 4 runs each, 0
+differences** in outcome, tokens, parser steps (a probe is executed exactly on a cache miss, so equal steps mean equal
+probe counts), nodes, retained states, depth, registry sizes, look-ahead entries, action count, tree, diagnostics and
+action/predicate trace digests, look-ahead content digest (every key and result, `null` and empty collections
+distinguished) and characterization. Refusals keep their phase, kind, limit, observed value and offset.
+Linux (WSL2 Ubuntu, self-contained `linux-x64` probes, same .NET 8.0.34, `lookahead-linux-campaign.sh`): 146
+configurations (every peak mode of the 15 scenarios and the 28 limits, no timing), 0 differences between base and
+branch, and 0 differences in any behavioral field or digest against the Windows branch campaign. The parse-scoped peaks
+are byte-identical to Windows (CSyntax sum 1,000: 12,657,976 → 9,754,568 bytes on both systems; CSyntax mixed 1,000:
+54.42 → 41.74 MB; 20 alternatives: 9.01 → 6.11 MB). The shared-grammar concurrency campaign of #709
+(`parser-concurrency-campaign --ops 200 --seeds 3`, Windows Release, branch) is clean: 252 / 252 runs, 378,000
+operations, 0 wrong trees, token lists or failures, 0 unexpected exceptions, the 17,635 expected failures returned
+exactly (the same counts as in section 9). Test suites on the branch: Unit 15,052 passed / 1 skipped, Security 433 / 3
+skipped, Functional 383, in Debug and in Release; expression-engine Debug job 354 / 1 skipped. The equivalence campaign
+(`ParserLookaheadCacheEquivalenceTests`: 400 seeded sequences of 2,500–3,500 operations with near keys, unusual fields,
+every kind, `null` / empty / repeated expected names, limits near the entry count, refusals, clears and reuse) compares
+every answer, stored instance, charge and refusal with the historical cache, and fails on a deliberately introduced key
+collision. Raw results: `results/2026-11-20/lookahead-*`.
+
+### Memory and time
+
+Cache = live bytes released by the look-ahead collections at the root exit (`--breakdown`); parse peak = live bytes
+released at the end of the parse (`peakRegistry`); means of two runs per build. Allocated and time from the timing runs
+(median of 7 parses per file).
+
+| Scenario | Look-ahead entries | Cache base → branch | Parse peak base → branch | Live peak base → branch | Allocated |
+|---|---|---|---|---|---|
+| CSyntax sum 1,000 | 54,089 | 7.98 → 5.07 MB (−36 %) | 12.66 → 9.75 MB (−23 %) | 15.04 → 12.14 MB (−19 %) | −3.9 % |
+| CSyntax sum 1,000, diagnostics | 45,069 | 7.98 → 5.07 MB (−36 %) | 15.00 → 12.10 MB (−19 %) | 106.5 → 103.6 MB (−3 %) | – |
+| CSyntax sum 5,000 | 270,089 | 35.86 → 23.49 MB (−34 %) | 56.01 → 43.64 MB (−22 %) | 64.84 → 52.48 MB (−19 %) | −3.4 % |
+| CSyntax mixed 1,000 | 235,218 | 33.72 → 21.05 MB (−38 %) | 54.42 → 41.74 MB (−23 %) | 61.01 → 48.34 MB (−21 %) | −3.7 % |
+| VBSyntax sum 5,000 | 220,052 | 34.18 → 21.81 MB (−36 %) | 51.41 → 39.05 MB (−24 %) | 60.10 → 47.73 MB (−21 %) | −4.1 % |
+| VBSyntax mixed 1,000 | 153,909 | 18.32 → 12.37 MB (−33 %) | 35.56 → 29.60 MB (−17 %) | 42.28 → 36.32 MB (−14 %) | −2.6 % |
+| CSyntax parentheses, 15 | 1,957 | 374 → 216 KB (−42 %) | 491 → 330 KB (−33 %) | 1.41 → 1.26 MB | −4.9 % |
+| 20 alternatives, 2,000 items | 42,022 | 8.09 → 5.18 MB (−36 %) | 9.01 → 6.11 MB (−32 %) | 10.51 → 7.61 MB (−28 %) | −6.3 % |
+| Common prefixes, 2,000 items | 8,005 | 1.09 → 0.86 MB (−21 %) | 1.75 → 1.53 MB (−13 %) | 3.68 → 3.46 MB | −1.4 % |
+| Left recursion, 2,000 terms | 4,000 | 531 → 482 KB (−9 %) | 1.35 → 1.30 MB (−4 %) | 3.05 → 3.01 MB | −0.6 % |
+| Optional items, 1,000 | 6,174 | 808 → 542 KB (−33 %) | 1.57 → 1.30 MB (−17 %) | 2.45 → 2.18 MB | −2.8 % |
+| Actions and predicates, 1,000 items | 6,339 | 770 → 504 KB (−35 %) | 2.32 → 2.05 MB (−11 %) | 3.66 → 3.40 MB | −1.7 % |
+
+The other registry collections and the live memory after a parse are unchanged (the cache is released when a parse
+ends since S-06). With diagnostics the cache gain is the same in bytes but small against the diagnostics themselves.
+The breakdown of the branch matches the layout: CSyntax sum 1,000 releases 4.96 MB of packed dictionary (75,431 × 36
+bytes plus the 2.24 MB of expected-name collections, which it keeps) and 0.12 MB of tables. Times: the campaign medians
+are within the noise on every scenario except CSyntax sum 1,000, whose apparent slowdown (130 → 180 ms) did not
+reproduce: rerun alternately 12 times with 21 parses each, the branch is faster there (median 106.7 against 122.9 ms)
+and equal on VBSyntax sum 1,000 (103.1 / 103.2 ms) and the optional-items grammar (34.0 / 33.6 ms)
+(`lookahead-win-timing-rerun.txt`).
+
+### Remaining (separate proposal)
+
+The expected-name collections are now about 45 % of the cache (CSyntax sum 1,000: 2.24 of 5.07 MB), with one instance
+per entry for fewer than 70 distinct values. `ParserLookaheadProbe` builds a new collection on every probe (the shallow
+expected-name list, then the `ImmutableArray` copy and its box). Returning one instance per alternative content would
+remove that memory and those allocations without changing any value, any probe kind or any S-06 charge, but two results
+from different probes would then share their collection and compare equal by reference where they did not, and the probe
+would hold per-engine state. It is a change of the probe, not of the cache, and is left to a separate PR. No other
+compaction was found that keeps the stored instances.

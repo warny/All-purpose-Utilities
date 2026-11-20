@@ -147,6 +147,42 @@ compare continuations as sets (including heavily interleaved invocations with du
 the memoization, keep a guaranteed insertion order because the reuse preference (first success, then first failure)
 depends on it.
 
+### Look-ahead cache usage audit and compact storage (look-ahead cache audit)
+
+Verified producers and consumers of `ParserLookaheadCache` on `3abcb1f8` (line numbers on that commit). The cache is
+internal, owned by one `ParserEngine` (`ParserEngine.cs:76`) and shared only with that engine's
+`ScheduledAlternativeExecutor` and `SchedulingPreparation`; `InternalsVisibleTo` names only the Unit and Security test
+projects.
+
+| Path | Reads | Writes | What the result is used for | S-06 |
+|---|---|---|---|---|
+| `SchedulingPreparation.PrepareSchedulingLookaheadProbes` (`SchedulingPreparation.cs:103-117`) | `TryGet` before probing; a hit replaces the probe | after a miss, the probe result when its kind is not `Unknown` | `PreparedSchedulingInputs.LookaheadProbes` (the scheduler checks only its count), `ParserLookaheadSharedPrefixDetector` and `ContinuationMetadataPreparation` (both read `ExpectedTokenNames` only: count, enumeration, ordinal comparisons) | a miss charges one step before probing; a new entry one retained state |
+| `ScheduledAlternativeExecutor.Execute` (`ScheduledAlternativeExecutor.cs:76-141`) | `TryGet` after the precedence check; a hit replaces the probe | after a miss, the probe result when not `Unknown`; after a failed attempt that consumed nothing and has no predicate or action (shortcut contexts only), `ImmediateReject`; after a successful attempt, `RequiresParse`; the last two are duplicates whenever the probe result was stored | `Kind == ImmediateReject` drives the negative shortcut, allowed only without diagnostics and for the `rule-root` / `left-recursive-seed` cursor kinds; the result travels in `ScheduledAlternativeExecutionResult.Probe`, which no production code reads | same as above; duplicates are free |
+| `ParserEngine.Parse` (`ParserEngine.cs:361`, `:375`) | – | `Clear()` at the start and at the end of every parse | – | – |
+
+No production code compares two probe results, reads a result's token strings, or depends on the identity of its
+`ExpectedTokenNames` instance; the tests do (record equality). The cache therefore has to reproduce the result exactly,
+which it does: same kind, same token-string instances, same expected-name collection instance (a `null` collection
+stays `null`, an empty one stays empty, order and repetitions are those of the stored instance).
+
+Since the look-ahead cache audit the storage is compact but exact (`ParserLookaheadCache` remarks):
+
+- a key whose cursor kind is one of the four `ScheduledAlternativeCursorKinds`, whose alternative index is in
+  `[0, 255]`, minimum precedence in `[0, 63]`, cursor index in `[-1, 62]` and whose rule name is not `null` is packed
+  into 64 bits; the origin position keeps all 32 bits, and the rule name becomes an index into a per-cache table of the
+  rule names it has stored (at most 1,024, compared ordinally like the key);
+- a packed entry stores its kind, its expected-name collection instance and the index of a token snapshot (token rule
+  name and text instances) shared by the entries of the same origin position, which all observe the same token; an
+  entry whose token instances differ from its origin's gets its own snapshot;
+- anything else (unusual cursor kind, out-of-range index, `null` name, kind outside 8 bits, full table) is stored
+  unchanged in an overflow dictionary of the historical form. A key is always looked up in both stores.
+
+Membership, duplicate detection, the first value kept, the stored instances and therefore every S-06 charge and refusal
+are those of the historical dictionary; the historical cache is kept as a reference model in
+`ParserLookaheadCacheEquivalenceTests` (Security). Every table is per cache and emptied by `Clear()`, which also drops the
+last-lookup memos, so no rule name or token string is retained after a parse. Measurements: `ParserResourceSafety.md`
+section 10.
+
 ## Operation ownership and concurrent use (issue #709)
 
 A `CompiledGrammar` separates what one grammar shares from what one operation owns. Every `Tokenize(string)` and

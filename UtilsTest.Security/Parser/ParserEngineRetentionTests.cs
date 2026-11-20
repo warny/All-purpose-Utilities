@@ -38,7 +38,12 @@ public class ParserEngineRetentionTests
         ["_stateRegistry", "_visitedStateOverflow"],
         ["_stateRegistry", "_continuations"],
         ["_stateRegistry", "_completedResults"],
-        ["_lookaheadCache", "_results"],
+        ["_lookaheadCache", "_entries"],
+        ["_lookaheadCache", "_overflow"],
+        ["_lookaheadCache", "_ruleIndexes"],
+        ["_lookaheadCache", "_ruleNames"],
+        ["_lookaheadCache", "_tokenSnapshots"],
+        ["_lookaheadCache", "_tokenSnapshotByOrigin"],
     ];
 
     /// <summary>The input text is unreachable from the grammar once <see cref="CompiledGrammar.Parse"/> returns.</summary>

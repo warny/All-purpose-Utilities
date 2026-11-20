@@ -25,6 +25,16 @@ internal static class ParserStateRetention
         if (large) set.TrimExcess();
     }
 
+    /// <summary>Removes every element of a list and releases its capacity when it exceeded <see cref="MaxRetainedEntries"/>.</summary>
+    /// <typeparam name="T">The element type.</typeparam>
+    /// <param name="list">The list to clear.</param>
+    public static void Clear<T>(List<T> list)
+    {
+        bool large = list.Count > MaxRetainedEntries;
+        list.Clear();
+        if (large) list.TrimExcess();
+    }
+
     /// <summary>Removes every entry of a dictionary and releases its capacity when it exceeded <see cref="MaxRetainedEntries"/>.</summary>
     /// <typeparam name="TKey">The key type.</typeparam>
     /// <typeparam name="TValue">The value type.</typeparam>

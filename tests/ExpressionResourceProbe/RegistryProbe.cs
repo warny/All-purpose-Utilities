@@ -24,11 +24,13 @@ namespace ExpressionResourceProbe;
 /// can be compared differentially.
 /// </summary>
 /// <remarks>
-/// Usage: <c>parser-registry &lt;scenario&gt; &lt;size&gt; [--peak] [--diagnostics] [--repeat N] [--max-retained N]</c>.
+/// Usage: <c>parser-registry &lt;scenario&gt; &lt;size&gt; [--peak] [--breakdown] [--lookahead] [--diagnostics] [--repeat N] [--max-retained N]</c>.
 /// <list type="bullet">
 /// <item><c>--peak</c> forces a full collection when the root rule invocation exits, which is the point where every
 /// registry collection holds its final content (the engine clears them right after). It distorts the elapsed time, so
 /// timing runs omit it.</item>
+/// <item><c>--lookahead</c> implies <c>--peak</c> and appends the look-ahead cache characterization and content digest of
+/// <see cref="LookaheadCacheStats"/>, read after the live peak is measured.</item>
 /// <item><c>--diagnostics</c> parses with a <see cref="DiagnosticBag"/> (which disables the negative look-ahead shortcut)
 /// and digests the diagnostics.</item>
 /// <item><c>--max-retained N</c> sets <see cref="ParserResourceLimits.MaxRetainedStates"/>; the refusal is classified.</item>
@@ -54,6 +56,7 @@ internal static class RegistryProbe
         ["g-deep"] = n => new(null, RuleChainGrammar, new string('[', n) + "a" + new string(']', n)),
         ["vbsyntax-text"] = _ => new(Dialect: "VBSyntax", Grammar: null, Text: Environment.GetEnvironmentVariable("PROBE_TEXT") ?? "x0", Stateful: false),
         ["csyntax-text"] = _ => new(Dialect: "CSyntax", Grammar: null, Text: Environment.GetEnvironmentVariable("PROBE_TEXT") ?? "x0", Stateful: false),
+        ["g-epsilon"] = n => new(null, EpsilonGrammar, string.Join(" ", Enumerable.Range(0, n).Select(i => (i % 6) switch { 0 => "a", 1 => "x a", 2 => "b", 3 => "b x", 4 => "c d", _ => "d" }))),
         ["g-stateful"] = n => new(null, StatefulGrammar, string.Join(" ", Enumerable.Range(0, n).Select(i => (i % 3) switch { 0 => "a", 1 => "a = a", _ => "a ;" })), Stateful: true),
     };
 
@@ -79,6 +82,18 @@ internal static class RegistryProbe
         s : t* ;
         t : 'a' | 'a' 'a' | u ;
         u : 'a' t? ;
+        WS : (' ' | '\t' | '\r' | '\n')+ -> skip ;
+        """;
+
+/// <summary>
+    /// Empty alternatives, optional items and a nested alternation with an empty branch, so probes report
+    /// <c>EpsilonPossible</c> and nested-alternation cursor contexts are cached.
+    /// </summary>
+    private const string EpsilonGrammar = """
+        grammar Eps;
+        s : item* ;
+        item : opt 'a' | 'b' opt | ( 'c' | 'e' )? 'd' ;
+        opt : 'x'? ;
         WS : (' ' | '\t' | '\r' | '\n')+ -> skip ;
         """;
 
@@ -131,7 +146,8 @@ internal static class RegistryProbe
         string name = args[1];
         int size = int.Parse(args[2], CultureInfo.InvariantCulture);
         bool breakdown = Array.IndexOf(args, "--breakdown") >= 0;
-        bool peak = breakdown || Array.IndexOf(args, "--peak") >= 0;
+        bool lookahead = Array.IndexOf(args, "--lookahead") >= 0;
+        bool peak = breakdown || lookahead || Array.IndexOf(args, "--peak") >= 0;
         bool withDiagnostics = Array.IndexOf(args, "--diagnostics") >= 0;
         int repeat = Option(args, "--repeat") is { } r ? int.Parse(r, CultureInfo.InvariantCulture) : 1;
         long? maxRetained = Option(args, "--max-retained") is { } m ? long.Parse(m, CultureInfo.InvariantCulture) : null;
@@ -160,7 +176,7 @@ internal static class RegistryProbe
         RunResult last = default;
         for (int i = 0; i < repeat; i++)
         {
-            last = RunOnce(definition, limits, tokens, scenario.Stateful, withDiagnostics, peak, breakdown);
+            last = RunOnce(definition, limits, tokens, scenario.Stateful, withDiagnostics, peak, breakdown, lookahead);
             times.Add(last.Milliseconds);
             allocations.Add(last.Allocated);
             if (last.TreeDigest != warmUpTree) throw new InvalidOperationException("Non-deterministic parse tree between runs.");
@@ -177,7 +193,8 @@ internal static class RegistryProbe
             $"allocated={allocations.Min()} allocatedMax={allocations.Max()}",
             $"msMin={times[0].ToString("0.###", CultureInfo.InvariantCulture)} msMedian={times[times.Count / 2].ToString("0.###", CultureInfo.InvariantCulture)}",
             $"actions={last.ActionCount} tree={last.TreeDigest} diag={last.DiagnosticDigest} trace={last.TraceDigest}",
-            last.Breakdown));
+            last.Breakdown,
+            last.Lookahead));
         return last.Outcome.StartsWith("resource-limit", StringComparison.Ordinal) ? 13 : last.Outcome.StartsWith("exception", StringComparison.Ordinal) ? 12 : 0;
     }
 
@@ -190,7 +207,8 @@ internal static class RegistryProbe
     /// <param name="peak">Whether to measure the live memory and the registry sizes when the root rule exits.</param>
     /// <returns>The measurements.</returns>
     /// <param name="breakdown">Whether to release the collections one by one at the root exit and report the live memory each one held (destructive: the measured parse is finished at that point).</param>
-    private static RunResult RunOnce(Utils.Parser.Model.ParserDefinition definition, ParserResourceLimits limits, IReadOnlyList<Token> tokens, bool stateful, bool withDiagnostics, bool peak, bool breakdown = false)
+    /// <param name="lookahead">Whether to characterize the look-ahead cache at the root exit (<see cref="LookaheadCacheStats"/>).</param>
+    private static RunResult RunOnce(Utils.Parser.Model.ParserDefinition definition, ParserResourceLimits limits, IReadOnlyList<Token> tokens, bool stateful, bool withDiagnostics, bool peak, bool breakdown = false, bool lookahead = false)
     {
         var trace = new StringBuilder();
         var state = new CounterState(trace);
@@ -205,6 +223,7 @@ internal static class RegistryProbe
         long livePeak = 0;
         RegistrySizes sizes = RegistrySizes.Unknown;
         string breakdownText = "breakdown=-";
+        string lookaheadText = "lookaheadDigest=-";
         if (peak)
         {
             frames.OnRootExit = () =>
@@ -212,6 +231,7 @@ internal static class RegistryProbe
                 // The last root exit wins: it is the one that follows the final completed-result insertion.
                 sizes = ReadRegistry(engine);
                 livePeak = GC.GetTotalMemory(forceFullCollection: true);
+                if (lookahead) lookaheadText = LookaheadCacheStats.Describe(engine);
                 if (breakdown) breakdownText = Breakdown(engine, livePeak);
             };
         }
@@ -246,7 +266,7 @@ internal static class RegistryProbe
         string treeDigest = Digest(tree is null ? "<none>" : Render(tree));
         string diagnosticDigest = diagnostics is null ? "-" : Digest(string.Join("\n", diagnostics.Select(d => $"{d.Code}|{d.RuleName}|{d.Message}|{d.Span}")));
         GC.KeepAlive(tree);
-        return new RunResult(outcome, usage, sizes, liveBefore, livePeak, liveAfter, allocated, stopwatch.Elapsed.TotalMilliseconds, treeDigest, diagnosticDigest, Digest(trace.ToString()), state.Actions, breakdownText);
+        return new RunResult(outcome, usage, sizes, liveBefore, livePeak, liveAfter, allocated, stopwatch.Elapsed.TotalMilliseconds, treeDigest, diagnosticDigest, Digest(trace.ToString()), state.Actions, breakdownText, lookaheadText);
     }
 
     /// <summary>
@@ -262,7 +282,7 @@ internal static class RegistryProbe
         object registry = Field(engine, "_stateRegistry")!;
         var targets = registry.GetType().GetFields(BindingFlags.NonPublic | BindingFlags.Instance)
             .Select(field => (Name: field.Name, Value: field.GetValue(registry)))
-            .Append((Name: "_lookahead", Value: Field(Field(engine, "_lookaheadCache")!, "_results")));
+            .Concat(LookaheadCollections(Field(engine, "_lookaheadCache")!));
         foreach ((string name, object? value) in targets)
         {
             if (value is null) continue;
@@ -324,7 +344,7 @@ internal static class RegistryProbe
     {
         object registry = Field(engine, "_stateRegistry")!;
         object cache = Field(engine, "_lookaheadCache")!;
-        long lookahead = ((ICollection)Field(cache, "_results")!).Count;
+        long lookahead = LookaheadCount(cache);
 
         // Historical layout: HashSet<ParserStateKey>, Dictionary<RuleInvocationKey, HashSet<ContinuationKey>>,
         // Dictionary<RuleInvocationKey, List<ParserRuleResult>>.
@@ -341,6 +361,28 @@ internal static class RegistryProbe
         // Compact layout: internal count properties.
         long Count(string property) => Convert.ToInt64(registry.GetType().GetProperty(property, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance)!.GetValue(registry), CultureInfo.InvariantCulture);
         return new RegistrySizes(Count("VisitedStateCount"), Count("VisitedStateGroupCount"), Count("ContinuationInvocationCount"), Count("ContinuationCount"), Count("CompletedInvocationCount"), Count("CompletedResultCount"), lookahead);
+    }
+
+    /// <summary>Reads the number of look-ahead entries of the historical (<c>_results</c>) or compact (<c>Count</c>) cache layout.</summary>
+    /// <param name="cache">The look-ahead cache.</param>
+    /// <returns>The number of entries.</returns>
+    internal static long LookaheadCount(object cache)
+        => Field(cache, "_results") is ICollection results
+            ? results.Count
+            : Convert.ToInt64(cache.GetType().GetProperty("Count", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance)!.GetValue(cache), CultureInfo.InvariantCulture);
+
+    /// <summary>
+    /// Lists the collection fields of the look-ahead cache, named <c>lookahead</c> for the historical single dictionary and
+    /// <c>lookahead.&lt;field&gt;</c> for every collection of another layout.
+    /// </summary>
+    /// <param name="cache">The look-ahead cache.</param>
+    /// <returns>The named collections.</returns>
+    private static IEnumerable<(string Name, object? Value)> LookaheadCollections(object cache)
+    {
+        if (Field(cache, "_results") is { } results) return [("_lookahead", results)];
+        return cache.GetType().GetFields(BindingFlags.NonPublic | BindingFlags.Instance)
+            .Where(field => typeof(ICollection).IsAssignableFrom(field.FieldType))
+            .Select(field => ("_lookahead." + field.Name.TrimStart('_'), field.GetValue(cache)));
     }
 
     /// <summary>Reads a private instance field by name.</summary>
@@ -432,7 +474,8 @@ internal static class RegistryProbe
         string DiagnosticDigest,
         string TraceDigest,
         long ActionCount,
-        string Breakdown);
+        string Breakdown,
+        string Lookahead);
 
     /// <summary>Registry and look-ahead sizes at the root exit.</summary>
     /// <param name="Visited">Distinct visited-state keys.</param>

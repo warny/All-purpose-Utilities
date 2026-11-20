@@ -400,7 +400,7 @@ internal static class ParserProbe
         var completed = Field(registry, "_completedResults") as IDictionary;
         var continuations = Field(registry, "_continuations") as IDictionary;
         var visited = Field(registry, "_visitedStates") as IEnumerable;
-        var lookahead = Field(cache, "_results") as ICollection;
+        long lookaheadCount = RegistryProbe.LookaheadCount(cache);
 
         long memoResults = 0;
         if (completed is not null) foreach (object? list in completed.Values) memoResults += ((ICollection)list!).Count;
@@ -408,7 +408,7 @@ internal static class ParserProbe
         if (continuations is not null) foreach (object? set in continuations.Values) continuationCount += ((IEnumerable)set!).Cast<object>().LongCount();
         long visitedCount = visited?.Cast<object>().LongCount() ?? -1;
 
-        return new RegistrySizes(completed?.Count ?? -1, memoResults, visitedCount, continuations?.Count ?? -1, continuationCount, lookahead?.Count ?? -1);
+        return new RegistrySizes(completed?.Count ?? -1, memoResults, visitedCount, continuations?.Count ?? -1, continuationCount, lookaheadCount);
     }
 
     /// <summary>

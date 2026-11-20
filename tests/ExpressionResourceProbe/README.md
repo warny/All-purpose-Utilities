@@ -158,3 +158,23 @@ $probe = Join-Path $env:TEMP 'etc-probe\win\ExpressionResourceProbe.exe'
 & $probe parser-registry g-stateful 1000 --peak --diagnostics --max-retained 26688
 & $probe parser-registry csyntax-sum 1000 --repeat 7
 ```
+
+### Look-ahead cache (`--lookahead`)
+
+`--lookahead` (implies `--peak`; `LookaheadCacheStats.cs`) reads every entry of the engine's `ParserLookaheadCache` at
+the root exit, after the live peak is measured, and appends `lookaheadDigest=` (order-independent SHA-256 of the exact
+keys and results, `null` and empty expected-name collections distinguished) and `lstats=` (layout and capacity, kinds,
+distinct rule names and cursor kinds and their instances, alternative / cursor-index / precedence histograms, group
+counts and sizes for (rule, position, precedence, cursor kind, cursor index) and (rule, position, precedence), token
+snapshots per origin, `null` fields, expected-name collection sizes, instances and distinct values). Entries are read from
+the historical dictionary (`_results`) or through the internal `EnumerateEntries()` of the compact layout, so the digest
+compares a base worktree with a branch. `--breakdown` reports each collection of the compact cache as
+`lookahead.<field>` (sum them to compare with the historical `lookahead`). `g-epsilon` adds optional items and an
+optional nested alternation (`EpsilonPossible` probes, alternation cursor contexts). Campaign and comparison scripts:
+`results/2026-11-20/lookahead-campaign.ps1`, `lookahead-compare.ps1`, `lookahead-linux-campaign.sh`. Results:
+`docs/parser/ParserResourceSafety.md` section 10.
+
+```powershell
+& $probe parser-registry csyntax-sum 1000 --lookahead
+& $probe parser-registry csyntax-sum 1000 --lookahead --diagnostics
+```
