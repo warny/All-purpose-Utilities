@@ -494,6 +494,18 @@ the right (<code>x - (10 - 1)</code>), so expressions written like this computed
 results were adjusted to the former behavior. Two-operand expressions, parenthesized expressions and <code>^</code> / <code>**</code>
 (still right-associative) are unchanged. VBSyntax no longer negates an identifier or literal whose name starts with
 <code>Not</code> (for example <code>Nothing</code>). No signature changed.</p>
+<p><a id="omy-utils-expressions-vbsyntax-numeric-promotion"></a></p>
+<h2 id="utilsexpressionsvbsyntax-symmetric-numeric-promotion-and-real-division">Utils.Expressions.VBSyntax: symmetric numeric promotion and real division</h2>
+<p>Mixed numeric operands are promoted to the type of higher rank in <code>Byte &lt; Int16 &lt; Int32 &lt; Int64 &lt; Single &lt; Double</code>,
+whichever side they are on, for <code>+</code>, <code>-</code>, <code>*</code>, <code>Mod</code> and comparisons; <code>/</code> always produces a <code>Double</code>. Expressions such
+as <code>10 - x</code> (<code>x</code> a <code>Double</code>), <code>3 / 4</code> or <code>7 * 5 / 2 * 3</code> now compute <code>7.5</code>, <code>0.75</code> and <code>52.5</code> instead of <code>8</code>, <code>0</code> and
+<code>51</code>, and their compiled types change accordingly (<code>Double</code> instead of <code>Int32</code>). A typed delegate such as <code>Func&lt;int&gt;</code>
+still compiles (the body is converted to the return type), but the <code>Double</code> result is truncated once at the end
+instead of after each integer division (<code>7 * 5 / 2 * 3</code> gives <code>52</code> instead of <code>51</code>). Mixed-type comparisons that used
+to throw now compile, and <code>2 = 2.5</code> with constant operands is <code>False</code>. Mixing <code>SByte</code>, <code>UInt16</code>, <code>UInt32</code>, <code>UInt64</code> or
+<code>Decimal</code> with another numeric type now throws <code>NotSupportedException</code>: convert one operand explicitly to the type
+you want (operations between two operands of the same such type are unchanged). A nullable operand on either side
+now keeps the result nullable. Arithmetic between two <code>Byte</code> operands (which used to throw) returns an <code>Int32</code>.</p>
 
 </article>
 
