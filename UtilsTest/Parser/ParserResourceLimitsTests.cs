@@ -198,10 +198,12 @@ public class ParserResourceLimitsTests
         var tokens = new CompiledGrammar(definition).Tokenize("a + b * (c + d) ; e");
         Assert.IsNotInstanceOfType<ErrorNode>(engine.Parse(tokens));
 
-        var registry = Field(engine, "_stateRegistry");
-        Assert.AreEqual(0, ((System.Collections.ICollection)Field(registry, "_completedResults")).Count);
-        Assert.AreEqual(0, ((System.Collections.ICollection)Field(registry, "_continuations")).Count);
-        Assert.AreEqual(0, ((HashSet<ParserStateKey>)Field(registry, "_visitedStates")).Count);
+        var registry = (ParserStateRegistry)Field(engine, "_stateRegistry");
+        Assert.AreEqual(0L, registry.CompletedResultCount);
+        Assert.AreEqual(0, registry.CompletedInvocationCount);
+        Assert.AreEqual(0, registry.ContinuationCount);
+        Assert.AreEqual(0L, registry.VisitedStateCount);
+        Assert.AreEqual(0, registry.VisitedStateGroupCount);
         Assert.AreEqual(0, ((System.Collections.ICollection)Field(Field(engine, "_lookaheadCache"), "_results")).Count);
         Assert.IsTrue(engine.LastResourceUsage!.RetainedStates > 0, "the parse did retain states while it ran");
     }

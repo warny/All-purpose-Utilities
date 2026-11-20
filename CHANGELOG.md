@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed — `omy.Utils.Parser` (compact parser state registry)
+- The per-parse `ParserStateRegistry` stores the same entries in less memory: visited states are grouped per (rule,
+  position, precedence) with one bit per alternative, continuations are one flat set of (invocation, continuation)
+  pairs instead of one set per invocation, and a memoized invocation keeps its result inline instead of in a list. The
+  registry part of the live peak of a parse drops by 30–81 % on the measured grammars (CSyntax 5,000-term sum: 98 MB →
+  56 MB including the unchanged look-ahead cache) and parse allocations by 2–11 %.
+- No behavior change: trees, tokens, diagnostics, action order and count, memoization (including restored execution-state
+  snapshots) and every S-06 counter are identical, including `RetainedStates` charges and refusals (kind, limit, observed
+  value, offset), on 98 compared configurations. The write-only metadata is still recorded and charged; not recording it
+  would change the `MaxRetainedStates` accounting and is left to a separate proposal
+  (`docs/parser/ParserResourceSafety.md`, section 9).
+
 ### Fixed — `omy.Utils.Parser` (engine reuse: retained memory and lexer enumeration state)
 - A long-lived `CompiledGrammar` (generated static `Grammar`, CSyntax/VBSyntax shared grammars) no longer keeps the last
   input text alive after `Tokenize` / `Parse`, nor the emptied collection capacity of its last parse (about 250 MB after

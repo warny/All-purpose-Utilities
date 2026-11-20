@@ -133,3 +133,28 @@ $probe = Join-Path $env:TEMP 'etc-probe\win\ExpressionResourceProbe.exe'
 & $probe parser-concurrency-campaign --ops 200 --seeds 3 --surfaces csyntax
 & $probe parser-concurrency-bench --ms 1500 --mode shared --threads 1,2,4,8,16 --label fixed
 ```
+## Registry metadata (registry-metadata audit)
+
+`parser-registry <scenario> <size> [--peak] [--breakdown] [--diagnostics] [--repeat N] [--max-retained N]`
+(`RegistryProbe.cs`) parses one scenario on a directly constructed `ParserEngine` and prints one `RRESULT` line: tokens,
+outcome (refusals with phase, kind, limit, observed value and offset), parser counters (`steps`, `nodes`, `retained`,
+`depth`), the distinct entries of every registry collection and of the look-ahead cache at the root exit, live memory
+before, at the root exit and after the parse, allocations, minimum and median times of `--repeat` parses, the action
+count and SHA-256 digests of the tree, the diagnostics and the action/predicate trace. `--peak` forces a full collection
+when the root invocation exits (timing runs omit it); `--breakdown` then releases each collection in turn and reports
+the bytes each one held (destructive, the parse is finished at that point). Scenarios: `csyntax-sum`, `csyntax-mixed`,
+`csyntax-parens`, `vbsyntax-sum`, `vbsyntax-mixed`, `g-alternatives`, `g-prefix`, `g-ambiguous`, `g-leftrec-sum`,
+`g-leftrec-mixed`, `g-deep`, `g-stateful` (actions and predicates over a counter execution state), and
+`csyntax-text` / `vbsyntax-text` (input from the `PROBE_TEXT` environment variable). Registry sizes are read by
+reflection from both the historical and the compact layouts, so the same probe sources measure a base worktree
+(`EtcUtilsRoot`). Deep scenarios (`g-ambiguous`, `g-deep`) need `--thread stack:262144`. Results:
+`docs/parser/ParserResourceSafety.md` section 9.
+
+**Environment:** Windows PowerShell 5.1
+
+```powershell
+$probe = Join-Path $env:TEMP 'etc-probe\win\ExpressionResourceProbe.exe'
+& $probe parser-registry csyntax-sum 2000 --breakdown
+& $probe parser-registry g-stateful 1000 --peak --diagnostics --max-retained 26688
+& $probe parser-registry csyntax-sum 1000 --repeat 7
+```
