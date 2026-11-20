@@ -270,6 +270,66 @@ production code reads it, the historical per-invocation <code>HashSet</code> did
 compare continuations as sets (including heavily interleaved invocations with duplicates). Completed results, read by
 the memoization, keep a guaranteed insertion order because the reuse preference (first success, then first failure)
 depends on it.</p>
+<h3 id="look-ahead-cache-usage-audit-and-compact-storage-look-ahead-cache-audit">Look-ahead cache usage audit and compact storage (look-ahead cache audit)</h3>
+<p>Verified producers and consumers of <code>ParserLookaheadCache</code> on <code>3abcb1f8</code> (line numbers on that commit). The cache is
+internal, owned by one <code>ParserEngine</code> (<code>ParserEngine.cs:76</code>) and shared only with that engine's
+<code>ScheduledAlternativeExecutor</code> and <code>SchedulingPreparation</code>; <code>InternalsVisibleTo</code> names only the Unit and Security test
+projects.</p>
+<table>
+<thead>
+<tr>
+<th>Path</th>
+<th>Reads</th>
+<th>Writes</th>
+<th>What the result is used for</th>
+<th>S-06</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SchedulingPreparation.PrepareSchedulingLookaheadProbes</code> (<code>SchedulingPreparation.cs:103-117</code>)</td>
+<td><code>TryGet</code> before probing; a hit replaces the probe</td>
+<td>after a miss, the probe result when its kind is not <code>Unknown</code></td>
+<td><code>PreparedSchedulingInputs.LookaheadProbes</code> (the scheduler checks only its count), <code>ParserLookaheadSharedPrefixDetector</code> and <code>ContinuationMetadataPreparation</code> (both read <code>ExpectedTokenNames</code> only: count, enumeration, ordinal comparisons)</td>
+<td>a miss charges one step before probing; a new entry one retained state</td>
+</tr>
+<tr>
+<td><code>ScheduledAlternativeExecutor.Execute</code> (<code>ScheduledAlternativeExecutor.cs:76-141</code>)</td>
+<td><code>TryGet</code> after the precedence check; a hit replaces the probe</td>
+<td>after a miss, the probe result when not <code>Unknown</code>; after a failed attempt that consumed nothing and has no predicate or action (shortcut contexts only), <code>ImmediateReject</code>; after a successful attempt, <code>RequiresParse</code>; the last two are duplicates whenever the probe result was stored</td>
+<td><code>Kind == ImmediateReject</code> drives the negative shortcut, allowed only without diagnostics and for the <code>rule-root</code> / <code>left-recursive-seed</code> cursor kinds; the result travels in <code>ScheduledAlternativeExecutionResult.Probe</code>, which no production code reads</td>
+<td>same as above; duplicates are free</td>
+</tr>
+<tr>
+<td><code>ParserEngine.Parse</code> (<code>ParserEngine.cs:361</code>, <code>:375</code>)</td>
+<td>–</td>
+<td><code>Clear()</code> at the start and at the end of every parse</td>
+<td>–</td>
+<td>–</td>
+</tr>
+</tbody>
+</table>
+<p>No production code compares two probe results, reads a result's token strings, or depends on the identity of its
+<code>ExpectedTokenNames</code> instance; the tests do (record equality). The cache therefore has to reproduce the result exactly,
+which it does: same kind, same token-string instances, same expected-name collection instance (a <code>null</code> collection
+stays <code>null</code>, an empty one stays empty, order and repetitions are those of the stored instance).</p>
+<p>Since the look-ahead cache audit the storage is compact but exact (<code>ParserLookaheadCache</code> remarks):</p>
+<ul>
+<li>a key whose cursor kind is one of the four <code>ScheduledAlternativeCursorKinds</code>, whose alternative index is in
+<code>[0, 255]</code>, minimum precedence in <code>[0, 63]</code>, cursor index in <code>[-1, 62]</code> and whose rule name is not <code>null</code> is packed
+into 64 bits; the origin position keeps all 32 bits, and the rule name becomes an index into a per-cache table of the
+rule names it has stored (at most 1,024, compared ordinally like the key);</li>
+<li>a packed entry stores its kind, its expected-name collection instance and the index of a token snapshot (token rule
+name and text instances) shared by the entries of the same origin position, which all observe the same token; an
+entry whose token instances differ from its origin's gets its own snapshot;</li>
+<li>anything else (unusual cursor kind, out-of-range index, <code>null</code> name, kind outside 8 bits, full table) is stored
+unchanged in an overflow dictionary of the historical form. A key is always looked up in both stores.</li>
+</ul>
+<p>Membership, duplicate detection, the first value kept, the stored instances and therefore every S-06 charge and refusal
+are those of the historical dictionary; the historical cache is kept as a reference model in
+<code>ParserLookaheadCacheEquivalenceTests</code> (Security). Every table is per cache and emptied by <code>Clear()</code>, which also drops the
+last-lookup memos, so no rule name or token string is retained after a parse. Measurements: <code>ParserResourceSafety.md</code>
+section 10.</p>
 <h2 id="operation-ownership-and-concurrent-use-issue-709">Operation ownership and concurrent use (issue #709)</h2>
 <p>A <code>CompiledGrammar</code> separates what one grammar shares from what one operation owns. Every <code>Tokenize(string)</code> and
 <code>Parse(string)</code> call creates its own <code>LexerEngine</code> and <code>ParserEngine</code>; the grammar-invariant tables those engines need
