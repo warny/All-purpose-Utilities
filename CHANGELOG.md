@@ -18,6 +18,24 @@ All notable changes to this project will be documented in this file.
 - The engine pool studied after #709 is abandoned: fresh engines per call are kept (see
   `docs/parser/RuntimeStateOwnership.md`).
 
+### Fixed — `omy.Utils.Expressions.VBSyntax` (symmetric numeric promotion and real division)
+- **Behavior change: compiled types and values change for mixed numeric expressions and `/`.** Binary arithmetic used
+  to convert the right operand to the left operand's type: `10 - x` with a `Double` `x` truncated `x` to `Int32`
+  (`10 - 2.5` gave `8`), `Int16 + Double` was an `Int16` addition, a nullable right operand lost its nullability, and an
+  equality whose left operand is not assignable converted the right operand too (`2 = 2.5` was `True`). Both operands are
+  now promoted, symmetrically, to the type of higher rank in `Byte < Int16 < Int32 < Int64 < Single < Double`, for
+  `+`, `-`, `*`, `Mod` and the comparisons `=`, `<>`, `<`, `<=`, `>`, `>=` (mixed-type comparisons used to throw).
+  Promotion to `Single` / `Double` can lose integer precision for large `Int32` / `Int64` values.
+- `/` is now a real division with a `Double` result for the promoted types (`3 / 4` is `0.75`; it was the integer
+  division `0`; `7 * 5 / 2 * 3` is `52.5`, it was `51`).
+- `Byte` arithmetic, which used to throw (LINQ has no `Byte` operators), is computed and returned in `Int32`, like C#
+  (`Byte + Byte` with `250` and `10` is the `Int32` `260`, not wrapped to a `Byte`); `Byte` mixed with a higher rank
+  takes that rank (`Byte + Int16` is `Int16`). Nullable operands lift the whole operation to the nullable common type.
+- `SByte`, `UInt16`, `UInt32`, `UInt64` and `Decimal` are not ranked: same-type operations are unchanged, but mixing one
+  of them with another numeric type now throws `NotSupportedException` (previously the right operand was converted to
+  the left type, for example `Decimal + Int32` worked while `Int32 + Decimal` truncated the decimal).
+- Unary operators, shifts, `^`, literal typing and the operator associativity of #713 are unchanged; CSyntax is unchanged.
+
 ### Fixed — `omy.Utils.Expressions.VBSyntax`, `omy.Utils.Expressions.CSyntax` (binary operator chains, issue #711)
 - **Behavior change: compiled values change for affected expressions.** A binary operator chain of three or more
   operands (`a op b op c ...`) was grouped from the right: `x - 10 - 1` compiled to `x - (10 - 1)`, `x / 100 / 2` to
@@ -843,7 +861,6 @@ manifested package as of this candidate.
 
 ### Source generators
 - All four generator packages are packaged under `analyzers/dotnet/cs`, restored by real consumers, and checked for Roslyn load errors.
-
 
 ### Changed — `omy.Utils.Mathematics` (BREAKING)
 - **`Matrix<T>.DiagonalizeLU()` now returns a 3-tuple `(L, U, P)` instead of `(L, U)`.** The previous

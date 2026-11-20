@@ -66,13 +66,16 @@ public class OperatorChainCompilationTests
         AssertSameValues(name, reference, compiled);
     }
 
-    /// <summary>Integer chains keep left associativity and integer division in both dialects.</summary>
+    /// <summary>
+    /// Integer chains keep left associativity in both dialects; CSyntax <c>/</c> is an integer division, VBSyntax <c>/</c>
+    /// is a real division (Double), as in VB.NET.
+    /// </summary>
     [TestMethod]
     public void IntegerChains_FoldLeftWithIntegerSemantics()
     {
         Assert.AreEqual(100 - 10 - 1, EvaluateVb<int>("100 - 10 - 1"));
-        Assert.AreEqual(100 / 10 / 2, EvaluateVb<int>("100 / 10 / 2"));
-        Assert.AreEqual(7 * 5 / 2 * 3, EvaluateVb<int>("7 * 5 / 2 * 3"));
+        Assert.AreEqual(100.0 / 10 / 2, EvaluateVb<double>("100 / 10 / 2"));
+        Assert.AreEqual(7.0 * 5 / 2 * 3, EvaluateVb<double>("7 * 5 / 2 * 3"));
         Assert.AreEqual(17 % 5 * 3, EvaluateVb<int>("17 Mod 5 * 3"));
         Assert.AreEqual(1 << 4 >> 2, EvaluateVb<int>("1 << 4 >> 2"));
         Assert.AreEqual(100 - 10 - 1, EvaluateC<int>("100 - 10 - 1"));
