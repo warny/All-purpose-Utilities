@@ -21,12 +21,15 @@ internal sealed class ParserStateRegistry
     /// <summary>Completed parse results grouped by state-aware rule invocation identity for local reuse.</summary>
     private readonly Dictionary<RuleInvocationKey, List<ParserRuleResult>> _completedResults = [];
 
-    /// <summary>Resets all registry state for a new parse.</summary>
+    /// <summary>
+    /// Resets all registry state for a new parse, releasing the capacity of a collection that grew large
+    /// (<see cref="ParserStateRetention"/>).
+    /// </summary>
     public void Clear()
     {
-        _visitedStates.Clear();
-        _continuations.Clear();
-        _completedResults.Clear();
+        ParserStateRetention.Clear(_visitedStates);
+        ParserStateRetention.Clear(_continuations);
+        ParserStateRetention.Clear(_completedResults);
     }
 
     /// <summary>Marks a state as visited and returns <c>true</c> when it was not seen before.</summary>

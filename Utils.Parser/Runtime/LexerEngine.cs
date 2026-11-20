@@ -11,9 +11,11 @@ namespace Utils.Parser.Runtime;
 /// using the lexer rules in a <see cref="ParserDefinition"/>.
 /// </summary>
 /// <remarks>
-/// This class is not thread-safe: the mode stack, the pending <c>more</c> text and the active rule references belong
-/// to the engine and are reset by every tokenization. Each concurrent tokenization must use a separate
-/// <see cref="LexerEngine"/> instance; <see cref="CompiledGrammar"/> does so for every call.
+/// This class is not thread-safe: the active rule references belong to the engine. Each concurrent tokenization must
+/// use a separate <see cref="LexerEngine"/> instance; <see cref="CompiledGrammar"/> does so for every call. The mode
+/// stack and the pending <c>more</c> text belong to each enumeration, so several enumerations of one engine may be
+/// interleaved on a thread, or abandoned, without affecting each other. Once an enumeration ends or is disposed, the
+/// engine no longer references its input.
 /// </remarks>
 public sealed class LexerEngine
 {
@@ -97,23 +99,39 @@ public sealed class LexerEngine
     private const string DefaultChannel = "DEFAULT_CHANNEL";
     private const string HiddenChannel = "HIDDEN";
 
-    /// <summary>The mode stack of the current tokenization (per-engine mutable state).</summary>
-    private readonly Stack<LexerMode> _modeStack = [];
-
     /// <summary>Whether literal matching ignores case (shared preparation).</summary>
     private readonly bool _caseInsensitive;
 
     /// <summary>The keyword trie of every mode (shared preparation, never mutated).</summary>
     private readonly IReadOnlyDictionary<string, KeywordLookup> _keywordTrieByMode;
 
-    /// <summary>The text accumulated by <c>more</c> commands in the current tokenization (per-engine mutable state).</summary>
-    private readonly StringBuilder _moreTextBuilder = new();
-
-    /// <summary>The rule references being matched, by rule and offset, in the current tokenization (per-engine mutable state).</summary>
+    /// <summary>
+    /// The rule references being matched, by rule and offset (per-engine mutable state). Entries are added and removed
+    /// within one token match, which never yields, so the set is empty between two tokens of any enumeration.
+    /// </summary>
     private readonly HashSet<(string RuleName, int Offset)> _activeRuleRefs = [];
 
-    /// <summary>The start position of the pending <c>more</c> text, or -1 (per-engine mutable state).</summary>
-    private int _moreStartPos = -1;
+    /// <summary>
+    /// The mutable state of one tokenization: each
+    /// <see cref="Tokenize(TextReader, LexerEngineOptions?, DiagnosticBag?, string?)"/> enumeration owns its own, so
+    /// enumerations of one engine that are interleaved on a thread (or abandoned before their end) never see each
+    /// other's modes or pending <c>more</c> text.
+    /// </summary>
+    private sealed class TokenizationState
+    {
+        /// <summary>Initialises the state of a tokenization starting in <paramref name="defaultMode"/>.</summary>
+        /// <param name="defaultMode">The initial lexer mode.</param>
+        public TokenizationState(LexerMode defaultMode) => Modes.Push(defaultMode);
+
+        /// <summary>The mode stack; its top is the current mode.</summary>
+        public Stack<LexerMode> Modes { get; } = new();
+
+        /// <summary>The text accumulated by <c>more</c> commands since the last emitted token.</summary>
+        public StringBuilder MoreText { get; } = new();
+
+        /// <summary>The start position of the pending <c>more</c> text, or -1.</summary>
+        public int MoreStartPos { get; set; } = -1;
+    }
 
     /// <summary>Gets the resource limits applied to every tokenization of this engine.</summary>
     public ParserResourceLimits ResourceLimits => _resourceLimits;
@@ -149,18 +167,44 @@ public sealed class LexerEngine
         var input = new TextReaderBuffer(reader, budget);
         inputForOffset = input;
         LastResourceBudget = budget;
+        try
+        {
+            foreach (Token token in TokenizeBuffered(input, budget, options, diagnostics, filePath))
+            {
+                yield return token;
+            }
+        }
+        finally
+        {
+            // LastResourceBudget outlives the enumeration (a CompiledGrammar keeps its last engine for diagnostics): drop
+            // the budget's only path to the reader so that the input text is not retained once the tokenization ends.
+            inputForOffset = null;
+        }
+    }
+
+    /// <summary>Produces the tokens of one tokenization, with its private <see cref="TokenizationState"/>.</summary>
+    /// <param name="input">The buffered input of the tokenization.</param>
+    /// <param name="budget">The budget of the tokenization.</param>
+    /// <param name="options">The lexer options.</param>
+    /// <param name="diagnostics">Optional diagnostics sink.</param>
+    /// <param name="filePath">Optional source file path for diagnostics.</param>
+    /// <returns>Token stream including non-default channels.</returns>
+    private IEnumerable<Token> TokenizeBuffered(
+        TextReaderBuffer input,
+        ParserResourceBudget budget,
+        LexerEngineOptions options,
+        DiagnosticBag? diagnostics,
+        string? filePath)
+    {
         var emittedTokens = new List<Token>();
 
         ValidateExtensions(options.Extensions, diagnostics, filePath);
 
-        _modeStack.Clear();
-        _modeStack.Push(GetDefaultMode());
-        _moreTextBuilder.Clear();
-        _moreStartPos = -1;
+        var state = new TokenizationState(GetDefaultMode());
 
         while (!input.IsEnd)
         {
-            var mode = _modeStack.Peek();
+            var mode = state.Modes.Peek();
 
             foreach (Token extensionToken in RunTryReadTokensExtensions(options.Extensions, input, emittedTokens, mode.Name, diagnostics, filePath))
             {
@@ -194,19 +238,19 @@ public sealed class LexerEngine
             var token = new Token(match, rule!.Name, mode.Name, DefaultChannel, tokenText);
 
             LexerActionExecutionResult actionResult = ExecuteLexerActions(actions, ref token);
-            ApplyLexerActionMode(actionResult, token, diagnostics);
-            bool skip = ExecuteLexerCommands(commands, ref token, diagnostics, filePath);
+            ApplyLexerActionMode(state, actionResult, token, diagnostics);
+            bool skip = ExecuteLexerCommands(state, commands, ref token, diagnostics);
             if (rule.IsFragment || skip)
             {
                 continue;
             }
 
-            if (_moreTextBuilder.Length > 0)
+            if (state.MoreText.Length > 0)
             {
-                var combinedSpan = new SourceSpan(_moreStartPos, token.Span.Position + token.Span.Length - _moreStartPos, token.Span.Line, token.Span.Column, filePath);
-                token = token with { Span = combinedSpan, Text = _moreTextBuilder + token.Text };
-                _moreTextBuilder.Clear();
-                _moreStartPos = -1;
+                var combinedSpan = new SourceSpan(state.MoreStartPos, token.Span.Position + token.Span.Length - state.MoreStartPos, token.Span.Line, token.Span.Column, filePath);
+                token = token with { Span = combinedSpan, Text = state.MoreText + token.Text };
+                state.MoreText.Clear();
+                state.MoreStartPos = -1;
             }
 
             ValidateTokenEmission(token, diagnostics, filePath);
@@ -223,7 +267,7 @@ public sealed class LexerEngine
             }
         }
 
-        foreach (Token endToken in RunEndOfInputExtensions(options.Extensions, input, emittedTokens, diagnostics, filePath))
+        foreach (Token endToken in RunEndOfInputExtensions(options.Extensions, input, emittedTokens, state.Modes.Peek().Name, diagnostics, filePath))
         {
             budget.ChargeToken();
             emittedTokens.Add(endToken);
@@ -299,11 +343,11 @@ public sealed class LexerEngine
         }
     }
 
-    private IEnumerable<Token> RunEndOfInputExtensions(IReadOnlyList<ILexerExtension> extensions, TextReaderBuffer input, IReadOnlyList<Token> emittedTokens, DiagnosticBag? diagnostics, string? filePath)
+    private IEnumerable<Token> RunEndOfInputExtensions(IReadOnlyList<ILexerExtension> extensions, TextReaderBuffer input, IReadOnlyList<Token> emittedTokens, string modeName, DiagnosticBag? diagnostics, string? filePath)
     {
         foreach (ILexerExtension extension in extensions)
         {
-            var context = new LexerExtensionContext(_definition, input, emittedTokens, _modeStack.Peek().Name);
+            var context = new LexerExtensionContext(_definition, input, emittedTokens, modeName);
             var extra = extension.OnEndOfInput(context);
             if (extra is null)
             {
@@ -717,18 +761,18 @@ public sealed class LexerEngine
     }
 
     /// <summary>Applies the bounded lexer mode mutation requested by accepted lexer actions.</summary>
-    private void ApplyLexerActionMode(LexerActionExecutionResult result, Token token, DiagnosticBag? diagnostics)
+    private void ApplyLexerActionMode(TokenizationState state, LexerActionExecutionResult result, Token token, DiagnosticBag? diagnostics)
     {
         if (result.Mode is null)
         {
             return;
         }
 
-        SetCurrentMode(result.Mode, token, diagnostics, "mode");
+        SetCurrentMode(state, result.Mode, token, diagnostics, "mode");
     }
 
     /// <summary>Replaces the current lexer mode after validating that the requested mode exists.</summary>
-    private void SetCurrentMode(string modeName, Token token, DiagnosticBag? diagnostics, string commandName)
+    private void SetCurrentMode(TokenizationState state, string modeName, Token token, DiagnosticBag? diagnostics, string commandName)
     {
         var mode = _definition.Modes.FirstOrDefault(m => m.Name == modeName);
         if (mode is null)
@@ -737,8 +781,8 @@ public sealed class LexerEngine
             return;
         }
 
-        _modeStack.Pop();
-        _modeStack.Push(mode);
+        state.Modes.Pop();
+        state.Modes.Push(mode);
     }
 
     /// <summary>Describes deterministic hook indexes while matching lexer rule content.</summary>
@@ -751,7 +795,7 @@ public sealed class LexerEngine
     /// <summary>Describes a lexer action collected while matching an accepted token rule.</summary>
     private sealed record LexerActionOccurrence(Rule Rule, string ActionCode, int AlternativeIndex, int ElementIndex);
 
-    private bool ExecuteLexerCommands(List<Model.LexerCommand> commands, ref Token token, DiagnosticBag? diagnostics, string? filePath)
+    private bool ExecuteLexerCommands(TokenizationState state, List<Model.LexerCommand> commands, ref Token token, DiagnosticBag? diagnostics)
     {
         bool skip = false;
         bool more = false;
@@ -775,22 +819,22 @@ public sealed class LexerEngine
                         }
                         else
                         {
-                            _modeStack.Push(mode);
+                            state.Modes.Push(mode);
                         }
                     }
 
                     break;
                 case LexerCommandType.PopMode:
-                    if (_modeStack.Count > 1)
+                    if (state.Modes.Count > 1)
                     {
-                        _modeStack.Pop();
+                        state.Modes.Pop();
                     }
 
                     break;
                 case LexerCommandType.Mode:
                     if (cmd.Argument is not null)
                     {
-                        SetCurrentMode(cmd.Argument, token, diagnostics, "mode");
+                        SetCurrentMode(state, cmd.Argument, token, diagnostics, "mode");
                     }
 
                     break;
@@ -813,12 +857,12 @@ public sealed class LexerEngine
 
         if (more)
         {
-            if (_moreStartPos < 0)
+            if (state.MoreStartPos < 0)
             {
-                _moreStartPos = token.Span.Position;
+                state.MoreStartPos = token.Span.Position;
             }
 
-            _moreTextBuilder.Append(token.Text);
+            state.MoreText.Append(token.Text);
             return true;
         }
 

@@ -367,9 +367,10 @@ public sealed class ParserEngine
         finally
         {
             // Per-parse state is released when the operation ends, successfully or not: the registry, memo and look-ahead
-            // entries are parse-lifecycle scoped and must not keep the input's parse states alive after the parse.
+            // entries are parse-lifecycle scoped and must not keep the input's parse states alive after the parse, nor
+            // the capacity a large input made them grow to (ParserStateRetention).
             LastResourceUsage = context.Budget.Snapshot();
-            _activeRuleFrames.Clear();
+            ParserStateRetention.Clear(_activeRuleFrames);
             _stateRegistry.Clear();
             _lookaheadCache.Clear();
         }

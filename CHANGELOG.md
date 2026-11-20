@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed — `omy.Utils.Parser` (engine reuse: retained memory and lexer enumeration state)
+- A long-lived `CompiledGrammar` (generated static `Grammar`, CSyntax/VBSyntax shared grammars) no longer keeps the last
+  input text alive after `Tokenize` / `Parse`, nor the emptied collection capacity of its last parse (about 250 MB after
+  a 400,000-token parse, until the next call). A `LexerEngine` releases its input when an enumeration completes or is
+  disposed.
+- A reused `ParserEngine` shrinks its per-parse collections after a parse that retained more than 1,024 entries in one of
+  them, instead of keeping the capacity of its largest parse forever (119 MB after a 200,000-token parse); smaller
+  parses keep their capacity, so sequential reuse is not slowed down.
+- The mode stack and the pending `more` text of `LexerEngine.Tokenize` belong to each enumeration: two enumerations of
+  one engine interleaved on a thread no longer corrupt each other (`ab` lexed during `abab` produced `ERROR:b`).
+  Concurrent use of one engine from several threads is still unsupported; `CompiledGrammar` remains safe for it.
+- The engine pool studied after #709 is abandoned: fresh engines per call are kept (see
+  `docs/parser/RuntimeStateOwnership.md`).
+
 ### Fixed — `omy.Utils.Expressions.VBSyntax` (symmetric numeric promotion and real division)
 - **Behavior change: compiled types and values change for mixed numeric expressions and `/`.** Binary arithmetic used
   to convert the right operand to the left operand's type: `10 - x` with a `Double` `x` truncated `x` to `Int32`
