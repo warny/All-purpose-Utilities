@@ -103,9 +103,9 @@ public class ParserStateRegistryCompactStorageTests
         CollectionAssert.AreEqual(new[] { continuation }, registry.GetContinuations(invocation).ToArray());
     }
 
-    /// <summary>Different continuations of one invocation are all kept, in registration order.</summary>
+    /// <summary>Different continuations of one invocation are all kept, each exactly once (the order is not part of the contract).</summary>
     [TestMethod]
-    public void Continuation_DifferentContinuationsOfOneInvocation_AreKeptInOrder()
+    public void Continuation_DifferentContinuationsOfOneInvocation_AreAllKept()
     {
         var registry = new ParserStateRegistry();
         var invocation = new RuleInvocationKey("expr", 2, 0);
@@ -124,7 +124,7 @@ public class ParserStateRegistryCompactStorageTests
             Assert.IsTrue(registry.AddContinuation(invocation, continuation));
         }
 
-        CollectionAssert.AreEqual(continuations, registry.GetContinuations(invocation).ToArray());
+        CollectionAssert.AreEquivalent(continuations, registry.GetContinuations(invocation).ToArray());
         Assert.AreEqual(1, registry.ContinuationInvocationCount);
     }
 
@@ -154,10 +154,47 @@ public class ParserStateRegistryCompactStorageTests
         Assert.IsTrue(registry.AddContinuation(invocations[3], extra));
 
         CollectionAssert.AreEqual(new[] { continuation }, registry.GetContinuations(invocations[0]).ToArray());
-        CollectionAssert.AreEqual(new[] { continuation, extra }, registry.GetContinuations(invocations[3]).ToArray());
+        CollectionAssert.AreEquivalent(new[] { continuation, extra }, registry.GetContinuations(invocations[3]).ToArray());
         Assert.AreEqual(0, registry.GetContinuations(new RuleInvocationKey("expr", 3, 0)).Count);
         Assert.AreEqual(5, registry.ContinuationCount);
         Assert.AreEqual(4, registry.ContinuationInvocationCount);
+    }
+
+    /// <summary>
+    /// Many invocations registered in a heavily interleaved order, with duplicates and enough pairs to resize the flat set
+    /// several times, each return exactly their own distinct continuations: the same set as one set per invocation, with
+    /// no duplicate and no continuation of another invocation.
+    /// </summary>
+    [TestMethod]
+    public void Continuation_InterleavedInvocationsWithDuplicates_ReturnExactlyTheirOwnSet()
+    {
+        var registry = new ParserStateRegistry();
+        var expected = new Dictionary<RuleInvocationKey, HashSet<ContinuationKey>>();
+        var random = new Random(716);
+        string[] rules = ["expr", "term", "factor"];
+
+        for (int step = 0; step < 20_000; step++)
+        {
+            var invocation = new RuleInvocationKey(rules[random.Next(rules.Length)], random.Next(40), random.Next(3), new ParserExecutionStateKey((ulong)random.Next(2)));
+            var continuation = new ContinuationKey(rules[random.Next(rules.Length)], random.Next(4), random.Next(4), invocation.OriginPosition + random.Next(2), random.Next(3));
+            if (!expected.TryGetValue(invocation, out var set))
+            {
+                set = [];
+                expected[invocation] = set;
+            }
+
+            Assert.AreEqual(set.Add(continuation), registry.AddContinuation(invocation, continuation), $"step {step}");
+        }
+
+        Assert.AreEqual(expected.Values.Sum(static set => set.Count), registry.ContinuationCount);
+        Assert.AreEqual(expected.Count, registry.ContinuationInvocationCount);
+        Assert.IsTrue(registry.ContinuationCount > 10 * expected.Count, "invocations carry many continuations");
+        foreach (var (invocation, set) in expected)
+        {
+            var actual = registry.GetContinuations(invocation);
+            Assert.AreEqual(set.Count, actual.Count, $"{invocation} returns each continuation once");
+            CollectionAssert.AreEquivalent(set.ToArray(), actual.ToArray(), $"{invocation}");
+        }
     }
 
     /// <summary>Results beyond the inline first result keep their insertion order and duplicate detection.</summary>

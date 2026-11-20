@@ -111,7 +111,11 @@ public class ParserStateRegistryBudgetTests
 
             foreach (var invocation in invocations)
             {
-                CollectionAssert.AreEqual(reference.GetContinuations(invocation).ToArray(), compact.GetContinuations(invocation).ToArray(), $"seed {seed}: continuations of {invocation}");
+                // Continuations are a set: their order is not part of the contract, the exact set (no duplicate) is.
+                var referenceContinuations = reference.GetContinuations(invocation);
+                var compactContinuations = compact.GetContinuations(invocation);
+                Assert.AreEqual(referenceContinuations.Count, compactContinuations.Count, $"seed {seed}: continuation count of {invocation}");
+                CollectionAssert.AreEquivalent(referenceContinuations.ToArray(), compactContinuations.ToArray(), $"seed {seed}: continuations of {invocation}");
                 CollectionAssert.AreEqual(reference.GetCompletedResults(invocation).ToArray(), compact.GetCompletedResults(invocation).ToArray(), $"seed {seed}: results of {invocation}");
             }
 

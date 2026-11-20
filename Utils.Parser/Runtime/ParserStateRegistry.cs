@@ -20,7 +20,8 @@ namespace Utils.Parser.Runtime;
 /// The storage is compact but exact: every collection keeps the full identity of its entries, so membership, duplicate
 /// detection and therefore <see cref="ParserResourceBudget.ChargeRetainedState"/> charges are those of one set of
 /// <see cref="ParserStateKey"/>, one set of (<see cref="RuleInvocationKey"/>, <see cref="ContinuationKey"/>) pairs and
-/// one insertion-ordered result list per <see cref="RuleInvocationKey"/>. No hash stands for an identity, nothing is
+/// one insertion-ordered result list per <see cref="RuleInvocationKey"/>. Continuations are a set: their enumeration
+/// order is not part of the contract. No hash stands for an identity, nothing is
 /// evicted, and no storage is shared between registries.
 /// </remarks>
 internal sealed class ParserStateRegistry
@@ -233,11 +234,13 @@ internal sealed class ParserStateRegistry
     }
 
     /// <summary>
-    /// Gets continuations previously registered for an invocation, in registration order.
+    /// Gets the distinct continuations previously registered for an invocation, in an unspecified order.
     /// Returned values are metadata snapshots and remain discardable from an execution-authority perspective.
     /// Retrieval does not provide replay/resume capability and does not imply executable parser frames.
     /// </summary>
     /// <remarks>
+    /// The contract is the set of continuations: each distinct continuation appears exactly once, and callers must not
+    /// rely on the enumeration order (neither the historical per-invocation set nor the current flat set guarantees one).
     /// The parser engine never reads continuations; this inspection scans every recorded pair and is meant for tests and
     /// diagnostics only.
     /// </remarks>

@@ -137,9 +137,15 @@ Since the registry-metadata audit the storage is compact but exact (`ParserState
 - completed results keep their first result inline, with an overflow list allocated only for later results of the same
   key (direct registry callers).
 
-Membership, duplicate detection, insertion order, reuse preference, snapshots and therefore every S-06 charge and
-refusal are those of the historical sets and lists; the historical storage is kept as a reference model in
-`ParserStateRegistryBudgetTests`. Measurements: `ParserResourceSafety.md` section 9.
+Membership, duplicate detection, the insertion order of completed results, reuse preference, snapshots and therefore
+every S-06 charge and refusal are those of the historical sets and lists; the historical storage is kept as a reference
+model in `ParserStateRegistryBudgetTests`. Measurements: `ParserResourceSafety.md` section 9.
+
+`GetContinuations` returns the exact set of distinct continuations of an invocation, in an unspecified order. No
+production code reads it, the historical per-invocation `HashSet` did not guarantee an order either, and the tests
+compare continuations as sets (including heavily interleaved invocations with duplicates). Completed results, read by
+the memoization, keep a guaranteed insertion order because the reuse preference (first success, then first failure)
+depends on it.
 
 ## Operation ownership and concurrent use (issue #709)
 
