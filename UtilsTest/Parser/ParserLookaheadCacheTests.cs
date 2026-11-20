@@ -267,6 +267,12 @@ public class ParserLookaheadCacheTests
         Assert.AreEqual(smallCapacity, small.Capacity);
     }
 
+    /// <summary>
+    /// Retrieves a cached probe result for an existing alternative in the fixed test context.
+    /// </summary>
+    /// <param name="cache">The cache containing the expected entry.</param>
+    /// <param name="alternativeIndex">The alternative index to look up.</param>
+    /// <returns>The cached probe result.</returns>
     private static ParserLookaheadProbeResult Lookup(ParserLookaheadCache cache, int alternativeIndex)
     {
         Assert.IsTrue(cache.TryGet(new ParserLookaheadKey("root", 7, alternativeIndex, 0, ScheduledAlternativeCursorKinds.RuleRoot, -1), out var result));
