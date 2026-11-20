@@ -376,9 +376,8 @@ public class ParserStateRegistryBudgetTests
     private static long DistinctEntries(ParserEngine engine)
     {
         var registry = (ParserStateRegistry)typeof(ParserEngine).GetField("_stateRegistry", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(engine)!;
-        object cache = typeof(ParserEngine).GetField("_lookaheadCache", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(engine)!;
-        var results = (System.Collections.ICollection)cache.GetType().GetField("_results", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(cache)!;
-        return registry.VisitedStateCount + registry.ContinuationCount + registry.CompletedResultCount + results.Count;
+        var cache = (ParserLookaheadCache)typeof(ParserEngine).GetField("_lookaheadCache", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(engine)!;
+        return registry.VisitedStateCount + registry.ContinuationCount + registry.CompletedResultCount + cache.Count;
     }
 
     /// <summary>Calls <see cref="OnRootExit"/> when the outermost rule invocation exits, while the registry is still populated.</summary>

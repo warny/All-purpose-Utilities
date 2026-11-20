@@ -1,0 +1,7 @@
+# Focused alternating timing rerun (base, branch, branch, base) x 3, --repeat 21, Windows Release; median of the 6 medians per build.
+base csyntax-sum 1000: 122.9 ms (119.4-133.2), best min 111.7
+branch csyntax-sum 1000: 106.7 ms (103.6-121.3), best min 85.4
+base g-epsilon 1000: 33.6 ms (31.7-36.8), best min 23.4
+branch g-epsilon 1000: 34.0 ms (32.1-35.0), best min 23.4
+base vbsyntax-sum 1000: 103.2 ms (100.4-104.0), best min 72.2
+branch vbsyntax-sum 1000: 103.1 ms (101.5-103.6), best min 69.9

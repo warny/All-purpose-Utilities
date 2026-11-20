@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed — `omy.Utils.Parser` (compact look-ahead cache)
+- The per-parse `ParserLookaheadCache` stores the same entries in less memory: keys are packed into 64 bits (rule name
+  replaced by an index into a per-cache table), values keep only the kind, the expected-token-name collection and the
+  index of a token snapshot shared by the entries of one input position, and unusual keys or values are kept unchanged in
+  an overflow dictionary. The cache drops by 9–42 % on the measured grammars, the live peak of a parse by up to 32 %
+  (CSyntax 5,000-term sum: 56.0 MB → 43.6 MB of parse-scoped memory) and parse allocations by 1–6 %.
+- No behavior change: trees, tokens, diagnostics, action order and count, probes executed, cached results (same kind,
+  token strings and expected-name collection instances, first value kept) and every S-06 counter, including
+  `RetainedStates` charges and refusals (kind, limit, observed value, offset), are identical on 161 compared
+  configurations.
+
 ### Changed — `omy.Utils.Parser` (compact parser state registry)
 - The per-parse `ParserStateRegistry` stores the same entries in less memory: visited states are grouped per (rule,
   position, precedence) with one bit per alternative, continuations are one flat set of (invocation, continuation)

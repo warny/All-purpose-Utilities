@@ -654,6 +654,15 @@ Completed:
   model in `ParserStateRegistryBudgetTests`; 98 configurations with identical trees, diagnostics, action traces and
   counters); registry peak −30 % to −81 %, parse allocations −2 % to −11 %. Details:
   `docs/parser/ParserResourceSafety.md` section 9, usage matrix in `docs/parser/RuntimeStateOwnership.md`.
+- Look-ahead cache audit: the producers and consumers of `ParserLookaheadCache` were verified (scheduling preparation
+  and scheduled execution read it before probing; production consumers read the kind and the expected-token names only)
+  and the cache stores the same entries compactly: keys packed into 64 bits with a per-cache rule-name table, values
+  reduced to the kind, the expected-name collection instance and a token snapshot shared per origin position, and an
+  exact overflow dictionary for anything that does not fit. Lookups return the same instances, and the first value
+  kept, the step counts and every S-06 charge and refusal are unchanged (historical cache kept as a reference model in
+  `ParserLookaheadCacheEquivalenceTests`; 161 Windows configurations with identical trees, diagnostics, action traces,
+  counters and cache contents); look-ahead cache −9 % to −42 %, parse peak up to −32 %, parse allocations −1 % to −6 %.
+  Details: `docs/parser/ParserResourceSafety.md` section 10, usage matrix in `docs/parser/RuntimeStateOwnership.md`.
 
 Remaining (separate PRs):
 
@@ -666,8 +675,11 @@ Remaining (separate PRs):
   `RetainedStates` for the same input (CSyntax: 54 % of the charges), so it needs a separate PR that redefines the
   `MaxRetainedStates` accounting and offers opt-in recording for metadata tools (`docs/parser/ParserResourceSafety.md`,
   section 9);
-- the look-ahead cache is now the largest per-parse collection (about two thirds of the remaining peak on CSyntax); a
-  compact exact storage of its keys and values is a candidate for a later memory change;
+- the look-ahead cache keeps one expected-token-name collection instance per entry (a boxed `ImmutableArray` over a
+  one-element array, 56 bytes), although CSyntax produces fewer than 70 distinct values: about 45 % of the compacted
+  cache (CSyntax 1,000-term sum: 2.24 of 5.07 MB). Sharing them needs `ParserLookaheadProbe` to return one instance per
+  alternative content, which changes which results are equal by reference (record equality of
+  `ParserLookaheadProbeResult`); it is a separate proposal (`docs/parser/ParserResourceSafety.md`, section 10);
 - a deeper reduction of stack use per rule level (currently about 1.3 KB per depth unit on Windows, so a 1 MiB thread
   accepts 19 CSyntax parenthesis levels (Release)) would need fewer frames per cycle or an explicit-stack execution model.
 
