@@ -108,6 +108,45 @@ Boundaries:
 - semantic evaluator external state is not modeled by memoization keys;
 - parser action side effects are not modeled by memoization keys.
 
+### Registry usage audit and compact storage (registry-metadata audit)
+
+Verified producers and consumers of the three registry collections on `6e7892a0` (line numbers on that commit). No
+other assembly reaches the registry: it is internal, and `InternalsVisibleTo` names only the Unit and Security test
+projects. No runtime observer, invocation-frame manager, rule-call policy or lifecycle executor receives registry data.
+
+| Collection | Producers | Production consumers | Test consumers | Role | S-06 charge |
+|---|---|---|---|---|---|
+| visited states | `ScheduledAlternativeExecutor.Execute` (`ScheduledAlternativeExecutor.cs:69`, every scheduled attempt, before the precedence check); `ParserEngine.TryExtendLeft` (`ParserEngine.cs:683`, every left-recursive extension attempt) | none: both producers ignore the returned value; the repeated-state rejection of `TryExtendLeft` (`ParserStateCycleDetected`, `ParserStateRejected`) is decided by its local `visitedStates` set (`ParserEngine.cs:689`) | `ParserStateRegistryTests`, `ActiveParseStateTests`, `ParserStateRegistryCompactStorageTests`, `ParserStateRegistryBudgetTests`, `ParserEngineRetentionTests` | descriptive (write-only); not cycle detection | one per distinct key |
+| continuations | `ParserEngine.TryParseRuleRef` (`ParserEngine.cs:1069`, every rule reference, lexer tokens included) | none (`GetContinuations` is called by tests only) | `ParserStateRegistryTests`, `ParserRuntimeInvariantTests`, the two compact-storage test classes | descriptive metadata, never executable | one per distinct (invocation, continuation) pair |
+| completed results | `ParserEngine.ParseRule` after a memo miss (`ParserEngine.cs:572`) | `ParserEngine.ParseRule` (`TryGetReusableResult`, `ParserEngine.cs:518`): position, execution-state snapshot restoration and the `ParseMemoHit` / `ParseMemoMiss` diagnostics | same as above | memoization (runtime-authoritative) | one per stored result |
+
+All three live for one parse: `ParserEngine.Parse` clears them when a parse starts and when it ends
+(`ParserEngine.cs:360`, `:374`), and every call of a `CompiledGrammar` owns its engine. Custom policies reach the
+registry only through `IParserExecutionStateManager`: `GetCurrentStateKey()` is part of every `RuleInvocationKey`
+(memoization and continuation identity) and `Capture()` provides the snapshot stored with each completed result.
+
+In production the engine stores at most one result per invocation key: a key is stored only after a memo miss, a
+re-entrant call of the same key is stopped by `_activeRuleFrames` before it stores anything, and every stored result is
+reusable (`IsFailure == (Node is null)`). Every key recorded as a visited state has `ElementIndex == AlternativeIndex`.
+
+Since the registry-metadata audit the storage is compact but exact (`ParserStateRegistry` remarks):
+
+- visited states with `ElementIndex == AlternativeIndex` and an alternative index in `[0, 63]` are grouped by
+  (rule, position, precedence) with one bit per alternative; any other key goes to an overflow set of full keys;
+- continuations are one flat set of (invocation, continuation) pairs instead of one set per invocation;
+- completed results keep their first result inline, with an overflow list allocated only for later results of the same
+  key (direct registry callers).
+
+Membership, duplicate detection, the insertion order of completed results, reuse preference, snapshots and therefore
+every S-06 charge and refusal are those of the historical sets and lists; the historical storage is kept as a reference
+model in `ParserStateRegistryBudgetTests`. Measurements: `ParserResourceSafety.md` section 9.
+
+`GetContinuations` returns the exact set of distinct continuations of an invocation, in an unspecified order. No
+production code reads it, the historical per-invocation `HashSet` did not guarantee an order either, and the tests
+compare continuations as sets (including heavily interleaved invocations with duplicates). Completed results, read by
+the memoization, keep a guaranteed insertion order because the reuse preference (first success, then first failure)
+depends on it.
+
 ## Operation ownership and concurrent use (issue #709)
 
 A `CompiledGrammar` separates what one grammar shares from what one operation owns. Every `Tokenize(string)` and

@@ -646,6 +646,14 @@ Completed:
   prototyped, since it would by construction keep the high-water capacity this audit removed. The 12–19 % parse
   allocation overhead of fresh engines measured for #709 is accepted. Details: `docs/parser/RuntimeStateOwnership.md`,
   section "Engine reuse and retained memory".
+- Registry-metadata audit: the producers and consumers of the three `ParserStateRegistry` collections were verified
+  (visited states and continuations are write-only in production, completed results are the memoization), and the
+  registry stores the same entries compactly (visited states grouped per rule, position and precedence with an
+  alternative bit mask, continuations as one flat set of pairs, memoized results inline). Membership, deduplication,
+  reuse preference, snapshots and every S-06 charge and refusal are unchanged (historical storage kept as a reference
+  model in `ParserStateRegistryBudgetTests`; 98 configurations with identical trees, diagnostics, action traces and
+  counters); registry peak −30 % to −81 %, parse allocations −2 % to −11 %. Details:
+  `docs/parser/ParserResourceSafety.md` section 9, usage matrix in `docs/parser/RuntimeStateOwnership.md`.
 
 Remaining (separate PRs):
 
@@ -653,8 +661,13 @@ Remaining (separate PRs):
   that is already small when cleared keeps its capacity. `_activeRuleFrames` is the known case (frames are removed as
   rules return, so it is always empty at the end of a parse); its capacity is bounded by `MaxParseDepth` (a few hundred
   kilobytes at the default 4,000). A capacity-based threshold is a candidate for a later memory audit;
-- the retained registry metadata (visited states, continuations) is write-only in production and dominates live memory;
-  removing or bounding it needs a metadata-lifecycle design;
+- the retained registry metadata (visited states, continuations) is write-only in production. Since the registry-metadata
+  audit it is stored compactly with identical S-06 charges (see Completed); not recording it would lower
+  `RetainedStates` for the same input (CSyntax: 54 % of the charges), so it needs a separate PR that redefines the
+  `MaxRetainedStates` accounting and offers opt-in recording for metadata tools (`docs/parser/ParserResourceSafety.md`,
+  section 9);
+- the look-ahead cache is now the largest per-parse collection (about two thirds of the remaining peak on CSyntax); a
+  compact exact storage of its keys and values is a candidate for a later memory change;
 - a deeper reduction of stack use per rule level (currently about 1.3 KB per depth unit on Windows, so a 1 MiB thread
   accepts 19 CSyntax parenthesis levels (Release)) would need fewer frames per cycle or an explicit-stack execution model.
 

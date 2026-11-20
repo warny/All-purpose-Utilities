@@ -34,7 +34,8 @@ public class ParserEngineRetentionTests
     private static readonly string[][] ParserCollections =
     [
         ["_activeRuleFrames"],
-        ["_stateRegistry", "_visitedStates"],
+        ["_stateRegistry", "_visitedStateGroups"],
+        ["_stateRegistry", "_visitedStateOverflow"],
         ["_stateRegistry", "_continuations"],
         ["_stateRegistry", "_completedResults"],
         ["_lookaheadCache", "_results"],
