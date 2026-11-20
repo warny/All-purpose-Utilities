@@ -488,4 +488,4 @@ instead of after each integer division (`7 * 5 / 2 * 3` gives `52` instead of `5
 to throw now compile, and `2 = 2.5` with constant operands is `False`. Mixing `SByte`, `UInt16`, `UInt32`, `UInt64` or
 `Decimal` with another numeric type now throws `NotSupportedException`: convert one operand explicitly to the type
 you want (operations between two operands of the same such type are unchanged). A nullable operand on either side
-now keeps the result nullable.
+now keeps the result nullable. Arithmetic between two `Byte` operands (which used to throw) returns an `Int32`.

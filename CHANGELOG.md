@@ -14,8 +14,9 @@ All notable changes to this project will be documented in this file.
   Promotion to `Single` / `Double` can lose integer precision for large `Int32` / `Int64` values.
 - `/` is now a real division with a `Double` result for the promoted types (`3 / 4` is `0.75`; it was the integer
   division `0`; `7 * 5 / 2 * 3` is `52.5`, it was `51`).
-- `Byte` arithmetic, which used to throw (LINQ has no `Byte` operators), is computed in `Int32` and converted back to
-  `Byte` (unchecked). Nullable operands lift the whole operation to the nullable common type.
+- `Byte` arithmetic, which used to throw (LINQ has no `Byte` operators), is computed and returned in `Int32`, like C#
+  (`Byte + Byte` with `250` and `10` is the `Int32` `260`, not wrapped to a `Byte`); `Byte` mixed with a higher rank
+  takes that rank (`Byte + Int16` is `Int16`). Nullable operands lift the whole operation to the nullable common type.
 - `SByte`, `UInt16`, `UInt32`, `UInt64` and `Decimal` are not ranked: same-type operations are unchanged, but mixing one
   of them with another numeric type now throws `NotSupportedException` (previously the right operand was converted to
   the left type, for example `Decimal + Int32` worked while `Int32 + Decimal` truncated the decimal).

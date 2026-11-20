@@ -42,21 +42,18 @@ public class VBSyntaxNumericPromotionTests
     public void Matrix_PromotesSymmetricallyToTheHigherRank(string op, Type leftType, Type rightType)
     {
         Type promoted = Ranked[Math.Max(System.Array.IndexOf(Ranked, leftType), System.Array.IndexOf(Ranked, rightType))];
-        Type expectedType = op == "/" ? typeof(double) : promoted;
+        Type expectedType = op == "/" ? typeof(double) : promoted == typeof(byte) ? typeof(int) : promoted;
         double expectedValue = Operators.Single(o => o.Op == op).Value;
 
         (Expression body, object? value) = Evaluate($"a {op} b", ("a", leftType, Convert.ChangeType(7, leftType, CultureInfo.InvariantCulture)), ("b", rightType, Convert.ChangeType(2, rightType, CultureInfo.InvariantCulture)));
 
         Assert.AreEqual(expectedType, body.Type, $"{leftType.Name} {op} {rightType.Name}");
         Assert.AreEqual(expectedValue, Convert.ToDouble(value, CultureInfo.InvariantCulture), $"{leftType.Name} {op} {rightType.Name}");
-        if (promoted != typeof(byte))
-        {
-            var binary = (BinaryExpression)body;
-            Assert.AreEqual(expectedType, binary.Left.Type, "left operand converted to the common type");
-            Assert.AreEqual(expectedType, binary.Right.Type, "right operand converted to the common type");
-            Assert.IsTrue(leftType != expectedType || binary.Left is ParameterExpression, "no redundant conversion of the left operand");
-            Assert.IsTrue(rightType != expectedType || binary.Right is ParameterExpression, "no redundant conversion of the right operand");
-        }
+        var binary = (BinaryExpression)body;
+        Assert.AreEqual(expectedType, binary.Left.Type, "left operand converted to the common type");
+        Assert.AreEqual(expectedType, binary.Right.Type, "right operand converted to the common type");
+        Assert.IsTrue(leftType != expectedType || binary.Left is ParameterExpression, "no redundant conversion of the left operand");
+        Assert.IsTrue(rightType != expectedType || binary.Right is ParameterExpression, "no redundant conversion of the right operand");
     }
 
     /// <summary>The cases of the defect report, with literals and typed variables, keep the associativity of #713.</summary>
@@ -92,12 +89,14 @@ public class VBSyntaxNumericPromotionTests
         Assert.IsInstanceOfType<ParameterExpression>(inner.Right, "the Double operand is not converted");
     }
 
-    /// <summary>Integral boundaries wrap like every unchecked integral operation of the compiler; widening keeps values.</summary>
+    /// <summary>Integral boundaries wrap like every unchecked integral operation of the compiler; widening keeps values; Byte arithmetic is computed and returned in Int32.</summary>
     [TestMethod]
     public void Boundaries_IntegralOverflowWrapsAndWideningKeepsValues()
     {
-        AssertValue((byte)0, "a + b", ("a", typeof(byte), byte.MaxValue), ("b", typeof(byte), (byte)1));
-        AssertValue((byte)255, "a - b", ("a", typeof(byte), byte.MinValue), ("b", typeof(byte), (byte)1));
+        AssertValue(256, "a + b", "Byte + Byte is an Int32, not wrapped modulo 256", ("a", typeof(byte), byte.MaxValue), ("b", typeof(byte), (byte)1));
+        AssertValue(-1, "a - b", "Byte - Byte is an Int32", ("a", typeof(byte), byte.MinValue), ("b", typeof(byte), (byte)1));
+        AssertValue(65025, "a * b", "Byte * Byte is an Int32", ("a", typeof(byte), byte.MaxValue), ("b", typeof(byte), byte.MaxValue));
+        AssertValue((short)255, "a + b", "Byte + Int16 stays Int16", ("a", typeof(byte), byte.MaxValue), ("b", typeof(short), (short)0));
         AssertValue((short)(short.MinValue), "a + b", ("a", typeof(short), short.MaxValue), ("b", typeof(short), (short)1));
         AssertValue(32768, "a + b", ("a", typeof(short), short.MaxValue), ("b", typeof(int), 1), "Int16 + Int32 is computed in Int32");
         AssertValue(int.MinValue, "a + b", ("a", typeof(int), int.MaxValue), ("b", typeof(int), 1));
@@ -142,7 +141,7 @@ public class VBSyntaxNumericPromotionTests
         AssertValue(1L, "a Mod b", ("a", typeof(int), 7), ("b", typeof(long), -3L));
         AssertValue(-2d, "a Mod b", ("a", typeof(int), -7), ("b", typeof(double), 2.5));
         AssertValue(1.5f, "a Mod b", ("a", typeof(float), 7.5f), ("b", typeof(short), (short)2));
-        AssertValue((byte)1, "a Mod b", ("a", typeof(byte), (byte)7), ("b", typeof(byte), (byte)3));
+        AssertValue(1, "a Mod b", ("a", typeof(byte), (byte)7), ("b", typeof(byte), (byte)3));
     }
 
     /// <summary>
@@ -207,7 +206,8 @@ public class VBSyntaxNumericPromotionTests
         AssertValue((double?)null, "a + b", ("a", typeof(int), 3), ("b", typeof(double?), null));
         AssertValue((long?)null, "a * b", ("a", typeof(int?), null), ("b", typeof(long), 2L));
         AssertValue((double?)3.5, "a / b", ("a", typeof(int?), (int?)7), ("b", typeof(int), 2));
-        AssertValue((byte?)4, "a + b", ("a", typeof(byte?), (byte?)250), ("b", typeof(byte), (byte)10));
+        AssertValue((int?)260, "a + b", ("a", typeof(byte?), (byte?)250), ("b", typeof(byte), (byte)10));
+        AssertValue((int?)null, "a + b", ("a", typeof(byte), (byte)250), ("b", typeof(byte?), null));
         AssertValue(true, "a < b", ("a", typeof(int?), (int?)3), ("b", typeof(double), 4d));
         AssertValue(false, "a < b", ("a", typeof(int?), null), ("b", typeof(double), 4d));
         (Expression body, _) = Evaluate("a + b", ("a", typeof(int), 3), ("b", typeof(double?), (double?)1));

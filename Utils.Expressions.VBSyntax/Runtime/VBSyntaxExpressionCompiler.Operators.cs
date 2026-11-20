@@ -457,8 +457,9 @@ public sealed partial class VBSyntaxExpressionCompiler
 
     /// <summary>
     /// Builds an arithmetic operation (<c>+</c>, <c>-</c>, <c>*</c>, <c>Mod</c>) on promoted operands. LINQ defines no
-    /// arithmetic on <see cref="byte"/>, so a Byte operation is computed in Int32 and converted back to Byte (unchecked,
-    /// like every other integral operation of the compiler). Non-numeric operands are passed through unchanged.
+    /// arithmetic on <see cref="byte"/>, so a Byte operation is computed and returned in Int32 (Int32? when an operand
+    /// is nullable), like C#: <c>250 + 10</c> on two Bytes is 260, not wrapped modulo 256. Non-numeric operands are
+    /// passed through unchanged.
     /// </summary>
     /// <param name="make">The LINQ factory of the operation.</param>
     /// <param name="left">The left operand.</param>
@@ -470,7 +471,7 @@ public sealed partial class VBSyntaxExpressionCompiler
         if ((Nullable.GetUnderlyingType(type!) ?? type) != typeof(byte)) return make(l, r);
 
         Type work = type == typeof(byte) ? typeof(int) : typeof(int?);
-        return Expression.Convert(make(Expression.Convert(l, work), Expression.Convert(r, work)), type!);
+        return make(Expression.Convert(l, work), Expression.Convert(r, work));
     }
 
     /// <summary>
