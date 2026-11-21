@@ -12339,6 +12339,34 @@ references:
   commentId: T:Utils.Expressions.ExpressionOptimiser
   fullName: Utils.Expressions.ExpressionOptimiser
   nameWithType: ExpressionOptimiser
+- uid: Utils.Expressions.ExpressionOptimiser.#ctor
+  name: ExpressionOptimiser()
+  href: api/Utils.Expressions.ExpressionOptimiser.html#Utils_Expressions_ExpressionOptimiser__ctor
+  commentId: M:Utils.Expressions.ExpressionOptimiser.#ctor
+  name.vb: New()
+  fullName: Utils.Expressions.ExpressionOptimiser.ExpressionOptimiser()
+  fullName.vb: Utils.Expressions.ExpressionOptimiser.New()
+  nameWithType: ExpressionOptimiser.ExpressionOptimiser()
+  nameWithType.vb: ExpressionOptimiser.New()
+- uid: Utils.Expressions.ExpressionOptimiser.#ctor(Utils.Expressions.ExpressionResourceLimits)
+  name: ExpressionOptimiser(ExpressionResourceLimits)
+  href: api/Utils.Expressions.ExpressionOptimiser.html#Utils_Expressions_ExpressionOptimiser__ctor_Utils_Expressions_ExpressionResourceLimits_
+  commentId: M:Utils.Expressions.ExpressionOptimiser.#ctor(Utils.Expressions.ExpressionResourceLimits)
+  name.vb: New(ExpressionResourceLimits)
+  fullName: Utils.Expressions.ExpressionOptimiser.ExpressionOptimiser(Utils.Expressions.ExpressionResourceLimits)
+  fullName.vb: Utils.Expressions.ExpressionOptimiser.New(Utils.Expressions.ExpressionResourceLimits)
+  nameWithType: ExpressionOptimiser.ExpressionOptimiser(ExpressionResourceLimits)
+  nameWithType.vb: ExpressionOptimiser.New(ExpressionResourceLimits)
+- uid: Utils.Expressions.ExpressionOptimiser.#ctor*
+  name: ExpressionOptimiser
+  href: api/Utils.Expressions.ExpressionOptimiser.html#Utils_Expressions_ExpressionOptimiser__ctor_
+  commentId: Overload:Utils.Expressions.ExpressionOptimiser.#ctor
+  isSpec: "True"
+  name.vb: New
+  fullName: Utils.Expressions.ExpressionOptimiser.ExpressionOptimiser
+  fullName.vb: Utils.Expressions.ExpressionOptimiser.New
+  nameWithType: ExpressionOptimiser.ExpressionOptimiser
+  nameWithType.vb: ExpressionOptimiser.New
 - uid: Utils.Expressions.ExpressionOptimiser.Optimize(System.Linq.Expressions.Expression)
   name: Optimize(Expression)
   href: api/Utils.Expressions.ExpressionOptimiser.html#Utils_Expressions_ExpressionOptimiser_Optimize_System_Linq_Expressions_Expression_
@@ -12352,6 +12380,19 @@ references:
   isSpec: "True"
   fullName: Utils.Expressions.ExpressionOptimiser.Optimize
   nameWithType: ExpressionOptimiser.Optimize
+- uid: Utils.Expressions.ExpressionOptimiser.ResourceLimits
+  name: ResourceLimits
+  href: api/Utils.Expressions.ExpressionOptimiser.html#Utils_Expressions_ExpressionOptimiser_ResourceLimits
+  commentId: P:Utils.Expressions.ExpressionOptimiser.ResourceLimits
+  fullName: Utils.Expressions.ExpressionOptimiser.ResourceLimits
+  nameWithType: ExpressionOptimiser.ResourceLimits
+- uid: Utils.Expressions.ExpressionOptimiser.ResourceLimits*
+  name: ResourceLimits
+  href: api/Utils.Expressions.ExpressionOptimiser.html#Utils_Expressions_ExpressionOptimiser_ResourceLimits_
+  commentId: Overload:Utils.Expressions.ExpressionOptimiser.ResourceLimits
+  isSpec: "True"
+  fullName: Utils.Expressions.ExpressionOptimiser.ResourceLimits
+  nameWithType: ExpressionOptimiser.ResourceLimits
 - uid: Utils.Expressions.ExpressionResourceLimitException
   name: ExpressionResourceLimitException
   href: api/Utils.Expressions.ExpressionResourceLimitException.html

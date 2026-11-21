@@ -6,7 +6,7 @@
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <meta name="title" content="Class ExpressionOptimiser | omy.Utils Documentation ">
       
-      <meta name="description" content="Provides a standard optimization pass over expression trees.">
+      <meta name="description" content="Provides a standard, behavior-preserving optimization pass over expression trees: local identities that are exact for every input of the types they apply to.">
       <link rel="icon" href="../favicon.ico">
       <link rel="stylesheet" href="../public/docfx.min.css">
       <link rel="stylesheet" href="../public/main.css">
@@ -89,7 +89,7 @@
 
 
   <h1 id="Utils_Expressions_ExpressionOptimiser" data-uid="Utils.Expressions.ExpressionOptimiser" class="text-break">
-Class ExpressionOptimiser  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionOptimiser.cs/#L9"><i class="bi bi-code-slash"></i></a>
+Class ExpressionOptimiser  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionOptimiser.cs/#L55"><i class="bi bi-code-slash"></i></a>
   </h1>
 
   <div class="facts text-secondary">
@@ -97,7 +97,8 @@ Class ExpressionOptimiser  <a class="header-action link-secondary" title="View s
   <dl><dt>Assembly</dt><dd>Utils.dll</dd></dl>
   </div>
 
-  <div class="markdown summary"><p>Provides a standard optimization pass over expression trees.</p>
+  <div class="markdown summary"><p>Provides a standard, behavior-preserving optimization pass over expression trees: local identities that are exact for
+every input of the types they apply to.</p>
 </div>
   <div class="markdown conceptual"></div>
 
@@ -235,6 +236,150 @@ Class ExpressionOptimiser  <a class="header-action link-secondary" title="View s
 
 
 
+  <h2 id="Utils_Expressions_ExpressionOptimiser_remarks">Remarks</h2>
+  <div class="markdown level0 remarks"><p>
+<b>Contract.</b> An optimized tree has exactly the type of its source and, once compiled, produces the same value (the
+same bits for binary floating point, signed zeros and NaN payloads included, except that the hardware may quiet a
+signaling NaN) or the same exception, with the same evaluations in the same order. A rule that cannot prove this for the
+node it inspects leaves the node unchanged. The rules and their guards are listed in
+<code>docs/expressions/ExpressionOptimiser.md</code>:
+</p>
+<ul><li><code>x + 0</code>, <code>0 + x</code>, <code>x - 0</code>, <code>x * 1</code>, <code>1 * x</code>, <code>x / 1</code> on primitive integral and
+  binary floating-point arithmetic without operator method (lifted forms included); for floating point the zero must
+  have the neutral sign (<code>x + (-0.0)</code>, <code>x - (+0.0)</code>);</li><li><code>x * 0</code> and <code>0 * x</code> on non-lifted primitive integral arithmetic, when the dropped operand is
+  proven discardable by <span class="xref">Utils.Expressions.ExpressionEffectAnalysis</span>;</li><li><code>-(-x)</code> on primitive unchecked negation, and identity conversions without method;</li><li>constant short circuits of <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a> and lifted <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.nullable-1">Nullable&lt;T&gt;</a> of
+  <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.boolean">bool</a> operators without method, and constant conditions whose selected branch has the conditional's type
+  and whose discarded branch defines no label;</li><li>removal of the <code>Default(void)</code> statements of a block other than its last one, and unwrapping of a
+  block holding a single expression of its own type and no variable.</li></ul>
+<p>
+Custom operator and conversion methods, checked arithmetic, <a class="xref" href="https://learn.microsoft.com/dotnet/api/system.decimal">decimal</a> arithmetic, quoted expressions and
+extension nodes are never rewritten. No user code runs: no node is evaluated, no reflection object of the tree is read
+(the methods are only compared with <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>), and an extension node is passed through without any call
+into it (ETC R4).
+</p>
+<p>
+<b>Resources.</b> Each call is one operation of the shared expression resource session: the input is validated against
+<a class="xref" href="Utils.Expressions.ExpressionOptimiser.html#Utils_Expressions_ExpressionOptimiser_ResourceLimits">ResourceLimits</a> (depth and logical nodes) before any work, every node, binding, initializer, switch case and
+catch block visited counts one structural visit, and every recursion is stack-guarded, so a hostile input ends with an
+<a class="xref" href="Utils.Expressions.ExpressionResourceLimitException.html">ExpressionResourceLimitException</a> instead of a stack overflow. A shared subtree is walked once per use, like
+every walk of the engine.
+</p>
+<p>
+<b>Tracing.</b> Inside a tracing scope (<a class="xref" href="Utils.Expressions.ExpressionTransformTracing.html">ExpressionTransformTracing</a>) every node visited is a treatment of the
+trace, reported for <a class="xref" href="Utils.Expressions.ExpressionOptimiser.html">ExpressionOptimiser</a>: its enter event, the rule that rewrote it if any (a
+<a class="xref" href="Utils.Expressions.ExpressionTransformEventKind.html#Utils_Expressions_ExpressionTransformEventKind_RuleApplied">RuleApplied</a> event whose input is the source node), and its exit with the outcome
+(<a class="xref" href="Utils.Expressions.ExpressionTransformOutcome.html#Utils_Expressions_ExpressionTransformOutcome_Unchanged">Unchanged</a>, <a class="xref" href="Utils.Expressions.ExpressionTransformOutcome.html#Utils_Expressions_ExpressionTransformOutcome_Rebuilt">Rebuilt</a>,
+<a class="xref" href="Utils.Expressions.ExpressionTransformOutcome.html#Utils_Expressions_ExpressionTransformOutcome_RuleApplied">RuleApplied</a>, or <a class="xref" href="Utils.Expressions.ExpressionTransformOutcome.html#Utils_Expressions_ExpressionTransformOutcome_Boundary">Boundary</a> for a quote), or
+its failure. The detailed level adds no event: the optimiser has no candidate rules nor lexical scopes to report. The
+optimization itself is unchanged, and outside a scope the only cost is one field read per call (no allocation).
+</p>
+</div>
+
+
+  <h2 class="section" id="constructors">Constructors
+</h2>
+
+
+  <a id="Utils_Expressions_ExpressionOptimiser__ctor_" data-uid="Utils.Expressions.ExpressionOptimiser.#ctor*"></a>
+
+  <h3 id="Utils_Expressions_ExpressionOptimiser__ctor" data-uid="Utils.Expressions.ExpressionOptimiser.#ctor">
+  ExpressionOptimiser()
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionOptimiser.cs/#L58"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Initializes an optimiser with the default resource limits (<a class="xref" href="Utils.Expressions.ExpressionResourceLimits.html#Utils_Expressions_ExpressionResourceLimits_Default">Default</a>).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ExpressionOptimiser()</code></pre>
+  </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <a id="Utils_Expressions_ExpressionOptimiser__ctor_" data-uid="Utils.Expressions.ExpressionOptimiser.#ctor*"></a>
+
+  <h3 id="Utils_Expressions_ExpressionOptimiser__ctor_Utils_Expressions_ExpressionResourceLimits_" data-uid="Utils.Expressions.ExpressionOptimiser.#ctor(Utils.Expressions.ExpressionResourceLimits)">
+  ExpressionOptimiser(ExpressionResourceLimits)
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionOptimiser.cs/#L65"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Initializes an optimiser with explicit resource limits.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ExpressionOptimiser(ExpressionResourceLimits resourceLimits)</code></pre>
+  </div>
+
+  <h4 class="section">Parameters</h4>
+  <dl class="parameters">
+    <dt><code>resourceLimits</code> <a class="xref" href="Utils.Expressions.ExpressionResourceLimits.html">ExpressionResourceLimits</a></dt>
+    <dd><p>The limits applied to every optimization.</p>
+</dd>
+  </dl>
+
+
+
+
+
+
+
+
+
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p><code class="paramref">resourceLimits</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+  </dl>
+
+
+
+  <h2 class="section" id="properties">Properties
+</h2>
+
+
+  <a id="Utils_Expressions_ExpressionOptimiser_ResourceLimits_" data-uid="Utils.Expressions.ExpressionOptimiser.ResourceLimits*"></a>
+
+  <h3 id="Utils_Expressions_ExpressionOptimiser_ResourceLimits" data-uid="Utils.Expressions.ExpressionOptimiser.ResourceLimits">
+  ResourceLimits
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionOptimiser.cs/#L72"><i class="bi bi-code-slash"></i></a>
+  </h3>
+
+  <div class="markdown level1 summary"><p>Gets the resource limits applied to every optimization.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ExpressionResourceLimits ResourceLimits { get; }</code></pre>
+  </div>
+
+
+
+
+
+  <h4 class="section">Property Value</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="Utils.Expressions.ExpressionResourceLimits.html">ExpressionResourceLimits</a></dt>
+    <dd></dd>
+  </dl>
+
+
+
+
+
+
 
 
   <h2 class="section" id="methods">Methods
@@ -245,7 +390,7 @@ Class ExpressionOptimiser  <a class="header-action link-secondary" title="View s
 
   <h3 id="Utils_Expressions_ExpressionOptimiser_Optimize_System_Linq_Expressions_Expression_" data-uid="Utils.Expressions.ExpressionOptimiser.Optimize(System.Linq.Expressions.Expression)">
   Optimize(Expression)
-  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionOptimiser.cs/#L16"><i class="bi bi-code-slash"></i></a>
+  <a class="header-action link-secondary" title="View source" href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionOptimiser.cs/#L81"><i class="bi bi-code-slash"></i></a>
   </h3>
 
   <div class="markdown level1 summary"><p>Optimizes the provided expression tree.</p>
@@ -266,7 +411,7 @@ Class ExpressionOptimiser  <a class="header-action link-secondary" title="View s
   <h4 class="section">Returns</h4>
   <dl class="parameters">
     <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.linq.expressions.expression">Expression</a></dt>
-    <dd><p>An optimized expression tree.</p>
+    <dd><p>An optimized expression tree of the same type; the source itself when no rule applies.</p>
 </dd>
   </dl>
 
@@ -277,6 +422,15 @@ Class ExpressionOptimiser  <a class="header-action link-secondary" title="View s
 
 
 
+  <h4 class="section">Exceptions</h4>
+  <dl class="parameters">
+    <dt><a class="xref" href="https://learn.microsoft.com/dotnet/api/system.argumentnullexception">ArgumentNullException</a></dt>
+    <dd><p><code class="paramref">expression</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.</p>
+</dd>
+    <dt><a class="xref" href="Utils.Expressions.ExpressionResourceLimitException.html">ExpressionResourceLimitException</a></dt>
+    <dd><p>The input or the work exceeds <a class="xref" href="Utils.Expressions.ExpressionOptimiser.html#Utils_Expressions_ExpressionOptimiser_ResourceLimits">ResourceLimits</a>, or the stack ran out.</p>
+</dd>
+  </dl>
 
 
 
@@ -284,7 +438,7 @@ Class ExpressionOptimiser  <a class="header-action link-secondary" title="View s
 </article>
 
         <div class="contribution d-print-none">
-          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionOptimiser.cs/#L9" class="edit-link">Edit this page</a>
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/Utils/Expressions/ExpressionOptimiser.cs/#L55" class="edit-link">Edit this page</a>
         </div>
 
 

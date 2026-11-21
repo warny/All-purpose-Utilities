@@ -247,7 +247,8 @@ innermost treatment the refusal crossed (or without treatment when the input val
   
   <dd><p>A rule returned a result for the prepared node <a class="xref" href="Utils.Expressions.ExpressionTransformEvent.html#Utils_Expressions_ExpressionTransformEvent_Input">Input</a>: emitted only after the rule
 returned. <a class="xref" href="Utils.Expressions.ExpressionTransformEvent.html#Utils_Expressions_ExpressionTransformEvent_Output">Output</a> is that result (<a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> when a single-node rule
-returned <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>, which the engine returns as is).</p>
+returned <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>, which the engine returns as is). For <a class="xref" href="Utils.Expressions.ExpressionOptimiser.html">ExpressionOptimiser</a>, whose rules read
+the visited children directly, <a class="xref" href="Utils.Expressions.ExpressionTransformEvent.html#Utils_Expressions_ExpressionTransformEvent_Input">Input</a> is the source node.</p>
 </dd>
     <dt id="Utils_Expressions_ExpressionTransformEventKind_RuleCandidate"><code>RuleCandidate = 6</code></dt>
   
@@ -267,7 +268,8 @@ returned <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/k
 </dd>
     <dt id="Utils_Expressions_ExpressionTransformEventKind_TransformEnter"><code>TransformEnter = 0</code></dt>
   
-  <dd><p>The engine starts transforming a node (one <code>TransformCore</code> call). <a class="xref" href="Utils.Expressions.ExpressionTransformEvent.html#Utils_Expressions_ExpressionTransformEvent_Input">Input</a> is
+  <dd><p>The engine starts transforming a node (one <code>TransformCore</code> call, or one node visit of
+<a class="xref" href="Utils.Expressions.ExpressionOptimiser.html">ExpressionOptimiser</a>). <a class="xref" href="Utils.Expressions.ExpressionTransformEvent.html#Utils_Expressions_ExpressionTransformEvent_Input">Input</a> is
 the node; <a class="xref" href="Utils.Expressions.ExpressionTransformEvent.html#Utils_Expressions_ExpressionTransformEvent_Rule">Rule</a> is the rule of the parent treatment that requested this one, or
 <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> when the node is a child prepared by its parent's traversal.</p>
 </dd>

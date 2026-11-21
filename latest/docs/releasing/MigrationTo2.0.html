@@ -431,6 +431,24 @@ policy (it is left to the evaluation); under the default it never reached the ru
 <li>Rules declared by a derived simplifier are unaffected (they keep the historical admission).</li>
 </ul>
 <p><a id="omy-utils-fonts-2"></a></p>
+<h2 id="expression-engine-expressionoptimiser-safety-audit-a10-c">Expression engine: <code>ExpressionOptimiser</code> safety audit (A10-C)</h2>
+<p>Behavior changes of <code>ExpressionOptimiser</code>; one additive constructor <code>ExpressionOptimiser(ExpressionResourceLimits)</code> and the
+property <code>ResourceLimits</code>. The full record (rule matrix, reproducers, limits) is in <code>docs/expressions/ExpressionOptimiser.md</code>.</p>
+<ul>
+<li><strong>Only exact identities.</strong> <code>x * 0 -&gt; 0</code> applies only to non-lifted integral products whose dropped operand is proven
+discardable (<code>F() * 0</code>, <code>(v = 5) * 0</code>, <code>(10 / i) * 0</code> are kept; lifted, <code>float</code>/<code>double</code> and <code>decimal</code> products by zero are
+kept). <code>x + 0</code>, <code>x - 0</code>, <code>x * 1</code>, <code>x / 1</code> and <code>-(-x)</code> no longer remove a custom operator method, and <code>x + 0.0</code> is kept
+(<code>-0.0 + 0.0</code> is <code>+0.0</code>): use <code>x + (-0.0)</code> or <code>x - 0.0</code>, which are removed. <code>decimal</code> identities are no longer applied.</li>
+<li><strong>Exact result types.</strong> A rewritten node always has the type of its source: <code>bool?</code> short circuits, explicitly typed
+conditionals and blocks, and blocks ending with <code>Empty()</code> keep their type (some of them threw or changed the enclosing
+lambda before).</li>
+<li><strong>Opaque and dynamic nodes, quotes.</strong> Extension nodes are passed through without any call into them; a dynamic
+operation stays a <code>DynamicExpression</code> (it was reduced to a call-site invocation); a quoted expression is not rewritten.</li>
+<li><strong>Resource limits.</strong> <code>new ExpressionOptimiser()</code> validates its input against <code>ExpressionResourceLimits.Default</code> (depth 512,
+50,000 logical nodes) and counts its work: a larger trusted tree needs
+<code>new ExpressionOptimiser(ExpressionResourceLimits.Unlimited)</code>. A hostile input ends with an
+<code>ExpressionResourceLimitException</code> instead of a stack overflow.</li>
+</ul>
 <h2 id="utilsfonts-hostile-font-parsing-hardening">Utils.Fonts hostile-font parsing hardening</h2>
 <p><code>TrueTypeFont.ParseFont</code>/<code>ParseFontAsync</code> now accept an optional <code>TrueTypeFontParsingOptions</code>
 governing a <code>FontValidationMode</code> (<code>Strict</code>, the default, or <code>Permissive</code>), explicit resource limits

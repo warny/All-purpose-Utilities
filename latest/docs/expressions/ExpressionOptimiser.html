@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>ExpressionOptimiser — safety audit and contract (A10-C, O0–O5) | omy.Utils Documentation </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="ExpressionOptimiser — safety audit and contract (A10-C, O0–O5) | omy.Utils Documentation ">
+      
+      
+      <link rel="icon" href="../../favicon.ico">
+      <link rel="stylesheet" href="../../public/docfx.min.css">
+      <link rel="stylesheet" href="../../public/main.css">
+      <meta name="docfx:navrel" content="../../toc.html">
+      <meta name="docfx:tocrel" content="../../toc.html">
+      
+      <meta name="docfx:rel" content="../../">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/warny/All-purpose-Utilities/blob/master/docs/expressions/ExpressionOptimiser.md/#L1">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../../index.html">
+            <img id="logo" class="svg" src="../../logo.svg" alt="All-purpose Utilities">
+            All-purpose Utilities
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+
+      <div class="content">
+        <div class="actionbar">
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="expressionoptimiser--safety-audit-and-contract-a10-c-o0o5"><code>ExpressionOptimiser</code> — safety audit and contract (A10-C, O0–O5)</h1>
+
+<p>Branch <code>fix/expression-optimiser-safety</code>, base <code>master</code> <code>76bf0b55</code> (PRs #715, #716 and #717 merged). This document records the
+audit of the public <code>Utils.Expressions.ExpressionOptimiser</code>, the defects found, the rules kept with their guards, and the
+limits of the optimiser. It closes finding <strong>A10-C</strong> of <a href="A10-ReflectionProvenance.html">A10-ReflectionProvenance.md</a> and the
+correctness part of the execution-optimizer stage <strong>O0</strong> of <code>Utils/TODO-2026-09-12-expression-simplifier-roadmap.md</code>.</p>
+<p>Vocabulary: <strong>proven defect</strong> (a reproducer fails on <code>76bf0b55</code>), <strong>confirmed risk</strong> (the mechanism exists, no reproducer),
+<strong>deliberate limitation</strong>, <strong>changed behavior</strong> (to keep the semantics), <strong>optimisation not made</strong>.</p>
+<h2 id="1-consumers-and-compatibility">1. Consumers and compatibility</h2>
+<p><code>ExpressionOptimiser</code> has no consumer inside the repository: no project calls <code>Optimize</code> (verified with a search of every
+project, generators and packaged-acceptance consumers included). Its consumers are external users of <code>omy.Utils</code>, documented by
+<code>Utils/README.md</code>. The public surface keeps the parameterless constructor and <code>Optimize(Expression)</code>; the only additions are
+<code>ExpressionOptimiser(ExpressionResourceLimits)</code> and <code>ResourceLimits</code>, the convention of <code>ExpressionSimplifier</code> and
+<code>ExpressionComparer</code>. Behavioral changes visible to a consumer:</p>
+<table>
+<thead>
+<tr>
+<th>Change</th>
+<th>Before</th>
+<th>After</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Identities that were not exact</td>
+<td>applied (<code>x * 0 -&gt; 0</code> dropped <code>F()</code>, <code>x + 0.0 -&gt; x</code> changed <code>-0.0</code>, …)</td>
+<td>declined (§3)</td>
+</tr>
+<tr>
+<td>Type of a rewritten node</td>
+<td>could change (<code>Block(7, Empty())</code> became <code>int</code>)</td>
+<td>always the source type</td>
+</tr>
+<tr>
+<td>Extension and dynamic nodes</td>
+<td><code>Accept</code>/<code>VisitChildren</code>/<code>Reduce</code> called; dynamic reduced to a call site</td>
+<td>passed through / kept, never called</td>
+</tr>
+<tr>
+<td>Quoted expressions</td>
+<td>rewritten inside</td>
+<td>kept as data</td>
+</tr>
+<tr>
+<td>Resource limits</td>
+<td>none (stack overflow on deep input)</td>
+<td><code>ExpressionResourceLimits.Default</code>: depth 512, 50,000 logical nodes, 10,000,000 structural visits, stack guard</td>
+</tr>
+</tbody>
+</table>
+<p>A consumer optimising trusted trees deeper than 512 levels or larger than 50,000 logical nodes passes
+<code>ExpressionResourceLimits.Unlimited</code> (the stack guard stays active).</p>
+<h2 id="2-o0--architecture-of-the-audited-version-76bf0b55">2. O0 — architecture of the audited version (<code>76bf0b55</code>)</h2>
+<p>A private <code>ExpressionVisitor</code> (<code>StandardOptimiserVisitor</code>) with five overrides: <code>VisitUnary</code>, <code>VisitBinary</code>, <code>VisitConditional</code>,
+<code>VisitBlock</code>, plus the framework defaults for every other family. Findings on the traversal itself:</p>
+<ul>
+<li><strong>Families.</strong> Every framework family is visited by <code>ExpressionVisitor</code>, including quoted lambdas (rewritten as data) and
+<code>DynamicExpression</code>: a plain visitor reaches it through <code>VisitExtension</code>, whose default calls <code>VisitChildren</code>, hence
+<code>Reduce</code>, which replaces the operation by <code>CallSite&lt;T&gt;.Target(site, …)</code> (<strong>proven defect D-12</strong>).</li>
+<li><strong>Extension nodes.</strong> <code>Visit</code> calls the node's overridable <code>Accept</code>, then <code>VisitChildren</code>, <code>CanReduce</code> and <code>Reduce</code>
+(<strong>proven defect D-11</strong>, ETC R4).</li>
+<li><strong>Resources.</strong> No validation, no budget, no stack guard: a deep tree overflows the stack and kills the process
+(<strong>confirmed risk R-1</strong>: not reproducible in-process, the test host dies), and the framework's binding walk recurses through
+nested member bindings with a delegate per level.</li>
+<li><strong>DAGs.</strong> A shared subtree is walked once per use (unfolded), and a rewritten one is rebuilt once per use.</li>
+<li><strong>Scopes.</strong> Variables and labels are never renamed; the only scope hazard is the block unwrapping of D-9/D-10.</li>
+<li><strong>Exceptions.</strong> The optimiser runs no user code except through D-11; <code>CreateZeroConstant</code> (<code>Convert.ChangeType</code>) throws
+<code>InvalidCastException</code> on an enumeration type (<strong>proven defect D-6</strong>).</li>
+</ul>
+<h2 id="3-rule-matrix">3. Rule matrix</h2>
+<p><code>kind</code> = arithmetic family of the node type: <em>integral</em> = <code>short</code>, <code>ushort</code>, <code>int</code>, <code>uint</code>, <code>long</code>, <code>ulong</code>; <em>floating</em> =
+<code>float</code>, <code>double</code>; <em>lifted</em> = their <code>Nullable&lt;T&gt;</code> forms. Every rule now requires <code>Method == null</code> (no operator method) and
+non-opaque operands (<code>ExpressionOpacity.IsOpaque</code> before any <code>Type</code> read), and returns a node of exactly the source type
+(reference equality of <code>Type</code>). Constants are classified exactly in their own type by a type switch on the boxed value
+(<code>Classify</code>), never through <code>double</code>.</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Rule</th>
+<th>Before (<code>76bf0b55</code>)</th>
+<th>After</th>
+<th>Guards (all required)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>x + 0</code>, <code>0 + x</code></td>
+<td>any numeric type with or without method, zero <code>≈ 0.0</code> through <code>Convert.ToDouble</code></td>
+<td>integral and lifted integral: zero; floating (lifted or not): <strong><code>-0.0</code> only</strong></td>
+<td>no method; constant of the node type; kept operand of the node type</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>x - 0</code></td>
+<td>idem</td>
+<td>integral: zero; floating: <strong><code>+0.0</code> only</strong></td>
+<td>idem</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>x * 1</code>, <code>1 * x</code></td>
+<td>idem, <code>1.0000000000000000000000000001m</code> counted as one</td>
+<td>integral, lifted integral, floating</td>
+<td>idem</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>x / 1</code></td>
+<td>idem</td>
+<td>integral, lifted integral, floating</td>
+<td>idem</td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>x * 0</code>, <code>0 * x</code></td>
+<td>any numeric type, operand dropped unconditionally, <code>Convert.ChangeType</code> zero</td>
+<td><strong>non-lifted integral only</strong>, dropped operand <code>ExpressionEffectAnalysis.CanDiscard</code></td>
+<td>the zero constant itself is the result</td>
+</tr>
+<tr>
+<td>6</td>
+<td><code>-(-x)</code></td>
+<td>any <code>Negate</code> over <code>Negate</code>, methods ignored</td>
+<td>primitive unchecked negation, both levels without method</td>
+<td>inner operand of the node type, not opaque</td>
+</tr>
+<tr>
+<td>7</td>
+<td><code>Convert(x)</code> to <code>x.Type</code></td>
+<td>any <code>Convert</code> whose visited operand has the target type</td>
+<td>without method only</td>
+<td>operand of the node type, not opaque</td>
+</tr>
+<tr>
+<td>8</td>
+<td><code>true &amp;&amp; r</code>, <code>false \|\| r</code> → <code>r</code></td>
+<td><code>bool</code> constant of any type</td>
+<td><code>bool</code> / <code>bool?</code> without method</td>
+<td>constant of the node type, <code>r</code> of the node type</td>
+</tr>
+<tr>
+<td>9</td>
+<td><code>false &amp;&amp; r</code>, <code>true \|\| r</code></td>
+<td>returned <code>Constant(false)</code> / <code>Constant(true)</code> typed <code>bool</code></td>
+<td>returns the constant operand itself (node type); <code>r</code> not visited</td>
+<td>constant of the node type</td>
+</tr>
+<tr>
+<td>10</td>
+<td><code>l &amp;&amp; true</code>, <code>l \|\| false</code> → <code>l</code></td>
+<td><code>bool</code> constant of any type</td>
+<td><code>bool</code> / <code>bool?</code> without method</td>
+<td>idem</td>
+</tr>
+<tr>
+<td>11</td>
+<td><code>l &amp;&amp; false</code>, <code>l \|\| true</code></td>
+<td>kept (already)</td>
+<td>kept</td>
+<td>—</td>
+</tr>
+<tr>
+<td>12</td>
+<td><code>c ? a : b</code>, constant <code>c</code></td>
+<td>branch returned whatever its type, both branches visited</td>
+<td>branch of exactly the conditional's type; discarded branch neither visited nor defining a label/loop</td>
+<td>both branches not opaque</td>
+</tr>
+<tr>
+<td>13</td>
+<td>block: drop <code>Default(void)</code></td>
+<td>every one, the last included; rebuilt without explicit type</td>
+<td><strong>not the last one</strong>; rebuilt with <code>Update</code> (own type and variables)</td>
+<td>—</td>
+</tr>
+<tr>
+<td>14</td>
+<td>block: single expression</td>
+<td>unwrapped whatever its type</td>
+<td>no variable, expression of the block's type, not a <code>LabelExpression</code></td>
+<td>not opaque</td>
+</tr>
+</tbody>
+</table>
+<p>Columns 1–10 of the mission (activation, transformation, hypotheses, evaluations, exceptions, types, custom operators, nullable,
+floating values, equivalence conditions) per rule, for the version on the branch:</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Evaluations</th>
+<th>Exceptions</th>
+<th>Custom operators</th>
+<th>Nullable</th>
+<th>Floating special values</th>
+<th>Why it is exact</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1–4</td>
+<td>constant dropped; <code>x</code> evaluated once, same position</td>
+<td>none: unchecked primitive <code>+ - * /</code> by these constants never throws (<code>/ 1</code> included)</td>
+<td>refused (<code>Method != null</code>)</td>
+<td>lifted: <code>null op c = null = x</code></td>
+<td><code>x + (-0.0)</code>, <code>x - 0.0</code>, <code>x * 1</code>, <code>x / 1</code> return <code>x</code> bit for bit (NaN payloads, infinities, subnormals) except that hardware may quiet a signaling NaN</td>
+<td>IEEE-754 and two's complement identities</td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>x</code> dropped only if <code>CanDiscard</code> (no write, exception, allocation or unknown code; a read may be dropped)</td>
+<td><code>x</code> cannot throw; <code>x * 0</code> cannot overflow</td>
+<td>refused</td>
+<td>lifted refused (<code>null * 0 = null</code>)</td>
+<td>floating refused (<code>NaN</code>, <code>±∞</code>, <code>-0.0</code>)</td>
+<td>integral product with zero is zero</td>
+</tr>
+<tr>
+<td>6</td>
+<td><code>x</code> once</td>
+<td>primitive unchecked negation never throws; <code>NegateChecked</code> never matched</td>
+<td>refused at both levels</td>
+<td>lifted: <code>-(-null) = null</code></td>
+<td>sign bit flipped twice, NaN payload kept</td>
+<td>involution</td>
+</tr>
+<tr>
+<td>7</td>
+<td><code>x</code> once</td>
+<td>an identity conversion without method is a no-op</td>
+<td>refused</td>
+<td>identity on <code>T?</code> too</td>
+<td>no-op</td>
+<td>—</td>
+</tr>
+<tr>
+<td>8–10</td>
+<td>the deciding constant is the left operand; the right one is never evaluated at run time, so dropping it changes nothing; neutral constants removed, the other operand evaluated exactly as before</td>
+<td>none added or removed</td>
+<td>refused</td>
+<td><code>bool?</code> lifted semantics kept</td>
+<td>n/a</td>
+<td>short-circuit truth tables</td>
+</tr>
+<tr>
+<td>12</td>
+<td>the test is a constant; the discarded branch never runs</td>
+<td>none</td>
+<td>n/a</td>
+<td>n/a</td>
+<td>n/a</td>
+<td>a dropped branch with a label could break a jump into it (void conditional), so it is kept</td>
+</tr>
+<tr>
+<td>13–14</td>
+<td><code>Default(void)</code> evaluates nothing</td>
+<td>none</td>
+<td>n/a</td>
+<td>n/a</td>
+<td>n/a</td>
+<td>type and scope preserved</td>
+</tr>
+</tbody>
+</table>
+<p>Not rewritten (optimisation not made, by design): checked arithmetic, <code>decimal</code> arithmetic (its identities change the scale:
+<code>1.5m + 0.00m = 1.50m</code>, <code>1.5m * 1.0m = 1.50m</code>; <code>x * 0m</code> also drops an overflow of <code>x</code>), custom operators and conversions,
+<code>Modulo</code>, <code>Power</code>, comparisons, <code>Not</code>, quoted expressions (their value is the tree), extension nodes, conversion lambdas of
+<code>Coalesce</code> and compound assignments (not visited, as before).</p>
+<h2 id="4-proven-defects-all-reproduced-on-76bf0b55-fixed-on-the-branch">4. Proven defects (all reproduced on <code>76bf0b55</code>, fixed on the branch)</h2>
+<table>
+<thead>
+<tr>
+<th>Id</th>
+<th>Defect</th>
+<th>Minimal reproducer</th>
+<th>Root cause</th>
+<th>Test</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>D-1</td>
+<td><code>x * 0</code> drops an observable operand (call, mutation, throw, division by zero, allocation)</td>
+<td><code>F(i) * 0</code> → <code>0</code>, <code>F</code> not called</td>
+<td>no effect check</td>
+<td><code>O1_CallTimesZero_KeepsTheCall</code>, <code>O1_MutationTimesZero_*</code>, <code>O1_ThrowingOperandTimesZero_*</code>, <code>O1_AllocationTimesZero_*</code>, <code>O1_DistinctEffectsOnBothSides_*</code></td>
+</tr>
+<tr>
+<td>D-2</td>
+<td><code>x * 0</code> wrong for lifted, floating and decimal types</td>
+<td><code>(int?)null * 0</code> → <code>0</code>; <code>NaN * 0.0</code> → <code>0</code>; <code>(m*m) * 0m</code> loses the overflow; <code>1.5m * 0.00m</code> scale</td>
+<td>identity applied outside integral arithmetic</td>
+<td><code>O1_NullableTimesZero_KeepsNull</code>, <code>O1_FloatingTimesZero_*</code>, <code>O1_DecimalTimesZero_*</code></td>
+</tr>
+<tr>
+<td>D-3</td>
+<td>identities drop a custom operator method</td>
+<td><code>Add(i, 0, AddCounted)</code> → <code>i</code>; idem <code>*</code>, <code>/</code>, <code>-</code>, lifted</td>
+<td><code>BinaryExpression.Method</code> ignored</td>
+<td><code>O1_CustomOperatorTimesZero_*</code>, <code>O2_CustomOperatorIdentities_*</code>, <code>O2_LiftedCustomOperator_IsKept</code>, <code>ImpersonatingOperatorMethods_AreNeverReadNorRemoved</code></td>
+</tr>
+<tr>
+<td>D-4</td>
+<td><code>x + 0.0</code>, <code>0.0 + x</code>, <code>x - (-0.0)</code> change <code>-0.0</code> into <code>+0.0</code></td>
+<td><code>(-0.0) + 0.0</code> is <code>+0.0</code>, optimised <code>-0.0</code></td>
+<td>signed zero ignored</td>
+<td><code>O2_FloatingAdditiveZero_RespectsTheSignOfZero</code>, <code>Optimize_AppliesArithmeticIdentities</code></td>
+</tr>
+<tr>
+<td>D-5</td>
+<td>decimal identities through <code>Convert.ToDouble</code></td>
+<td><code>1e28m * 1.0000000000000000000000000001m</code> → <code>1e28m</code>; <code>1.5m + 0.00m</code> loses the scale</td>
+<td>inexact constant test, decimal scale</td>
+<td><code>O2_DecimalIdentities_KeepValueAndScale</code></td>
+</tr>
+<tr>
+<td>D-6</td>
+<td><code>Optimize</code> throws on an enumeration custom operator by zero</td>
+<td><code>Multiply(level, Zero, MultiplyLevels)</code> → <code>InvalidCastException</code></td>
+<td><code>Convert.ChangeType(0, enum)</code></td>
+<td><code>O1_CustomEnumerationOperatorTimesZero_DoesNotThrow</code></td>
+</tr>
+<tr>
+<td>D-7</td>
+<td><code>-(-x)</code> drops custom negation operators</td>
+<td><code>-(-money)</code> with <code>operator -</code></td>
+<td><code>UnaryExpression.Method</code> ignored</td>
+<td><code>O3_CustomDoubleNegation_KeepsTheOperators</code>, impersonation test</td>
+</tr>
+<tr>
+<td>D-8</td>
+<td>conversion through a method dropped when types are equal</td>
+<td><code>Convert(i, int, IdentityCounted)</code> → <code>i</code></td>
+<td><code>Method</code> ignored</td>
+<td><code>O3_Conversions_KeepTheirMethod</code></td>
+</tr>
+<tr>
+<td>D-9</td>
+<td><code>bool?</code> short circuits return a <code>bool</code> constant</td>
+<td><code>(bool?)false &amp;&amp; nb</code> → <code>Constant(false)</code>: <code>Lambda</code> throws</td>
+<td>constant built with <code>typeof(bool)</code></td>
+<td><code>O4_NullableBooleanShortCircuits_KeepTheNullableType</code></td>
+</tr>
+<tr>
+<td>D-10</td>
+<td>type changes: constant conditional with explicit type, block ending with <code>Empty()</code>, explicitly typed blocks</td>
+<td><code>Block(Constant(7), Empty())</code> becomes <code>int</code></td>
+<td>type of the selected/last child used</td>
+<td><code>O4_ConstantConditional_KeepsTheType</code>, <code>O5_BlockEndingWithEmpty_StaysVoid</code>, <code>O5_ExplicitlyTypedBlocks_*</code>, <code>O5_BlockShapes_*</code></td>
+</tr>
+<tr>
+<td>D-10b</td>
+<td>single-label block unwrapped into its parent scope</td>
+<td><code>Block(Block(Label(t)), Block(Label(t)))</code> → &quot;Cannot redefine label&quot;</td>
+<td>unwrapping changes the label scope</td>
+<td><code>O5_ControlFlowInBlocks_IsPreserved</code></td>
+</tr>
+<tr>
+<td>D-11</td>
+<td>extension node called (<code>Accept</code>, <code>VisitChildren</code>, <code>Reduce</code>)</td>
+<td>any <code>R4HostileExtension</code></td>
+<td>framework <code>Visit</code></td>
+<td><code>HostileExtension_IsNeverCalled</code></td>
+</tr>
+<tr>
+<td>D-12</td>
+<td>dynamic operation reduced to a call-site invocation</td>
+<td><code>MakeDynamic(...)</code> → <code>InvocationExpression</code></td>
+<td>framework <code>VisitExtension</code> → <code>Reduce</code></td>
+<td><code>DynamicOperation_IsKeptAndItsBinderNeverCalled</code>, <code>UnchangedDynamicOperation_IsReturnedAsIs</code></td>
+</tr>
+<tr>
+<td>D-13</td>
+<td>quoted lambdas rewritten</td>
+<td><code>Quote(i =&gt; i * 1)</code> value changed</td>
+<td>framework visit of <code>Quote</code></td>
+<td><code>QuotedExpression_IsNotRewritten</code></td>
+</tr>
+<tr>
+<td>D-14</td>
+<td>shared dependency: <code>ExpressionEffectAnalysis</code> read <code>Type</code> of an extension operand (conversion, <code>TypeAs</code>, field receiver)</td>
+<td><code>Convert(hostile, int)</code> analysed</td>
+<td>R4 check missing before <code>Operand.Type</code></td>
+<td><code>EffectAnalysis_NeverReadsTheTypeOfAnExtensionOperand</code></td>
+</tr>
+</tbody>
+</table>
+<p>D-14 is in the shared effect analysis, also reached by the simplifier's gate. The fix returns <code>Observable</code> before the read; the
+operand's own classification (<code>Observable</code>, as an unknown node) already made the union <code>Observable</code>, and every consumer only
+uses <code>IsInert</code>/<code>CanDiscard</code>/<code>CanRepeat</code>/<code>CanReorder</code> or the <code>Observable</code> bit, so no classification result changes.</p>
+<h2 id="5-confirmed-risks-without-in-process-reproducer-and-deliberate-limitations">5. Confirmed risks without in-process reproducer, and deliberate limitations</h2>
+<ul>
+<li><strong>R-1 stack overflow on <code>76bf0b55</code></strong> for deep inputs (unary, binary, nested bindings): kills the process, so no in-process
+test can fail on <code>master</code>; the branch tests (<code>HostileNesting_OfEveryFamily_IsRefusedOnASmallStack</code>) end every family with a
+controlled <code>Stack</code> refusal on a 256 KiB thread.</li>
+<li><strong>Signaling NaN.</strong> <code>x * 1.0</code>, <code>x / 1.0</code>, <code>x + (-0.0)</code>, <code>x - 0.0</code> return <code>x</code> itself; the source operation may quiet a signaling
+NaN (quiet bit set). Quiet NaN payloads are kept (tested with <code>0x7FF8000000000123</code>). Signaling NaNs are outside the contract,
+as for C compilers without <code>-fsignaling-nans</code>.</li>
+<li><strong>Framework reads of hostile reflection objects on rebuild.</strong> When a child of a call, member, binding or initializer changes,
+the framework factory (<code>Update</code>) revalidates the parent and reads its reflection object (as for every engine rebuild,
+documented in <code>ExpressionOpacity</code>). The optimiser itself never reads one: operator methods are only compared with <code>null</code>, and an
+unchanged node is never rebuilt (<code>ImpersonatingMember_InAnUnchangedInitialization_IsNeverRead</code>).</li>
+<li><strong>Implicitly typed conditional chains.</strong> <code>ConditionalExpression.Type</code> delegates to <code>IfTrue.Type</code>; a chain nested through
+<code>IfTrue</code> costs O(depth) per read in the framework (its construction is already quadratic). The optimiser reads it once per
+conditional with a constant test, after the opacity check of both branches.</li>
+<li><strong>DAGs</strong> are walked per logical node, like every engine walk: bounded by <code>MaxNodes</code> (validated without unfolding) and by
+the structural budget, which also counts the effect analysis (<code>SharedDag_IsBoundedByTheLimits</code>,
+<code>SharedProductsByZero_AreBoundedByTheBudget</code>). Memoising rewrites by reference would make DAGs linear but costs a table on
+every call; not done.</li>
+<li><strong>No fixed point.</strong> One bottom-up pass: rewrites whose result enables a rule higher up are applied (<code>(x * 1 + 0) * (x - 0)</code>
+→ <code>x * x</code>); a rule enabled only by a later sibling is not revisited.</li>
+</ul>
+<h3 id="guard-mutation-check">Guard mutation check</h3>
+<p>Each guard was disabled in turn and the optimiser tests rerun (Debug): the label, discardability, operator-method, signed-zero,
+operand-opacity, lifted-product, quote, conditional-type, label-unwrap and dynamic-rebuild guards each make 1 to 5 tests fail.
+The inner-negation method guard survived the first run (no test had a primitive outer negation over a custom inner one); the
+case was added. The &quot;keep the last block expression&quot; guard is an equivalent mutant: dropping a final <code>Default(void)</code> and
+rebuilding through <code>BlockExpression.Update</code>, which keeps the block's type, gives the same type and behavior; the guard is kept
+for structural fidelity.</p>
+<h2 id="6-architecture">6. Architecture</h2>
+<p><strong>A — keep the <code>ExpressionVisitor</code>, add guards (retained).</strong> <code>Visit</code> counts one structural visit (stack check included) and
+returns an extension node before <code>Accept</code>; <code>VisitExtension</code> rebuilds a dynamic operation from its arguments; <code>VisitUnary</code> keeps
+quotes; <code>VisitMemberInit</code>/<code>VisitListInit</code> walk bindings and initializers with the optimiser's own loop (one visit per binding
+and initializer, original <code>AddMethod</code>), so the framework's delegate-per-level binding recursion never runs; <code>VisitCatchBlock</code> and
+<code>VisitSwitchCase</code> count their container. <code>Optimize</code> runs inside <code>ExpressionResourceBudget.Run</code> (input validation, budgets,
+<code>Stack</code> translation at the outermost boundary, <code>finally</code> restoration, nested calls join and only tighten). Rule admission is
+centralised in <code>TryGetArithmeticKind</code>, <code>Classify</code>, <code>KeepIfNeutral</code> and the <code>Method is null</code> / <code>IsOpaque</code> / exact-type checks;
+discardability reuses <code>ExpressionEffectAnalysis</code>. About 600 lines, no new public concept.</p>
+<p><strong>B — rebuild on <code>ExpressionTransformer</code> (not retained).</strong> Benefits: budgets, validation, rebuilds, scopes and opacity
+conventions already tested. Costs measured or established during the audit: every node goes through <code>TransformCore</code>
+(preparation, plan dispatch, <code>CopyExpression</code> finalisation), which costs about 1–4 µs per visit against 50–250 ns per node for
+the visitor (§8); the transformer's rules are dispatched by signature, which would make the short-circuit, conditional and block
+rules (that must not visit a discarded child) awkward; and the transformer copies node families the optimiser leaves untouched,
+changing rebuild counts. A gives every invariant with the existing session, so B brings no correctness benefit.</p>
+<h2 id="7-comparison-with-expressionsimplifier">7. Comparison with <code>ExpressionSimplifier</code></h2>
+<p>The simplifier is bound by a <em>symbolic-equivalence</em> contract (floating NaN, infinities and signed zeros may differ, decimal
+scale is not kept) plus ETC R1b/C-06 for evaluations; the optimiser by an <em>execution</em> contract (bit-exact values). Differences
+below that follow from the contracts are not anomalies.</p>
+<table>
+<thead>
+<tr>
+<th>Transformation</th>
+<th>ExpressionOptimiser (branch)</th>
+<th>ExpressionSimplifier (<code>76bf0b55</code>)</th>
+<th>Guard equivalence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Drop of an evaluation (<code>x * 0</code>)</td>
+<td><code>CanDiscard</code>, non-lifted integral only</td>
+<td><code>AllowsRules</code> gate (<code>HasInertOperands</code>) / <code>CanDropOperand</code> per policy; any ordinary type</td>
+<td>equivalent on evaluations; the simplifier also folds floating/decimal by its symbolic contract</td>
+</tr>
+<tr>
+<td><code>x + 0</code>, <code>x - 0</code>, <code>x * 1</code>, <code>x / 1</code></td>
+<td>no method, exact sign of zero, no decimal</td>
+<td><code>IsOrdinaryBinaryArithmetic</code> (runtime-provenance method check), any sign of zero, decimal included</td>
+<td>equivalent for operators; IEEE/scale latitude by contract</td>
+</tr>
+<tr>
+<td>Custom operators</td>
+<td>refused (<code>Method != null</code>, never read)</td>
+<td>refused (<code>IsOrdinaryBinaryArithmetic</code>, provenance first)</td>
+<td>equivalent</td>
+</tr>
+<tr>
+<td>Hostile reflection</td>
+<td>never read</td>
+<td>provenance check before any read (A-10)</td>
+<td>equivalent</td>
+</tr>
+<tr>
+<td>Lifted nullable arithmetic</td>
+<td>identities kept (exact), <code>* 0</code> refused</td>
+<td>refused (<code>!IsLifted</code>)</td>
+<td>optimiser more permissive, exact</td>
+</tr>
+<tr>
+<td>Exceptions of the operator</td>
+<td>checked and decimal arithmetic never rewritten</td>
+<td>own-operator exceptions kept (<code>DivideWithZeroOrOne</code>, S5A-04 deferred folds)</td>
+<td>equivalent</td>
+</tr>
+<tr>
+<td>Double negation</td>
+<td><code>-(-x)</code> removed for primitive unchecked negation</td>
+<td>not simplified (S5A-10, open)</td>
+<td>n/a: missing rule, not a missing guard</td>
+</tr>
+<tr>
+<td>Conversions</td>
+<td>identity conversion without method removed</td>
+<td>no conversion rule</td>
+<td>n/a</td>
+</tr>
+<tr>
+<td>Booleans, conditionals, blocks</td>
+<td>rules 8–14</td>
+<td>no rule (generic rebuild keeps types)</td>
+<td>n/a</td>
+</tr>
+<tr>
+<td>Resource budgets</td>
+<td>structural budget + validation + stack guard</td>
+<td>transformation + structural budgets + validation + stack guard</td>
+<td>equivalent infrastructure</td>
+</tr>
+</tbody>
+</table>
+<p>No simplifier defect was found by this comparison; nothing was changed in <code>ExpressionSimplifier</code>.</p>
+<h2 id="8-performance">8. Performance</h2>
+<p>Harness <code>OptimiserBench</code> (console, Release, .NET 9, process at high priority pinned to one core, 2,000 calls per batch,
+median of 25 batches, warm), built once against a detached worktree of <code>76bf0b55</code> and once against the branch, run alternately
+master / branch / branch / master (A/A control: master −5 % to +3 %, branch −2 % to +12 %), plus the branch with
+<code>ExpressionResourceLimits.Unlimited</code> (no shape validation) to isolate the validation cost. Windows 11, i7-12700KF.</p>
+<table>
+<thead>
+<tr>
+<th>Workload</th>
+<th style="text-align: right;">Input nodes / depth</th>
+<th style="text-align: right;">master ns</th>
+<th style="text-align: right;">branch ns</th>
+<th style="text-align: right;">branch, no validation</th>
+<th style="text-align: right;">branch / master</th>
+<th style="text-align: right;">Allocated B (master → branch)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>simple <code>x * 1 + 0</code></td>
+<td style="text-align: right;">6 / 4</td>
+<td style="text-align: right;">423</td>
+<td style="text-align: right;">935</td>
+<td style="text-align: right;">665</td>
+<td style="text-align: right;">2.21×</td>
+<td style="text-align: right;">320 → 320</td>
+</tr>
+<tr>
+<td>arithmetic (identities)</td>
+<td style="text-align: right;">242 / 26</td>
+<td style="text-align: right;">8,056</td>
+<td style="text-align: right;">6,379</td>
+<td style="text-align: right;">4,746</td>
+<td style="text-align: right;">0.79×</td>
+<td style="text-align: right;">3,224 → 3,224</td>
+</tr>
+<tr>
+<td>calls (<code>Sin</code>, <code>Cos</code>)</td>
+<td style="text-align: right;">162 / 25</td>
+<td style="text-align: right;">4,089</td>
+<td style="text-align: right;">8,447</td>
+<td style="text-align: right;">5,948</td>
+<td style="text-align: right;">2.07×</td>
+<td style="text-align: right;">3,544 → 3,544</td>
+</tr>
+<tr>
+<td>effects (<code>F(i) * 0</code>, <code>(i + k) * 0</code>)</td>
+<td style="text-align: right;">222 / 25</td>
+<td style="text-align: right;">4,726</td>
+<td style="text-align: right;">7,373</td>
+<td style="text-align: right;">10,112</td>
+<td style="text-align: right;">1.56×</td>
+<td style="text-align: right;">3,200 → 1,280</td>
+</tr>
+<tr>
+<td>conversions</td>
+<td style="text-align: right;">103 / 43</td>
+<td style="text-align: right;">3,394</td>
+<td style="text-align: right;">5,877</td>
+<td style="text-align: right;">4,949</td>
+<td style="text-align: right;">1.73×</td>
+<td style="text-align: right;">2,240 → 2,240</td>
+</tr>
+<tr>
+<td>blocks (empties)</td>
+<td style="text-align: right;">258 / 9</td>
+<td style="text-align: right;">13,246</td>
+<td style="text-align: right;">15,320</td>
+<td style="text-align: right;">10,197</td>
+<td style="text-align: right;">1.16×</td>
+<td style="text-align: right;">5,960 → 5,440</td>
+</tr>
+<tr>
+<td>conditionals (constant tests)</td>
+<td style="text-align: right;">162 / 24</td>
+<td style="text-align: right;">1,474</td>
+<td style="text-align: right;">6,128</td>
+<td style="text-align: right;">3,919</td>
+<td style="text-align: right;">4.16×</td>
+<td style="text-align: right;">1,232 → 1,256</td>
+</tr>
+<tr>
+<td>deep negations (400)</td>
+<td style="text-align: right;">402 / 402</td>
+<td style="text-align: right;">6,112</td>
+<td style="text-align: right;">14,127</td>
+<td style="text-align: right;">10,921</td>
+<td style="text-align: right;">2.31×</td>
+<td style="text-align: right;">9,872 → 9,872</td>
+</tr>
+<tr>
+<td>deep calls (450)</td>
+<td style="text-align: right;">452 / 452</td>
+<td style="text-align: right;">8,990</td>
+<td style="text-align: right;">17,867</td>
+<td style="text-align: right;">13,306</td>
+<td style="text-align: right;">1.99×</td>
+<td style="text-align: right;">24 → 24</td>
+</tr>
+<tr>
+<td>shared DAG <code>e + e</code> (12 levels)</td>
+<td style="text-align: right;">8,192 / 14</td>
+<td style="text-align: right;">40,109</td>
+<td style="text-align: right;">159,876</td>
+<td style="text-align: right;">117,049</td>
+<td style="text-align: right;">3.99×</td>
+<td style="text-align: right;">24 → 24</td>
+</tr>
+<tr>
+<td>shared DAG <code>(e + e) * 1</code> (10 levels)</td>
+<td style="text-align: right;">4,094 / 22</td>
+<td style="text-align: right;">33,521</td>
+<td style="text-align: right;">99,113</td>
+<td style="text-align: right;">62,733</td>
+<td style="text-align: right;">2.96×</td>
+<td style="text-align: right;">24,848 → 24,848</td>
+</tr>
+</tbody>
+</table>
+<p>Output shape (logical nodes / depth / distinct nodes created) is identical on master and branch for every workload except
+<code>effects</code> (master 2 / 2 / 1, wrong: the 20 calls of <code>F</code> were dropped; branch 102 / 24 / 21). Structural visits on the branch,
+measured as the smallest accepted <code>MaxStructuralVisits</code>: logical nodes + 1 (the lambda's parameter) on every workload, the
+effect analysis of the small operands of <code>x * 0</code> being answered by its shallow path without counting.</p>
+<p>Explanation: the added cost is per node, about 15–20 ns (<code>ConsumeStructuralVisit</code>: stack check and thread-static counter, then
+the opacity type tests), plus the shape validation (about 30 % of the overhead, an unfolded walk of the input), plus a fixed
+≈ 0.5 µs per call for the session. Constant conditionals also pay the label search of their discarded branch. <code>arithmetic</code>
+is faster although its output is identical: the exact constant classification is a type switch on the boxed value,
+where master called <code>Convert.ToDouble</code> up to four times per arithmetic node. Allocations never grow except
+for the reused label finder (24 B per call with a constant conditional); unchanged blocks no longer allocate. The overhead is
+the price of the controlled refusals and of R4, of the same order as the other engine walks; no optimisation of the rules was
+attempted beyond removing two allocations.</p>
+<h2 id="9-tracing">9. Tracing</h2>
+<p><code>Optimize</code> bypasses <code>TransformCore</code>, so it opens its own treatments of the active trace (<code>Utils/AGENTS.md</code> rule 13). Inside a
+tracing scope, <code>Optimize</code> builds a <code>TracedOptimiserVisitor</code>. Each node visited (after its structural visit is counted) is one
+treatment reported for <code>ExpressionOptimiser</code>. It produces <code>TransformEnter</code>, then <code>RuleApplied</code> when a rule rewrote the node,
+then <code>TransformExit</code>. A failure is reported as <code>TransformFailed</code> from an exception filter that only records; the resource
+refusal is reported once, as <code>ResourceLimitReached</code>. The rule is identified by the method implementing it (<code>RewriteAdd</code>,
+<code>RewriteSubtract</code>, <code>RewriteMultiply</code>, <code>RewriteDivide</code>, <code>RewriteConvert</code>, <code>RewriteNegate</code>, <code>VisitShortCircuit</code>,
+<code>VisitConditional</code>, <code>VisitBlock</code> for removed empty statements, <code>UnwrapBlock</code>). The <code>RuleApplied</code> input is the source node: the
+rules read the visited children directly, without a prepared copy.</p>
+<p>Exit outcomes are <code>Unchanged</code>, <code>Rebuilt</code> (a node rebuilt around rewritten children), <code>RuleApplied</code>, or <code>Boundary</code> for a quote. An
+extension node is a treatment without node type and is never read. The detailed level adds no event, because the optimiser has
+no candidate rules and no lexical scopes. The input validation refuses before any visit, so its refusal is a single
+<code>ResourceLimitReached</code> event without treatment. An optimisation nested in a traced operation joins that operation's trace.</p>
+<p>The untraced visitor holds no tracing state: a call pays one field read when it starts, and each rewrite pays one virtual call.
+Campaign <code>tests/ExpressionTracingBench</code> (<code>opt-*</code> scenarios, baseline <code>cf920869</code>, A/A control, 3 to 7 rounds):</p>
+<table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th style="text-align: right;">Baseline</th>
+<th style="text-align: right;">A/A</th>
+<th style="text-align: right;">Candidate, no scope</th>
+<th>Allocation</th>
+<th style="text-align: right;">Minimal tracer</th>
+<th style="text-align: right;">Collector</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>opt-ext-root</code></td>
+<td style="text-align: right;">45 ns</td>
+<td style="text-align: right;">+0.4 %</td>
+<td style="text-align: right;">+0.6 %</td>
+<td>24 B → 24 B</td>
+<td style="text-align: right;">+461 %</td>
+<td style="text-align: right;">+609 %</td>
+</tr>
+<tr>
+<td><code>opt-scalar</code></td>
+<td style="text-align: right;">105 ns</td>
+<td style="text-align: right;">+0.6 %</td>
+<td style="text-align: right;">+3.7 %</td>
+<td>24 B → 24 B</td>
+<td style="text-align: right;">+745 %</td>
+<td style="text-align: right;">+1,048 %</td>
+</tr>
+<tr>
+<td><code>opt-lambda</code></td>
+<td style="text-align: right;">306 ns</td>
+<td style="text-align: right;">−5.5 %</td>
+<td style="text-align: right;">−2.7 %</td>
+<td>392 B → 392 B</td>
+<td style="text-align: right;">+373 %</td>
+<td style="text-align: right;">+572 %</td>
+</tr>
+<tr>
+<td><code>opt-leftsum20</code></td>
+<td style="text-align: right;">615 ns</td>
+<td style="text-align: right;">−5.7 %</td>
+<td style="text-align: right;">−5.7 %</td>
+<td>24 B → 24 B</td>
+<td style="text-align: right;">+815 %</td>
+<td style="text-align: right;">+1,048 %</td>
+</tr>
+<tr>
+<td><code>opt-block16</code></td>
+<td style="text-align: right;">2,562 ns</td>
+<td style="text-align: right;">+0.4 %</td>
+<td style="text-align: right;">−3.6 %</td>
+<td>1,744 B → 1,744 B</td>
+<td style="text-align: right;">+419 %</td>
+<td style="text-align: right;">+559 %</td>
+</tr>
+<tr>
+<td><code>opt-li1024</code></td>
+<td style="text-align: right;">162,491 ns</td>
+<td style="text-align: right;">+3.1 %</td>
+<td style="text-align: right;">+0.9 %</td>
+<td>106,680 B → 106,680 B</td>
+<td style="text-align: right;">+240 %</td>
+<td style="text-align: right;">+332 %</td>
+</tr>
+</tbody>
+</table>
+<p>No per-node drift appears without a scope. <code>opt-scalar</code> keeps about 4 ns, which matches its two rewrites. A first version
+stored the tracing state on the untraced visitor, which allocated 16 B more per call; that is why the state moved to a subclass.
+The relative cost with a tracer is high because the optimiser's own per-node work is small (tens of nanoseconds).</p>
+<p>Tests: <code>UtilsTest/Mathematics/Expressions/ExpressionOptimiserTracingTests.cs</code> (events, rules, outcomes, observational) and
+<code>UtilsTest.Security/Expressions/ExpressionOptimiserSecurityTests.cs</code> (traced structural, validation and stack refusals, hostile
+tracer). The R4 hostile-node tests, traced variants included, are in <code>UtilsTest.Security/Expressions/ExpressionOptimiserR4SecurityTests.cs</code>,
+with the fixtures shared from <code>UtilsTest.Shared/ExpressionTreeR4Fixtures.cs</code>.</p>
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/warny/All-purpose-Utilities/blob/master/docs/expressions/ExpressionOptimiser.md/#L1" class="edit-link">Edit this page</a>
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          All-purpose Utilities — Apache 2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>
