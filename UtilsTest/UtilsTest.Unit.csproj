@@ -13,6 +13,7 @@
 
 	<ItemGroup>
 		<Compile Include="..\UtilsTest.Shared\NativeRuntimeLibraryResolver.cs" Link="NativeRuntimeLibraryResolver.cs" />
+		<Compile Include="..\UtilsTest.Shared\ExpressionTreeR4Fixtures.cs" Link="Mathematics\Expressions\Coverage\ExpressionTreeR4Fixtures.cs" />
 	</ItemGroup>
 
 	<ItemGroup>

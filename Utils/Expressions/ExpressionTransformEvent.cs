@@ -6,7 +6,8 @@ namespace Utils.Expressions;
 public enum ExpressionTransformEventKind
 {
     /// <summary>
-    /// The engine starts transforming a node (one <c>TransformCore</c> call). <see cref="ExpressionTransformEvent.Input"/> is
+    /// The engine starts transforming a node (one <c>TransformCore</c> call, or one node visit of
+    /// <see cref="ExpressionOptimiser"/>). <see cref="ExpressionTransformEvent.Input"/> is
     /// the node; <see cref="ExpressionTransformEvent.Rule"/> is the rule of the parent treatment that requested this one, or
     /// <see langword="null"/> when the node is a child prepared by its parent's traversal.
     /// </summary>
@@ -21,7 +22,8 @@ public enum ExpressionTransformEventKind
     /// <summary>
     /// A rule returned a result for the prepared node <see cref="ExpressionTransformEvent.Input"/>: emitted only after the rule
     /// returned. <see cref="ExpressionTransformEvent.Output"/> is that result (<see langword="null"/> when a single-node rule
-    /// returned <see langword="null"/>, which the engine returns as is).
+    /// returned <see langword="null"/>, which the engine returns as is). For <see cref="ExpressionOptimiser"/>, whose rules read
+    /// the visited children directly, <see cref="ExpressionTransformEvent.Input"/> is the source node.
     /// </summary>
     RuleApplied,
 

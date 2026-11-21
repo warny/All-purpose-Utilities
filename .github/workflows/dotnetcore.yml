@@ -93,6 +93,8 @@ jobs:
                   cache: true
                   cache-dependency-path: ${{ env.DOTNET_CACHE_PATHS }}
             - run: dotnet test UtilsTest/UtilsTest.Unit.csproj --configuration Debug --filter "FullyQualifiedName~UtilsTest.Mathematics.Expressions.Coverage" --logger trx --results-directory artifacts/test-results
+            # The R4 security tests (hostile extension nodes and binders) use the same attribution and must stay strict too.
+            - run: dotnet test UtilsTest.Security/UtilsTest.Security.csproj --configuration Debug --filter "FullyQualifiedName~R4Security" --logger trx --results-directory artifacts/test-results
 
     functional-tests:
         needs: changes
