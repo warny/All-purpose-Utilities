@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Linq.Expressions;
+using System.Reflection;
 
 namespace Utils.Expressions;
 
@@ -41,6 +42,15 @@ namespace Utils.Expressions;
 /// <see cref="ExpressionResourceLimitException"/> instead of a stack overflow. A shared subtree is walked once per use, like
 /// every walk of the engine.
 /// </para>
+/// <para>
+/// <b>Tracing.</b> Inside a tracing scope (<see cref="ExpressionTransformTracing"/>) every node visited is a treatment of the
+/// trace, reported for <see cref="ExpressionOptimiser"/>: its enter event, the rule that rewrote it if any (a
+/// <see cref="ExpressionTransformEventKind.RuleApplied"/> event whose input is the source node), and its exit with the outcome
+/// (<see cref="ExpressionTransformOutcome.Unchanged"/>, <see cref="ExpressionTransformOutcome.Rebuilt"/>,
+/// <see cref="ExpressionTransformOutcome.RuleApplied"/>, or <see cref="ExpressionTransformOutcome.Boundary"/> for a quote), or
+/// its failure. The detailed level adds no event: the optimiser has no candidate rules nor lexical scopes to report. The
+/// optimization itself is unchanged, and outside a scope the only cost is one field read per call (no allocation).
+/// </para>
 /// </remarks>
 public sealed class ExpressionOptimiser
 {
@@ -71,7 +81,12 @@ public sealed class ExpressionOptimiser
     public Expression Optimize(Expression expression)
     {
         ArgumentNullException.ThrowIfNull(expression);
-        return ExpressionResourceBudget.Run(ResourceLimits, this, expression, null, expression, static root => new StandardOptimiserVisitor().Visit(root)!);
+        return ExpressionResourceBudget.Run(ResourceLimits, this, expression, null, expression, static root =>
+        {
+            // Tracing (ExpressionTransformTracing): one field read per call; the untraced visitor holds no tracing state.
+            StandardOptimiserVisitor visitor = ExpressionResourceBudget.ActiveTrace is { } trace ? new TracedOptimiserVisitor(trace) : new StandardOptimiserVisitor();
+            return visitor.Visit(root)!;
+        });
     }
 
     /// <summary>
@@ -79,7 +94,7 @@ public sealed class ExpressionOptimiser
     /// <see cref="ExpressionOpacity.IsOpaque"/> before its <see cref="Expression.Type"/> is read, and operator methods are only
     /// compared with <see langword="null"/>.
     /// </summary>
-    private sealed class StandardOptimiserVisitor : ExpressionVisitor
+    private class StandardOptimiserVisitor : ExpressionVisitor
     {
         /// <summary>The label search of the discarded conditional branches, created on first use and reused.</summary>
         private LabelDefinitionFinder? _labelFinder;
@@ -96,6 +111,17 @@ public sealed class ExpressionOptimiser
             if (ExpressionOpacity.IsOpaque(node)) return node;
             return base.Visit(node);
         }
+
+        /// <summary>Dispatches a counted, non-opaque node to the framework visitor (for <see cref="TracedOptimiserVisitor"/>).</summary>
+        /// <param name="node">The node.</param>
+        /// <returns>The visited node.</returns>
+        protected Expression Dispatch(Expression node) => base.Visit(node)!;
+
+        /// <summary>Called when <paramref name="rule"/> produced <paramref name="result"/>; only a traced visitor records it.</summary>
+        /// <param name="rule">The rule.</param>
+        /// <param name="result">The rewritten node.</param>
+        /// <returns><paramref name="result"/>.</returns>
+        protected virtual Expression Applied(OptimiserRule rule, Expression result) => result;
 
         /// <inheritdoc />
         /// <remarks>
@@ -119,21 +145,32 @@ public sealed class ExpressionOptimiser
             Expression? operand = Visit(node.Operand);
             if (operand is not null && !ExpressionOpacity.IsOpaque(operand) && node.Method is null)
             {
-                // Convert(x) to its own type without method is a no-op.
-                if (node.NodeType == ExpressionType.Convert && ReferenceEquals(operand.Type, node.Type)) return operand;
-
-                // -(-x): primitive unchecked negation flips the sign bit (or wraps) twice, null included.
-                if (node.NodeType == ExpressionType.Negate
-                    && operand is UnaryExpression { NodeType: ExpressionType.Negate, Method: null, Operand: var inner }
-                    && !ExpressionOpacity.IsOpaque(inner)
-                    && ReferenceEquals(inner.Type, node.Type))
-                {
-                    return inner;
-                }
+                if (node.NodeType == ExpressionType.Convert && RewriteConvert(node, operand) is { } converted) return Applied(OptimiserRule.IdentityConversion, converted);
+                if (node.NodeType == ExpressionType.Negate && RewriteNegate(node, operand) is { } negated) return Applied(OptimiserRule.DoubleNegation, negated);
             }
 
             return node.Update(operand);
         }
+
+        /// <summary>Rewrites <c>Convert(x)</c> to its own type without method, a no-op, to <c>x</c>.</summary>
+        /// <param name="node">The conversion, without method.</param>
+        /// <param name="operand">The visited, non-opaque operand.</param>
+        /// <returns>The operand, or <see langword="null"/> when the conversion changes the type.</returns>
+        private static Expression? RewriteConvert(UnaryExpression node, Expression operand)
+            => ReferenceEquals(operand.Type, node.Type) ? operand : null;
+
+        /// <summary>
+        /// Rewrites <c>-(-x)</c> to <c>x</c>: primitive unchecked negation flips the sign bit (or wraps) twice, null included.
+        /// </summary>
+        /// <param name="node">The outer negation, without method.</param>
+        /// <param name="operand">The visited, non-opaque operand.</param>
+        /// <returns>The inner operand, or <see langword="null"/> when the operand is not a negation of the same type.</returns>
+        private static Expression? RewriteNegate(UnaryExpression node, Expression operand)
+            => operand is UnaryExpression { NodeType: ExpressionType.Negate, Method: null, Operand: var inner }
+                && !ExpressionOpacity.IsOpaque(inner)
+                && ReferenceEquals(inner.Type, node.Type)
+                ? inner
+                : null;
 
         /// <inheritdoc />
         protected override Expression VisitBinary(BinaryExpression node)
@@ -150,15 +187,15 @@ public sealed class ExpressionOptimiser
                 && !ExpressionOpacity.IsOpaque(right)
                 && TryGetArithmeticKind(node.Type, out ArithmeticKind kind))
             {
-                Expression? rewritten = node.NodeType switch
+                (Expression? rewritten, OptimiserRule rule) = node.NodeType switch
                 {
-                    ExpressionType.Add => RewriteAdd(node, left, right, kind),
-                    ExpressionType.Subtract => KeepIfNeutral(node, left, right, NeutralRole.SubtractedZero, kind),
-                    ExpressionType.Multiply => RewriteMultiply(node, left, right, kind),
-                    ExpressionType.Divide => KeepIfNeutral(node, left, right, NeutralRole.One, kind),
-                    _ => null,
+                    ExpressionType.Add => (RewriteAdd(node, left, right, kind), OptimiserRule.AddZero),
+                    ExpressionType.Subtract => (RewriteSubtract(node, left, right, kind), OptimiserRule.SubtractZero),
+                    ExpressionType.Multiply => (RewriteMultiply(node, left, right, kind), OptimiserRule.Multiply),
+                    ExpressionType.Divide => (RewriteDivide(node, left, right, kind), OptimiserRule.DivideOne),
+                    _ => ((Expression?)null, OptimiserRule.None),
                 };
-                if (rewritten is not null) return rewritten;
+                if (rewritten is not null) return Applied(rule, rewritten);
             }
 
             return node.Update(left, node.Conversion, right);
@@ -182,10 +219,10 @@ public sealed class ExpressionOptimiser
             if (boolean && TryGetBoolean(left, type, out bool leftValue))
             {
                 // false && r -> false, true || r -> true: the constant already has the node's type.
-                if (leftValue != isAnd) return left;
+                if (leftValue != isAnd) return Applied(OptimiserRule.ShortCircuit, left);
 
                 Expression kept = Visit(node.Right)!;
-                if (!ExpressionOpacity.IsOpaque(kept) && ReferenceEquals(kept.Type, type)) return kept;
+                if (!ExpressionOpacity.IsOpaque(kept) && ReferenceEquals(kept.Type, type)) return Applied(OptimiserRule.ShortCircuit, kept);
                 return node.Update(left, node.Conversion, kept);
             }
 
@@ -196,7 +233,7 @@ public sealed class ExpressionOptimiser
                 && !ExpressionOpacity.IsOpaque(left)
                 && ReferenceEquals(left.Type, type))
             {
-                return left;
+                return Applied(OptimiserRule.ShortCircuit, left);
             }
 
             return node.Update(left, node.Conversion, right);
@@ -222,7 +259,7 @@ public sealed class ExpressionOptimiser
                     && ReferenceEquals(chosen.Type, node.Type)
                     && !(_labelFinder ??= new LabelDefinitionFinder()).MayDefineLabel(discarded))
                 {
-                    return Visit(chosen)!;
+                    return Applied(OptimiserRule.ConstantCondition, Visit(chosen)!);
                 }
             }
 
@@ -245,10 +282,12 @@ public sealed class ExpressionOptimiser
 
             // The list is created only once a statement is removed or rewritten; an unchanged block allocates nothing.
             List<Expression>? kept = null;
+            bool anyRemoved = false;
             for (int i = 0; i <= last; i++)
             {
                 Expression visited = Visit(expressions[i])!;
                 bool removed = i < last && visited is DefaultExpression && visited.Type == typeof(void);
+                anyRemoved |= removed;
                 if (kept is null && !removed && ReferenceEquals(visited, expressions[i])) continue;
                 if (kept is null)
                 {
@@ -259,19 +298,29 @@ public sealed class ExpressionOptimiser
                 if (!removed) kept.Add(visited);
             }
 
-            IReadOnlyList<Expression> result = (IReadOnlyList<Expression>?)kept ?? expressions;
-            if (node.Variables.Count == 0
-                && result.Count == 1
-                && result[0] is var single
+            if (UnwrapBlock(node, (IReadOnlyList<Expression>?)kept ?? expressions) is { } single) return Applied(OptimiserRule.UnwrapBlock, single);
+            if (kept is null) return node;
+
+            BlockExpression rebuilt = node.Update(node.Variables, kept);
+            return anyRemoved ? Applied(OptimiserRule.EmptyStatement, rebuilt) : rebuilt;
+        }
+
+        /// <summary>
+        /// Unwraps a block without variables holding one expression of its own type, unless it is a label, whose scope would move
+        /// to the enclosing block.
+        /// </summary>
+        /// <param name="node">The block.</param>
+        /// <param name="expressions">Its visited statements, the removed ones left out.</param>
+        /// <returns>The single expression, or <see langword="null"/> when the block must stay.</returns>
+        private static Expression? UnwrapBlock(BlockExpression node, IReadOnlyList<Expression> expressions)
+            => node.Variables.Count == 0
+                && expressions.Count == 1
+                && expressions[0] is var single
                 && !ExpressionOpacity.IsOpaque(single)
                 && single is not LabelExpression
-                && ReferenceEquals(single.Type, node.Type))
-            {
-                return single;
-            }
-
-            return kept is null ? node : node.Update(node.Variables, kept);
-        }
+                && ReferenceEquals(single.Type, node.Type)
+                ? single
+                : null;
 
         /// <inheritdoc />
         protected override CatchBlock VisitCatchBlock(CatchBlock node)
@@ -406,6 +455,24 @@ public sealed class ExpressionOptimiser
         private static Expression? RewriteAdd(BinaryExpression node, Expression left, Expression right, ArithmeticKind kind)
             => KeepIfNeutral(node, left, right, NeutralRole.AddedZero, kind) ?? KeepIfNeutral(node, right, left, NeutralRole.AddedZero, kind);
 
+        /// <summary>Rewrites <c>x - 0</c>, the zero being positive for floating point.</summary>
+        /// <param name="node">The subtraction.</param>
+        /// <param name="left">The visited left operand.</param>
+        /// <param name="right">The visited right operand.</param>
+        /// <param name="kind">The arithmetic kind of the node's type.</param>
+        /// <returns>The left operand, or <see langword="null"/> when no identity applies.</returns>
+        private static Expression? RewriteSubtract(BinaryExpression node, Expression left, Expression right, ArithmeticKind kind)
+            => KeepIfNeutral(node, left, right, NeutralRole.SubtractedZero, kind);
+
+        /// <summary>Rewrites <c>x / 1</c>.</summary>
+        /// <param name="node">The division.</param>
+        /// <param name="left">The visited left operand.</param>
+        /// <param name="right">The visited right operand.</param>
+        /// <param name="kind">The arithmetic kind of the node's type.</param>
+        /// <returns>The left operand, or <see langword="null"/> when no identity applies.</returns>
+        private static Expression? RewriteDivide(BinaryExpression node, Expression left, Expression right, ArithmeticKind kind)
+            => KeepIfNeutral(node, left, right, NeutralRole.One, kind);
+
         /// <summary>
         /// Rewrites <c>x * 1</c> and <c>1 * x</c>, then, for non-lifted integral arithmetic only, <c>x * 0</c> and <c>0 * x</c>
         /// when the dropped operand is discardable (no write, exception, allocation or unknown code): an integral product with
@@ -530,6 +597,147 @@ public sealed class ExpressionOptimiser
 
             value = false;
             return false;
+        }
+    }
+
+    /// <summary>
+    /// <see cref="StandardOptimiserVisitor"/> inside a traced operation: the same visit, each node inside a treatment of the trace
+    /// (enter, rule applied, exit or failure).
+    /// </summary>
+    /// <param name="trace">The tracing state of the operation.</param>
+    private sealed class TracedOptimiserVisitor(ExpressionTraceSession trace) : StandardOptimiserVisitor
+    {
+        /// <summary>The tracing state of the operation.</summary>
+        private readonly ExpressionTraceSession _trace = trace;
+
+        /// <summary>
+        /// The rule that rewrote the node being returned: a rewrite sets it after every child visit of its node, and the visit of
+        /// that node reads and clears it.
+        /// </summary>
+        private OptimiserRule _appliedRule;
+
+        /// <inheritdoc />
+        /// <remarks>
+        /// A failure is recorded by an exception filter that always declines: the exception propagates untouched, without any
+        /// handler running on the (possibly exhausted) stack of the throw site. An opaque node is never read: its events carry no
+        /// node type, and it is returned unchanged.
+        /// </remarks>
+        public override Expression? Visit(Expression? node)
+        {
+            if (node is null) return null;
+            ExpressionResourceBudget.ConsumeStructuralVisit();
+            int frame = _trace.EnterTreatment(typeof(ExpressionOptimiser), node);
+            try
+            {
+                bool opaque = ExpressionOpacity.IsOpaque(node);
+                Expression result = opaque ? node : Dispatch(node);
+                OptimiserRule rule = _appliedRule;
+                _appliedRule = OptimiserRule.None;
+                if (rule != OptimiserRule.None)
+                {
+                    ExpressionTransformRuleInfo info = OptimiserRuleInfos.Get(rule);
+                    _trace.BeginRule(info);
+                    _trace.RuleApplied(info, node, result);
+                }
+
+                // Without a rule, a result other than the node is the node rebuilt around its optimised children.
+                _trace.ExitTreatment(frame, node, rule == OptimiserRule.None ? result : node, result, !opaque && node.NodeType == ExpressionType.Quote);
+                return result;
+            }
+            catch (Exception exception) when (_trace.TreatmentFailed(frame, exception))
+            {
+                // Never reached: the filter only records the failure.
+                throw;
+            }
+        }
+
+        /// <inheritdoc />
+        protected override Expression Applied(OptimiserRule rule, Expression result)
+        {
+            _appliedRule = rule;
+            return result;
+        }
+    }
+
+    /// <summary>The rules of the optimiser, as reported by tracing.</summary>
+    private enum OptimiserRule
+    {
+        /// <summary>No rule rewrote the node.</summary>
+        None,
+
+        /// <summary><c>x + 0</c>, <c>0 + x</c>.</summary>
+        AddZero,
+
+        /// <summary><c>x - 0</c>.</summary>
+        SubtractZero,
+
+        /// <summary><c>x * 1</c>, <c>1 * x</c>, <c>x * 0</c>, <c>0 * x</c>.</summary>
+        Multiply,
+
+        /// <summary><c>x / 1</c>.</summary>
+        DivideOne,
+
+        /// <summary>An identity conversion without method.</summary>
+        IdentityConversion,
+
+        /// <summary><c>-(-x)</c>.</summary>
+        DoubleNegation,
+
+        /// <summary>A constant short circuit.</summary>
+        ShortCircuit,
+
+        /// <summary>A constant condition.</summary>
+        ConstantCondition,
+
+        /// <summary>The removal of <c>Default(void)</c> statements of a block.</summary>
+        EmptyStatement,
+
+        /// <summary>The unwrapping of a block holding a single expression.</summary>
+        UnwrapBlock,
+    }
+
+    /// <summary>
+    /// The trace identities of the <see cref="OptimiserRule"/> values: each identifies the method implementing the rule. Built
+    /// on the first traced rewrite only, so an untraced optimization never reads reflection metadata.
+    /// </summary>
+    private static class OptimiserRuleInfos
+    {
+        /// <summary>The identities, indexed by <see cref="OptimiserRule"/>.</summary>
+        private static readonly ExpressionTransformRuleInfo[] Infos = Build();
+
+        /// <summary>Gets the identity of <paramref name="rule"/>.</summary>
+        /// <param name="rule">A rule other than <see cref="OptimiserRule.None"/>.</param>
+        /// <returns>Its identity.</returns>
+        public static ExpressionTransformRuleInfo Get(OptimiserRule rule) => Infos[(int)rule];
+
+        /// <summary>Builds the identities, in the order of <see cref="OptimiserRule"/>.</summary>
+        /// <returns>The identities; the slot of <see cref="OptimiserRule.None"/> is unused.</returns>
+        private static ExpressionTransformRuleInfo[] Build()
+        {
+            const ExpressionType AnyNodeType = (ExpressionType)(-1);
+            (OptimiserRule Rule, string Method, ExpressionType NodeType)[] rules =
+            [
+                (OptimiserRule.AddZero, "RewriteAdd", ExpressionType.Add),
+                (OptimiserRule.SubtractZero, "RewriteSubtract", ExpressionType.Subtract),
+                (OptimiserRule.Multiply, "RewriteMultiply", ExpressionType.Multiply),
+                (OptimiserRule.DivideOne, "RewriteDivide", ExpressionType.Divide),
+                (OptimiserRule.IdentityConversion, "RewriteConvert", ExpressionType.Convert),
+                (OptimiserRule.DoubleNegation, "RewriteNegate", ExpressionType.Negate),
+                (OptimiserRule.ShortCircuit, "VisitShortCircuit", AnyNodeType),
+                (OptimiserRule.ConstantCondition, "VisitConditional", ExpressionType.Conditional),
+                (OptimiserRule.EmptyStatement, "VisitBlock", ExpressionType.Block),
+                (OptimiserRule.UnwrapBlock, "UnwrapBlock", ExpressionType.Block),
+            ];
+
+            const BindingFlags Flags = BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
+            var infos = new ExpressionTransformRuleInfo[rules.Length + 1];
+            for (int i = 0; i < rules.Length; i++)
+            {
+                MethodInfo method = typeof(StandardOptimiserVisitor).GetMethod(rules[i].Method, Flags)!;
+                infos[(int)rules[i].Rule] = new ExpressionTransformRuleInfo(method, typeof(ExpressionOptimiser), rules[i].NodeType, i, isOverloaded: false);
+            }
+
+            return infos;
         }
     }
 

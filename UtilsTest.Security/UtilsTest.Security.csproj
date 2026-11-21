@@ -13,6 +13,10 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<Compile Include="..\UtilsTest.Shared\ExpressionTreeR4Fixtures.cs" Link="Expressions\ExpressionTreeR4Fixtures.cs" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<PackageReference Include="coverlet.collector" Version="10.0.1">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

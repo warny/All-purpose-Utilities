@@ -216,3 +216,40 @@ where master called `Convert.ToDouble` up to four times per arithmetic node. All
 for the reused label finder (24 B per call with a constant conditional); unchanged blocks no longer allocate. The overhead is
 the price of the controlled refusals and of R4, of the same order as the other engine walks; no optimisation of the rules was
 attempted beyond removing two allocations.
+
+## 9. Tracing
+
+`Optimize` bypasses `TransformCore`, so it opens its own treatments of the active trace (`Utils/AGENTS.md` rule 13). Inside a
+tracing scope, `Optimize` builds a `TracedOptimiserVisitor`. Each node visited (after its structural visit is counted) is one
+treatment reported for `ExpressionOptimiser`. It produces `TransformEnter`, then `RuleApplied` when a rule rewrote the node,
+then `TransformExit`. A failure is reported as `TransformFailed` from an exception filter that only records; the resource
+refusal is reported once, as `ResourceLimitReached`. The rule is identified by the method implementing it (`RewriteAdd`,
+`RewriteSubtract`, `RewriteMultiply`, `RewriteDivide`, `RewriteConvert`, `RewriteNegate`, `VisitShortCircuit`,
+`VisitConditional`, `VisitBlock` for removed empty statements, `UnwrapBlock`). The `RuleApplied` input is the source node: the
+rules read the visited children directly, without a prepared copy.
+
+Exit outcomes are `Unchanged`, `Rebuilt` (a node rebuilt around rewritten children), `RuleApplied`, or `Boundary` for a quote. An
+extension node is a treatment without node type and is never read. The detailed level adds no event, because the optimiser has
+no candidate rules and no lexical scopes. The input validation refuses before any visit, so its refusal is a single
+`ResourceLimitReached` event without treatment. An optimisation nested in a traced operation joins that operation's trace.
+
+The untraced visitor holds no tracing state: a call pays one field read when it starts, and each rewrite pays one virtual call.
+Campaign `tests/ExpressionTracingBench` (`opt-*` scenarios, baseline `cf920869`, A/A control, 3 to 7 rounds):
+
+| Scenario | Baseline | A/A | Candidate, no scope | Allocation | Minimal tracer | Collector |
+|---|---:|---:|---:|---|---:|---:|
+| `opt-ext-root` | 45 ns | +0.4 % | +0.6 % | 24 B → 24 B | +461 % | +609 % |
+| `opt-scalar` | 105 ns | +0.6 % | +3.7 % | 24 B → 24 B | +745 % | +1,048 % |
+| `opt-lambda` | 306 ns | −5.5 % | −2.7 % | 392 B → 392 B | +373 % | +572 % |
+| `opt-leftsum20` | 615 ns | −5.7 % | −5.7 % | 24 B → 24 B | +815 % | +1,048 % |
+| `opt-block16` | 2,562 ns | +0.4 % | −3.6 % | 1,744 B → 1,744 B | +419 % | +559 % |
+| `opt-li1024` | 162,491 ns | +3.1 % | +0.9 % | 106,680 B → 106,680 B | +240 % | +332 % |
+
+No per-node drift appears without a scope. `opt-scalar` keeps about 4 ns, which matches its two rewrites. A first version
+stored the tracing state on the untraced visitor, which allocated 16 B more per call; that is why the state moved to a subclass.
+The relative cost with a tracer is high because the optimiser's own per-node work is small (tens of nanoseconds).
+
+Tests: `UtilsTest/Mathematics/Expressions/ExpressionOptimiserTracingTests.cs` (events, rules, outcomes, observational) and
+`UtilsTest.Security/Expressions/ExpressionOptimiserSecurityTests.cs` (traced structural, validation and stack refusals, hostile
+tracer). The R4 hostile-node tests, traced variants included, are in `UtilsTest.Security/Expressions/ExpressionOptimiserR4SecurityTests.cs`,
+with the fixtures shared from `UtilsTest.Shared/ExpressionTreeR4Fixtures.cs`.

@@ -40,6 +40,12 @@ public static class Program
         ["li1024"] = () => Simplify(Expression.ListInit(Expression.New(typeof(List<double>)), Enumerable.Range(0, 1024).Select(i => One(Xs[i % 64])))),
         ["calls8"] = () => Simplify(new[] { "Atan", "Tan", "Cos", "Sin", "Ceiling", "Floor", "Abs", "Sqrt" }.Aggregate((Expression)Xs[0], static (e, name) => Expression.Call(typeof(double).GetMethod(name, [typeof(double)])!, e))),
         ["callsum16"] = () => Simplify(Enumerable.Range(0, 16).Select(i => (Expression)Expression.Call(typeof(double).GetMethod(nameof(double.Sin), [typeof(double)])!, Xs[i])).Aggregate(Expression.Add)),
+        ["opt-ext-root"] = () => Optimize(new BenchExtension()),
+        ["opt-scalar"] = () => Optimize(Expression.Add(Expression.Multiply(Xs[0], Expression.Constant(1.0)), Expression.Constant(-0.0))),
+        ["opt-lambda"] = () => Optimize(Expression.Lambda<Func<double, double, double>>(Expression.Add(Expression.Multiply(Xs[0], Expression.Constant(1.0)), Xs[1]), Xs[0], Xs[1])),
+        ["opt-leftsum20"] = () => Optimize(Xs.Take(20).Aggregate<Expression>(Expression.Add)),
+        ["opt-block16"] = () => Optimize(BlockOf(16)),
+        ["opt-li1024"] = () => Optimize(Expression.ListInit(Expression.New(typeof(List<double>)), Enumerable.Range(0, 1024).Select(i => One(Xs[i % 64])))),
         ["cmp-pos"] = () => Compare(Chain(8), Chain(8)),
         ["hash"] = () => Hash(Chain(8)),
     };
@@ -146,6 +152,15 @@ public static class Program
     {
         var simplifier = new ExpressionSimplifier();
         return new Scenario(() => simplifier.Simplify(tree));
+    }
+
+    /// <summary>An optimisation scenario (<see cref="ExpressionOptimiser"/>).</summary>
+    /// <param name="tree">The tree to optimise.</param>
+    /// <returns>The scenario.</returns>
+    private static Scenario Optimize(Expression tree)
+    {
+        var optimiser = new ExpressionOptimiser();
+        return new Scenario(() => optimiser.Optimize(tree));
     }
 
     /// <summary>A structural comparison scenario.</summary>

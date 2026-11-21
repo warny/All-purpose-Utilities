@@ -326,6 +326,162 @@ public class ExpressionOptimiserSecurityTests
         Assert.AreSame(chain, result);
     }
 
+    /// <summary>Checks the invariants of the events of a traced refusal: numbering, one resource event, one failure per open treatment.</summary>
+    /// <param name="events">The delivered events.</param>
+    /// <param name="kind">The refused resource.</param>
+    private static void AssertTracedRefusal(ExpressionTransformEvent[] events, ExpressionResourceLimitKind kind)
+    {
+        CollectionAssert.AreEqual(Enumerable.Range(1, events.Length).Select(i => (long)i).ToArray(), events.Select(e => e.Sequence).ToArray());
+        Assert.AreEqual(kind, events.Single(e => e.Kind == ExpressionTransformEventKind.ResourceLimitReached).ResourceLimit);
+        int enters = events.Count(e => e.Kind == ExpressionTransformEventKind.TransformEnter);
+        int exits = events.Count(e => e.Kind == ExpressionTransformEventKind.TransformExit);
+        Assert.IsGreaterThan(0, enters);
+        Assert.AreEqual(enters - exits, events.Count(e => e.Kind == ExpressionTransformEventKind.TransformFailed));
+        Assert.AreEqual(ExpressionTransformEventKind.TransformFailed, events[^1].Kind);
+        Assert.AreEqual(0, events[^1].Depth, "the root treatment fails last");
+        Assert.IsTrue(events.All(e => e.TransformerType is null || e.TransformerType == typeof(ExpressionOptimiser)));
+    }
+
+    /// <summary>
+    /// A traced structural refusal is reported once, for the innermost treatment it crossed, followed by the failure of every open
+    /// treatment up to the root; the refusal itself is the untraced one and the session is restored.
+    /// </summary>
+    [TestMethod]
+    public void TracedStructuralRefusal_ReportsTheRefusalAndEveryOpenTreatment()
+    {
+        Expression chain = CallChain(200);
+        var limits = ExpressionResourceLimits.Default with { MaxStructuralVisits = 50 };
+        var collector = new ExpressionTraceCollector();
+        ExpressionResourceLimitException refusal;
+        using (ExpressionTraceScope scope = ExpressionTransformTracing.Begin(collector))
+        {
+            refusal = Assert.ThrowsExactly<ExpressionResourceLimitException>(() => new ExpressionOptimiser(limits).Optimize(chain));
+            Assert.IsNull(scope.TracerException);
+            Assert.AreEqual(0, scope.UndeliveredEvents);
+        }
+
+        Assert.AreEqual(ExpressionResourceLimitKind.StructuralWork, refusal.Kind);
+        Assert.AreEqual(50, refusal.Limit);
+        Assert.AreEqual(0, ExpressionResourceBudget.OperationDepth);
+        ExpressionTransformEvent[] events = collector.GetEvents();
+        AssertTracedRefusal(events, ExpressionResourceLimitKind.StructuralWork);
+        Assert.AreEqual(50, events.Count(e => e.Kind == ExpressionTransformEventKind.TransformEnter), "one treatment per counted visit");
+        Assert.AreSame(refusal, events.Single(e => e.Kind == ExpressionTransformEventKind.ResourceLimitReached).Exception);
+    }
+
+    /// <summary>A traced input refused by the validator reports the refusal alone, without any treatment: no node was visited.</summary>
+    [TestMethod]
+    public void TracedValidationRefusal_ReportsNoTreatment()
+    {
+        Expression deep = CallChain(200);
+        var collector = new ExpressionTraceCollector();
+        using (ExpressionTransformTracing.Begin(collector))
+        {
+            Assert.AreEqual(ExpressionResourceLimitKind.Depth, Assert.ThrowsExactly<ExpressionResourceLimitException>(
+                () => new ExpressionOptimiser(Shape(maxDepth: 100)).Optimize(deep)).Kind);
+        }
+
+        ExpressionTransformEvent[] events = collector.GetEvents();
+        Assert.AreEqual(1, events.Length);
+        Assert.AreEqual(ExpressionTransformEventKind.ResourceLimitReached, events[0].Kind);
+        Assert.AreEqual(ExpressionResourceLimitKind.Depth, events[0].ResourceLimit);
+        Assert.AreEqual(0L, events[0].OperationId);
+    }
+
+    /// <summary>
+    /// A hostile depth traced on a 256 KiB thread ends with the same controlled Stack refusal as without tracing; every failure
+    /// is delivered after the stack unwound, never on the exhausted stack, and the thread keeps working.
+    /// </summary>
+    [TestMethod]
+    public void TracedStackRefusal_OnSmallStack_StaysControlled()
+    {
+        Expression negate = NegateChain(HostileDepth);
+        RunOnThread(() =>
+        {
+            var collector = new ExpressionTraceCollector(capacity: 1_000_000);
+            var tracer = new StackRecordingTracer(collector);
+            using (ExpressionTraceScope scope = ExpressionTransformTracing.Begin(tracer))
+            {
+                ExpressionResourceLimitException refusal = Assert.ThrowsExactly<ExpressionResourceLimitException>(() => new ExpressionOptimiser(ExpressionResourceLimits.Unlimited).Optimize(negate));
+                Assert.AreEqual(ExpressionResourceLimitKind.Stack, refusal.Kind);
+                Assert.IsNull(scope.TracerException);
+                Assert.AreEqual(0, scope.UndeliveredEvents);
+            }
+
+            Assert.AreEqual(0, ExpressionResourceBudget.OperationDepth);
+            ExpressionTransformEvent[] events = collector.GetEvents();
+            AssertTracedRefusal(events, ExpressionResourceLimitKind.Stack);
+            Assert.IsGreaterThan(1, tracer.FailureStackStates.Count);
+            Assert.IsTrue(tracer.FailureStackStates.All(static sufficient => sufficient));
+            Assert.AreSame(P, new ExpressionOptimiser().Optimize(Expression.Multiply(P, Expression.Constant(1.0))));
+        }, SmallStack, Timeout);
+    }
+
+    /// <summary>
+    /// A tracer that throws, or that tries to run the optimiser inside the operation it observes, never reaches the operation:
+    /// tracing stops, the fault is reported on the scope, and the result is the untraced one.
+    /// </summary>
+    [TestMethod]
+    public void HostileTracer_NeverReachesTheOperation()
+    {
+        Expression tree = Expression.Add(Expression.Multiply(P, Expression.Constant(1.0)), Expression.Constant(-0.0));
+        Expression untraced = new ExpressionOptimiser().Optimize(tree);
+        Assert.AreSame(P, untraced);
+
+        foreach (Action reentry in new Action[]
+        {
+            static () => throw new InvalidOperationException("tracer failure"),
+            () => new ExpressionOptimiser().Optimize(tree),
+        })
+        {
+            var tracer = new DelegateTracer(reentry);
+            Expression result;
+            using (ExpressionTraceScope scope = ExpressionTransformTracing.Begin(tracer))
+            {
+                result = new ExpressionOptimiser().Optimize(tree);
+                Assert.IsNotNull(scope.TracerException);
+            }
+
+            Assert.AreSame(untraced, result);
+            Assert.AreEqual(1, tracer.Calls, "tracing stops after the first fault");
+            Assert.AreEqual(0, ExpressionResourceBudget.OperationDepth);
+        }
+    }
+
+    /// <summary>A tracer recording, for every failure event, whether it runs with a sufficient stack, then forwarding to a collector.</summary>
+    /// <param name="collector">The collector.</param>
+    private sealed class StackRecordingTracer(ExpressionTraceCollector collector) : IExpressionTransformTracer
+    {
+        /// <summary>Gets, per failure event, whether the stack was sufficient when it was delivered.</summary>
+        public List<bool> FailureStackStates { get; } = [];
+
+        /// <inheritdoc/>
+        public void OnEvent(in ExpressionTransformEvent traceEvent)
+        {
+            if (traceEvent.Kind is ExpressionTransformEventKind.TransformFailed or ExpressionTransformEventKind.ResourceLimitReached)
+            {
+                FailureStackStates.Add(RuntimeHelpers.TryEnsureSufficientExecutionStack());
+            }
+
+            collector.OnEvent(in traceEvent);
+        }
+    }
+
+    /// <summary>A tracer running an action on every event.</summary>
+    /// <param name="action">The action.</param>
+    private sealed class DelegateTracer(Action action) : IExpressionTransformTracer
+    {
+        /// <summary>Gets the number of events received.</summary>
+        public int Calls { get; private set; }
+
+        /// <inheritdoc/>
+        public void OnEvent(in ExpressionTransformEvent traceEvent)
+        {
+            Calls++;
+            action();
+        }
+    }
+
     /// <summary>A null argument and a null resource limit are refused with <see cref="ArgumentNullException"/>.</summary>
     [TestMethod]
     public void NullArguments_AreRefused()
