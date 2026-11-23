@@ -508,6 +508,10 @@ object).</li>
 <p><code>CanFlattenThrough</code> is <code>internal virtual</code>: only a transformer of the <code>Utils</code> assembly can widen it (the simplifier may reuse
 its <code>IsOrdinaryBinaryArithmetic</code>/<code>IsOrdinaryUnaryNegate</code> classification in PR B). It grants the structural crossing only,
 never a permission to reassociate. There is no public extension point at this stage.</p>
+<p>Double negations (S5A-10) are not a chain matter: the simplifier's flatten rule declares <code>Add</code> and <code>Subtract</code> only, so a
+negation is an operand of its chains, and the terms it collects already carry their sign (<code>CollectAdditiveTerms</code> flips it at
+each ordinary negation). A lone <code>-(-t)</code> is removed by the finalization of the <code>Negate</code> node and by the builder every
+simplifier rule uses for the negations it creates (<code>SimplifierFlatten.md</code> §17); the engine's extraction is unchanged.</p>
 <h2 id="11-provenance">11. Provenance</h2>
 <p>The engine keeps, for each extracted chain, the root, every crossed node (with its node type, operator method, result type
 and lifting, which are the node's own) and their pre-order positions, hence the original grouping. This structure

@@ -560,8 +560,8 @@ below that follow from the contracts are not anomalies.</p>
 <tr>
 <td>Double negation</td>
 <td><code>-(-x)</code> removed for primitive unchecked negation</td>
-<td>not simplified (S5A-10, open)</td>
-<td>n/a: missing rule, not a missing guard</td>
+<td>not simplified on <code>76bf0b55</code> (S5A-10); since S5A-10 removed for every ordinary negation (<code>IsOrdinaryUnaryNegate</code>, <code>decimal</code> included), in the source and in rule results (<code>SimplifierFlatten.md</code> §17)</td>
+<td>equivalent guards (custom, lifted, checked kept); the simplifier also admits the runtime <code>decimal</code> operator, exact too</td>
 </tr>
 <tr>
 <td>Conversions</td>

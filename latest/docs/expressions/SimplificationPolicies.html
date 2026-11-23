@@ -1524,6 +1524,16 @@ The study is worth redoing after P19d, when the comparer probes no longer domina
 stays for that purpose. <strong>After P19d (2026-11-10):</strong> <code>nanpow</code> takes 602 / 2,218 / 8,522 visits and 2.6 / 15.7 / 66 ms at
 n = 16 / 32 / 64 (907 ms at 64 before), identically under the default and the permissive policy, so the walk's 8,256 nodes at
 n = 64 are now of the same order as the whole simplification. Redoing the study is a separate decision; P19d does not ship the memo.</p>
+<h2 id="10-a-rewrite-that-needs-no-permission-double-negations-s5a-10">10. A rewrite that needs no permission: double negations (S5A-10)</h2>
+<p><code>-(-t) -&gt; t</code> (ordinary, non-lifted, unchecked negations only, <code>IsOrdinaryUnaryNegate</code> on both nodes) is performed by the
+finalization of the <code>Negate</code> node and by the builder of every negation a rule creates, under <strong>every</strong> policy and outside the
+effect gate, like the additive canonicalization that already absorbed the signs of its terms (<code>a + -(-f())</code> gave <code>a + f()</code>).
+It consults no permission because it uses none: the two operators evaluate nothing but <code>t</code>, so <code>t</code> is still evaluated once, at
+the same place, with the same value and exceptions; nothing is dropped, repeated, merged or moved, whatever <code>t</code> is (pure, reading
+or writing state, throwing, allocating, unknown, declared deterministic). <code>CanDiscard</code>, <code>CanRepeat</code>, <code>CanMerge</code> and <code>CanMove</code> are
+therefore not asked, the trust policy and the exception categories cannot change the result, and no policy cache changed. Checked,
+lifted and user negations, and a conversion between the two negations, keep every node under every policy. Tests:
+<code>ExpressionSimplifierDoubleNegationTests</code> (six policies, six operand families, call logs), proof in <code>SimplifierFlatten.md</code> §17.6.</p>
 
 </article>
 

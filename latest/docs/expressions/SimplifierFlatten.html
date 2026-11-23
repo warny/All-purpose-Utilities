@@ -5263,6 +5263,593 @@ needs quotient atoms in the proof obligations of the factorable family (C3c), a 
 <li>A root refused by one lookup of the family's own table lowers the shared known-refusal depth to <code>0</code> for that root (a
 performance-only choice: its sub-chains are walked again by the old families).</li>
 </ul>
+<h2 id="17-double-negations-s5a-10">17. Double negations (S5A-10)</h2>
+<p>Branch <code>fix/expression-s5a10-double-negation</code>, base <code>master</code> <code>2e6c6550</code> (PR #718), measured in a detached worktree of the base.
+The S5 campaigns ran with 4,000 seeds and 4,000 nested compositions, both sides built by the same harness.</p>
+<h3 id="171-reproduction-on-the-base">17.1 Reproduction on the base</h3>
+<p><code>-(-x)</code>, <code>-(-(-x))</code>, <code>-(-(x + y))</code> and <code>-(-(x - y))</code> (<code>-(-((0 - y) + x))</code>) were kept by any number of calls, while inside a sum the
+signs were already absorbed (<code>x + -(-y)</code> gave <code>x + y</code>, <code>x - -(-y)</code> gave <code>(0 - y) + x</code>, <code>x + (0 - (0 - y))</code> gave <code>x + y</code>): the
+additive canonicalization collects the terms through <code>CollectAdditiveTerms</code>, which flips the sign of a term at every ordinary
+negation it crosses. The rules that negate a prepared operand also left double negations in their results: <code>(-x) * (-y)</code> gave
+<code>-(-(x * y))</code>, <code>(-x) / (-y)</code> gave <code>-(-(x / y))</code>, <code>(0 - x) * -1</code> gave <code>-(-x)</code>, <code>(-y) * ((y * -1) + ((1 - y) * -1))</code> gave <code>-(-y)</code>.</p>
+<h3 id="172-the-negation-rules">17.2 The negation rules</h3>
+<table>
+<thead>
+<tr>
+<th>Rule (signature)</th>
+<th>Admission</th>
+<th>Builds</th>
+<th>Result transformed?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SubstractionWithZero(Subtract; 0, t)</code></td>
+<td>ordinary, no constant pair, type with a negation</td>
+<td><code>-t</code></td>
+<td>yes (<code>TransformCore</code>)</td>
+</tr>
+<tr>
+<td><code>MultiplicationWithZeroOrOne(Multiply; t, ±1)</code> and mirror</td>
+<td>ordinary, no constant pair</td>
+<td><code>-t</code> for <code>-1</code></td>
+<td><strong>no</strong></td>
+</tr>
+<tr>
+<td><code>DivideWithZeroOrOne(Divide; t, c)</code></td>
+<td>ordinary, <code>c ≠ 0</code>, not signed integral for <code>-1</code></td>
+<td><code>-t</code> for <code>-1</code></td>
+<td><strong>no</strong></td>
+</tr>
+<tr>
+<td><code>AdditionWithNegate(Add; a, -b)</code> and mirror</td>
+<td>ordinary outer, <code>IsOrdinaryUnaryNegate</code></td>
+<td><code>a - b</code>, or <code>0</code></td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>SubstractionWithNegate(Subtract; a, -b)</code></td>
+<td>idem</td>
+<td><code>a + b</code></td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>SubstractionWithNegate(Subtract; -a, b)</code></td>
+<td>idem</td>
+<td><code>-(a + b)</code></td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>NegateWithSubstraction(Negate; a - b)</code></td>
+<td>idem</td>
+<td><code>-a + b</code></td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>MultiplicationWithNegate(Multiply; a, -b)</code> and mirror</td>
+<td>idem</td>
+<td><code>-(a * b)</code></td>
+<td>inner only, <strong>not the negation</strong></td>
+</tr>
+<tr>
+<td><code>DivisionWithNegate(Divide; a, -b)</code> and mirror</td>
+<td>idem, not signed integral</td>
+<td><code>-(a / b)</code></td>
+<td>inner only, <strong>not the negation</strong></td>
+</tr>
+<tr>
+<td>additive canonicalization (<code>FinalizeExpression</code> of <code>Add</code>/<code>Subtract</code>)</td>
+<td><code>CanCanonicalizeCommutativeBinary</code>, <code>CanonicalizesOperator</code>; not gated, pins non-inert terms</td>
+<td>signed terms; <code>-(sum)</code> for an all-negative sum (<code>IsNegatedSum</code>)</td>
+<td>it is the finalization</td>
+</tr>
+<tr>
+<td>multiplicative canonicalization (<code>BuildCanonicalProduct</code>)</td>
+<td>idem</td>
+<td><code>-(product)</code> when the negated factors are odd (<code>NormalizeProductFactors</code>)</td>
+<td>idem</td>
+</tr>
+<tr>
+<td><code>CanonicalizeFactoredCoefficient</code> (factoring), <code>NegateSubtractedSum</code> (C3c)</td>
+<td>ordinary, factorable chain</td>
+<td><code>-(sum)</code></td>
+<td>idem</td>
+</tr>
+</tbody>
+</table>
+<p>Dependency graph of the rewrites that produce or consume a negation (an arrow reads &quot;may produce a node that&quot;):</p>
+<pre><code class="lang-text">0 - t ──SubstractionWithZero──► -t ──(operand of)──► AdditionWithNegate ──► a - b ──canonicalization──► (0 - b) + a
+t * -1, t / -1 ──────────────► -t ─┐
+(-a) * b, (-a) / b ───────────► -(a op b) ─┼──(operand of)──► MultiplicationWithNegate / DivisionWithNegate ──► -(…)
+(-a) - b ─────────────────────► -(a + b) ──┘                                                          │
+-(a - b) ──NegateWithSubstraction──► -a + b                                                             ▼
+all-negative sum or product ──canonicalization──► -(…)                          -(-t) when the operand was already -t
+</code></pre>
+<p>No rule had the signature <code>Negate(Negate)</code>: <code>NegateWithSubstraction</code> needs a <code>Subtract</code> operand, and the operand of a negation
+is prepared before the rules see it (<code>-(-(x - y))</code>: the inner <code>x - y</code> becomes <code>(0 - y) + x</code>, an <code>Add</code>).</p>
+<h3 id="173-why-a-local-rule-is-not-enough-strategy-a-measured">17.3 Why a local rule is not enough (strategy A, measured)</h3>
+<p>The experiment of the 2026-11-04 audit was reproduced in a separate worktree: a rule
+<code>NegateOfNegate(Negate; Negate) -&gt; operand.Operand</code>, admitted by <code>IsOrdinaryUnaryNegate</code> on both nodes. On the 70,470 cases of the
+current <code>converge</code> corpus it changes 232 first-pass forms (229 historically), <code>terminate</code> 11, <code>diff</code> 34, <code>effects</code> 16, <code>s3</code> 5,
+raises the cases fixed after two calls from 272 to <strong>423</strong> (exactly the historical count) and gives <strong>3</strong> violations of the
+comparer invariant <code>Equals(a, b) == Equals(S(a), S(b))</code> (none on the base).</p>
+<p>Root cause of both: an unstable canonical form, not the comparer. The rule only sees the negations of the source and the ones
+a rule transforms itself (<code>SubstractionWithZero</code>, <code>SubstractionWithNegate</code>). The rules marked <strong>no</strong> above return the negation
+they build without transforming it, so its <code>-(-t)</code> waits for the next call: 148 cases keep the same first pass but move from
+fixed@1 to fixed@2. The three violations are such pairs: <code>(-y) * ((y * -1) + ((1 - y) * -1))</code> (<code>int</code> and <code>long</code>, seed 1519) is
+<code>-(-y)</code> after one call (<code>MultiplicationWithNegate</code> over <code>(-y) * (-1)</code>) and <code>y</code> after two, so <code>Equals(a, y)</code> compares <code>-(-y)</code>
+with <code>y</code> (false) while <code>Equals(S(a), S(y))</code> compares <code>y</code> with <code>y</code> (true); the <code>double</code> case <code>-1 * (-1)</code> against a product of
+powers of <code>x ** 0</code> is the same with a constant. The comparison memo, the caches and the scopes play no part: the comparer
+simplifies once with the public simplifier, which is simply not idempotent there. Changing the comparer would have hidden the
+symptom; making the first call finish the negations removes it.</p>
+<h3 id="174-where-the-double-negation-is-removed">17.4 Where the double negation is removed</h3>
+<table>
+<thead>
+<tr>
+<th>Placement</th>
+<th>Assessment</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1. Before the flatten rule</td>
+<td>A flatten chain does not cross negations (<code>[Flatten(Add, Subtract)]</code>): a negated operand is an operand, never a linear term (§3), so there is nothing to remove before it.</td>
+</tr>
+<tr>
+<td>2. During the extraction of the terms</td>
+<td>Already done, and unchanged: <code>CollectAdditiveTerms</code> flips the sign at each ordinary negation, for every caller (level canonicalization, linear, anchored, spine, factorable and grouped chains).</td>
+</tr>
+<tr>
+<td>3. In the flattened representation</td>
+<td>Same mechanism: a term is <code>(Expression, IsNegative)</code>; a double negation is two flips. Nothing to add.</td>
+</tr>
+<tr>
+<td>4. During the reconstruction</td>
+<td>The canonicalization builds <code>-(…)</code> only from flattened terms, never over a negation, and the rules that build a negation are not part of the reconstruction: this is where the residues came from.</td>
+</tr>
+<tr>
+<td>5. An independent final rule</td>
+<td>Strategy A: sees only some of the negations (17.3).</td>
+</tr>
+</tbody>
+</table>
+<p>The choice is the common model of placements 2 and 3 applied to a lone term: the sign model of the additive canonicalization,
+used wherever the simplifier builds or finalizes an ordinary negation (strategy C, restricted).</p>
+<h3 id="175-strategies-compared">17.5 Strategies compared</h3>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>A — local rule</th>
+<th>B — flatten only</th>
+<th>C — common sign model (chosen)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Change</td>
+<td>one rule in the plan</td>
+<td>none needed: already absorbed in sums</td>
+<td>finalization of <code>Negate</code> + one builder <code>BuildNegation</code> at the 11 construction sites</td>
+</tr>
+<tr>
+<td>Plan of rules</td>
+<td>+1 rule (pinned plan, trace indices change)</td>
+<td>unchanged</td>
+<td>unchanged (76 rules, same order)</td>
+</tr>
+<tr>
+<td><code>-(-x)</code> alone</td>
+<td>fixed</td>
+<td>not covered (a negation is not a chain)</td>
+<td>fixed</td>
+</tr>
+<tr>
+<td>Rule results <code>-(-t)</code></td>
+<td>left to the next call</td>
+<td>not covered</td>
+<td>removed by the same call</td>
+</tr>
+<tr>
+<td>fixed@2 (corpus)</td>
+<td>272 → 423</td>
+<td>—</td>
+<td>272 → 273 (17.7)</td>
+</tr>
+<tr>
+<td>Comparer violations</td>
+<td>3</td>
+<td>—</td>
+<td>0</td>
+</tr>
+<tr>
+<td>Values, exceptions, effects</td>
+<td>unchanged</td>
+<td>—</td>
+<td>unchanged</td>
+</tr>
+<tr>
+<td>Cost</td>
+<td>one more rule candidate per <code>Negate</code></td>
+<td>—</td>
+<td>two type tests per finalized or built negation</td>
+</tr>
+</tbody>
+</table>
+<h3 id="176-mechanism-and-proof-obligations">17.6 Mechanism and proof obligations</h3>
+<ul>
+<li><strong>Finalization.</strong> <code>FinalizeExpression</code> of an ordinary <code>Negate</code> whose prepared operand is an ordinary <code>Negate</code> returns the
+operand of the latter. It runs where the additive canonicalization runs: after the rules, for every runtime type (a derived
+simplifier included, like the additive canonicalization), behind no effect gate.</li>
+<li><strong>Builder.</strong> <code>BuildNegation(t)</code> returns <code>t.Operand</code> when <code>t</code> is an ordinary negation, <code>Expression.Negate(t)</code> otherwise. Every
+negation the simplifier builds goes through it (<code>x * -1</code>, <code>-1 * x</code>, <code>x / -1</code>, <code>(-a) * b</code>, <code>a * (-b)</code>, <code>(-a) / b</code>,
+<code>a / (-b)</code>, the negated sums of the canonicalization and of the factoring, the negated products): the simplifier never
+builds <code>-(-t)</code>. The negations built through <code>TransformCore</code> are finalized by the first point.</li>
+<li><strong>Admission.</strong> <code>IsOrdinaryUnaryNegate</code> on both nodes: the predefined, non-lifted, unchecked negation of a type of
+<code>Types.Number</code> that has one, whose method is absent or is the runtime operator itself (provenance checked first, A-10).
+Excluded: <code>NegateChecked</code> (outer or inner: <code>checked(-(-int.MinValue))</code> throws), lifted <code>int?</code> negations, user operators
+(<code>-(-s)</code> runs the operator twice), impersonated reflection objects, a conversion between the two negations, unsigned
+types (no negation), extension nodes (never negations).</li>
+<li><strong>Exactness.</strong> Two ordinary negations are the identity on every value: <code>float</code>/<code>double</code> flip the sign bit twice (signed
+zeros, infinities, subnormals and NaN payloads bit for bit), signed integers wrap twice (<code>-(-int.MinValue)</code> is
+<code>int.MinValue</code>, same for <code>short</code> and <code>long</code>), <code>decimal</code> negation flips the sign without rounding, scale change or overflow.
+Neither can throw; the type of <code>t</code> is the type of the node.</li>
+<li><strong>Effects and policies.</strong> The two operators evaluate nothing but <code>t</code>: <code>t</code> is evaluated exactly once at the same place, every
+exception it raises is unchanged, so no evaluation is dropped, repeated, merged or moved, whatever <code>t</code> is (pure, reading
+or writing state, throwing, allocating, unknown, declared deterministic). The removal therefore needs none of the
+permissions of <code>ExpressionBehaviorPermissions</code> and is the same under every policy (default, <code>Verified</code>,
+<code>TrustDeclarations</code>, <code>AggressiveSimplification</code>, every <code>ExceptionPreservation</code>): <code>-(-f())</code> gives <code>f()</code> for an observable
+<code>f()</code>, as <code>a + -(-f())</code> already gave <code>a + f()</code> through the pinned terms of the canonicalization. No policy cache changes.</li>
+<li><strong>Resources.</strong> Two type tests and a provenance check per finalized or built negation, no walk: no new structural visit, no
+new transformation visit, no allocation (one node less per removed pair).</li>
+</ul>
+<h3 id="177-differential-base-against-branch">17.7 Differential (base against branch)</h3>
+<p>Every first-pass difference was classified; none changes a value class (<code>diff</code>, <code>effects</code>: 0 of 94 changed records change
+their class), an exception, an evaluation log or a type.</p>
+<table>
+<thead>
+<tr>
+<th>Campaign</th>
+<th style="text-align: right;">Records changed</th>
+<th>Classification</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>terminate</code> (66,270)</td>
+<td style="text-align: right;">128</td>
+<td>116 results that held <code>-(-t)</code>; 7 identical results with fewer visits (79 → 62, 35 → 24, …); 5 results (<code>-(1 + (0 - z))</code> → <code>-1 + z</code>, <code>-Infinity + (0 - x)</code> → <code>(-1 - Infinity) - x</code>)</td>
+</tr>
+<tr>
+<td><code>converge</code> (70,495)</td>
+<td style="text-align: right;">251</td>
+<td>238 first passes that held <code>-(-t)</code>; 12 other first passes; 1 same first pass with a different fixed point</td>
+</tr>
+<tr>
+<td><code>diff</code> (4,000 seeds)</td>
+<td style="text-align: right;">57</td>
+<td>54 held <code>-(-t)</code>; 3 sums ordered differently or <code>-0</code> → <code>0</code> (<code>(-A) - (-A)</code>), all <code>same</code></td>
+</tr>
+<tr>
+<td><code>effects</code> (4,004)</td>
+<td style="text-align: right;">37</td>
+<td>all held <code>-(-t)</code>; evaluation logs and exceptions identical</td>
+</tr>
+<tr>
+<td><code>s3</code></td>
+<td style="text-align: right;">5</td>
+<td>the identity <code>-(-x)</code> → <code>x</code> for <code>double</code>, <code>float</code>, <code>int</code>, <code>long</code>, <code>decimal</code>: 0 difference over every assignment</td>
+</tr>
+<tr>
+<td><code>canon</code></td>
+<td style="text-align: right;">0</td>
+<td></td>
+</tr>
+<tr>
+<td><code>comparer</code></td>
+<td style="text-align: right;">0 violation (28,000 invariant checks)</td>
+<td>only the number of hash checks changes (its sample depends on the forms)</td>
+</tr>
+<tr>
+<td><code>inventory</code></td>
+<td style="text-align: right;">76 rules, same plan order</td>
+<td>only the line numbers and the calls listed for the rules that use <code>BuildNegation</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Delimitation of the changed forms.</strong> Every other changed result was checked to be the base result of the same source with its
+double negations already removed (<code>S_branch(E) = S_master(E′)</code>): for example <code>-1 - (((-1 * x) / -1) - c)</code> gives the base result
+of <code>-1 - (x - c)</code>, <code>((-2 + 2) - (-z)) - …</code> the base result of <code>z - …</code>. The rules then see <code>t</code> instead of the unfinished <code>-(-t)</code>,
+so a different rule may apply (<code>SubstractionWithSubstraction</code> instead of <code>SubstractionWithNegate</code>); none of these rules changed.</p>
+<p><strong>Convergence</strong> (<code>converge</code>, 8 passes):</p>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th style="text-align: right;">Base</th>
+<th style="text-align: right;">Branch</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>fixed@0</td>
+<td style="text-align: right;">2,940</td>
+<td style="text-align: right;">2,920</td>
+</tr>
+<tr>
+<td>fixed@1</td>
+<td style="text-align: right;">67,179</td>
+<td style="text-align: right;">67,197</td>
+</tr>
+<tr>
+<td>fixed@2</td>
+<td style="text-align: right;">272</td>
+<td style="text-align: right;">273</td>
+</tr>
+<tr>
+<td>fixed@3</td>
+<td style="text-align: right;">21</td>
+<td style="text-align: right;">21</td>
+</tr>
+<tr>
+<td>fixed@4</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">9</td>
+</tr>
+<tr>
+<td>cycle, period 2</td>
+<td style="text-align: right;">62</td>
+<td style="text-align: right;">62</td>
+</tr>
+<tr>
+<td>cycle, period 3</td>
+<td style="text-align: right;">13</td>
+<td style="text-align: right;">13</td>
+</tr>
+</tbody>
+</table>
+<p>The 20 cases leaving fixed@0 are sources holding a double negation (the new families of the harness included), now simplified
+by the first call. Four cases need more passes and one fewer (net +2 cases needing several passes, 0 new cycle); the four are pre-existing residues that the double negations
+used to hide, because <code>SubstractionWithNegate</code> and <code>DivisionWithNegate</code> transformed their operands a second time:</p>
+<table>
+<thead>
+<tr>
+<th>Case</th>
+<th>Base</th>
+<th>Branch</th>
+<th>Residue (identical on the base for <code>E′</code>)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>gen#2430</td>
+<td>fixed@1</td>
+<td>fixed@2</td>
+<td><code>z - (x - R)</code> with a call in <code>R</code>: <code>t - (sum)</code> reassociation not finished (S5A-05)</td>
+</tr>
+<tr>
+<td>gen#3191</td>
+<td>fixed@1</td>
+<td>fixed@2</td>
+<td>the same with <code>Log</code>/<code>Sin</code> terms</td>
+</tr>
+<tr>
+<td>gen#2330</td>
+<td>fixed@1</td>
+<td>fixed@2</td>
+<td><code>4 / ((x * (y + -1)) + (x * (y + -1)))</code>: <code>t + t</code> over a product is not finished (<code>(-1 + y) * (x + x)</code>)</td>
+</tr>
+<tr>
+<td>gen#459</td>
+<td>fixed@2</td>
+<td>fixed@4</td>
+<td>the base takes 4 passes for the source with <code>y / y</code> instead of <code>(-y) / (-y)</code></td>
+</tr>
+<tr>
+<td>gen#743</td>
+<td>fixed@2</td>
+<td>fixed@1</td>
+<td>without the negation pair another rule path reaches the canonical form in one call</td>
+</tr>
+</tbody>
+</table>
+<p>These residues are S5A-05/S5A-06 material and are left to their own change, as the mission requires.</p>
+<h3 id="178-complexity-and-performance">17.8 Complexity and performance</h3>
+<p>Deterministic counters (<code>measure</code>, limits lifted, one process per point), 26 families at n = 4, 8, 12, 16 and 20 (130 points):
+90 points have identical visits and comparer simplifications (every control family: <code>n</code>, <code>constabs</code>, <code>nanabs</code>, <code>horner</code>, <code>Lsub</code>, <code>g</code>, <code>p</code>, <code>B</code>, <code>H</code>, <code>bal</code>, <code>div</code>,
+<code>plus0</code>, <code>pow1</code>, <code>zeroplus</code>, <code>subdivR</code>, <code>subdivBM</code>, and <code>neg</code>, <code>negcall</code>, whose towers cost one visit per node on both sides; only their output is smaller).
+The other 40 points are the families built from negations, all cheaper:</p>
+<table>
+<thead>
+<tr>
+<th>Family (n = 20)</th>
+<th style="text-align: right;">Visits base → branch</th>
+<th style="text-align: right;">Comparer simplifications base → branch</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>negsum</code> (S5A-08)</td>
+<td style="text-align: right;">3,038 → 384</td>
+<td style="text-align: right;">782 → 36</td>
+</tr>
+<tr>
+<td><code>subneg</code></td>
+<td style="text-align: right;">3,059 → 377</td>
+<td style="text-align: right;">792 → 36</td>
+</tr>
+<tr>
+<td><code>negmul</code></td>
+<td style="text-align: right;">6,745 → 1,056</td>
+<td style="text-align: right;">4,948 → 888</td>
+</tr>
+<tr>
+<td><code>negdiv</code></td>
+<td style="text-align: right;">8,869 → 2,773</td>
+<td style="text-align: right;">6,472 → 2,444</td>
+</tr>
+<tr>
+<td><code>zerominus</code></td>
+<td style="text-align: right;">9,224 → 3,535</td>
+<td style="text-align: right;">7,262 → 3,202</td>
+</tr>
+<tr>
+<td><code>negprod</code> (new)</td>
+<td style="text-align: right;">7,345 → 1,085</td>
+<td style="text-align: right;">5,292 → 908</td>
+</tr>
+<tr>
+<td><code>negadd</code> (new)</td>
+<td style="text-align: right;">570 → 310</td>
+<td style="text-align: right;">38 → 76</td>
+</tr>
+<tr>
+<td><code>negdag</code> (new, 2^20 logical nodes)</td>
+<td style="text-align: right;">20,971,750 → 9,437,176</td>
+<td style="text-align: right;">8,388,710 → 3,145,725</td>
+</tr>
+</tbody>
+</table>
+<p><code>negsum</code> at 60 and 120 terms: 57,268 → 2,964 and 408,863 → 11,334 visits, 7,182 → 116 and 28,782 → 236 comparer
+simplifications: the work goes from about n^2.8 to n^1.9, the comparer simplifications from quadratic to linear (<code>2n - 4</code>).
+<code>negadd</code> is the only counter that grows: the canonicalization of <code>x + y</code> (the double negation removed first) probes the comparer
+twice per level instead of once, still linear (<code>4(n - 1)</code>), for 46 % fewer visits. <code>negdag</code> shares one double negation per level,
+so its logical tree has 2^n nodes and both sides grow by the same factor 16 per four levels (every occurrence of a shared node is
+transformed, as for every DAG, §5): no new exponential family, 2.2 times fewer visits. No structural walk was added: the removal
+is two type tests and a provenance check per finalized or built negation.</p>
+<p>Performance (<code>tests/ExpressionTracingBench/run-campaign.ps1</code>, one process per scenario and variant, rotating order, A/A copy of
+the base binaries, 4 rounds; four scenarios added for the touched path: <code>neg1</code> a lone negation, <code>negsum16</code> a sum of sixteen
+negations, <code>neg2sum16</code> a sum of sixteen double negations, <code>negmul8</code> a product of eight negations):</p>
+<table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th style="text-align: right;">Base</th>
+<th style="text-align: right;">A/A</th>
+<th style="text-align: right;">Branch</th>
+<th style="text-align: right;">Allocated base → branch</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ext-root</code></td>
+<td style="text-align: right;">92.8 ns</td>
+<td style="text-align: right;">−0.3 %</td>
+<td style="text-align: right;">−14.5 % (7 rounds: +0.9 % / −12.5 %)</td>
+<td style="text-align: right;">0 B</td>
+</tr>
+<tr>
+<td><code>scalar</code></td>
+<td style="text-align: right;">1,345 ns</td>
+<td style="text-align: right;">+2.3 %</td>
+<td style="text-align: right;">+2.1 % (7 rounds: −0.9 % / +0.9 %)</td>
+<td style="text-align: right;">2,256 B</td>
+</tr>
+<tr>
+<td><code>binary</code></td>
+<td style="text-align: right;">5,681 ns</td>
+<td style="text-align: right;">−0.1 %</td>
+<td style="text-align: right;">−0.2 %</td>
+<td style="text-align: right;">6,513 B</td>
+</tr>
+<tr>
+<td><code>lambda</code></td>
+<td style="text-align: right;">3,235 ns</td>
+<td style="text-align: right;">−1.0 %</td>
+<td style="text-align: right;">+4.4 % (7 rounds: −1.1 % / +0.2 %)</td>
+<td style="text-align: right;">6,385 B</td>
+</tr>
+<tr>
+<td><code>leftsum20</code></td>
+<td style="text-align: right;">7,070 ns</td>
+<td style="text-align: right;">−9.8 %</td>
+<td style="text-align: right;">−7.7 %</td>
+<td style="text-align: right;">14,368 B</td>
+</tr>
+<tr>
+<td><code>p9family16</code></td>
+<td style="text-align: right;">41,117 ns</td>
+<td style="text-align: right;">−2.7 %</td>
+<td style="text-align: right;">−1.7 %</td>
+<td style="text-align: right;">52,132 → 52,131 B</td>
+</tr>
+<tr>
+<td><code>dag10</code></td>
+<td style="text-align: right;">993,995 ns</td>
+<td style="text-align: right;">−3.8 %</td>
+<td style="text-align: right;">+0.1 %</td>
+<td style="text-align: right;">1,288,325 → 1,288,326 B</td>
+</tr>
+<tr>
+<td><code>calls8</code></td>
+<td style="text-align: right;">4,508 ns</td>
+<td style="text-align: right;">−1.3 %</td>
+<td style="text-align: right;">+0.5 %</td>
+<td style="text-align: right;">2,632 B</td>
+</tr>
+<tr>
+<td><code>callsum16</code></td>
+<td style="text-align: right;">20,187 ns</td>
+<td style="text-align: right;">+4.2 %</td>
+<td style="text-align: right;">+1.6 %</td>
+<td style="text-align: right;">31,344 B</td>
+</tr>
+<tr>
+<td><code>cmp-pos</code></td>
+<td style="text-align: right;">60,785 ns</td>
+<td style="text-align: right;">−0.5 %</td>
+<td style="text-align: right;">−1.6 %</td>
+<td style="text-align: right;">61,742 → 61,741 B</td>
+</tr>
+<tr>
+<td><code>hash</code></td>
+<td style="text-align: right;">30,634 ns</td>
+<td style="text-align: right;">−2.4 %</td>
+<td style="text-align: right;">−0.3 %</td>
+<td style="text-align: right;">29,694 B</td>
+</tr>
+<tr>
+<td><code>neg1</code></td>
+<td style="text-align: right;">151 ns</td>
+<td style="text-align: right;">+0.9 %</td>
+<td style="text-align: right;">−0.9 % (7 rounds: +1.6 % / +1.3 %)</td>
+<td style="text-align: right;">80 B</td>
+</tr>
+<tr>
+<td><code>negsum16</code></td>
+<td style="text-align: right;">10,043 ns</td>
+<td style="text-align: right;">+0.2 %</td>
+<td style="text-align: right;">+1.3 %</td>
+<td style="text-align: right;">20,432 B</td>
+</tr>
+<tr>
+<td><code>neg2sum16</code></td>
+<td style="text-align: right;">128,255 ns</td>
+<td style="text-align: right;">+1.1 %</td>
+<td style="text-align: right;"><strong>−14.7 %</strong></td>
+<td style="text-align: right;">198,634 → 193,058 B</td>
+</tr>
+<tr>
+<td><code>negmul8</code></td>
+<td style="text-align: right;">263,121 ns</td>
+<td style="text-align: right;">+1.3 %</td>
+<td style="text-align: right;"><strong>−58.1 %</strong></td>
+<td style="text-align: right;">231,019 → 110,265 B</td>
+</tr>
+</tbody>
+</table>
+<p>Reading: the scenarios that hold negations are faster and allocate less where a double negation disappeared (<code>negmul8</code> builds
+no <code>-(-t)</code> any more), the others stay inside the A/A band; the lone negation pays two type tests, below the noise. <code>ext-root</code> (an extension root, a path this change does not touch) measured faster twice; with 11 ns on 92 ns it is a code-layout effect, not attributed to the change. Allocations are identical except where a double negation disappears (<code>calls8</code>: one base round measured 2,776 B, the eleven other runs of every variant 2,632 B); the single bytes of <code>p9family16</code>, <code>dag10</code> and <code>cmp-pos</code> are rounding of the per-operation average.</p>
+<h3 id="179-residual-limits">17.9 Residual limits</h3>
+<ul>
+<li>The negation of a constant is not folded (<code>-(c)</code>, 3 residues of the base, unchanged): <code>-(-2)</code> with an inner constant <code>-2</code> is
+one negation of a constant, not a double negation.</li>
+<li><code>-(-2 * x)</code> (a negation of a product with a negative coefficient) is not a double negation and is kept, as on the base.</li>
+<li>The pre-existing residues of 17.7 (<code>t - (sum)</code>, <code>t + t</code> over a product) now show where a double negation hid them.</li>
+<li>Rebuilding a unary node still goes through the framework factory, which reads the <code>Type</code> of its operand and the metadata of
+its method (limitation L-1 of <code>A10-ReflectionProvenance.md</code>): unchanged, the classification itself compares reflection
+objects by provenance only.</li>
+</ul>
 
 </article>
 

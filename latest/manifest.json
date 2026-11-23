@@ -6141,7 +6141,7 @@
       "Uid": null,
       "IsMRef": true,
       "Title": "Utils.Mathematics.Expressions.ExpressionExtensionsException",
-      "Summary": "<p sourcefile=\"api/Utils.Mathematics.Expressions.ExpressionExtensionsException.yml\" sourcestartlinenumber=\"1\">Represents validation errors that occur while building derivative expressions.</p>\n"
+      "Summary": "<p sourcefile=\"api/Utils.Mathematics.Expressions.ExpressionExtensionsException.yml\" sourcestartlinenumber=\"1\">Represents a custom exception related to expression extension operations.</p>\n"
     },
     {
       "type": "ManagedReference",
@@ -16811,11 +16811,11 @@
       "type": "Toc",
       "source_relative_path": "api/toc.yml",
       "output": {
-        ".json": {
-          "relative_path": "api/toc.json"
-        },
         ".html": {
           "relative_path": "api/toc.html"
+        },
+        ".json": {
+          "relative_path": "api/toc.json"
         }
       },
       "version": ""
@@ -17254,11 +17254,11 @@
       "type": "Toc",
       "source_relative_path": "docs/toc.yml",
       "output": {
-        ".json": {
-          "relative_path": "docs/toc.json"
-        },
         ".html": {
           "relative_path": "docs/toc.html"
+        },
+        ".json": {
+          "relative_path": "docs/toc.json"
         }
       },
       "version": ""
@@ -17277,11 +17277,11 @@
       "type": "Toc",
       "source_relative_path": "toc.yml",
       "output": {
-        ".json": {
-          "relative_path": "toc.json"
-        },
         ".html": {
           "relative_path": "toc.html"
+        },
+        ".json": {
+          "relative_path": "toc.json"
         }
       },
       "version": ""
