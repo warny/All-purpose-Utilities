@@ -271,6 +271,20 @@ internal static partial class Campaigns
     /// <summary>The cases of the convergence campaign: the corpus, the families at small sizes and generated trees.</summary>
     /// <param name="options">The options.</param>
     /// <returns>The labelled cases.</returns>
+    /// <summary>Finds the case of the convergence corpus (<see cref="Converge"/>) that has <paramref name="label"/>.</summary>
+    /// <param name="options">The options the campaign ran with (seeds, nested compositions, depth).</param>
+    /// <param name="label">The label of the case, as the <c>converge.jsonl</c> record prints it.</param>
+    /// <returns>The source tree, or <see langword="null"/> when no case has this label.</returns>
+    public static Expression? FindConvergenceCase(CampaignOptions options, string label)
+    {
+        foreach ((string caseLabel, Expression tree) in ConvergenceCases(options))
+        {
+            if (string.Equals(caseLabel, label, StringComparison.Ordinal)) return tree;
+        }
+
+        return null;
+    }
+
     private static IEnumerable<(string Label, Expression Tree)> ConvergenceCases(CampaignOptions options)
     {
         foreach ((string label, Expression tree) in Corpus.Instantiate(options.Nested, 2027)) yield return (label, tree);

@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed — `omy.Utils` (`ExpressionSimplifier` double negations, S5A-10)
+- `ExpressionSimplifier` removes an ordinary double negation in one call: `-(-x)` gives `x`, `-(-(x + y))` gives `x + y`, and
+  the negations its own rules build no longer leave `-(-t)` behind (`(-x) * (-y)` gives `x * y` instead of `-(-(x * y))`,
+  `(-x) / (-y)` gives `x / y`, `(0 - x) * -1` gives `x`). The finalization of a `Negate` node and every negation a rule creates
+  share the sign model the additive canonicalization already applied to the terms of a sum. Only predefined, non-lifted,
+  unchecked negations are removed (`double`, `float`, `int`, `long`, `short`, `decimal`): `NegateChecked`, lifted nullable
+  negations, user-defined or impersonated operators and a conversion between the two negations keep every node. The result is
+  exact on every value (signed zeros, infinities, NaN payloads, `int.MinValue`), keeps the type, and the operand is still
+  evaluated exactly once, so the change applies under every simplification policy.
+- Behavior change: first-pass forms that held a double negation change (238 of 70,495 cases of the S5 convergence corpus, 128
+  of 66,270 of the termination corpus); a few downstream forms change with them, each equal to the result of the same source
+  without its double negations. The comparer identifies `-(-x)` with `x`. Cases fixed after two calls: 272 → 273; cycles
+  unchanged (75). The local-rule alternative (272 → 423 and three comparer-invariant violations) was measured and rejected. The
+  nested negated differences `-(-(-(x0 - x1) - x2) …)` cost 11,334 transformation visits at 120 terms instead of 408,863.
+  See `docs/expressions/SimplifierFlatten.md` §17.
+
 ### Fixed — `omy.Utils` (`ExpressionOptimiser` safety audit, A10-C)
 - `ExpressionOptimiser` no longer applies identities that change the behavior of a tree: `F() * 0` keeps the call (an
   integral product by zero is folded only when the dropped operand is proven discardable; lifted, floating-point and

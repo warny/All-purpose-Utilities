@@ -15,7 +15,7 @@ This report describes the **2026-11-04 baseline**. Its original findings and pro
 | Right-associated and balanced subtracted quotient groups | **Fixed for the restricted grouped family** (branch `fix/expression-grouped-quotient-chains`, §16): `double`/`float` chains of parameters, at most one constant, linear products and quotients of two parameters with unique numerators and denominators used nowhere else, any grouping and signs, are canonicalized once (`subdivR`, `subdivB`, `subdivBM`, `subdivRD`, `subdivRF`: `3n + 2` visits), first-pass structure identical to the historical one. **Still open:** grouped chains outside that family (repeated or shared terms, two constants, quotients of other shapes, integral/decimal) keep the level by level cost; admitting them needs quotient atoms in the C3c proof obligations, still deferred. |
 | Other original S5A findings (exception timing, convergence, dispatch determinism, domain-specific behavior) | **Re-audited on `c509bdf6` (2026-11-18)**, see "Re-audit on the integrated code" below: S5A-02 fixed and S5A-11 pinned on branch `fix/expression-s5-residual-correctness`; S5A-04, S5A-07 and S5A-10 open with a specified separate change each; S5A-05, S5A-06 and S5A-09 reduced to documented residues; S5A-08 and S5A-12 resolved. |
 | S5A-04 exception timing (update 2026-11-18) | **Fixed** on branch `fix/expression-s5a04-deferred-arithmetic-exceptions` (base `9be5fcff`): a throwing constant fold declines under every policy; see "S5A-04 — disposition" below. |
-| `ExpressionOptimiser` A10-C / O0–O5 | **Correctness audit done** on branch `fix/expression-optimiser-safety` (base `76bf0b55`, 2026-11-20): 14 proven defects fixed (evaluation drops, custom operators, signed zeros, decimal identities, type changes, R4 opacity, dynamic reduction, quotes), resource session integrated; one shared R4 read fixed in `ExpressionEffectAnalysis` without any classification change; `ExpressionSimplifier` untouched. See `docs/expressions/ExpressionOptimiser.md`. The benchmark-driven stages O1–O5 of the simplifier roadmap remain future work. |
+| S5A-10 double negation (update 2026-11-23) | **Fixed** on branch `fix/expression-s5a10-double-negation` (base `2e6c6550`): common sign model (finalization of `Negate` + `BuildNegation` at every construction site), not a local rule; see "S5A-10 — disposition" below and `docs/expressions/SimplifierFlatten.md` §17. | **Correctness audit done** on branch `fix/expression-optimiser-safety` (base `76bf0b55`, 2026-11-20): 14 proven defects fixed (evaluation drops, custom operators, signed zeros, decimal identities, type changes, R4 opacity, dynamic reduction, quotes), resource session integrated; one shared R4 read fixed in `ExpressionEffectAnalysis` without any classification change; `ExpressionSimplifier` untouched. See `docs/expressions/ExpressionOptimiser.md`. The benchmark-driven stages O1–O5 of the simplifier roadmap remain future work. |
 
 **Next evidence required:** confirm actual merge SHAs and CI for the recent PR series; run S5 stability and reference/branch comparisons, differential corpora with new quotients, paired BenchmarkDotNet measurements, and targeted residual-family profiling. Keep a separate count of validated remaining fixes; the old phase-M PR sequence is not a reliable count of future PRs.
 
@@ -61,7 +61,7 @@ stated. The base was measured in a detached worktree of `c509bdf6`, so the branc
 | S5A-07 `t + 0`, `t ^ 1` re-transform a prepared operand | **PARTIAL** (deferred) | excess bounded (×1.48 at n = 12, ×1.30 at n = 20); removing it changes 1 first-pass result (below); `S5A07_ZeroAndOneIdentities_RetransformAPreparedOperand` | `AdditionWithZero(e, t, 0)`, `PowerByZeroOrOne` |
 | S5A-08 nested negated differences | **FIXED** (C3c: bounded polynomial) | `negsum` 3,038 visits at n = 20 (363,882 on 2026-11-04), `subneg` 3,059, `negmul` 6,745, `negdiv` 8,869, `zerominus` 9,224 (about n^2.3 to n^2.5); `S5A08_NestedNegatedDifferences_GrowSuperPolynomially` | negation rules, C3c factorable chains |
 | S5A-09 equal terms not combined | additive **FIXED** (C3c); multiplicative **DOCUMENTED-LIMITATION** | `S5A09_EqualTermsGroupedButNotCombined`: `x * (x * y)` kept, not identified with `y * x^2` | `MultiplicationOfEqualsElements` |
-| S5A-10 `-(-x)` kept | **OPEN-CONFIRMED** (deferred, not isolable) | `S5A10_DoubleNegation_IsNeverSimplified`; experiment below | missing rule |
+| S5A-10 `-(-x)` kept | **FIXED 2026-11-23** (common sign model, disposition below; was OPEN-CONFIRMED, deferred, not isolable) | `S5A10_DoubleNegation_IsSimplified`, `ExpressionSimplifierDoubleNegationTests`, `ExpressionSimplifierDoubleNegationSecurityTests` | `FinalizeExpression`, `BuildNegation` |
 | S5A-11 plan order from `GetMethods` | **FIXED as a pinned contract** (no nondeterminism demonstrated) | `ExpressionSimplifierDispatchOrderTests` (Windows, Ubuntu and Debug CI jobs) | `ExpressionTransformer.BuildPlan` |
 | S5A-12 free-parameter subtraction chains | **FIXED** (Flatten PR B + C3c) | `Lsub` `n + 1` visits (21 at n = 20); level by level: free 169, bound 182 visits at twelve terms; `S5A12_DifferenceOfFreeParameters_GrowsExponentially` | C3c factorable chain |
 | S5A-13 decimal divisor below 1 inert | **FIXED** (P18b, PR #684) | `S5A13_DecimalDivisionByASmallConstant_IsNotInert` | `ExpressionEffectAnalysis.IsSafeDivisor` |
@@ -290,9 +290,30 @@ checked negations by `IsOrdinaryUnaryNegate`. Experiment (a local `NegateOfNegat
 `diff` and 16 `effects` first-pass forms change (values unchanged), but the rule does not run where the negation is a flattened
 unary of an additive chain, so `-(-x)` itself still needs two passes (fixed@2 rises from 272 to 423 cases), and the comparer
 invariant `Equals(a, b) == Equals(S(a), S(b))` gets 3 violations. It changes canonical results without being isolable: deferred
-(it needs the flatten path to treat a double negation, a C3 change).
+(it needs the flatten path to treat a double negation, a C3 change). **Update 2026-11-23:** fixed without a rule, by the sign
+model of the canonicalization applied to every built and finalized negation; see "S5A-10 — disposition".
 
-### S5A-11 — dispatch determinism
+### S5A-10 — disposition (2026-11-23, mission "double negation")
+
+Base `2e6c6550` (PR #718), branch `fix/expression-s5a10-double-negation`. The defect was confirmed on the base (`-(-x)`,
+`-(-(x + y))` kept by every call; `(-x) * (-y)` gave `-(-(x * y))`). The historical local-rule experiment was reproduced in a
+separate worktree with the same outcome on the current corpus: fixed@2 272 → 423 (148 cases keep their first pass but need a
+second one) and 3 comparer-invariant violations. Root cause: the rules that negate a prepared operand (`x * -1`, `x / -1`,
+`MultiplicationWithNegate`, `DivisionWithNegate`, the negated sums and products of the canonicalizations) return the negation
+they build untransformed, so a rule on the `Negate` node sees their `-(-t)` only at the next call; the violations are pairs
+whose first result is such an unfinished `-(-t)` (`(-y) * ((y * -1) + ((1 - y) * -1))`: `-(-y)`, then `y`). Neither the
+comparer nor its memo is involved.
+
+Fix: the sign model the additive canonicalization already applied to its terms (`CollectAdditiveTerms`) is applied to a lone
+term, in the finalization of an ordinary `Negate` node and in `BuildNegation`, which every negation the simplifier creates goes
+through; the plan of rules is unchanged (76 rules). Differential base/branch: `terminate` 128, `converge` 251, `diff` 57,
+`effects` 37, `s3` 5 changed records, `canon` 0, comparer 0 violation; no value class, exception, evaluation log or type
+changes; every changed form is the double-negation-free form or equals the base result of the same source without its double
+negations. Convergence: fixed@2 272 → 273, fixed@4 8 → 9, cycles 75 → 75; the four cases needing more passes are pre-existing
+residues (`t - (sum)` with a call, `t + t` over a product) that the double negations used to hide (`SimplifierFlatten.md`
+§17.7). `negsum` (S5A-08): 408,863 → 11,334 visits at 120 terms, 28,782 → 236 comparer simplifications; the budget tests that
+used it as a heavy tree now use 80 to 200 terms.
+
 
 `BuildPlan` keeps the order of `Type.GetMethods(Public | NonPublic | InvokeMethod | Instance)`: for the built-in type, the
 declaration order of `ExpressionSimplifier.cs`, then `.INumber.cs`, then `.Math.cs` (alphabetical on this machine; MSBuild and
@@ -357,8 +378,7 @@ CI: see the pull request (the dispatch-order tests run on Ubuntu there for the f
 ### Remaining work before the final 2.0 release (expression simplifier)
 
 1. S5A-04: contract decision on simplification-time exceptions, then the "deferred fold" pull request (migration-guide entry).
-2. S5A-07 and S5A-10: each a separately approved change of first-pass results (S5A-10 needs the flatten path to treat double
-   negations).
+2. S5A-07: a separately approved change of first-pass results. (S5A-10: fixed on 2026-11-23, see its disposition.)
 3. Documented, not blocking: free-parameter ties (L-3), bound cycles with non-finite constants or call terms, `z`/`e`/`k`
    (L-6), `o`/`r` (L-7), the multiplicative half of S5A-09, grouped quotient chains outside the #706 family.
 4. `ExpressionOptimiser` A10-C / O0–O5 (independent workstream).

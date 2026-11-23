@@ -5347,6 +5347,18 @@ policy, permission or option change. S5 (default policy): `diff` 210 `SIMPLIFY-T
 campaign line identical; permissive policy: the newly simplifiable seeds fall into the documented `t * 0` drop classes. Record:
 `Utils/TODO-2026-11-04-s5-simplifier-deep-audit.md` (S5A-04 disposition), `docs/releasing/MigrationTo2.0.md`.
 
+### S5A-10 — double negations (2026-11-23)
+
+Branch `fix/expression-s5a10-double-negation`, base `master` `2e6c6550`. Not a rule: the sign model the additive
+canonicalization applies to its terms (`CollectAdditiveTerms`) now also applies to a lone term, in the finalization of an
+ordinary `Negate` node and in `BuildNegation`, the builder of every negation a rule creates (`x * -1`, `x / -1`, `(-a) * b`,
+`(-a) / b`, negated sums and products). The local-rule alternative was measured again and rejected (fixed@2 272 → 423, 3
+comparer-invariant violations, both from rule results left with an unfinished `-(-t)`). Plan of rules unchanged; values,
+exceptions, evaluation logs and types unchanged on every S5 campaign; fixed@2 272 → 273, cycles unchanged; `negsum` 36 times
+cheaper at 120 terms. Admitted only for ordinary, non-lifted, unchecked negations, under every policy (no evaluation is
+dropped, repeated, merged or moved). Record: `docs/expressions/SimplifierFlatten.md` §17,
+`Utils/TODO-2026-11-04-s5-simplifier-deep-audit.md` (S5A-10 disposition).
+
 ## Execution-optimizer stages
 
 These remain separate from the simplifier stages above.

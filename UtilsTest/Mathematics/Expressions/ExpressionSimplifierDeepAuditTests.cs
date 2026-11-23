@@ -680,12 +680,16 @@ public class ExpressionSimplifierDeepAuditTests
         Assert.IsFalse(ExpressionComparer.Default.Equals(product, power));
     }
 
-    /// <summary>S5A-10: no rule removes a double ordinary negation, even after several passes.</summary>
+    /// <summary>
+    /// S5A-10 (fixed): a double ordinary negation is removed by the first call, including the ones a rule builds; the detailed
+    /// cases are in <see cref="ExpressionSimplifierDoubleNegationTests"/>.
+    /// </summary>
     [TestMethod]
-    public void S5A10_DoubleNegation_IsNeverSimplified()
+    public void S5A10_DoubleNegation_IsSimplified()
     {
         Expression source = Expression.Negate(Expression.Negate(X));
-        Assert.AreEqual("-(-x)", Text(Simplify(Simplify(Simplify(source)))));
+        Assert.AreEqual("x", Text(Simplify(source)));
+        Assert.AreEqual("x * y", Text(Simplify(Expression.Multiply(Expression.Negate(X), Expression.Negate(Y)))));
     }
 
     /// <summary>
