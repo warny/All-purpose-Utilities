@@ -298,6 +298,11 @@ The chain crosses a node only when all of the following hold; otherwise the node
 its `IsOrdinaryBinaryArithmetic`/`IsOrdinaryUnaryNegate` classification in PR B). It grants the structural crossing only,
 never a permission to reassociate. There is no public extension point at this stage.
 
+Double negations (S5A-10) are not a chain matter: the simplifier's flatten rule declares `Add` and `Subtract` only, so a
+negation is an operand of its chains, and the terms it collects already carry their sign (`CollectAdditiveTerms` flips it at
+each ordinary negation). A lone `-(-t)` is removed by the finalization of the `Negate` node and by the builder every
+simplifier rule uses for the negations it creates (`SimplifierFlatten.md` §17); the engine's extraction is unchanged.
+
 ## 11. Provenance
 
 The engine keeps, for each extracted chain, the root, every crossed node (with its node type, operator method, result type

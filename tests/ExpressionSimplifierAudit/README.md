@@ -26,6 +26,7 @@ order); a checkout without them reports those columns as unavailable instead of 
 | `profile <family> <n>` | | The cost of one point split by mechanism, in a fresh process: minimal transformation and structural budgets (bisection of the public limits), visits, rule candidates, rejections, applications and canonicalizations of the main transformation and of the comparer simplifications (comparison depth 0 against 1 and more), factor probe comparisons, comparer simplifications and memo hits, additive canonicalizations and canonical keys (internal `SimplificationMetadataStatistics`), Flatten admission counters, time, allocations, size and depth of the result. The `subdiv*` families are the quotient chains `1 - x1/x0 - …`. |
 | `families` | | Lists the families (`p`, `B`, `g`, `F`, `z`, `e`, `k`, `n`, `o`, `r`, `H` of the S5 history, rebuilt from the P10–P16 characterization tests, and the re-entry families of this audit). |
 | `trace "<template>"` | §12 | Simplifies a template (`x`, `y`, `z` and other letters are parameters) several times and prints each pass, the trace of the first pass and its cycle report. |
+| `case "<label>"` | | The same for one case of `converge`, found by the label its record prints (`gen#2430`, `family:neg \| n=4`); pass the options of the campaign (`--seeds`, `--nested`, `--depth`) to rebuild the same corpus, and `--second-pass` to trace the second pass instead of the first (what the first pass left to do). |
 | `replay diff\|effects <seed>` | §11 | Re-runs one seed verbosely (same options as the campaign). |
 
 ## Running

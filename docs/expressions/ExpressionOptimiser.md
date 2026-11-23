@@ -175,7 +175,7 @@ below that follow from the contracts are not anomalies.
 | Hostile reflection | never read | provenance check before any read (A-10) | equivalent |
 | Lifted nullable arithmetic | identities kept (exact), `* 0` refused | refused (`!IsLifted`) | optimiser more permissive, exact |
 | Exceptions of the operator | checked and decimal arithmetic never rewritten | own-operator exceptions kept (`DivideWithZeroOrOne`, S5A-04 deferred folds) | equivalent |
-| Double negation | `-(-x)` removed for primitive unchecked negation | not simplified (S5A-10, open) | n/a: missing rule, not a missing guard |
+| Double negation | `-(-x)` removed for primitive unchecked negation | not simplified on `76bf0b55` (S5A-10); since S5A-10 removed for every ordinary negation (`IsOrdinaryUnaryNegate`, `decimal` included), in the source and in rule results (`SimplifierFlatten.md` §17) | equivalent guards (custom, lifted, checked kept); the simplifier also admits the runtime `decimal` operator, exact too |
 | Conversions | identity conversion without method removed | no conversion rule | n/a |
 | Booleans, conditionals, blocks | rules 8–14 | no rule (generic rebuild keeps types) | n/a |
 | Resource budgets | structural budget + validation + stack guard | transformation + structural budgets + validation + stack guard | equivalent infrastructure |

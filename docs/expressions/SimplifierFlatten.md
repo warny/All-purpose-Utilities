@@ -2133,3 +2133,226 @@ on the base (BenchmarkDotNet refuses an in-process case of several seconds per o
 - Mixed signs keep the free-parameter ties of S4: the result is the level by level result, which is not always idempotent.
 - A root refused by one lookup of the family's own table lowers the shared known-refusal depth to `0` for that root (a
   performance-only choice: its sub-chains are walked again by the old families).
+
+## 17. Double negations (S5A-10)
+
+Branch `fix/expression-s5a10-double-negation`, base `master` `2e6c6550` (PR #718), measured in a detached worktree of the base.
+The S5 campaigns ran with 4,000 seeds and 4,000 nested compositions, both sides built by the same harness.
+
+### 17.1 Reproduction on the base
+
+`-(-x)`, `-(-(-x))`, `-(-(x + y))` and `-(-(x - y))` (`-(-((0 - y) + x))`) were kept by any number of calls, while inside a sum the
+signs were already absorbed (`x + -(-y)` gave `x + y`, `x - -(-y)` gave `(0 - y) + x`, `x + (0 - (0 - y))` gave `x + y`): the
+additive canonicalization collects the terms through `CollectAdditiveTerms`, which flips the sign of a term at every ordinary
+negation it crosses. The rules that negate a prepared operand also left double negations in their results: `(-x) * (-y)` gave
+`-(-(x * y))`, `(-x) / (-y)` gave `-(-(x / y))`, `(0 - x) * -1` gave `-(-x)`, `(-y) * ((y * -1) + ((1 - y) * -1))` gave `-(-y)`.
+
+### 17.2 The negation rules
+
+| Rule (signature) | Admission | Builds | Result transformed? |
+|---|---|---|---|
+| `SubstractionWithZero(Subtract; 0, t)` | ordinary, no constant pair, type with a negation | `-t` | yes (`TransformCore`) |
+| `MultiplicationWithZeroOrOne(Multiply; t, ±1)` and mirror | ordinary, no constant pair | `-t` for `-1` | **no** |
+| `DivideWithZeroOrOne(Divide; t, c)` | ordinary, `c ≠ 0`, not signed integral for `-1` | `-t` for `-1` | **no** |
+| `AdditionWithNegate(Add; a, -b)` and mirror | ordinary outer, `IsOrdinaryUnaryNegate` | `a - b`, or `0` | yes |
+| `SubstractionWithNegate(Subtract; a, -b)` | idem | `a + b` | yes |
+| `SubstractionWithNegate(Subtract; -a, b)` | idem | `-(a + b)` | yes |
+| `NegateWithSubstraction(Negate; a - b)` | idem | `-a + b` | yes |
+| `MultiplicationWithNegate(Multiply; a, -b)` and mirror | idem | `-(a * b)` | inner only, **not the negation** |
+| `DivisionWithNegate(Divide; a, -b)` and mirror | idem, not signed integral | `-(a / b)` | inner only, **not the negation** |
+| additive canonicalization (`FinalizeExpression` of `Add`/`Subtract`) | `CanCanonicalizeCommutativeBinary`, `CanonicalizesOperator`; not gated, pins non-inert terms | signed terms; `-(sum)` for an all-negative sum (`IsNegatedSum`) | it is the finalization |
+| multiplicative canonicalization (`BuildCanonicalProduct`) | idem | `-(product)` when the negated factors are odd (`NormalizeProductFactors`) | idem |
+| `CanonicalizeFactoredCoefficient` (factoring), `NegateSubtractedSum` (C3c) | ordinary, factorable chain | `-(sum)` | idem |
+
+Dependency graph of the rewrites that produce or consume a negation (an arrow reads "may produce a node that"):
+
+```text
+0 - t ──SubstractionWithZero──► -t ──(operand of)──► AdditionWithNegate ──► a - b ──canonicalization──► (0 - b) + a
+t * -1, t / -1 ──────────────► -t ─┐
+(-a) * b, (-a) / b ───────────► -(a op b) ─┼──(operand of)──► MultiplicationWithNegate / DivisionWithNegate ──► -(…)
+(-a) - b ─────────────────────► -(a + b) ──┘                                                          │
+-(a - b) ──NegateWithSubstraction──► -a + b                                                             ▼
+all-negative sum or product ──canonicalization──► -(…)                          -(-t) when the operand was already -t
+```
+
+No rule had the signature `Negate(Negate)`: `NegateWithSubstraction` needs a `Subtract` operand, and the operand of a negation
+is prepared before the rules see it (`-(-(x - y))`: the inner `x - y` becomes `(0 - y) + x`, an `Add`).
+
+### 17.3 Why a local rule is not enough (strategy A, measured)
+
+The experiment of the 2026-11-04 audit was reproduced in a separate worktree: a rule
+`NegateOfNegate(Negate; Negate) -> operand.Operand`, admitted by `IsOrdinaryUnaryNegate` on both nodes. On the 70,470 cases of the
+current `converge` corpus it changes 232 first-pass forms (229 historically), `terminate` 11, `diff` 34, `effects` 16, `s3` 5,
+raises the cases fixed after two calls from 272 to **423** (exactly the historical count) and gives **3** violations of the
+comparer invariant `Equals(a, b) == Equals(S(a), S(b))` (none on the base).
+
+Root cause of both: an unstable canonical form, not the comparer. The rule only sees the negations of the source and the ones
+a rule transforms itself (`SubstractionWithZero`, `SubstractionWithNegate`). The rules marked **no** above return the negation
+they build without transforming it, so its `-(-t)` waits for the next call: 148 cases keep the same first pass but move from
+fixed@1 to fixed@2. The three violations are such pairs: `(-y) * ((y * -1) + ((1 - y) * -1))` (`int` and `long`, seed 1519) is
+`-(-y)` after one call (`MultiplicationWithNegate` over `(-y) * (-1)`) and `y` after two, so `Equals(a, y)` compares `-(-y)`
+with `y` (false) while `Equals(S(a), S(y))` compares `y` with `y` (true); the `double` case `-1 * (-1)` against a product of
+powers of `x ** 0` is the same with a constant. The comparison memo, the caches and the scopes play no part: the comparer
+simplifies once with the public simplifier, which is simply not idempotent there. Changing the comparer would have hidden the
+symptom; making the first call finish the negations removes it.
+
+### 17.4 Where the double negation is removed
+
+| Placement | Assessment |
+|---|---|
+| 1. Before the flatten rule | A flatten chain does not cross negations (`[Flatten(Add, Subtract)]`): a negated operand is an operand, never a linear term (§3), so there is nothing to remove before it. |
+| 2. During the extraction of the terms | Already done, and unchanged: `CollectAdditiveTerms` flips the sign at each ordinary negation, for every caller (level canonicalization, linear, anchored, spine, factorable and grouped chains). |
+| 3. In the flattened representation | Same mechanism: a term is `(Expression, IsNegative)`; a double negation is two flips. Nothing to add. |
+| 4. During the reconstruction | The canonicalization builds `-(…)` only from flattened terms, never over a negation, and the rules that build a negation are not part of the reconstruction: this is where the residues came from. |
+| 5. An independent final rule | Strategy A: sees only some of the negations (17.3). |
+
+The choice is the common model of placements 2 and 3 applied to a lone term: the sign model of the additive canonicalization,
+used wherever the simplifier builds or finalizes an ordinary negation (strategy C, restricted).
+
+### 17.5 Strategies compared
+
+| | A — local rule | B — flatten only | C — common sign model (chosen) |
+|---|---|---|---|
+| Change | one rule in the plan | none needed: already absorbed in sums | finalization of `Negate` + one builder `BuildNegation` at the 11 construction sites |
+| Plan of rules | +1 rule (pinned plan, trace indices change) | unchanged | unchanged (76 rules, same order) |
+| `-(-x)` alone | fixed | not covered (a negation is not a chain) | fixed |
+| Rule results `-(-t)` | left to the next call | not covered | removed by the same call |
+| fixed@2 (corpus) | 272 → 423 | — | 272 → 273 (17.7) |
+| Comparer violations | 3 | — | 0 |
+| Values, exceptions, effects | unchanged | — | unchanged |
+| Cost | one more rule candidate per `Negate` | — | two type tests per finalized or built negation |
+
+### 17.6 Mechanism and proof obligations
+
+- **Finalization.** `FinalizeExpression` of an ordinary `Negate` whose prepared operand is an ordinary `Negate` returns the
+  operand of the latter. It runs where the additive canonicalization runs: after the rules, for every runtime type (a derived
+  simplifier included, like the additive canonicalization), behind no effect gate.
+- **Builder.** `BuildNegation(t)` returns `t.Operand` when `t` is an ordinary negation, `Expression.Negate(t)` otherwise. Every
+  negation the simplifier builds goes through it (`x * -1`, `-1 * x`, `x / -1`, `(-a) * b`, `a * (-b)`, `(-a) / b`,
+  `a / (-b)`, the negated sums of the canonicalization and of the factoring, the negated products): the simplifier never
+  builds `-(-t)`. The negations built through `TransformCore` are finalized by the first point.
+- **Admission.** `IsOrdinaryUnaryNegate` on both nodes: the predefined, non-lifted, unchecked negation of a type of
+  `Types.Number` that has one, whose method is absent or is the runtime operator itself (provenance checked first, A-10).
+  Excluded: `NegateChecked` (outer or inner: `checked(-(-int.MinValue))` throws), lifted `int?` negations, user operators
+  (`-(-s)` runs the operator twice), impersonated reflection objects, a conversion between the two negations, unsigned
+  types (no negation), extension nodes (never negations).
+- **Exactness.** Two ordinary negations are the identity on every value: `float`/`double` flip the sign bit twice (signed
+  zeros, infinities, subnormals and NaN payloads bit for bit), signed integers wrap twice (`-(-int.MinValue)` is
+  `int.MinValue`, same for `short` and `long`), `decimal` negation flips the sign without rounding, scale change or overflow.
+  Neither can throw; the type of `t` is the type of the node.
+- **Effects and policies.** The two operators evaluate nothing but `t`: `t` is evaluated exactly once at the same place, every
+  exception it raises is unchanged, so no evaluation is dropped, repeated, merged or moved, whatever `t` is (pure, reading
+  or writing state, throwing, allocating, unknown, declared deterministic). The removal therefore needs none of the
+  permissions of `ExpressionBehaviorPermissions` and is the same under every policy (default, `Verified`,
+  `TrustDeclarations`, `AggressiveSimplification`, every `ExceptionPreservation`): `-(-f())` gives `f()` for an observable
+  `f()`, as `a + -(-f())` already gave `a + f()` through the pinned terms of the canonicalization. No policy cache changes.
+- **Resources.** Two type tests and a provenance check per finalized or built negation, no walk: no new structural visit, no
+  new transformation visit, no allocation (one node less per removed pair).
+
+### 17.7 Differential (base against branch)
+
+Every first-pass difference was classified; none changes a value class (`diff`, `effects`: 0 of 94 changed records change
+their class), an exception, an evaluation log or a type.
+
+| Campaign | Records changed | Classification |
+|---|---:|---|
+| `terminate` (66,270) | 128 | 116 results that held `-(-t)`; 7 identical results with fewer visits (79 → 62, 35 → 24, …); 5 results (`-(1 + (0 - z))` → `-1 + z`, `-Infinity + (0 - x)` → `(-1 - Infinity) - x`) |
+| `converge` (70,495) | 251 | 238 first passes that held `-(-t)`; 12 other first passes; 1 same first pass with a different fixed point |
+| `diff` (4,000 seeds) | 57 | 54 held `-(-t)`; 3 sums ordered differently or `-0` → `0` (`(-A) - (-A)`), all `same` |
+| `effects` (4,004) | 37 | all held `-(-t)`; evaluation logs and exceptions identical |
+| `s3` | 5 | the identity `-(-x)` → `x` for `double`, `float`, `int`, `long`, `decimal`: 0 difference over every assignment |
+| `canon` | 0 | |
+| `comparer` | 0 violation (28,000 invariant checks) | only the number of hash checks changes (its sample depends on the forms) |
+| `inventory` | 76 rules, same plan order | only the line numbers and the calls listed for the rules that use `BuildNegation` |
+
+**Delimitation of the changed forms.** Every other changed result was checked to be the base result of the same source with its
+double negations already removed (`S_branch(E) = S_master(E′)`): for example `-1 - (((-1 * x) / -1) - c)` gives the base result
+of `-1 - (x - c)`, `((-2 + 2) - (-z)) - …` the base result of `z - …`. The rules then see `t` instead of the unfinished `-(-t)`,
+so a different rule may apply (`SubstractionWithSubstraction` instead of `SubstractionWithNegate`); none of these rules changed.
+
+**Convergence** (`converge`, 8 passes):
+
+| Category | Base | Branch |
+|---|---:|---:|
+| fixed@0 | 2,940 | 2,920 |
+| fixed@1 | 67,179 | 67,197 |
+| fixed@2 | 272 | 273 |
+| fixed@3 | 21 | 21 |
+| fixed@4 | 8 | 9 |
+| cycle, period 2 | 62 | 62 |
+| cycle, period 3 | 13 | 13 |
+
+The 20 cases leaving fixed@0 are sources holding a double negation (the new families of the harness included), now simplified
+by the first call. Four cases need more passes and one fewer (net +2 cases needing several passes, 0 new cycle); the four are pre-existing residues that the double negations
+used to hide, because `SubstractionWithNegate` and `DivisionWithNegate` transformed their operands a second time:
+
+| Case | Base | Branch | Residue (identical on the base for `E′`) |
+|---|---|---|---|
+| gen#2430 | fixed@1 | fixed@2 | `z - (x - R)` with a call in `R`: `t - (sum)` reassociation not finished (S5A-05) |
+| gen#3191 | fixed@1 | fixed@2 | the same with `Log`/`Sin` terms |
+| gen#2330 | fixed@1 | fixed@2 | `4 / ((x * (y + -1)) + (x * (y + -1)))`: `t + t` over a product is not finished (`(-1 + y) * (x + x)`) |
+| gen#459 | fixed@2 | fixed@4 | the base takes 4 passes for the source with `y / y` instead of `(-y) / (-y)` |
+| gen#743 | fixed@2 | fixed@1 | without the negation pair another rule path reaches the canonical form in one call |
+
+These residues are S5A-05/S5A-06 material and are left to their own change, as the mission requires.
+
+### 17.8 Complexity and performance
+
+Deterministic counters (`measure`, limits lifted, one process per point), 26 families at n = 4, 8, 12, 16 and 20 (130 points):
+90 points have identical visits and comparer simplifications (every control family: `n`, `constabs`, `nanabs`, `horner`, `Lsub`, `g`, `p`, `B`, `H`, `bal`, `div`,
+`plus0`, `pow1`, `zeroplus`, `subdivR`, `subdivBM`, and `neg`, `negcall`, whose towers cost one visit per node on both sides; only their output is smaller).
+The other 40 points are the families built from negations, all cheaper:
+
+| Family (n = 20) | Visits base → branch | Comparer simplifications base → branch |
+|---|---:|---:|
+| `negsum` (S5A-08) | 3,038 → 384 | 782 → 36 |
+| `subneg` | 3,059 → 377 | 792 → 36 |
+| `negmul` | 6,745 → 1,056 | 4,948 → 888 |
+| `negdiv` | 8,869 → 2,773 | 6,472 → 2,444 |
+| `zerominus` | 9,224 → 3,535 | 7,262 → 3,202 |
+| `negprod` (new) | 7,345 → 1,085 | 5,292 → 908 |
+| `negadd` (new) | 570 → 310 | 38 → 76 |
+| `negdag` (new, 2^20 logical nodes) | 20,971,750 → 9,437,176 | 8,388,710 → 3,145,725 |
+
+`negsum` at 60 and 120 terms: 57,268 → 2,964 and 408,863 → 11,334 visits, 7,182 → 116 and 28,782 → 236 comparer
+simplifications: the work goes from about n^2.8 to n^1.9, the comparer simplifications from quadratic to linear (`2n - 4`).
+`negadd` is the only counter that grows: the canonicalization of `x + y` (the double negation removed first) probes the comparer
+twice per level instead of once, still linear (`4(n - 1)`), for 46 % fewer visits. `negdag` shares one double negation per level,
+so its logical tree has 2^n nodes and both sides grow by the same factor 16 per four levels (every occurrence of a shared node is
+transformed, as for every DAG, §5): no new exponential family, 2.2 times fewer visits. No structural walk was added: the removal
+is two type tests and a provenance check per finalized or built negation.
+
+Performance (`tests/ExpressionTracingBench/run-campaign.ps1`, one process per scenario and variant, rotating order, A/A copy of
+the base binaries, 4 rounds; four scenarios added for the touched path: `neg1` a lone negation, `negsum16` a sum of sixteen
+negations, `neg2sum16` a sum of sixteen double negations, `negmul8` a product of eight negations):
+
+| Scenario | Base | A/A | Branch | Allocated base → branch |
+|---|---:|---:|---:|---:|
+| `ext-root` | 92.8 ns | −0.3 % | −14.5 % (7 rounds: +0.9 % / −12.5 %) | 0 B |
+| `scalar` | 1,345 ns | +2.3 % | +2.1 % (7 rounds: −0.9 % / +0.9 %) | 2,256 B |
+| `binary` | 5,681 ns | −0.1 % | −0.2 % | 6,513 B |
+| `lambda` | 3,235 ns | −1.0 % | +4.4 % (7 rounds: −1.1 % / +0.2 %) | 6,385 B |
+| `leftsum20` | 7,070 ns | −9.8 % | −7.7 % | 14,368 B |
+| `p9family16` | 41,117 ns | −2.7 % | −1.7 % | 52,132 → 52,131 B |
+| `dag10` | 993,995 ns | −3.8 % | +0.1 % | 1,288,325 → 1,288,326 B |
+| `calls8` | 4,508 ns | −1.3 % | +0.5 % | 2,632 B |
+| `callsum16` | 20,187 ns | +4.2 % | +1.6 % | 31,344 B |
+| `cmp-pos` | 60,785 ns | −0.5 % | −1.6 % | 61,742 → 61,741 B |
+| `hash` | 30,634 ns | −2.4 % | −0.3 % | 29,694 B |
+| `neg1` | 151 ns | +0.9 % | −0.9 % (7 rounds: +1.6 % / +1.3 %) | 80 B |
+| `negsum16` | 10,043 ns | +0.2 % | +1.3 % | 20,432 B |
+| `neg2sum16` | 128,255 ns | +1.1 % | **−14.7 %** | 198,634 → 193,058 B |
+| `negmul8` | 263,121 ns | +1.3 % | **−58.1 %** | 231,019 → 110,265 B |
+
+Reading: the scenarios that hold negations are faster and allocate less where a double negation disappeared (`negmul8` builds
+no `-(-t)` any more), the others stay inside the A/A band; the lone negation pays two type tests, below the noise. `ext-root` (an extension root, a path this change does not touch) measured faster twice; with 11 ns on 92 ns it is a code-layout effect, not attributed to the change. Allocations are identical except where a double negation disappears (`calls8`: one base round measured 2,776 B, the eleven other runs of every variant 2,632 B); the single bytes of `p9family16`, `dag10` and `cmp-pos` are rounding of the per-operation average.
+
+### 17.9 Residual limits
+
+- The negation of a constant is not folded (`-(c)`, 3 residues of the base, unchanged): `-(-2)` with an inner constant `-2` is
+  one negation of a constant, not a double negation.
+- `-(-2 * x)` (a negation of a product with a negative coefficient) is not a double negation and is kept, as on the base.
+- The pre-existing residues of 17.7 (`t - (sum)`, `t + t` over a product) now show where a double negation hid them.
+- Rebuilding a unary node still goes through the framework factory, which reads the `Type` of its operand and the metadata of
+  its method (limitation L-1 of `A10-ReflectionProvenance.md`): unchanged, the classification itself compares reflection
+  objects by provenance only.

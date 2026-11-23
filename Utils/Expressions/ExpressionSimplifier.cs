@@ -1350,7 +1350,7 @@ namespace Utils.Mathematics.Expressions
             if (!IsOrdinaryBinaryArithmetic(e) || IsConstantPair(e)) return null;
             if (NumericValueEquals(right.Value, 0)) return CanDropOperand(left) ? right : null;  // x * 0 => 0
             if (NumericValueEquals(right.Value, 1)) return left;   // x * 1 => x
-            if (NumericValueEquals(right.Value, -1)) return Expression.Negate(left); // x * -1 => -x
+            if (NumericValueEquals(right.Value, -1)) return BuildNegation(left); // x * -1 => -x
             return null;
         }
 
@@ -1367,7 +1367,7 @@ namespace Utils.Mathematics.Expressions
             if (!IsOrdinaryBinaryArithmetic(e) || IsConstantPair(e)) return null;
             if (NumericValueEquals(left.Value, 0)) return CanDropOperand(right) ? left : null;
             if (NumericValueEquals(left.Value, 1)) return right;
-            if (NumericValueEquals(left.Value, -1)) return Expression.Negate(right);
+            if (NumericValueEquals(left.Value, -1)) return BuildNegation(right);
             return null;
         }
 
@@ -1406,7 +1406,7 @@ namespace Utils.Mathematics.Expressions
             if (left is not ConstantExpression)
             {
                 if (NumericValueEquals(right.Value, 1)) return left;
-                if (NumericValueEquals(right.Value, -1) && !IsSignedIntegral(e.Type)) return Expression.Negate(left);
+                if (NumericValueEquals(right.Value, -1) && !IsSignedIntegral(e.Type)) return BuildNegation(left);
             }
             return null;
         }
@@ -2495,7 +2495,7 @@ namespace Utils.Mathematics.Expressions
                     terms[index] = (negated, false);
                 }
 
-                return Expression.Negate(CanonicalizeAdditiveTerms(terms, type, recordMetadata: false));
+                return BuildNegation(CanonicalizeAdditiveTerms(terms, type, recordMetadata: false));
             }
 
             return CanonicalizeAdditiveTerms(terms, type, recordMetadata: false);
@@ -2672,7 +2672,7 @@ namespace Utils.Mathematics.Expressions
         {
             if (!IsOrdinaryBinaryArithmetic(e) || !IsOrdinaryUnaryNegate(right)) return null;
 
-            return Expression.Negate(
+            return BuildNegation(
                 TransformCore(Expression.Multiply(left, right.Operand))
             );
         }
@@ -2685,7 +2685,7 @@ namespace Utils.Mathematics.Expressions
         {
             if (!IsOrdinaryBinaryArithmetic(e) || !IsOrdinaryUnaryNegate(left)) return null;
 
-            return Expression.Negate(
+            return BuildNegation(
                 TransformCore(Expression.Multiply(left.Operand, right))
             );
         }
@@ -2702,7 +2702,7 @@ namespace Utils.Mathematics.Expressions
         {
             if (!IsOrdinaryBinaryArithmetic(e) || !IsOrdinaryUnaryNegate(right) || IsSignedIntegral(e.Type)) return null;
 
-            return Expression.Negate(
+            return BuildNegation(
                 TransformCore(Expression.Divide(left, right.Operand))
             );
         }
@@ -2721,7 +2721,7 @@ namespace Utils.Mathematics.Expressions
         {
             if (!IsOrdinaryBinaryArithmetic(e) || !IsOrdinaryUnaryNegate(left) || IsSignedIntegral(e.Type)) return null;
 
-            return Expression.Negate(
+            return BuildNegation(
                 TransformCore(Expression.Divide(left.Operand, right))
             );
         }
@@ -3094,6 +3094,18 @@ namespace Utils.Mathematics.Expressions
             // scope tracking too, so this dispatch is safe and correct to leave unconditional, exactly as it
             // was before round 6 and, ultimately, before S4 (pre-S4 ToString()-based ordering needed no
             // ambient state at all, so it also worked identically for every subclass).
+
+            // S5A-10: an ordinary negation of an ordinary negation is its operand, the sign model of the additive canonicalization
+            // (CollectAdditiveTerms) applied to a lone term. Like that canonicalization, it is not behind the effect gate: it
+            // removes two operators that evaluate nothing, never an evaluation (see BuildNegation).
+            if (e is UnaryExpression negation
+                && IsOrdinaryUnaryNegate(negation)
+                && parameters[0] is UnaryExpression operandNegation
+                && IsOrdinaryUnaryNegate(operandNegation))
+            {
+                return operandNegation.Operand;
+            }
+
             if (e is BinaryExpression binaryExpression)
             {
                 if ((binaryExpression.NodeType == ExpressionType.Add || binaryExpression.NodeType == ExpressionType.Subtract)
@@ -3245,7 +3257,7 @@ namespace Utils.Mathematics.Expressions
             {
                 for (int index = 0; index < terms.Count; index++) terms[index] = (terms[index].Term, false);
                 Expression positive = terms.Count == 1 ? terms[0].Term : CanonicalizeAdditiveTerms(terms, type, recordMetadata, AdditiveFactoring.None);
-                return Expression.Negate(positive);
+                return BuildNegation(positive);
             }
 
             if (terms.Count == 0)
@@ -3628,7 +3640,7 @@ namespace Utils.Mathematics.Expressions
             if (pinned is not null) orderedFactors.AddRange(pinned);
 
             Expression product = BuildRightAssociative(orderedFactors, Expression.Multiply);
-            return negated ? Expression.Negate(product) : product;
+            return negated ? BuildNegation(product) : product;
         }
 
         /// <summary>
@@ -4255,6 +4267,41 @@ namespace Utils.Mathematics.Expressions
             }
             return table;
         }
+
+        /// <summary>
+        /// Builds the ordinary negation of <paramref name="operand"/>, or returns the operand of <paramref name="operand"/> when
+        /// it is itself an ordinary negation (S5A-10): the simplifier never builds <c>-(-t)</c>.
+        /// </summary>
+        /// <param name="operand">The operand to negate, already prepared by the caller.</param>
+        /// <returns><c>t</c> when <paramref name="operand"/> is the ordinary negation <c>-t</c>; otherwise <c>-operand</c>.</returns>
+        /// <remarks>
+        /// <para>
+        /// <b>Why it is exact.</b> <see cref="IsOrdinaryUnaryNegate(UnaryExpression)"/> admits only the predefined, non-lifted,
+        /// unchecked negation of a type of <see cref="Types.Number"/> that has one, whose method, if any, is the runtime operator
+        /// itself (<see cref="decimal"/>). Applied twice it is the identity on every value: <see cref="float"/> and
+        /// <see cref="double"/> flip the sign bit twice (signed zeros, infinities and <c>NaN</c> payloads included), the signed
+        /// integers wrap twice (<c>-(-int.MinValue)</c> is <c>int.MinValue</c>), and <see cref="decimal"/> negation flips the sign
+        /// without rounding or overflow. Neither negation can throw, and the result keeps the type of the operand.
+        /// </para>
+        /// <para>
+        /// <b>Why it may run outside the effect gate.</b> Both operators evaluate nothing but their operand: <c>t</c> is still
+        /// evaluated exactly once, at the same place, and every exception it raises is raised unchanged, so no evaluation is
+        /// dropped, repeated, merged or moved and the permissions of every policy are respected. The additive canonicalization
+        /// already applies the same sign model to every term, pinned observable terms included
+        /// (<see cref="CollectAdditiveTerms"/>: <c>a + (-(-f()))</c> gives <c>a + f()</c>); this builder applies it to a lone term.
+        /// </para>
+        /// <para>
+        /// <b>Why at the construction sites.</b> The rules that negate a prepared operand (<c>x * -1</c>, <c>x / -1</c>,
+        /// <c>(-a) * b</c>, <c>(-a) / b</c>, a negated sum or product) return the negation they build without transforming it,
+        /// so a rule on the <c>Negate</c> node would only see it at the next call: the canonical form would need two passes
+        /// (the local rule experiment raised the cases fixed after two passes from 272 to 423 and broke the comparer invariant
+        /// <c>Equals(a, b) == Equals(S(a), S(b))</c> three times). The finalization of a <c>Negate</c> node
+        /// (<see cref="FinalizeExpression"/>) covers the negations of the source and the ones a rule transforms itself.
+        /// Custom, lifted and checked negations are never removed (<see cref="IsOrdinaryUnaryNegate(UnaryExpression)"/>).
+        /// </para>
+        /// </remarks>
+        private static Expression BuildNegation(Expression operand)
+            => operand is UnaryExpression negation && IsOrdinaryUnaryNegate(negation) ? negation.Operand : Expression.Negate(operand);
 
         /// <summary>
         /// Determines whether <paramref name="unary"/> represents ordinary, non-lifted, predefined numeric

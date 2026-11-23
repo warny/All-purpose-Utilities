@@ -31,12 +31,13 @@ public static class Program
           s3                        S3 identity matrix
           measure <family> <n>      complexity of one family at one size (one process per measurement)
           profile <family> <n>      cost of one family at one size split by mechanism (budgets, comparer, probes, admission)
-          profile <family> <n>      cost of one family at one size split by mechanism (budgets, comparer, probes, admission)
           families                  list the families
           trace "<template>"        simplify a template (x, y, z are parameters) and print passes, trace and cycle report
+          case "<label>"            the same for one converge case found by its label (--second-pass traces pass 2)
           replay diff|effects <seed> re-run one seed of a campaign verbosely
         Options: --out <dir> --seeds <n> --start <n> --depth <n> --nested <n> --types a,b --passes <n> --assign <n>
                  --reduce <n> --max-cases <n> --timeout <s> --memory <MB> --resume --unlimited --edges <file> --max-seconds <s>
+                 --second-pass
         """;
 
     /// <summary>Runs a command.</summary>
@@ -59,7 +60,7 @@ public static class Program
             if (args[i].StartsWith("--", StringComparison.Ordinal))
             {
                 string key = args[i][2..];
-                bool flag = key is "resume" or "unlimited";
+                bool flag = key is "resume" or "unlimited" or "second-pass";
                 options[key] = flag ? "true" : i + 1 < args.Length ? args[++i] : "";
             }
             else
@@ -116,6 +117,14 @@ public static class Program
             case "trace":
                 if (positional.Count < 1) return Fail("trace needs a template");
                 return Worker.Run(() => Trace(positional[0]), timeout, memory, (reason, current) => Console.Error.WriteLine(reason + ": " + current));
+            case "case":
+                if (positional.Count < 1) return Fail("case needs the label of a converge record");
+                return Worker.Run(() =>
+                {
+                    Expression? tree = Campaigns.FindConvergenceCase(campaign, positional[0]);
+                    if (tree is null) return Fail("no converge case has the label " + positional[0]);
+                    return Trace(tree, options.ContainsKey("second-pass"));
+                }, timeout, memory, (reason, current) => Console.Error.WriteLine(reason + ": " + current));
             case "replay":
                 if (positional.Count < 2) return Fail("replay needs a campaign and a seed");
                 return Worker.Run(() => Replay(positional[0], int.Parse(positional[1], CultureInfo.InvariantCulture), campaign), timeout, memory, (reason, current) => Console.Error.WriteLine(reason + ": " + current));
@@ -180,12 +189,24 @@ public static class Program
     {
         var template = new Template(text);
         var bindings = template.Placeholders.ToDictionary(c => c, c => (Expression)(c switch { 'x' => Corpus.X, 'y' => Corpus.Y, 'z' => Corpus.Z, _ => Expression.Parameter(typeof(double), c.ToString()) }));
-        Expression current = template.Build(bindings);
+        return Trace(template.Build(bindings), tracedPassIsSecond: false);
+    }
+
+    /// <summary>Simplifies a tree repeatedly and prints the passes, the trace of one pass and its cycle report.</summary>
+    /// <param name="current">The source tree.</param>
+    /// <param name="tracedPassIsSecond">
+    /// Whether the second pass is traced instead of the first: the second pass of a case that one pass does not stabilize shows
+    /// what the first pass left to do.
+    /// </param>
+    /// <returns>0.</returns>
+    private static int Trace(Expression current, bool tracedPassIsSecond)
+    {
         Console.WriteLine("source:  " + AuditText.Format(current));
         var collector = new ExpressionTraceCollector(200_000, ExpressionTraceRetention.KeepFirst);
+        int tracedPass = tracedPassIsSecond ? 2 : 1;
         for (int pass = 1; pass <= 6; pass++)
         {
-            (Expression? result, Exception? error) = Simplification.Run(current, null, pass == 1 ? collector : null);
+            (Expression? result, Exception? error) = Simplification.Run(current, null, pass == tracedPass ? collector : null);
             if (error is not null)
             {
                 Console.WriteLine("pass " + pass + ": throws " + AuditText.Describe(error));

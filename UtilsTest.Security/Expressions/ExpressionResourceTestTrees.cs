@@ -89,8 +89,9 @@ internal static class ExpressionResourceTestTrees
 
     /// <summary>
     /// Builds the nested negated differences <c>-(-(-(x0 - x1) - x2) ... - x(n-1))</c> (S5 finding S5A-08), whose
-    /// simplification work grows faster than any small polynomial of <paramref name="terms"/> while depth and size stay tiny:
-    /// about 20,000 transformation visits at sixteen terms and 100,000 at twenty.
+    /// simplification work grows quadratically with <paramref name="terms"/> while size stays linear and depth is about
+    /// <c>2 * terms</c>: 5,154 transformation visits at 80 terms, 7,944 at 100 and 30,894 at 200 since S5A-10 (the double
+    /// negations its rules built were rewritten again at every level: 408,863 visits at 120 terms before).
     /// </summary>
     /// <param name="terms">The number of terms.</param>
     /// <returns>The tree.</returns>

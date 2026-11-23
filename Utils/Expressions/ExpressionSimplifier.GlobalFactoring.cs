@@ -1096,6 +1096,6 @@ public partial class ExpressionSimplifier
 
         for (int index = 0; index < terms.Count; index++) terms[index] = (terms[index].Term, false);
         Expression positive = terms.Count == 1 ? terms[0].Term : CanonicalizeAdditiveTerms(terms, type, recordMetadata: false);
-        return Expression.Negate(positive);
+        return BuildNegation(positive);
     }
 }

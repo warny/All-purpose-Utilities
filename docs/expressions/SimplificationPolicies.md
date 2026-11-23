@@ -690,3 +690,15 @@ The study is worth redoing after P19d, when the comparer probes no longer domina
 stays for that purpose. **After P19d (2026-11-10):** `nanpow` takes 602 / 2,218 / 8,522 visits and 2.6 / 15.7 / 66 ms at
 n = 16 / 32 / 64 (907 ms at 64 before), identically under the default and the permissive policy, so the walk's 8,256 nodes at
 n = 64 are now of the same order as the whole simplification. Redoing the study is a separate decision; P19d does not ship the memo.
+
+## 10. A rewrite that needs no permission: double negations (S5A-10)
+
+`-(-t) -> t` (ordinary, non-lifted, unchecked negations only, `IsOrdinaryUnaryNegate` on both nodes) is performed by the
+finalization of the `Negate` node and by the builder of every negation a rule creates, under **every** policy and outside the
+effect gate, like the additive canonicalization that already absorbed the signs of its terms (`a + -(-f())` gave `a + f()`).
+It consults no permission because it uses none: the two operators evaluate nothing but `t`, so `t` is still evaluated once, at
+the same place, with the same value and exceptions; nothing is dropped, repeated, merged or moved, whatever `t` is (pure, reading
+or writing state, throwing, allocating, unknown, declared deterministic). `CanDiscard`, `CanRepeat`, `CanMerge` and `CanMove` are
+therefore not asked, the trust policy and the exception categories cannot change the result, and no policy cache changed. Checked,
+lifted and user negations, and a conversion between the two negations, keep every node under every policy. Tests:
+`ExpressionSimplifierDoubleNegationTests` (six policies, six operand families, call logs), proof in `SimplifierFlatten.md` §17.6.
