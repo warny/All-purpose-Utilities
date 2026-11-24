@@ -5850,6 +5850,338 @@ one negation of a constant, not a double negation.</li>
 its method (limitation L-1 of <code>A10-ReflectionProvenance.md</code>): unchanged, the classification itself compares reflection
 objects by provenance only.</li>
 </ul>
+<h2 id="18-finalization-of-rebuilt-forms-s5a-05-pr-a">18. Finalization of rebuilt forms (S5A-05, PR A)</h2>
+<p>Branch <code>fix/expression-s5a05-finalization</code>, base <code>master</code> <code>65495e50</code> (PR #719), measured in a detached worktree of the base,
+both sides built by the same harness (S5 campaigns, 4,000 seeds and 4,000 nested compositions).</p>
+<h3 id="181-the-residues-of-177">18.1 The residues of §17.7</h3>
+<table>
+<thead>
+<tr>
+<th>Case</th>
+<th>Base</th>
+<th>First rule left unfinished</th>
+<th>Next call</th>
+<th>Family</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>gen#2430</td>
+<td>fixed@2</td>
+<td><code>SubstractionWithSubstraction</code>: <code>(z + R) - (x - (0 - y))</code> with <code>Tan(x)</code> in <code>R</code></td>
+<td><code>FlattenAdditiveChain</code></td>
+<td>R</td>
+</tr>
+<tr>
+<td>gen#3191</td>
+<td>fixed@2</td>
+<td><code>SubstractionWithAddition</code>: <code>(x - (0 - Log(-20))) - Sin(-1)</code></td>
+<td><code>SubstractionWithZero</code>, <code>SubstractionWithNegate</code></td>
+<td>R</td>
+</tr>
+<tr>
+<td>gen#459</td>
+<td>fixed@4</td>
+<td>nested reassociations over <code>-Infinity</code> and <code>Sin(y)</code>, one level finished per call</td>
+<td>canonicalizations</td>
+<td>R</td>
+</tr>
+<tr>
+<td>gen#2330</td>
+<td>fixed@2</td>
+<td><code>AdditionOfEqualsElements</code>: <code>(-1 + y) * (x + x)</code></td>
+<td>coefficient <code>x + x</code> merged</td>
+<td>Q</td>
+</tr>
+<tr>
+<td>gen#743</td>
+<td>fixed@1</td>
+<td>— (fixed by #719, kept as a control)</td>
+<td>—</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Family R — unfinished reassociations.</strong> <code>SubstractionWithAddition</code> (<code>t - (a + b)</code>) and <code>SubstractionWithSubstraction</code>
+(<code>t - (a - b)</code>) finish the nodes they rebuild with the rules (<code>FinishReassociation</code>, mission C3d) only when every operand is inert
+finite arithmetic (<code>FinishesRebuilt</code>): re-entering the rules over a call, an opaque constant or a decimal would add comparer
+simplifications and user <code>Equals</code> calls the historical rules never made, and a non-finite constant belongs to the
+policy-dependent <code>NaN</code> fold. Any other operand returned the rebuilt difference as built. Inside an additive parent this is
+harmless, since the parent's canonicalization collects its terms, but at a root, or below a product or a quotient, the next call
+had to canonicalize it. The signs and coefficients played no part: the terms were already signed, and only the finalization was
+missing.</p>
+<p><strong>Family Q — a product added twice with a symbolic coefficient.</strong> <code>AdditionOfEqualsElements</code> factors one factor of
+<code>x*(y - 1) + x*(y - 1)</code> and keeps the coefficient <code>x + x</code>. <code>CanonicalizeFactoredCoefficient</code> deliberately leaves a coefficient of
+added terms alone, because canonicalizing it at every level of the <code>dag</code> family made the factoring quadratic in allocations
+(§14.8), so <code>x + x</code> waited for the next call. The structure hid that the two operands are one product.</p>
+<h3 id="182-corrections">18.2 Corrections</h3>
+<ul>
+<li><strong>R:</strong> when <code>FinishesRebuilt</code> refuses, the rebuilt difference is finalized by the additive canonicalization alone
+(<code>CanonicalizeReassociation</code>): the terms of <code>inner - last</code> are collected and canonicalized as the finalization of an ordinary
+<code>Subtract</code> node would do (zeros dropped, constants aggregated, monomials merged, pinned terms in place). No rule is dispatched,
+no operand is compared through the public comparer, no user code runs, and nothing is folded to <code>NaN</code>. A difference with a <code>NaN</code>
+term is kept as built, so the policy-dependent <code>NaN</code> fold still sees its operand (the <code>S5-P18C</code> matrix pins this). Decimal
+differences (<code>CanonicalizesOperator</code>) and derived simplifiers (<code>StabilizesRebuiltForms</code>) keep the node as built.</li>
+<li><strong>Q:</strong> when both factor pairs of <code>AdditionOfEqualsElements</code> are equal and the common coefficient is not a constant, the result
+is the canonical product of <code>2</code> and the factors of the operand (<code>BuildCanonicalProduct</code>), the tree the next call built. The
+decision reuses the two comparisons the first test of the rule already made, so it makes no extra comparison. A constant
+coefficient keeps the historical path, which folds it (<code>0.5*x + 0.5*x</code> gives <code>x</code>, <code>2*x + 2*x</code> gives <code>4 * x</code>).</li>
+</ul>
+<p>Both are inside the effect gate (neither rule is audited for admission outside it), so their operands are inert. Q merges the
+two evaluations of an inert product, which is the permission the rule already used to merge the common factor. The plan of
+rules is unchanged (76 rules, same order).</p>
+<h3 id="183-differential-base-against-branch">18.3 Differential (base against branch)</h3>
+<table>
+<thead>
+<tr>
+<th>Campaign</th>
+<th style="text-align: right;">Changed records</th>
+<th>Classification</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>terminate</code> (66,270)</td>
+<td style="text-align: right;">36</td>
+<td>30 results finalized at the same visit count; 6 identical results whose visit count changes (2 lower, 4 higher, by a few visits)</td>
+</tr>
+<tr>
+<td><code>converge</code> (70,495)</td>
+<td style="text-align: right;">118</td>
+<td>first passes reaching the fixed point the base reached after more calls (below)</td>
+</tr>
+<tr>
+<td><code>diff</code> (4,000)</td>
+<td style="text-align: right;">19</td>
+<td>no value-class regression; one <code>rounding</code> becomes <code>same</code></td>
+</tr>
+<tr>
+<td><code>effects</code> (4,004)</td>
+<td style="text-align: right;">4</td>
+<td>evaluation logs and exceptions identical</td>
+</tr>
+<tr>
+<td><code>s3</code></td>
+<td style="text-align: right;">0</td>
+<td></td>
+</tr>
+<tr>
+<td><code>canon</code></td>
+<td style="text-align: right;">0</td>
+<td></td>
+</tr>
+<tr>
+<td><code>comparer</code></td>
+<td style="text-align: right;">0 violation (28,000 checks)</td>
+<td></td>
+</tr>
+<tr>
+<td><code>inventory</code></td>
+<td style="text-align: right;">76 rules, same order</td>
+<td>line numbers and called helpers only</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Convergence</strong> (8 passes, free parameters / parameters bound by a lambda, <code>S5_AUDIT_BIND=1</code>):</p>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th style="text-align: right;">Base free</th>
+<th style="text-align: right;">Branch free</th>
+<th style="text-align: right;">Base bound</th>
+<th style="text-align: right;">Branch bound</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>fixed@1</td>
+<td style="text-align: right;">67,197</td>
+<td style="text-align: right;">67,307</td>
+<td style="text-align: right;">67,188</td>
+<td style="text-align: right;">67,302</td>
+</tr>
+<tr>
+<td>fixed@2</td>
+<td style="text-align: right;">273</td>
+<td style="text-align: right;">212</td>
+<td style="text-align: right;">271</td>
+<td style="text-align: right;">209</td>
+</tr>
+<tr>
+<td>fixed@3</td>
+<td style="text-align: right;">21</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">21</td>
+<td style="text-align: right;">4</td>
+</tr>
+<tr>
+<td>fixed@4</td>
+<td style="text-align: right;">9</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">9</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr>
+<td>cycle, period 2</td>
+<td style="text-align: right;">62</td>
+<td style="text-align: right;">44</td>
+<td style="text-align: right;">20</td>
+<td style="text-align: right;"><strong>0</strong></td>
+</tr>
+<tr>
+<td>cycle, period 3</td>
+<td style="text-align: right;">13</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;"><strong>0</strong></td>
+</tr>
+</tbody>
+</table>
+<p>The cases needing several passes go from 303 to 217, and the cycles from 75 to 51. Every bound cycle is gone, so the 51 cycles
+left are free-parameter ties of the S4 canonical order (limitation L-3). One case moves from fixed@2 to a period-2 cycle
+(gen#867: the two forms differ only by the order of the free parameters <code>x</code> and <code>y</code>; bound, it has no cycle). No case moves
+from fixed@1 to more passes. With bound parameters, the first rule of the second pass of the remaining cases is
+<code>DivideWithZeroOrOne</code> (48, <code>/ ±1</code>, L-2), the finalization (46), <code>DivisionOfConstants</code> (40), <code>FlattenAdditiveChain</code> (22),
+<code>SubstractionWithZero</code> (17) and <code>AdditionOfEqualsElements</code> (14): left to later changes.</p>
+<h3 id="184-complexity-and-performance">18.4 Complexity and performance</h3>
+<p><code>measure</code>, limits lifted, 26 families at n = 4 to 20 (the 130 points of §17.8): all 130 points have identical visits, comparer
+simplifications and output sizes. The corrected paths are not exercised by those families: R needs a call or a non-finite
+constant below a reassociation, and Q a product added twice.</p>
+<p>Performance (<code>tests/ExpressionTracingBench/run-campaign.ps1</code>, one process per scenario and variant, rotating order, A/A copy of
+the base binaries, 4 rounds, then 7 rounds for the four scenarios outside the A/A band; two scenarios added: <code>subcall</code>, a
+reassociation over a <code>Tan</code> call, and <code>prod2x</code>, a product added twice):</p>
+<table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th style="text-align: right;">Base</th>
+<th style="text-align: right;">A/A</th>
+<th style="text-align: right;">Branch</th>
+<th style="text-align: right;">Allocated base → branch</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ext-root</code></td>
+<td style="text-align: right;">79.4 ns</td>
+<td style="text-align: right;">−0.6 %</td>
+<td style="text-align: right;">+0.3 %</td>
+<td style="text-align: right;">0 B</td>
+</tr>
+<tr>
+<td><code>scalar</code></td>
+<td style="text-align: right;">1,408 ns</td>
+<td style="text-align: right;">+0.2 %</td>
+<td style="text-align: right;">−4.8 %</td>
+<td style="text-align: right;">2,256 B</td>
+</tr>
+<tr>
+<td><code>binary</code></td>
+<td style="text-align: right;">5,931 ns</td>
+<td style="text-align: right;">−0.6 %</td>
+<td style="text-align: right;">−1.9 %</td>
+<td style="text-align: right;">6,513 B</td>
+</tr>
+<tr>
+<td><code>lambda</code></td>
+<td style="text-align: right;">3,305 ns</td>
+<td style="text-align: right;">+2.8 %</td>
+<td style="text-align: right;">+4.4 % (7 rounds: +1.4 % / −1.6 %)</td>
+<td style="text-align: right;">6,385 B</td>
+</tr>
+<tr>
+<td><code>leftsum20</code></td>
+<td style="text-align: right;">6,783 ns</td>
+<td style="text-align: right;">−1.7 %</td>
+<td style="text-align: right;">+2.3 % (7 rounds: +3.4 % / −0.3 %)</td>
+<td style="text-align: right;">14,368 B</td>
+</tr>
+<tr>
+<td><code>p9family16</code></td>
+<td style="text-align: right;">40,722 ns</td>
+<td style="text-align: right;">+3.6 %</td>
+<td style="text-align: right;">−1.1 %</td>
+<td style="text-align: right;">52,131 B</td>
+</tr>
+<tr>
+<td><code>dag10</code></td>
+<td style="text-align: right;">983,567 ns</td>
+<td style="text-align: right;">−0.2 %</td>
+<td style="text-align: right;">+0.6 %</td>
+<td style="text-align: right;">1,288,326 → 1,288,328 B</td>
+</tr>
+<tr>
+<td><code>calls8</code></td>
+<td style="text-align: right;">4,602 ns</td>
+<td style="text-align: right;">+1.8 %</td>
+<td style="text-align: right;">−1.0 %</td>
+<td style="text-align: right;">2,632 B</td>
+</tr>
+<tr>
+<td><code>callsum16</code></td>
+<td style="text-align: right;">21,156 ns</td>
+<td style="text-align: right;">−1.1 %</td>
+<td style="text-align: right;">−0.7 %</td>
+<td style="text-align: right;">31,344 B</td>
+</tr>
+<tr>
+<td><code>cmp-pos</code></td>
+<td style="text-align: right;">59,743 ns</td>
+<td style="text-align: right;">+6.6 %</td>
+<td style="text-align: right;">+6.5 %</td>
+<td style="text-align: right;">61,742 B</td>
+</tr>
+<tr>
+<td><code>hash</code></td>
+<td style="text-align: right;">29,768 ns</td>
+<td style="text-align: right;">+1.7 %</td>
+<td style="text-align: right;">+1.4 %</td>
+<td style="text-align: right;">29,694 B</td>
+</tr>
+<tr>
+<td><code>neg2sum16</code></td>
+<td style="text-align: right;">112,606 ns</td>
+<td style="text-align: right;">−2.6 %</td>
+<td style="text-align: right;">+2.5 %</td>
+<td style="text-align: right;">193,058 B</td>
+</tr>
+<tr>
+<td><code>negmul8</code></td>
+<td style="text-align: right;">106,865 ns</td>
+<td style="text-align: right;">+3.5 %</td>
+<td style="text-align: right;">+4.8 % (7 rounds: −1.0 % / +2.6 %)</td>
+<td style="text-align: right;">110,265 B</td>
+</tr>
+<tr>
+<td><code>subcall</code></td>
+<td style="text-align: right;">7,784 ns</td>
+<td style="text-align: right;">+1.1 %</td>
+<td style="text-align: right;">−0.1 %</td>
+<td style="text-align: right;">10,064 B</td>
+</tr>
+<tr>
+<td><code>prod2x</code></td>
+<td style="text-align: right;">15,366 ns</td>
+<td style="text-align: right;">−0.6 %</td>
+<td style="text-align: right;">−1.5 % (7 rounds: −2.7 % / −3.1 %)</td>
+<td style="text-align: right;">21,344 → 21,568 B</td>
+</tr>
+</tbody>
+</table>
+<p>Reading: no scenario is outside the noise of the A/A copy except <code>negmul8</code> in the 7-round re-measure (+2.6 % against −1.0 %), a
+product of negations that neither correction touches (its counters and allocations are identical): not attributed to the
+change. <code>prod2x</code> allocates 224 bytes more (the factor list of the canonical product) and is not slower. <code>subcall</code> keeps its
+allocations: its source chain is already canonicalized by the flatten rule, so the reassociation of family R is reached only
+from prepared operands, as in the corpus cases.</p>
+<h3 id="185-residual-limits">18.5 Residual limits</h3>
+<ul>
+<li>Free-parameter ties (L-3) still order <code>x</code> and <code>y</code> by collection order; one case of the corpus now cycles through them.</li>
+<li><code>/ ±1</code> (L-2), constant pairs left by <code>DivisionOfConstants</code> and <code>SubstractionOfConstants</code>, and the negation of a constant
+(<code>-(c)</code>, PR B) remain residues of the second pass.</li>
+<li>The reassociation rules still finish with the rules only on inert finite arithmetic; with other operands they stop at the
+canonicalization, so a rule that would apply to the canonical sum waits for the next call.</li>
+</ul>
 
 </article>
 
