@@ -610,6 +610,21 @@ public class ExpressionSimplifierGlobalFactoringTests
         // factorable test never walks more than the linear one.
         Assert.IsTrue(statistics.FactorableWalks <= statistics.Walks, $"{statistics.FactorableWalks} factorable walks, {statistics.Walks} linear walks");
         Assert.AreEqual(1, statistics.Factorable, "the sub-chain below the division is admitted");
-        Assert.IsTrue(Text(result).Contains("(2 * p0)") && Text(result).Contains("(2 * p3)"), Text(result));
+        // Mission M4 (SimplifierFlatten.md §22): the canonical result ends with the suffix (2 * p0) + (2 * p3), which the next call
+        // factored on master 48ae9be3; the boundary now factors it in the same call, and the result is a fixed point.
+        Assert.IsTrue(Text(result).Contains("(2 * (p3 + p0))"), Text(result));
+        ExpressionSimplifier.RefusedSuffixFinishingDisabled = true;
+        try
+        {
+            Expression historical = new ExpressionSimplifier().Simplify(chain);
+            Assert.IsTrue(Text(historical).Contains("(2 * p0)") && Text(historical).Contains("(2 * p3)"), Text(historical));
+            Assert.AreEqual(Text(result), Text(new ExpressionSimplifier().Simplify(historical)), "the next call of master");
+        }
+        finally
+        {
+            ExpressionSimplifier.RefusedSuffixFinishingDisabled = false;
+        }
+
+        Assert.IsTrue(ExpressionComparer.StructuralEqualsRaw(result, new ExpressionSimplifier().Simplify(result)));
     }
 }

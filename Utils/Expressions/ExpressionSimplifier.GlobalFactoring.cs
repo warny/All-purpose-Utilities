@@ -1250,7 +1250,12 @@ public partial class ExpressionSimplifier
         CollectAdditiveTermsIteratively(terms, suffix, pending);
         int termCount = CountNonZeroTerms(terms);
         if (termCount < 2) return null;
-        Expression factored = NegateSubtractedSum(CanonicalizeAdditiveTerms(terms, type, recordMetadata: false, AdditiveFactoring.CommonFactors), type);
+
+        // The suffix comes out of a canonicalization of the levels, which merged its identical monomials and aggregated its
+        // constants: only a common factor can still remove a term. Its candidates are indexed once (no key, no sort) before the
+        // whole canonicalization runs, so a suffix without any common factor costs one indexing pass.
+        if (!HasFactoringCandidate(terms, type, statistics)) return null;
+        Expression factored =NegateSubtractedSum(CanonicalizeAdditiveTerms(terms, type, recordMetadata: false, AdditiveFactoring.CommonFactors), type);
 
         // Only a factoring or a merge removes terms. A suffix that keeps all its terms (no common factor, or only a new sign
         // representation such as 0 - a + (0 - b) as -(a + b)) is rebuilt by the levels of the prefix into the historical result:
@@ -1306,6 +1311,27 @@ public partial class ExpressionSimplifier
         if (!IsFactorableSuffixOperand(node.Left, type)) return false;
         if (last && !IsFactorableSuffixOperand(node.Right, type)) return false;
         return IsOrdinaryBinaryArithmetic(node);
+    }
+
+    /// <summary>
+    /// Whether two of <paramref name="terms"/> share a candidate of the common factoring (<see cref="FindBestCandidate"/>): a
+    /// necessary condition for <see cref="FactorCommonFactors"/> to remove a term. A candidate whose factoring is later abandoned
+    /// only costs the canonicalization that finds out.
+    /// </summary>
+    /// <param name="terms">The collected signed terms of a factorable suffix; not modified.</param>
+    /// <param name="type">The type of the chain.</param>
+    /// <param name="statistics">The opt-in counters of the thread, or <see langword="null"/>.</param>
+    /// <returns><see langword="true"/> when a candidate is held by two terms.</returns>
+    private bool HasFactoringCandidate(List<(Expression Term, bool IsNegative)> terms, Type type, FlattenAdmissionStatistics? statistics)
+    {
+        if (!Types.Number.Contains(type)) return false;
+        var monomials = new List<FactoringMonomial>(terms.Count);
+        foreach ((Expression term, bool isNegative) in terms)
+        {
+            if (!IsOrdinaryZeroConstant(term)) monomials.Add(FactoringMonomial.Create(this, term, isNegative, type));
+        }
+
+        return monomials.Count >= 2 && FindBestCandidate(monomials, CaptureLexicalScopeSnapshot(), [], statistics) is not null;
     }
 
     /// <summary>Counts the collected terms that are not ordinary zero constants (<see cref="IsOrdinaryZeroConstant"/>).</summary>

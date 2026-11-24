@@ -54,6 +54,15 @@ public static class Program
         ["mixsign16"] = () => Simplify(Enumerable.Range(0, 16).Select(i => (Expression)Expression.Multiply(Expression.Constant(i % 4 < 2 ? 2.0 : -2.0), Xs[i])).Aggregate(Expression.Add)),
         ["coef2"] = () => Simplify(Expression.Add(Expression.Multiply(Xs[0], Expression.Add(Xs[1], Expression.Constant(0.0))), Xs[0])),
         ["refusedcall"] = () => Simplify(Expression.Add(Expression.Call(typeof(Math).GetMethod(nameof(Math.Sin), [typeof(double)])!, Expression.Subtract(Expression.Subtract(Expression.Subtract(Expression.Constant(2.0), Expression.Constant(10.0)), Xs[2]), Expression.Multiply(Xs[0], Xs[2]))), Xs[1])),
+        // Mission M4 (SimplifierFlatten.md §22): refused chains whose canonical result ends with a factorable suffix, with and
+        // without a common factor, behind observable calls, and nested#1179. The "x2" variants run Simplify on the result of
+        // Simplify: the cost of reaching the fixed point, to compare with one call of the candidate.
+        ["m4suffix16"] = () => Simplify(SuffixChain(16)),
+        ["m4suffix16x2"] = () => SimplifyTwice(SuffixChain(16)),
+        ["m4none16"] = () => Simplify(Enumerable.Range(1, 16).Select(i => (Expression)Expression.Multiply(Expression.Call(typeof(Math).GetMethod(nameof(Math.Sin), [typeof(double)])!, Xs[i]), Xs[i + 20])).Prepend(Expression.Divide(Xs[0], Xs[63])).Aggregate(Expression.Add)),
+        ["m4calls8"] = () => Simplify(Enumerable.Range(1, 8).SelectMany(i => new[] { Expression.Multiply(Expression.Constant(2.0), Xs[i]), Expression.Call(typeof(Program).GetMethod(nameof(Observable))!) }).Prepend(Expression.Divide(Xs[0], Xs[63])).Aggregate(Expression.Add)),
+        ["nested1179"] = () => Simplify(Nested1179()),
+        ["nested1179x2"] = () => SimplifyTwice(Nested1179()),
         ["opt-ext-root"] = () => Optimize(new BenchExtension()),
         ["opt-scalar"] = () => Optimize(Expression.Add(Expression.Multiply(Xs[0], Expression.Constant(1.0)), Expression.Constant(-0.0))),
         ["opt-lambda"] = () => Optimize(Expression.Lambda<Func<double, double, double>>(Expression.Add(Expression.Multiply(Xs[0], Expression.Constant(1.0)), Xs[1]), Xs[0], Xs[1])),
@@ -167,6 +176,37 @@ public static class Program
         var simplifier = new ExpressionSimplifier();
         return new Scenario(() => simplifier.Simplify(tree));
     }
+
+    /// <summary>A simplification scenario run twice: <c>Simplify(Simplify(tree))</c>, the cost of reaching the fixed point.</summary>
+    /// <param name="tree">The tree to simplify.</param>
+    /// <returns>The scenario.</returns>
+    private static Scenario SimplifyTwice(Expression tree)
+    {
+        var simplifier = new ExpressionSimplifier();
+        return new Scenario(() => simplifier.Simplify(simplifier.Simplify(tree)));
+    }
+
+    /// <summary>
+    /// <c>((2*x1 + x0/x63) + 2*x2) + ... + 2*xn</c>: refused by the quotient at every level, whose canonical result ends with the
+    /// factorable suffix of the products (mission M4).
+    /// </summary>
+    /// <param name="terms">The number of products.</param>
+    /// <returns>The chain.</returns>
+    private static Expression SuffixChain(int terms)
+        => Enumerable.Range(2, terms - 1).Aggregate(
+            (Expression)Expression.Add(Expression.Multiply(Expression.Constant(2.0), Xs[1]), Expression.Divide(Xs[0], Xs[63])),
+            (chain, i) => Expression.Add(chain, Expression.Multiply(Expression.Constant(2.0), Xs[i])));
+
+    /// <summary>nested#1179 of the S5 campaign: <c>(-2 * (y / 1)) - ((x / (y / 0)) + (-1 * (2 * z)))</c>.</summary>
+    /// <returns>The tree.</returns>
+    private static Expression Nested1179()
+        => Expression.Subtract(
+            Expression.Multiply(Expression.Constant(-2.0), Expression.Divide(Xs[1], Expression.Constant(1.0))),
+            Expression.Add(Expression.Divide(Xs[0], Expression.Divide(Xs[1], Expression.Constant(0.0))), Expression.Multiply(Expression.Constant(-1.0), Expression.Multiply(Expression.Constant(2.0), Xs[2]))));
+
+    /// <summary>An observable call of the M4 scenarios (never evaluated: the trees are only simplified).</summary>
+    /// <returns>1.</returns>
+    public static double Observable() => 1;
 
     /// <summary>An optimisation scenario (<see cref="ExpressionOptimiser"/>).</summary>
     /// <param name="tree">The tree to optimise.</param>

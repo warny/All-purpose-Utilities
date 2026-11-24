@@ -733,3 +733,14 @@ admitted it. A result holding a pinned term, an observable call or a non-finite 
 by magnitude rewrites `(-c)*t` as `-(c*t)` (exact in every type) on inert terms only. The coefficient of a binary factoring made of
 two single terms is canonicalized inside the effect gate, where the factoring rule ran. The policy tests of the mission
 (`ExpressionSimplifierFactoringConsistencyTests.ObservableCalls_KeepTheirEvaluations_UnderEveryPolicy`) keep every evaluation.
+
+## 15. Suffixes of refused chains (M4)
+
+The suffix finishing of `SimplifierFlatten.md` §22 needs no permission and no new admission either. The factored suffix is
+admitted by the factorable family, whose terms are inert under every policy (parameters, finite constants, ordinary products, at
+most one inert runtime call of the allow-list per term); the quotients, the calls that are not inert and every pinned term stay
+outside it, and a pinned term, placed last by the canonicalization, ends the spine, so no suffix ever crosses it. The prefix is
+prepared and run through the rules of its levels under the effect gate, as on the next call. The policy tests
+(`ExpressionSimplifierRefusedSuffixFactoringTests.ObservableCalls_KeepTheirEvaluations_UnderEveryPolicy`) keep every evaluation and
+its order under the default, aggressive, exception-free and trusting policies; an integral division by a parameter, which may
+throw, is pinned and keeps its exception.
