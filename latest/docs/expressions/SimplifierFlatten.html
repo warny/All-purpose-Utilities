@@ -6544,6 +6544,228 @@ reproduce. <code>calls8</code> alternates between 2,632 B and 2,776 B in the bas
 <li>A <code>NaN</code> term in a reassociation is left to the policy fold, so gen#983 needs five calls.</li>
 <li>Quotient factorization (family E) is not done.</li>
 </ul>
+<h2 id="20-additive-sign-normalization-audit-no-production-change">20. Additive sign normalization (audit, no production change)</h2>
+<p>Branch <code>fix/expression-additive-sign-normalization</code>, base <code>master</code> <code>1c7cec21</code> (PRs #720 and #721). Every variant was measured
+against that base with the same harness: S5 campaigns with 4,000 seeds and 4,000 nested compositions (70,515 convergence cases
+with the four new families), and bound stability (<code>S5_AUDIT_BIND=1</code>).</p>
+<h3 id="201-construction-sites">20.1 Construction sites</h3>
+<table>
+<thead>
+<tr>
+<th>Site</th>
+<th>Sign from</th>
+<th>Represented by</th>
+<th>Negative coefficient possible</th>
+<th>Outer negation kept</th>
+<th>Finished at once</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>CollectAdditiveTerms</code></td>
+<td>subtraction, ordinary negation</td>
+<td>sign flag</td>
+<td>yes (a constant in the term)</td>
+<td>no, absorbed into the flag</td>
+<td>— (collection)</td>
+</tr>
+<tr>
+<td><code>CanonicalizeAdditiveTerms</code> (levels, linear, anchored, spine, factorable and grouped chains, <code>CanonicalizeReassociation</code>, factored coefficients)</td>
+<td>collected flags</td>
+<td>flag; <code>0 - t</code> or <code>a - t</code> on rebuild</td>
+<td>yes, kept as an added term (<code>x + (-2 * y)</code>)</td>
+<td>no</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>MergeIdenticalMonomials</code> / <code>BuildMergedMonomial</code></td>
+<td>signed coefficient sum</td>
+<td>flag for a sum of <code>-1</code>, otherwise in the coefficient (<code>-2 * x</code>)</td>
+<td>yes</td>
+<td>no</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>IsNegatedSum</code></td>
+<td>all terms subtracted</td>
+<td>outer negation of the positive sum (<code>-(a + b)</code>)</td>
+<td>no</td>
+<td>yes (built)</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>NegateSubtractedConstant</code></td>
+<td>a subtracted constant</td>
+<td>the constant's own sign (<code>-1 + y</code>)</td>
+<td>n/a</td>
+<td>no</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>BuildCanonicalProduct</code> / <code>NormalizeProductFactors</code></td>
+<td>negated factors</td>
+<td>outer negation (<code>-(2 * x)</code>); a folded constant keeps its sign (<code>-2 * x</code>)</td>
+<td>yes</td>
+<td>yes</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>BuildNegation</code> / <code>TryFoldNegation</code></td>
+<td>rule results</td>
+<td>outer negation; <code>-(-t)</code> and <code>-(c)</code> folded</td>
+<td>yes (<code>-(-2 * x)</code>)</td>
+<td>yes</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>FinishReassociation</code>, <code>CanonicalizeReassociation</code></td>
+<td>rebuilt difference</td>
+<td>canonicalization above</td>
+<td>yes</td>
+<td>no</td>
+<td>yes (PR A)</td>
+</tr>
+<tr>
+<td><code>AggregateFactoredCoefficient</code> / <code>BuildAdditiveExpression</code></td>
+<td>coefficient terms</td>
+<td>flag; <code>0 - t</code></td>
+<td>yes</td>
+<td>no</td>
+<td>constants only</td>
+</tr>
+</tbody>
+</table>
+<p>No site moves an observable evaluation: the canonicalization pins every term that is not inert, and the rules run inside the
+effect gate. The ambiguity is in the reconstruction only: an added term with a negative coefficient (<code>x + (-2 * y)</code>) and a
+subtracted term with a positive one (<code>x + (0 - (2 * y))</code>) are both canonical, and so is the double negative
+<code>x + (0 - (-2 * y))</code>.</p>
+<h3 id="202-analysis-is-already-sign-consistent-experiment-a">20.2 Analysis is already sign-consistent (experiment A)</h3>
+<p>The term analysis (<code>AnalyzedAdditiveTerm</code>: sign flag, coefficient, factors) and the merge of identical monomials combine signed
+coefficients whatever the physical form: <code>(x - (-2*y)) - 2*y</code>, <code>(x + -(2*y)) + 2*y</code> and <code>(x + (-2*y)) + 2*y</code> all give <code>x</code>, and
+<code>-(2*x) + (-2*x)</code> gives <code>-4 * x</code> (<code>ExpressionSimplifierAdditiveSignTests.LogicalAnalysis_MergesAcrossPhysicalForms</code>). A
+separate logical normalization would change no output. The existing structures are sufficient, and none was added.</p>
+<h3 id="203-normalizing-the-reconstruction-experiments-b-and-c">20.3 Normalizing the reconstruction (experiments B and C)</h3>
+<table>
+<thead>
+<tr>
+<th>Variant</th>
+<th style="text-align: right;">First-pass <code>converge</code> changes</th>
+<th style="text-align: right;">More passes / fewer</th>
+<th style="text-align: right;">fixed@2 free / bound</th>
+<th style="text-align: right;">cycles free / bound</th>
+<th style="text-align: right;">comparer</th>
+<th>value classes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>master</code></td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">213 / 210</td>
+<td style="text-align: right;">51 / 0</td>
+<td style="text-align: right;">0</td>
+<td>—</td>
+</tr>
+<tr>
+<td>V1: every negative coefficient into the flag</td>
+<td style="text-align: right;">1,582</td>
+<td style="text-align: right;">14 / 1</td>
+<td style="text-align: right;">225 / 223</td>
+<td style="text-align: right;">52 / 0</td>
+<td style="text-align: right;">0</td>
+<td>1 <code>same</code> → <code>extreme</code></td>
+</tr>
+<tr>
+<td>C1: V1 + <code>-(c * t)</code> → <code>(-c) * t</code> for <code>c &lt; 0</code></td>
+<td style="text-align: right;">1,698</td>
+<td style="text-align: right;">17 / 1</td>
+<td style="text-align: right;">227 / 225</td>
+<td style="text-align: right;">52 / 0</td>
+<td style="text-align: right;">0</td>
+<td>1 <code>same</code> → <code>extreme</code></td>
+</tr>
+<tr>
+<td>C2: V1 + every direct constant absorbs the negation</td>
+<td style="text-align: right;">1,889</td>
+<td style="text-align: right;">18 / 2</td>
+<td style="text-align: right;">227 / 225</td>
+<td style="text-align: right;">52 / 0</td>
+<td style="text-align: right;">0</td>
+<td>none</td>
+</tr>
+<tr>
+<td>V1b: subtracted negative coefficients only (<code>0 - (-2 * y)</code>)</td>
+<td style="text-align: right;">92</td>
+<td style="text-align: right;">3 / 0</td>
+<td style="text-align: right;">216 / 213</td>
+<td style="text-align: right;">51 / 0</td>
+<td style="text-align: right;">0</td>
+<td>none</td>
+</tr>
+<tr>
+<td>V1b + C1</td>
+<td style="text-align: right;">217</td>
+<td style="text-align: right;">4 / 0</td>
+<td style="text-align: right;">216 / 213</td>
+<td style="text-align: right;">51 / 0</td>
+<td style="text-align: right;">0</td>
+<td>none</td>
+</tr>
+<tr>
+<td>V1d: V1, also before the merges</td>
+<td style="text-align: right;">not run: same mechanism, no improvement on the reproducers</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>Every rewrite is exact. <code>c * t = -((-c) * t)</code> holds on integers (a ring modulo 2^n) and on decimals, and bit for bit on every
+non-NaN floating-point product, a NaN product keeping the sign and payload IEEE-754 leaves unspecified. <code>a + p = a - (-p)</code> holds
+for every type. Only inert terms are rewritten.</p>
+<p>V1 unifies the sums (<code>x + (-2 * y)</code> and <code>x + -(2 * y)</code> give one form, and so do <code>x - (-2 * y)</code> and <code>x - -(2 * y)</code>), and C2 also
+unifies the lone products (<code>-(2 * x)</code> and <code>-2 * x</code>). Every variant, however, needs more passes on some cases, and the cause is the
+same in all of them. Removing a sign from a coefficient makes coefficients equal: <code>x - (y - (x - y))</code> gives <code>(0 - (2 * y)) + (2 * x)</code> instead of <code>(-2 * y) + (2 * x)</code>, and <code>-1 + ((0 - (-2 * z)) + (2 * x))</code> becomes <code>-1 + ((2 * x) + (2 * z))</code>. The next call then
+factors those equal coefficients through the factorable chain (<code>2 * ((0 - y) + x)</code>, <code>-1 + (2 * (x + z))</code>). The canonicalization
+of a level never extracts common factors (mission C3c: the factors must not depend on how the source groups them), so the first
+call cannot reach that form. The normalization does not create the instability; it exposes the gap between level and
+whole-chain factoring wherever the double negative used to keep coefficients apart.</p>
+<p><strong>Disposition.</strong> Under the acceptance rule of the mission (no new unstable first result), no variant is kept, and the production
+code is unchanged. <code>gen#1594</code> and <code>gen#2973</code> (§19.3) are not sign problems: every variant gives them exactly the base results.
+Their causes are the factored coefficient of added terms and the common factors of whole chains
+(<code>ExpressionSimplifierS5A05FinalizationTests.KnownResidues_TakeTwoCalls</code>).</p>
+<h3 id="204-proposed-order">20.4 Proposed order</h3>
+<ol>
+<li>Make the level canonicalization reach the whole-chain factoring where its terms are the whole chain (a root, or a node whose
+parent is not additive), or record the factoring decision in the metadata so that the next call agrees with the first. This
+is a C3c change, and it removes the mechanism of every regression in 20.3.</li>
+<li>Then apply V1b + C1 (the smallest variant: 217 changed first passes, no new cycle, no value change). It removes the double
+negatives <code>0 - (-c * t)</code> and <code>-(-c * t)</code>, then the remaining forms: V1 for the sums, C2 for the lone products.</li>
+<li>Measure each step alone against the previous one, with the reproducers of <code>ExpressionSimplifierAdditiveSignTests</code>.</li>
+</ol>
+<h3 id="205-measures">20.5 Measures</h3>
+<ul>
+<li>Complexity (<code>measure</code>, 150 points: the 130 of §17.8 and the four new families <code>altsign</code>, <code>negcoef</code>, <code>negprodsum</code>,
+<code>sharedneg</code> at n = 4 to 20). On <code>master</code> the new families are linear: 97, 101, 111 and 101 visits at n = 20. V1b + C1 has
+identical visits and comparer simplifications on all 150 points; only the output of <code>altsign</code> shrinks (97 → 77 nodes at
+n = 20).</li>
+<li>Performance: not measured. No production change is delivered, and the machine was loaded (a game used about 1.4 cores), which
+the protocol excludes.</li>
+</ul>
+<h3 id="206-reproducers">20.6 Reproducers</h3>
+<p><code>ExpressionSimplifierAdditiveSignTests</code> (<code>S5-Audit</code>) pins the forms of <code>master</code>:</p>
+<ul>
+<li>the matrix of the mission;</li>
+<li>associations and repeated terms;</li>
+<li>quotients, powers, extreme, infinite and NaN coefficients;</li>
+<li>bound parameters and shared products;</li>
+<li>an observable call with a negative coefficient, evaluated once under three policies;</li>
+<li>the competing forms the comparer does not identify.</li>
+</ul>
+<p>A future normalization must update these tests together with the change of 20.4.</p>
 
 </article>
 
