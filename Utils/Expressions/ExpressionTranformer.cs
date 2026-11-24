@@ -1699,6 +1699,22 @@ public abstract partial class ExpressionTransformer
         => AllowsRules(root) ? ExpressionRuleRejection.None : ExpressionRuleRejection.EffectGate;
 
     /// <summary>
+    /// Finishes the result of a chain whose admission (<see cref="FlattenAdmission"/>) refused the root, when that root is the
+    /// <em>boundary</em> of its chain: no node of the same group is transforming it as one of its crossed operands or through
+    /// one of its rules (see <see cref="TransformWithFlatten"/>). Called once per such root, after its historical treatment.
+    /// The base implementation returns <paramref name="result"/>.
+    /// </summary>
+    /// <remarks>
+    /// <c>internal virtual</c> like <see cref="FlattenAdmission"/>: not an extensibility point for third-party subclasses. The
+    /// built-in simplifier gives the result to the global factoring of its additive chains when the result, unlike the raw root,
+    /// is a factorable chain (mission C3c, <c>docs/expressions/SimplifierFlatten.md</c> §21).
+    /// </remarks>
+    /// <param name="root">The raw root of the refused chain.</param>
+    /// <param name="result">The result of its historical treatment.</param>
+    /// <returns>The result of the root.</returns>
+    internal virtual Expression FinishRefusedChain(Expression root, Expression result) => result;
+
+    /// <summary>
     /// Decides, when <see cref="AllowsRules"/> refused a node, whether the rules audited by <see cref="IsAuditedRule"/> may
     /// still run on it, each checking the permissions of the evaluations it actually rewrites (S5 P18 Architecture C). Asked
     /// at most once per refused node. The base implementation refuses, so the refusal of <see cref="AllowsRules"/> stays final.

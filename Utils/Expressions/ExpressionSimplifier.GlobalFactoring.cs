@@ -410,8 +410,11 @@ public partial class ExpressionSimplifier
                 FactoringMonomial monomial = monomials[index];
                 if (!monomial.Holds(best, statistics)) continue;
                 if (first < 0) first = index;
-                residues.Add((monomial.Residue(best, type, ref one, this), monomial.IsNegative));
-                allNegative &= monomial.IsNegative;
+
+                // A holder of the opposite coefficient keeps its residue with the opposite sign: (-c)*t is -(c*t) exactly.
+                bool isNegative = monomial.IsNegative ^ best.FlipsSign(monomial.NumericValue!);
+                residues.Add((monomial.Residue(best, type, ref one, this), isNegative));
+                allNegative &= isNegative;
             }
 
             // Terms that are all subtracted give a subtracted product of a positive sum (-a*x - b*x is -(x*(a + b))), never a
@@ -467,14 +470,16 @@ public partial class ExpressionSimplifier
                 // One structural visit per indexed factor: the rounds are bounded by the operation's budget.
                 ExpressionResourceBudget.ConsumeStructuralVisit();
                 if (statistics is not null) statistics.FactorComparisons++;
-                if (!symbolic.TryGetValue(factor, out FactoringCandidate? candidate)) symbolic.Add(factor, new FactoringCandidate(factor, null, index));
+                if (!symbolic.TryGetValue(factor, out FactoringCandidate? candidate)) symbolic.Add(factor, new FactoringCandidate(factor, index));
                 else candidate.Count(index);
             }
 
+            // Coefficients are indexed by their magnitude: c and -c are one candidate (see FactoringCandidate.FactoredValue).
             if (monomial.NumericValue is { } value && IsFactorableCoefficient(value))
             {
-                if (!numeric.TryGetValue(value, out FactoringCandidate? candidate)) numeric.Add(value, new FactoringCandidate(monomial.NumericConstant!, value, index));
-                else candidate.Count(index);
+                object magnitude = CoefficientMagnitude(value);
+                if (!numeric.TryGetValue(magnitude, out FactoringCandidate? candidate)) numeric.Add(magnitude, new FactoringCandidate(monomial.NumericConstant!, value, magnitude, index));
+                else candidate.Count(index, value);
             }
         }
 
@@ -483,6 +488,24 @@ public partial class ExpressionSimplifier
         foreach (FactoringCandidate candidate in numeric.Values) best = Better(candidate, best, scopes, rejected);
         return best;
     }
+
+    /// <summary>
+    /// The magnitude of a factorable coefficient, under which <see cref="FindBestCandidate"/> indexes it: the value itself when
+    /// it is positive, of an unsigned type, or a signed integral minimum (whose negation is itself); otherwise its exact negation
+    /// (IEEE-754 for the floating-point types, so bit for bit). So <c>2</c> and <c>-2</c> are one candidate, and
+    /// <c>2*x + (-2)*y</c> is factored as <c>2*x - 2*y</c> is: the term analysis already treats the sign of a coefficient and
+    /// the sign of a term as one sign (<c>docs/expressions/SimplifierFlatten.md</c> §20.2, §21.4).
+    /// </summary>
+    /// <param name="value">A boxed factorable coefficient (<see cref="IsFactorableCoefficient"/>).</param>
+    /// <returns>The boxed magnitude, of the same type.</returns>
+    private static object CoefficientMagnitude(object value) => value switch
+    {
+        int intValue when intValue < 0 && intValue != int.MinValue => -intValue,
+        long longValue when longValue < 0 && longValue != long.MinValue => -longValue,
+        double doubleValue when doubleValue < 0 => -doubleValue,
+        float floatValue when floatValue < 0 => -floatValue,
+        _ => value,
+    };
 
     /// <summary>Whether a numeric coefficient may be factored: finite, other than <c>0</c>, <c>1</c> and <c>-1</c>.</summary>
     /// <param name="value">A boxed primitive.</param>
@@ -523,7 +546,7 @@ public partial class ExpressionSimplifier
         term = null;
         isNegative = false;
         var factors = new List<Expression>(4);
-        object? coefficient = candidate.Value;
+        object? coefficient = candidate.FactoredValue;
         if (!candidate.IsNumeric) factors.Add(candidate.Factor);
 
         if (sum is ConstantExpression constant)
@@ -654,7 +677,7 @@ public partial class ExpressionSimplifier
         /// <returns><see langword="true"/> when it holds it.</returns>
         public bool Holds(FactoringCandidate candidate, FlattenAdmissionStatistics? statistics)
         {
-            if (candidate.IsNumeric) return NumericValue is { } value && IsFactorableCoefficient(value) && Equals(value, candidate.Value);
+            if (candidate.IsNumeric) return NumericValue is { } value && IsFactorableCoefficient(value) && Equals(CoefficientMagnitude(value), candidate.Magnitude);
             return IndexOf(candidate.Factor, statistics) >= 0;
         }
 
@@ -722,26 +745,49 @@ public partial class ExpressionSimplifier
         /// <summary>The canonical-order key of the factor, built for a tie only.</summary>
         private ExpressionCanonicalOrder.KeyNode? _key;
 
-        /// <summary>Initializes a candidate met in the term at <paramref name="term"/>.</summary>
-        /// <param name="factor">The factor, or the constant node of a coefficient.</param>
-        /// <param name="value">The boxed value of a coefficient, or <see langword="null"/> for a factor.</param>
+        /// <summary>Whether two holders of a coefficient candidate have opposite values (<c>c</c> and <c>-c</c>).</summary>
+        private bool _mixedSigns;
+
+        /// <summary>Initializes a factor candidate met in the term at <paramref name="term"/>.</summary>
+        /// <param name="factor">The factor.</param>
         /// <param name="term">The index of the term.</param>
-        public FactoringCandidate(Expression factor, object? value, int term)
+        public FactoringCandidate(Expression factor, int term)
         {
             Factor = factor;
-            Value = value;
             Terms = 1;
             _lastTerm = term;
+        }
+
+        /// <summary>Initializes a coefficient candidate met in the term at <paramref name="term"/>.</summary>
+        /// <param name="constant">The constant node of the coefficient.</param>
+        /// <param name="value">The boxed value of the coefficient in that term.</param>
+        /// <param name="magnitude">Its magnitude (<see cref="CoefficientMagnitude"/>), the key of the candidate.</param>
+        /// <param name="term">The index of the term.</param>
+        public FactoringCandidate(ConstantExpression constant, object value, object magnitude, int term)
+            : this(constant, term)
+        {
+            Value = value;
+            Magnitude = magnitude;
         }
 
         /// <summary>The factor, or the constant node of a coefficient.</summary>
         public Expression Factor { get; }
 
-        /// <summary>The boxed value of a coefficient, or <see langword="null"/> for a factor.</summary>
+        /// <summary>The boxed value of the coefficient in its first holder, or <see langword="null"/> for a factor.</summary>
         public object? Value { get; }
+
+        /// <summary>The magnitude of a coefficient, the key of the candidate, or <see langword="null"/> for a factor.</summary>
+        public object? Magnitude { get; }
 
         /// <summary>Whether the candidate is a numeric coefficient.</summary>
         public bool IsNumeric => Value is not null;
+
+        /// <summary>
+        /// The coefficient factored out: the common value when every holder has the same one (the historical factoring, so
+        /// <c>-2*x + -2*y</c> still gives <c>-2 * (x + y)</c>), the magnitude when holders have opposite values (<c>2*x + -2*y</c>
+        /// gives <c>2 * (x - y)</c>, as <c>2*x - 2*y</c> does); <see langword="null"/> for a factor.
+        /// </summary>
+        public object? FactoredValue => _mixedSigns ? Magnitude : Value;
 
         /// <summary>The number of distinct terms that hold it.</summary>
         public int Terms { get; private set; }
@@ -755,20 +801,41 @@ public partial class ExpressionSimplifier
             Terms++;
         }
 
-        /// <summary>The canonical-order key of the candidate's node.</summary>
+        /// <summary>Counts the term at <paramref name="term"/>, once, holding the coefficient with <paramref name="value"/>.</summary>
+        /// <param name="term">The index of a term holding the candidate.</param>
+        /// <param name="value">The boxed value of its coefficient, of the candidate's magnitude.</param>
+        public void Count(int term, object value)
+        {
+            if (!Equals(value, Value)) _mixedSigns = true;
+            Count(term);
+        }
+
+        /// <summary>
+        /// Whether a holder of value <paramref name="value"/> changes its sign once <see cref="FactoredValue"/> is factored out: its
+        /// value is the opposite of the factored one.
+        /// </summary>
+        /// <param name="value">The boxed value of a holder's coefficient.</param>
+        /// <returns><see langword="true"/> for the holders of the opposite value.</returns>
+        public bool FlipsSign(object value) => IsNumeric && !Equals(value, FactoredValue);
+
+        /// <summary>
+        /// The canonical-order key of the candidate's node: of the factor, or of the magnitude of a coefficient, so that a tie
+        /// between coefficients never depends on which holder came first.
+        /// </summary>
         /// <param name="scopes">The lexical scope snapshot.</param>
         /// <returns>The key.</returns>
-        public ExpressionCanonicalOrder.KeyNode KeyOf(ParameterExpression[][] scopes) => _key ??= GetCanonicalKey(Factor, scopes, record: false);
+        public ExpressionCanonicalOrder.KeyNode KeyOf(ParameterExpression[][] scopes)
+            => _key ??= GetCanonicalKey(IsNumeric && !Equals(Value, Magnitude) ? Expression.Constant(Magnitude, Factor.Type) : Factor, scopes, record: false);
 
         /// <inheritdoc/>
         public bool Equals(FactoringCandidate? other)
-            => other is not null && IsNumeric == other.IsNumeric && (IsNumeric ? Equals(Value, other.Value) : FactorEqualityComparer.Instance.Equals(Factor, other.Factor));
+            => other is not null && IsNumeric == other.IsNumeric && (IsNumeric ? Equals(Magnitude, other.Magnitude) : FactorEqualityComparer.Instance.Equals(Factor, other.Factor));
 
         /// <inheritdoc/>
         public override bool Equals(object? obj) => Equals(obj as FactoringCandidate);
 
         /// <inheritdoc/>
-        public override int GetHashCode() => IsNumeric ? Value!.GetHashCode() : FactorEqualityComparer.Instance.GetHashCode(Factor);
+        public override int GetHashCode() => IsNumeric ? Magnitude!.GetHashCode() : FactorEqualityComparer.Instance.GetHashCode(Factor);
     }
 
     /// <summary>
@@ -1029,6 +1096,62 @@ public partial class ExpressionSimplifier
 
         Expression result = CanonicalizeAdditiveTerms(signedTerms, source.Type, recordMetadata: false, AdditiveFactoring.CommonFactors);
         return NegateSubtractedSum(result, source.Type);
+    }
+
+    /// <summary>
+    /// Gives the result of a refused chain boundary to the global factoring when that result is a factorable chain (mission
+    /// C3c, <c>docs/expressions/SimplifierFlatten.md</c> §21): the factoring the next call applied to it, applied once, now.
+    /// </summary>
+    /// <param name="root">The raw root of the refused chain, the boundary of its chain.</param>
+    /// <param name="result">The result of its level by level treatment.</param>
+    /// <returns>
+    /// The canonical factored form of <paramref name="result"/>, or <paramref name="result"/> itself when it is not a
+    /// factorable chain (or the negation of one), when it is a linear chain, outside an operation, for a derived simplifier and
+    /// while the factorable family is switched off.
+    /// </returns>
+    /// <remarks>
+    /// <para>
+    /// <b>Why.</b> The admission decides on the raw root (<see cref="FlattenAdmission"/>): a chain holding a constant pair, the
+    /// negation of a constant, a product by a sum the levels fold, or a factor of <c>1</c>, is refused and simplified level by
+    /// level, where each canonicalization merges identical monomials but never extracts common factors (the factors would
+    /// depend on how the source groups the terms). The result is often a factorable chain, which the next call admitted and
+    /// factored: <c>((2 - 10) - z) - (x * z)</c> gave <c>-8 + ((0 - z) + (0 - (x * z)))</c>, then
+    /// <c>-8 + (0 - (z * (1 + x)))</c>.
+    /// </para>
+    /// <para>
+    /// <b>Where.</b> Only at the boundary of the refused chain (<see cref="ExpressionTransformer.FinishRefusedChain"/>), once its
+    /// whole treatment is done: never on a crossed operand or on a node a rule of the chain builds, whose result an enclosing
+    /// canonicalization collects again, so the factoring is applied to all the terms of the chain at once, as the next call's
+    /// admission applied it, and once per chain.
+    /// </para>
+    /// <para>
+    /// <b>Safety.</b> The result is tested exactly as the next call tested it: a linear chain is left alone (its terms are
+    /// distinct), and a chain is factored only when <see cref="IsFactorableChain"/> admits it, so every proof of that family
+    /// holds (§13.5): every term is inert and factorable, every crossed node an ordinary operator, no constant pair is
+    /// crossed. The levels already folded the constants the raw admission refused, exactly; no admission condition is widened.
+    /// The terms are the terms of the result, finished by the levels: they are not prepared again (the next call prepared each
+    /// term, which rewrites no factorable term the levels finished; §21.3 lists the measured exceptions). Both walks consume the
+    /// structural budget and stop at the first refusal; the factoring is the one of <see cref="FlattenFactorableChain"/>.
+    /// </para>
+    /// </remarks>
+    internal override Expression FinishRefusedChain(Expression root, Expression result)
+    {
+        if (GetType() != typeof(ExpressionSimplifier) || t_factorableChainsDisabled || t_refusedChainFinishingDisabled || ExpressionResourceBudget.ActiveSession is null) return result;
+
+        // The negation of a sum (all its terms subtracted, C3d): the next call's chain is its operand.
+        bool negated = result is UnaryExpression negation && IsOrdinaryUnaryNegate(negation);
+        Expression candidate = negated ? ((UnaryExpression)result).Operand : result;
+        if (AsCrossedAdditiveNode(candidate) is not BinaryExpression chain) return result;
+
+        FlattenAdmissionStatistics? statistics = t_admissionStatistics;
+        if (statistics is not null) statistics.BoundaryTests++;
+        if (IsLinearChain(chain, null, out _, out _) || !IsFactorableChain(chain, null, out _)) return result;
+
+        if (statistics is not null) statistics.BoundaryFactorings++;
+        var terms = new List<(Expression Term, bool IsNegative)>();
+        CollectAdditiveTermsIteratively(terms, chain, new Stack<(Expression Node, bool IsNegative)>());
+        Expression factored = NegateSubtractedSum(CanonicalizeAdditiveTerms(terms, chain.Type, recordMetadata: false, AdditiveFactoring.CommonFactors), chain.Type);
+        return negated ? BuildNegation(factored) : factored;
     }
 
     /// <summary>

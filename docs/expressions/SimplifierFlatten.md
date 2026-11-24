@@ -2699,3 +2699,133 @@ Their causes are the factored coefficient of added terms and the common factors 
 - the competing forms the comparer does not identify.
 
 A future normalization must update these tests together with the change of 20.4.
+
+## 21. Level and whole-chain factoring agree (mission C3c, consistency)
+
+Branch `fix/expression-c3c-factoring-consistency`, base `master` `523fc708` (PR #722). The base was measured in a detached
+worktree of `523fc708`; every figure below compares the branch with it, never the branch with itself. Same harness as §20: S5
+campaigns with 4,000 seeds and 4,000 nested compositions (70,515 convergence cases), bound stability (`S5_AUDIT_BIND=1`).
+
+### 21.1 Diagnosis: three mechanisms, not one admission condition
+
+The stability campaign of the base leaves 213 cases at `fixed@2`, 5 at `fixed@3`, 1 at `fixed@5` and 51 cycles. Tracing every case
+whose second pass factors (`FlattenAdditiveChain`, `AdditionOfEqualsElements`, `SubstractionWithZero` as responsible rule) gives
+three distinct mechanisms, plus a fourth one outside the factorable family.
+
+| | Mechanism | First divergence | Reproducers |
+|---|---|---|---|
+| M1 | The raw admission refuses the chain (a constant pair, the negation of a constant, a product by `1`, a negated sum, a factor that is a sum the levels fold), so it is simplified level by level, where every canonicalization merges monomials (`AdditiveFactoring.Monomials`) but never extracts common factors. Its result is a factorable chain, which the next call admits and factors. | `FlattenAdmission` decides on the raw root, before any preparation; nothing decides again on the result. | gen#2973, gen#2594, gen#2339, gen#2991, gen#3634, gen#3817, gen#3999, gen#611, nested#546 |
+| M2 | A binary factoring (`AdditionOfEqualsElements`) builds the coefficient of two added single terms with the ordinary factory (`CanonicalizeFactoredCoefficient` keeps a sum of added terms, §14.8); the next call orders it. | `CanonicalizeFactoredCoefficient` | gen#1594, gen#777, gen#1535, gen#1778, gen#2167, gen#2171, gen#3018, nested#282, … (16 cases) |
+| M3 | The global factoring compares numeric coefficients with their sign: `2*x - 2*y` (a subtracted `2`) gives `2 * ((0 - y) + x)`, `2*x + (-2)*y` (an added `-2`) gives `(-2 * y) + (2 * x)`. Phase A puts the sign of a merged group in its coefficient (`x - (y - (x - y))` merges into `-2 * y`), so the merged form is not factored, while any sign normalization of the reconstruction (§20.3: V1, V1b) makes the two coefficients equal and lets the next call factor them. | `FindBestCandidate` keyed coefficients by their signed value. | Case A of the mission, the regressions of every §20.3 variant |
+| M4 | A refused chain that stays refused after the levels (a quotient, a call that is not inert) is canonicalized as a right-associated sum; the next call offers each suffix of that sum as a chain of its own, and a factorable suffix is factored. | The canonical reconstruction of a refused chain (pre-existing: `((2*y) - (x/w)) + (2*z)` takes two calls on the base) | nested#1179 (exposed by M3, below) |
+
+Case A (`x - (y - (x - y))`) is a fixed point on the base (`(-2 * y) + (2 * x)`, one call): its instability appears only once a
+sign normalization moves the sign of `-2` into the flag, which is exactly M3. Case B (`gen#1594`) is M2, a separate correction of
+the binary factoring, not of the C3c admission. Case C (`gen#2973`) is M1: `(-1E+300) + (-y)` is the negation of a constant,
+which `IsFactorableTerm` refuses; once prepared it is the constant `-1E+300`, and the result of the levels,
+`-1E+300 + ((0 - y) + (z + ((0 - (x * y)) + (y ** 2))))`, is a factorable chain. Its trace also shows the inner chain
+`-1E+300 + ((0 - y) + (z + (0 - (x * y))))` factored by a probe of `AdditionOfEqualsElements` and discarded: the factoring was
+reached, on a node whose result an enclosing canonicalization collects again.
+
+### 21.2 Questions of the admission (phase B of the mission)
+
+1. **The admission is evaluated before the preparation** of the operands, on the raw root, once per chain root.
+2. **A refused chain can become admissible without any change of its operators**: its refusing terms are folded by the levels
+   (constant pairs, negated constants, products by `1`), and no part of the engine tests the result again.
+3. **Recorded refusals stay valid**: the tables of known refusals (C1) hold raw nodes of the operation, which are never rebuilt;
+   a result is a new tree and is never looked up.
+4. **A sub-chain is not distinguished from a whole chain** by the admission: every crossed node is offered as a root of its own,
+   and an admitted sub-chain of a refused chain is factored on its own (M4, and the probe of case C).
+5. **A parent does not reuse the analysis of its children**: each canonicalization analyzes its terms again (with the hashes of
+   C3a).
+6. **The session cannot carry a new admission** without keeping a decision that a rebuild invalidates: the admitted roots are
+   consumed by the rule invoked right after the admission (§13.4).
+7. **Factoring once per chain** needs the boundary of the chain: the node no node of the same chain is transforming.
+
+### 21.3 Strategies compared
+
+| Strategy | Principle | Measured or analyzed | Decision |
+|---|---|---|---|
+| A — deferred admission after preparation | Test `IsFactorableChain` again on the prepared operands of every crossed node | One more walk per level (quadratic on a refused comb), and an inner level that factors makes the result depend on the grouping again (§13.3) | rejected |
+| B — whole-chain canonicalization at the boundary | At the boundary of a refused chain only, test its *result* as the next call would (linear, then factorable) and canonicalize it with `AdditiveFactoring.CommonFactors` | Two walks and one canonicalization per refused chain, linear (21.6); the result is the next call's result (21.5) | **kept (M1)** |
+| C — factorability metadata in the session | Record that a prepared sub-chain is factorable, so that the parent decides without walking | The decision belongs to the whole chain, not to a sub-chain (Q4): the metadata would need the boundary anyway, and would outlive the rebuilds that invalidate it (Q6) | rejected |
+| D — specialized finishing of some rebuilds | Finish the coefficient of a binary factoring, or the factored forms of the reassociation rules | Reuses `CanonicalizeAdditiveTerms` (no second factoring algorithm), at a constant cost when the coefficient has two single terms | **kept, restricted (M2)** |
+| D' — inner sub-chains without common factors | An admitted sub-chain of a refused chain merges monomials only, the boundary factors | Removes M4, but changes the historical result of every refused family whose sub-chains are factorable today (`(a*x + a*y) + x/b` keeps `a*(x + y)` on the base) | rejected (refused families keep the historical behavior) |
+
+**The boundary.** The engine knows it without any parent pointer: `ExpressionTransformer.TransformWithFlatten` sets a thread-static
+marker (`WithinRefusedChain`) while a refused root is transformed historically, so its crossed operands and the nodes its rules
+build (a reassociation, a probe) are not boundaries; the marker is cleared while a node of no flatten group (a call, a product, a
+lambda, a term of an admitted chain) is transformed, so a chain below it is the boundary of its own chain; and the simplifier
+clears it at the entry of every operation (`TransformWithinBoundary`, the public calls and the comparer's simplifications), so a
+nested operation never inherits it. It is restored in `finally` on every path, so a budget refusal never leaves it set. The hot
+path of a node of no group pays one thread-static read.
+
+**M3.** `FindBestCandidate` indexes a coefficient by its magnitude (`CoefficientMagnitude`: the exact negation, IEEE-754 for the
+floating-point types, never for an unsigned type nor a signed minimum, which is its own negation). When every holder has the same
+value the factored coefficient is that value (the historical result: `-2*x + -2*y` keeps `-2 * (x + y)`); when holders have
+opposite values the magnitude is factored and the holders of the negative value keep their residue with the opposite sign
+(`(-c)*t` is `-(c*t)` exactly). A tie between coefficients is broken on the key of the magnitude, so it never depends on which
+holder came first. The linear family compares its coefficients and constants by magnitude too (`LinearChainOperands`): a chain
+holding `2*x` and `-2*y` is no longer linear (no rule could apply at a level, but the global factoring now does), so it reaches the
+factorable family. No sign normalization of the reconstruction is changed (§20.3 stays the decision of a later change).
+
+**M2.** `CanonicalizeFactoredCoefficient` also canonicalizes a coefficient whose two operands are single terms (neither an
+ordinary `Add` nor `Subtract`): its canonicalization costs two keys, whatever the length of the chain. A coefficient that is
+already a sum keeps the historical node, so the `dag` growth family of §14.8 stays linear (21.6).
+
+### 21.4 Proof obligations of the boundary finishing
+
+- **Same identities as the next call.** The result is tested by `IsLinearChain` then `IsFactorableChain`, the tests the next
+  call's admission applies to it, and canonicalized by `CanonicalizeAdditiveTerms(…, CommonFactors)` then `NegateSubtractedSum`,
+  the treatment of `FlattenFactorableChain`; a negated sum (`-(sum)`, C3d) is finished through its operand and negated again
+  (`BuildNegation`), as the next call finishes the operand of a `Negate` root. The terms are not prepared again: they are the
+  finished terms of the levels (the next call prepares them, which rewrote none of the factorable terms of the campaign: every
+  M1 case reaches in one call the exact tree its second call reached on the base).
+- **No admission is widened.** Every proof of §13.4 and §13.5 holds on the tested result: every term inert and factorable, every
+  crossed node an ordinary operator, no constant pair crossed. The constant pairs, the negated constants and the products by
+  `1` the raw admission refused are folded by the levels, exactly, before the test; the decisions about signed zeros
+  (`-0.0 + -0.0`), `NaN` and the infinities are those of the levels (a non-finite constant refuses the result).
+- **Effects.** A result holding a call that is not inert, a pinned term or any node outside the family is returned as is: no
+  user code runs, no evaluation moves (type tests and runtime reflection objects only, ETC R4 and S5 A-10).
+- **Once per chain.** The boundary is finished once, after its whole historical treatment; its crossed operands and the nodes its
+  rules build never are, so a sub-sum is never factored before the enclosing canonicalization collects its terms.
+- **Budgets.** Both walks count their structural visits and stop at the first refusal; the canonicalization counts as every
+  canonicalization. Every walk is iterative.
+
+### 21.5 Validation
+
+**Stability** (8 passes, free parameters / parameters bound by a lambda):
+
+| Category | Base | M1 | M1 + M3 | M1 + M2 + M3 (branch) | Base bound | Branch bound |
+|---|---:|---:|---:|---:|---:|---:|
+| fixed@1 | 67,346 | 67,355 | 67,354 | 67,370 | 67,341 | 67,364 |
+| fixed@2 | 213 | 204 | 205 | **189** | 210 | **187** |
+| fixed@3 | 5 | 5 | 5 | 5 | 4 | 4 |
+| fixed@5 | 1 | 1 | 1 | 1 | 1 | 1 |
+| cycles, period 2 / 3 | 44 / 7 | 44 / 7 | 44 / 7 | 44 / 7 | 0 | **0** |
+
+25 cases reach their fixed point in one call (every M1 and M2 reproducer, gen#1594 and gen#2973 included); one case needs two
+calls instead of one: nested#1179, `(0 - (x / (y / 0))) + ((-2 * y) + (2 * z))`, an M4 case (a refused chain with a quotient,
+whose suffix `(-2 * y) + (2 * z)` is factorable once coefficients compare by magnitude; on the base the same suffix with `2 * y`
+needs two calls as well). No case moves to a cycle; the 51 remaining cycles are the free-parameter ties of S4 (L-3), with no bound
+cycle on either side.
+
+**Campaigns** (base against branch):
+
+| Campaign | Changed records | Classification |
+|---|---:|---|
+| `converge` (70,515) | 40 first passes | 11 new forms that were already fixed points (M3: `a - (b - (c - d))` with `c = a`, `d = b` gives `2 * ((0 - y) + x)`, `-1 + ((0 - (-2 * z)) + (2 * x))` gives `-1 + (2 * (z + x))`); 25 first passes reaching the base's second pass (M1, M2); 3 coefficients ordered by M2 in cases that stay `fixed@2` for a sum factor (outside C3c); nested#1179 |
+| `terminate` (66,270) | 17 | identical visit counts and classes; results only (M3 forms) |
+| `diff` (4,000 seeds, 7 types) | 21 | one value class moves: `float` `(y - (y - (0.5f - y))) - ((y / (1f / y)) - (2f - x))`, two samples `same` → `extreme` at `y = 3E+38` (the factoring of `-y - y*y`, the S3 latitude the base's second call already took); no `VALUE`, no exception added, removed or changed |
+| `effects` (4,004) | 0 | evaluation logs and exceptions identical |
+| `canon`, `s3` | 0 | |
+| `comparer` | — | 0 violation; 164,888 hash-consistent and 329,298 transitive checks instead of 164,702 and 328,740 (more pairs identified) |
+| `inventory` | — | 76 rules, same order |
+
+**Suites**: Unit, Security, Functional and the Debug expression jobs (21.8). Updated with their reason:
+`ExpressionSimplifierS5A05FinalizationTests.KnownResidues_TakeTwoCalls` becomes `FormerResidues_TakeOneCall` (gen#1594 and
+gen#2973 now reach the base's second result in one call); `ExpressionSimplifierNumericChainGrowthTests` `negatedInLambda` (M3:
+`-7 * x3` and `-(7 * x5)` share `7`) and `negatedChainCancels` (M1: a negated sum, factored at the boundary as the next call
+factored it), both now asserted to be fixed points. New: `ExpressionSimplifierFactoringConsistencyTests` (Unit) and
+`ExpressionSimplifierFactoringConsistencyResourceTests` (Security). The evaluation-preserving tests are Unit tests: the
+Functional suite holds the tests that need sockets, processes or environment paths, which these do not.

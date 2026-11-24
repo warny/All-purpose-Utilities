@@ -239,7 +239,9 @@ public class ExpressionSimplifierNumericChainGrowthTests
     /// <remarks>
     /// Since mission C3c these chains are factorable chains, simplified at once: the reversed and the right-associated sources
     /// give the canonical form of the left-associated one, the equal coefficients are factored out as a canonical product, and
-    /// the two terms of <c>x3</c> of the negated lambda merge into <c>-7 * x3</c>.
+    /// the two terms of <c>x3</c> of the negated lambda merge into <c>-7 * x3</c>. Since the C3c consistency fix
+    /// (<c>docs/expressions/SimplifierFlatten.md</c> §21.4) <c>-7 * x3</c> and <c>-(7 * x5)</c> share the coefficient <c>7</c>,
+    /// which the global factoring compares by magnitude: <c>0 - (7 * (x3 + x5))</c>. Every form is a fixed point.
     /// </remarks>
     /// <param name="shape">The shape.</param>
     /// <param name="expected">The simplified tree.</param>
@@ -251,7 +253,7 @@ public class ExpressionSimplifierNumericChainGrowthTests
     [DataRow("equalCoefficients", "(3 * ((0 - x1) + ((0 - x2) + ((0 - x3) + ((0 - x4) + ((0 - x5) + ((0 - x6) + x0)))))))")]
     [DataRow("permutedCoefficients", "((2 * x0) + ((0 - (16 * x3)) + ((0 - (30 * x6)) + ((0 - (39 * x1)) + ((0 - (53 * x4)) + ((0 - (76 * x2)) + (0 - (90 * x5))))))))")]
     [DataRow("lambda", "(x0, x1, x2, x3, x4, x5, x6) => ((0 - (3 * x1)) + ((0 - (4 * x2)) + ((0 - (5 * x3)) + ((0 - (6 * x4)) + ((0 - (7 * x5)) + ((0 - (8 * x6)) + (100 * x0)))))))")]
-    [DataRow("negatedInLambda", "(x0, x1, x2, x3, x4, x5, x6) => ((-7 * x3) + ((0 - (3 * x1)) + ((0 - (4 * x2)) + ((0 - (6 * x4)) + ((0 - (7 * x5)) + ((0 - (8 * x6)) + (100 * x0)))))))")]
+    [DataRow("negatedInLambda", "(x0, x1, x2, x3, x4, x5, x6) => ((0 - (3 * x1)) + ((0 - (4 * x2)) + ((0 - (6 * x4)) + ((0 - (7 * (x3 + x5))) + ((0 - (8 * x6)) + (100 * x0))))))")]
     public void ChainShapes_SimplifiedForm(string shape, string expected)
     {
         ParameterExpression[] xs = Parameters(7, typeof(double));
@@ -274,6 +276,8 @@ public class ExpressionSimplifierNumericChainGrowthTests
         };
 
         Assert.AreEqual(expected, Simplified(source));
+        Expression once = new ExpressionSimplifier().Simplify(source);
+        Assert.IsTrue(ExpressionComparer.StructuralEqualsRaw(once, new ExpressionSimplifier().Simplify(once)), shape);
     }
 
     /// <summary>
@@ -330,8 +334,10 @@ public class ExpressionSimplifierNumericChainGrowthTests
     [DataRow("negatedLeftCancels", "0")]
     [DataRow("negatedRightCancels", "0")]
     // Mission C3d: the two chains hold distinct parameters of the same names, so nothing cancels; the reassociations now finish
-    // their nodes, so the sum is one canonical chain instead of the unfinished reassociation the next call flattened.
-    [DataRow("negatedChainCancels", "((0 - (3 * x1)) + ((3 * x1) + ((0 - (4 * x2)) + ((4 * x2) + ((0 - (5 * x3)) + ((5 * x3) + ((0 - (6 * x4)) + ((6 * x4) + ((0 - (100 * x0)) + (100 * x0))))))))))")]
+    // their nodes, so the sum is one canonical chain instead of the unfinished reassociation the next call flattened. Since the
+    // C3c consistency fix (SimplifierFlatten.md §21.3) the refused chain (a negated sum is not a factorable term) is factored at
+    // its boundary, as the next call factored that canonical chain: each coefficient is held by two homonymous parameters.
+    [DataRow("negatedChainCancels", "((3 * ((0 - x1) + x1)) + ((4 * ((0 - x2) + x2)) + ((5 * ((0 - x3) + x3)) + ((6 * ((0 - x4) + x4)) + (100 * ((0 - x0) + x0))))))")]
     [DataRow("sumMinusPart", "a")]
     [DataRow("differencePlusPart", "a")]
     [DataRow("plusZero", "0")]
@@ -363,6 +369,8 @@ public class ExpressionSimplifierNumericChainGrowthTests
         };
 
         Assert.AreEqual(expected, Simplified(source));
+        Expression once = new ExpressionSimplifier().Simplify(source);
+        Assert.IsTrue(ExpressionComparer.StructuralEqualsRaw(once, new ExpressionSimplifier().Simplify(once)), shape);
     }
 
     /// <summary>

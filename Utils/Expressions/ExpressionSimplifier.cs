@@ -157,12 +157,18 @@ namespace Utils.Mathematics.Expressions
             ExpressionMetricsScope metricsScope = diagnosticsActive ? BeginExpressionMetricsScope() : default;
             List<ParameterExpression[]>? callerScope = _lexicalScopeStack;
             _lexicalScopeStack = null;
+
+            // Mission C3c: the root of this operation is the boundary of its chain, whatever chain of the caller's operation
+            // (a comparison inside a rule) is being transformed.
+            bool callerWithinRefusedChain = WithinRefusedChain;
+            WithinRefusedChain = false;
             try
             {
                 return FoldNaNOperand(TransformCore(expression));
             }
             finally
             {
+                WithinRefusedChain = callerWithinRefusedChain;
                 _lexicalScopeStack = callerScope;
                 if (diagnosticsActive) metricsScope.Dispose();
             }
@@ -2529,10 +2535,13 @@ namespace Utils.Mathematics.Expressions
             // subtraction or a negation (a cancellation, the 0 - t form, a negated group) or two constants. A sum of added
             // terms keeps the historical node: on a long chain whose factor repeats (the dag family of §14.8) the coefficient
             // grows by one term per level, and canonicalizing it at every level made the factoring quadratic in allocations.
+            // Mission C3c (§21.5): a sum of two single terms is canonicalized all the same, at a constant cost (z*x + z gave
+            // z * (x + 1), ordered 1 + x by the next call); only a coefficient that is already a sum keeps the historical node.
             if (nodeType != ExpressionType.Subtract
                 && !HasAdditiveNegation(leftCoefficient)
                 && !HasAdditiveNegation(rightCoefficient)
-                && CountAdditiveConstants(rightCoefficient, type, CountAdditiveConstants(leftCoefficient, type, 0)) < 2)
+                && CountAdditiveConstants(rightCoefficient, type, CountAdditiveConstants(leftCoefficient, type, 0)) < 2
+                && (IsOrdinaryAdditiveNode(leftCoefficient) || IsOrdinaryAdditiveNode(rightCoefficient)))
             {
                 return null;
             }
@@ -2568,6 +2577,16 @@ namespace Utils.Mathematics.Expressions
 
             return CanonicalizeAdditiveTerms(terms, type, recordMetadata: false);
         }
+
+        /// <summary>
+        /// Whether <paramref name="expression"/> is an ordinary <c>Add</c> or <c>Subtract</c> node, one that
+        /// <see cref="CollectAdditiveTerms"/> would split into several terms (mission C3c, <see cref="CanonicalizeFactoredCoefficient"/>).
+        /// By type tests first, so an extension node is never read.
+        /// </summary>
+        /// <param name="expression">A coefficient of a binary factoring.</param>
+        /// <returns><see langword="true"/> for an ordinary additive node.</returns>
+        private static bool IsOrdinaryAdditiveNode(Expression expression)
+            => expression is BinaryExpression { NodeType: ExpressionType.Add or ExpressionType.Subtract } binary && IsOrdinaryBinaryArithmetic(binary);
 
         /// <summary>
         /// Whether every term of a factored coefficient is subtracted or is a negative constant, with at least one subtracted
