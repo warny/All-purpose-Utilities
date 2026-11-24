@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
 using System.Runtime.InteropServices;
 using Utils.Expressions;
@@ -263,6 +264,89 @@ public partial class ExpressionSimplifier
         return sum;
     }
 
+    /// <summary>
+    /// Moves the sign of a negative constant coefficient into the sign flag of its additive term: a term <c>c * t</c> with
+    /// <c>c &lt; 0</c> becomes <c>(-c) * t</c> with the opposite sign, so that one value has one canonical sum
+    /// (<c>x + (-2 * y)</c> and <c>x + -(2 * y)</c> both give <c>x + (0 - (2 * y))</c>; <c>x - (-2 * y)</c> gives <c>x + (2 * y)</c>).
+    /// </summary>
+    /// <param name="terms">The inert signed terms of a sum of the built-in type, after the merges; updated in place.</param>
+    /// <remarks>
+    /// <para>
+    /// <b>Invariant.</b> In a canonical sum of the built-in type, the sign of a term is carried by its sign flag only: no
+    /// collected term is an ordinary negation (<see cref="CollectAdditiveTerms"/>), and after this step no term is an ordinary
+    /// product whose direct constant factor is negative. A coefficient that is not a strictly positive constant once negated
+    /// (zero, NaN, <c>MinValue</c> of a signed integer, which is its own negation) keeps its term unchanged.
+    /// </para>
+    /// <para>
+    /// <b>Values.</b> <c>c * t = -((-c) * t)</c>: exact on integers (a ring modulo 2^n) and decimals (the magnitude is rounded
+    /// independently of the signs), and bit for bit on every non-NaN floating-point product, NaN staying NaN with the sign and
+    /// payload IEEE-754 leaves unspecified for a multiplication. <c>a + p = a - (-p)</c> for every type. The constant is negated
+    /// by <see cref="TryNegateConstant"/>, as the negation node would compute it.
+    /// </para>
+    /// <para>
+    /// <b>Evaluations.</b> Only inert terms reach this step (the pinned ones were set aside by <see cref="SplitPinnedTerms{T}"/>):
+    /// <c>t</c> is evaluated once, at the same place in the rebuilt chain as any other inert term, and the constant evaluates
+    /// nothing. No permission is needed, under any policy.
+    /// </para>
+    /// </remarks>
+    private static void NormalizeNegativeCoefficients(List<(Expression Term, bool IsNegative)> terms)
+    {
+        for (int index = 0; index < terms.Count; index++)
+        {
+            (Expression term, bool isNegative) = terms[index];
+            if (term is BinaryExpression { NodeType: ExpressionType.Multiply } product && TryNegateNegativeCoefficient(product, out Expression? rebuilt))
+            {
+                terms[index] = (rebuilt, !isNegative);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Rebuilds an ordinary product whose direct constant factor is negative as the product with that constant negated
+    /// (<see cref="NormalizeNegativeCoefficients"/>): <c>-2 * t</c> gives <c>2 * t</c>, <c>-1 * t</c> gives <c>t</c>.
+    /// </summary>
+    /// <param name="product">An ordinary multiplication node.</param>
+    /// <param name="rebuilt">Receives the product with a strictly positive coefficient, or <see langword="null"/>.</param>
+    /// <returns><see langword="true"/> when the coefficient was negative and the product was rebuilt.</returns>
+    /// <remarks>
+    /// Only a direct constant operand of the product, of the product's type, is read; the factors are not collected. Custom,
+    /// lifted and checked products are refused by <see cref="IsOrdinaryBinaryArithmetic(BinaryExpression)"/>, types without an
+    /// ordinary negation by the negation table. Nothing is walked, so no budget is consumed.
+    /// </remarks>
+    private static bool TryNegateNegativeCoefficient(BinaryExpression product, [NotNullWhen(true)] out Expression? rebuilt)
+    {
+        rebuilt = null;
+        if (!IsOrdinaryBinaryArithmetic(product) || !_ordinaryNegateMethods.ContainsKey(product.Type)) return false;
+
+        bool constantLeft = product.Left is ConstantExpression;
+        if ((constantLeft ? product.Left : product.Right) is not ConstantExpression coefficient
+            || coefficient.Type != product.Type
+            || !TryNegateConstant(coefficient, out ConstantExpression? negated)
+            || !IsStrictlyPositive(negated.Value))
+        {
+            return false;
+        }
+
+        Expression other = constantLeft ? product.Right : product.Left;
+        rebuilt = NumericValueEquals(negated.Value, 1)
+            ? other
+            : constantLeft ? Expression.Multiply(negated, other) : Expression.Multiply(other, negated);
+        return true;
+    }
+
+    /// <summary>Whether a numeric constant value is strictly positive: not zero, not negative, not NaN.</summary>
+    /// <param name="value">The value of a constant of a type with an ordinary negation.</param>
+    /// <returns><see langword="true"/> for a value greater than zero.</returns>
+    private static bool IsStrictlyPositive(object? value) => value switch
+    {
+        int integer => integer > 0,
+        long integer => integer > 0,
+        short integer => integer > 0,
+        double real => real > 0,
+        float real => real > 0,
+        decimal number => number > 0,
+        _ => false,
+    };
     /// <summary>
     /// Replaces the subtracted constant of a canonicalized sum (the constants are aggregated, so it holds one at most) by its
     /// negation (mission C3c): <c>y - 1</c> gives <c>-1 + y</c> instead of <c>(0 - 1) + y</c>, the form the next call folded

@@ -30,7 +30,7 @@ param(
     [string] $Types = 'double,float,int,long,decimal,int?,uint',
     [int] $CaseTimeoutSeconds = 60,
     [int] $MemoryMB = 6144,
-    [string[]] $Families = @('p', 'B', 'g', 'F', 'z', 'e', 'k', 'n', 'o', 'r', 'H', 'Lsub', 'Rsub', 'Lmul', 'Gm', 'div', 'pow', 'bal', 'negmul', 'negdiv', 'subneg', 'negsum', 'neg', 'negcall', 'negdag', 'negadd', 'negprod', 'zerominus', 'plus0', 'zeroplus', 'pow1'),
+    [string[]] $Families = @('p', 'B', 'g', 'F', 'z', 'e', 'k', 'n', 'o', 'r', 'H', 'Lsub', 'Rsub', 'Lmul', 'Gm', 'div', 'pow', 'bal', 'negmul', 'negdiv', 'subneg', 'negsum', 'neg', 'negcall', 'negdag', 'negadd', 'negprod', 'altsign', 'negcoef', 'negprodsum', 'sharedneg', 'zerominus', 'plus0', 'zeroplus', 'pow1'),
     [int[]] $Sizes = @(4, 6, 8, 10, 12, 14, 16, 18, 20),
     [int] $MeasureTimeoutSeconds = 120,
     [double] $StopAfterSeconds = 20,
