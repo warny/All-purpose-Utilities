@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed — `omy.Utils` (`ExpressionSimplifier` level and whole-chain factoring agree, C3c)
+- A chain the factorable admission refuses on its raw shape (a constant pair, the negation of a constant, a product by `1`, a
+  negated sum) is now factored in the same call when its level by level result is a factorable chain, exactly as the next call
+  factored it: `((2 - 10) - z) - x*z` gives `-8 + (0 - (z * (1 + x)))` at once. The result is tested at the boundary of the chain
+  only (`ExpressionTransformer.FinishRefusedChain`), once, with the admission tests of the factorable family: no admission is
+  widened, and a result holding a quotient, a non-inert call or a non-finite constant is unchanged.
+- The global factoring compares coefficients by magnitude: `2*x - 2*y`, `2*x + (-2)*y` and `x - (y - (x - y))` give one tree,
+  `2 * ((0 - y) + x)`. A group whose terms share one negative value keeps `-2 * (x + y)`; no sign normalization of the
+  reconstruction changes.
+- The coefficient of a binary factoring made of two single terms is canonical (`z*x + z` gives `z * (1 + x)` instead of
+  `z * (x + 1)`); longer coefficients keep the historical node (no quadratic growth).
+- Behavior change: 40 of 70,515 first-pass results of the S5 convergence corpus change. Cases needing two calls: 213 → 189
+  (bound parameters 210 → 187), cycles unchanged (no bound cycle); one case (a refused chain with a quotient) needs one call
+  more. Values, exceptions, evaluation logs and types are unchanged; the 150 complexity points keep their visit counts. See
+  `docs/expressions/SimplifierFlatten.md` §21.
+
 ### Documentation — `omy.Utils` (`ExpressionSimplifier` additive sign audit)
 - Audit of the placement of the sign of additive terms (`docs/expressions/SimplifierFlatten.md` §20): the term analysis already
   combines signed coefficients across physical forms. Six normalizations of the reconstruction were measured; each exposes the

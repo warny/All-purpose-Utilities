@@ -2829,3 +2829,31 @@ gen#2973 now reach the base's second result in one call); `ExpressionSimplifierN
 factored it), both now asserted to be fixed points. New: `ExpressionSimplifierFactoringConsistencyTests` (Unit) and
 `ExpressionSimplifierFactoringConsistencyResourceTests` (Security). The evaluation-preserving tests are Unit tests: the
 Functional suite holds the tests that need sockets, processes or environment paths, which these do not.
+
+### 21.6 Complexity
+
+**The 150 points** (`measure`, limits lifted, the 130 points of §17.8 and the four sign families of §20.5 at n = 4 to 20): all 150
+points have identical transformation visits, comparer simplifications, user calls and output sizes on the base and the branch.
+
+**Targeted families** (`profile`, limits lifted, one process per point; new audit families of `Corpus.cs`):
+
+| Family (n = 512) | What it exercises | Transformation visits (both) | Structural visits base → branch | Allocated base → branch | Output nodes base → branch | Boundary tests / factorings |
+|---|---|---:|---:|---:|---:|---|
+| `refusedfac` `(2 - 1) + x0*x1 + …` | M1, factorable once folded | 394,501 | 11,807,484 → 11,824,804 (+0.15 %) | 464 → 469 MB | 2,045 → 1,025 | 1 / 1 |
+| `refusednone` `(2 - 1) + x1*y1 + …` | M1 test, no common factor | 395,011 | 13,655,225 → 13,655,736 | 338.1 → 338.1 MB | 2,045 → 2,045 | 1 / 0 |
+| `tailquot` `x0*x1 + … + x1/x0` | refused by a quotient | 3,077 | 40,275 → 40,277 | 1.92 → 1.94 MB | 1,027 → 1,027 | 1 / 0 |
+| `dagfactor` `s*x1 + s*x2 + …`, `s` shared | M2 on the dag family of §14.8 | 8,700 | 682,747 → 682,757 | 19.51 → 19.51 MB | 1,027 → 1,027 | 0 |
+| `mixsign` `2*x1 - 2*x2 + (-2)*x3 …` | M3 | 2,561 | 27,741 → 27,718 | 2.46 → 2.43 MB | 1,539 → 1,537 | 0 |
+
+At every size from 8 to 512 the transformation visits and the comparer simplifications are identical on both sides; the
+structural visits of the finishing grow linearly (`refusedfac`: +166 at 8 terms, +17,320 at 512, the walks and the analysis of
+the result), and M2 adds a constant (`dagfactor`: +10 visits and +3 KB at every size, the canonicalization of the first two-term
+coefficient only, never of the growing one). The cost of `refusedfac` and `refusednone` is the quadratic level by level
+treatment of a refused comb, identical on the base (its probes of `AdditionOfEqualsElements`, 263,672 comparer simplifications
+at 512): the finishing does not re-simplify anything, it canonicalizes the result once.
+
+The finishing of a 100,000-term result is iterative except where the global factoring itself recurses: the canonical key and the
+effect analysis of a factored product `x0 * (sum)` walk its sum recursively, so a factored sum of thousands of terms needs the
+stack the levels of the same chain already needed. `BoundaryFinishing_NeverRefusesWhatTheLevelsAccept_OnASmallStack` (Security)
+checks, on a 256 KiB thread and without limits, that at every size from 64 to 4,096 terms the finished simplification succeeds
+wherever the levels alone succeed.
