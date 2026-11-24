@@ -846,6 +846,75 @@ public abstract partial class ExpressionTransformer
     private static PendingChainChild _pendingChainChild;
 
     /// <summary>
+    /// Whether the innermost node being transformed on this thread is a refused chain root or a node reached from one (a
+    /// crossed operand, or a node built by one of its rules) without crossing a node of no flatten group (mission C3c): such a
+    /// root is not the boundary of its chain, so <see cref="FinishRefusedChain"/> is not called for it. Set by
+    /// <see cref="TransformRefusedChainBoundary"/>, cleared by <see cref="TransformOutsideRefusedChain"/> for the operands of
+    /// any other node (a call, a product, a lambda), and cleared by a simplifier for each operation it opens, so that a nested
+    /// operation never inherits it. Per thread, like <see cref="_pendingChainChild"/>; restored in <c>finally</c>.
+    /// </summary>
+    [ThreadStatic]
+    private static bool _withinRefusedChain;
+
+    /// <summary>
+    /// Gets or sets <see cref="_withinRefusedChain"/>: the entry points of an operation save it, clear it and restore it.
+    /// </summary>
+    internal static bool WithinRefusedChain
+    {
+        get => _withinRefusedChain;
+        set => _withinRefusedChain = value;
+    }
+
+    /// <summary>
+    /// Transforms the refused root <paramref name="e"/> of a chain that no node of its group is transforming: historically,
+    /// with <see cref="_withinRefusedChain"/> set, so that its crossed operands and the nodes its rules build are not boundaries,
+    /// then <see cref="FinishRefusedChain"/> on its result.
+    /// </summary>
+    /// <param name="e">The refused root.</param>
+    /// <param name="trace">The tracing state of the operation, or <see langword="null"/>.</param>
+    /// <param name="prepared">The node rebuilt by the traversal.</param>
+    /// <param name="boundary">Whether the node was a transformation boundary.</param>
+    /// <returns>The result of the root.</returns>
+    private Expression TransformRefusedChainBoundary(Expression e, ExpressionTraceSession? trace, out Expression prepared, out bool boundary)
+    {
+        Expression result;
+        _withinRefusedChain = true;
+        try
+        {
+            result = TransformHistorically(e, trace, out prepared, out boundary);
+        }
+        finally
+        {
+            _withinRefusedChain = false;
+        }
+
+        return FinishRefusedChain(e, result);
+    }
+
+    /// <summary>
+    /// Transforms a node of no flatten group reached inside a refused chain (a term, or a node a rule built): historically,
+    /// with <see cref="_withinRefusedChain"/> cleared, so that a chain below it (an argument, a factor) is the boundary of its
+    /// own chain.
+    /// </summary>
+    /// <param name="e">The node.</param>
+    /// <param name="trace">The tracing state of the operation, or <see langword="null"/>.</param>
+    /// <param name="prepared">The node rebuilt by the traversal.</param>
+    /// <param name="boundary">Whether the node was a transformation boundary.</param>
+    /// <returns>The result of the node.</returns>
+    private Expression TransformOutsideRefusedChain(Expression e, ExpressionTraceSession? trace, out Expression prepared, out bool boundary)
+    {
+        _withinRefusedChain = false;
+        try
+        {
+            return TransformHistorically(e, trace, out prepared, out boundary);
+        }
+        finally
+        {
+            _withinRefusedChain = true;
+        }
+    }
+
+    /// <summary>
     /// <see cref="TransformCore(Expression)"/> for a transformer that declares flatten rules. When <paramref name="e"/> is the
     /// root of a chain (a crossed node of a declared operator that does not continue a declined chain), the chain is extracted
     /// from the raw tree and given to the rules of its group, in declaration order; the first non-<see langword="null"/>
@@ -886,7 +955,10 @@ public abstract partial class ExpressionTransformer
         // OperandGroup operator whose operand identifies none, for example) roots no chain.
         if (FlattenGroupOf(e, out FlattenOperator? root) is not FlattenGroup group)
         {
-            return TransformHistorically(e, trace, out prepared, out boundary);
+            // Mission C3c: a chain below this node is the boundary of its own chain (one thread-static read otherwise).
+            return _withinRefusedChain
+                ? TransformOutsideRefusedChain(e, trace, out prepared, out boundary)
+                : TransformHistorically(e, trace, out prepared, out boundary);
         }
 
         // The admission of the chain, on the raw root: by default the effect gate (inert operands make the whole chain inert);
@@ -901,7 +973,10 @@ public abstract partial class ExpressionTransformer
                 foreach (TransformRule rule in group.Rules) trace.RuleRejected(rule.Info, e, refusal);
             }
 
-            return TransformHistorically(e, trace, out prepared, out boundary);
+            // Mission C3c: the boundary of a refused chain is finished once its whole historical treatment is done.
+            return _withinRefusedChain
+                ? TransformHistorically(e, trace, out prepared, out boundary)
+                : TransformRefusedChainBoundary(e, trace, out prepared, out boundary);
         }
 
         FlattenedChain chain = FlattenedChain.Extract(this, e, root!, group, keepProvenance: false);

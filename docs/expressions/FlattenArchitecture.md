@@ -689,3 +689,13 @@ The sign of an additive term is carried by the flag of `CollectAdditiveTerms`, w
 `SimplifierFlatten.md` §20 found the analysis consistent. The reconstruction keeps two canonical placements of a negative
 coefficient. Unifying them needs the level canonicalization to reach the whole-chain factoring first (§20.4); the engine's
 extraction is unchanged.
+
+## C3c consistency note
+
+The boundary finishing of `SimplifierFlatten.md` §21 adds one engine hook, `ExpressionTransformer.FinishRefusedChain`
+(`internal virtual`, a no-op in the base class), called by `TransformWithFlatten` once per refused chain root that no node of the
+same group is transforming. The engine marks the extent of such a root with a thread-static flag (`WithinRefusedChain`), set
+while the root is transformed historically and cleared while a node of no flatten group is transformed, so the boundary needs no
+parent pointer and is exact for shared nodes: it is a position in the traversal, like the link of a declined chain. The
+extraction, the admission contract and the dispatcher are unchanged; the built-in simplifier gives the result of the boundary to
+the global factoring when it is a factorable chain.

@@ -417,6 +417,11 @@ internal static class Families
         ("subdivRF", "1 - (x1/x0 - (x2/x0 - (... - xn/x0))) over float"),
         ("subdivBM", "1 - ((x1/x0 - x2/x0) + (x3/x0 - x4/x0)) ... (balanced, every right operand of an odd level subtracted)"),
         ("subdivBF", "1 - ((x1/x0 + x2/x0) + (x3/x0 + x4/x0)) ... over float"),
+        ("refusedfac", "(2 - 1) + x0*x1 + x0*x2 + ... (refused by its constant pair, factorable once the levels fold it: C3c consistency)"),
+        ("refusednone", "(2 - 1) + x1*y1 + x2*y2 + ... (refused by its constant pair, no common factor once folded)"),
+        ("tailquot", "x0*x1 + x0*x2 + ... + x1/x0 (refused by its last quotient; its factorable sub-chain is factored on its own)"),
+        ("dagfactor", "s*x1 + s*x2 + ... with s = (u + v) shared (a sum factor: binary factorings level by level, C3d dag)"),
+        ("mixsign", "2*x1 - 2*x2 + (-2)*x3 - (-2)*x4 + ... (one coefficient magnitude with both signs)"),
     ];
 
     /// <summary>Builds family <paramref name="name"/> at size <paramref name="n"/>.</summary>
@@ -456,6 +461,13 @@ internal static class Families
             "negadd" => LeftChain(xs.Select((v, i) => i == 0 ? (Expression)v : Expression.Negate(Expression.Negate(v))), Expression.Add),
             "negprod" => xs.Skip(1).Aggregate((Expression)Expression.Negate(x), (acc, v) => Expression.Multiply(Expression.Negate(v), acc)),
             "altsign" => xs.Skip(1).Select((v, i) => (v, i)).Aggregate((Expression)x, (acc, p) => p.i % 2 == 0 ? Expression.Subtract(acc, Expression.Multiply(Expression.Constant(-(p.i + 2.0)), p.v)) : Expression.Add(acc, Expression.Multiply(Expression.Constant(-(p.i + 2.0)), p.v))),             "negcoef" => LeftChain(xs.Select((v, i) => (Expression)Expression.Multiply(Expression.Constant(-(i + 2.0)), v)), Expression.Add),             "negprodsum" => xs.Skip(1).Select((v, i) => (v, i)).Aggregate((Expression)Expression.Negate(Expression.Multiply(Expression.Constant(2.0), x)), (acc, p) => p.i % 2 == 0 ? Expression.Subtract(acc, Expression.Multiply(Expression.Constant(p.i + 3.0), p.v)) : Expression.Add(acc, Expression.Negate(Expression.Multiply(Expression.Constant(p.i + 3.0), p.v)))),             "sharedneg" => Expression.Multiply(Expression.Constant(-2.0), x) is var shared ? Enumerable.Range(1, Math.Max(1, n - 1)).Aggregate((Expression)shared, (acc, i) => i % 2 == 1 ? Expression.Subtract(acc, shared) : Expression.Add(acc, shared)) : x,
+            "refusedfac" => LeftChain(xs.Skip(1).Select(v => (Expression)Expression.Multiply(x, v)).Prepend(Expression.Subtract(Expression.Constant(2.0), Expression.Constant(1.0))), Expression.Add),
+            "refusednone" => LeftChain(xs.Skip(1).Select((v, i) => (Expression)Expression.Multiply(v, Expression.Parameter(typeof(double), "y" + (i + 1)))).Prepend(Expression.Subtract(Expression.Constant(2.0), Expression.Constant(1.0))), Expression.Add),
+            "tailquot" => Expression.Add(LeftChain(xs.Skip(1).Select(v => (Expression)Expression.Multiply(x, v)).DefaultIfEmpty(x), Expression.Add), Expression.Divide(xs[Math.Min(1, n - 1)], x)),
+            "dagfactor" => Expression.Add(Expression.Parameter(typeof(double), "u"), Expression.Parameter(typeof(double), "v")) is var sum
+                ? LeftChain(xs.Select(v => (Expression)Expression.Multiply(sum, v)), Expression.Add) : x,
+            "mixsign" => xs.Select((v, i) => (Expression)Expression.Multiply(Expression.Constant(i % 4 < 2 ? 2.0 : -2.0), v)).Select((term, i) => (term, i))
+                .Aggregate((Expression?)null, (acc, p) => acc is null ? p.term : p.i % 2 == 1 ? Expression.Subtract(acc, p.term) : Expression.Add(acc, p.term))!,
             "zerominus" => Nest(xs, (acc, v) => Expression.Subtract(Expression.Constant(0.0), Expression.Multiply(acc, v))),
             "plus0" => Nest(xs, (acc, v) => Expression.Add(Expression.Multiply(acc, v), Expression.Constant(0.0))),
             "zeroplus" => Nest(xs, (acc, v) => Expression.Add(Expression.Constant(0.0), Expression.Multiply(acc, v))),

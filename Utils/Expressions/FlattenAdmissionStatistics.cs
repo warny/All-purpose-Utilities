@@ -106,6 +106,15 @@ internal sealed class FlattenAdmissionStatistics
     /// <summary>The number of factorable chains simplified by the global factoring.</summary>
     public long FactorableChains;
 
+    /// <summary>
+    /// The number of results of refused chain boundaries tested as factorable chains (mission C3c, consistency of the level and
+    /// whole-chain factoring: <c>ExpressionSimplifier.FinishRefusedChain</c>).
+    /// </summary>
+    public long BoundaryTests;
+
+    /// <summary>The number of those results that were factorable chains, canonicalized by the global factoring.</summary>
+    public long BoundaryFactorings;
+
     /// <summary>The number of grouped quotient chain roots admitted (docs/expressions/SimplifierFlatten.md §16).</summary>
     public long GroupedQuotient;
 

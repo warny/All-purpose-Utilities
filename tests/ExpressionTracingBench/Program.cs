@@ -47,6 +47,13 @@ public static class Program
         ["subcall"] = () => Simplify(Expression.Subtract(Xs[2], Expression.Subtract(Xs[0], Expression.Add(Expression.Call(typeof(double).GetMethod(nameof(double.Tan), [typeof(double)])!, Xs[0]), Expression.Multiply(Xs[1], Xs[1]))))),
         ["prod2x"] = () => Simplify(Expression.Add(Expression.Multiply(Xs[0], Expression.Subtract(Xs[1], Expression.Constant(1.0))), Expression.Multiply(Xs[0], Expression.Subtract(Xs[1], Expression.Constant(1.0))))),
         ["negmul8"] = () => Simplify(Enumerable.Range(0, 8).Select(i => (Expression)Expression.Negate(Xs[i])).Aggregate(Expression.Multiply)),
+        // C3c consistency (SimplifierFlatten.md §21): a refused chain factored at its boundary, one left as it is, coefficients
+        // of both signs, a binary factoring of two single terms, and a refused chain below a call.
+        ["refused16"] = () => Simplify(Enumerable.Range(1, 16).Select(i => (Expression)Expression.Multiply(Xs[0], Xs[i])).Aggregate((Expression)Expression.Subtract(Expression.Constant(2.0), Expression.Constant(1.0)), Expression.Add)),
+        ["refusednone16"] = () => Simplify(Enumerable.Range(1, 16).Select(i => (Expression)Expression.Multiply(Xs[i], Xs[i + 20])).Aggregate((Expression)Expression.Subtract(Expression.Constant(2.0), Expression.Constant(1.0)), Expression.Add)),
+        ["mixsign16"] = () => Simplify(Enumerable.Range(0, 16).Select(i => (Expression)Expression.Multiply(Expression.Constant(i % 4 < 2 ? 2.0 : -2.0), Xs[i])).Aggregate(Expression.Add)),
+        ["coef2"] = () => Simplify(Expression.Add(Expression.Multiply(Xs[0], Expression.Add(Xs[1], Expression.Constant(0.0))), Xs[0])),
+        ["refusedcall"] = () => Simplify(Expression.Add(Expression.Call(typeof(Math).GetMethod(nameof(Math.Sin), [typeof(double)])!, Expression.Subtract(Expression.Subtract(Expression.Subtract(Expression.Constant(2.0), Expression.Constant(10.0)), Xs[2]), Expression.Multiply(Xs[0], Xs[2]))), Xs[1])),
         ["opt-ext-root"] = () => Optimize(new BenchExtension()),
         ["opt-scalar"] = () => Optimize(Expression.Add(Expression.Multiply(Xs[0], Expression.Constant(1.0)), Expression.Constant(-0.0))),
         ["opt-lambda"] = () => Optimize(Expression.Lambda<Func<double, double, double>>(Expression.Add(Expression.Multiply(Xs[0], Expression.Constant(1.0)), Xs[1]), Xs[0], Xs[1])),

@@ -5387,6 +5387,15 @@ however, equalizes coefficients that only the next call's factorable chain facto
 227, with no comparer or value regression. Prerequisite: make the level canonicalization agree with the whole-chain factoring
 (a C3c change), then V1b+C1. Record: `docs/expressions/SimplifierFlatten.md` §20.
 
+### C3c — level and whole-chain factoring agree (2026-11-24)
+
+Branch `fix/expression-c3c-factoring-consistency`, base `523fc708`. The prerequisite above. A refused chain whose level by level
+result is a factorable chain is factored once at its boundary (`FinishRefusedChain`, a thread-static marker of the extent of a
+refused root, no parent pointer), the global factoring compares coefficients by magnitude, and a two-term factored coefficient is
+canonical. fixed@2 213 → 189, no new cycle, identical complexity counters. Next: the sign normalization experiments replayed on
+this base (`SimplifierFlatten.md` §21.9), then the suffixes of refused canonical sums (M4) if a non-historical treatment of the
+refused families is accepted. Record: `docs/expressions/SimplifierFlatten.md` §21.
+
 ## Execution-optimizer stages
 
 These remain separate from the simplifier stages above.

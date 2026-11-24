@@ -546,7 +546,7 @@ public partial class ExpressionSimplifier
             (FlattenRefusalCause.RepeatedParameter, ParameterExpression parameter) => ReferenceEquals(parameter, key),
             (FlattenRefusalCause.RepeatedParameter, BinaryExpression product) => ReferenceEquals(product.Left, key) || ReferenceEquals(product.Right, key),
             (FlattenRefusalCause.RepeatedCoefficient, BinaryExpression product) => FactorHolds(product.Left, key) || FactorHolds(product.Right, key),
-            (FlattenRefusalCause.CoefficientEqualsConstant, ConstantExpression constant) => Equals(constant.Value, key),
+            (FlattenRefusalCause.CoefficientEqualsConstant, ConstantExpression constant) => Equals(CoefficientMagnitude(constant.Value!), key),
             (FlattenRefusalCause.CoefficientEqualsConstant, BinaryExpression product) => FactorHolds(product.Left, key) || FactorHolds(product.Right, key),
             _ => false,
         };
@@ -556,7 +556,7 @@ public partial class ExpressionSimplifier
     /// <param name="factor">A parameter or a constant.</param>
     /// <param name="key">A boxed primitive value.</param>
     /// <returns><see langword="true"/> for a constant of that value.</returns>
-    private static bool FactorHolds(Expression factor, object key) => factor is ConstantExpression constant && Equals(constant.Value, key);
+    private static bool FactorHolds(Expression factor, object key) => factor is ConstantExpression constant && Equals(CoefficientMagnitude(constant.Value!), key);
 
     /// <summary>
     /// Why <see cref="IsLinearChain"/> refused a chain, and where: data only.
@@ -587,6 +587,21 @@ public partial class ExpressionSimplifier
     {
         get => t_factorableChainsDisabled;
         set => t_factorableChainsDisabled = value;
+    }
+
+    /// <summary>Backing field of <see cref="RefusedChainFinishingDisabled"/>.</summary>
+    [ThreadStatic]
+    private static bool t_refusedChainFinishingDisabled;
+
+    /// <summary>
+    /// Gets or sets, for this thread, whether the boundary of a refused chain is left as the levels built it (mission C3c,
+    /// <see cref="FinishRefusedChain"/>): audits and tests only, so that the result of <c>master</c> <c>523fc708</c> stays
+    /// available as the reference of the boundary finishing. <see langword="false"/> by default.
+    /// </summary>
+    internal static bool RefusedChainFinishingDisabled
+    {
+        get => t_refusedChainFinishingDisabled;
+        set => t_refusedChainFinishingDisabled = value;
     }
 
     /// <summary>
@@ -958,7 +973,9 @@ public partial class ExpressionSimplifier
                     }
 
                     if (_constantCount == 1) _firstConstantDepth = depth;
-                    object value = constant.Value!;
+
+                    // Mission C3c (§21.3): values are compared by magnitude, as the global factoring compares coefficients.
+                    object value = CoefficientMagnitude(constant.Value!);
                     _constants.Add(value);
                     return Accept(!_coefficients.Contains(value), FlattenRefusalCause.CoefficientEqualsConstant, depth, value, out refusal);
                 case BinaryExpression { NodeType: ExpressionType.Divide } quotient:
@@ -991,7 +1008,7 @@ public partial class ExpressionSimplifier
         private bool AddFactor(Expression factor, int depth, out ChainRefusal refusal)
         {
             if (factor is ParameterExpression parameter) return AddParameter(parameter, depth, out refusal);
-            object value = ((ConstantExpression)factor).Value!;
+            object value = CoefficientMagnitude(((ConstantExpression)factor).Value!);
             return Accept(_coefficients.Add(value), FlattenRefusalCause.RepeatedCoefficient, depth, value, out refusal)
                 && Accept(!_constants.Contains(value), FlattenRefusalCause.CoefficientEqualsConstant, depth, value, out refusal);
         }

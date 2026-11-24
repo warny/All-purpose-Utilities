@@ -122,27 +122,26 @@ public class ExpressionSimplifierS5A05FinalizationTests
             "-1 + (y + (z + ((1 / (-10 * (2 + x))) + (((1 + (x ** x)) * (x / y)) + Double.Log(1E+300 * (y ** 2))))))");
 
     /// <summary>
-    /// The two residues PR B exposed, still two calls (additive sign audit, <c>SimplifierFlatten.md</c> §20): <c>gen#1594</c>, a
-    /// factored coefficient of added terms left in source order (§14.8), and <c>gen#2973</c>, common factors that only the
-    /// factoring of a whole chain extracts. No sign normalization changes either.
+    /// The two residues PR B exposed, which took two calls until the C3c consistency fix (<c>SimplifierFlatten.md</c> §20, §21):
+    /// <c>gen#1594</c>, a factored coefficient of two added terms left in source order (§21.3), and <c>gen#2973</c>, a chain the
+    /// raw admission refused (the negation of a constant) whose level by level result is a factorable chain, now factored at its
+    /// boundary (§21.3). Each first result is the fixed point the second call reached on <c>master</c> <c>523fc708</c>.
     /// </summary>
     [TestMethod]
-    public void KnownResidues_TakeTwoCalls()
+    public void FormerResidues_TakeOneCall()
     {
-        (string Source, string First, string Second)[] cases =
+        (string Source, string Expected)[] cases =
         [
             ("(((x ** y) * (((-1 - z) - z) - z)) + ((3 / z) * (((-1 - z) - z) - z))) / (--1)",
-                "(-1 + (-3 * z)) * ((x ** y) + (3 / z))", "(-1 + (-3 * z)) * ((3 / z) + (x ** y))"),
+                "(-1 + (-3 * z)) * ((3 / z) + (x ** y))"),
             ("((-(1E+300)) + (-y)) - (((x * y) - (y * y)) - (3 + z))",
-                "-1E+300 + ((0 - y) + (z + ((0 - (x * y)) + (y ** 2))))", "-1E+300 + (z + ((0 - (y * (1 + x))) + (y ** 2)))"),
+                "-1E+300 + (z + ((0 - (y * (1 + x))) + (y ** 2)))"),
         ];
-        foreach ((string source, string first, string second) in cases)
+        foreach ((string source, string expected) in cases)
         {
             Expression once = S(Parse(source));
-            Assert.AreEqual(first, Text(once), source);
-            Expression twice = S(once);
-            Assert.AreEqual(second, Text(twice), source);
-            Assert.IsTrue(ExpressionComparer.StructuralEqualsRaw(twice, S(twice)), second);
+            Assert.AreEqual(expected, Text(once), source);
+            Assert.IsTrue(ExpressionComparer.StructuralEqualsRaw(once, S(once)), expected);
         }
     }
 

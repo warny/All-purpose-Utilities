@@ -724,3 +724,12 @@ removal of a double negation (§10).
 The sign normalizations measured in `SimplifierFlatten.md` §20 need no permission: they rewrite inert terms only, with exact
 identities, and evaluate nothing new. None of them is shipped. They are rejected for convergence (§20.3), not for semantics or
 policies.
+
+## 14. Level and whole-chain factoring (C3c consistency)
+
+The boundary finishing of `SimplifierFlatten.md` §21 needs no permission and no new admission: the result of a refused chain is
+factored only when the factorable family admits it, whose terms are all inert under every policy, exactly as the next call
+admitted it. A result holding a pinned term, an observable call or a non-finite constant is returned as is. Comparing coefficients
+by magnitude rewrites `(-c)*t` as `-(c*t)` (exact in every type) on inert terms only. The coefficient of a binary factoring made of
+two single terms is canonicalized inside the effect gate, where the factoring rule ran. The policy tests of the mission
+(`ExpressionSimplifierFactoringConsistencyTests.ObservableCalls_KeepTheirEvaluations_UnderEveryPolicy`) keep every evaluation.
