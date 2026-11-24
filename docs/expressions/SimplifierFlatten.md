@@ -2356,3 +2356,122 @@ no `-(-t)` any more), the others stay inside the A/A band; the lone negation pay
 - Rebuilding a unary node still goes through the framework factory, which reads the `Type` of its operand and the metadata of
   its method (limitation L-1 of `A10-ReflectionProvenance.md`): unchanged, the classification itself compares reflection
   objects by provenance only.
+
+## 18. Finalization of rebuilt forms (S5A-05, PR A)
+
+Branch `fix/expression-s5a05-finalization`, base `master` `65495e50` (PR #719), measured in a detached worktree of the base,
+both sides built by the same harness (S5 campaigns, 4,000 seeds and 4,000 nested compositions).
+
+### 18.1 The residues of §17.7
+
+| Case | Base | First rule left unfinished | Next call | Family |
+|---|---|---|---|---|
+| gen#2430 | fixed@2 | `SubstractionWithSubstraction`: `(z + R) - (x - (0 - y))` with `Tan(x)` in `R` | `FlattenAdditiveChain` | R |
+| gen#3191 | fixed@2 | `SubstractionWithAddition`: `(x - (0 - Log(-20))) - Sin(-1)` | `SubstractionWithZero`, `SubstractionWithNegate` | R |
+| gen#459 | fixed@4 | nested reassociations over `-Infinity` and `Sin(y)`, one level finished per call | canonicalizations | R |
+| gen#2330 | fixed@2 | `AdditionOfEqualsElements`: `(-1 + y) * (x + x)` | coefficient `x + x` merged | Q |
+| gen#743 | fixed@1 | — (fixed by #719, kept as a control) | — | — |
+
+**Family R — unfinished reassociations.** `SubstractionWithAddition` (`t - (a + b)`) and `SubstractionWithSubstraction`
+(`t - (a - b)`) finish the nodes they rebuild with the rules (`FinishReassociation`, mission C3d) only when every operand is inert
+finite arithmetic (`FinishesRebuilt`): re-entering the rules over a call, an opaque constant or a decimal would add comparer
+simplifications and user `Equals` calls the historical rules never made, and a non-finite constant belongs to the
+policy-dependent `NaN` fold. Any other operand returned the rebuilt difference as built. Inside an additive parent this is
+harmless, since the parent's canonicalization collects its terms, but at a root, or below a product or a quotient, the next call
+had to canonicalize it. The signs and coefficients played no part: the terms were already signed, and only the finalization was
+missing.
+
+**Family Q — a product added twice with a symbolic coefficient.** `AdditionOfEqualsElements` factors one factor of
+`x*(y - 1) + x*(y - 1)` and keeps the coefficient `x + x`. `CanonicalizeFactoredCoefficient` deliberately leaves a coefficient of
+added terms alone, because canonicalizing it at every level of the `dag` family made the factoring quadratic in allocations
+(§14.8), so `x + x` waited for the next call. The structure hid that the two operands are one product.
+
+### 18.2 Corrections
+
+- **R:** when `FinishesRebuilt` refuses, the rebuilt difference is finalized by the additive canonicalization alone
+  (`CanonicalizeReassociation`): the terms of `inner - last` are collected and canonicalized as the finalization of an ordinary
+  `Subtract` node would do (zeros dropped, constants aggregated, monomials merged, pinned terms in place). No rule is dispatched,
+  no operand is compared through the public comparer, no user code runs, and nothing is folded to `NaN`. A difference with a `NaN`
+  term is kept as built, so the policy-dependent `NaN` fold still sees its operand (the `S5-P18C` matrix pins this). Decimal
+  differences (`CanonicalizesOperator`) and derived simplifiers (`StabilizesRebuiltForms`) keep the node as built.
+- **Q:** when both factor pairs of `AdditionOfEqualsElements` are equal and the common coefficient is not a constant, the result
+  is the canonical product of `2` and the factors of the operand (`BuildCanonicalProduct`), the tree the next call built. The
+  decision reuses the two comparisons the first test of the rule already made, so it makes no extra comparison. A constant
+  coefficient keeps the historical path, which folds it (`0.5*x + 0.5*x` gives `x`, `2*x + 2*x` gives `4 * x`).
+
+Both are inside the effect gate (neither rule is audited for admission outside it), so their operands are inert. Q merges the
+two evaluations of an inert product, which is the permission the rule already used to merge the common factor. The plan of
+rules is unchanged (76 rules, same order).
+
+### 18.3 Differential (base against branch)
+
+| Campaign | Changed records | Classification |
+|---|---:|---|
+| `terminate` (66,270) | 36 | 30 results finalized at the same visit count; 6 identical results whose visit count changes (2 lower, 4 higher, by a few visits) |
+| `converge` (70,495) | 118 | first passes reaching the fixed point the base reached after more calls (below) |
+| `diff` (4,000) | 19 | no value-class regression; one `rounding` becomes `same` |
+| `effects` (4,004) | 4 | evaluation logs and exceptions identical |
+| `s3` | 0 | |
+| `canon` | 0 | |
+| `comparer` | 0 violation (28,000 checks) | |
+| `inventory` | 76 rules, same order | line numbers and called helpers only |
+
+**Convergence** (8 passes, free parameters / parameters bound by a lambda, `S5_AUDIT_BIND=1`):
+
+| Category | Base free | Branch free | Base bound | Branch bound |
+|---|---:|---:|---:|---:|
+| fixed@1 | 67,197 | 67,307 | 67,188 | 67,302 |
+| fixed@2 | 273 | 212 | 271 | 209 |
+| fixed@3 | 21 | 5 | 21 | 4 |
+| fixed@4 | 9 | 0 | 9 | 0 |
+| cycle, period 2 | 62 | 44 | 20 | **0** |
+| cycle, period 3 | 13 | 7 | 6 | **0** |
+
+The cases needing several passes go from 303 to 217, and the cycles from 75 to 51. Every bound cycle is gone, so the 51 cycles
+left are free-parameter ties of the S4 canonical order (limitation L-3). One case moves from fixed@2 to a period-2 cycle
+(gen#867: the two forms differ only by the order of the free parameters `x` and `y`; bound, it has no cycle). No case moves
+from fixed@1 to more passes. With bound parameters, the first rule of the second pass of the remaining cases is
+`DivideWithZeroOrOne` (48, `/ ±1`, L-2), the finalization (46), `DivisionOfConstants` (40), `FlattenAdditiveChain` (22),
+`SubstractionWithZero` (17) and `AdditionOfEqualsElements` (14): left to later changes.
+
+### 18.4 Complexity and performance
+
+`measure`, limits lifted, 26 families at n = 4 to 20 (the 130 points of §17.8): all 130 points have identical visits, comparer
+simplifications and output sizes. The corrected paths are not exercised by those families: R needs a call or a non-finite
+constant below a reassociation, and Q a product added twice.
+
+Performance (`tests/ExpressionTracingBench/run-campaign.ps1`, one process per scenario and variant, rotating order, A/A copy of
+the base binaries, 4 rounds, then 7 rounds for the four scenarios outside the A/A band; two scenarios added: `subcall`, a
+reassociation over a `Tan` call, and `prod2x`, a product added twice):
+
+| Scenario | Base | A/A | Branch | Allocated base → branch |
+|---|---:|---:|---:|---:|
+| `ext-root` | 79.4 ns | −0.6 % | +0.3 % | 0 B |
+| `scalar` | 1,408 ns | +0.2 % | −4.8 % | 2,256 B |
+| `binary` | 5,931 ns | −0.6 % | −1.9 % | 6,513 B |
+| `lambda` | 3,305 ns | +2.8 % | +4.4 % (7 rounds: +1.4 % / −1.6 %) | 6,385 B |
+| `leftsum20` | 6,783 ns | −1.7 % | +2.3 % (7 rounds: +3.4 % / −0.3 %) | 14,368 B |
+| `p9family16` | 40,722 ns | +3.6 % | −1.1 % | 52,131 B |
+| `dag10` | 983,567 ns | −0.2 % | +0.6 % | 1,288,326 → 1,288,328 B |
+| `calls8` | 4,602 ns | +1.8 % | −1.0 % | 2,632 B |
+| `callsum16` | 21,156 ns | −1.1 % | −0.7 % | 31,344 B |
+| `cmp-pos` | 59,743 ns | +6.6 % | +6.5 % | 61,742 B |
+| `hash` | 29,768 ns | +1.7 % | +1.4 % | 29,694 B |
+| `neg2sum16` | 112,606 ns | −2.6 % | +2.5 % | 193,058 B |
+| `negmul8` | 106,865 ns | +3.5 % | +4.8 % (7 rounds: −1.0 % / +2.6 %) | 110,265 B |
+| `subcall` | 7,784 ns | +1.1 % | −0.1 % | 10,064 B |
+| `prod2x` | 15,366 ns | −0.6 % | −1.5 % (7 rounds: −2.7 % / −3.1 %) | 21,344 → 21,568 B |
+
+Reading: no scenario is outside the noise of the A/A copy except `negmul8` in the 7-round re-measure (+2.6 % against −1.0 %), a
+product of negations that neither correction touches (its counters and allocations are identical): not attributed to the
+change. `prod2x` allocates 224 bytes more (the factor list of the canonical product) and is not slower. `subcall` keeps its
+allocations: its source chain is already canonicalized by the flatten rule, so the reassociation of family R is reached only
+from prepared operands, as in the corpus cases.
+
+### 18.5 Residual limits
+
+- Free-parameter ties (L-3) still order `x` and `y` by collection order; one case of the corpus now cycles through them.
+- `/ ±1` (L-2), constant pairs left by `DivisionOfConstants` and `SubstractionOfConstants`, and the negation of a constant
+  (`-(c)`, PR B) remain residues of the second pass.
+- The reassociation rules still finish with the rules only on inert finite arithmetic; with other operands they stop at the
+  canonicalization, so a rule that would apply to the canonical sum waits for the next call.

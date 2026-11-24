@@ -1686,7 +1686,9 @@ namespace Utils.Mathematics.Expressions
         /// </summary>
         /// <remarks>
         /// Mission C3d: for the built-in type and inert finite operands (<see cref="FinishesRebuilt"/>) both rebuilt nodes are transformed from
-        /// their prepared operands (<see cref="FinishReassociation"/>), so the rule returns what a second call returned.
+        /// their prepared operands (<see cref="FinishReassociation"/>), so the rule returns what a second call returned. S5A-05: with other
+        /// operands (a call, a non-finite constant) the rebuilt difference is finalized as the next call finalized it, by the additive
+        /// canonicalization alone (<see cref="CanonicalizeReassociation"/>).
         /// </remarks>
         [ExpressionSignature(ExpressionType.Subtract)]
         protected Expression SubstractionWithAddition(BinaryExpression e, Expression left, [ExpressionSignature(ExpressionType.Add)] BinaryExpression right)
@@ -1696,7 +1698,7 @@ namespace Utils.Mathematics.Expressions
             BinaryExpression inner = Expression.Subtract(left, right.Left);
             return FinishesRebuilt(left, right)
                 ? FinishReassociation(inner, ExpressionType.Subtract, right.Right)
-                : Expression.Subtract(inner, right.Right);
+                : CanonicalizeReassociation(inner, right.Right) ?? Expression.Subtract(inner, right.Right);
         }
 
         /// <summary>
@@ -1711,7 +1713,7 @@ namespace Utils.Mathematics.Expressions
             BinaryExpression inner = Expression.Add(left, right.Right);
             return FinishesRebuilt(left, right)
                 ? FinishReassociation(inner, ExpressionType.Subtract, right.Left)
-                : Expression.Subtract(inner, right.Left);
+                : CanonicalizeReassociation(inner, right.Left) ?? Expression.Subtract(inner, right.Left);
         }
 
         /// <summary>
@@ -1744,6 +1746,56 @@ namespace Utils.Mathematics.Expressions
             Expression finishedInner = TransformCoreWithPreparedOperands(inner, inner.Left, inner.Right);
             BinaryExpression outer = nodeType == ExpressionType.Add ? Expression.Add(finishedInner, last) : Expression.Subtract(finishedInner, last);
             return TransformCoreWithPreparedOperands(outer, finishedInner, last);
+        }
+
+        /// <summary>
+        /// Finalizes the difference <c>inner - last</c> a reassociation rule rebuilds from prepared operands that
+        /// <see cref="FinishesRebuilt"/> does not admit (S5A-05): the additive canonicalization of its terms, without dispatching
+        /// any rule.
+        /// </summary>
+        /// <param name="inner">The rebuilt inner sum or difference, whose operands are prepared operands of the rule.</param>
+        /// <param name="last">The prepared operand the rule subtracts from <paramref name="inner"/>.</param>
+        /// <returns>
+        /// The canonical sum of the terms of <paramref name="inner"/> and <paramref name="last"/>, or <see langword="null"/> for a
+        /// derived simplifier, an operator the canonicalization does not reorder (<see cref="CanonicalizesOperator"/>) or a difference
+        /// with a <c>NaN</c> term, which keep the node as built.
+        /// </returns>
+        /// <remarks>
+        /// <para>
+        /// <see cref="SubstractionWithAddition"/> and <see cref="SubstractionWithSubstraction"/> finish their result with the rules
+        /// (<see cref="FinishReassociation"/>) only on inert finite arithmetic, because finishing re-enters rules that compare their
+        /// operands. On any other operand (a call such as <c>Tan(x)</c>, a non-finite constant) the rebuilt node was returned as
+        /// built, and when no additive parent collected its terms the next call canonicalized it: the residue <c>t - (sum)</c> of the
+        /// convergence corpus (<c>z - (x - (Tan(x) + …))</c> gave <c>(z + …) - (x - (0 - y))</c>, then the canonical sum).
+        /// </para>
+        /// <para>
+        /// The canonicalization applied here is the finalization of an ordinary <c>Add</c>/<c>Subtract</c> node
+        /// (<see cref="FinalizeExpression"/>), on the same prepared terms: it dispatches no rule, compares no operand through the
+        /// public comparer and runs no user code (terms that are not inert are pinned in source order, the others are keyed
+        /// structurally), and it does not fold <c>NaN</c>; a difference with a <c>NaN</c> term is kept as built, so the
+        /// policy-dependent <c>NaN</c> fold of <see cref="PrepareExpression"/> (S5 P18 C2b) still sees its operand where it saw it
+        /// before. It reorders and groups exactly as an additive parent of the rebuilt node already did at the same
+        /// call. The rule ran inside the effect gate (it is not audited for admission outside it), so every operand is inert.
+        /// </para>
+        /// </remarks>
+        private Expression? CanonicalizeReassociation(BinaryExpression inner, Expression last)
+        {
+            if (!StabilizesRebuiltForms) return null;
+            BinaryExpression outer = Expression.Subtract(inner, last);
+            if (!CanCanonicalizeCommutativeBinary(outer) || !CanonicalizesOperator(outer)) return null;
+
+            // The terms the canonicalization collects anyway. A NaN term is left to the policy-dependent NaN fold of the next
+            // preparation (S5 P18 C2b), which recognizes a NaN operand of the node and must not see it regrouped first: the node is
+            // then kept as built, as before.
+            var terms = new List<(Expression Term, bool IsNegative)>();
+            CollectAdditiveTerms(terms, inner, false);
+            CollectAdditiveTerms(terms, last, true);
+            foreach ((Expression term, _) in terms)
+            {
+                if (IsNaNConstant(term)) return null;
+            }
+
+            return CanonicalizeAdditiveTerms(terms, outer.Type);
         }
 
         /// <summary>
@@ -2141,6 +2193,12 @@ namespace Utils.Mathematics.Expressions
         /// <see cref="AdditionOfConstants"/> first, so it reaches this rule only when that fold declines because the addition
         /// throws (S5A-04: <c>decimal.MaxValue + decimal.MaxValue</c>); the throwing node is then kept as built instead of
         /// being rewritten into the equivalent <c>2 * decimal.MaxValue</c>.
+        /// <para>
+        /// S5A-05: for the built-in type, when both factors of the two products are equal and the common coefficient is not a
+        /// constant, the sum is one product added twice and gives the canonical product of <c>2</c> and its factors at once
+        /// (<c>x*(y - 1) + x*(y - 1)</c> gives <c>2 * (x * (-1 + y))</c>, not <c>(-1 + y) * (x + x)</c>). The decision reuses the two
+        /// comparisons of the first test, so no comparison is added; a derived simplifier keeps the historical factoring.
+        /// </para>
         /// </remarks>
         [ExpressionSignature(ExpressionType.Add)]
         protected Expression AdditionOfEqualsElements(BinaryExpression e, Expression left, Expression right)
@@ -2193,13 +2251,22 @@ namespace Utils.Mathematics.Expressions
             // the public ExpressionComparer contract at most once per call, rather than once per comparison
             // it participates in - see FactorEqualityProbe's remarks for why this is semantics-preserving.
             var equalityProbe = new FactorEqualityProbe();
-            if (!leftAugmented
-                && !rightAugmented
-                && equalityProbe.Equals(leftleft, rightleft)
-                && !equalityProbe.Equals(leftright, rightright))
+            bool leadingEqual = !leftAugmented && !rightAugmented && equalityProbe.Equals(leftleft, rightleft);
+            bool trailingEqual = leadingEqual && equalityProbe.Equals(leftright, rightright);
+            if (leadingEqual && !trailingEqual)
             {
                 ObjectUtils.Swap(ref leftleft, ref leftright);
                 ObjectUtils.Swap(ref rightleft, ref rightright);
+            }
+            else if (trailingEqual && StabilizesRebuiltForms && leftleft is not ConstantExpression)
+            {
+                // S5A-05: both factors are equal, so the operands are one product added twice. Factoring one factor left the
+                // symbolic coefficient t + t of the other one (x*(y - 1) + x*(y - 1) gave (-1 + y) * (x + x)), which the next call
+                // merged into 2 * (x * (-1 + y)): that canonical product of 2 and the factors of the operand is built at once. A
+                // constant coefficient keeps the historical path below, which folds it (0.5*x + 0.5*x gives x).
+                var factors = new List<Expression>(4) { Expression.Constant(Convert.ChangeType(2, left.Type), left.Type) };
+                CollectMultiplicativeFactors(factors, left);
+                return BuildCanonicalProduct(factors, record: null);
             }
             else if (equalityProbe.Equals(leftleft, rightright))
             {

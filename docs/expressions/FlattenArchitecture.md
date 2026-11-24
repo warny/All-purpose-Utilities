@@ -676,3 +676,9 @@ Two findings, fixed on the branch:
 dispatcher adds one delegate call, a scan of the group's declared operators (at most a handful) and, under tracing, a treatment
 frame; its cost over the traversal of an already prepared node is the extraction and invocation of the flatten rule, about
 40 ns on `a + b`.
+
+## S5A-05 note
+
+The finalization of the reassociation rules (`SimplifierFlatten.md` §18) reuses `CollectAdditiveTerms` and
+`CanonicalizeAdditiveTerms` on the rebuilt difference. It does not go through the engine's extraction and adds no flatten rule:
+a rebuilt node is not a source chain, and its terms are already prepared.
