@@ -2606,3 +2606,96 @@ reproduce. `calls8` alternates between 2,632 B and 2,776 B in the baseline, the 
 - `-(-2 * x)` and `-(2 * x)` keep their negation (19.4).
 - A `NaN` term in a reassociation is left to the policy fold, so gen#983 needs five calls.
 - Quotient factorization (family E) is not done.
+
+## 20. Additive sign normalization (audit, no production change)
+
+Branch `fix/expression-additive-sign-normalization`, base `master` `1c7cec21` (PRs #720 and #721). Every variant was measured
+against that base with the same harness: S5 campaigns with 4,000 seeds and 4,000 nested compositions (70,515 convergence cases
+with the four new families), and bound stability (`S5_AUDIT_BIND=1`).
+
+### 20.1 Construction sites
+
+| Site | Sign from | Represented by | Negative coefficient possible | Outer negation kept | Finished at once |
+|---|---|---|---|---|---|
+| `CollectAdditiveTerms` | subtraction, ordinary negation | sign flag | yes (a constant in the term) | no, absorbed into the flag | — (collection) |
+| `CanonicalizeAdditiveTerms` (levels, linear, anchored, spine, factorable and grouped chains, `CanonicalizeReassociation`, factored coefficients) | collected flags | flag; `0 - t` or `a - t` on rebuild | yes, kept as an added term (`x + (-2 * y)`) | no | yes |
+| `MergeIdenticalMonomials` / `BuildMergedMonomial` | signed coefficient sum | flag for a sum of `-1`, otherwise in the coefficient (`-2 * x`) | yes | no | yes |
+| `IsNegatedSum` | all terms subtracted | outer negation of the positive sum (`-(a + b)`) | no | yes (built) | yes |
+| `NegateSubtractedConstant` | a subtracted constant | the constant's own sign (`-1 + y`) | n/a | no | yes |
+| `BuildCanonicalProduct` / `NormalizeProductFactors` | negated factors | outer negation (`-(2 * x)`); a folded constant keeps its sign (`-2 * x`) | yes | yes | yes |
+| `BuildNegation` / `TryFoldNegation` | rule results | outer negation; `-(-t)` and `-(c)` folded | yes (`-(-2 * x)`) | yes | yes |
+| `FinishReassociation`, `CanonicalizeReassociation` | rebuilt difference | canonicalization above | yes | no | yes (PR A) |
+| `AggregateFactoredCoefficient` / `BuildAdditiveExpression` | coefficient terms | flag; `0 - t` | yes | no | constants only |
+
+No site moves an observable evaluation: the canonicalization pins every term that is not inert, and the rules run inside the
+effect gate. The ambiguity is in the reconstruction only: an added term with a negative coefficient (`x + (-2 * y)`) and a
+subtracted term with a positive one (`x + (0 - (2 * y))`) are both canonical, and so is the double negative
+`x + (0 - (-2 * y))`.
+
+### 20.2 Analysis is already sign-consistent (experiment A)
+
+The term analysis (`AnalyzedAdditiveTerm`: sign flag, coefficient, factors) and the merge of identical monomials combine signed
+coefficients whatever the physical form: `(x - (-2*y)) - 2*y`, `(x + -(2*y)) + 2*y` and `(x + (-2*y)) + 2*y` all give `x`, and
+`-(2*x) + (-2*x)` gives `-4 * x` (`ExpressionSimplifierAdditiveSignTests.LogicalAnalysis_MergesAcrossPhysicalForms`). A
+separate logical normalization would change no output. The existing structures are sufficient, and none was added.
+
+### 20.3 Normalizing the reconstruction (experiments B and C)
+
+| Variant | First-pass `converge` changes | More passes / fewer | fixed@2 free / bound | cycles free / bound | comparer | value classes |
+|---|---:|---:|---:|---:|---:|---|
+| `master` | — | — | 213 / 210 | 51 / 0 | 0 | — |
+| V1: every negative coefficient into the flag | 1,582 | 14 / 1 | 225 / 223 | 52 / 0 | 0 | 1 `same` → `extreme` |
+| C1: V1 + `-(c * t)` → `(-c) * t` for `c < 0` | 1,698 | 17 / 1 | 227 / 225 | 52 / 0 | 0 | 1 `same` → `extreme` |
+| C2: V1 + every direct constant absorbs the negation | 1,889 | 18 / 2 | 227 / 225 | 52 / 0 | 0 | none |
+| V1b: subtracted negative coefficients only (`0 - (-2 * y)`) | 92 | 3 / 0 | 216 / 213 | 51 / 0 | 0 | none |
+| V1b + C1 | 217 | 4 / 0 | 216 / 213 | 51 / 0 | 0 | none |
+| V1d: V1, also before the merges | not run: same mechanism, no improvement on the reproducers | | | | | |
+
+Every rewrite is exact. `c * t = -((-c) * t)` holds on integers (a ring modulo 2^n) and on decimals, and bit for bit on every
+non-NaN floating-point product, a NaN product keeping the sign and payload IEEE-754 leaves unspecified. `a + p = a - (-p)` holds
+for every type. Only inert terms are rewritten.
+
+V1 unifies the sums (`x + (-2 * y)` and `x + -(2 * y)` give one form, and so do `x - (-2 * y)` and `x - -(2 * y)`), and C2 also
+unifies the lone products (`-(2 * x)` and `-2 * x`). Every variant, however, needs more passes on some cases, and the cause is the
+same in all of them. Removing a sign from a coefficient makes coefficients equal: `x - (y - (x - y))` gives `(0 - (2 * y)) + (2 *
+x)` instead of `(-2 * y) + (2 * x)`, and `-1 + ((0 - (-2 * z)) + (2 * x))` becomes `-1 + ((2 * x) + (2 * z))`. The next call then
+factors those equal coefficients through the factorable chain (`2 * ((0 - y) + x)`, `-1 + (2 * (x + z))`). The canonicalization
+of a level never extracts common factors (mission C3c: the factors must not depend on how the source groups them), so the first
+call cannot reach that form. The normalization does not create the instability; it exposes the gap between level and
+whole-chain factoring wherever the double negative used to keep coefficients apart.
+
+**Disposition.** Under the acceptance rule of the mission (no new unstable first result), no variant is kept, and the production
+code is unchanged. `gen#1594` and `gen#2973` (§19.3) are not sign problems: every variant gives them exactly the base results.
+Their causes are the factored coefficient of added terms and the common factors of whole chains
+(`ExpressionSimplifierS5A05FinalizationTests.KnownResidues_TakeTwoCalls`).
+
+### 20.4 Proposed order
+
+1. Make the level canonicalization reach the whole-chain factoring where its terms are the whole chain (a root, or a node whose
+   parent is not additive), or record the factoring decision in the metadata so that the next call agrees with the first. This
+   is a C3c change, and it removes the mechanism of every regression in 20.3.
+2. Then apply V1b + C1 (the smallest variant: 217 changed first passes, no new cycle, no value change). It removes the double
+   negatives `0 - (-c * t)` and `-(-c * t)`, then the remaining forms: V1 for the sums, C2 for the lone products.
+3. Measure each step alone against the previous one, with the reproducers of `ExpressionSimplifierAdditiveSignTests`.
+
+### 20.5 Measures
+
+- Complexity (`measure`, 150 points: the 130 of §17.8 and the four new families `altsign`, `negcoef`, `negprodsum`,
+  `sharedneg` at n = 4 to 20). On `master` the new families are linear: 97, 101, 111 and 101 visits at n = 20. V1b + C1 has
+  identical visits and comparer simplifications on all 150 points; only the output of `altsign` shrinks (97 → 77 nodes at
+  n = 20).
+- Performance: not measured. No production change is delivered, and the machine was loaded (a game used about 1.4 cores), which
+  the protocol excludes.
+
+### 20.6 Reproducers
+
+`ExpressionSimplifierAdditiveSignTests` (`S5-Audit`) pins the forms of `master`:
+
+- the matrix of the mission;
+- associations and repeated terms;
+- quotients, powers, extreme, infinite and NaN coefficients;
+- bound parameters and shared products;
+- an observable call with a negative coefficient, evaluated once under three policies;
+- the competing forms the comparer does not identify.
+
+A future normalization must update these tests together with the change of 20.4.

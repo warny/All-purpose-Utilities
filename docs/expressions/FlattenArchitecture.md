@@ -682,3 +682,10 @@ frame; its cost over the traversal of an already prepared node is the extraction
 The finalization of the reassociation rules (`SimplifierFlatten.md` §18) reuses `CollectAdditiveTerms` and
 `CanonicalizeAdditiveTerms` on the rebuilt difference. It does not go through the engine's extraction and adds no flatten rule:
 a rebuilt node is not a source chain, and its terms are already prepared.
+
+## Additive sign audit note
+
+The sign of an additive term is carried by the flag of `CollectAdditiveTerms`, which every flatten family reuses. The audit of
+`SimplifierFlatten.md` §20 found the analysis consistent. The reconstruction keeps two canonical placements of a negative
+coefficient. Unifying them needs the level canonicalization to reach the whole-chain factoring first (§20.4); the engine's
+extraction is unchanged.

@@ -3315,7 +3315,6 @@ namespace Utils.Mathematics.Expressions
                     if (factoring == AdditiveFactoring.CommonFactors) FactorCommonFactors(terms, type, scopes, analyzed, sources);
                 }
 
-                NormalizeNegativeCoefficients(terms);
                 NegateSubtractedConstant(terms, type, StabilizesRebuiltForms);
             }
 
