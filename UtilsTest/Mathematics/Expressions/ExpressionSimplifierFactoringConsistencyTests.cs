@@ -144,7 +144,7 @@ public class ExpressionSimplifierFactoringConsistencyTests
     }
 
     /// <summary>
-    /// The physical forms of one signed term give one factored tree (§21.4): an added term with a negative coefficient, a
+    /// The physical forms of one signed term give one factored tree (§21.3): an added term with a negative coefficient, a
     /// subtracted term, a negated product and a subtracted negative coefficient. A group whose holders all share one negative
     /// value keeps the historical coefficient (<c>-2 * (x + y)</c>), and a group of subtracted terms its negation.
     /// </summary>
@@ -281,7 +281,7 @@ public class ExpressionSimplifierFactoringConsistencyTests
     }
 
     /// <summary>
-    /// The coefficient of a binary factoring made of two single terms is canonical (M2, §21.5): <c>z*x + z</c> gives
+    /// The coefficient of a binary factoring made of two single terms is canonical (M2, §21.3): <c>z*x + z</c> gives
     /// <c>z * (1 + x)</c>, which the next call ordered; <c>gen#1594</c> is covered by
     /// <see cref="ExpressionSimplifierS5A05FinalizationTests.FormerResidues_TakeOneCall"/>.
     /// </summary>

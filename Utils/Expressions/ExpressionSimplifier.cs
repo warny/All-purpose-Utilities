@@ -2535,7 +2535,7 @@ namespace Utils.Mathematics.Expressions
             // subtraction or a negation (a cancellation, the 0 - t form, a negated group) or two constants. A sum of added
             // terms keeps the historical node: on a long chain whose factor repeats (the dag family of §14.8) the coefficient
             // grows by one term per level, and canonicalizing it at every level made the factoring quadratic in allocations.
-            // Mission C3c (§21.5): a sum of two single terms is canonicalized all the same, at a constant cost (z*x + z gave
+            // Mission C3c (§21.3): a sum of two single terms is canonicalized all the same, at a constant cost (z*x + z gave
             // z * (x + 1), ordered 1 + x by the next call); only a coefficient that is already a sum keeps the historical node.
             if (nodeType != ExpressionType.Subtract
                 && !HasAdditiveNegation(leftCoefficient)

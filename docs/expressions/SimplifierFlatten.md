@@ -2857,3 +2857,79 @@ effect analysis of a factored product `x0 * (sum)` walk its sum recursively, so 
 stack the levels of the same chain already needed. `BoundaryFinishing_NeverRefusesWhatTheLevelsAccept_OnASmallStack` (Security)
 checks, on a 256 KiB thread and without limits, that at every size from 64 to 4,096 terms the finished simplification succeeds
 wherever the levels alone succeed.
+
+### 21.7 Performance
+
+`tests/ExpressionTracingBench/run-campaign.ps1`, baseline `523fc708`, A/A copy of the base binaries, one process per scenario and
+variant, rotating order, machine idle; 4 rounds, then 7 rounds for the scenarios outside the A/A band. Five scenarios added:
+`refused16` (a refused chain factored at its boundary), `refusednone16` (refused, no common factor), `mixsign16` (one coefficient
+with both signs), `coef2` (`x0*(x1 + 0) + x0`, a two-term factored coefficient), `refusedcall` (a refused chain below a call).
+
+| Scenario | Base | A/A | Branch (4 rounds) | Branch (7 rounds) | Allocated base → branch |
+|---|---:|---:|---:|---:|---:|
+| `ext-root` | 79.4 ns | +4.0 % | +2.6 % | | 0 B |
+| `scalar` | 1,340 ns | +4.7 % | +4.7 % | +0.8 % (A/A −1.8 %) | 2,256 B |
+| `binary` | 5,775 ns | +1.0 % | −0.6 % | | 6,513 B |
+| `lambda` | 3,352 ns | −5.4 % | +7.0 % | +6.0 % (A/A +0.2 %) | 6,385 B |
+| `leftsum20` | 6,678 ns | −1.3 % | −2.7 % | | 14,368 B |
+| `p9family16` | 40,182 ns | +0.7 % | +0.4 % | | 52,131 → 52,259 B |
+| `dag10` | 969,585 ns | −1.0 % | +0.2 % | | 1,288,325 B |
+| `calls8` | 4,547 ns | +0.6 % | −0.8 % | | 2,776 → 2,632 B ¹ |
+| `callsum16` | 20,825 ns | −3.7 % | −0.2 % | | 31,344 → 31,600 B |
+| `negsum16` | 10,229 ns | +1.5 % | +1.1 % | | 20,432 → 20,688 B |
+| `negconst8` | 134,847 ns | −4.5 % | +9.7 % | +2.4 % (A/A +2.3 %) | 162,252 → 163,829 B |
+| `subcall` | 7,717 ns | +0.8 % | +0.9 % | | 10,064 → 10,128 B |
+| `prod2x` | 14,834 ns | +2.5 % | −0.3 % | | 21,568 → 21,664 B |
+| `cmp-pos` | 60,470 ns | −0.1 % | +0.2 % | | 61,742 B |
+| `hash` | 29,485 ns | +3.8 % | +0.8 % | | 29,694 B |
+| `refused16` | 430,536 ns | +0.2 % | +4.2 % | +3.5 % (A/A −2.1 %) | 617,780 → 653,982 B |
+| `refusednone16` | 322,092 ns | +0.2 % | +0.2 % | | 434,243 → 435,795 B |
+| `mixsign16` | 56,650 ns | −5.1 % | +25.6 % | +31.3 % (A/A −1.4 %) | 81,674 → 82,003 B |
+| `coef2` | 3,008 ns | +4.0 % | +41.3 % | +39.3 % (A/A −0.8 %) | 4,120 → 6,496 B |
+| `refusedcall` | 36,262 ns | +3.3 % | +39.1 % | +36.1 % (A/A +2.6 %) | 37,400 → 55,516 B |
+
+¹ `calls8` alternates between 2,632 B and 2,776 B on every variant (tiered compilation, §19.6).
+
+Reading: every scenario the change does not target stays inside the A/A band, with at most a few hundred bytes more on the refused
+chains (the walks of the boundary test, which allocate their branch sets past four entries). `lambda` pays about 200 ns: its
+`(… * 1) + 0` root is a refused chain, so its result is tested at the boundary (two walks of a two-term chain and the marker's
+`try/finally`), with identical allocations. `mixsign16`, `coef2` and `refusedcall` cost 31 to 39 % more, with the allocations of the
+factoring: the work the next call did (M3, M2 and M1 respectively) is done once, in the first call, which is cheaper than the two
+calls the base needed for the same tree. `refused16` costs 3.5 % more for a result half its size.
+
+### 21.8 Suites
+
+Unit 15,147 passed (1 skipped), Security 465 (3 skipped), Functional 383, Debug expression coverage 356 (1 skipped) and
+`R4Security` 4, all on Windows; the CI of the pull request runs Windows and Ubuntu.
+
+### 21.9 Sign normalizations replayed on this base
+
+The variants of §20.3 were implemented again (they were not kept) in a separate worktree of this branch, behind an environment
+switch that never reached the branch, and measured against the branch with the same harness (the convergence corpus holds the five
+new audit families, 70,540 cases; on the branch they are 193 / 191 at `fixed@2`, the four extra cases being the `dagfactor`
+coefficients of three terms and more, which keep the historical node by design, §21.3).
+
+| Variant | First passes changed | New multi-pass cases (free / bound) | Fixed | New cycles (free / bound) | Comparer | Values, exceptions, effects |
+|---|---:|---:|---:|---:|---:|---|
+| on #722's base (§20.3) | | V1b +3, V1b+C1 +3, V1 +12, C2 +14 | | | | |
+| V1b | 92 | 1 / 1 | 0 | 0 / 0 | 0 | identical |
+| V1b + C1 | 211 | 2 / 2 | 0 | 0 / 0 | 0 | identical |
+| V1 | 1,572 | 3 / 3 (one is a cycle) | 1 | 1 / 0 | 0 | 1 `float` sample `same` → `extreme` |
+| C2 | 1,773 | 7 / 6 (two are cycles) | 2 | 2 / 0 | 0 | identical |
+
+The mechanism of §20.3 is gone: no variant exposes a whole-chain factoring the first call misses any more (M1, M3). What remains
+is outside the factorable family: nested#3674 in every variant, a refused chain holding a quotient whose suffix
+`(0 - (2 * y)) + (0 - (2 * (z / -2)))` is factored on its own by the next call (M4); nested#3002 (V1b + C1, C2), a sum with a
+quotient term factored by the binary rule; and, for V1 and C2, new free-parameter ties (L-3). **V1b + C1 is not stable** under the
+acceptance rule (two new multi-pass first results), so no pull request is proposed for it; it needs M4 first.
+
+### 21.10 Residual limits
+
+- **M4, suffixes of refused canonical sums.** A chain refused for a quotient or a non-inert call keeps its historical result; the
+  next call may factor a factorable suffix of its canonical form. Treating it means factoring the factorable terms of a refused
+  chain, a change of the refused families' historical behavior (strategy D' of 21.3) that needs its own decision.
+- **Sum factors.** A term with a factor that is a sum refuses the factorable family (§13.12); the binary rule still factors such
+  terms pairwise, one level at a time (`AdditionOfEqualsElements` residues of the stability campaign).
+- **Coefficients of three terms and more** of a binary factoring keep the historical node (§14.8, `dagfactor` at 3 to 8 terms).
+- **Deep factored sums** are keyed and analyzed recursively (21.6): the stack the levels of the same chain already need.
+- Free-parameter ties of the canonical order (L-3) are unchanged.

@@ -974,7 +974,7 @@ public partial class ExpressionSimplifier
 
                     if (_constantCount == 1) _firstConstantDepth = depth;
 
-                    // Mission C3c (§21.4): values are compared by magnitude, as the global factoring compares coefficients.
+                    // Mission C3c (§21.3): values are compared by magnitude, as the global factoring compares coefficients.
                     object value = CoefficientMagnitude(constant.Value!);
                     _constants.Add(value);
                     return Accept(!_coefficients.Contains(value), FlattenRefusalCause.CoefficientEqualsConstant, depth, value, out refusal);

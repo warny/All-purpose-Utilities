@@ -494,7 +494,7 @@ public partial class ExpressionSimplifier
     /// it is positive, of an unsigned type, or a signed integral minimum (whose negation is itself); otherwise its exact negation
     /// (IEEE-754 for the floating-point types, so bit for bit). So <c>2</c> and <c>-2</c> are one candidate, and
     /// <c>2*x + (-2)*y</c> is factored as <c>2*x - 2*y</c> is: the term analysis already treats the sign of a coefficient and
-    /// the sign of a term as one sign (<c>docs/expressions/SimplifierFlatten.md</c> §20.2, §21.4).
+    /// the sign of a term as one sign (<c>docs/expressions/SimplifierFlatten.md</c> §20.2, §21.3).
     /// </summary>
     /// <param name="value">A boxed factorable coefficient (<see cref="IsFactorableCoefficient"/>).</param>
     /// <returns>The boxed magnitude, of the same type.</returns>
@@ -1130,7 +1130,7 @@ public partial class ExpressionSimplifier
     /// holds (§13.5): every term is inert and factorable, every crossed node an ordinary operator, no constant pair is
     /// crossed. The levels already folded the constants the raw admission refused, exactly; no admission condition is widened.
     /// The terms are the terms of the result, finished by the levels: they are not prepared again (the next call prepared each
-    /// term, which rewrites no factorable term the levels finished; §21.3 lists the measured exceptions). Both walks consume the
+    /// term, which rewrites no factorable term the levels finished; §21.4). Both walks consume the
     /// structural budget and stop at the first refusal; the factoring is the one of <see cref="FlattenFactorableChain"/>.
     /// </para>
     /// </remarks>

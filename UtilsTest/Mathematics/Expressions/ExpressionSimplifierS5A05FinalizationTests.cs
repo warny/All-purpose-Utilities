@@ -123,7 +123,7 @@ public class ExpressionSimplifierS5A05FinalizationTests
 
     /// <summary>
     /// The two residues PR B exposed, which took two calls until the C3c consistency fix (<c>SimplifierFlatten.md</c> §20, §21):
-    /// <c>gen#1594</c>, a factored coefficient of two added terms left in source order (§21.5), and <c>gen#2973</c>, a chain the
+    /// <c>gen#1594</c>, a factored coefficient of two added terms left in source order (§21.3), and <c>gen#2973</c>, a chain the
     /// raw admission refused (the negation of a constant) whose level by level result is a factorable chain, now factored at its
     /// boundary (§21.3). Each first result is the fixed point the second call reached on <c>master</c> <c>523fc708</c>.
     /// </summary>

@@ -240,7 +240,7 @@ public class ExpressionSimplifierNumericChainGrowthTests
     /// Since mission C3c these chains are factorable chains, simplified at once: the reversed and the right-associated sources
     /// give the canonical form of the left-associated one, the equal coefficients are factored out as a canonical product, and
     /// the two terms of <c>x3</c> of the negated lambda merge into <c>-7 * x3</c>. Since the C3c consistency fix
-    /// (<c>docs/expressions/SimplifierFlatten.md</c> §21.4) <c>-7 * x3</c> and <c>-(7 * x5)</c> share the coefficient <c>7</c>,
+    /// (<c>docs/expressions/SimplifierFlatten.md</c> §21.3) <c>-7 * x3</c> and <c>-(7 * x5)</c> share the coefficient <c>7</c>,
     /// which the global factoring compares by magnitude: <c>0 - (7 * (x3 + x5))</c>. Every form is a fixed point.
     /// </remarks>
     /// <param name="shape">The shape.</param>
