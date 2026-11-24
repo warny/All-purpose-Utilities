@@ -162,6 +162,62 @@ public class ExpressionSimplifierConstantNegationTests
             Assert.AreEqual(1, Probe.Calls);
         }
     }
+    /// <summary>
+    /// The factorization families of the S5A-05 audit (§19.5): the signed families A–D are recognized in one call through the
+    /// negations; the quotient family E is not factored (deferred quotient atoms). Each result is a structural fixed point.
+    /// </summary>
+    [TestMethod]
+    public void FactorizationFamilies_AreRecognizedThroughNegations()
+    {
+        ParameterExpression a = Expression.Parameter(typeof(double), "a"), b = Expression.Parameter(typeof(double), "b");
+        ParameterExpression y = Expression.Parameter(typeof(double), "y"), z = Expression.Parameter(typeof(double), "z");
+        (Expression Source, string Expected)[] cases =
+        [
+            (Expression.Add(Expression.Negate(Expression.Multiply(Expression.Constant(2.0), X)), Expression.Multiply(Expression.Constant(2.0), X)), "0"),
+            (Expression.Add(Expression.Negate(Expression.Multiply(a, X)), Expression.Multiply(a, X)), "0"),
+            (Expression.Add(Expression.Negate(Expression.Multiply(a, X)), Expression.Multiply(a, y)), "a * ((0 - x) + y)"),
+            (Expression.Subtract(Expression.Negate(Expression.Multiply(a, X)), Expression.Multiply(a, y)), "-(a * (x + y))"),
+            (Expression.Add(Expression.Multiply(a, b), Expression.Multiply(a, b)), "2 * (a * b)"),
+            (Expression.Subtract(Expression.Multiply(a, X), Expression.Add(Expression.Multiply(a, y), Expression.Multiply(a, z))), "a * ((0 - y) + ((0 - z) + x))"),
+            (Expression.Add(Expression.Negate(Expression.Multiply(a, Expression.Subtract(X, y))), Expression.Multiply(a, X)), "y * a"),
+            (Expression.Add(Expression.Negate(Expression.Divide(a, b)), Expression.Divide(a, b)), "0"),
+            (Expression.Subtract(Expression.Divide(Expression.Multiply(a, X), b), Expression.Divide(Expression.Multiply(a, y), b)), "(0 - ((a * y) / b)) + ((a * x) / b)"),
+        ];
+        foreach ((Expression source, string expected) in cases)
+        {
+            Expression once = S(source);
+            Assert.AreEqual(expected, Text(once), Text(source));
+            Assert.IsTrue(ExpressionComparer.StructuralEqualsRaw(once, S(once)), Text(once));
+        }
+    }
+
+    /// <summary>A factorization that would merge two evaluations of an observable call is refused: both calls stay.</summary>
+    [TestMethod]
+    public void Factorization_OverAnObservableCall_KeepsBothEvaluations()
+    {
+        Expression F() => Expression.Call(typeof(Probe).GetMethod(nameof(Probe.F))!);
+        ParameterExpression y = Expression.Parameter(typeof(double), "y");
+        Expression[] sources =
+        [
+            Expression.Subtract(Expression.Multiply(F(), X), Expression.Multiply(F(), y)),
+            Expression.Add(Expression.Negate(Expression.Multiply(F(), X)), Expression.Multiply(F(), X)),
+            Expression.Add(Expression.Multiply(F(), X), Expression.Multiply(F(), X)),
+        ];
+        foreach (Expression body in sources)
+        {
+            var source = Expression.Lambda<Func<double, double, double>>(body, X, y);
+            foreach (ExpressionSimplifierOptions options in Policies)
+            {
+                var simplified = (Expression<Func<double, double, double>>)S(source, options);
+                Probe.Calls = 0;
+                double expected = source.Compile()(2, 5);
+                Probe.Calls = 0;
+                Assert.AreEqual(expected, simplified.Compile()(2, 5), Text(simplified));
+                Assert.AreEqual(2, Probe.Calls, $"{Text(source)} -> {Text(simplified)} ({options})");
+            }
+        }
+    }
+
     /// <summary>The comparer identifies the folded forms, and a second call keeps them.</summary>
     [TestMethod]
     public void Comparer_IdentifiesTheFoldedForms()

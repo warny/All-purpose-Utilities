@@ -43,6 +43,7 @@ public static class Program
         ["neg1"] = () => Simplify(Expression.Negate(Xs[0])),
         ["negsum16"] = () => Simplify(Enumerable.Range(0, 16).Select(i => (Expression)Expression.Negate(Xs[i])).Aggregate(Expression.Add)),
         ["neg2sum16"] = () => Simplify(Enumerable.Range(0, 16).Select(i => (Expression)Expression.Negate(Expression.Negate(Xs[i]))).Aggregate(Expression.Add)),
+        ["negconst8"] = () => Simplify(Enumerable.Range(0, 8).Select(i => (Expression)Expression.Multiply(Expression.Negate(Expression.Constant(i + 2.0)), Xs[i])).Aggregate(Expression.Add)),
         ["subcall"] = () => Simplify(Expression.Subtract(Xs[2], Expression.Subtract(Xs[0], Expression.Add(Expression.Call(typeof(double).GetMethod(nameof(double.Tan), [typeof(double)])!, Xs[0]), Expression.Multiply(Xs[1], Xs[1]))))),
         ["prod2x"] = () => Simplify(Expression.Add(Expression.Multiply(Xs[0], Expression.Subtract(Xs[1], Expression.Constant(1.0))), Expression.Multiply(Xs[0], Expression.Subtract(Xs[1], Expression.Constant(1.0))))),
         ["negmul8"] = () => Simplify(Enumerable.Range(0, 8).Select(i => (Expression)Expression.Negate(Xs[i])).Aggregate(Expression.Multiply)),

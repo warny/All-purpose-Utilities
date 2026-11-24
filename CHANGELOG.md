@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed — `omy.Utils` (`ExpressionSimplifier` constant negations, S5A-05 PR B)
+- An ordinary negation of a numeric constant is folded into the constant the node computes, wherever it appears (alone, in a
+  sum, a product, or built by a rule): `-(2)` gives `-2`, `-(-0.0)` gives `0.0`, `-int.MinValue` gives `int.MinValue`. The fold
+  is exact bit for bit (signed zeros, infinities, NaN payloads, subnormals, decimal scale) and keeps the type. Lifted, checked
+  and user-defined negations keep their node.
+- Behavior change: 180 of 70,495 first-pass results of the S5 convergence corpus change (21 sources holding `-(c)` are simplified
+  where they were already fixed points). Three cases need more calls because the folded negation no longer hides a
+  pre-existing residue. Comparer, values, exceptions and evaluation logs are unchanged. Absorbing a negation into a negative
+  coefficient (`-(-2 * x)`) was measured and deferred. See `docs/expressions/SimplifierFlatten.md` §19.
 ### Fixed — `omy.Utils` (`ExpressionSimplifier` finalization of rebuilt forms, S5A-05)
 - A reassociation `t - (a + b)` or `t - (a - b)` over operands holding a call or an infinite constant no longer returns its
   rebuilt difference as built: it is finalized by the additive canonicalization in the same call (a difference with a `NaN`
