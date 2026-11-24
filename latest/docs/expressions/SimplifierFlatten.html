@@ -6182,6 +6182,368 @@ from prepared operands, as in the corpus cases.</p>
 <li>The reassociation rules still finish with the rules only on inert finite arithmetic; with other operands they stop at the
 canonicalization, so a rule that would apply to the canonical sum waits for the next call.</li>
 </ul>
+<h2 id="19-constant-negations-and-signed-coefficients-s5a-05-pr-b-and-the-pr-c-audit">19. Constant negations and signed coefficients (S5A-05, PR B, and the PR C audit)</h2>
+<p>Branch <code>fix/expression-s5a05-constant-negation</code>, stacked on PR A (<code>fix/expression-s5a05-finalization</code>, #720): its baseline is
+PR A, measured with the same harness (S5 campaigns, 4,000 seeds and 4,000 nested compositions).</p>
+<h3 id="191-constant-negation-matrix">19.1 Constant negation matrix</h3>
+<p><code>TryNegateConstant</code> folds the ordinary negation of a constant into the constant the node computes when it runs:</p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Admitted</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>int</code>, <code>long</code></td>
+<td>yes</td>
+<td>unchecked negation: <code>-int.MinValue</code> is <code>int.MinValue</code></td>
+</tr>
+<tr>
+<td><code>short</code></td>
+<td>yes</td>
+<td>negated in <code>int</code> and truncated, as the compiled node does: <code>-short.MinValue</code> is <code>short.MinValue</code></td>
+</tr>
+<tr>
+<td><code>double</code>, <code>float</code></td>
+<td>yes</td>
+<td>IEEE-754 <code>negate</code>: the sign bit flips; signed zeros, infinities, subnormals and NaN payloads bit for bit</td>
+</tr>
+<tr>
+<td><code>decimal</code></td>
+<td>yes</td>
+<td><code>decimal.Negate</code>, the operator the node calls: sign flipped, scale kept (<code>-(0.00m)</code> keeps scale 2)</td>
+</tr>
+<tr>
+<td><code>int?</code> and other lifted negations</td>
+<td>no</td>
+<td><code>IsOrdinaryUnaryNegate</code> refuses lifted nodes</td>
+</tr>
+<tr>
+<td><code>NegateChecked</code></td>
+<td>no</td>
+<td>not an ordinary negation (<code>checked(-int.MinValue)</code> still throws at run time)</td>
+</tr>
+<tr>
+<td>user or impersonated operator</td>
+<td>no</td>
+<td>not ordinary (A-10 provenance)</td>
+</tr>
+<tr>
+<td>unsigned, enumerations, boxed values</td>
+<td>no</td>
+<td>no ordinary negation, or declared type is not the runtime type</td>
+</tr>
+</tbody>
+</table>
+<p>No value is converted. In particular, <code>Convert.ToDouble</code> is never used, so no user code runs and nothing can throw.</p>
+<h3 id="192-one-sign-model">19.2 One sign model</h3>
+<p><code>TryFoldNegation</code> is the single place where a negation disappears: <code>-(-t)</code> gives <code>t</code> (S5A-10), and <code>-c</code> gives the folded
+constant. Both the finalization of an ordinary <code>Negate</code> node and <code>BuildNegation</code> use it. Every negation the rules and the
+canonicalizations build (<code>x * -1</code>, <code>x / -1</code>, <code>(-a) * b</code>, negated sums and products, the factored coefficients) goes through
+<code>BuildNegation</code>, so none of them keeps <code>-(c)</code>. The additive canonicalization's <code>NegateSubtractedConstant</code> folds <code>0 - c</code>, a
+different operation (<code>0 - 0.0</code> is <code>+0</code>, <code>-0.0</code> is <code>-0</code>), and keeps its own fold. Operands that are not admitted are boundaries:
+they are never traversed, and only type tests and runtime reflection objects are read.</p>
+<h3 id="193-differential-pr-a-against-pr-b">19.3 Differential (PR A against PR B)</h3>
+<table>
+<thead>
+<tr>
+<th>Campaign</th>
+<th style="text-align: right;">Changed records</th>
+<th>Classification</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>terminate</code> (66,270)</td>
+<td style="text-align: right;">5</td>
+<td>same results with one node less (<code>-1</code> built as a constant instead of <code>-(1)</code>)</td>
+</tr>
+<tr>
+<td><code>converge</code> (70,495)</td>
+<td style="text-align: right;">180</td>
+<td>negations of constants folded; 21 sources holding <code>-(c)</code> leave fixed@0 for fixed@1</td>
+</tr>
+<tr>
+<td><code>diff</code> (4,000)</td>
+<td style="text-align: right;">110</td>
+<td>one value class improves (<code>extreme</code> → <code>same</code>); none regresses</td>
+</tr>
+<tr>
+<td><code>effects</code> (4,004)</td>
+<td style="text-align: right;">80</td>
+<td>evaluation logs and exceptions identical</td>
+</tr>
+<tr>
+<td><code>s3</code>, <code>canon</code></td>
+<td style="text-align: right;">0</td>
+<td></td>
+</tr>
+<tr>
+<td><code>comparer</code></td>
+<td style="text-align: right;">0 violation</td>
+<td><code>-(2)</code> and <code>-2</code> are now one form</td>
+</tr>
+<tr>
+<td>complexity</td>
+<td style="text-align: right;">130/130 points identical</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>Convergence: fixed@1 67,307 → 67,326, fixed@2 212 → 213, fixed@3 5 → 5, fixed@5 0 → 1, cycles unchanged (44 / 7); bound:
+fixed@2 209 → 210, fixed@5 0 → 1, no cycle. Three cases need more passes, each a pre-existing residue that the negations hid:</p>
+<table>
+<thead>
+<tr>
+<th>Case</th>
+<th>PR A</th>
+<th>PR B</th>
+<th>Residue</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>gen#983</td>
+<td>fixed@1</td>
+<td>fixed@5</td>
+<td>a reassociation with a <code>NaN</code> term, deliberately left to the policy-dependent <code>NaN</code> fold (§18.2)</td>
+</tr>
+<tr>
+<td>gen#1594</td>
+<td>fixed@1</td>
+<td>fixed@2</td>
+<td><code>x / (--1)</code> went through <code>DivisionWithNegate</code>, which transformed its dividend again; once <code>--1</code> is <code>1</code>, the factored coefficient of added terms (§14.8) is not canonicalized</td>
+</tr>
+<tr>
+<td>gen#2973</td>
+<td>fixed@1</td>
+<td>fixed@2</td>
+<td>the PR A finalization merges monomials but does not factor common factors (the next call's factorable chain factors <code>y</code>)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="194-absorbing-a-negation-into-a-coefficient-measured-deferred">19.4 Absorbing a negation into a coefficient (measured, deferred)</h3>
+<p><code>-(-2 * x)</code> is still kept. Two designs were measured against the base of PR A, <code>65495e50</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Variant</th>
+<th style="text-align: right;"><code>converge</code> changes</th>
+<th style="text-align: right;">fixed@2</th>
+<th style="text-align: right;">fixed@3</th>
+<th style="text-align: right;">fixed@5</th>
+<th style="text-align: right;">cycles</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>base</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">273</td>
+<td style="text-align: right;">21</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">75</td>
+</tr>
+<tr>
+<td>B1 — constants only (this PR)</td>
+<td style="text-align: right;">181</td>
+<td style="text-align: right;">273</td>
+<td style="text-align: right;">22</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">75</td>
+</tr>
+<tr>
+<td>B — B1 + <code>-(c * t)</code> → <code>(-c) * t</code> for <code>c &lt; 0</code></td>
+<td style="text-align: right;">327</td>
+<td style="text-align: right;">282</td>
+<td style="text-align: right;">26</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">73</td>
+</tr>
+<tr>
+<td>B2 — B + sign normalization of the additive terms</td>
+<td style="text-align: right;">1,846</td>
+<td style="text-align: right;">286</td>
+<td style="text-align: right;">23</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">78</td>
+</tr>
+</tbody>
+</table>
+<p>The products are exact in every variant: integers form a ring, decimals round the magnitude, and floating-point products give the
+same bits except a NaN result, whose sign and payload IEEE-754 leaves unspecified. Convergence, however, regresses. A canonical
+sum carries a subtracted term as <code>0 - (c * t)</code>, so once the next call can remove a negation from <code>-(c * t)</code>, a term with a
+negative coefficient has two physical forms in the same sum. The first is <code>0 - (-2 * z)</code>: a fixed point before, and after B
+rewritten by <code>SubstractionWithZero</code> into <code>2 * z</code> at the next call. Normalizing the sign of every term (B2) restores those cases
+but changes 1,846 canonical forms and makes other residues appear. Both B and B2 are rejected. A sound version needs the sign of
+a term carried only by its additive flag at every construction site (rules included), designed and measured as its own change.</p>
+<h3 id="195-factorization-families-the-pr-c-audit">19.5 Factorization families (the PR C audit)</h3>
+<p>The families of the mission, simplified once with PR B, each result a structural fixed point:</p>
+<table>
+<thead>
+<tr>
+<th>Family</th>
+<th>Example</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A — opposite coefficients</td>
+<td><code>-(2*x) + 2*x</code>, <code>-(a*x) + a*x</code></td>
+<td><code>0</code></td>
+</tr>
+<tr>
+<td>B — common factors with signs</td>
+<td><code>-(a*x) + a*y</code>, <code>-(a*x) - a*y</code></td>
+<td><code>a * ((0 - x) + y)</code>, <code>-(a * (x + y))</code></td>
+</tr>
+<tr>
+<td>C — repeated products</td>
+<td><code>(a*b) + (a*b)</code>, <code>-(a*b) + (a*b)</code></td>
+<td><code>2 * (a * b)</code>, <code>0</code></td>
+</tr>
+<tr>
+<td>D — factorization in a chain</td>
+<td><code>a*x - (a*y + a*z)</code>, <code>-(a*(x - y)) + a*x</code></td>
+<td><code>a * ((0 - y) + ((0 - z) + x))</code>, <code>y * a</code></td>
+</tr>
+<tr>
+<td>E — quotients</td>
+<td><code>-(a/b) + a/b</code> / <code>(a*x)/b - (a*y)/b</code></td>
+<td><code>0</code> / not factored</td>
+</tr>
+</tbody>
+</table>
+<p>The signed families A–D are already recognized through negations: <code>CollectAdditiveTerms</code> collects a negation as a subtracted
+term, and the term analysis (<code>AnalyzedAdditiveTerm</code>: sign, coefficient, factors) is the existing logical representation of
+signs and coefficients. No second representation is needed. With an observable call (<code>F() * x - F() * y</code>, <code>F()*x + F()*x</code>), the
+effect gate refuses the factoring and both evaluations stay, under every policy (<code>ExpressionSimplifierConstantNegationTests</code>).
+Family E needs quotient atoms in the proof obligations of the factorable chains (C3c), already listed as deferred.</p>
+<p><strong>Disposition of PR C.</strong> No change measured here meets the acceptance criteria. Coefficient absorption regresses convergence
+(19.4), and family E needs a new proof obligation. PR C is therefore delivered as this audit, with no production change. The
+proposed next steps are:</p>
+<ol>
+<li>Carry the sign of an additive term only in its flag, at every construction site, and measure it alone.</li>
+<li>Add quotient atoms to the factorable family.</li>
+<li>Canonicalize the factored coefficient of added terms when it repeats a term (gen#1594), within the allocation bound of
+§14.8.</li>
+</ol>
+<h3 id="196-complexity-and-performance">19.6 Complexity and performance</h3>
+<p>Deterministic counters: the 130 <code>measure</code> points of §17.8 are identical to PR A. Performance
+(<code>tests/ExpressionTracingBench/run-campaign.ps1</code>, baseline PR A, A/A copy, 4 rounds, then 7 rounds for the scenarios outside
+the band; a game was running on the machine during both campaigns, so only differences well beyond the A/A spread are read; one
+scenario added, <code>negconst8</code>, a sum of eight products by negated constants):</p>
+<table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th style="text-align: right;">PR A</th>
+<th style="text-align: right;">A/A</th>
+<th style="text-align: right;">PR B</th>
+<th style="text-align: right;">Allocated PR A → PR B</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>scalar</code></td>
+<td style="text-align: right;">1,625 ns</td>
+<td style="text-align: right;">−0.5 %</td>
+<td style="text-align: right;">+0.8 % (7 rounds: +0.7 % / +1.4 %)</td>
+<td style="text-align: right;">2,256 B</td>
+</tr>
+<tr>
+<td><code>binary</code></td>
+<td style="text-align: right;">6,813 ns</td>
+<td style="text-align: right;">+0.4 %</td>
+<td style="text-align: right;">−0.0 %</td>
+<td style="text-align: right;">6,513 B</td>
+</tr>
+<tr>
+<td><code>lambda</code></td>
+<td style="text-align: right;">3,993 ns</td>
+<td style="text-align: right;">−1.1 %</td>
+<td style="text-align: right;">+0.1 %</td>
+<td style="text-align: right;">6,385 B</td>
+</tr>
+<tr>
+<td><code>leftsum20</code></td>
+<td style="text-align: right;">7,903 ns</td>
+<td style="text-align: right;">+0.4 %</td>
+<td style="text-align: right;">+0.2 %</td>
+<td style="text-align: right;">14,368 B</td>
+</tr>
+<tr>
+<td><code>dag10</code></td>
+<td style="text-align: right;">1,182,550 ns</td>
+<td style="text-align: right;">+4.5 %</td>
+<td style="text-align: right;">+1.0 %</td>
+<td style="text-align: right;">1,288,328 B</td>
+</tr>
+<tr>
+<td><code>calls8</code></td>
+<td style="text-align: right;">5,402 ns</td>
+<td style="text-align: right;">+0.5 %</td>
+<td style="text-align: right;">+1.5 % (7 rounds: +1.4 % / +0.8 %)</td>
+<td style="text-align: right;">2,632 B</td>
+</tr>
+<tr>
+<td><code>neg1</code></td>
+<td style="text-align: right;">175 ns</td>
+<td style="text-align: right;">+2.8 %</td>
+<td style="text-align: right;">+4.6 % (7 rounds: −1.5 % / +3.9 %)</td>
+<td style="text-align: right;">80 B</td>
+</tr>
+<tr>
+<td><code>neg2sum16</code></td>
+<td style="text-align: right;">133,441 ns</td>
+<td style="text-align: right;">+1.7 %</td>
+<td style="text-align: right;">+0.1 %</td>
+<td style="text-align: right;">193,058 B</td>
+</tr>
+<tr>
+<td><code>negmul8</code></td>
+<td style="text-align: right;">132,749 ns</td>
+<td style="text-align: right;">−2.2 %</td>
+<td style="text-align: right;">−2.6 %</td>
+<td style="text-align: right;">110,265 B</td>
+</tr>
+<tr>
+<td><code>negconst8</code></td>
+<td style="text-align: right;">293,220 ns</td>
+<td style="text-align: right;">−6.0 %</td>
+<td style="text-align: right;"><strong>−46.8 %</strong></td>
+<td style="text-align: right;">253,314 → 162,253 B</td>
+</tr>
+<tr>
+<td><code>subcall</code></td>
+<td style="text-align: right;">9,684 ns</td>
+<td style="text-align: right;">−4.5 %</td>
+<td style="text-align: right;">+32.7 % (7 rounds: +2.1 % / +1.1 %)</td>
+<td style="text-align: right;">10,064 B</td>
+</tr>
+<tr>
+<td><code>prod2x</code></td>
+<td style="text-align: right;">17,956 ns</td>
+<td style="text-align: right;">−0.7 %</td>
+<td style="text-align: right;">−0.1 %</td>
+<td style="text-align: right;">21,568 B</td>
+</tr>
+</tbody>
+</table>
+<p>Reading: folded constants make the products of negated constants cheaper, since the rules no longer rewrite <code>x * -(c)</code> through
+<code>MultiplicationWithNegate</code>. A lone negation pays the type tests of <code>TryFoldNegation</code>: about 7 ns on 176 ns in the 7-round
+re-measure, the only difference beyond the A/A spread. The first <code>subcall</code> round was an outlier, which the re-measure does not
+reproduce. <code>calls8</code> alternates between 2,632 B and 2,776 B in the baseline, the A/A copy and PR B alike (tiered compilation), so its allocations are not attributed to either side.</p>
+<h3 id="197-residual-limits">19.7 Residual limits</h3>
+<ul>
+<li><code>-(-2 * x)</code> and <code>-(2 * x)</code> keep their negation (19.4).</li>
+<li>A <code>NaN</code> term in a reassociation is left to the policy fold, so gen#983 needs five calls.</li>
+<li>Quotient factorization (family E) is not done.</li>
+</ul>
 
 </article>
 

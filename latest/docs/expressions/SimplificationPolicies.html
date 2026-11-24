@@ -1542,6 +1542,10 @@ holding a <code>NaN</code> term is kept as built, so the policy-dependent <code>
 every policy. A product added twice becomes <code>2 * product</code> only inside the gate, on inert operands: the merge of two evaluations of
 an inert product, the permission <code>AdditionOfEqualsElements</code> already used for its common factor. An observable <code>F()</code> keeps both
 evaluations (<code>ExpressionSimplifierS5A05FinalizationTests</code>). No policy cache, audited rule list or permission changed.</p>
+<h2 id="12-constant-negations-s5a-05-pr-b">12. Constant negations (S5A-05 PR B)</h2>
+<p>The fold of an ordinary negation of a numeric constant (<code>SimplifierFlatten.md</code> §19) evaluates nothing but a boxed constant of a
+primitive type and cannot throw, so it needs no permission. It applies under every policy, outside the effect gate, like the
+removal of a double negation (§10).</p>
 
 </article>
 
