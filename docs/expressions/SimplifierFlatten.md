@@ -2475,3 +2475,134 @@ from prepared operands, as in the corpus cases.
   (`-(c)`, PR B) remain residues of the second pass.
 - The reassociation rules still finish with the rules only on inert finite arithmetic; with other operands they stop at the
   canonicalization, so a rule that would apply to the canonical sum waits for the next call.
+
+## 19. Constant negations and signed coefficients (S5A-05, PR B, and the PR C audit)
+
+Branch `fix/expression-s5a05-constant-negation`, stacked on PR A (`fix/expression-s5a05-finalization`, #720): its baseline is
+PR A, measured with the same harness (S5 campaigns, 4,000 seeds and 4,000 nested compositions).
+
+### 19.1 Constant negation matrix
+
+`TryNegateConstant` folds the ordinary negation of a constant into the constant the node computes when it runs:
+
+| Type | Admitted | Value |
+|---|---|---|
+| `int`, `long` | yes | unchecked negation: `-int.MinValue` is `int.MinValue` |
+| `short` | yes | negated in `int` and truncated, as the compiled node does: `-short.MinValue` is `short.MinValue` |
+| `double`, `float` | yes | IEEE-754 `negate`: the sign bit flips; signed zeros, infinities, subnormals and NaN payloads bit for bit |
+| `decimal` | yes | `decimal.Negate`, the operator the node calls: sign flipped, scale kept (`-(0.00m)` keeps scale 2) |
+| `int?` and other lifted negations | no | `IsOrdinaryUnaryNegate` refuses lifted nodes |
+| `NegateChecked` | no | not an ordinary negation (`checked(-int.MinValue)` still throws at run time) |
+| user or impersonated operator | no | not ordinary (A-10 provenance) |
+| unsigned, enumerations, boxed values | no | no ordinary negation, or declared type is not the runtime type |
+
+No value is converted. In particular, `Convert.ToDouble` is never used, so no user code runs and nothing can throw.
+
+### 19.2 One sign model
+
+`TryFoldNegation` is the single place where a negation disappears: `-(-t)` gives `t` (S5A-10), and `-c` gives the folded
+constant. Both the finalization of an ordinary `Negate` node and `BuildNegation` use it. Every negation the rules and the
+canonicalizations build (`x * -1`, `x / -1`, `(-a) * b`, negated sums and products, the factored coefficients) goes through
+`BuildNegation`, so none of them keeps `-(c)`. The additive canonicalization's `NegateSubtractedConstant` folds `0 - c`, a
+different operation (`0 - 0.0` is `+0`, `-0.0` is `-0`), and keeps its own fold. Operands that are not admitted are boundaries:
+they are never traversed, and only type tests and runtime reflection objects are read.
+
+### 19.3 Differential (PR A against PR B)
+
+| Campaign | Changed records | Classification |
+|---|---:|---|
+| `terminate` (66,270) | 5 | same results with one node less (`-1` built as a constant instead of `-(1)`) |
+| `converge` (70,495) | 180 | negations of constants folded; 21 sources holding `-(c)` leave fixed@0 for fixed@1 |
+| `diff` (4,000) | 110 | one value class improves (`extreme` → `same`); none regresses |
+| `effects` (4,004) | 80 | evaluation logs and exceptions identical |
+| `s3`, `canon` | 0 | |
+| `comparer` | 0 violation | `-(2)` and `-2` are now one form |
+| complexity | 130/130 points identical | |
+
+Convergence: fixed@1 67,307 → 67,326, fixed@2 212 → 213, fixed@3 5 → 5, fixed@5 0 → 1, cycles unchanged (44 / 7); bound:
+fixed@2 209 → 210, fixed@5 0 → 1, no cycle. Three cases need more passes, each a pre-existing residue that the negations hid:
+
+| Case | PR A | PR B | Residue |
+|---|---|---|---|
+| gen#983 | fixed@1 | fixed@5 | a reassociation with a `NaN` term, deliberately left to the policy-dependent `NaN` fold (§18.2) |
+| gen#1594 | fixed@1 | fixed@2 | `x / (--1)` went through `DivisionWithNegate`, which transformed its dividend again; once `--1` is `1`, the factored coefficient of added terms (§14.8) is not canonicalized |
+| gen#2973 | fixed@1 | fixed@2 | the PR A finalization merges monomials but does not factor common factors (the next call's factorable chain factors `y`) |
+
+### 19.4 Absorbing a negation into a coefficient (measured, deferred)
+
+`-(-2 * x)` is still kept. Two designs were measured against the base of PR A, `65495e50`:
+
+| Variant | `converge` changes | fixed@2 | fixed@3 | fixed@5 | cycles |
+|---|---:|---:|---:|---:|---:|
+| base | — | 273 | 21 | 0 | 75 |
+| B1 — constants only (this PR) | 181 | 273 | 22 | 1 | 75 |
+| B — B1 + `-(c * t)` → `(-c) * t` for `c < 0` | 327 | 282 | 26 | 1 | 73 |
+| B2 — B + sign normalization of the additive terms | 1,846 | 286 | 23 | 1 | 78 |
+
+The products are exact in every variant: integers form a ring, decimals round the magnitude, and floating-point products give the
+same bits except a NaN result, whose sign and payload IEEE-754 leaves unspecified. Convergence, however, regresses. A canonical
+sum carries a subtracted term as `0 - (c * t)`, so once the next call can remove a negation from `-(c * t)`, a term with a
+negative coefficient has two physical forms in the same sum. The first is `0 - (-2 * z)`: a fixed point before, and after B
+rewritten by `SubstractionWithZero` into `2 * z` at the next call. Normalizing the sign of every term (B2) restores those cases
+but changes 1,846 canonical forms and makes other residues appear. Both B and B2 are rejected. A sound version needs the sign of
+a term carried only by its additive flag at every construction site (rules included), designed and measured as its own change.
+
+### 19.5 Factorization families (the PR C audit)
+
+The families of the mission, simplified once with PR B, each result a structural fixed point:
+
+| Family | Example | Result |
+|---|---|---|
+| A — opposite coefficients | `-(2*x) + 2*x`, `-(a*x) + a*x` | `0` |
+| B — common factors with signs | `-(a*x) + a*y`, `-(a*x) - a*y` | `a * ((0 - x) + y)`, `-(a * (x + y))` |
+| C — repeated products | `(a*b) + (a*b)`, `-(a*b) + (a*b)` | `2 * (a * b)`, `0` |
+| D — factorization in a chain | `a*x - (a*y + a*z)`, `-(a*(x - y)) + a*x` | `a * ((0 - y) + ((0 - z) + x))`, `y * a` |
+| E — quotients | `-(a/b) + a/b` / `(a*x)/b - (a*y)/b` | `0` / not factored |
+
+The signed families A–D are already recognized through negations: `CollectAdditiveTerms` collects a negation as a subtracted
+term, and the term analysis (`AnalyzedAdditiveTerm`: sign, coefficient, factors) is the existing logical representation of
+signs and coefficients. No second representation is needed. With an observable call (`F() * x - F() * y`, `F()*x + F()*x`), the
+effect gate refuses the factoring and both evaluations stay, under every policy (`ExpressionSimplifierConstantNegationTests`).
+Family E needs quotient atoms in the proof obligations of the factorable chains (C3c), already listed as deferred.
+
+**Disposition of PR C.** No change measured here meets the acceptance criteria. Coefficient absorption regresses convergence
+(19.4), and family E needs a new proof obligation. PR C is therefore delivered as this audit, with no production change. The
+proposed next steps are:
+
+1. Carry the sign of an additive term only in its flag, at every construction site, and measure it alone.
+2. Add quotient atoms to the factorable family.
+3. Canonicalize the factored coefficient of added terms when it repeats a term (gen#1594), within the allocation bound of
+   §14.8.
+
+### 19.6 Complexity and performance
+
+Deterministic counters: the 130 `measure` points of §17.8 are identical to PR A. Performance
+(`tests/ExpressionTracingBench/run-campaign.ps1`, baseline PR A, A/A copy, 4 rounds, then 7 rounds for the scenarios outside
+the band; a game was running on the machine during both campaigns, so only differences well beyond the A/A spread are read; one
+scenario added, `negconst8`, a sum of eight products by negated constants):
+
+| Scenario | PR A | A/A | PR B | Allocated PR A → PR B |
+|---|---:|---:|---:|---:|
+| `scalar` | 1,625 ns | −0.5 % | +0.8 % (7 rounds: +0.7 % / +1.4 %) | 2,256 B |
+| `binary` | 6,813 ns | +0.4 % | −0.0 % | 6,513 B |
+| `lambda` | 3,993 ns | −1.1 % | +0.1 % | 6,385 B |
+| `leftsum20` | 7,903 ns | +0.4 % | +0.2 % | 14,368 B |
+| `dag10` | 1,182,550 ns | +4.5 % | +1.0 % | 1,288,328 B |
+| `calls8` | 5,402 ns | +0.5 % | +1.5 % (7 rounds: +1.4 % / +0.8 %) | 2,632 B |
+| `neg1` | 175 ns | +2.8 % | +4.6 % (7 rounds: −1.5 % / +3.9 %) | 80 B |
+| `neg2sum16` | 133,441 ns | +1.7 % | +0.1 % | 193,058 B |
+| `negmul8` | 132,749 ns | −2.2 % | −2.6 % | 110,265 B |
+| `negconst8` | 293,220 ns | −6.0 % | **−46.8 %** | 253,314 → 162,253 B |
+| `subcall` | 9,684 ns | −4.5 % | +32.7 % (7 rounds: +2.1 % / +1.1 %) | 10,064 B |
+| `prod2x` | 17,956 ns | −0.7 % | −0.1 % | 21,568 B |
+
+Reading: folded constants make the products of negated constants cheaper, since the rules no longer rewrite `x * -(c)` through
+`MultiplicationWithNegate`. A lone negation pays the type tests of `TryFoldNegation`: about 7 ns on 176 ns in the 7-round
+re-measure, the only difference beyond the A/A spread. The first `subcall` round was an outlier, which the re-measure does not
+reproduce. `calls8` alternates between 2,632 B and 2,776 B in the baseline, the A/A copy and PR B alike (tiered compilation), so its allocations are not attributed to either side.
+
+### 19.7 Residual limits
+
+- `-(-2 * x)` and `-(2 * x)` keep their negation (19.4).
+- A `NaN` term in a reassociation is left to the policy fold, so gen#983 needs five calls.
+- Quotient factorization (family E) is not done.

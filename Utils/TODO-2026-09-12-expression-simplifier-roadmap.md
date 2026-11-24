@@ -5368,6 +5368,15 @@ the canonicalization had simply not run on the rebuilt node. Multi-pass cases 30
 130/130 complexity points identical. Next, PR B (exact folding of constant negations, `-(c * t)`) and PR C (factorizations
 through signed coefficients). Record: `docs/expressions/SimplifierFlatten.md` §18.
 
+### S5A-05 — constant negations (PR B) and factorization audit (PR C), 2026-11-24
+
+Branch `fix/expression-s5a05-constant-negation`, stacked on PR A. The ordinary negation of a numeric constant is folded
+exactly (`TryNegateConstant`), through the single sign model `TryFoldNegation` shared by the finalization of `Negate` and
+`BuildNegation`. Absorbing the sign into a negative coefficient was measured in two designs and rejected: fixed@2 rises from 273
+to 282 or 286, because canonical sums carry the sign of a term outside its coefficient. The PR C audit found the signed
+factorization families already recognized through negations, and quotient factorization deferred (quotient atoms). Next: a sign
+carried only by the additive flag, measured alone; quotient atoms in the factorable family. Record:
+`docs/expressions/SimplifierFlatten.md` §19.
 ## Execution-optimizer stages
 
 These remain separate from the simplifier stages above.

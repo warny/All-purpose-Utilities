@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Numerics;
@@ -3167,10 +3168,9 @@ namespace Utils.Mathematics.Expressions
             // removes two operators that evaluate nothing, never an evaluation (see BuildNegation).
             if (e is UnaryExpression negation
                 && IsOrdinaryUnaryNegate(negation)
-                && parameters[0] is UnaryExpression operandNegation
-                && IsOrdinaryUnaryNegate(operandNegation))
+                && TryFoldNegation(parameters[0], out Expression? folded))
             {
-                return operandNegation.Operand;
+                return folded;
             }
 
             if (e is BinaryExpression binaryExpression)
@@ -4368,7 +4368,87 @@ namespace Utils.Mathematics.Expressions
         /// </para>
         /// </remarks>
         private static Expression BuildNegation(Expression operand)
-            => operand is UnaryExpression negation && IsOrdinaryUnaryNegate(negation) ? negation.Operand : Expression.Negate(operand);
+            => TryFoldNegation(operand, out Expression? folded) ? folded : Expression.Negate(operand);
+
+        /// <summary>
+        /// The sign model shared by the finalization of an ordinary <c>Negate</c> node and <see cref="BuildNegation"/>: the
+        /// negation of <paramref name="operand"/> without a <c>Negate</c> node, when it is exact (S5A-10, S5A-05 PR B). The negation
+        /// of a product keeps its node: absorbing it into a negative coefficient (<c>-(-2 * x)</c> to <c>2 * x</c>) was measured and
+        /// deferred, because the canonical sums carry the sign of a term outside its coefficient (<c>docs/expressions/SimplifierFlatten.md</c>
+        /// §19.4).
+        /// </summary>
+        /// <param name="operand">The operand of an ordinary negation, already prepared.</param>
+        /// <param name="folded">Receives the negation without a <c>Negate</c> node, or <see langword="null"/>.</param>
+        /// <returns><see langword="true"/> when <paramref name="folded"/> was built.</returns>
+        /// <remarks>
+        /// <para>Two shapes, each removing the negation node without changing any evaluation:</para>
+        /// <list type="bullet">
+        /// <item><c>-(-t)</c> gives <c>t</c> (S5A-10, <see cref="BuildNegation"/>).</item>
+        /// <item><c>-c</c> for a numeric constant gives the constant <c>-c</c> (<see cref="TryNegateConstant"/>): the value the
+        /// ordinary negation computes when the node runs, bit for bit, in the same type.</item>
+        /// </list>
+        /// <para>
+        /// Any other operand (a call, a sum, a product, a custom, lifted or checked operator, an extension
+        /// node) is a boundary: it is not traversed and the negation is kept. Only type tests and runtime reflection objects are
+        /// read (A-10 provenance through <see cref="IsOrdinaryUnaryNegate(UnaryExpression)"/> and
+        /// <see cref="IsOrdinaryBinaryArithmetic(BinaryExpression)"/>); nothing is walked, so no budget is consumed.
+        /// </para>
+        /// </remarks>
+        private static bool TryFoldNegation(Expression operand, [NotNullWhen(true)] out Expression? folded)
+        {
+            switch (operand)
+            {
+                case UnaryExpression negation when IsOrdinaryUnaryNegate(negation):
+                    folded = negation.Operand;
+                    return true;
+                case ConstantExpression constant when TryNegateConstant(constant, out ConstantExpression? negated):
+                    folded = negated;
+                    return true;
+                default:
+                    folded = null;
+                    return false;
+            }
+        }
+
+        /// <summary>
+        /// Computes the ordinary negation of a numeric constant exactly as the <c>Negate</c> node computes it when it runs
+        /// (S5A-05 PR B).
+        /// </summary>
+        /// <param name="constant">The constant operand of an ordinary negation.</param>
+        /// <param name="negated">Receives the constant <c>-value</c> of the same declared type, or <see langword="null"/>.</param>
+        /// <returns><see langword="true"/> when the constant was negated.</returns>
+        /// <remarks>
+        /// <para>
+        /// Admitted: a non-null value whose runtime type is the declared type, for the types with an ordinary unchecked negation
+        /// (<see cref="short"/>, <see cref="int"/>, <see cref="long"/>, <see cref="float"/>, <see cref="double"/>,
+        /// <see cref="decimal"/>). A nullable, unsigned, enumeration or boxed-as-object constant, and any other type, keeps its
+        /// negation. Nothing else is read: no conversion, no <see cref="Convert"/>, no user code.
+        /// </para>
+        /// <para>
+        /// The value is the one the node computes. Signed integers negate unchecked and wrap (<c>-int.MinValue</c> is
+        /// <c>int.MinValue</c>, and a <see cref="short"/> is negated in <see cref="int"/> then truncated, as the compiled node
+        /// does). <see cref="float"/> and <see cref="double"/> negation is the IEEE-754 <c>negate</c> operation, which only flips
+        /// the sign bit, so signed zeros, infinities, subnormals and NaN payloads give exactly the bits the node gives.
+        /// <see cref="decimal"/> uses <see cref="decimal.Negate(decimal)"/>, the operator the node calls, which flips the sign and
+        /// keeps the scale. Neither can throw, so simplifying never raises an exception the evaluation would not.
+        /// </para>
+        /// </remarks>
+        private static bool TryNegateConstant(ConstantExpression constant, [NotNullWhen(true)] out ConstantExpression? negated)
+        {
+            Type type = constant.Type;
+            object? value = constant.Value;
+            negated = value switch
+            {
+                int integer when type == typeof(int) => Expression.Constant(unchecked(-integer), type),
+                long integer when type == typeof(long) => Expression.Constant(unchecked(-integer), type),
+                short integer when type == typeof(short) => Expression.Constant(unchecked((short)-integer), type),
+                double real when type == typeof(double) => Expression.Constant(-real, type),
+                float real when type == typeof(float) => Expression.Constant(-real, type),
+                decimal number when type == typeof(decimal) => Expression.Constant(decimal.Negate(number), type),
+                _ => null,
+            };
+            return negated is not null;
+        }
 
         /// <summary>
         /// Determines whether <paramref name="unary"/> represents ordinary, non-lifted, predefined numeric

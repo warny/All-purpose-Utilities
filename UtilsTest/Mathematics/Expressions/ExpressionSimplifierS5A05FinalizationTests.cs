@@ -114,12 +114,12 @@ public class ExpressionSimplifierS5A05FinalizationTests
             Parse("(((((z ** -2) ** z) * ((Double.Sin(1) ** 2) + (Double.Cos(1) ** 2))) + ((z + y) * ((Double.Sin(1) ** 2) + (Double.Cos(1) ** 2)))) / ((-y) / (-y))) / (((-1 / 0) - ((x + 2) - (((-1 ** y) ** y) - -1))) - ((-2 - (y - (1 - x))) + (Double.Sin(y) + (y / z))))"),
             "(y * (z + (y + ((1 / (z ** 2)) ** z)))) / (y * (-Infinity + (y + ((0 - (y / z)) + (((-1 ** y) ** y) + (0 - Double.Sin(y)))))))");
 
-    /// <summary><c>gen#743</c>: the control case S5A-10 already fixed (one call on the base), unchanged.</summary>
+    /// <summary><c>gen#743</c>: the control case S5A-10 already fixed (one call on the base); PR B folds its <c>-(10)</c>.</summary>
     [TestMethod]
     public void Gen743_Control_IsUnchanged()
         => AssertFinalized(
             Parse("y - (((-1 * (x / y)) - ((x ** x) * (x / y))) - (((--1) / ((x + 2) * (-(10)))) - ((((-1 ** 2) - (Double.Log(y) + Double.Log(1E+300))) - z) - Double.Log(y))))"),
-            "-1 + (y + (z + ((-1 / (10 * (2 + x))) + (((1 + (x ** x)) * (x / y)) + Double.Log(1E+300 * (y ** 2))))))");
+            "-1 + (y + (z + ((1 / (-10 * (2 + x))) + (((1 + (x ** x)) * (x / y)) + Double.Log(1E+300 * (y ** 2))))))");
 
     /// <summary>The equal-products family: symbolic coefficients are merged, constant coefficients keep the historical fold.</summary>
     [TestMethod]

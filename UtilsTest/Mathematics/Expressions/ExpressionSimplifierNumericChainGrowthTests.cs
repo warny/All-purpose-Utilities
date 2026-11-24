@@ -411,7 +411,9 @@ public class ExpressionSimplifierNumericChainGrowthTests
     /// <param name="shape">The shape.</param>
     /// <param name="expected">The simplified tree, or the innermost exception type.</param>
     [TestMethod]
-    [DataRow("nan", "0")]
+    // S5A-05 PR B: -(NaN) is now the folded NaN constant, so the two NaN terms are no longer cancelled as equal terms: the
+    // result is NaN, the value of the source for every input (it was 0).
+    [DataRow("nan", "NaN")]
     [DataRow("infinity", "((-Infinity * y) + ((0 - (3 * z)) + (100 * x)))")]
     [DataRow("negativeZero", "((0 - (3 * z)) + (100 * x))")]
     [DataRow("decimalMax", "(-(79228162514264337593543950335 + x) + (((79228162514264337593543950335 + (79228162514264337593543950335 * x)) - (-7.25 * y)) - 79228162514264337593543950335))")]
