@@ -5359,6 +5359,15 @@ cheaper at 120 terms. Admitted only for ordinary, non-lifted, unchecked negation
 dropped, repeated, merged or moved). Record: `docs/expressions/SimplifierFlatten.md` §17,
 `Utils/TODO-2026-11-04-s5-simplifier-deep-audit.md` (S5A-10 disposition).
 
+### S5A-05 — finalization of rebuilt forms (2026-11-24, PR A of the S5A-05 mission)
+
+Branch `fix/expression-s5a05-finalization`, base `65495e50`. The convergence residues `gen#2430`, `gen#3191`, `gen#459`
+(family R: a reassociation over a call or an infinite constant returned its rebuilt difference as built) and `gen#2330` (family
+Q: a product added twice kept the coefficient `t + t`) are finalized in one call. Signs and coefficients were not the cause;
+the canonicalization had simply not run on the rebuilt node. Multi-pass cases 303 → 217, cycles 75 → 51, bound cycles 26 → 0;
+130/130 complexity points identical. Next, PR B (exact folding of constant negations, `-(c * t)`) and PR C (factorizations
+through signed coefficients). Record: `docs/expressions/SimplifierFlatten.md` §18.
+
 ## Execution-optimizer stages
 
 These remain separate from the simplifier stages above.

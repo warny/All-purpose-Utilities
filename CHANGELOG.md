@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed — `omy.Utils` (`ExpressionSimplifier` finalization of rebuilt forms, S5A-05)
+- A reassociation `t - (a + b)` or `t - (a - b)` over operands holding a call or an infinite constant no longer returns its
+  rebuilt difference as built: it is finalized by the additive canonicalization in the same call (a difference with a `NaN`
+  term is still left to the policy-dependent `NaN` fold). A product added twice with a symbolic coefficient gives its canonical
+  form at once (`x*(y - 1) + x*(y - 1)` gives `2 * (x * (-1 + y))` instead of `(-1 + y) * (x + x)`).
+- Behavior change: 118 of 70,495 first-pass results of the S5 convergence corpus change, each to the fixed point the base
+  reached after more calls. Cases needing several calls: 303 → 217; cycles: 75 → 51, and 26 → 0 with bound parameters (every
+  remaining cycle is a free-parameter tie of the canonical order). Values, exceptions, evaluation logs and types are unchanged;
+  the rule plan is unchanged; derived simplifiers keep the historical nodes. See `docs/expressions/SimplifierFlatten.md` §18.
+
 ### Fixed — `omy.Utils` (`ExpressionSimplifier` double negations, S5A-10)
 - `ExpressionSimplifier` removes an ordinary double negation in one call: `-(-x)` gives `x`, `-(-(x + y))` gives `x + y`, and
   the negations its own rules build no longer leave `-(-t)` behind (`(-x) * (-y)` gives `x * y` instead of `-(-(x * y))`,

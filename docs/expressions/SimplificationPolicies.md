@@ -702,3 +702,13 @@ or writing state, throwing, allocating, unknown, declared deterministic). `CanDi
 therefore not asked, the trust policy and the exception categories cannot change the result, and no policy cache changed. Checked,
 lifted and user negations, and a conversion between the two negations, keep every node under every policy. Tests:
 `ExpressionSimplifierDoubleNegationTests` (six policies, six operand families, call logs), proof in `SimplifierFlatten.md` §17.6.
+
+## 11. Finalization of rebuilt forms (S5A-05) needs no new permission
+
+The two corrections of `SimplifierFlatten.md` §18 stay inside the existing admissions. The finalization of an unfinished
+reassociation (`CanonicalizeReassociation`) is the additive canonicalization of the rebuilt difference: it runs where the rule
+ran, inside the effect gate, pins every term that is not inert, dispatches no rule and folds nothing to `NaN`. A difference
+holding a `NaN` term is kept as built, so the policy-dependent `NaN` fold (§9) sees its operand where it saw it before, under
+every policy. A product added twice becomes `2 * product` only inside the gate, on inert operands: the merge of two evaluations of
+an inert product, the permission `AdditionOfEqualsElements` already used for its common factor. An observable `F()` keeps both
+evaluations (`ExpressionSimplifierS5A05FinalizationTests`). No policy cache, audited rule list or permission changed.
