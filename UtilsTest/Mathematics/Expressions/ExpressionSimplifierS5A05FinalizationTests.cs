@@ -121,6 +121,31 @@ public class ExpressionSimplifierS5A05FinalizationTests
             Parse("y - (((-1 * (x / y)) - ((x ** x) * (x / y))) - (((--1) / ((x + 2) * (-(10)))) - ((((-1 ** 2) - (Double.Log(y) + Double.Log(1E+300))) - z) - Double.Log(y))))"),
             "-1 + (y + (z + ((1 / (-10 * (2 + x))) + (((1 + (x ** x)) * (x / y)) + Double.Log(1E+300 * (y ** 2))))))");
 
+    /// <summary>
+    /// The two residues PR B exposed, still two calls (additive sign audit, <c>SimplifierFlatten.md</c> §20): <c>gen#1594</c>, a
+    /// factored coefficient of added terms left in source order (§14.8), and <c>gen#2973</c>, common factors that only the
+    /// factoring of a whole chain extracts. No sign normalization changes either.
+    /// </summary>
+    [TestMethod]
+    public void KnownResidues_TakeTwoCalls()
+    {
+        (string Source, string First, string Second)[] cases =
+        [
+            ("(((x ** y) * (((-1 - z) - z) - z)) + ((3 / z) * (((-1 - z) - z) - z))) / (--1)",
+                "(-1 + (-3 * z)) * ((x ** y) + (3 / z))", "(-1 + (-3 * z)) * ((3 / z) + (x ** y))"),
+            ("((-(1E+300)) + (-y)) - (((x * y) - (y * y)) - (3 + z))",
+                "-1E+300 + ((0 - y) + (z + ((0 - (x * y)) + (y ** 2))))", "-1E+300 + (z + ((0 - (y * (1 + x))) + (y ** 2)))"),
+        ];
+        foreach ((string source, string first, string second) in cases)
+        {
+            Expression once = S(Parse(source));
+            Assert.AreEqual(first, Text(once), source);
+            Expression twice = S(once);
+            Assert.AreEqual(second, Text(twice), source);
+            Assert.IsTrue(ExpressionComparer.StructuralEqualsRaw(twice, S(twice)), second);
+        }
+    }
+
     /// <summary>The equal-products family: symbolic coefficients are merged, constant coefficients keep the historical fold.</summary>
     [TestMethod]
     public void EqualProducts_AreMergedOnce()

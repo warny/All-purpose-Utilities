@@ -5377,6 +5377,16 @@ to 282 or 286, because canonical sums carry the sign of a term outside its coeff
 factorization families already recognized through negations, and quotient factorization deferred (quotient atoms). Next: a sign
 carried only by the additive flag, measured alone; quotient atoms in the factorable family. Record:
 `docs/expressions/SimplifierFlatten.md` §19.
+
+### Additive sign normalization — audit (2026-11-24)
+
+Branch `fix/expression-additive-sign-normalization`, base `1c7cec21`. There is no production change. The sign of an additive
+term is consistent in the analysis (`AnalyzedAdditiveTerm`) but has two canonical placements in the reconstruction. Moving
+negative coefficients into the sign flag (V1, V1b), with or without absorbing outer negations (C1, C2), is exact. Each variant,
+however, equalizes coefficients that only the next call's factorable chain factors: fixed@2 rises from 213 to between 216 and
+227, with no comparer or value regression. Prerequisite: make the level canonicalization agree with the whole-chain factoring
+(a C3c change), then V1b+C1. Record: `docs/expressions/SimplifierFlatten.md` §20.
+
 ## Execution-optimizer stages
 
 These remain separate from the simplifier stages above.

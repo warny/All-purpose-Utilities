@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Documentation — `omy.Utils` (`ExpressionSimplifier` additive sign audit)
+- Audit of the placement of the sign of additive terms (`docs/expressions/SimplifierFlatten.md` §20): the term analysis already
+  combines signed coefficients across physical forms. Six normalizations of the reconstruction were measured; each exposes the
+  gap between level and whole-chain factoring (fixed@2 213 → 216 to 227), so none is shipped and the simplifier is unchanged.
+  New permanent reproducers (`ExpressionSimplifierAdditiveSignTests`, the `gen#1594`/`gen#2973` residues) and four audit
+  families (`altsign`, `negcoef`, `negprodsum`, `sharedneg`).
 ### Fixed — `omy.Utils` (`ExpressionSimplifier` constant negations, S5A-05 PR B)
 - An ordinary negation of a numeric constant is folded into the constant the node computes, wherever it appears (alone, in a
   sum, a product, or built by a rule): `-(2)` gives `-2`, `-(-0.0)` gives `0.0`, `-int.MinValue` gives `int.MinValue`. The fold

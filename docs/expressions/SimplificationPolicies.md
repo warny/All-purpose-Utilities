@@ -718,3 +718,9 @@ evaluations (`ExpressionSimplifierS5A05FinalizationTests`). No policy cache, aud
 The fold of an ordinary negation of a numeric constant (`SimplifierFlatten.md` §19) evaluates nothing but a boxed constant of a
 primitive type and cannot throw, so it needs no permission. It applies under every policy, outside the effect gate, like the
 removal of a double negation (§10).
+
+## 13. Additive sign normalization (audit)
+
+The sign normalizations measured in `SimplifierFlatten.md` §20 need no permission: they rewrite inert terms only, with exact
+identities, and evaluate nothing new. None of them is shipped. They are rejected for convergence (§20.3), not for semantics or
+policies.
