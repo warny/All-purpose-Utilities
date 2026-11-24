@@ -78,9 +78,17 @@ internal static class Profile
         Dictionary<string, long> admission = Collect(AdmissionProperty, () => Simplification.Run(tree, limits));
         (int comparerEvents, int comparerMaxDepth, SortedDictionary<int, int> histogram) = EngineInternals.Capture(() => Simplification.Run(tree, limits));
 
+        // The second call (mission M4): its cost is what a caller pays to reach the fixed point after the first one.
+        Expression second = Simplification.Run(result!, limits).Result ?? result!;
+        bool fixedPoint = new StrictForm().Of(second) == new StrictForm().Of(result);
+        (double secondMedianMs, long secondBytesPerOp) = Timed(result!, limits, maxSeconds);
+        long secondTransformVisits = MinimalBudget(result!, value => limits with { MaxTransformVisits = value });
+        long secondStructuralVisits = MinimalBudget(result!, value => limits with { MaxStructuralVisits = value });
+
         return new
         {
             family, n, outcome = "ok",
+            fixedPoint, secondMedianMs, secondBytesPerOp, secondTransformVisits, secondStructuralVisits,
             medianMs = samples[samples.Count / 2], minMs = samples[0], runs = samples.Count,
             bytesPerOp = bytes / samples.Count,
             transformVisits, structuralVisits,
@@ -93,6 +101,32 @@ internal static class Profile
             inputNodes = AuditText.Count(tree), outputNodes = AuditText.Count(result), outputDepth = Depth(result),
             result = AuditText.Format(result),
         };
+    }
+
+    /// <summary>Times the untraced simplification of <paramref name="tree"/>: median of up to 15 runs after a warm-up.</summary>
+    /// <param name="tree">The tree.</param>
+    /// <param name="limits">The limits.</param>
+    /// <param name="maxSeconds">The time budget of the timed runs.</param>
+    /// <returns>The median time and the allocated bytes per run.</returns>
+    private static (double MedianMs, long BytesPerOp) Timed(Expression tree, ExpressionResourceLimits limits, double maxSeconds)
+    {
+        var warm = Stopwatch.StartNew();
+        for (int runs = 0; runs < 3 && warm.Elapsed.TotalSeconds < 1; runs++) Simplification.Run(tree, limits);
+        var samples = new List<double>();
+        long bytes = 0;
+        var budget = Stopwatch.StartNew();
+        do
+        {
+            long before = GC.GetAllocatedBytesForCurrentThread();
+            var watch = Stopwatch.StartNew();
+            Simplification.Run(tree, limits);
+            watch.Stop();
+            bytes += GC.GetAllocatedBytesForCurrentThread() - before;
+            samples.Add(watch.Elapsed.TotalMilliseconds);
+        }
+        while (samples.Count < 15 && budget.Elapsed.TotalSeconds + samples[^1] / 1000 < maxSeconds);
+        samples.Sort();
+        return (samples[samples.Count / 2], bytes / samples.Count);
     }
 
     /// <summary>The smallest value of one visit budget under which the simplification of <paramref name="tree"/> succeeds.</summary>

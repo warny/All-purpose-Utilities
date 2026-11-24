@@ -604,6 +604,21 @@ public partial class ExpressionSimplifier
         set => t_refusedChainFinishingDisabled = value;
     }
 
+    /// <summary>Backing field of <see cref="RefusedSuffixFinishingDisabled"/>.</summary>
+    [ThreadStatic]
+    private static bool t_refusedSuffixFinishingDisabled;
+
+    /// <summary>
+    /// Gets or sets, for this thread, whether the boundary finishing of a refused chain stops at the whole-chain test (mission
+    /// M4, <see cref="FinishRefusedSuffix"/>): audits and tests only, so that the result of <c>master</c> <c>48ae9be3</c> stays
+    /// available as the reference of the suffix finishing. <see langword="false"/> by default.
+    /// </summary>
+    internal static bool RefusedSuffixFinishingDisabled
+    {
+        get => t_refusedSuffixFinishingDisabled;
+        set => t_refusedSuffixFinishingDisabled = value;
+    }
+
     /// <summary>
     /// Gets or sets the admission counters of this thread: audits and benchmarks only. While <see langword="null"/> (the
     /// default), the admission reads this field once per chain root and records nothing.

@@ -29,6 +29,7 @@ public static class Program
           diff                      differential campaign over several numeric types
           effects                   observable-effect campaign
           s3                        S3 identity matrix
+          reference                 M4: every corpus with the suffix finishing off (H) and on, compared with H's second call (F)
           measure <family> <n>      complexity of one family at one size (one process per measurement)
           profile <family> <n>      cost of one family at one size split by mechanism (budgets, comparer, probes, admission)
           families                  list the families
@@ -147,6 +148,7 @@ public static class Program
             "diff" => w => Campaigns.Differential(campaign, w),
             "effects" => w => Campaigns.Effects(campaign, w),
             "s3" => w => Campaigns.S3Matrix(w),
+            "reference" => w => Campaigns.Reference(campaign, w),
             _ => null,
         };
         if (body is null) return Fail("Unknown command " + command);
