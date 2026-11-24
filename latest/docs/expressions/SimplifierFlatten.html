@@ -6766,6 +6766,618 @@ the protocol excludes.</li>
 <li>the competing forms the comparer does not identify.</li>
 </ul>
 <p>A future normalization must update these tests together with the change of 20.4.</p>
+<h2 id="21-level-and-whole-chain-factoring-agree-mission-c3c-consistency">21. Level and whole-chain factoring agree (mission C3c, consistency)</h2>
+<p>Branch <code>fix/expression-c3c-factoring-consistency</code>, base <code>master</code> <code>523fc708</code> (PR #722). The base was measured in a detached
+worktree of <code>523fc708</code>; every figure below compares the branch with it, never the branch with itself. Same harness as §20: S5
+campaigns with 4,000 seeds and 4,000 nested compositions (70,515 convergence cases), bound stability (<code>S5_AUDIT_BIND=1</code>).</p>
+<h3 id="211-diagnosis-three-mechanisms-not-one-admission-condition">21.1 Diagnosis: three mechanisms, not one admission condition</h3>
+<p>The stability campaign of the base leaves 213 cases at <code>fixed@2</code>, 5 at <code>fixed@3</code>, 1 at <code>fixed@5</code> and 51 cycles. Tracing every case
+whose second pass factors (<code>FlattenAdditiveChain</code>, <code>AdditionOfEqualsElements</code>, <code>SubstractionWithZero</code> as responsible rule) gives
+three distinct mechanisms, plus a fourth one outside the factorable family.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Mechanism</th>
+<th>First divergence</th>
+<th>Reproducers</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>M1</td>
+<td>The raw admission refuses the chain (a constant pair, the negation of a constant, a product by <code>1</code>, a negated sum, a factor that is a sum the levels fold), so it is simplified level by level, where every canonicalization merges monomials (<code>AdditiveFactoring.Monomials</code>) but never extracts common factors. Its result is a factorable chain, which the next call admits and factors.</td>
+<td><code>FlattenAdmission</code> decides on the raw root, before any preparation; nothing decides again on the result.</td>
+<td>gen#2973, gen#2594, gen#2339, gen#2991, gen#3634, gen#3817, gen#3999, gen#611, nested#546</td>
+</tr>
+<tr>
+<td>M2</td>
+<td>A binary factoring (<code>AdditionOfEqualsElements</code>) builds the coefficient of two added single terms with the ordinary factory (<code>CanonicalizeFactoredCoefficient</code> keeps a sum of added terms, §14.8); the next call orders it.</td>
+<td><code>CanonicalizeFactoredCoefficient</code></td>
+<td>gen#1594, gen#777, gen#1535, gen#1778, gen#2167, gen#2171, gen#3018, nested#282, … (16 cases)</td>
+</tr>
+<tr>
+<td>M3</td>
+<td>The global factoring compares numeric coefficients with their sign: <code>2*x - 2*y</code> (a subtracted <code>2</code>) gives <code>2 * ((0 - y) + x)</code>, <code>2*x + (-2)*y</code> (an added <code>-2</code>) gives <code>(-2 * y) + (2 * x)</code>. Phase A puts the sign of a merged group in its coefficient (<code>x - (y - (x - y))</code> merges into <code>-2 * y</code>), so the merged form is not factored, while any sign normalization of the reconstruction (§20.3: V1, V1b) makes the two coefficients equal and lets the next call factor them.</td>
+<td><code>FindBestCandidate</code> keyed coefficients by their signed value.</td>
+<td>Case A of the mission, the regressions of every §20.3 variant</td>
+</tr>
+<tr>
+<td>M4</td>
+<td>A refused chain that stays refused after the levels (a quotient, a call that is not inert) is canonicalized as a right-associated sum; the next call offers each suffix of that sum as a chain of its own, and a factorable suffix is factored.</td>
+<td>The canonical reconstruction of a refused chain (pre-existing: <code>((2*y) - (x/w)) + (2*z)</code> takes two calls on the base)</td>
+<td>nested#1179 (exposed by M3, below)</td>
+</tr>
+</tbody>
+</table>
+<p>Case A (<code>x - (y - (x - y))</code>) is a fixed point on the base (<code>(-2 * y) + (2 * x)</code>, one call): its instability appears only once a
+sign normalization moves the sign of <code>-2</code> into the flag, which is exactly M3. Case B (<code>gen#1594</code>) is M2, a separate correction of
+the binary factoring, not of the C3c admission. Case C (<code>gen#2973</code>) is M1: <code>(-1E+300) + (-y)</code> is the negation of a constant,
+which <code>IsFactorableTerm</code> refuses; once prepared it is the constant <code>-1E+300</code>, and the result of the levels,
+<code>-1E+300 + ((0 - y) + (z + ((0 - (x * y)) + (y ** 2))))</code>, is a factorable chain. Its trace also shows the inner chain
+<code>-1E+300 + ((0 - y) + (z + (0 - (x * y))))</code> factored by a probe of <code>AdditionOfEqualsElements</code> and discarded: the factoring was
+reached, on a node whose result an enclosing canonicalization collects again.</p>
+<h3 id="212-questions-of-the-admission-phase-b-of-the-mission">21.2 Questions of the admission (phase B of the mission)</h3>
+<ol>
+<li><strong>The admission is evaluated before the preparation</strong> of the operands, on the raw root, once per chain root.</li>
+<li><strong>A refused chain can become admissible without any change of its operators</strong>: its refusing terms are folded by the levels
+(constant pairs, negated constants, products by <code>1</code>), and no part of the engine tests the result again.</li>
+<li><strong>Recorded refusals stay valid</strong>: the tables of known refusals (C1) hold raw nodes of the operation, which are never rebuilt;
+a result is a new tree and is never looked up.</li>
+<li><strong>A sub-chain is not distinguished from a whole chain</strong> by the admission: every crossed node is offered as a root of its own,
+and an admitted sub-chain of a refused chain is factored on its own (M4, and the probe of case C).</li>
+<li><strong>A parent does not reuse the analysis of its children</strong>: each canonicalization analyzes its terms again (with the hashes of
+C3a).</li>
+<li><strong>The session cannot carry a new admission</strong> without keeping a decision that a rebuild invalidates: the admitted roots are
+consumed by the rule invoked right after the admission (§13.4).</li>
+<li><strong>Factoring once per chain</strong> needs the boundary of the chain: the node no node of the same chain is transforming.</li>
+</ol>
+<h3 id="213-strategies-compared">21.3 Strategies compared</h3>
+<table>
+<thead>
+<tr>
+<th>Strategy</th>
+<th>Principle</th>
+<th>Measured or analyzed</th>
+<th>Decision</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A — deferred admission after preparation</td>
+<td>Test <code>IsFactorableChain</code> again on the prepared operands of every crossed node</td>
+<td>One more walk per level (quadratic on a refused comb), and an inner level that factors makes the result depend on the grouping again (§13.3)</td>
+<td>rejected</td>
+</tr>
+<tr>
+<td>B — whole-chain canonicalization at the boundary</td>
+<td>At the boundary of a refused chain only, test its <em>result</em> as the next call would (linear, then factorable) and canonicalize it with <code>AdditiveFactoring.CommonFactors</code></td>
+<td>Two walks and one canonicalization per refused chain, linear (21.6); the result is the next call's result (21.5)</td>
+<td><strong>kept (M1)</strong></td>
+</tr>
+<tr>
+<td>C — factorability metadata in the session</td>
+<td>Record that a prepared sub-chain is factorable, so that the parent decides without walking</td>
+<td>The decision belongs to the whole chain, not to a sub-chain (Q4): the metadata would need the boundary anyway, and would outlive the rebuilds that invalidate it (Q6)</td>
+<td>rejected</td>
+</tr>
+<tr>
+<td>D — specialized finishing of some rebuilds</td>
+<td>Finish the coefficient of a binary factoring, or the factored forms of the reassociation rules</td>
+<td>Reuses <code>CanonicalizeAdditiveTerms</code> (no second factoring algorithm), at a constant cost when the coefficient has two single terms</td>
+<td><strong>kept, restricted (M2)</strong></td>
+</tr>
+<tr>
+<td>D' — inner sub-chains without common factors</td>
+<td>An admitted sub-chain of a refused chain merges monomials only, the boundary factors</td>
+<td>Removes M4, but changes the historical result of every refused family whose sub-chains are factorable today (<code>(a*x + a*y) + x/b</code> keeps <code>a*(x + y)</code> on the base)</td>
+<td>rejected (refused families keep the historical behavior)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>The boundary.</strong> The engine knows it without any parent pointer: <code>ExpressionTransformer.TransformWithFlatten</code> sets a thread-static
+marker (<code>WithinRefusedChain</code>) while a refused root is transformed historically, so its crossed operands and the nodes its rules
+build (a reassociation, a probe) are not boundaries; the marker is cleared while a node of no flatten group (a call, a product, a
+lambda, a term of an admitted chain) is transformed, so a chain below it is the boundary of its own chain; and the simplifier
+clears it at the entry of every operation (<code>TransformWithinBoundary</code>, the public calls and the comparer's simplifications), so a
+nested operation never inherits it. It is restored in <code>finally</code> on every path, so a budget refusal never leaves it set. The hot
+path of a node of no group pays one thread-static read.</p>
+<p><strong>M3.</strong> <code>FindBestCandidate</code> indexes a coefficient by its magnitude (<code>CoefficientMagnitude</code>: the exact negation, IEEE-754 for the
+floating-point types, never for an unsigned type nor a signed minimum, which is its own negation). When every holder has the same
+value the factored coefficient is that value (the historical result: <code>-2*x + -2*y</code> keeps <code>-2 * (x + y)</code>); when holders have
+opposite values the magnitude is factored and the holders of the negative value keep their residue with the opposite sign
+(<code>(-c)*t</code> is <code>-(c*t)</code> exactly). A tie between coefficients is broken on the key of the magnitude, so it never depends on which
+holder came first. The linear family compares its coefficients and constants by magnitude too (<code>LinearChainOperands</code>): a chain
+holding <code>2*x</code> and <code>-2*y</code> is no longer linear (no rule could apply at a level, but the global factoring now does), so it reaches the
+factorable family. No sign normalization of the reconstruction is changed (§20.3 stays the decision of a later change).</p>
+<p><strong>M2.</strong> <code>CanonicalizeFactoredCoefficient</code> also canonicalizes a coefficient whose two operands are single terms (neither an
+ordinary <code>Add</code> nor <code>Subtract</code>): its canonicalization costs two keys, whatever the length of the chain. A coefficient that is
+already a sum keeps the historical node, so the <code>dag</code> growth family of §14.8 stays linear (21.6).</p>
+<h3 id="214-proof-obligations-of-the-boundary-finishing">21.4 Proof obligations of the boundary finishing</h3>
+<ul>
+<li><strong>Same identities as the next call.</strong> The result is tested by <code>IsLinearChain</code> then <code>IsFactorableChain</code>, the tests the next
+call's admission applies to it, and canonicalized by <code>CanonicalizeAdditiveTerms(…, CommonFactors)</code> then <code>NegateSubtractedSum</code>,
+the treatment of <code>FlattenFactorableChain</code>; a negated sum (<code>-(sum)</code>, C3d) is finished through its operand and negated again
+(<code>BuildNegation</code>), as the next call finishes the operand of a <code>Negate</code> root. The terms are not prepared again: they are the
+finished terms of the levels (the next call prepares them, which rewrote none of the factorable terms of the campaign: every
+M1 case reaches in one call the exact tree its second call reached on the base).</li>
+<li><strong>No admission is widened.</strong> Every proof of §13.4 and §13.5 holds on the tested result: every term inert and factorable, every
+crossed node an ordinary operator, no constant pair crossed. The constant pairs, the negated constants and the products by
+<code>1</code> the raw admission refused are folded by the levels, exactly, before the test; the decisions about signed zeros
+(<code>-0.0 + -0.0</code>), <code>NaN</code> and the infinities are those of the levels (a non-finite constant refuses the result).</li>
+<li><strong>Effects.</strong> A result holding a call that is not inert, a pinned term or any node outside the family is returned as is: no
+user code runs, no evaluation moves (type tests and runtime reflection objects only, ETC R4 and S5 A-10).</li>
+<li><strong>Once per chain.</strong> The boundary is finished once, after its whole historical treatment; its crossed operands and the nodes its
+rules build never are, so a sub-sum is never factored before the enclosing canonicalization collects its terms.</li>
+<li><strong>Budgets.</strong> Both walks count their structural visits and stop at the first refusal; the canonicalization counts as every
+canonicalization. Every walk is iterative.</li>
+</ul>
+<h3 id="215-validation">21.5 Validation</h3>
+<p><strong>Stability</strong> (8 passes, free parameters / parameters bound by a lambda):</p>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th style="text-align: right;">Base</th>
+<th style="text-align: right;">M1</th>
+<th style="text-align: right;">M1 + M3</th>
+<th style="text-align: right;">M1 + M2 + M3 (branch)</th>
+<th style="text-align: right;">Base bound</th>
+<th style="text-align: right;">Branch bound</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>fixed@1</td>
+<td style="text-align: right;">67,346</td>
+<td style="text-align: right;">67,355</td>
+<td style="text-align: right;">67,354</td>
+<td style="text-align: right;">67,370</td>
+<td style="text-align: right;">67,341</td>
+<td style="text-align: right;">67,364</td>
+</tr>
+<tr>
+<td>fixed@2</td>
+<td style="text-align: right;">213</td>
+<td style="text-align: right;">204</td>
+<td style="text-align: right;">205</td>
+<td style="text-align: right;"><strong>189</strong></td>
+<td style="text-align: right;">210</td>
+<td style="text-align: right;"><strong>187</strong></td>
+</tr>
+<tr>
+<td>fixed@3</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">4</td>
+</tr>
+<tr>
+<td>fixed@5</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr>
+<td>cycles, period 2 / 3</td>
+<td style="text-align: right;">44 / 7</td>
+<td style="text-align: right;">44 / 7</td>
+<td style="text-align: right;">44 / 7</td>
+<td style="text-align: right;">44 / 7</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;"><strong>0</strong></td>
+</tr>
+</tbody>
+</table>
+<p>25 cases reach their fixed point in one call (every M1 and M2 reproducer, gen#1594 and gen#2973 included); one case needs two
+calls instead of one: nested#1179, <code>(0 - (x / (y / 0))) + ((-2 * y) + (2 * z))</code>, an M4 case (a refused chain with a quotient,
+whose suffix <code>(-2 * y) + (2 * z)</code> is factorable once coefficients compare by magnitude; on the base the same suffix with <code>2 * y</code>
+needs two calls as well). No case moves to a cycle; the 51 remaining cycles are the free-parameter ties of S4 (L-3), with no bound
+cycle on either side.</p>
+<p><strong>Campaigns</strong> (base against branch):</p>
+<table>
+<thead>
+<tr>
+<th>Campaign</th>
+<th style="text-align: right;">Changed records</th>
+<th>Classification</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>converge</code> (70,515)</td>
+<td style="text-align: right;">40 first passes</td>
+<td>11 new forms that were already fixed points (M3: <code>a - (b - (c - d))</code> with <code>c = a</code>, <code>d = b</code> gives <code>2 * ((0 - y) + x)</code>, <code>-1 + ((0 - (-2 * z)) + (2 * x))</code> gives <code>-1 + (2 * (z + x))</code>); 25 first passes reaching the base's second pass (M1, M2); 3 coefficients ordered by M2 in cases that stay <code>fixed@2</code> for a sum factor (outside C3c); nested#1179</td>
+</tr>
+<tr>
+<td><code>terminate</code> (66,270)</td>
+<td style="text-align: right;">17</td>
+<td>identical visit counts and classes; results only (M3 forms)</td>
+</tr>
+<tr>
+<td><code>diff</code> (4,000 seeds, 7 types)</td>
+<td style="text-align: right;">21</td>
+<td>one value class moves: <code>float</code> <code>(y - (y - (0.5f - y))) - ((y / (1f / y)) - (2f - x))</code>, two samples <code>same</code> → <code>extreme</code> at <code>y = 3E+38</code> (the factoring of <code>-y - y*y</code>, the S3 latitude the base's second call already took); no <code>VALUE</code>, no exception added, removed or changed</td>
+</tr>
+<tr>
+<td><code>effects</code> (4,004)</td>
+<td style="text-align: right;">0</td>
+<td>evaluation logs and exceptions identical</td>
+</tr>
+<tr>
+<td><code>canon</code>, <code>s3</code></td>
+<td style="text-align: right;">0</td>
+<td></td>
+</tr>
+<tr>
+<td><code>comparer</code></td>
+<td style="text-align: right;">—</td>
+<td>0 violation; 164,888 hash-consistent and 329,298 transitive checks instead of 164,702 and 328,740 (more pairs identified)</td>
+</tr>
+<tr>
+<td><code>inventory</code></td>
+<td style="text-align: right;">—</td>
+<td>76 rules, same order</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Suites</strong>: Unit, Security, Functional and the Debug expression jobs (21.8). Updated with their reason:
+<code>ExpressionSimplifierS5A05FinalizationTests.KnownResidues_TakeTwoCalls</code> becomes <code>FormerResidues_TakeOneCall</code> (gen#1594 and
+gen#2973 now reach the base's second result in one call); <code>ExpressionSimplifierNumericChainGrowthTests</code> <code>negatedInLambda</code> (M3:
+<code>-7 * x3</code> and <code>-(7 * x5)</code> share <code>7</code>) and <code>negatedChainCancels</code> (M1: a negated sum, factored at the boundary as the next call
+factored it), both now asserted to be fixed points. New: <code>ExpressionSimplifierFactoringConsistencyTests</code> (Unit) and
+<code>ExpressionSimplifierFactoringConsistencyResourceTests</code> (Security). The evaluation-preserving tests are Unit tests: the
+Functional suite holds the tests that need sockets, processes or environment paths, which these do not.</p>
+<h3 id="216-complexity">21.6 Complexity</h3>
+<p><strong>The 150 points</strong> (<code>measure</code>, limits lifted, the 130 points of §17.8 and the four sign families of §20.5 at n = 4 to 20): all 150
+points have identical transformation visits, comparer simplifications, user calls and output sizes on the base and the branch.</p>
+<p><strong>Targeted families</strong> (<code>profile</code>, limits lifted, one process per point; new audit families of <code>Corpus.cs</code>):</p>
+<table>
+<thead>
+<tr>
+<th>Family (n = 512)</th>
+<th>What it exercises</th>
+<th style="text-align: right;">Transformation visits (both)</th>
+<th style="text-align: right;">Structural visits base → branch</th>
+<th style="text-align: right;">Allocated base → branch</th>
+<th style="text-align: right;">Output nodes base → branch</th>
+<th>Boundary tests / factorings</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>refusedfac</code> <code>(2 - 1) + x0*x1 + …</code></td>
+<td>M1, factorable once folded</td>
+<td style="text-align: right;">394,501</td>
+<td style="text-align: right;">11,807,484 → 11,824,804 (+0.15 %)</td>
+<td style="text-align: right;">464 → 469 MB</td>
+<td style="text-align: right;">2,045 → 1,025</td>
+<td>1 / 1</td>
+</tr>
+<tr>
+<td><code>refusednone</code> <code>(2 - 1) + x1*y1 + …</code></td>
+<td>M1 test, no common factor</td>
+<td style="text-align: right;">395,011</td>
+<td style="text-align: right;">13,655,225 → 13,655,736</td>
+<td style="text-align: right;">338.1 → 338.1 MB</td>
+<td style="text-align: right;">2,045 → 2,045</td>
+<td>1 / 0</td>
+</tr>
+<tr>
+<td><code>tailquot</code> <code>x0*x1 + … + x1/x0</code></td>
+<td>refused by a quotient</td>
+<td style="text-align: right;">3,077</td>
+<td style="text-align: right;">40,275 → 40,277</td>
+<td style="text-align: right;">1.92 → 1.94 MB</td>
+<td style="text-align: right;">1,027 → 1,027</td>
+<td>1 / 0</td>
+</tr>
+<tr>
+<td><code>dagfactor</code> <code>s*x1 + s*x2 + …</code>, <code>s</code> shared</td>
+<td>M2 on the dag family of §14.8</td>
+<td style="text-align: right;">8,700</td>
+<td style="text-align: right;">682,747 → 682,757</td>
+<td style="text-align: right;">19.51 → 19.51 MB</td>
+<td style="text-align: right;">1,027 → 1,027</td>
+<td>0</td>
+</tr>
+<tr>
+<td><code>mixsign</code> <code>2*x1 - 2*x2 + (-2)*x3 …</code></td>
+<td>M3</td>
+<td style="text-align: right;">2,561</td>
+<td style="text-align: right;">27,741 → 27,718</td>
+<td style="text-align: right;">2.46 → 2.43 MB</td>
+<td style="text-align: right;">1,539 → 1,537</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+<p>At every size from 8 to 512 the transformation visits and the comparer simplifications are identical on both sides; the
+structural visits of the finishing grow linearly (<code>refusedfac</code>: +166 at 8 terms, +17,320 at 512, the walks and the analysis of
+the result), and M2 adds a constant (<code>dagfactor</code>: +10 visits and +3 KB at every size, the canonicalization of the first two-term
+coefficient only, never of the growing one). The cost of <code>refusedfac</code> and <code>refusednone</code> is the quadratic level by level
+treatment of a refused comb, identical on the base (its probes of <code>AdditionOfEqualsElements</code>, 263,672 comparer simplifications
+at 512): the finishing does not re-simplify anything, it canonicalizes the result once.</p>
+<p>The finishing of a 100,000-term result is iterative except where the global factoring itself recurses: the canonical key and the
+effect analysis of a factored product <code>x0 * (sum)</code> walk its sum recursively, so a factored sum of thousands of terms needs the
+stack the levels of the same chain already needed. <code>BoundaryFinishing_NeverRefusesWhatTheLevelsAccept_OnASmallStack</code> (Security)
+checks, on a 256 KiB thread and without limits, that at every size from 64 to 4,096 terms the finished simplification succeeds
+wherever the levels alone succeed.</p>
+<h3 id="217-performance">21.7 Performance</h3>
+<p><code>tests/ExpressionTracingBench/run-campaign.ps1</code>, baseline <code>523fc708</code>, A/A copy of the base binaries, one process per scenario and
+variant, rotating order, machine idle; 4 rounds, then 7 rounds for the scenarios outside the A/A band. Five scenarios added:
+<code>refused16</code> (a refused chain factored at its boundary), <code>refusednone16</code> (refused, no common factor), <code>mixsign16</code> (one coefficient
+with both signs), <code>coef2</code> (<code>x0*(x1 + 0) + x0</code>, a two-term factored coefficient), <code>refusedcall</code> (a refused chain below a call).</p>
+<table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th style="text-align: right;">Base</th>
+<th style="text-align: right;">A/A</th>
+<th style="text-align: right;">Branch (4 rounds)</th>
+<th style="text-align: right;">Branch (7 rounds)</th>
+<th style="text-align: right;">Allocated base → branch</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ext-root</code></td>
+<td style="text-align: right;">79.4 ns</td>
+<td style="text-align: right;">+4.0 %</td>
+<td style="text-align: right;">+2.6 %</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">0 B</td>
+</tr>
+<tr>
+<td><code>scalar</code></td>
+<td style="text-align: right;">1,340 ns</td>
+<td style="text-align: right;">+4.7 %</td>
+<td style="text-align: right;">+4.7 %</td>
+<td style="text-align: right;">+0.8 % (A/A −1.8 %)</td>
+<td style="text-align: right;">2,256 B</td>
+</tr>
+<tr>
+<td><code>binary</code></td>
+<td style="text-align: right;">5,775 ns</td>
+<td style="text-align: right;">+1.0 %</td>
+<td style="text-align: right;">−0.6 %</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">6,513 B</td>
+</tr>
+<tr>
+<td><code>lambda</code></td>
+<td style="text-align: right;">3,352 ns</td>
+<td style="text-align: right;">−5.4 %</td>
+<td style="text-align: right;">+7.0 %</td>
+<td style="text-align: right;">+6.0 % (A/A +0.2 %)</td>
+<td style="text-align: right;">6,385 B</td>
+</tr>
+<tr>
+<td><code>leftsum20</code></td>
+<td style="text-align: right;">6,678 ns</td>
+<td style="text-align: right;">−1.3 %</td>
+<td style="text-align: right;">−2.7 %</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">14,368 B</td>
+</tr>
+<tr>
+<td><code>p9family16</code></td>
+<td style="text-align: right;">40,182 ns</td>
+<td style="text-align: right;">+0.7 %</td>
+<td style="text-align: right;">+0.4 %</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">52,131 → 52,259 B</td>
+</tr>
+<tr>
+<td><code>dag10</code></td>
+<td style="text-align: right;">969,585 ns</td>
+<td style="text-align: right;">−1.0 %</td>
+<td style="text-align: right;">+0.2 %</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">1,288,325 B</td>
+</tr>
+<tr>
+<td><code>calls8</code></td>
+<td style="text-align: right;">4,547 ns</td>
+<td style="text-align: right;">+0.6 %</td>
+<td style="text-align: right;">−0.8 %</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">2,776 → 2,632 B ¹</td>
+</tr>
+<tr>
+<td><code>callsum16</code></td>
+<td style="text-align: right;">20,825 ns</td>
+<td style="text-align: right;">−3.7 %</td>
+<td style="text-align: right;">−0.2 %</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">31,344 → 31,600 B</td>
+</tr>
+<tr>
+<td><code>negsum16</code></td>
+<td style="text-align: right;">10,229 ns</td>
+<td style="text-align: right;">+1.5 %</td>
+<td style="text-align: right;">+1.1 %</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">20,432 → 20,688 B</td>
+</tr>
+<tr>
+<td><code>negconst8</code></td>
+<td style="text-align: right;">134,847 ns</td>
+<td style="text-align: right;">−4.5 %</td>
+<td style="text-align: right;">+9.7 %</td>
+<td style="text-align: right;">+2.4 % (A/A +2.3 %)</td>
+<td style="text-align: right;">162,252 → 163,829 B</td>
+</tr>
+<tr>
+<td><code>subcall</code></td>
+<td style="text-align: right;">7,717 ns</td>
+<td style="text-align: right;">+0.8 %</td>
+<td style="text-align: right;">+0.9 %</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">10,064 → 10,128 B</td>
+</tr>
+<tr>
+<td><code>prod2x</code></td>
+<td style="text-align: right;">14,834 ns</td>
+<td style="text-align: right;">+2.5 %</td>
+<td style="text-align: right;">−0.3 %</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">21,568 → 21,664 B</td>
+</tr>
+<tr>
+<td><code>cmp-pos</code></td>
+<td style="text-align: right;">60,470 ns</td>
+<td style="text-align: right;">−0.1 %</td>
+<td style="text-align: right;">+0.2 %</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">61,742 B</td>
+</tr>
+<tr>
+<td><code>hash</code></td>
+<td style="text-align: right;">29,485 ns</td>
+<td style="text-align: right;">+3.8 %</td>
+<td style="text-align: right;">+0.8 %</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">29,694 B</td>
+</tr>
+<tr>
+<td><code>refused16</code></td>
+<td style="text-align: right;">430,536 ns</td>
+<td style="text-align: right;">+0.2 %</td>
+<td style="text-align: right;">+4.2 %</td>
+<td style="text-align: right;">+3.5 % (A/A −2.1 %)</td>
+<td style="text-align: right;">617,780 → 653,982 B</td>
+</tr>
+<tr>
+<td><code>refusednone16</code></td>
+<td style="text-align: right;">322,092 ns</td>
+<td style="text-align: right;">+0.2 %</td>
+<td style="text-align: right;">+0.2 %</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">434,243 → 435,795 B</td>
+</tr>
+<tr>
+<td><code>mixsign16</code></td>
+<td style="text-align: right;">56,650 ns</td>
+<td style="text-align: right;">−5.1 %</td>
+<td style="text-align: right;">+25.6 %</td>
+<td style="text-align: right;">+31.3 % (A/A −1.4 %)</td>
+<td style="text-align: right;">81,674 → 82,003 B</td>
+</tr>
+<tr>
+<td><code>coef2</code></td>
+<td style="text-align: right;">3,008 ns</td>
+<td style="text-align: right;">+4.0 %</td>
+<td style="text-align: right;">+41.3 %</td>
+<td style="text-align: right;">+39.3 % (A/A −0.8 %)</td>
+<td style="text-align: right;">4,120 → 6,496 B</td>
+</tr>
+<tr>
+<td><code>refusedcall</code></td>
+<td style="text-align: right;">36,262 ns</td>
+<td style="text-align: right;">+3.3 %</td>
+<td style="text-align: right;">+39.1 %</td>
+<td style="text-align: right;">+36.1 % (A/A +2.6 %)</td>
+<td style="text-align: right;">37,400 → 55,516 B</td>
+</tr>
+</tbody>
+</table>
+<p>¹ <code>calls8</code> alternates between 2,632 B and 2,776 B on every variant (tiered compilation, §19.6).</p>
+<p>Reading: every scenario the change does not target stays inside the A/A band, with at most a few hundred bytes more on the refused
+chains (the walks of the boundary test, which allocate their branch sets past four entries). <code>lambda</code> pays about 200 ns: its
+<code>(… * 1) + 0</code> root is a refused chain, so its result is tested at the boundary (two walks of a two-term chain and the marker's
+<code>try/finally</code>), with identical allocations. <code>mixsign16</code>, <code>coef2</code> and <code>refusedcall</code> cost 31 to 39 % more, with the allocations of the
+factoring: the work the next call did (M3, M2 and M1 respectively) is done once, in the first call, which is cheaper than the two
+calls the base needed for the same tree. <code>refused16</code> costs 3.5 % more for a result half its size.</p>
+<h3 id="218-suites">21.8 Suites</h3>
+<p>Unit 15,147 passed (1 skipped), Security 465 (3 skipped), Functional 383, Debug expression coverage 356 (1 skipped) and
+<code>R4Security</code> 4, all on Windows; the CI of the pull request runs Windows and Ubuntu.</p>
+<h3 id="219-sign-normalizations-replayed-on-this-base">21.9 Sign normalizations replayed on this base</h3>
+<p>The variants of §20.3 were implemented again (they were not kept) in a separate worktree of this branch, behind an environment
+switch that never reached the branch, and measured against the branch with the same harness (the convergence corpus holds the five
+new audit families, 70,540 cases; on the branch they are 193 / 191 at <code>fixed@2</code>, the four extra cases being the <code>dagfactor</code>
+coefficients of three terms and more, which keep the historical node by design, §21.3).</p>
+<table>
+<thead>
+<tr>
+<th>Variant</th>
+<th style="text-align: right;">First passes changed</th>
+<th style="text-align: right;">New multi-pass cases (free / bound)</th>
+<th style="text-align: right;">Fixed</th>
+<th style="text-align: right;">New cycles (free / bound)</th>
+<th style="text-align: right;">Comparer</th>
+<th>Values, exceptions, effects</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>on #722's base (§20.3)</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">V1b +3, V1b+C1 +3, V1 +12, C2 +14</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td></td>
+</tr>
+<tr>
+<td>V1b</td>
+<td style="text-align: right;">92</td>
+<td style="text-align: right;">1 / 1</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0 / 0</td>
+<td style="text-align: right;">0</td>
+<td>identical</td>
+</tr>
+<tr>
+<td>V1b + C1</td>
+<td style="text-align: right;">211</td>
+<td style="text-align: right;">2 / 2</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0 / 0</td>
+<td style="text-align: right;">0</td>
+<td>identical</td>
+</tr>
+<tr>
+<td>V1</td>
+<td style="text-align: right;">1,572</td>
+<td style="text-align: right;">3 / 3 (one is a cycle)</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1 / 0</td>
+<td style="text-align: right;">0</td>
+<td>1 <code>float</code> sample <code>same</code> → <code>extreme</code></td>
+</tr>
+<tr>
+<td>C2</td>
+<td style="text-align: right;">1,773</td>
+<td style="text-align: right;">7 / 6 (two are cycles)</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">2 / 0</td>
+<td style="text-align: right;">0</td>
+<td>identical</td>
+</tr>
+</tbody>
+</table>
+<p>The mechanism of §20.3 is gone: no variant exposes a whole-chain factoring the first call misses any more (M1, M3). What remains
+is outside the factorable family: nested#3674 in every variant, a refused chain holding a quotient whose suffix
+<code>(0 - (2 * y)) + (0 - (2 * (z / -2)))</code> is factored on its own by the next call (M4); nested#3002 (V1b + C1, C2), a sum with a
+quotient term factored by the binary rule; and, for V1 and C2, new free-parameter ties (L-3). <strong>V1b + C1 is not stable</strong> under the
+acceptance rule (two new multi-pass first results), so no pull request is proposed for it; it needs M4 first.</p>
+<h3 id="2110-residual-limits">21.10 Residual limits</h3>
+<ul>
+<li><strong>M4, suffixes of refused canonical sums.</strong> A chain refused for a quotient or a non-inert call keeps its historical result; the
+next call may factor a factorable suffix of its canonical form. Treating it means factoring the factorable terms of a refused
+chain, a change of the refused families' historical behavior (strategy D' of 21.3) that needs its own decision.</li>
+<li><strong>Sum factors.</strong> A term with a factor that is a sum refuses the factorable family (§13.12); the binary rule still factors such
+terms pairwise, one level at a time (<code>AdditionOfEqualsElements</code> residues of the stability campaign).</li>
+<li><strong>Coefficients of three terms and more</strong> of a binary factoring keep the historical node (§14.8, <code>dagfactor</code> at 3 to 8 terms).</li>
+<li><strong>Deep factored sums</strong> are keyed and analyzed recursively (21.6): the stack the levels of the same chain already need.</li>
+<li>Free-parameter ties of the canonical order (L-3) are unchanged.</li>
+</ul>
 
 </article>
 
