@@ -60,7 +60,7 @@ public static class Program
         ["m4suffix16"] = () => Simplify(SuffixChain(16)),
         ["m4suffix16x2"] = () => SimplifyTwice(SuffixChain(16)),
         ["m4none16"] = () => Simplify(Enumerable.Range(1, 16).Select(i => (Expression)Expression.Multiply(Expression.Call(typeof(Math).GetMethod(nameof(Math.Sin), [typeof(double)])!, Xs[i]), Xs[i + 20])).Prepend(Expression.Divide(Xs[0], Xs[63])).Aggregate(Expression.Add)),
-        ["m4calls8"] = () => Simplify(Enumerable.Range(1, 8).SelectMany(i => new[] { Expression.Multiply(Expression.Constant(2.0), Xs[i]), Expression.Call(typeof(Program).GetMethod(nameof(Observable))!) }).Prepend(Expression.Divide(Xs[0], Xs[63])).Aggregate(Expression.Add)),
+        ["m4calls8"] = () => Simplify(Enumerable.Range(1, 8).SelectMany(i => new Expression[] { Expression.Multiply(Expression.Constant(2.0), Xs[i]), Expression.Call(typeof(Program).GetMethod(nameof(Observable))!) }).Prepend(Expression.Divide(Xs[0], Xs[63])).Aggregate(Expression.Add)),
         ["nested1179"] = () => Simplify(Nested1179()),
         ["nested1179x2"] = () => SimplifyTwice(Nested1179()),
         ["opt-ext-root"] = () => Optimize(new BenchExtension()),

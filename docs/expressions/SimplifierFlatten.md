@@ -3113,14 +3113,40 @@ search alone costs a linear number of visits (`SuffixFinishing_IsCounted_AndRefu
 terms); every comparer probe operation is a boundary of its own, which is why `m4none` pays its search once per probe. A first
 version without the candidate pre-test cost `m4none` +18 % structural visits; the pre-test removed most of it.
 
-The 150 historical points (`measure`) were still running when the session ended: **pending**, to be compared with
-`run-audit.ps1 -Campaigns complexity -Unlimited` on both sides.
+**The historical points** (`run-audit.ps1 -Campaigns complexity -Unlimited`, the 35 families of the script at n = 4 to 20, a family
+stopped after 10 s): 304 points on both sides, all with identical transformation visits, rule applications, comparer
+simplifications, user calls, re-entries and output sizes. None of those families holds a factorable suffix after an opaque term.
 
 ### 22.7 Performance
 
-**Pending.** The scenarios are in `tests/ExpressionTracingBench` (`m4suffix16`, `m4suffix16x2`, `m4none16`, `m4calls8`,
-`nested1179`, `nested1179x2`; the `x2` variants measure `Simplify(Simplify(source))`, the cost of the base's fixed point). They
-must be run with `run-campaign.ps1` against a worktree of `48ae9be3`, A/A included, on an idle machine; the session ended before.
+`tests/ExpressionTracingBench/run-campaign.ps1`, baseline `48ae9be3`, A/A copy of the base binaries, one process per scenario and
+variant, rotating order, machine idle; 4 rounds on 26 scenarios, then 7 rounds on the 10 scenarios outside the A/A band or
+targeted. New scenarios: `m4suffix16`, `m4none16`, `m4calls8`, `nested1179`; the `x2` variants run `Simplify(Simplify(source))`,
+the cost of reaching the base's fixed point.
+
+| Scenario | Base (one call) | A/A | Branch (7 rounds) | Allocated base → branch |
+|---|---:|---:|---:|---:|
+| `ext-root`, `scalar`, `binary`, `lambda`, `leftsum20`, `dag10`, `calls8`, `callsum16`, `negsum16`, `subcall`, `prod2x`, `cmp-pos`, `hash`, `refused16`, `refusednone16`, `mixsign16`, `coef2` (4 rounds) | | | inside the A/A band | identical (`calls8` alternates, §19.6) |
+| `p9family16` | 49,198 ns | −2.0 % | −4.1 % | 52,260 B |
+| `negconst8` | 190,022 ns | +5.9 % | −6.0 % | 163,829 B |
+| `refusedcall` | 93,380 ns | −11.1 % | −28.9 % (noisy) | 55,516 → 55,780 B |
+| `m4calls8` (4 rounds) | 67,156 ns | −2.7 % | −2.9 % | 52,604 → 53,020 B |
+| `m4none16` | 1,433,700 ns | −0.4 % | **+4.9 %** | 1,195,681 → 1,312,114 B |
+| `m4suffix16` | 1,084,606 ns | −8.6 % | −11.9 % | 922,938 → 976,636 B |
+| `nested1179` | 65,524 ns | +5.2 % | **+72.1 %** | 38,064 → 66,479 B |
+
+**Cost of the fixed point** (base: two calls, `x2`; branch: one call):
+
+| Scenario | Base, two calls | Branch, one call | Allocated |
+|---|---:|---:|---:|
+| `m4suffix16` | 1,243,814 ns | 955,500 ns (−23 %) | 1,013,760 → 976,636 B |
+| `nested1179` | 125,417 ns | 112,800 ns (−10 %) | 73,512 → 66,479 B |
+
+Reading: the scenarios the change does not target stay inside the A/A band with identical allocations. A refused chain whose
+suffix is factored pays, in its one call, the factoring and the prefix levels the next call paid (`nested1179` +72 % for one call),
+and reaches the fixed point 10 to 23 % faster than the two calls of the base, with fewer allocations. A refused chain with a
+factorable suffix but no common factor pays the search without any change: `m4none16` +4.9 % and +9.7 % allocations, one search
+per boundary, the comparer probes included (22.6).
 
 ### 22.8 Suites
 
