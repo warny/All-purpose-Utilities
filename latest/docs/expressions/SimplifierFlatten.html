@@ -7371,11 +7371,572 @@ acceptance rule (two new multi-pass first results), so no pull request is propos
 <ul>
 <li><strong>M4, suffixes of refused canonical sums.</strong> A chain refused for a quotient or a non-inert call keeps its historical result; the
 next call may factor a factorable suffix of its canonical form. Treating it means factoring the factorable terms of a refused
-chain, a change of the refused families' historical behavior (strategy D' of 21.3) that needs its own decision.</li>
+chain, a change of the refused families' historical behavior (strategy D' of 21.3) that needs its own decision. <em>Fixed by
+§22 without D': the boundary finishes the suffix the next call factored.</em></li>
 <li><strong>Sum factors.</strong> A term with a factor that is a sum refuses the factorable family (§13.12); the binary rule still factors such
 terms pairwise, one level at a time (<code>AdditionOfEqualsElements</code> residues of the stability campaign).</li>
 <li><strong>Coefficients of three terms and more</strong> of a binary factoring keep the historical node (§14.8, <code>dagfactor</code> at 3 to 8 terms).</li>
 <li><strong>Deep factored sums</strong> are keyed and analyzed recursively (21.6): the stack the levels of the same chain already need.</li>
+<li>Free-parameter ties of the canonical order (L-3) are unchanged.</li>
+</ul>
+<h2 id="22-suffixes-of-refused-canonical-sums-mission-m4">22. Suffixes of refused canonical sums (mission M4)</h2>
+<p>Branch <code>fix/expression-c3c-refused-chain-suffixes</code>, base <code>master</code> <code>48ae9be3</code> (PR #723). The base was measured in a detached worktree
+of <code>48ae9be3</code>; every figure below compares the branch with it. Same harness as §21 (4,000 seeds, 4,000 nested compositions, bound
+stability with <code>S5_AUDIT_BIND=1</code>); the M4 families of <code>Corpus.cs</code> (below) add 30 convergence cases (70,540 → 70,570), and each
+comparison uses one corpus on both sides. Two references are used throughout: <strong>H</strong>, the result of <code>master</code> (the branch with
+<code>RefusedSuffixFinishingDisabled</code>, identical by construction), and <strong>F</strong>, H simplified once more by <code>master</code>.</p>
+<h3 id="221-diagnosis">22.1 Diagnosis</h3>
+<p><strong>nested#1179</strong>, <code>(-2 * (y / 1)) - ((x / (y / 0)) + (-1 * (2 * z)))</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>First call (<code>master</code>)</th>
+<th>Second call (<code>master</code>)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Root admission</td>
+<td>refused: <code>x / (y / 0)</code> is no factorable term (§13.12), the linear family refuses the repeated <code>y</code></td>
+<td>refused: the same quotient</td>
+</tr>
+<tr>
+<td>Crossed nodes offered</td>
+<td>every raw node holds the quotient: all refused</td>
+<td>the root, then its right operand <code>(-2 * y) + (2 * z)</code>, a node of the result</td>
+</tr>
+<tr>
+<td>Levels</td>
+<td><code>SubstractionWithAddition</code>, <code>SubstractionWithSubstraction</code>, <code>AdditionOfEqualsElements</code> (probe), <code>AdditionWithNegate</code>; each level canonicalizes with <code>AdditiveFactoring.Monomials</code></td>
+<td>the root level only (<code>AdditionWithNegate</code>)</td>
+</tr>
+<tr>
+<td>Terms of the last canonicalization</td>
+<td><code>-(x / (y / 0))</code>, <code>-2 * y</code>, <code>2 * z</code> (sorted: the quotient first, the products after it)</td>
+<td><code>-(x / (y / 0))</code> and the factored product</td>
+</tr>
+<tr>
+<td>Reconstruction</td>
+<td><code>(0 - (x / (y / 0))) + ((-2 * y) + (2 * z))</code>, right-associated</td>
+<td><code>(0 - (x / (y / 0))) + (2 * ((0 - y) + z))</code></td>
+</tr>
+<tr>
+<td><code>FinishRefusedChain</code> (§21)</td>
+<td>the whole result holds the quotient: returned as is</td>
+<td>the same</td>
+</tr>
+<tr>
+<td>Factorable suffix</td>
+<td><code>(-2 * y) + (2 * z)</code>, built by <code>BuildRightAssociative</code>, never offered to the admission</td>
+<td>admitted as a factorable chain (<code>FlattenAdditiveChain</code>), factored with <code>CommonFactors</code> (M3 magnitude)</td>
+</tr>
+</tbody>
+</table>
+<p>The first factoring absent from the first call is the one of a <strong>structural suffix of the reconstructed tree</strong>: the canonical
+order puts quotients and other opaque terms before the products, so the factorable terms of a refused chain end its right spine,
+and the next call offers that suffix, a node the first call built, as a chain of its own.</p>
+<p><strong>Classification by mechanism</strong> (every case of the stability campaign of the base whose second pass factors, and the two residues
+of §21.9):</p>
+<table>
+<thead>
+<tr>
+<th>Mechanism</th>
+<th>Second-pass factoring</th>
+<th>Cases</th>
+<th>Treated here</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>S — structural suffix</td>
+<td>the factorable family admits a right suffix of the canonical result (all its terms inert and factorable)</td>
+<td>nested#1179; the M4 families (30 corpus cases)</td>
+<td><strong>yes</strong></td>
+</tr>
+<tr>
+<td>G — sub-chain merged after the levels</td>
+<td>not observed apart from S: a merge of monomials inside the suffix is part of its global factoring</td>
+<td>—</td>
+<td>with S</td>
+</tr>
+<tr>
+<td>O — order of the canonical sort</td>
+<td>the sort does not move a factorable term out of the suffix (quotients sort first, pinned terms last)</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>B — binary rule on a term outside C3c</td>
+<td><code>AdditionOfEqualsElements</code> on a pair of the result whose factor is a quotient or a sum: nested#3633 (<code>-2*x + x*(2 + z)</code>, a sum factor), gen#947 and gen#1727 (two quotient groups), nested#3674 (<code>2*y + 2*(z/-2)</code>, §21.9, a quotient factor), nested#3002 (<code>2*(-2 - z) + 2*(x/(z*x))</code>, §21.9)</td>
+<td>5</td>
+<td>no: a quotient never becomes a C3c factor (family E stays out of scope), and a sum factor refuses the family (§13.12)</td>
+</tr>
+</tbody>
+</table>
+<p>nested#3674 and nested#3002 are therefore not M4 cases in the sense of the mission: their second pass is a binary factoring with
+a quotient factor, which the factorable family refuses by design. They are not grouped with nested#1179.</p>
+<h3 id="222-the-boundary-of-a-suffix">22.2 The boundary of a suffix</h3>
+<p>The result of the levels is <code>CanonicalizeAdditiveTerms → BuildAdditiveExpression → BuildRightAssociative</code>: a right spine
+<code>g0 + (g1 + (… + gn))</code>, each <code>gi</code> a group (a term, <code>0 - t</code>, or a small sum of one grouping class). Its properties:</p>
+<ul>
+<li><strong>The suffix the next call factors is the longest suffix of factorable groups.</strong> The next call offers the root, then each right
+operand top-down; a suffix that holds a refused group is refused, so the first admitted suffix is the longest one whose
+groups are all factorable. A suffix admitted above it by another family is linear or anchored, and then so is every sub-chain;
+the only other family, the grouped quotient chains (§16), starts at a subtraction of a crossed operand, which a canonical spine
+never holds, and which stops the search.</li>
+<li><strong>Identifiable in one pass.</strong> Walking the spine bottom-up, the first group that is not factorable ends the suffix: every
+group and every spine node is tested once (no walk per suffix).</li>
+<li><strong>Syntactic boundary, semantic proof.</strong> The boundary only selects the candidate; the proof is the factorable admission of the
+candidate itself (<code>IsFactorableChain</code>, §13.5), so no quotient, pinned term or non-inert call is ever a factor.</li>
+<li><strong>No reassociation of the refused part.</strong> Only the suffix is canonicalized with common factors; the prefix is run through its
+own levels, as on the next call.</li>
+<li><strong>Convergence.</strong> Every association of the same terms gives one canonical result, so one suffix (21.5 and the matrix of
+<code>ExpressionSimplifierRefusedSuffixFactoringTests</code>), up to the free-parameter ties of S4.</li>
+<li><strong>Once.</strong> The suffix is factored at the boundary only (§21.3); its prefix levels run with the refused-chain marker set, so no
+node they build is finished again.</li>
+</ul>
+<h3 id="223-strategies-compared">22.3 Strategies compared</h3>
+<table>
+<thead>
+<tr>
+<th>Strategy</th>
+<th>Principle</th>
+<th>Measured or analyzed</th>
+<th>Decision</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A — suffixes during the reconstruction</td>
+<td>Factor the candidate suffixes inside <code>CanonicalizeAdditiveTerms</code></td>
+<td>Every level of a refused chain canonicalizes: either every level factors (D', which changes the historical forms and factors partial sums the parent collects again), or the suffixes of growing size are factored once per level (quadratic)</td>
+<td>rejected</td>
+</tr>
+<tr>
+<td>B — segments of the refused chain</td>
+<td>Factor each maximal admissible segment of the terms</td>
+<td>The segments before the last refused term are never offered by the next call (they are not suffixes), so B factors what no second call factors and changes H for them; the sort already makes the factorable terms contiguous at the end</td>
+<td>rejected</td>
+</tr>
+<tr>
+<td>C — suffix metadata</td>
+<td>Record, during collection, which suffix is admissible and its factors</td>
+<td>The decision needs the final canonical order, which only exists after the last canonicalization; recording it at every level costs every refused chain, for one case of the corpus</td>
+<td>rejected</td>
+</tr>
+<tr>
+<td>D — targeted finishing at the boundary</td>
+<td>At the boundary only, find the longest factorable suffix of the result, factor it with C3c when that removes terms, then run the prefix levels as the next call runs them</td>
+<td>One bottom-up pass, one linear and one factorable walk, one canonicalization and the prefix levels, only when a factoring happens; every changed result is F (22.5)</td>
+<td><strong>kept</strong></td>
+</tr>
+<tr>
+<td>D without the second preparation</td>
+<td>D, with the prefix levels on the operands of the result as they are</td>
+<td>4 convergence cases neither F nor fixed points: the next call prepares <code>0 - t</code> into <code>-t</code> before its level rules, which then take another route</td>
+<td>rejected</td>
+</tr>
+</tbody>
+</table>
+<p>D reuses the C3c factoring (<code>CanonicalizeAdditiveTerms(…, CommonFactors)</code>, <code>NegateSubtractedSum</code>), the boundary of M1 and the
+level machinery of the anchored fallback (<code>TransformLevel</code> with the group's dispatcher); it adds no state but the marker of
+§21.3, set while the prefix runs again.</p>
+<h3 id="224-mechanism-and-proof-obligations">22.4 Mechanism and proof obligations</h3>
+<p><code>FinishRefusedChain</code> now loops: the whole-chain test of M1, then, when the result stays refused, <code>FinishRefusedSuffix</code>, at most
+two rounds (the corpus needs one; the bound keeps the work linear whatever the prefix rebuilds).</p>
+<ol>
+<li><strong>Search.</strong> The right spine is collected iteratively (one structural visit per node); a subtraction of a crossed operand stops
+it. Bottom-up, <code>IsFactorableSuffixNode</code> tests each node: no constant pair, its left group (and the last right group)
+factorable (<code>IsFactorableTerm</code>, or <code>IsFactorableChain</code> for a crossed group), an ordinary operator, type tests first (ETC R4).</li>
+<li><strong>Candidate.</strong> The longest such proper suffix; <code>IsLinearChain</code> (the linear rule would change nothing) and <code>IsFactorableChain</code>
+(the admission the next call applies, DAG revisits included) decide on it.</li>
+<li><strong>Change.</strong> The terms of the suffix come out of a canonicalization of the levels (identical monomials merged, constants
+aggregated), so only a common factor can remove one: their factoring candidates are indexed once (<code>HasFactoringCandidate</code>,
+the index of <code>FindBestCandidate</code>, no key and no sort), and a suffix without a shared candidate stops here. Otherwise its terms
+are canonicalized with common factors as <code>FlattenFactorableChain</code> does. A suffix of fewer than two
+non-zero terms, or whose factoring keeps every term (no common factor, or only another sign representation such as
+<code>(0 - a) + (0 - b)</code> as <code>-(a + b)</code>), returns the historical result: the prefix levels would rebuild it.</li>
+<li><strong>Prefix.</strong> The left operands of the prefix are prepared again in source order, the marker set; then, bottom-up, each prefix
+node runs its additive signature rules through the group's dispatcher and its finalization (<code>TransformLevel</code>), on top of the
+<code>NaN</code>-folded result below. This is exactly the treatment the next call gives those nodes (the reference campaign checks it on
+every corpus).</li>
+</ol>
+<p><strong>Safety.</strong> Types: every rebuilt node is built by the factoring or by the rules of the levels. Evaluations: the factored suffix
+holds inert factorable terms only (parameters, finite constants, ordinary products, at most one inert runtime call of the
+allow-list per term), so no evaluation is moved, merged or dropped beyond what the factorable family already admits; quotients,
+calls that are not inert and every pinned term (placed last by the canonicalization, ETC R1b) stay outside the suffix; the prefix
+is treated by the rules under the effect gate. Exceptions: a quotient that may throw (an integral division by a parameter) is
+pinned, so it ends the spine and nothing follows it (<code>IntegralTypes_KeepTheDivisionByZero_AndFactorExactly</code>). Custom, checked
+and lifted operators are not ordinary, so they refuse the suffix; conversions are no factor. Signed zeros, <code>NaN</code> and infinities:
+a non-finite constant refuses the family, and the identities are those of C3c (exact on integers and decimals — decimal chains
+are not canonicalized at all —, the reassociation latitude of S3 on floating point, 22.5). Policies: the factorable family is
+admitted under every policy with the same terms; <code>Verified</code> and <code>TrustDeclarations</code> see the same inert terms. ETC and R4: type
+tests and runtime reflection only (<code>SuffixSearch_NeverReadsHostileNodes</code>); a prefix holding an impersonating call is prepared as
+the next call prepares it, never invoked. Budgets: every walk counts its visits and every level its transformation visit; a
+refusal leaves the marker restored (<code>finally</code>).</p>
+<p><strong>Rules of the levels.</strong> No historical rule is bypassed: the suffix is only replaced by its factored form when the factorable
+family admits it, the family whose global factoring applies every identity the additive rules apply on such terms (§13.5:
+<code>AdditionOfEqualsElements</code>, <code>SubstractionOfEqualsElements</code>, <code>SubstractionWithAddition</code>, <code>SubstractionWithSubstraction</code>, the
+negation, zero and constant identities; the logarithm, trigonometric, power and quotient rules never match a factorable term
+pair), and the prefix runs every rule of its levels.</p>
+<h3 id="225-validation">22.5 Validation</h3>
+<p><strong>Stability</strong> (free / bound, 8 passes):</p>
+<table>
+<thead>
+<tr>
+<th>Corpus</th>
+<th>Category</th>
+<th style="text-align: right;">Base</th>
+<th style="text-align: right;">Branch</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>§21 corpus (70,540)</td>
+<td>fixed@1</td>
+<td style="text-align: right;">67,391 / 67,385</td>
+<td style="text-align: right;">67,392 / 67,386</td>
+</tr>
+<tr>
+<td></td>
+<td>fixed@2</td>
+<td style="text-align: right;">193 / 191</td>
+<td style="text-align: right;"><strong>192 / 190</strong></td>
+</tr>
+<tr>
+<td></td>
+<td>cycles</td>
+<td style="text-align: right;">51 / 0</td>
+<td style="text-align: right;">51 / 0</td>
+</tr>
+<tr>
+<td>with the M4 families (70,570)</td>
+<td>fixed@1</td>
+<td style="text-align: right;">67,405 / 67,399</td>
+<td style="text-align: right;">67,419 / 67,413</td>
+</tr>
+<tr>
+<td></td>
+<td>fixed@2</td>
+<td style="text-align: right;">208 / 204</td>
+<td style="text-align: right;"><strong>195 / 191</strong></td>
+</tr>
+<tr>
+<td></td>
+<td>fixed@3</td>
+<td style="text-align: right;">6 / 7</td>
+<td style="text-align: right;">5 / 6</td>
+</tr>
+<tr>
+<td></td>
+<td>cycles</td>
+<td style="text-align: right;">51 / 0</td>
+<td style="text-align: right;">51 / 0</td>
+</tr>
+</tbody>
+</table>
+<p>No case becomes multi-pass, no case becomes a cycle; the 14 cases that reach their fixed point in one call are nested#1179 and
+13 M4 family cases, and one other case goes from <code>fixed@3</code> to <code>fixed@2</code>. Three M4 family cases keep two calls, both outside the
+suffix: <code>m4middle</code> at n = 6 and 8 (the factorable products before the quotient were factored as a source sub-chain into
+<code>2 * (x1 + x2)</code>, a sum factor that ends the suffix; the next call joins them by <code>AdditionOfEqualsElements</code>, mechanism B) and
+<code>m4dag</code> at n = 3 (<code>2 * ((x0 / q) + (x1 + x2))</code>, the order of a coefficient sum holding the shared quotient).</p>
+<p><strong>Reference campaign</strong> (<code>ExpressionSimplifierAudit reference</code>: every case of the convergence, termination, differential and
+effect corpora, simplified with the finishing off (H) and on; a changed result must be F and a fixed point):</p>
+<table>
+<thead>
+<tr>
+<th>Corpus</th>
+<th style="text-align: right;">Cases</th>
+<th style="text-align: right;">Changed</th>
+<th style="text-align: right;">Changed = F, fixed point</th>
+<th style="text-align: right;">Exceptions changed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>converge (with the M4 families)</td>
+<td style="text-align: right;">70,570</td>
+<td style="text-align: right;">15 (nested#1179, 14 family cases)</td>
+<td style="text-align: right;">15 = F; 14 fixed points, <code>m4dag</code> n = 3 needs one more call (F is not a fixed point on <code>master</code> either: <code>fixed@3</code> → <code>fixed@2</code>)</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr>
+<td>terminate</td>
+<td style="text-align: right;">66,270</td>
+<td style="text-align: right;">1 (nested#2101)</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr>
+<td>diff (7 types)</td>
+<td style="text-align: right;">4,000</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr>
+<td>effects</td>
+<td style="text-align: right;">4,000</td>
+<td style="text-align: right;">22</td>
+<td style="text-align: right;">22</td>
+<td style="text-align: right;">0</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Campaigns</strong> (base against branch): <code>converge</code> 1 first pass changed on the §21 corpus (15 with the M4 families); <code>terminate</code> 1 result changed, every other case has identical
+visits and rule applications; <code>diff</code> two <code>float</code> seeds move two samples each from <code>same</code> to <code>extreme</code> (<code>… + ((0f - (2f * x)) + (x * x))</code> gives <code>x * (-2f + x)</code>, the factoring the base's second call applied, the S3 latitude at <code>x = 3E+38</code>), no <code>VALUE</code>, no exception
+added or removed; <code>effects</code> 22 rewritten trees with identical values, exceptions and evaluation logs (a pinned call first, then
+<code>(0 - x) + (0 - x)</code> merged into <code>-2 * x</code>, two reads of a parameter); <code>canon</code> and <code>s3</code> identical; <code>comparer</code> 0 violation (330,096
+hash-consistent and 659,742 transitive checks instead of 330,078 and 659,688); <code>inventory</code> 76 rules, same order.</p>
+<p><strong>Reproducers</strong> (<code>ExpressionSimplifierRefusedSuffixFactoringTests</code>): nested#1179 and its reduced form, the historical scenarios
+(quotient before, after and in the middle, every association), several quotients, signed and opposite coefficients, no common
+factor, a fixed point, M1/M2/M3, observable calls under four policies, integral exactness and division by zero, <code>float</code> near
+<code>3E+38</code>, <code>NaN</code>, infinite and signed-zero coefficients, decimals, bound parameters, a derived simplifier, the comparer.</p>
+<h3 id="226-complexity">22.6 Complexity</h3>
+<p>Targeted families (<code>profile</code>, limits lifted, one process per point, n = 4 to 128; counters are exact, times indicative: the machine
+was not idle). Transformation visits / structural visits, base → branch, at n = 128 unless stated:</p>
+<table>
+<thead>
+<tr>
+<th>Family</th>
+<th>What it exercises</th>
+<th style="text-align: right;">Transformation visits</th>
+<th style="text-align: right;">Structural visits</th>
+<th style="text-align: right;">Allocated</th>
+<th>Fixed point in one call</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>m4suffix</code></td>
+<td>M4-1, suffix after a quotient</td>
+<td style="text-align: right;">33,406 → 33,538</td>
+<td style="text-align: right;">718,222 → 724,819</td>
+<td style="text-align: right;">44.3 → 44.6 MB</td>
+<td>no → <strong>yes</strong> (all sizes)</td>
+</tr>
+<tr>
+<td><code>m4middle</code></td>
+<td>M4-2, quotient in the middle</td>
+<td style="text-align: right;">185,961 → 185,961</td>
+<td style="text-align: right;">3,265,211 → 3,265,342</td>
+<td style="text-align: right;">identical</td>
+<td>no → no (sum factor, mechanism B), yes at n = 4</td>
+</tr>
+<tr>
+<td><code>m4segments</code></td>
+<td>M4-3, a quotient every second term</td>
+<td style="text-align: right;">545,094 → 557,635</td>
+<td style="text-align: right;">39.57 M → 40.97 M</td>
+<td style="text-align: right;">1.19 → 1.23 GB</td>
+<td>no → <strong>yes</strong></td>
+</tr>
+<tr>
+<td><code>m4none</code></td>
+<td>M4-4, no common factor</td>
+<td style="text-align: right;">identical</td>
+<td style="text-align: right;">2,154,015 → 2,202,778 (+2.3 %)</td>
+<td style="text-align: right;">68.4 → 74.8 MB</td>
+<td>yes → yes</td>
+</tr>
+<tr>
+<td><code>m4calls</code></td>
+<td>M4-5, observable calls (pinned last)</td>
+<td style="text-align: right;">identical</td>
+<td style="text-align: right;">33,173 → 33,426</td>
+<td style="text-align: right;">identical</td>
+<td>yes → yes</td>
+</tr>
+<tr>
+<td><code>m4dag</code></td>
+<td>M4-6, shared quotient</td>
+<td style="text-align: right;">122,173 → 122,682</td>
+<td style="text-align: right;">2.397 M → 2.403 M</td>
+<td style="text-align: right;">101.9 → 102.2 MB</td>
+<td>no → <strong>yes</strong> (n ≥ 4)</td>
+</tr>
+<tr>
+<td><code>refusedfac</code>, <code>refusednone</code>, <code>tailquot</code>, <code>dagfactor</code>, <code>mixsign</code> (§21.6)</td>
+<td>C3c families</td>
+<td style="text-align: right;">identical</td>
+<td style="text-align: right;">identical (<code>tailquot</code> +1)</td>
+<td style="text-align: right;">identical</td>
+<td>unchanged</td>
+</tr>
+</tbody>
+</table>
+<p>Against the cost of reaching the fixed point on the base (first call plus second call), the branch's single call needs fewer
+transformation visits on every family where it factors (<code>m4suffix</code> 128: 34,179 → 33,538; <code>m4dag</code> 128: 124,458 → 122,682). The
+search alone costs a linear number of visits (<code>SuffixFinishing_IsCounted_AndRefusedJustAboveEachLimit</code>: under 5× for 4× the
+terms); every comparer probe operation is a boundary of its own, which is why <code>m4none</code> pays its search once per probe. A first
+version without the candidate pre-test cost <code>m4none</code> +18 % structural visits; the pre-test removed most of it.</p>
+<p><strong>The historical points</strong> (<code>run-audit.ps1 -Campaigns complexity -Unlimited</code>, the 35 families of the script at n = 4 to 20, a family
+stopped after 10 s): 304 points on both sides, all with identical transformation visits, rule applications, comparer
+simplifications, user calls, re-entries and output sizes. None of those families holds a factorable suffix after an opaque term.</p>
+<h3 id="227-performance">22.7 Performance</h3>
+<p><code>tests/ExpressionTracingBench/run-campaign.ps1</code>, baseline <code>48ae9be3</code>, A/A copy of the base binaries, one process per scenario and
+variant, rotating order, machine idle; 4 rounds on 26 scenarios, then 7 rounds on the 10 scenarios outside the A/A band or
+targeted. New scenarios: <code>m4suffix16</code>, <code>m4none16</code>, <code>m4calls8</code>, <code>nested1179</code>; the <code>x2</code> variants run <code>Simplify(Simplify(source))</code>,
+the cost of reaching the base's fixed point.</p>
+<table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th style="text-align: right;">Base (one call)</th>
+<th style="text-align: right;">A/A</th>
+<th style="text-align: right;">Branch (7 rounds)</th>
+<th style="text-align: right;">Allocated base → branch</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ext-root</code>, <code>scalar</code>, <code>binary</code>, <code>lambda</code>, <code>leftsum20</code>, <code>dag10</code>, <code>calls8</code>, <code>callsum16</code>, <code>negsum16</code>, <code>subcall</code>, <code>prod2x</code>, <code>cmp-pos</code>, <code>hash</code>, <code>refused16</code>, <code>refusednone16</code>, <code>mixsign16</code>, <code>coef2</code> (4 rounds)</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">inside the A/A band</td>
+<td style="text-align: right;">identical (<code>calls8</code> alternates, §19.6)</td>
+</tr>
+<tr>
+<td><code>p9family16</code></td>
+<td style="text-align: right;">49,198 ns</td>
+<td style="text-align: right;">−2.0 %</td>
+<td style="text-align: right;">−4.1 %</td>
+<td style="text-align: right;">52,260 B</td>
+</tr>
+<tr>
+<td><code>negconst8</code></td>
+<td style="text-align: right;">190,022 ns</td>
+<td style="text-align: right;">+5.9 %</td>
+<td style="text-align: right;">−6.0 %</td>
+<td style="text-align: right;">163,829 B</td>
+</tr>
+<tr>
+<td><code>refusedcall</code></td>
+<td style="text-align: right;">93,380 ns</td>
+<td style="text-align: right;">−11.1 %</td>
+<td style="text-align: right;">−28.9 % (noisy)</td>
+<td style="text-align: right;">55,516 → 55,780 B</td>
+</tr>
+<tr>
+<td><code>m4calls8</code> (4 rounds)</td>
+<td style="text-align: right;">67,156 ns</td>
+<td style="text-align: right;">−2.7 %</td>
+<td style="text-align: right;">−2.9 %</td>
+<td style="text-align: right;">52,604 → 53,020 B</td>
+</tr>
+<tr>
+<td><code>m4none16</code></td>
+<td style="text-align: right;">1,433,700 ns</td>
+<td style="text-align: right;">−0.4 %</td>
+<td style="text-align: right;"><strong>+4.9 %</strong></td>
+<td style="text-align: right;">1,195,681 → 1,312,114 B</td>
+</tr>
+<tr>
+<td><code>m4suffix16</code></td>
+<td style="text-align: right;">1,084,606 ns</td>
+<td style="text-align: right;">−8.6 %</td>
+<td style="text-align: right;">−11.9 %</td>
+<td style="text-align: right;">922,938 → 976,636 B</td>
+</tr>
+<tr>
+<td><code>nested1179</code></td>
+<td style="text-align: right;">65,524 ns</td>
+<td style="text-align: right;">+5.2 %</td>
+<td style="text-align: right;"><strong>+72.1 %</strong></td>
+<td style="text-align: right;">38,064 → 66,479 B</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Cost of the fixed point</strong> (base: two calls, <code>x2</code>; branch: one call):</p>
+<table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th style="text-align: right;">Base, two calls</th>
+<th style="text-align: right;">Branch, one call</th>
+<th style="text-align: right;">Allocated</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>m4suffix16</code></td>
+<td style="text-align: right;">1,243,814 ns</td>
+<td style="text-align: right;">955,500 ns (−23 %)</td>
+<td style="text-align: right;">1,013,760 → 976,636 B</td>
+</tr>
+<tr>
+<td><code>nested1179</code></td>
+<td style="text-align: right;">125,417 ns</td>
+<td style="text-align: right;">112,800 ns (−10 %)</td>
+<td style="text-align: right;">73,512 → 66,479 B</td>
+</tr>
+</tbody>
+</table>
+<p>Reading: the scenarios the change does not target stay inside the A/A band with identical allocations. A refused chain whose
+suffix is factored pays, in its one call, the factoring and the prefix levels the next call paid (<code>nested1179</code> +72 % for one call),
+and reaches the fixed point 10 to 23 % faster than the two calls of the base, with fewer allocations. A refused chain with a
+factorable suffix but no common factor pays the search without any change: <code>m4none16</code> +4.9 % and +9.7 % allocations, one search
+per boundary, the comparer probes included (22.6).</p>
+<h3 id="228-suites">22.8 Suites</h3>
+<p>Unit 15,161 passed (1 skipped), Security 473 (3 skipped), Functional 383 in Release; Unit, Security and Functional in Debug (the
+one Debug failure, <code>ExpressionSimplifierGlobalFactoringTests.DeepRefusal_IsWalkedOnce_AndTheSubChainIsAdmitted</code>, asserted the
+historical M4 residue <code>(2 * p0)</code> … <code>(2 * p3)</code>; it now asserts the factored suffix, the base's second call and a fixed point);
+Debug expression coverage 390 (1 skipped) and <code>R4Security</code> with the new Security tests 12, all on Windows. CI runs Windows and
+Ubuntu.</p>
+<h3 id="229-sign-normalizations-replayed-on-this-base">22.9 Sign normalizations replayed on this base</h3>
+<p>The variants of §20.3 were implemented again in a separate worktree, behind environment switches that never reached the branch
+(the normalization placed before the negated-sum test and the sort, as in §20.3), and each was run with the suffix finishing off
+(the <code>master</code> base) and on, against the same corpus (70,570 cases). The replay reproduces §21.9 exactly (V1b 92 and V1b + C1 211
+first passes changed).</p>
+<table>
+<thead>
+<tr>
+<th>Variant</th>
+<th style="text-align: right;">New multi-pass cases, finishing off (free / bound)</th>
+<th style="text-align: right;">Finishing on (free / bound)</th>
+<th>Which</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>V1b</td>
+<td style="text-align: right;">1 / 1</td>
+<td style="text-align: right;">1 / 1</td>
+<td>nested#3674</td>
+</tr>
+<tr>
+<td>V1b + C1</td>
+<td style="text-align: right;">2 / 2</td>
+<td style="text-align: right;">2 / 2</td>
+<td>nested#3674, nested#3002</td>
+</tr>
+<tr>
+<td>V1</td>
+<td style="text-align: right;">3 / 3 (one cycle)</td>
+<td style="text-align: right;">3 / 3 (one cycle)</td>
+<td>nested#2979, nested#3674, gen#2611 (cycle) / gen#699</td>
+</tr>
+<tr>
+<td>C2</td>
+<td style="text-align: right;">7 / 6 (two cycles)</td>
+<td style="text-align: right;">7 / 6 (two cycles)</td>
+<td>gen#3391, gen#3681, gen#3759 and gen#2611 (cycles), nested#1860, nested#3002, nested#3674</td>
+</tr>
+</tbody>
+</table>
+<p>The suffix finishing changes none of these residues: they are the binary-rule mechanism B of 22.1 (a quotient or sum factor
+that the factorable family refuses by design), not structural suffixes. <strong>V1b + C1 is still not stable</strong> (two new multi-pass
+first results), so no sign normalization pull request is proposed; it needs quotient factors (family E) or sum factors in the
+global factoring first.</p>
+<h3 id="2210-residual-limits">22.10 Residual limits</h3>
+<ul>
+<li><strong>Binary factorings with a quotient or a sum factor</strong> (mechanism B): nested#3633, nested#3674, nested#3002, gen#947, gen#1727
+still take two calls; treating them means admitting quotient atoms or sum factors to C3c.</li>
+<li><strong>Suffixes only.</strong> A factorable segment that the sort places before an opaque term is not a suffix, and no call factors it.</li>
+<li><strong>Pinned terms</strong> end the spine: inert products followed by a pinned term are never a suffix (as on the next call).</li>
+<li><strong>The prefix is prepared twice</strong> when a suffix is factored (the work of the next call, done once); the cost is the size of the
+prefix terms (22.6).</li>
 <li>Free-parameter ties of the canonical order (L-3) are unchanged.</li>
 </ul>
 
