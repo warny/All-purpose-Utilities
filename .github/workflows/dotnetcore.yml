@@ -59,6 +59,12 @@ jobs:
                   cache-dependency-path: ${{ env.DOTNET_CACHE_PATHS }}
             - run: dotnet restore Utils.sln
             - run: dotnet build Utils.sln --configuration GitHub --no-restore
+            # The S5 audit and benchmark harnesses are outside Utils.sln and never run in CI (long campaigns, machine-dependent
+            # timings): only their compilation is checked, so that an internal API change cannot silently break them.
+            - name: Compile the expression audit and benchmark harnesses (not run)
+              run: |
+                  dotnet build tests/ExpressionSimplifierAudit/ExpressionSimplifierAudit.csproj --configuration Release
+                  dotnet build tests/ExpressionTracingBench/ExpressionTracingBench.csproj --configuration Release
             - name: Blocking product-graph vulnerability scan
               shell: pwsh
               run: ./eng/audit-dependencies.ps1 -ArtifactsPath artifacts -SkipDeprecated -SkipOutdated
