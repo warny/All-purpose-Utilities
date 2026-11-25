@@ -1165,7 +1165,12 @@ public partial class ExpressionSimplifier
 
             // Mission M4: the chain stays refused; the next call would still factor a factorable suffix of it.
             if (t_refusedSuffixFinishingDisabled || round == MaximumSuffixRounds) return result;
-            if (FinishRefusedSuffix(chain, statistics) is not Expression finished) return result;
+            Expression? finished = FinishRefusedSuffix(chain, statistics);
+
+            // Mission B: no factoring of the whole chain or of a suffix; a binary rule of the next call may still factor a pair the
+            // last canonicalization built.
+            if (finished is null && !t_refusedBinaryFinishingDisabled) finished = FinishRefusedBinaryPair(chain, statistics);
+            if (finished is null) return result;
             result = negated ? BuildNegation(finished) : finished;
         }
     }
@@ -1277,22 +1282,38 @@ public partial class ExpressionSimplifier
         WithinRefusedChain = true;
         try
         {
-            // The left operands of the prefix, prepared in source order as the next call prepares them, then its levels, bottom-up.
-            var prepared = new Expression[start];
-            for (int index = 0; index < start; index++) prepared[index] = PrepareExpression(spine[index].Left);
-
-            Expression result = factored;
-            for (int index = start - 1; index >= 0; index--)
-            {
-                result = TransformLevel(dispatcher, spine[index], prepared[index], FoldNaNOperand(result));
-            }
-
-            return result;
+            return RunPrefixLevels(spine, start, factored, dispatcher);
         }
         finally
         {
             WithinRefusedChain = callerWithinRefusedChain;
         }
+    }
+
+    /// <summary>
+    /// Runs the spine nodes above <paramref name="start"/> of a refused boundary result as the next call runs them, on top of the
+    /// new result of the node <paramref name="start"/> (missions M4 and B): the left operand of each prefix node prepared again, in
+    /// source order, then, bottom-up, the additive signature rules of its level and its finalization (<see cref="TransformLevel"/>)
+    /// on that operand and the <c>NaN</c>-folded result below.
+    /// </summary>
+    /// <param name="spine">The right spine of the result, root first.</param>
+    /// <param name="start">The index of the node whose new result is <paramref name="below"/>; the nodes before it are the prefix.</param>
+    /// <param name="below">The new result of <c>spine[start]</c>.</param>
+    /// <param name="dispatcher">The dispatcher of the chain's group.</param>
+    /// <returns>The new result of the root.</returns>
+    /// <remarks>The caller sets the refused-chain marker, so that no node prepared here is the boundary of a chain.</remarks>
+    private Expression RunPrefixLevels(List<BinaryExpression> spine, int start, Expression below, FlattenRuleDispatcher dispatcher)
+    {
+        var prepared = new Expression[start];
+        for (int index = 0; index < start; index++) prepared[index] = PrepareExpression(spine[index].Left);
+
+        Expression result = below;
+        for (int index = start - 1; index >= 0; index--)
+        {
+            result = TransformLevel(dispatcher, spine[index], prepared[index], FoldNaNOperand(result));
+        }
+
+        return result;
     }
 
     /// <summary>

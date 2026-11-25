@@ -11,10 +11,13 @@ namespace ExpressionSimplifierAudit;
 internal static partial class Campaigns
 {
     /// <summary>
-    /// The internal switch of the suffix finishing of refused chains (mission M4), read by reflection: <see langword="null"/> on a
-    /// checkout that does not have it.
+    /// The internal switch of the latest boundary finishing of refused chains, read by reflection: the binary pair finishing
+    /// (mission B, <c>RefusedBinaryFinishingDisabled</c>) when the checkout has it, otherwise the suffix finishing (mission M4,
+    /// <c>RefusedSuffixFinishingDisabled</c>); <see langword="null"/> on a checkout that has neither.
     /// </summary>
-    private static readonly PropertyInfo? SuffixFinishingSwitch = typeof(ExpressionSimplifier).GetProperty("RefusedSuffixFinishingDisabled", BindingFlags.NonPublic | BindingFlags.Static);
+    private static readonly PropertyInfo? SuffixFinishingSwitch =
+        typeof(ExpressionSimplifier).GetProperty("RefusedBinaryFinishingDisabled", BindingFlags.NonPublic | BindingFlags.Static)
+        ?? typeof(ExpressionSimplifier).GetProperty("RefusedSuffixFinishingDisabled", BindingFlags.NonPublic | BindingFlags.Static);
 
     /// <summary>
     /// Reference campaign of mission M4 (<c>docs/expressions/SimplifierFlatten.md</c> §22): every case of the convergence,
@@ -65,16 +68,21 @@ internal static partial class Campaigns
             (Expression? b2, _) = RunSuffix(b1!, disabled: false);
             bool isF = h2 is not null && form.Of(h2) == b;
             bool fixedPoint = b2 is not null && form.Of(b2) == b;
-            string kind = (isF ? "F" : "not-F") + (fixedPoint ? "|fixed" : "|NOT-FIXED");
+
+            // A changed result that is F but not a fixed point is classified by the reference's own third call: when F is not a
+            // fixed point of the reference either, the residue is the reference's, one call earlier.
+            bool referenceFixed = !isF || fixedPoint || (RunSuffix(h2!, disabled: true) is ({ } h3, null) && form.Of(h3) == form.Of(h2));
+            string kind = (isF ? "F" : "not-F") + (fixedPoint ? "|fixed" : referenceFixed ? "|NOT-FIXED" : "|not-fixed-as-F-on-reference");
             Count(counts, key + "|" + kind);
             var record = new { corpus, label, kind, h = AuditText.Format(h1!), f = h2 is null ? null : AuditText.Format(h2), branch = AuditText.Format(b1!), branch2 = b2 is null ? null : AuditText.Format(b2) };
             writer.Record(record);
-            if (!isF || !fixedPoint) writer.Anomaly(record);
+            if (!isF || !fixedPoint && referenceFixed) writer.Anomaly(record);
             Worker.EndCase();
         }
 
-        var summary = new StringBuilder("# Reference campaign (mission M4)\n\n")
-            .Append("H: suffix finishing switched off (master 48ae9be3); F: H simplified again with it switched off; branch: switched on.\n\n")
+        var summary = new StringBuilder("# Reference campaign\n\n")
+            .Append("Switch: ").Append(SuffixFinishingSwitch.Name)
+            .Append(". H: the finishing switched off; F: H simplified again with it switched off; branch: switched on.\n\n")
             .Append("| Corpus and class | Cases |\n|---|---:|\n");
         foreach (KeyValuePair<string, int> pair in counts) summary.Append("| ").Append(pair.Key.Replace("|", " · ")).Append(" | ").Append(pair.Value).Append(" |\n");
         writer.Summary(summary.ToString());
