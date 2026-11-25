@@ -1133,26 +1133,229 @@ public partial class ExpressionSimplifier
     /// term, which rewrites no factorable term the levels finished; §21.4). Both walks consume the
     /// structural budget and stop at the first refusal; the factoring is the one of <see cref="FlattenFactorableChain"/>.
     /// </para>
+    /// <para>
+    /// <b>Suffixes (mission M4).</b> A result that stays refused as a whole (a quotient, a call that is not inert) is searched
+    /// for the factorable suffix the next call admits on its own (<see cref="FinishRefusedSuffix"/>); when its factoring changes
+    /// it, the levels of the prefix are run again on top of it, and the new result is finished in turn, as the next call
+    /// finishes it, for at most <see cref="MaximumSuffixRounds"/> rounds.
+    /// </para>
     /// </remarks>
     internal override Expression FinishRefusedChain(Expression root, Expression result)
     {
         if (GetType() != typeof(ExpressionSimplifier) || t_factorableChainsDisabled || t_refusedChainFinishingDisabled || ExpressionResourceBudget.ActiveSession is null) return result;
 
-        // The negation of a sum (all its terms subtracted, C3d): the next call's chain is its operand.
-        bool negated = result is UnaryExpression negation && IsOrdinaryUnaryNegate(negation);
-        Expression candidate = negated ? ((UnaryExpression)result).Operand : result;
-        if (AsCrossedAdditiveNode(candidate) is not BinaryExpression chain) return result;
-
         FlattenAdmissionStatistics? statistics = t_admissionStatistics;
-        if (statistics is not null) statistics.BoundaryTests++;
-        if (IsLinearChain(chain, null, out _, out _) || !IsFactorableChain(chain, null, out _)) return result;
+        for (int round = 0; ; round++)
+        {
+            // The negation of a sum (all its terms subtracted, C3d): the next call's chain is its operand.
+            bool negated = result is UnaryExpression negation && IsOrdinaryUnaryNegate(negation);
+            Expression candidate = negated ? ((UnaryExpression)result).Operand : result;
+            if (AsCrossedAdditiveNode(candidate) is not BinaryExpression chain) return result;
 
-        if (statistics is not null) statistics.BoundaryFactorings++;
-        var terms = new List<(Expression Term, bool IsNegative)>();
-        CollectAdditiveTermsIteratively(terms, chain, new Stack<(Expression Node, bool IsNegative)>());
-        Expression factored = NegateSubtractedSum(CanonicalizeAdditiveTerms(terms, chain.Type, recordMetadata: false, AdditiveFactoring.CommonFactors), chain.Type);
-        return negated ? BuildNegation(factored) : factored;
+            if (statistics is not null) statistics.BoundaryTests++;
+            if (IsLinearChain(chain, null, out _, out _)) return result;
+            if (IsFactorableChain(chain, null, out _))
+            {
+                if (statistics is not null) statistics.BoundaryFactorings++;
+                var terms = new List<(Expression Term, bool IsNegative)>();
+                CollectAdditiveTermsIteratively(terms, chain, new Stack<(Expression Node, bool IsNegative)>());
+                Expression factored = NegateSubtractedSum(CanonicalizeAdditiveTerms(terms, chain.Type, recordMetadata: false, AdditiveFactoring.CommonFactors), chain.Type);
+                return negated ? BuildNegation(factored) : factored;
+            }
+
+            // Mission M4: the chain stays refused; the next call would still factor a factorable suffix of it.
+            if (t_refusedSuffixFinishingDisabled || round == MaximumSuffixRounds) return result;
+            if (FinishRefusedSuffix(chain, statistics) is not Expression finished) return result;
+            result = negated ? BuildNegation(finished) : finished;
+        }
     }
+
+    /// <summary>
+    /// The number of suffix rounds (<see cref="FinishRefusedSuffix"/>) the boundary finishing of one refused chain may run: each
+    /// round removes at least one term of the chain, and the stability campaign never needs a second one (see
+    /// <c>docs/expressions/SimplifierFlatten.md</c> §22); the bound keeps the work of a boundary linear in its result whatever
+    /// the prefix levels rebuild.
+    /// </summary>
+    private const int MaximumSuffixRounds = 2;
+
+    /// <summary>
+    /// Factors the factorable suffix of a refused boundary result, as the next call factors it (mission M4,
+    /// <c>docs/expressions/SimplifierFlatten.md</c> §22): the longest suffix of its right spine whose terms are all factorable,
+    /// when the global factoring changes it, then the levels of the prefix on top of the factored suffix.
+    /// </summary>
+    /// <param name="chain">The result of the levels of a refused chain, neither linear nor factorable as a whole.</param>
+    /// <param name="statistics">The opt-in counters of the thread, or <see langword="null"/>.</param>
+    /// <returns>The new result of the chain, or <see langword="null"/> when there is no such suffix or its factoring changes nothing.</returns>
+    /// <remarks>
+    /// <para>
+    /// <b>What the next call does.</b> The canonical reconstruction of a refused chain is a right-associated sum
+    /// <c>g0 + (g1 + (… + gn))</c>; nothing offers its suffixes to the admission during the call that builds them. The next call
+    /// offers the root (refused again), then, top-down, each crossed right operand as a chain of its own: the first one the
+    /// admission accepts is treated by its family, every one above it is refused and simplified level by level on top of that
+    /// result. A suffix is refused as long as it holds a term that is not factorable, so the first factorable suffix the next
+    /// call meets is the longest suffix of factorable terms; any suffix admitted above it by another family is a linear or an
+    /// anchored chain, whose sub-chains are linear chains too, and a subtracted crossed operand (the only start of a grouped
+    /// quotient chain) stops the search. When that suffix is a linear chain, the next call's linear canonicalization changes
+    /// nothing; otherwise its factorable rule gives the global factoring of its terms, computed here exactly as that rule and
+    /// <see cref="FinishRefusedChain"/> compute it.
+    /// </para>
+    /// <para>
+    /// <b>The prefix.</b> Each prefix node is then run as the next call runs it: its left operand prepared again, in source
+    /// order, while the chain is marked as refused (so that no node below is a boundary, as during the levels), then the
+    /// additive signature rules of the level and its finalization (<see cref="TransformLevel"/>) on the prepared operand and
+    /// the result below, after the <c>NaN</c> fold of the parent's preparation. A binary rule that factors a prefix term with
+    /// the factored suffix is therefore applied exactly as on the next call; nothing is factored that the next call does not
+    /// factor.
+    /// </para>
+    /// <para>
+    /// <b>Safety.</b> Only the suffix is given to the global factoring, and it is admitted by <see cref="IsFactorableChain"/>
+    /// itself, so every proof of that family holds on it (§13.5): its terms are inert, so no evaluation moves, and no quotient,
+    /// pinned term or call that is not inert enters the factoring; the terms of the prefix are only seen by the rules and the
+    /// canonicalization of the levels, under the effect gate, as on every level. The search is one bottom-up pass over the
+    /// spine (one structural visit per spine node, each term or group tested once), then one linear and one factorable walk of
+    /// the candidate, so a long refused result costs a linear number of visits, never one walk per suffix.
+    /// </para>
+    /// </remarks>
+    private Expression? FinishRefusedSuffix(BinaryExpression chain, FlattenAdmissionStatistics? statistics)
+    {
+        if (statistics is not null) statistics.SuffixSearches++;
+        Type type = chain.Type;
+        if (!IsFlattenedChainType(type)) return null;
+
+        // The right spine. A subtraction of a crossed operand may start a grouped quotient chain the next call admits above the
+        // suffix: no suffix is searched below it.
+        var spine = new List<BinaryExpression>();
+        for (BinaryExpression? node = chain; node is not null; node = AsCrossedAdditiveNode(node.Right))
+        {
+            ExpressionResourceBudget.ConsumeStructuralVisit();
+            if (node.NodeType == ExpressionType.Subtract && AsCrossedAdditiveNode(node.Right) is not null) return null;
+            spine.Add(node);
+        }
+
+        // Bottom-up: the first node of the longest suffix whose own operands are all factorable (a proper suffix only).
+        int start = -1;
+        for (int index = spine.Count - 1; index >= 1; index--)
+        {
+            if (!IsFactorableSuffixNode(spine[index], index == spine.Count - 1, type)) break;
+            start = index;
+        }
+
+        if (start < 1) return null;
+        BinaryExpression suffix = spine[start];
+        if (statistics is not null) statistics.SuffixTests++;
+        if (IsLinearChain(suffix, null, out _, out _) || !IsFactorableChain(suffix, null, out _)) return null;
+
+        var terms = new List<(Expression Term, bool IsNegative)>();
+        var pending = new Stack<(Expression Node, bool IsNegative)>();
+        CollectAdditiveTermsIteratively(terms, suffix, pending);
+        int termCount = CountNonZeroTerms(terms);
+        if (termCount < 2) return null;
+
+        // The suffix comes out of a canonicalization of the levels, which merged its identical monomials and aggregated its
+        // constants: only a common factor can still remove a term. Its candidates are indexed once (no key, no sort) before the
+        // whole canonicalization runs, so a suffix without any common factor costs one indexing pass.
+        if (!HasFactoringCandidate(terms, type, statistics)) return null;
+        Expression factored =NegateSubtractedSum(CanonicalizeAdditiveTerms(terms, type, recordMetadata: false, AdditiveFactoring.CommonFactors), type);
+
+        // Only a factoring or a merge removes terms. A suffix that keeps all its terms (no common factor, or only a new sign
+        // representation such as 0 - a + (0 - b) as -(a + b)) is rebuilt by the levels of the prefix into the historical result:
+        // the prefix is not run again.
+        Expression factoredSum = factored is UnaryExpression negation && IsOrdinaryUnaryNegate(negation) ? negation.Operand : factored;
+        terms.Clear();
+        if (AsCrossedAdditiveNode(factoredSum) is BinaryExpression rebuilt) CollectAdditiveTermsIteratively(terms, rebuilt, pending);
+        else terms.Add((factoredSum, false));
+        if (CountNonZeroTerms(terms) >= termCount) return null;
+
+        if (FlattenRuleDispatcherOf(chain) is not FlattenRuleDispatcher dispatcher) return null;
+        if (statistics is not null)
+        {
+            statistics.SuffixFactorings++;
+            statistics.SuffixPrefixLevels += start;
+        }
+
+        bool callerWithinRefusedChain = WithinRefusedChain;
+        WithinRefusedChain = true;
+        try
+        {
+            // The left operands of the prefix, prepared in source order as the next call prepares them, then its levels, bottom-up.
+            var prepared = new Expression[start];
+            for (int index = 0; index < start; index++) prepared[index] = PrepareExpression(spine[index].Left);
+
+            Expression result = factored;
+            for (int index = start - 1; index >= 0; index--)
+            {
+                result = TransformLevel(dispatcher, spine[index], prepared[index], FoldNaNOperand(result));
+            }
+
+            return result;
+        }
+        finally
+        {
+            WithinRefusedChain = callerWithinRefusedChain;
+        }
+    }
+
+    /// <summary>
+    /// Whether the own operands of a spine node of a refused result are those of a factorable chain (see
+    /// <see cref="FinishRefusedSuffix"/>, <see cref="IsFactorableChain"/>): its left operand, and for the last node its right
+    /// operand too, a factorable term or a factorable crossed group; an ordinary operator; not two constant operands.
+    /// </summary>
+    /// <param name="node">A spine node.</param>
+    /// <param name="last">Whether it is the last node of the spine (its right operand is not crossed).</param>
+    /// <param name="type">The type of the chain.</param>
+    /// <returns><see langword="true"/> when nothing in the node refuses a factorable suffix that contains it.</returns>
+    /// <remarks>Type tests first, then the operator, as in <see cref="IsFactorableChain"/> (ETC R4).</remarks>
+    private bool IsFactorableSuffixNode(BinaryExpression node, bool last, Type type)
+    {
+        if (node.Left is ConstantExpression && node.Right is ConstantExpression) return false;
+        if (!IsFactorableSuffixOperand(node.Left, type)) return false;
+        if (last && !IsFactorableSuffixOperand(node.Right, type)) return false;
+        return IsOrdinaryBinaryArithmetic(node);
+    }
+
+    /// <summary>
+    /// Whether two of <paramref name="terms"/> share a candidate of the common factoring (<see cref="FindBestCandidate"/>): a
+    /// necessary condition for <see cref="FactorCommonFactors"/> to remove a term. A candidate whose factoring is later abandoned
+    /// only costs the canonicalization that finds out.
+    /// </summary>
+    /// <param name="terms">The collected signed terms of a factorable suffix; not modified.</param>
+    /// <param name="type">The type of the chain.</param>
+    /// <param name="statistics">The opt-in counters of the thread, or <see langword="null"/>.</param>
+    /// <returns><see langword="true"/> when a candidate is held by two terms.</returns>
+    private bool HasFactoringCandidate(List<(Expression Term, bool IsNegative)> terms, Type type, FlattenAdmissionStatistics? statistics)
+    {
+        if (!Types.Number.Contains(type)) return false;
+        var monomials = new List<FactoringMonomial>(terms.Count);
+        foreach ((Expression term, bool isNegative) in terms)
+        {
+            if (!IsOrdinaryZeroConstant(term)) monomials.Add(FactoringMonomial.Create(this, term, isNegative, type));
+        }
+
+        return monomials.Count >= 2 && FindBestCandidate(monomials, CaptureLexicalScopeSnapshot(), [], statistics) is not null;
+    }
+
+    /// <summary>Counts the collected terms that are not ordinary zero constants (<see cref="IsOrdinaryZeroConstant"/>).</summary>
+    /// <param name="terms">The collected signed terms.</param>
+    /// <returns>The number of terms a canonicalization keeps before merging.</returns>
+    private static int CountNonZeroTerms(List<(Expression Term, bool IsNegative)> terms)
+    {
+        int count = 0;
+        foreach ((Expression term, _) in terms)
+        {
+            if (!IsOrdinaryZeroConstant(term)) count++;
+        }
+
+        return count;
+    }
+
+    /// <summary>Whether an operand of a spine node is a factorable term or a crossed group that is a factorable chain.</summary>
+    /// <param name="operand">The operand.</param>
+    /// <param name="type">The type of the chain.</param>
+    /// <returns><see langword="true"/> for a factorable operand.</returns>
+    private bool IsFactorableSuffixOperand(Expression operand, Type type)
+        => AsCrossedAdditiveNode(operand) is BinaryExpression group
+            ? IsFactorableChain(group, null, out _)
+            : IsFactorableTerm(operand, type);
 
     /// <summary>
     /// Whether the inert terms of a canonicalization are all subtracted, in a type with an ordinary negation (mission C3d):

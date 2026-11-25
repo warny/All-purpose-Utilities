@@ -1158,6 +1158,15 @@ public abstract partial class ExpressionTransformer
     }
 
     /// <summary>
+    /// Gets the dispatcher bound to this instance of the flatten group whose chains <paramref name="node"/> roots (see
+    /// <see cref="FlattenRuleDispatcher"/>), or <see langword="null"/> when the node belongs to no group of the plan.
+    /// </summary>
+    /// <param name="node">A node of this transformer's plan, typically the root of a refused chain.</param>
+    /// <returns>The dispatcher, or <see langword="null"/>.</returns>
+    internal FlattenRuleDispatcher? FlattenRuleDispatcherOf(Expression node)
+        => FlattenGroupOf(node, out _) is FlattenGroup group ? GetFlattenRuleDispatcher(group) : null;
+
+    /// <summary>
     /// Creates the dispatcher of <paramref name="group"/> bound to this instance. A method of its own: the closure over
     /// <paramref name="group"/> is allocated at the entry of the method that declares the captured parameter, so the cached
     /// path of <see cref="GetFlattenRuleDispatcher"/> allocates nothing.

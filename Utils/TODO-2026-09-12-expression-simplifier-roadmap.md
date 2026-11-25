@@ -5396,6 +5396,16 @@ canonical. fixed@2 213 → 189, no new cycle, identical complexity counters. Nex
 this base (`SimplifierFlatten.md` §21.9), then the suffixes of refused canonical sums (M4) if a non-historical treatment of the
 refused families is accepted. Record: `docs/expressions/SimplifierFlatten.md` §21.
 
+### M4 — suffixes of refused canonical sums (2026-11-24)
+
+Branch `fix/expression-c3c-refused-chain-suffixes`, base `48ae9be3`. Done without changing the historical forms of the refused
+families (strategy D' stays rejected): at the boundary only, the longest factorable suffix of the canonical result of a refused
+chain is factored by the C3c global factoring when that removes terms, and the prefix levels are run again on top of it, exactly
+as the next call ran them. Every changed result of four corpora is the second call of `master` and a fixed point; no new
+multi-pass case or cycle. The sign normalizations replayed on this base keep their residues (V1b + C1: nested#3674 and
+nested#3002, binary factorings with a quotient factor), so no sign PR. Next: quotient atoms or sum factors in the factorable
+family, then V1b + C1 again. Record: `docs/expressions/SimplifierFlatten.md` §22.
+
 ## Execution-optimizer stages
 
 These remain separate from the simplifier stages above.

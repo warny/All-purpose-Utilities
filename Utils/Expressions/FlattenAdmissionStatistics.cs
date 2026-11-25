@@ -115,6 +115,21 @@ internal sealed class FlattenAdmissionStatistics
     /// <summary>The number of those results that were factorable chains, canonicalized by the global factoring.</summary>
     public long BoundaryFactorings;
 
+    /// <summary>
+    /// The number of refused boundary results whose right spine was searched for a factorable suffix (mission M4,
+    /// <c>ExpressionSimplifier.FinishRefusedSuffix</c>): one per result that is neither linear nor factorable as a whole.
+    /// </summary>
+    public long SuffixSearches;
+
+    /// <summary>The number of candidate suffixes tested as linear, then factorable, chains (at most one per search and round).</summary>
+    public long SuffixTests;
+
+    /// <summary>The number of factorable suffixes whose global factoring changed their terms, and whose prefix levels were run again.</summary>
+    public long SuffixFactorings;
+
+    /// <summary>The number of spine nodes of a prefix run again on top of a factored suffix.</summary>
+    public long SuffixPrefixLevels;
+
     /// <summary>The number of grouped quotient chain roots admitted (docs/expressions/SimplifierFlatten.md §16).</summary>
     public long GroupedQuotient;
 

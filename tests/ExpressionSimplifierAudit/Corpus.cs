@@ -422,6 +422,12 @@ internal static class Families
         ("tailquot", "x0*x1 + x0*x2 + ... + x1/x0 (refused by its last quotient; its factorable sub-chain is factored on its own)"),
         ("dagfactor", "s*x1 + s*x2 + ... with s = (u + v) shared (a sum factor: binary factorings level by level, C3d dag)"),
         ("mixsign", "2*x1 - 2*x2 + (-2)*x3 - (-2)*x4 + ... (one coefficient magnitude with both signs)"),
+        ("m4suffix", "((2*x1 + x0/q) + 2*x2) + 2*x3 + ... (M4-1: refused by the quotient at every level, the products form the canonical suffix)"),
+        ("m4middle", "2*x1 + ... + 2*xk + x0/q + 2*x(k+1) + ... (M4-2: factorable terms before and after the quotient)"),
+        ("m4segments", "2*x1 + x0/q1 + 2*x2 + x0/q2 + ... (M4-3: one quotient every second term)"),
+        ("m4none", "((Sin(x1)*y1 + x0/q) + Sin(x2)*y2) + ... (M4-4: a factorable suffix without any common factor)"),
+        ("m4calls", "((2*x1 + x0/q) + Next()) + 2*x2 + Next() + ... (M4-5: observable calls, pinned last)"),
+        ("m4dag", "((2*x1 + s) + 2*x2) + s + ... with s = x0/q shared (M4-6: a shared quotient)"),
     ];
 
     /// <summary>Builds family <paramref name="name"/> at size <paramref name="n"/>.</summary>
@@ -468,6 +474,13 @@ internal static class Families
                 ? LeftChain(xs.Select(v => (Expression)Expression.Multiply(sum, v)), Expression.Add) : x,
             "mixsign" => xs.Select((v, i) => (Expression)Expression.Multiply(Expression.Constant(i % 4 < 2 ? 2.0 : -2.0), v)).Select((term, i) => (term, i))
                 .Aggregate((Expression?)null, (acc, p) => acc is null ? p.term : p.i % 2 == 1 ? Expression.Subtract(acc, p.term) : Expression.Add(acc, p.term))!,
+            "m4suffix" => LeftChain(Products(xs, 2.0).Take(1).Append(Quotient(x, "q")).Concat(Products(xs, 2.0).Skip(1)), Expression.Add),
+            "m4middle" => LeftChain(Products(xs, 2.0).Take(Math.Max(1, (n - 1) / 2)).Append(Quotient(x, "q")).Concat(Products(xs, 2.0).Skip(Math.Max(1, (n - 1) / 2))), Expression.Add),
+            "m4segments" => LeftChain(Products(xs, 2.0).SelectMany((p, i) => new[] { p, Quotient(x, "q" + i) }).Take(Math.Max(2, n)), Expression.Add),
+            "m4none" => LeftChain(xs.Skip(1).Select((v, i) => (Expression)Expression.Multiply(Expression.Call(Sin, v), Expression.Parameter(typeof(double), "y" + (i + 1))))
+                .Take(1).Append(Quotient(x, "q")).Concat(xs.Skip(2).Select((v, i) => (Expression)Expression.Multiply(Expression.Call(Sin, v), Expression.Parameter(typeof(double), "y" + (i + 2))))), Expression.Add),
+            "m4calls" => LeftChain(Products(xs, 2.0).Take(1).Append(Quotient(x, "q")).Concat(Products(xs, 2.0).Skip(1).SelectMany(p => new[] { Expression.Call(typeof(EffectLeaves).GetMethod(nameof(EffectLeaves.Next))!), p })), Expression.Add),
+            "m4dag" => Quotient(x, "q") is var s ? LeftChain(Products(xs, 2.0).Take(1).Append(s).Concat(Products(xs, 2.0).Skip(1).SelectMany(p => new[] { p, s })), Expression.Add) : x,
             "zerominus" => Nest(xs, (acc, v) => Expression.Subtract(Expression.Constant(0.0), Expression.Multiply(acc, v))),
             "plus0" => Nest(xs, (acc, v) => Expression.Add(Expression.Multiply(acc, v), Expression.Constant(0.0))),
             "zeroplus" => Nest(xs, (acc, v) => Expression.Add(Expression.Constant(0.0), Expression.Multiply(acc, v))),
@@ -492,6 +505,19 @@ internal static class Families
             _ => throw new ArgumentException("Unknown family " + name),
         };
     }
+
+    /// <summary>The products <c>c*x1, c*x2, ...</c> of the parameters but the first (the M4 families).</summary>
+    /// <param name="xs">The parameters.</param>
+    /// <param name="coefficient">The common coefficient.</param>
+    /// <returns>The products.</returns>
+    private static IEnumerable<Expression> Products(ParameterExpression[] xs, double coefficient)
+        => xs.Skip(1).DefaultIfEmpty(xs[0]).Select(v => (Expression)Expression.Multiply(Expression.Constant(coefficient), v));
+
+    /// <summary>The quotient <c>x / name</c>, by a parameter of its own (the M4 families).</summary>
+    /// <param name="x">The numerator.</param>
+    /// <param name="name">The name of the denominator.</param>
+    /// <returns>The quotient.</returns>
+    private static Expression Quotient(ParameterExpression x, string name) => Expression.Divide(x, Expression.Parameter(typeof(double), name));
 
     /// <summary>The inert carrier of an opaque value.</summary>
     /// <param name="value">The value.</param>

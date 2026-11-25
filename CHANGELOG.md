@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed — `omy.Utils` (`ExpressionSimplifier` factorable suffixes of refused chains, M4)
+- A sum the factorable admission refuses for a quotient (or another term outside the family) whose canonical result ends with
+  factorable terms now has that suffix factored in the same call, as the next call factored it:
+  `(-2 * (y / 1)) - ((x / (y / 0)) + (-1 * (2 * z)))` gives `(0 - (x / (y / 0))) + (2 * ((0 - y) + z))` at once, and
+  `(a*x + x/b) + a*y` gives `(x / b) + (a * (x + y))`. The suffix is found at the boundary of the chain only, admitted by the
+  factorable family itself (quotients, pinned terms and non-inert calls never become factors), and the prefix levels are run
+  again on top of it; refused chains without such a suffix keep their historical result.
+- Behavior change: every changed first result of the S5 convergence, termination, differential and effect corpora (1, 1, 2
+  and 22 cases) is the second call of the previous version and a fixed point; cases needing two calls 193 → 192 (bound
+  191 → 190), no new multi-pass case, no new cycle. Values, exceptions and evaluation logs are unchanged; two `float` samples
+  near `3E+38` take the reassociation latitude the next call already took. See `docs/expressions/SimplifierFlatten.md` §22.
+
 ### Fixed — `omy.Utils` (`ExpressionSimplifier` level and whole-chain factoring agree, C3c)
 - A chain the factorable admission refuses on its raw shape (a constant pair, the negation of a constant, a product by `1`, a
   negated sum) is now factored in the same call when its level by level result is a factorable chain, exactly as the next call

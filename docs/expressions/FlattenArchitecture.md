@@ -699,3 +699,12 @@ while the root is transformed historically and cleared while a node of no flatte
 parent pointer and is exact for shared nodes: it is a position in the traversal, like the link of a declined chain. The
 extraction, the admission contract and the dispatcher are unchanged; the built-in simplifier gives the result of the boundary to
 the global factoring when it is a factorable chain.
+
+## M4 suffix note
+
+The suffix finishing of `SimplifierFlatten.md` §22 adds no hook and no state: inside `FinishRefusedChain`, the built-in simplifier
+searches the right spine of a result that stays refused for its longest factorable suffix, factors it, and runs the prefix nodes
+again through `TransformLevel` with the dispatcher of the chain's group (`ExpressionTransformer.FlattenRuleDispatcherOf`, an
+internal accessor of the per-instance dispatcher cache), the refused-chain marker set while it does, so that the nodes those
+levels build are not boundaries. A transformer without flatten groups, or a node of no group, gets no dispatcher and keeps its
+result.
