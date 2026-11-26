@@ -3184,3 +3184,273 @@ global factoring first.
 - **The prefix is prepared twice** when a suffix is factored (the work of the next call, done once); the cost is the size of the
   prefix terms (22.6).
 - Free-parameter ties of the canonical order (L-3) are unchanged.
+
+## 23. Binary factorings of refused chains (mission B)
+
+Branch `fix/expression-binary-factoring-finalization`, base `master` `7664b9ca` (PR #724). The base was measured in a detached
+worktree of `7664b9ca` with the harness of the branch; the references are those of §22: **H**, the result of `master` (the branch
+with `RefusedBinaryFinishingDisabled`, identical by construction), and **F**, H simplified once more by `master`.
+
+### 23.1 The five reproducers
+
+The reproducers of §22.1 were rebuilt from the corpus itself (`ExpressionSimplifierAudit case "<label>" --events <n>`, full
+traces of the first and second calls) and from their reduced forms.
+
+| Case | Family | Source (corpus) | First call (`master`) | Second call (`master`) | Rule of the second call | Factor / residue |
+|---|---|---|---|---|---|---|
+| nested#3633 | A, sum factor | `((((1E+300 / z) / (z / -2)) - (((-1 - x) - y) - x)) - ((z * x) - (-2 * x))) - -2` | `3 + (y + ((-2E+300 / (z ** 2)) + ((0 - (-2 * x)) + (0 - (x * (2 + z))))))` | `3 + (y + ((-2E+300 / (z ** 2)) + (0 - (z * x))))` | last spine node: `AdditionWithNegate` → `SubstractionWithNegate` → `AdditionOfEqualsElements` on `(-2 * x) + (x * (2 + z))` | factor `x`; the sum `2 + z` stays in the coefficient, which folds to `z` |
+| nested#3674 | B, quotient in a residue | `((0.5 / -1) / (y / 0.5)) - ((-2 - (0.5 - (0.5 - 1E+300))) - ((-2 * (z / -2)) - ((1E+300 * 2) + (y * 2))))` | `-1E+300 + ((-0.25 / y) + ((-2 * (z / -2)) + (0 - (2 * y))))` | identical: **a fixed point on `master`** | — (the residue of §21.9 exists only under V1b, which rewrites `0 - (-2 * …)`) | with V1b: factor `2`, the quotient `z / -2` in the residue |
+| nested#3002 | C, sum and quotient | `(((x / z) / (x / -1)) * (((x - x) - 0) - 2)) - ((((z - z) - 2) - z) * (((x - x) - 0) - 2))` | `-(-2 * (-2 + ((0 - z) + (x / (z * x)))))` | identical: **a fixed point on `master`** | — (residue only under V1b + C1 and C2) | the level already factored `-2`; the quotient `x / (z * x)` is a term of the coefficient sum |
+| gen#947 | D, group of quotients | (S5 generator, seed 947) | `-7.5 + ((0 - y) + (x + (((z / z) + (z / z)) + (y * (z / z)))))` | `-7.5 + ((0 - y) + (x + ((2 + y) * (z / z))))` | `AdditionOfEqualsElements` on the group `(z / z) + (z / z)` (→ `2 * (z / z)`), then on `(2 * (z / z)) + (y * (z / z))` | mechanism 1 (a complete quotient as the factor) after mechanism 4 (a factor exposed by the preparation of the group) |
+| gen#1727 | D, subtracted group | (S5 generator, seed 1727) | `(1 + (((0 - (x / z)) - (x / z)) + Double.Cos(3))) ** (-1 / Double.Log(-12))` | `(1 + ((0 - (2 * (x / z))) + Double.Cos(3))) ** (-1 / Double.Log(-12))` | `SubstractionWithZero` then `SubstractionOfEqualsElements`/`AdditionOfEqualsElements` on the group | a complete quotient, merged with itself (no coefficient sum) |
+
+The four mechanisms of the brief are therefore not one: gen#947 uses two binary factorings in sequence (a group merged into
+`2 * t`, then `t` extracted from the pair `2*t`, `y*t`), gen#1727 only the merge, nested#3633 a factor shared by two products
+whose other factors are a constant and a sum, and no reproducer needs a factor found only by the comparer's simplification (the
+shared factors are raw equal). No reproducer extracts a *sum* as the common factor (`(a + b) * (x + y)` from two products by the
+same sum is the family `bfsum`, 23.6).
+
+**Matrix (questions of the brief).**
+
+| Question | nested#3633 | gen#947 | gen#1727 |
+|---|---|---|---|
+| Admission of the first call | the root and every crossed node hold the quotient: refused (not factorable, not linear) | refused (quotients) | refused (quotients); the chain is the base of the power, its own boundary |
+| 1. Handler called at the first call? | no, not on this pair: the level that joins `x * (2 + z)` is the root, whose operands are the whole left chain and the product (`SubstractionOfEqualsElements` compares `1 * chain` with `x * (2 + z)` and declines) | no: `z / z` is collected once per level, the identical terms only meet in the last canonicalization | no: same |
+| 2. Why refused | the pair does not exist before the finalization (`CanonicalizeAdditiveExpression`) of the root | the group does not exist before the last finalization | same |
+| 3. Different preparation at the second call | yes: `0 - (-2 * x)` and `0 - (x * (2 + z))` are prepared into `-(-2 * x)` and `-(x * (2 + z))`, which sends the node through `AdditionWithNegate` and `SubstractionWithNegate` to `AdditionOfEqualsElements` on the positive products | the group `(z / z) + (z / z)` is a node of its own, prepared (and factored) before its parent | same |
+| 4. Reassociation masking the pair | yes: the source holds `(z * x) - (-2 * x)` (factored by the level into `x * (2 + z)`) and `-2 * x` deep in the left chain | yes: the two `z / z` are in different source sub-chains | yes |
+| 5. Canonical sort and adjacency | the sort puts the quotient first and the two products last: they become the last spine node | identical terms are grouped by `GroupBy` into one group, built `t + t` (`BuildAdditiveExpression`), never merged because they are no monomials | the group is built `(0 - t) - t` |
+| 6. Factor found only by `FactorEqualityProbe` | no (`x` is raw equal) | no | no |
+| 7. Result rebuilt by an enclosing canonicalization | the root's finalization is the last step; at the boundary nothing changes it (M1: not factorable; M4: no factorable suffix, the last group holds a sum factor) | the same | the same |
+| 8. Can the handler run on the prepared operands without a full pass | yes: the node is transformed again exactly as the next call reaches it (prepared, offered to the admission, levels), then the prefix levels as in M4 | yes | yes |
+
+**First divergence.** In all three cases the two calls diverge at the last spine node (nested#3633) or at the group node
+(gen#947, gen#1727) of the boundary result: a node built by the last canonicalization, which the first call never offers to a
+rule, and which the second call prepares and offers to the binary rules before anything else changes.
+
+### 23.2 Audit of the handlers
+
+- `AdditionOfEqualsElements` decomposes each operand into the factors of an ordinary top-level product, or `1 * t` (the
+  augmentation); it declines when an augmented operand is the constant `1` (AUD-03) and on a constant pair (S5A-04). It compares
+  at most four pairs with one `FactorEqualityProbe` (the comparer's simplification of each candidate, computed at most once), in a
+  fixed order (leading, then crossed, then trailing), swaps the factors accordingly and builds `BuildFactoredProduct`. Two equal
+  products give `BuildCanonicalProduct(2, factors)` (S5A-05). The coefficient is folded when both are constants
+  (`TryFoldFactoredCoefficient`), canonicalized when both are single terms (M2, `CanonicalizeFactoredCoefficient`), aggregated
+  otherwise; a symbolic coefficient gives the canonical product of its factors and of the factor (C3c).
+- `SubstractionOfEqualsElements`: the same decomposition and comparisons; the cancellation of two equal coefficients gives the
+  zero of the type; no `IsConstantPair` guard (the constant pair is folded by `SubstractionOfConstants` first).
+- **Exceptions and effects.** Both run under the effect gate of the dispatcher: a pinned term (an observable call, an integral
+  division by a parameter, which may throw) is never grouped by the canonicalization, so it never forms a pair or a group that
+  reaches them from the finishing; a quotient by a constant is inert (`x / 3` is merged with itself: `t + t = 2 * t` is exact in
+  modular arithmetic, and the doubling of a floating-point value is exact).
+- **The comparer.** `FactorEqualityProbe` simplifies each candidate through `ExpressionComparer.SimplifyForComparison` (the P3
+  cache, the P9 memo, the P15 observed memo); a simplification made for a probe is not finished by mission B (23.4), so that the
+  decisions of the rules stay those of `master`. Raw structural equality implies the comparer's equality, so the pre-test never
+  claims a factor the rules would refuse to see, and the decision stays the rules'.
+
+### 23.3 Strategies compared
+
+| Strategy | Principle | Measured or analyzed | Decision |
+|---|---|---|---|
+| A — during the reconstruction | Run the rules on the pairs and groups every canonicalization builds | Every level of a refused chain canonicalizes: the rules would run on every partial sum, which the parent collects again (the D' problem of §22.3), at a cost of one rule dispatch and four probes per level | rejected |
+| B — at the boundary of the refused chain | After M1 and M4, find the deepest node of the result a binary rule of the next call may factor (bounded structural pre-test), transform it again as the next call reaches it, then run the prefix levels as M4 does | One bottom-up pass over the spine, O(1) per node; the rules run only on a candidate; every changed result is F (23.5) | **kept** |
+| C — finish the result of a handler, or of `BuildAdditiveExpression` | Merge the identical non-monomial terms of a group (`t + t` → `2 * t`) inside the canonicalization | Fixes gen#1727 only; gen#947 also needs the pair factoring, nested#3633 has no group. It changes every level (a parent then collects `2 * t` instead of two `t`, losing the identity grouping its cancellation relies on, `t + t - t`), and the handlers already build canonical results (23.1, question 7) | rejected |
+| D — admit sum or quotient atoms to C3c | Make some sums or quotients factorable | Not needed: B corrects every reproducer; D needs a new C3c proof (quotients are not a field on integers, and a quotient that may throw is pinned) | not retained |
+| B without the comparer gate | B, also inside the comparer's simplifications | diff#3627 (`float`): a probe simplified a coefficient sum to `1`, and `AdditionOfEqualsElements` then factored the whole chain by it (`(z + (-1 + (y + (y / -0)))) * (…)`), a form no call of `master` builds | rejected |
+
+### 23.4 Mechanism and proof obligations
+
+`FinishRefusedChain` (§21, §22) now runs, in each of its at most two rounds, the whole-chain test (M1), the suffix finishing (M4),
+and, when neither changes the result, `FinishRefusedBinaryPair`:
+
+1. **Gate.** Not inside a comparer simplification (`ComparisonMemoDepth > 0`), only for the flattened chain types (`double`,
+   `float`, `int`, `long`, `uint`, `ulong`: `decimal`, `short` and lifted chains are never canonicalized), only for the
+   built-in simplifier inside an operation.
+2. **Spine.** The right spine, as in M4 (a subtraction of a crossed operand stops it); a last `0 - t` is a term of the node above.
+   A spine of more than 512 nodes is not searched: its candidate and prefix could not both pass the bounds of step 4.
+3. **Pre-test, bottom-up, first hit.** A node whose operands are opaque, or whose operator is not ordinary, stops the search
+   (type tests first, ETC R4). A node is a candidate when its left operand, or, for the last node, its right operand, is a group
+   (two or more non-zero terms) whose first two terms share a factor, or when the last node's two operands share a factor.
+   Sharing is decided as the rules decompose (`0 - t` and `-t` removed, an ordinary product or `1 * t`), by raw structural
+   equality (`ExpressionComparer.StructuralEqualsRaw`, no user code) of the same instance (not opaque) or of two trees of at most
+   32 nodes. No pair holding a `NaN`, infinite or negative zero floating-point constant is a candidate (23.5).
+4. **Candidate and prefix.** The candidate holds at most 256 nodes, and the left operands of the prefix, which are prepared
+   again, at most 256 together (repetitions counted), all made only of parameters, constants, framework unary and binary nodes
+   and static calls whose operators and methods are runtime reflection objects (S5 A-10): no impersonating method or extension
+   node is ever rebuilt by the finishing, a shared DAG whose paths multiply is never prepared again (the first version re-ran a
+   prefix of such DAGs and hung M4's `ExplosiveDag_IsRefusedAfterLinearWork`), and the depth of the re-run stays bounded (a
+   prefix of 512 parameters exhausted a 256 KiB stack where the levels succeed).
+5. **Treatment.** The candidate is transformed again with the refused-chain marker set (`PrepareExpression`: admission, rules,
+   finalization, exactly the next call's treatment of that crossed node). An unchanged node keeps the historical result;
+   otherwise the prefix nodes are run again on top of it (`RunPrefixLevels`, shared with M4: left operands prepared again, then
+   `TransformLevel` with the group's dispatcher).
+
+**Safety.** No identity is added: every node is rebuilt by the rules, the admission and the finalization of the engine, under
+the effect gate and the resource budget, on the operands the next call prepares. `IsFactorableChain` is unchanged: a quotient or
+a sum is a factor of the binary rules only, never of the global factoring. Types: every node comes out of the engine's own
+factories. Evaluations and exceptions: a pinned term is never grouped and never in a candidate that the rules may merge; the
+merge of identical inert terms only removes duplicate inert evaluations, as the next call did. Policies: the finishing runs the
+rules of the policy's own dispatcher; the effect gate decides as on the next call. The comparer is never asked more than the
+next call asked it, and its own simplifications are not finished.
+
+### 23.5 Validation
+
+The convergence corpus holds the nine mission B families of `Corpus.cs` (`bfquot`, `bfquotcoef`, `bfsum`, `bfsumcoef`, `bfalt`,
+`bfnone`, `bfdag`, `bfcalls`, `bfgroup`, five sizes each: 70,570 → 70,615 cases); both sides ran the same harness.
+
+**Reference campaign** (`ExpressionSimplifierAudit reference`, H against the branch, switch `RefusedBinaryFinishingDisabled`):
+
+| Corpus | Cases | Changed | Changed = F, fixed point | Changed = F, F not a fixed point of `master` either | Exceptions changed |
+|---|---:|---:|---:|---:|---:|
+| converge | 70,615 | 40 | 36 | 4 (`bfsumcoef`, 23.10) | 0 |
+| terminate | 66,270 | 4 | 3 | 1 (nested#3663, a free-parameter tie, L-3) | 0 |
+| diff (7 types) | 4,000 | 7 | 6 | 1 (diff#1835 `float`, L-3) | 0 |
+| effects | 4,000 | 3 | 3 | 0 | 0 |
+
+Every changed result is the second call of `master`; those that are not fixed points take one more call on `master` too (their F
+is not a fixed point there), so the branch reaches the same fixed point one call earlier.
+
+**Stability** (free / bound, 8 passes, 70,615 cases):
+
+| Category | Base (`7664b9ca`) | Branch |
+|---|---:|---:|
+| fixed@1 | 67,433 / 67,427 | **67,469 / 67,460** |
+| fixed@2 | 219 / 215 | **188 / 188** |
+| fixed@3 | 9 / 10 | 4 / 4 |
+| cycles | 51 / 0 | 51 / 0 |
+
+No case becomes multi-pass and no case becomes a cycle. Free, 36 cases reach their fixed point in one call: nested#1470,
+nested#1560, nested#1580, nested#3163, nested#3633, gen#947, gen#1078, gen#1678, gen#1727, gen#3686, `m4middle` at n = 6 and 8
+(the sum factor of §22.5) and 24 family cases (`bfquot`, `bfsum`, `bfdag`, `bfgroup` at every size, `bfquotcoef` from n = 3);
+gen#1190 and `bfsumcoef` (n = 3 to 8) go from `fixed@3` to `fixed@2`. Bound, 33 reach it in one call and six go from `fixed@3`
+to `fixed@2`. `bfalt`, `bfnone` and `bfcalls` are fixed points on both sides.
+
+**Campaigns** (base against branch): `comparer` 0 violation, identical counts (330,096 hash-consistent and 659,742 transitive
+checks); `canon`, `s3` and `inventory` identical (76 rules, same order); `terminate` 0 anomaly, a few more applications of the
+binary rules (`AdditionOfEqualsElements` 147 → 151); `effects` identical summary (values, exceptions and evaluation logs);
+`diff`: no `VALUE`, no exception added or removed, one `float` seed (1835) moves from `rounding` to `extreme`: its F
+`z * (1 + …)` gives `-Infinity` where the source gives `NaN` for `z = -Infinity` (`3z - z * (2 + …)`), the reassociation latitude
+of S3 the next call of `master` already took.
+
+**Numeric types** (`ExpressionSimplifierBinaryFactoringFinalizationTests.NumericTypes_FinishExactly_AndKeepTheirExceptions`):
+`int`, `long`, `uint`, `ulong` merge `x/3 + x/3` exactly (modular arithmetic) and keep `x/w + x/w` (pinned: it may throw);
+`int.MinValue / -1` is pinned and keeps its `OverflowException`; `short`, `decimal` and `int?` chains keep their historical
+result; `float` and `double` merge exactly (a doubling) and reassociate within S3. `NaN`, infinite and negative zero coefficients
+are not finished: `Infinity * y + Infinity * (z / w)` keeps its historical form, whose factoring by the next call
+(`Infinity * (y + (z / w))`, `Infinity` instead of `NaN` for `y = 1`, `z / w = 0`) stays the next call's IEEE latitude, as the
+global factoring refuses such coefficients (§13.12).
+
+### 23.6 Complexity
+
+**The historical points** (`run-audit.ps1 -Campaigns complexity -Unlimited`, the 35 families of the script at n = 4 to 20, a family
+stopped after 10 s): 304 points on both sides, all with identical transformation visits, rule applications, comparer
+simplifications and depths, user calls, re-entries and output sizes (only the number of timing runs differs, on three points).
+None of those families holds a refused chain whose last pair or group a binary rule factors.
+
+**The mission B families** (`profile`, limits lifted, one process per point, five minutes at most; counters exact, times
+indicative). Transformation / structural visits, base → branch, and the base's first plus second call:
+
+| Family | n | Transformation visits | Structural visits | Base, two calls (transf. / struct.) | Allocated | Fixed point in one call |
+|---|---:|---:|---:|---:|---:|---|
+| `bfquot` (identical quotient factors) | 4 / 16 | 113 → 152 / 1,677 → 1,926 | 614 → 935 / 13,230 → 15,261 | 191 / 862; 2,025 / 15,254 | 65 → 91 KB / 1.10 → 1.25 MB | no → **yes** |
+| | 64 / 128 | identical | +358 / +422 | | identical | no → no (over the bounds) |
+| `bfquotcoef` (different quotients, one coefficient) | 4 / 16 | 86 → 124 / 2,564 → 3,028 | 429 → 780 / 20,295 → 24,044 | 154 / 715; 3,142 / 23,923 | 50 → 75 KB / 1.46 → 1.65 MB | no → **yes** |
+| | 64 / 128 | identical | +334 / +398 | | identical | no → no |
+| `bfsum` (identical sum factors) and `bfdag` (one shared sum) | 4 / 16 | 113 → 152 / 1,677 → 1,926 | 753 → 1,109 / 14,527 → 16,701 | 194 / 1,127; 2,028 / 16,893 | 110 → 148 KB / 1.53 → 1.73 MB | no → **yes** |
+| | 64 (128 `bfsum`) | identical | +358 (+422) | | identical | no → no |
+| `bfsumcoef` (different sums, one coefficient) | 4 / 16 | 84 → 117 / 2,018 → 2,363 | 539 → 909 / 22,525 → 26,563 | 147 / 904; 2,477 / 26,742 | 80 → 119 KB / 2.26 → 2.62 MB | no → no (one call fewer, 23.10) |
+| `bfgroup` (a group of identical quotients) | 4 / 16 / 64 | 55 → 73 / 583 → 649 / 8,455 → 8,713 | 291 → 398 / 3,869 → 4,096 / 82,251 → 82,958 | 102 / 358; 774 / 4,044; 9,222 / 82,858 | +7 to +16 % | no → **yes** (every size) |
+| `bfalt`, `bfnone`, `bfcalls` (untargeted) | 4 to 128 | identical | +16 to +138 (`bfnone` 64: 23,258,997 → 23,259,087) | | identical (`bfcalls` +1 KB) | yes → yes |
+| `m4suffix`, `m4none`, `refusedfac`, `refusednone` (§21, §22) | 4 to 64 | identical | +0 to +85 | | identical | yes → yes |
+
+Reading: an untargeted refused chain pays the pre-test only, a few structural visits per boundary (one per spine node and at most
+32 per compared factor), with identical transformation visits, comparer simplifications and allocations. A targeted chain pays,
+in its one call, about the work of the next call it replaces: its transformation visits stay below the base's two calls
+(`bfquot` 16: 1,926 against 2,025) and its structural visits around them (`bfquot` 16: 15,261 against 15,254, `bfquotcoef` 4:
+780 against 715). Beyond the bounds of 23.4 (n = 64 for the families whose prefix holds more than 256 nodes), nothing is finished
+and the cost is the base's plus the pre-test. No search of pairs is made: the pre-test is linear in the spine.
+
+### 23.7 Performance
+
+`tests/ExpressionTracingBench/run-campaign.ps1`, baseline `7664b9ca`, A/A copy of the base binaries, one process per scenario and
+variant, rotating order, machine idle; 4 rounds on 34 scenarios, then 7 rounds on the 12 scenarios outside the A/A band or
+targeted. New scenarios: `nested3633`, `bfgroup8`, `bfsum16` (each with its `x2` variant, `Simplify(Simplify(source))`),
+`bfnone16`, `bfcalls8`.
+
+| Scenario | Base (one call) | A/A | Branch | Allocated base → branch |
+|---|---:|---:|---:|---:|
+| `ext-root`, `scalar`, `binary`, `lambda`, `leftsum20`, `p9family16`, `dag10`, `calls8`, `callsum16`, `negsum16`, `subcall`, `prod2x`, `refused16`, `refusednone16`, `mixsign16`, `coef2`, `cmp-pos`, `hash`, `m4suffix16`, `m4none16`, `bfnone16`, `bfcalls8` (4 rounds) | | | inside the A/A band (−1.6 % to +1.6 %) | identical, or +0.05 % (`m4none16`, `bfnone16`) and +1.1 % (`bfcalls8`): the pre-test |
+| `refusedcall` (7 rounds) | 59,261 ns | +6.1 % | 0.0 % | 55,780 → 56,012 B |
+| `m4calls8` (7 rounds) | 61,696 ns | +1.0 % | +3.1 % | 53,020 → 53,548 B |
+| `negconst8` (7 rounds) | 167,099 ns | +0.6 % | −13.8 % | identical (163,829 B); also −10.3 % on 4 rounds, not explained (an untargeted scenario) |
+| `nested1179` (7 rounds) | 102,309 ns | +0.5 % | +2.6 % | 66,479 → 66,767 B |
+| `bfgroup8` (7 rounds) | 107,574 ns | +1.3 % | **+16.0 %** | 91,473 → 101,121 B |
+| `bfsum16` (7 rounds) | 1,474,086 ns | −0.4 % | **+12.9 %** | 1,566,014 → 1,769,489 B |
+| `nested3633` (7 rounds) | 419,144 ns | −37.1 % | +6.3 % | 169,718 → 218,322 B; too noisy to conclude (+13.2 % on 4 rounds) |
+
+**Cost of the fixed point** (base: two calls, `x2`; branch: one call):
+
+| Scenario | Base, two calls | Branch, one call | Allocated |
+|---|---:|---:|---:|
+| `nested1179` | 138,966 ns | 104,992 ns (−24 %) | 93,557 → 66,767 B |
+| `bfgroup8` | 131,132 ns | 124,830 ns (−5 %) | 102,585 → 101,121 B |
+| `bfsum16` | 1,696,617 ns | 1,664,023 ns (−2 %) | 1,840,153 → 1,769,489 B |
+| `m4suffix16` (4 rounds) | 893,724 ns | 871,398 ns (−2.5 %) | 1,008,536 → 976,920 B |
+| `nested3633` | 420,350 ns (A/A +8.7 %) | 445,691 ns | 250,490 → 218,322 B; within the noise of this scenario (−24 % on 4 rounds) |
+
+Reading: untargeted scenarios stay inside the A/A band with identical or nearly identical allocations (the pre-test allocates its
+walk stack only when a spine is searched). A refused chain whose pair or group is finished pays, in its one call, the work of the
+next call (+13 to +16 % for one call) and reaches the fixed point 2 to 24 % faster than the base's two calls, with fewer
+allocations. The `nested3633` scenario (a quotient of `1E+300` and a power) varies by tens of percent between runs on the same
+binaries and gives no conclusion; its counters (23.6 method, `profile`) are the reliable measure.
+
+### 23.8 Suites
+
+Unit 15,174 passed (1 skipped), Security 481 (3 skipped), Functional 383, in Release and in Debug, on Windows; CI runs Windows
+and Ubuntu. New classes: `ExpressionSimplifierBinaryFactoringFinalizationTests` (Unit, `S5-Audit`: the five reproducers and their
+reduced forms, the four elementary families, associations and bound parameters, a shared factor, nine numeric types,
+`int.MinValue / -1`, floating-point specials, observable calls under five policies, the derived simplifier and the switches, the
+comparer and diff#3627) and `ExpressionSimplifierBinaryFinishingResourceTests` (Security: hostile extension nodes, impersonating
+methods and operators never read by the pre-test nor rebuilt, counted work refused just above each limit, state restored through
+refusals and nested operations, explosive DAGs, a 256 KiB stack, isolation between threads). The tests of C3c, M1, M2, M3 and M4
+are unchanged and pass; the first version broke two of them (M4's `FloatingPointTypes_FactorAsTheNextCall`, an infinite
+coefficient factored by the binary rule, and `SuffixSearch_NeverReadsHostileNodes`, an impersonating method rebuilt), which led to
+the special-coefficient and runtime-provenance gates of 23.4, and a hang of `ExplosiveDag_IsRefusedAfterLinearWork`, which led to
+the prefix bound.
+
+### 23.9 Sign normalizations replayed
+
+The variants of §20.3 were rebuilt from their description in a separate worktree (`S5_SIGN_VARIANT` = `V1b`, `V1bC1`, `V1`, `C2`;
+the normalization in `CanonicalizeAdditiveTerms` before the negated-sum test, C1 and C2 in `BuildNegation`) behind environment
+switches that never reached the branch, with the final code of the branch, the binary finishing off (`master`) and on (the branch), on the corpus of §22
+(70,570 cases). With the finishing off the replay reproduces §22.9 (V1b 92 first passes changed and nested#3674; V1b + C1 207
+instead of 211, the same two residues; V1 1,573, three cases with the gen#2611 cycle; C2 1,738).
+
+| Variant | New multi-pass cases, finishing off (free / bound) | Finishing on, against the branch (free / bound) | Which (finishing on) |
+|---|---:|---:|---|
+| V1b | 1 / 1 | **0 / 0** | — |
+| V1b + C1 | 2 / 2 | **0 / 0** | — |
+| V1 | 3 / 3 (one cycle) | 1 / 1 (one cycle free) | gen#2611 (cycle, free-parameter tie) / gen#699 |
+| C2 | 8 / 7 (two cycles) | 3 / 2 (two cycles free) | gen#2611 and gen#3759 (cycles), gen#3391 / gen#699, gen#3391 |
+
+**V1b + C1 is stable on this branch** (no new multi-pass first result, free or bound): its residues nested#3674 and nested#3002
+were the binary pairs this mission finishes. The normalization is not part of this pull request; it can be proposed on its own
+once this one is merged, with the full campaigns (values, effects, comparer) the replay did not run.
+
+### 23.10 Residual limits
+
+- **Factors found by the comparer only.** A pair whose shared factor is equal only after the comparer's simplification (raw
+  different) is left to the next call, as before.
+- **Large or shared candidates and prefixes.** A candidate or a prefix of more than 256 nodes, or a factor of more than 32 nodes
+  that is not the same instance, is not finished: long refused chains keep the historical result, and take a second call as on
+  `master`.
+- **One node per round, two rounds.** Each round finishes the deepest candidate. `bfsumcoef` (different sums with one common
+  coefficient) goes from three calls to two: the finished first call gives `2 * ((x1 + z) + (… + (x7 + z)))`, whose coefficient,
+  a nested sum built by the successive factorings, is canonicalized by the second call (the seven `z` merged into `7 * z`): a
+  node inside a product, which is not the boundary of the refused chain.
+- **Comparer simplifications** are not finished (23.3).
+- **Special coefficients** (`NaN`, infinities, negative zero) and **opaque factors** are never finished.
+- **Pre-existing.** A term that is a multiplicative DAG whose paths multiply makes the boundary tests of M1/M4 walk it
+  (independently of mission B: `ExpressionSimplifierBinaryFinishingResourceTests.ExplosiveDags_AreTestedAfterBoundedWork` uses
+  distinct large products instead).
+- Free-parameter ties of the canonical order (L-3) are unchanged.

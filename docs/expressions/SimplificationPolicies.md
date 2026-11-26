@@ -744,3 +744,16 @@ prepared and run through the rules of its levels under the effect gate, as on th
 (`ExpressionSimplifierRefusedSuffixFactoringTests.ObservableCalls_KeepTheirEvaluations_UnderEveryPolicy`) keep every evaluation and
 its order under the default, aggressive, exception-free and trusting policies; an integral division by a parameter, which may
 throw, is pinned and keeps its exception.
+
+## 16. Binary factorings of refused chains (mission B)
+
+The binary pair finishing of `SimplifierFlatten.md` §23 needs no permission and no new admission: it transforms again, with the
+historical rules of the policy's own dispatcher and under the effect gate, a node the next call would have transformed, then the
+levels above it. A term that is not inert is pinned by the canonicalization, so it never belongs to a group or to a pair the
+rules may merge; an integral division by a parameter, which may throw, is pinned too and keeps its exception (`int.MinValue / -1`
+included). The candidate holds runtime reflection objects only (S5 A-10), so `TrustDeclarations` and `Verified` see exactly the
+nodes the default policy sees, and no impersonating declaration is trusted or rebuilt by the finishing. The comparer's own
+simplifications are not finished, so the factors the rules see as equal are those of `master`. The policy tests
+(`ExpressionSimplifierBinaryFactoringFinalizationTests.ObservableCalls_KeepTheirEvaluations_UnderEveryPolicy`) keep every
+evaluation, its order, the values and the exceptions of `F()*x + F()*y`, `F()*x - F()*y`, `x/F() + y/F()`, `F()*(x+y)` and of
+throwing calls inside shared factors, under the default, `Verified`, `TrustDeclarations`, aggressive and exception-free policies.

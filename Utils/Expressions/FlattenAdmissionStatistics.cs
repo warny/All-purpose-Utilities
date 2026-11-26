@@ -130,6 +130,21 @@ internal sealed class FlattenAdmissionStatistics
     /// <summary>The number of spine nodes of a prefix run again on top of a factored suffix.</summary>
     public long SuffixPrefixLevels;
 
+    /// <summary>
+    /// The number of refused boundary results whose right spine was searched for a binary factoring pair (mission B,
+    /// <c>ExpressionSimplifier.FinishRefusedBinaryPair</c>): one per result that no whole-chain or suffix factoring changed.
+    /// </summary>
+    public long BinarySearches;
+
+    /// <summary>The number of spine nodes whose pair passed the structural pre-test and were transformed again.</summary>
+    public long BinaryCandidates;
+
+    /// <summary>The number of candidate nodes whose new treatment changed them, and whose prefix levels were run again.</summary>
+    public long BinaryFinishings;
+
+    /// <summary>The number of spine nodes of a prefix run again on top of a finished binary pair.</summary>
+    public long BinaryPrefixLevels;
+
     /// <summary>The number of grouped quotient chain roots admitted (docs/expressions/SimplifierFlatten.md §16).</summary>
     public long GroupedQuotient;
 

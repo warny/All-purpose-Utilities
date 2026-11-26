@@ -5406,6 +5406,16 @@ multi-pass case or cycle. The sign normalizations replayed on this base keep the
 nested#3002, binary factorings with a quotient factor), so no sign PR. Next: quotient atoms or sum factors in the factorable
 family, then V1b + C1 again. Record: `docs/expressions/SimplifierFlatten.md` §22.
 
+### Mission B — binary factorings of refused chains (2026-11-26)
+
+Branch `fix/expression-binary-factoring-finalization`, base `7664b9ca`. The remaining residues of M4 (nested#3633, gen#947,
+gen#1727) were not C3c gaps but pairs and groups built by the last canonicalization of a refused chain, which only the next call
+offered to the existing binary rules. At the boundary only, after M1 and M4, the deepest such node is transformed again as the
+next call transformed it, then the prefix levels (shared with M4); quotient atoms and sum factors were not admitted to the
+factorable family (strategy D not needed). Every changed result is the second call of `master`; fixed@2 219 → 188, no new
+multi-pass case or cycle. V1b and V1b + C1, replayed on this branch, add no multi-pass case. Next: the sign normalization
+V1b + C1 as a separate pull request, with the full S5 campaigns. Record: `docs/expressions/SimplifierFlatten.md` §23.
+
 ## Execution-optimizer stages
 
 These remain separate from the simplifier stages above.

@@ -63,6 +63,16 @@ public static class Program
         ["m4calls8"] = () => Simplify(Enumerable.Range(1, 8).SelectMany(i => new Expression[] { Expression.Multiply(Expression.Constant(2.0), Xs[i]), Expression.Call(typeof(Program).GetMethod(nameof(Observable))!) }).Prepend(Expression.Divide(Xs[0], Xs[63])).Aggregate(Expression.Add)),
         ["nested1179"] = () => Simplify(Nested1179()),
         ["nested1179x2"] = () => SimplifyTwice(Nested1179()),
+        // Mission B (SimplifierFlatten.md §23): binary factorings of refused chains with a sum or a quotient as a factor, groups of
+        // identical quotients, a refused chain without any common factor, and observable calls; "x2" as for M4.
+        ["nested3633"] = () => Simplify(Nested3633()),
+        ["nested3633x2"] = () => SimplifyTwice(Nested3633()),
+        ["bfgroup8"] = () => Simplify(QuotientGroup(8)),
+        ["bfgroup8x2"] = () => SimplifyTwice(QuotientGroup(8)),
+        ["bfsum16"] = () => Simplify(Enumerable.Range(1, 16).Select(i => (Expression)Expression.Multiply(Xs[i], Expression.Add(Expression.Constant(1.0), Xs[62]))).Prepend(Expression.Divide(Xs[0], Xs[63])).Aggregate(Expression.Add)),
+        ["bfsum16x2"] = () => SimplifyTwice(Enumerable.Range(1, 16).Select(i => (Expression)Expression.Multiply(Xs[i], Expression.Add(Expression.Constant(1.0), Xs[62]))).Prepend(Expression.Divide(Xs[0], Xs[63])).Aggregate(Expression.Add)),
+        ["bfnone16"] = () => Simplify(Enumerable.Range(1, 16).Select(i => (Expression)Expression.Multiply(Xs[i], Expression.Divide(Xs[i + 20], Xs[i + 40]))).Prepend(Expression.Divide(Xs[0], Xs[63])).Aggregate(Expression.Add)),
+        ["bfcalls8"] = () => Simplify(Enumerable.Range(1, 8).SelectMany(i => new Expression[] { Expression.Multiply(Xs[i], Expression.Divide(Xs[61], Xs[62])), Expression.Call(typeof(Program).GetMethod(nameof(Observable))!) }).Prepend(Expression.Divide(Xs[0], Xs[63])).Aggregate(Expression.Add)),
         ["opt-ext-root"] = () => Optimize(new BenchExtension()),
         ["opt-scalar"] = () => Optimize(Expression.Add(Expression.Multiply(Xs[0], Expression.Constant(1.0)), Expression.Constant(-0.0))),
         ["opt-lambda"] = () => Optimize(Expression.Lambda<Func<double, double, double>>(Expression.Add(Expression.Multiply(Xs[0], Expression.Constant(1.0)), Xs[1]), Xs[0], Xs[1])),
@@ -203,6 +213,25 @@ public static class Program
         => Expression.Subtract(
             Expression.Multiply(Expression.Constant(-2.0), Expression.Divide(Xs[1], Expression.Constant(1.0))),
             Expression.Add(Expression.Divide(Xs[0], Expression.Divide(Xs[1], Expression.Constant(0.0))), Expression.Multiply(Expression.Constant(-1.0), Expression.Multiply(Expression.Constant(2.0), Xs[2]))));
+
+    /// <summary>nested#3633 of the S5 campaign: <c>((((1E+300 / z) / (z / -2)) - (((-1 - x) - y) - x)) - ((z * x) - (-2 * x))) - -2</c>.</summary>
+    /// <returns>The tree.</returns>
+    private static Expression Nested3633()
+    {
+        Expression x = Xs[0], y = Xs[1], z = Xs[2];
+        Expression C(double value) => Expression.Constant(value);
+        return Expression.Subtract(
+            Expression.Subtract(
+                Expression.Subtract(Expression.Divide(Expression.Divide(C(1E+300), z), Expression.Divide(z, C(-2))), Expression.Subtract(Expression.Subtract(Expression.Subtract(C(-1), x), y), x)),
+                Expression.Subtract(Expression.Multiply(z, x), Expression.Multiply(C(-2), x))),
+            C(-2));
+    }
+
+    /// <summary><c>((y + x/z) + x/z) + ... + x/z</c>: a group of identical quotients the canonicalization keeps unmerged (mission B).</summary>
+    /// <param name="terms">The number of quotients.</param>
+    /// <returns>The chain.</returns>
+    private static Expression QuotientGroup(int terms)
+        => Enumerable.Range(0, terms).Aggregate((Expression)Xs[1], (chain, _) => Expression.Add(chain, Expression.Divide(Xs[0], Xs[2])));
 
     /// <summary>An observable call of the M4 scenarios (never evaluated: the trees are only simplified).</summary>
     /// <returns>1.</returns>

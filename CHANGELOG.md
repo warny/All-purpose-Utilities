@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed — `omy.Utils` (`ExpressionSimplifier` binary factorings of refused chains, mission B)
+- A refused sum whose last canonicalization builds a pair or a group that the binary factoring rules (`AdditionOfEqualsElements`,
+  `SubstractionOfEqualsElements`) only factored on the next call is now finished in the same call: `(y / w) + ((-2 * x) +
+  (x * (2 + z)))` gives `(y / w) + (z * x)`, `((x + z/z) + z/z) + y*(z/z)` gives `x + ((2 + y) * (z / z))`, and
+  `(0 - (x / z)) - (x / z)` gives `0 - (2 * (x / z))`. At the boundary of the chain only, the deepest such node is transformed
+  again exactly as the next call transformed it, then the levels above it; nothing is admitted to the global factoring (a sum or
+  a quotient stays a factor of the binary rules), pinned terms (observable calls, integral divisions by a parameter) are never
+  merged, and `NaN`, infinite and negative-zero coefficients, opaque nodes, impersonating reflection objects, large candidates and
+  the comparer's own simplifications are left as before.
+- Behavior change: every changed first result of the S5 convergence, termination, differential and effect corpora (40, 4, 7 and 3
+  cases) is the second call of the previous version; cases needing two calls 219 → 188 (bound 215 → 188), no new multi-pass case,
+  no new cycle, no comparer violation. Values, exceptions and evaluation logs are unchanged; one `float` sample takes the S3
+  latitude the next call already took. See `docs/expressions/SimplifierFlatten.md` §23.
+
 ### Fixed — `omy.Utils` (`ExpressionSimplifier` factorable suffixes of refused chains, M4)
 - A sum the factorable admission refuses for a quotient (or another term outside the family) whose canonical result ends with
   factorable terms now has that suffix factored in the same call, as the next call factored it:

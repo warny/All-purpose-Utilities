@@ -38,7 +38,7 @@ public static class Program
           replay diff|effects <seed> re-run one seed of a campaign verbosely
         Options: --out <dir> --seeds <n> --start <n> --depth <n> --nested <n> --types a,b --passes <n> --assign <n>
                  --reduce <n> --max-cases <n> --timeout <s> --memory <MB> --resume --unlimited --edges <file> --max-seconds <s>
-                 --second-pass
+                 --second-pass --events <n> (trace events printed, default 400)
         """;
 
     /// <summary>Runs a command.</summary>
@@ -86,6 +86,7 @@ public static class Program
             Reduce: GetInt("reduce", 40),
             MaxCases: GetInt("max-cases", int.MaxValue));
         var timeout = TimeSpan.FromSeconds(GetInt("timeout", 60));
+        traceEventLimit = Math.Max(1, GetInt("events", 400));
         long memory = GetInt("memory", 6144) * 1024L * 1024L;
 
         switch (command)
@@ -194,6 +195,9 @@ public static class Program
         return Trace(template.Build(bindings), tracedPassIsSecond: false);
     }
 
+    /// <summary>The number of trace events <see cref="Trace(Expression, bool)"/> prints (<c>--events</c>).</summary>
+    private static int traceEventLimit = 400;
+
     /// <summary>Simplifies a tree repeatedly and prints the passes, the trace of one pass and its cycle report.</summary>
     /// <param name="current">The source tree.</param>
     /// <param name="tracedPassIsSecond">
@@ -222,7 +226,7 @@ public static class Program
 
         ExpressionTransformEvent[] events = collector.GetEvents();
         Console.WriteLine();
-        Console.WriteLine(ExpressionTraceExporter.ToText(events.Take(400)));
+        Console.WriteLine(ExpressionTraceExporter.ToText(events.Take(traceEventLimit)));
         Console.WriteLine(ExpressionTraceCycleAnalyzer.ToText(ExpressionTraceCycleAnalyzer.Analyze(events)));
         return 0;
     }
