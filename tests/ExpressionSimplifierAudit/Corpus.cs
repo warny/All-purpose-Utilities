@@ -437,6 +437,20 @@ internal static class Families
         ("bfdag", "((x0/q + y1*s) + y2*s) + ... with s = (1 + z) shared (mission B: a shared sum factor)"),
         ("bfcalls", "x0/q + y1*(z/w) + Next() + y2*(z/w) + Next() + ... (mission B: observable calls, pinned last)"),
         ("bfgroup", "((y + x/z) + x/z) + ... + x/z (mission B: a group of identical quotients)"),
+        ("mdag", "s = x*y; s = s*s, n times (multiplicative DAG: n + 3 distinct nodes, 2^(n+2) - 1 occurrences; variant A)"),
+        ("mdagtree", "the tree copy of mdag (no shared node; control of mdag, small n only)"),
+        ("mdagq", "x0/q + mdag (a refused sum holding the DAG; variant B)"),
+        ("mdagm4", "x0/q + (mdag + 2*x1) (the DAG inside an M4 suffix; variant C)"),
+        ("mdag2", "mdag*x1 + mdag*y1 (two products sharing the DAG; variant D)"),
+        ("mdagmix", "s = x*y; s = (s + s) * s, n times (additive and multiplicative sharing; variant E)"),
+        ("mdagnone", "x0/q + mdag + z*w (no common factor; variant F)"),
+        ("mdagopaque", "s = carrier(o)*x; s = s*s, n times (an opaque factor; variant G)"),
+        ("mdagieee", "s = (x*1e300)*(y*-0.0); s = s*s, n times (extreme and signed-zero constants; variant H)"),
+        ("mdagnan", "x0/q + s, s = (x*NaN)*y; s = s*s, n times (NaN constant; variant H)"),
+        ("mdaglong", "mdag over long (integral wrapping product)"),
+        ("mdaglongtree", "the tree copy of mdaglong (control, small n only)"),
+        ("Lmullong", "x * y * x * y * ... over long, n factors, left-associated (control of mdaglong without sharing)"),
+        ("mdagcustom", "s = x*y; s = s*s with a custom operator method, n times (variant G: custom operator)"),
     ];
 
     /// <summary>Builds family <paramref name="name"/> at size <paramref name="n"/>.</summary>
@@ -498,7 +512,23 @@ internal static class Families
             "bfdag" => Expression.Add(Expression.Constant(1.0), Z) is var shared ? LeftChain(Ys(n).Select(y => (Expression)Expression.Multiply(y, shared)).Prepend(Quotient(x, "q")), Expression.Add) : x,
             "bfcalls" => LeftChain(Ys(n).SelectMany(y => new Expression[] { Expression.Multiply(y, Expression.Divide(Z, W)), Expression.Call(typeof(EffectLeaves).GetMethod(nameof(EffectLeaves.Next))!) }).Prepend(Quotient(x, "q")), Expression.Add),
             "bfgroup" => LeftChain(Enumerable.Range(0, Math.Max(2, n)).Select(_ => (Expression)Expression.Divide(x, Z)).Prepend(Expression.Parameter(typeof(double), "y")), Expression.Add),
-            "m4dag" => Quotient(x, "q") is var s ? LeftChain(Products(xs, 2.0).Take(1).Append(s).Concat(Products(xs, 2.0).Skip(1).SelectMany(p => new[] { p, s })), Expression.Add) : x,
+            "mdag" => MulDag(n, typeof(double), shared: true),
+            "mdagtree" => MulDag(n, typeof(double), shared: false),
+            "mdagq" => Expression.Add(Quotient(x, "q"), MulDag(n, typeof(double), shared: true)),
+            "mdagm4" => Expression.Add(Quotient(x, "q"), Expression.Add(MulDag(n, typeof(double), shared: true), Expression.Multiply(Expression.Constant(2.0), xs[Math.Min(1, xs.Length - 1)]))),
+            "mdag2" => MulDag(n, typeof(double), shared: true) is var dag
+                ? Expression.Add(Expression.Multiply(dag, xs[Math.Min(1, xs.Length - 1)]), Expression.Multiply(dag, Ys(1).First())) : x,
+            "mdagmix" => Enumerable.Range(0, n).Aggregate((Expression)Expression.Multiply(Dx, Dy), (acc, _) => Expression.Multiply(Expression.Add(acc, acc), acc)),
+            "mdagnone" => Expression.Add(Expression.Add(Quotient(x, "q"), MulDag(n, typeof(double), shared: true)), Expression.Multiply(Z, W)),
+            "mdagopaque" => Enumerable.Range(0, n).Aggregate(Expression.Multiply(Carrier(new CountingOpaque(0)), Dx), (acc, _) => Expression.Multiply(acc, acc)),
+            "mdagieee" => Enumerable.Range(0, n).Aggregate(Expression.Multiply(Expression.Multiply(Dx, Expression.Constant(1e300)), Expression.Multiply(Dy, Expression.Constant(-0.0))), (acc, _) => Expression.Multiply(acc, acc)),
+            "mdagnan" => Expression.Add(Quotient(x, "q"), Enumerable.Range(0, n).Aggregate(Expression.Multiply(Expression.Multiply(Dx, Expression.Constant(double.NaN)), Dy), (acc, _) => Expression.Multiply(acc, acc))),
+            "mdaglong" => MulDag(n, typeof(long), shared: true),
+            "mdaglongtree" => MulDag(n, typeof(long), shared: false),
+            "Lmullong" => new[] { Expression.Parameter(typeof(long), "x"), Expression.Parameter(typeof(long), "y") } is var pair
+                ? LeftChain(Enumerable.Range(0, Math.Max(n, 1)).Select(i => (Expression)pair[i % 2]), Expression.Multiply) : x,
+            "mdagcustom" => Enumerable.Range(0, n).Aggregate(Expression.Multiply(Dx, Dy, CustomMultiplyMethod), (acc, _) => Expression.Multiply(acc, acc, CustomMultiplyMethod)),
+            "m4dag" => Quotient(x, "q") is var s ?LeftChain(Products(xs, 2.0).Take(1).Append(s).Concat(Products(xs, 2.0).Skip(1).SelectMany(p => new[] { p, s })), Expression.Add) : x,
             "zerominus" => Nest(xs, (acc, v) => Expression.Subtract(Expression.Constant(0.0), Expression.Multiply(acc, v))),
             "plus0" => Nest(xs, (acc, v) => Expression.Add(Expression.Multiply(acc, v), Expression.Constant(0.0))),
             "zeroplus" => Nest(xs, (acc, v) => Expression.Add(Expression.Constant(0.0), Expression.Multiply(acc, v))),
@@ -530,6 +560,31 @@ internal static class Families
     /// <returns>The products.</returns>
     private static IEnumerable<Expression> Products(ParameterExpression[] xs, double coefficient)
         => xs.Skip(1).DefaultIfEmpty(xs[0]).Select(v => (Expression)Expression.Multiply(Expression.Constant(coefficient), v));
+
+    /// <summary>The parameter <c>x</c> of the multiplicative DAG families.</summary>
+    private static readonly ParameterExpression Dx = Expression.Parameter(typeof(double), "x");
+
+    /// <summary>The parameter <c>y</c> of the multiplicative DAG families.</summary>
+    private static readonly ParameterExpression Dy = Expression.Parameter(typeof(double), "y");
+
+    /// <summary>
+    /// The multiplicative DAG of the mission "multiplicative DAG resource bounds": <c>s = x * y</c>, then <c>s = s * s</c>
+    /// <paramref name="n"/> times, with <c>s</c> shared (<paramref name="shared"/>) or rebuilt as a tree.
+    /// </summary>
+    /// <param name="n">The number of squarings.</param>
+    /// <param name="type">The type of the parameters.</param>
+    /// <param name="shared">Whether both operands of each squaring are the same instance.</param>
+    /// <returns>The DAG or its tree copy.</returns>
+    private static Expression MulDag(int n, Type type, bool shared)
+    {
+        ParameterExpression px = type == typeof(double) ? Dx : Expression.Parameter(type, "x");
+        ParameterExpression py = type == typeof(double) ? Dy : Expression.Parameter(type, "y");
+        Expression Build(int level) => level == 0 ? Expression.Multiply(px, py) : Expression.Multiply(Build(level - 1), Build(level - 1));
+        if (!shared) return Build(n);
+        Expression result = Expression.Multiply(px, py);
+        for (int level = 0; level < n; level++) result = Expression.Multiply(result, result);
+        return result;
+    }
 
     /// <summary>The parameter <c>z</c> of the mission B families.</summary>
     private static readonly ParameterExpression Z = Expression.Parameter(typeof(double), "z");

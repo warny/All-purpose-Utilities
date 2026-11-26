@@ -116,6 +116,17 @@ public static class Program
                     File.AppendAllText(Path.Combine(output, "profile.jsonl"), line + Environment.NewLine, new UTF8Encoding(false));
                     return 0;
                 }, timeout, memory, (reason, current) => Abort(output, "profile", reason, positional[0] + " " + positional[1]));
+            case "dagprobe":
+                if (positional.Count < 2) return Fail("dagprobe needs <family> <n>");
+                return Worker.Run(() =>
+                {
+                    object record = Profile.Probe(positional[0], int.Parse(positional[1], CultureInfo.InvariantCulture));
+                    string line = JsonSerializer.Serialize(record, record.GetType());
+                    Console.WriteLine(line);
+                    Directory.CreateDirectory(output);
+                    File.AppendAllText(Path.Combine(output, "dagprobe.jsonl"), line + Environment.NewLine, new UTF8Encoding(false));
+                    return 0;
+                }, timeout, memory, (reason, current) => Abort(output, "dagprobe", reason, positional[0] + " " + positional[1]));
             case "trace":
                 if (positional.Count < 1) return Fail("trace needs a template");
                 return Worker.Run(() => Trace(positional[0]), timeout, memory, (reason, current) => Console.Error.WriteLine(reason + ": " + current));

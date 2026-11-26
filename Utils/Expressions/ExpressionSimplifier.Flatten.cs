@@ -634,6 +634,22 @@ public partial class ExpressionSimplifier
         set => t_refusedBinaryFinishingDisabled = value;
     }
 
+    /// <summary>Backing field of <see cref="MultiplicativeDagGuardDisabled"/>.</summary>
+    [ThreadStatic]
+    private static bool t_multiplicativeDagGuardDisabled;
+
+    /// <summary>
+    /// Gets or sets, for this thread, whether the multiplicative DAG guards are off (mission "multiplicative DAG resource
+    /// bounds", <c>docs/expressions/SimplifierFlatten.md</c> §24): the factorable product test walks every occurrence and the
+    /// multiplicative factor collection consumes no structural visit, as on <c>master</c> <c>01f7a453</c>. Audits and tests
+    /// only, so that the reference stays available. <see langword="false"/> by default.
+    /// </summary>
+    internal static bool MultiplicativeDagGuardDisabled
+    {
+        get => t_multiplicativeDagGuardDisabled;
+        set => t_multiplicativeDagGuardDisabled = value;
+    }
+
     /// <summary>
     /// Gets or sets the admission counters of this thread: audits and benchmarks only. While <see langword="null"/> (the
     /// default), the admission reads this field once per chain root and records nothing.

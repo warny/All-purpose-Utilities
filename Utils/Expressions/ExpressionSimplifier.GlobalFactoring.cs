@@ -986,20 +986,36 @@ public partial class ExpressionSimplifier
     /// <param name="expression">A term, or the operand of a negated term.</param>
     /// <param name="type">The type of the chain.</param>
     /// <returns><see langword="true"/> for a factorable product.</returns>
+    /// <remarks>
+    /// <para>
+    /// <b>Shared products (mission "multiplicative DAG resource bounds", <c>docs/expressions/SimplifierFlatten.md</c> §24).</b>
+    /// The walk below follows the occurrences of the product: a product node shared by its two operands at each of n levels
+    /// (<c>s = s * s</c>) has n + 1 distinct product nodes and 2^(n+1) - 1 occurrences. After
+    /// <see cref="PlainProductVisits"/> product occurrences, the term is decided by <see cref="IsFactorableSharedProduct"/>,
+    /// which visits each distinct product node once, so the test costs at most <see cref="PlainProductVisits"/> visits more
+    /// than the distinct product nodes, whatever the sharing. A product of fewer occurrences, and every tree whatever its size,
+    /// gets the decision of <c>master</c>; a product whose revisits exceed its distinct nodes (beyond
+    /// <see cref="SharedRevisitAllowance"/>) is refused, as <see cref="IsFactorableChain"/> refuses a shared sub-chain whose
+    /// paths multiply: the global factoring would collect its factors once per path.
+    /// </para>
+    /// </remarks>
     private static bool IsFactorableProduct(Expression expression, Type type)
     {
         int calls = 0;
+        int products = 0;
         Stack<Expression>? pending = null;
         Expression? current = expression;
         while (current is not null)
         {
             if (current is BinaryExpression { NodeType: ExpressionType.Multiply } product)
             {
+                // A product of more occurrences than an ordinary term holds: decided over its distinct nodes instead.
+                if (++products > PlainProductVisits && !t_multiplicativeDagGuardDisabled) return IsFactorableSharedProduct((BinaryExpression)expression, type);
                 ExpressionResourceBudget.ConsumeStructuralVisit();
+                if (t_admissionStatistics is { } statistics) statistics.ProductOccurrences++;
 
                 // Both operands are framework nodes of a factor shape before the operator is classified (ETC R4).
-                if (!IsFactorShape(product.Left) || !IsFactorShape(product.Right)) return false;
-                if (!IsOrdinaryBinaryArithmetic(product) || !ReferenceEquals(product.Type, type)) return false;
+                if (!IsFactorableProductNode(product, type)) return false;
                 (pending ??= new Stack<Expression>()).Push(product.Right);
                 current = product.Left;
                 continue;
@@ -1010,6 +1026,108 @@ public partial class ExpressionSimplifier
         }
 
         return true;
+    }
+
+    /// <summary>
+    /// The number of product occurrences <see cref="IsFactorableProduct"/> walks one by one before deciding over the distinct
+    /// product nodes: a term of the factorable family is a product of a few factors, so an ordinary term never allocates the
+    /// table of <see cref="IsFactorableSharedProduct"/>.
+    /// </summary>
+    private const int PlainProductVisits = 64;
+
+    /// <summary>Whether a product node of a term has the shape, the operator and the type of a factorable product (ETC R4: type tests first).</summary>
+    /// <param name="product">The product node.</param>
+    /// <param name="type">The type of the chain.</param>
+    /// <returns><see langword="true"/> when nothing in the node itself refuses the term.</returns>
+    private static bool IsFactorableProductNode(BinaryExpression product, Type type)
+        => IsFactorShape(product.Left) && IsFactorShape(product.Right)
+            && IsOrdinaryBinaryArithmetic(product) && ReferenceEquals(product.Type, type);
+
+    /// <summary>
+    /// Decides <see cref="IsFactorableProduct"/> over the distinct product nodes of a term of more than
+    /// <see cref="PlainProductVisits"/> product occurrences: one iterative post-order walk, one structural visit per distinct
+    /// product node, the number of calls (saturated at 2) and of product occurrences (saturated) of each node memoized by
+    /// reference.
+    /// </summary>
+    /// <param name="root">The root product of the term (or of the operand of a negated term).</param>
+    /// <param name="type">The type of the chain.</param>
+    /// <returns>
+    /// The answer of the walk of the occurrences when the revisits of shared product nodes stay within
+    /// <c>max(</c><see cref="SharedRevisitAllowance"/><c>, distinct product nodes)</c>, always the case for a tree;
+    /// <see langword="false"/> beyond.
+    /// </returns>
+    /// <remarks>
+    /// <para>
+    /// Every condition of the walk of the occurrences is a property of one node (its shape, its operator, its type, the factor
+    /// test of a leaf), except the number of calls, which is the sum over the occurrences of the leaves: a node contributes the
+    /// calls of its subtree once per occurrence, so no occurrence is dropped from the count, and the calls of a node bound
+    /// those of the term from below. The walk refuses at a node or leaf the walk of the occurrences refuses too (in another
+    /// order, which only changes which refusal is met first). Leaves are tested at each occurrence of their parent: a leaf
+    /// test reads no child and allocates nothing.
+    /// </para>
+    /// <para>
+    /// The revisits are counted after the walk, which is linear in the distinct product nodes, and never evaluate anything: a
+    /// shared node is not an evaluation saved (a compiled tree evaluates it once per occurrence), it is the global factoring's
+    /// work that would multiply, and the term is left to the levels, which transform it occurrence by occurrence under the
+    /// transformation budget.
+    /// </para>
+    /// </remarks>
+    private static bool IsFactorableSharedProduct(BinaryExpression root, Type type)
+    {
+        FlattenAdmissionStatistics? statistics = t_admissionStatistics;
+        if (statistics is not null) statistics.SharedProductTests++;
+        var memo = new Dictionary<BinaryExpression, (int Calls, long Occurrences)>(ReferenceEqualityComparer.Instance);
+        var pending = new Stack<(BinaryExpression Node, bool Expanded)>();
+        pending.Push((root, false));
+        while (pending.Count > 0)
+        {
+            (BinaryExpression node, bool expanded) = pending.Pop();
+            if (memo.ContainsKey(node)) continue;
+            if (!expanded)
+            {
+                ExpressionResourceBudget.ConsumeStructuralVisit();
+                if (statistics is not null) statistics.SharedProductNodes++;
+                if (!IsFactorableProductNode(node, type)) return false;
+                pending.Push((node, true));
+                if (node.Right is BinaryExpression { NodeType: ExpressionType.Multiply } right && !memo.ContainsKey(right)) pending.Push((right, false));
+                if (node.Left is BinaryExpression { NodeType: ExpressionType.Multiply } left && !memo.ContainsKey(left)) pending.Push((left, false));
+                continue;
+            }
+
+            int calls = 0;
+            long occurrences = 1;
+            if (!AddOperand(node.Left, type, memo, ref calls, ref occurrences) || !AddOperand(node.Right, type, memo, ref calls, ref occurrences)) return false;
+            memo[node] = (calls, occurrences);
+        }
+
+        long revisits = memo[root].Occurrences - memo.Count;
+        return revisits <= Math.Max(SharedRevisitAllowance, memo.Count);
+    }
+
+    /// <summary>
+    /// Adds one operand of a product node to the counts of the node (see <see cref="IsFactorableSharedProduct"/>): the memoized
+    /// counts of a product operand, or the factor test of a leaf.
+    /// </summary>
+    /// <param name="operand">The operand; a product operand is already memoized.</param>
+    /// <param name="type">The type of the chain.</param>
+    /// <param name="memo">The memoized counts of the distinct product nodes.</param>
+    /// <param name="calls">The calls of the node so far, saturated at 2.</param>
+    /// <param name="occurrences">The product occurrences of the node so far, saturated at <see cref="long.MaxValue"/>.</param>
+    /// <returns><see langword="false"/> when the operand refuses the term or the calls exceed one.</returns>
+    private static bool AddOperand(Expression operand, Type type, Dictionary<BinaryExpression, (int Calls, long Occurrences)> memo, ref int calls, ref long occurrences)
+    {
+        if (operand is BinaryExpression { NodeType: ExpressionType.Multiply } product)
+        {
+            (int productCalls, long productOccurrences) = memo[product];
+            calls = Math.Min(2, calls + productCalls);
+            occurrences = occurrences > long.MaxValue - productOccurrences ? long.MaxValue : occurrences + productOccurrences;
+        }
+        else if (!IsFactorableFactor(operand, type, ref calls))
+        {
+            return false;
+        }
+
+        return calls <= 1;
     }
 
     /// <summary>Whether <paramref name="expression"/> has the class of a factorable factor or product, by type tests only.</summary>

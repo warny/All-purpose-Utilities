@@ -103,6 +103,100 @@ internal static class Profile
         };
     }
 
+    /// <summary>
+    /// One bounded probe of family <paramref name="family"/> at size <paramref name="n"/> (mission "multiplicative DAG resource
+    /// bounds"): one run under the default limits, one under the unlimited ones, each with its time and allocations, the
+    /// distinct and logical node counts of the input and of the result (memoized by reference, never unfolded), and the minimal
+    /// visit budgets when the unlimited run is short. Meant to run in a process of its own under the harness watchdog.
+    /// </summary>
+    /// <param name="family">The family.</param>
+    /// <param name="n">The size.</param>
+    /// <returns>The probe record.</returns>
+    public static object Probe(string family, int n)
+    {
+        Expression tree = Families.Build(family, n);
+        (long inputDistinct, long inputLogical) = DagCount(tree);
+
+        (string defaultOutcome, double defaultMs, long defaultBytes, _) = TimedOnce(tree, ExpressionResourceLimits.Default);
+        // The node limit lifted, the visit budgets kept: the walks before the first refusal are what the budgets bound.
+        (string nodesOffOutcome, double nodesOffMs, long nodesOffBytes, _) = TimedOnce(tree, ExpressionResourceLimits.Default with { MaxNodes = long.MaxValue });
+        (string unlimitedOutcome, double unlimitedMs, long unlimitedBytes, Expression? result) = TimedOnce(tree, ExpressionResourceLimits.Unlimited);
+        (long outputDistinct, long outputLogical) = result is null ? (0, 0) : DagCount(result);
+
+        long transformVisits = -1, structuralVisits = -1;
+        Dictionary<string, long> admission = [];
+        if (result is not null && unlimitedMs < 2000)
+        {
+            transformVisits = MinimalBudget(tree, value => ExpressionResourceLimits.Unlimited with { MaxTransformVisits = value });
+            structuralVisits = MinimalBudget(tree, value => ExpressionResourceLimits.Unlimited with { MaxStructuralVisits = value });
+            admission = Collect(AdmissionProperty, () => Simplification.Run(tree, ExpressionResourceLimits.Unlimited));
+        }
+
+        return new
+        {
+            family, n,
+            inputDistinct, inputLogical,
+            defaultOutcome, defaultMs, defaultBytes,
+            nodesOffOutcome, nodesOffMs, nodesOffBytes,
+            unlimitedOutcome, unlimitedMs, unlimitedBytes,
+            outputDistinct, outputLogical,
+            transformVisits, structuralVisits, admission,
+        };
+    }
+
+    /// <summary>Runs one simplification of <paramref name="tree"/> and reports its outcome, time and allocations.</summary>
+    /// <param name="tree">The tree.</param>
+    /// <param name="limits">The limits.</param>
+    /// <returns>The outcome (<c>ok</c> or the described error), the time, the allocated bytes and the result.</returns>
+    private static (string Outcome, double Ms, long Bytes, Expression? Result) TimedOnce(Expression tree, ExpressionResourceLimits limits)
+    {
+        long before = GC.GetAllocatedBytesForCurrentThread();
+        var watch = Stopwatch.StartNew();
+        (Expression? result, Exception? error) = Simplification.Run(tree, limits);
+        watch.Stop();
+        return (error is null ? "ok" : AuditText.Describe(error), watch.Elapsed.TotalMilliseconds, GC.GetAllocatedBytesForCurrentThread() - before, result);
+    }
+
+    /// <summary>The distinct (by reference) and logical (unfolded, saturated) node counts of a DAG, by memoized post-order.</summary>
+    /// <param name="root">The root.</param>
+    /// <returns>The two counts.</returns>
+    private static (long Distinct, long Logical) DagCount(Expression root)
+    {
+        var logical = new Dictionary<Expression, long>(ReferenceEqualityComparer.Instance);
+        var stack = new Stack<(Expression Node, bool Expanded)>();
+        stack.Push((root, false));
+        while (stack.Count > 0)
+        {
+            (Expression node, bool expanded) = stack.Pop();
+            if (logical.ContainsKey(node)) continue;
+            List<Expression> children = Children(node);
+            if (!expanded)
+            {
+                stack.Push((node, true));
+                foreach (Expression child in children) if (!logical.ContainsKey(child)) stack.Push((child, false));
+                continue;
+            }
+
+            long count = 1;
+            foreach (Expression child in children) count = count > long.MaxValue - logical[child] ? long.MaxValue : count + logical[child];
+            logical[node] = count;
+        }
+
+        return (logical.Count, logical[root]);
+    }
+
+    /// <summary>The direct children of a node, for the node kinds of the DAG families (other kinds count as leaves).</summary>
+    /// <param name="node">The node.</param>
+    /// <returns>Its children.</returns>
+    private static List<Expression> Children(Expression node) => node switch
+    {
+        BinaryExpression binary => [binary.Left, binary.Right],
+        UnaryExpression unary => [unary.Operand],
+        MethodCallExpression call => call.Object is null ? [.. call.Arguments] : [call.Object, .. call.Arguments],
+        LambdaExpression lambda => [lambda.Body, .. lambda.Parameters],
+        _ => [],
+    };
+
     /// <summary>Times the untraced simplification of <paramref name="tree"/>: median of up to 15 runs after a warm-up.</summary>
     /// <param name="tree">The tree.</param>
     /// <param name="limits">The limits.</param>

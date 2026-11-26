@@ -73,6 +73,14 @@ public static class Program
         ["bfsum16x2"] = () => SimplifyTwice(Enumerable.Range(1, 16).Select(i => (Expression)Expression.Multiply(Xs[i], Expression.Add(Expression.Constant(1.0), Xs[62]))).Prepend(Expression.Divide(Xs[0], Xs[63])).Aggregate(Expression.Add)),
         ["bfnone16"] = () => Simplify(Enumerable.Range(1, 16).Select(i => (Expression)Expression.Multiply(Xs[i], Expression.Divide(Xs[i + 20], Xs[i + 40]))).Prepend(Expression.Divide(Xs[0], Xs[63])).Aggregate(Expression.Add)),
         ["bfcalls8"] = () => Simplify(Enumerable.Range(1, 8).SelectMany(i => new Expression[] { Expression.Multiply(Xs[i], Expression.Divide(Xs[61], Xs[62])), Expression.Call(typeof(Program).GetMethod(nameof(Observable))!) }).Prepend(Expression.Divide(Xs[0], Xs[63])).Aggregate(Expression.Add)),
+        // Multiplicative DAG resource bounds (SimplifierFlatten.md §24): ordinary product terms (the plain walk only), a legitimate
+        // shared product (within the allowance), a shared product beyond it (refused by the factorable family), its tree copy, and
+        // a long integral product (the counted factor collection).
+        ["prodsum16"] = () => Simplify(Enumerable.Range(1, 16).Select(i => (Expression)Expression.Multiply(Expression.Multiply(Xs[0], Xs[i]), Xs[i + 20])).Aggregate(Expression.Add)),
+        ["mdag2x3"] = () => Simplify(MulDagSum(3, shared: true)),
+        ["mdag2x7"] = () => Simplify(MulDagSum(7, shared: true)),
+        ["mdag2x7tree"] = () => Simplify(MulDagSum(7, shared: false)),
+        ["lmullong32"] = () => Simplify(Enumerable.Range(0, 32).Select(i => (Expression)Ls[i % 4]).Aggregate(Expression.Multiply)),
         ["opt-ext-root"] = () => Optimize(new BenchExtension()),
         ["opt-scalar"] = () => Optimize(Expression.Add(Expression.Multiply(Xs[0], Expression.Constant(1.0)), Expression.Constant(-0.0))),
         ["opt-lambda"] = () => Optimize(Expression.Lambda<Func<double, double, double>>(Expression.Add(Expression.Multiply(Xs[0], Expression.Constant(1.0)), Xs[1]), Xs[0], Xs[1])),
@@ -206,6 +214,26 @@ public static class Program
         => Enumerable.Range(2, terms - 1).Aggregate(
             (Expression)Expression.Add(Expression.Multiply(Expression.Constant(2.0), Xs[1]), Expression.Divide(Xs[0], Xs[63])),
             (chain, i) => Expression.Add(chain, Expression.Multiply(Expression.Constant(2.0), Xs[i])));
+
+    /// <summary>The <see cref="long"/> parameters of the integral product scenario.</summary>
+    private static readonly ParameterExpression[] Ls = Enumerable.Range(0, 4).Select(i => Expression.Parameter(typeof(long), "l" + i)).ToArray();
+
+    /// <summary>
+    /// <c>s * x2 + s * x3</c> with <c>s = x0 * x1</c> squared <paramref name="levels"/> times, shared by both terms and by its own
+    /// operands, or rebuilt as a tree (SimplifierFlatten.md §24).
+    /// </summary>
+    /// <param name="levels">The number of squarings.</param>
+    /// <param name="shared">Whether the product is one shared instance.</param>
+    /// <returns>The tree.</returns>
+    private static Expression MulDagSum(int levels, bool shared)
+    {
+        Expression Tree(int level) => level == 0 ? Expression.Multiply(Xs[0], Xs[1]) : Expression.Multiply(Tree(level - 1), Tree(level - 1));
+        Expression product = Expression.Multiply(Xs[0], Xs[1]);
+        for (int level = 0; level < levels; level++) product = Expression.Multiply(product, product);
+        return shared
+            ? Expression.Add(Expression.Multiply(product, Xs[2]), Expression.Multiply(product, Xs[3]))
+            : Expression.Add(Expression.Multiply(Tree(levels), Xs[2]), Expression.Multiply(Tree(levels), Xs[3]));
+    }
 
     /// <summary>nested#1179 of the S5 campaign: <c>(-2 * (y / 1)) - ((x / (y / 0)) + (-1 * (2 * z)))</c>.</summary>
     /// <returns>The tree.</returns>
