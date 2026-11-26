@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed — `omy.Utils` (`ExpressionSimplifier` multiplicative DAG resource bounds)
+- A product node shared by its own operands (`s = s * s`, n + 1 distinct products, 2^(n+1) - 1 occurrences) no longer makes the
+  factorable test of the global factoring walk every occurrence: past 64 product occurrences a term is decided over its distinct
+  product nodes, with the decision of the previous version for every tree and every term within the shared-revisit allowance,
+  and a refusal beyond it (the term is then simplified level by level, as a shared additive sub-chain already was). The boundary
+  finishing of refused chains (M1, M4, mission B) is therefore linear in the distinct nodes of what it tests, with or without
+  budgets; the multiplicative factor collection is counted by the structural budget.
+- Behavior: every result and every exception of the S5 convergence, termination, differential and effect corpora, of the 304
+  complexity points and of 151 multiplicative DAG cases is unchanged; the minimal structural budget of long integral products
+  grows (up to +44 % on the measured cases, the collection now counted). See `docs/expressions/SimplifierFlatten.md` §24.
 ### Fixed — `omy.Utils` (`ExpressionSimplifier` binary factorings of refused chains, mission B)
 - A refused sum whose last canonicalization builds a pair or a group that the binary factoring rules (`AdditionOfEqualsElements`,
   `SubstractionOfEqualsElements`) only factored on the next call is now finished in the same call: `(y / w) + ((-2 * x) +

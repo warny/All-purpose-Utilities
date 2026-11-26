@@ -1,6 +1,6 @@
 # Flatten rule of `ExpressionSimplifier` (PR B)
 
-Status: first n-ary treatment of the simplifier, restricted to the *linear additive chains*; §11 describes the shared metadata of mission C3a, §12 the term analysis and the spine chains of mission C3b, §13 the global factoring of mission C3c, §14 the stabilization of mission C3d, §15 the trigonometric rule and the linear quotient chains, §16 the grouped quotient chains. Built on the infrastructure of
+Status: first n-ary treatment of the simplifier, restricted to the *linear additive chains*; §11 describes the shared metadata of mission C3a, §12 the term analysis and the spine chains of mission C3b, §13 the global factoring of mission C3c, §14 the stabilization of mission C3d, §15 the trigonometric rule and the linear quotient chains, §16 the grouped quotient chains, §24 the resource bounds of multiplicative DAGs. Built on the infrastructure of
 [FlattenArchitecture.md](FlattenArchitecture.md) (PR A, `a9ec71ac`). No multiplicative chain, no division, no C3, no change to
 `ExpressionDerivation<T>` or `ExpressionIntegration<T>`.
 
@@ -3450,7 +3450,186 @@ once this one is merged, with the full campaigns (values, effects, comparer) the
   node inside a product, which is not the boundary of the refused chain.
 - **Comparer simplifications** are not finished (23.3).
 - **Special coefficients** (`NaN`, infinities, negative zero) and **opaque factors** are never finished.
-- **Pre-existing.** A term that is a multiplicative DAG whose paths multiply makes the boundary tests of M1/M4 walk it
+- **Pre-existing, fixed by §24.** A term that is a multiplicative DAG whose paths multiply made the boundary tests of M1/M4 walk it
   (independently of mission B: `ExpressionSimplifierBinaryFinishingResourceTests.ExplosiveDags_AreTestedAfterBoundedWork` uses
   distinct large products instead).
 - Free-parameter ties of the canonical order (L-3) are unchanged.
+
+## 24. Multiplicative DAG resource bounds
+
+Mission of 2026-11-26, base `01f7a453` (PR #725). The question: can a compact multiplicative DAG — a product node shared by its
+own operands, `s = x * y`, then `s = s * s` repeated n times — make the simplifier walk or materialize an exponential number of
+occurrences before it refuses a transformation or applies a resource limit?
+
+### 24.1 Counts
+
+| Quantity | `s = s * s`, n squarings | Meaning |
+|---|---|---|
+| Distinct nodes | n + 3 (n + 1 products, `x`, `y`) | the objects in memory, what `ExpressionShapeValidator` measures exactly |
+| Paths from the root / occurrences | 2^(n+2) - 1 (2^(n+1) - 1 products, 2^(n+1) leaves) | the unfolded tree; `MaxNodes` limits this logical count |
+| Factors materialized by a full collection | 2^(n+1) | what `CollectMultiplicativeFactors` appends for the root |
+| Visits consumed | per occurrence for every walk that follows the occurrences | what the visit budgets count |
+
+The transformation itself visits every occurrence: `PrepareExpression` has no memo by reference (a shared node is evaluated once
+per occurrence by a compiled tree, and the engine never merges evaluations, §8 of the brief), and every binary node is rebuilt,
+so **a prepared operand or a rule result is a tree** whose leaves only are shared. The default limits refuse the DAG at input
+(`MaxNodes` = 50,000 logical nodes: `ResourceLimit:Nodes` from n = 14, in about 30 ms, without unfolding).
+
+### 24.2 Map of the multiplicative walks (phase A)
+
+Measured with `dagprobe` (one process per point, watchdog `--timeout`/`--memory` and an external kill, `run-dagprobe.ps1`), on
+the families `mdag`, `mdagtree`, `mdagq`, `mdagm4`, `mdag2`, `mdagmix`, `mdagnone`, `mdagopaque`, `mdagieee`, `mdagnan`,
+`mdaglong`, `mdagcustom` (variants A to H of the brief, `tests/ExpressionSimplifierAudit/Corpus.cs`).
+
+| Walk | Traversal | Budget | Sharing on `master` | Input it receives | Risk on `master` |
+|---|---|---|---|---|---|
+| `IsFactorableProduct` (via `IsFactorableTerm`, `IsFactorableChain`, `IsFactorableSuffixNode`/`Operand`) | iterative, occurrences | one structural visit per product occurrence | none | raw terms (admission) and boundary results | **exponential in distinct nodes**: a term holding the DAG is walked once per occurrence before any refusal; bounded only by the structural budget, never ending without limits on a boundary result (`FinishRefusedChain`, §23.10 "pre-existing") |
+| `IsFactorableChain` | iterative, crossed additive nodes | one per crossed node | revisits counted, refusal beyond `max(16, distinct)` | raw chains, results | linear for additive sharing, but its terms go to `IsFactorableProduct` |
+| `CollectMultiplicativeFactors` (`CanonicalizeMultiplicativeExpression`, `BuildFactoredProduct`, `NormalizeProductFactors`, `TryBuildFactoredTerm`, `AdditiveTermAnalysis.Decompose` → `FactoringMonomial.Create`/`FromAnalysis`, `MergeIdenticalMonomials`, `FactorCommonFactors`, `HasFactoringCandidate`) | recursive, occurrences; appends one entry per leaf occurrence | stack only | none | prepared operands and rule results (trees); a boundary result once `IsFactorableChain` admits it | uncounted work, proportional to the tree the transformation already paid, except on a result admitted with a shared product (then 2^(n+1) entries) |
+| `BuildCanonicalProduct`, keys, `MergeIdenticalMonomials`, `FactorCommonFactors` | over the collected factors | structural (sorted keys, comparisons) | key table by reference | the collected list | linear-logarithmic in the list |
+| `FinishRefusedChain`, `FinishRefusedSuffix`, `FinishRefusedBinaryPair` | spine, then the walks above | structural | through `IsFactorableChain` | the level result | the product walk above |
+| Transformation (`PrepareExpression`), effect gate | recursive, occurrences | one transformation visit per occurrence | none, by design | the input | linear in occurrences (6.5 transformation visits per occurrence on `mdag`, identical to its tree copy) |
+| `ExpressionShapeValidator` | distinct items, exact | — | memo by reference | the input | linear in distinct nodes |
+
+Measured on `master` (limits lifted): `mdag`, `mdagq`, `mdag2`, `mdagnone`, `mdagopaque` and `mdagcustom` cost a constant number of
+transformation and structural visits per occurrence (5.5 to 6.5), identical for a DAG and its tree copy; `mdagm4` and `mdag2` pay
+0.5 structural visit per occurrence more (the admission walk of the product term); `mdagmix` (additive and multiplicative sharing)
+stays linear in its occurrences (19 million at n = 14: 57 s, the external kill stopped n = 16). No family is super-linear in its
+occurrences **because of the sharing**. `mdaglong` (`long`: no power rule, the result keeps 2^(n+1) factors) costs
+quadratically more transformation visits and about L^3.3 structural visits — **identical for its tree copy** `mdaglongtree`: the
+comparer probes of the multiplication rules (4,294 comparer simplifications, depth ≤ 3, for 255 occurrences) on balanced
+integral products, a pre-existing cost of the probes, bounded by the budgets (refused by `StructuralWork` at n = 8 under the default
+limits) and outside this mission (24.8).
+
+The exponential walk is therefore the factorable product test: on the raw admission of a sum holding a shared product (variants
+B to E) it walks every occurrence before the transformation starts, and on a boundary result holding one it walks, then collects,
+every occurrence with no bound but the budgets.
+
+### 24.3 Strategies compared (phase B)
+
+| Strategy | Effect | Cost | Verdict |
+|---|---|---|---|
+| **A** — anticipated refusal by revisits of `Multiply` nodes | the product test decides over distinct nodes; a product whose revisits exceed its distinct nodes is refused, as `IsFactorableChain` refuses a shared sub-chain | one table allocated only past 64 product occurrences | **kept**, with the exact decision below the threshold |
+| **B** — local budget of materialized factors | bounds `CollectMultiplicativeFactors` | a new limit, a new refusal kind | kept in its simplest form: one structural visit per expanded product (the existing budget, no new limit) |
+| **C** — compact analysis with multiplicities | factoring without unfolding | multiplicity overflow, factor order, pinned factors, floating-point latitude | rejected: no proof of the invariants of §13.5 for multiplicities, and no gain once the transformation unfolds the term anyway |
+| **D** — controlled resource exception | refuses the operation | turns into failures inputs `master` simplifies | rejected as a mechanism; it is what the existing budgets already do |
+
+**Refusal is not abandonment** (§7 of the brief). The refused product only leaves the factorable family: the chain is then
+simplified level by level, where each product is transformed occurrence by occurrence under the transformation budget, and where
+`CollectMultiplicativeFactors` only ever sees prepared trees. Every caller of `CollectMultiplicativeFactors` needs the complete
+list of the occurrences of the factors (a shared factor is a factor once per occurrence), so its behavior is unchanged: it is
+counted, not truncated, and no product is kept opaque.
+
+### 24.4 Mechanism and proof obligations
+
+- **`IsFactorableProduct`** walks the occurrences as before up to `PlainProductVisits` = 64 product occurrences (an ordinary term
+  allocates nothing more), then hands the term to `IsFactorableSharedProduct`: one iterative post-order walk over the distinct
+  product nodes, one structural visit each, memoizing per node its number of calls (saturated at 2) and of product occurrences
+  (saturated at `long.MaxValue`).
+- **Same decision as the walk of the occurrences** for every term of at most 64 product occurrences and for every tree: every
+  condition is a property of one node (its shape — type tests first, ETC R4 —, its operator, its type, the factor test of a leaf,
+  whose call check reads the provenance first, S5 A-10), except the number of calls, which is the sum over the occurrences: a
+  node adds the calls of its subtree once per occurrence, so no occurrence is dropped from the count. The order of the refusals
+  changes, not their set.
+- **New refusal**: a term of more than 64 product occurrences whose revisits (occurrences − distinct product nodes) exceed
+  `max(SharedRevisitAllowance = 16, distinct product nodes)` — the rule `IsFactorableChain` applies to shared sub-chains. A tree
+  has no revisit and is never refused by it. The refusal never evaluates anything and never assumes a shared node is evaluated
+  once: it only declines the global factoring, whose work would multiply.
+- **`CollectMultiplicativeFactors`** consumes one structural visit per expanded ordinary product: the list it builds is bounded
+  by the structural budget of the operation and visible in the minimal budgets.
+- **Switch**: `ExpressionSimplifier.MultiplicativeDagGuardDisabled` (thread-static, audits and tests) restores both behaviors of
+  `master` `01f7a453`; the `reference` campaign uses it.
+- **Statistics** (`FlattenAdmissionStatistics`): `ProductOccurrences`, `SharedProductTests`, `SharedProductNodes`,
+  `CollectedProducts`.
+
+Guarantees: the factorable test of a term costs at most 64 + (distinct product nodes) structural visits, so `IsFactorableChain`,
+the suffix search and the boundary finishing are linear in the distinct nodes of what they test, with or without budgets; the
+global factoring never collects the factors of a product whose occurrences multiply; every other collection is counted.
+
+### 24.5 Validation
+
+**Probes** (`run-dagprobe.ps1`, base `01f7a453` worktree against the branch, the same harness, one process per point; times
+indicative, counters exact). Outcomes and results are identical on every point; the visits are those of the unlimited run.
+
+| Family | n | Default limits | Node limit lifted (budgets kept), base → branch | Transformation visits | Structural visits | Result |
+|---|---:|---|---|---:|---:|---|
+| `mdag` (A) | 4 / 8 / 12 | ok | ok | identical (395 / 6,635 / 106,475) | identical | identical (5 nodes) |
+| | 16 / 20 | `Nodes` (≈ 30 ms) | `Work`, 978 → 896 ms / 999 → 1,105 ms | identical | identical | — |
+| `mdagq` (B), `mdagnone` (F) | 4 to 20 | ok to 12, `Nodes` beyond | `Work` from 16, ≈ 0.9 s on both | identical | identical (± 1) | identical |
+| `mdagm4` (C) | 4 / 8 / 12 / 16 | ok, `Nodes` from 14 | `Work` from 16: 995 → 904 ms; 20: 1,113 → 888 ms | +0 / +1 / +1 / +1 | 556 → 559 / 6,316 → 5,869 / 98,476 → 90,353 / 1,573,036 → 1,442,037 (−8 %) | identical |
+| `mdag2` (D) | 4 / 8 / 12 / 16 | ok, `Nodes` from 14 | `Work` from 16: 975 → 914 ms; 20: 1,192 → 910 ms | +0 / +9 / +9 / +9 | 916 → 919 / 12,436 → 11,368 / 196,756 → 180,332 / 3,145,876 → 2,883,696 (−8 %) | identical |
+| `mdagopaque` (G), `mdagnan`, `mdagieee` (H), `mdagcustom` (G) | 4 to 16 | ok, `Nodes` from 14 | identical outcomes (`Work` or ok) | identical | identical | identical |
+| `mdaglong` (`long`) | 4 / 5 / 6 / 7 | ok | ok | identical | 1,497 → 2,155 / 13,744 → 18,962 / 144,027 → 186,333 / 1,471,945 → 1,814,859 (+23 to +44 %) | identical |
+| `Lmullong` (`x * y * …`, `long`) | 4 / 7 | ok | ok | identical | 26 → 30 / 127 → 172 | identical |
+
+Reading: the families whose sum holds the shared product (C, D) no longer walk its occurrences at the admission (−8 % structural
+visits, a few transformation visits more for D: the levels instead of one global factoring, with the same result). The integral
+products pay one structural visit per expanded product in the factor collection: their minimal structural budget grows, by a
+constant factor of the collection work that was already done (no new refusal on any measured point, `mdaglong` 8 was already
+refused by `StructuralWork` on `master`). The families where the power rule collapses the product (A, B, F, G, H) are unchanged.
+
+**Reference campaign** (`reference`, switch `MultiplicativeDagGuardDisabled`, one process, the corpora of `converge`,
+`terminate`, `diff` and `effects` plus 151 DAG cases of the families above, shared and copied, at the sizes the default limits
+accept): 139,106 + 151 cases, **all unchanged**, no exception changed (2 cases throw on both sides), no anomaly.
+
+**S5 campaigns** (`run-audit.ps1`, `terminate`, `inventory`, `converge`, `canon`, `comparer`, `diff`, `effects`, `s3`, the same
+corpus on both sides): every summary identical line by line, and every record identical but for times (`converge` 70,685,
+`terminate` 66,270, `diff` 4,000, `effects` 4,004 records; anomalies 0 / 0 / 53 / 19 / 0 / 1 / 1 / 1 on both sides: the
+documented residues of §17–§23).
+
+**Tests.** Security `ExpressionSimplifierMultiplicativeDagResourceTests` (9 tests): a 40-level shared product decided in fewer
+than 1,000 visits; DAG and tree decided alike up to 64 product occurrences for ordinary terms, shared calls (counted per
+occurrence), `NaN`, conversions and custom operators, refused beyond; a moderately shared large product keeps its decision; the
+boundary finishing of results holding the product in M1, M4 and mission B positions linear; public entry points refused by
+`Nodes`, then by `Work` or `StructuralWork` with the node limit lifted, state restored; the factor collection refused just below its
+structural count; hostile extension nodes, impersonating methods and operators never read; a 400-level product on a 256 KiB stack;
+isolation through refusals, nested operations and threads. The walks are run under a 5,000,000-visit safety net on background
+threads, so a regression fails in seconds instead of blocking the job: on `master`, 5 of them fail (structural budget exhausted).
+Unit `ExpressionSimplifierMultiplicativeDagTests` (3 tests): six families (product, refused sum, M4 suffix, two products, binary
+pair, no common factor) give their tree copy's result under three policies up to 4 levels, with the source values; from 5 to 8
+levels (refused by the factorable family) the values, the second pass and the tree copy's result are kept; `int` and `long` shared
+products give their tree copy's result and wrap like the source.
+
+### 24.6 Complexity
+
+The 304 historical points (`run-audit.ps1 -Campaigns complexity -Unlimited -StopAfterSeconds 10`, the 35 families of the script,
+n = 4 to 20): 304 points on both sides, **identical** transformation visits, rule applications, depths, comparer simplifications
+and their depths, user and opaque calls, re-entries, input and output sizes, results and outcomes under the default limits. The
+structural visits of the collection are not part of those counters; they show in the probes above (24.5).
+
+### 24.7 Performance and suites
+
+`tests/ExpressionTracingBench/run-campaign.ps1`, baseline `01f7a453` (worktree), A/A copy of the base binaries, one process per
+scenario and variant, rotating order, 5 rounds, machine idle. New scenarios: `prodsum16` (16 ordinary product terms: the plain walk
+only), `mdag2x3` (a shared product within the allowance), `mdag2x7` (beyond it: refused by the factorable family), `mdag2x7tree`
+(its tree copy: 255 product occurrences decided over distinct nodes, no revisit) and `lmullong32` (32 `long` factors: the counted
+collection).
+
+| Scenario | Base (one call) | A/A | Branch | Allocated base → branch |
+|---|---:|---:|---:|---:|
+| `ext-root`, `scalar`, `binary`, `leftsum20`, `p9family16`, `dag10`, `negmul8`, `prod2x`, `refused16`, `m4suffix16`, `bfsum16`, `nested1179`, `cmp-pos`, `hash` | | −3.6 % to +6.3 % | −2.6 % to +1.9 % | identical (± 1 B) |
+| `prodsum16` | 88,682 ns | +0.9 % | +2.3 % | identical (121,609 B) |
+| `mdag2x3` | 109,506 ns | 0.0 % | −1.5 % | identical (102,671 B) |
+| `mdag2x7` | 1,652,939 ns | −1.2 % | −2.0 % | 1,531,782 → 1,527,337 B |
+| `mdag2x7tree` | 1,614,715 ns | +1.5 % | +3.3 % | 1,531,783 → 1,590,025 B (+3.8 %: the memo table of 255 product nodes, twice) |
+| `lmullong32` | 4,352,940 ns | −1.7 % | +0.2 % | identical |
+
+Reading: ordinary products and legitimate small DAGs pay nothing measurable (the plain walk allocates nothing, the structural
+visit of the collection is one counter increment); a large product tree pays one dictionary per product term tested past 64
+occurrences.
+
+**Suites**, Debug and Release on Windows: Unit 15,177 passed (1 skipped), Security 490 (3 skipped), Functional 383; CI runs
+Windows and Ubuntu, the ETC coverage and R4 jobs. The tests of C3c, M1–M4 and mission B are unchanged and pass.
+
+### 24.8 Residual limits
+
+- **The transformation follows the occurrences.** With the node limit lifted, a shared input costs its unfolded size in
+  transformation visits (linear in occurrences, exponential in distinct nodes) and a result that keeps its factors (an integral
+  product, a custom operator) is materialized as its unfolded tree (`mdagcustom` 14: 32,769 distinct output nodes). The default
+  `MaxNodes` refuses such inputs at once; a memo of transformations by reference would be a separate architecture change.
+- **Comparer probes on balanced integral products** (`mdaglong`, identical for its tree copy): about L^3.3 structural visits,
+  bounded by the budgets; a probe question of the S5 audit, not a sharing one.
+- **DAG and tree copy may differ** above the allowance: the DAG is simplified level by level where the tree copy is factored
+  globally. On the families of this mission both give the same tree (24.5).
+- **Without any limit**, nothing bounds the transformation of a huge input; only the walks that decide a refusal are now
+  linear in the distinct nodes.

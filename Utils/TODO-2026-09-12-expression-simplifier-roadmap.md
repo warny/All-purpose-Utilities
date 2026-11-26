@@ -5416,6 +5416,15 @@ factorable family (strategy D not needed). Every changed result is the second ca
 multi-pass case or cycle. V1b and V1b + C1, replayed on this branch, add no multi-pass case. Next: the sign normalization
 V1b + C1 as a separate pull request, with the full S5 campaigns. Record: `docs/expressions/SimplifierFlatten.md` §23.
 
+### Multiplicative DAG resource bounds (2026-11-26)
+
+Branch `fix/expression-multiplicative-dag-resource-bounds`, base `01f7a453`. The factorable product test walked every occurrence
+of a shared product (exponential in distinct nodes, before any refusal, and without bound on a boundary result); it now decides
+over distinct product nodes past 64 occurrences (same decision within the shared-revisit allowance, refusal beyond), and the
+multiplicative factor collection is counted. All S5 corpora, the 304 complexity points and the DAG reference cases are unchanged.
+Left: the transformation itself follows the occurrences (no memo by reference, by design), and the comparer probes on balanced
+integral products cost about L^3.3 structural visits, DAG or tree alike (a probe question). Record:
+`docs/expressions/SimplifierFlatten.md` §24.
 ## Execution-optimizer stages
 
 These remain separate from the simplifier stages above.
