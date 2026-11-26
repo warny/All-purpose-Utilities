@@ -1577,6 +1577,13 @@ simplifications are not finished, so the factors the rules see as equal are thos
 (<code>ExpressionSimplifierBinaryFactoringFinalizationTests.ObservableCalls_KeepTheirEvaluations_UnderEveryPolicy</code>) keep every
 evaluation, its order, the values and the exceptions of <code>F()*x + F()*y</code>, <code>F()*x - F()*y</code>, <code>x/F() + y/F()</code>, <code>F()*(x+y)</code> and of
 throwing calls inside shared factors, under the default, <code>Verified</code>, <code>TrustDeclarations</code>, aggressive and exception-free policies.</p>
+<h2 id="17-multiplicative-dag-resource-bounds">17. Multiplicative DAG resource bounds</h2>
+<p>The bounds of <code>SimplifierFlatten.md</code> §24 need no permission: they only decide, in fewer visits, whether a term belongs to the
+factorable family, and count the factor collection against the structural budget. A shared product is never treated as one
+evaluation (a compiled tree evaluates it once per occurrence): the calls of a term are counted once per occurrence, as before, and
+a product whose occurrences multiply is refused by the family and left to the levels, which transform it occurrence by
+occurrence under the effect gate of the policy. The provenance of a call is checked before any of its members is read (S5 A-10)
+and the type tests come first (ETC R4), so <code>Verified</code> and <code>TrustDeclarations</code> see the nodes the default policy sees.</p>
 
 </article>
 

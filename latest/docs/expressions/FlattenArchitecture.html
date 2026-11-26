@@ -1229,6 +1229,14 @@ above it through <code>TransformLevel</code> with the group's dispatcher, the lo
 tests, runtime reflection objects and raw structure only; a simplification made by the comparer for a factor probe
 (<code>ComparisonMemoDepth &gt; 0</code>) is never finished. <code>RefusedBinaryFinishingDisabled</code> (thread-static, audits and tests) gives back the
 result of <code>master</code> <code>7664b9ca</code>.</p>
+<h2 id="multiplicative-dag-note">Multiplicative DAG note</h2>
+<p>The multiplicative DAG bounds of <code>SimplifierFlatten.md</code> §24 add no hook. The factorable product test of the built-in simplifier
+(<code>IsFactorableProduct</code>, reached from <code>IsFactorableChain</code> through each term) walks at most 64 product occurrences, then decides the
+term over its distinct product nodes (<code>IsFactorableSharedProduct</code>: one structural visit per distinct node, calls and occurrences
+memoized by reference, the decision of the walk of the occurrences for every tree and every term within the shared-revisit
+allowance, a refusal beyond it). <code>CollectMultiplicativeFactors</code> consumes one structural visit per expanded product. The
+extraction, the admission contract, the dispatcher and the boundary hook are unchanged; <code>MultiplicativeDagGuardDisabled</code>
+(thread-static, audits and tests) gives back the result of <code>master</code> <code>01f7a453</code>.</p>
 
 </article>
 
