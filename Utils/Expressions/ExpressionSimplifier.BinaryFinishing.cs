@@ -94,7 +94,8 @@ public partial class ExpressionSimplifier
             }
         }
 
-        if (start < 0 || !IsSmallTree(spine[start], pending, MaximumCandidateNodes) || FlattenRuleDispatcherOf(chain) is not FlattenRuleDispatcher dispatcher) return null;
+        if (start < 0 || !IsSmallTree(spine[start], pending, MaximumCandidateNodes) || !HasSmallPrefix(spine, start, pending)
+            || FlattenRuleDispatcherOf(chain) is not FlattenRuleDispatcher dispatcher) return null;
         if (statistics is not null) statistics.BinaryCandidates++;
 
         bool callerWithinRefusedChain = WithinRefusedChain;
@@ -135,6 +136,29 @@ public partial class ExpressionSimplifier
     /// object and no opaque node is ever rebuilt by the finishing; a larger candidate is left to the next call, as before.
     /// </summary>
     private const int MaximumCandidateNodes = 256;
+
+    /// <summary>
+    /// Whether the left operands of the prefix above <paramref name="start"/>, which <see cref="RunPrefixLevels"/> prepares again,
+    /// are small trees of runtime provenance (<see cref="IsSmallTree"/>) holding together at most <see cref="MaximumCandidateNodes"/>
+    /// nodes counted with their repetitions: the re-run of the prefix is then bounded in work and in depth (a shared DAG whose
+    /// paths multiply, a long prefix or a prefix holding a hostile node keeps the historical result).
+    /// </summary>
+    /// <param name="spine">The right spine of the result, root first.</param>
+    /// <param name="start">The index of the candidate.</param>
+    /// <param name="pending">A reusable stack.</param>
+    /// <returns><see langword="true"/> when the prefix may be run again.</returns>
+    private static bool HasSmallPrefix(List<BinaryExpression> spine, int start, Stack<Expression> pending)
+    {
+        int remaining = MaximumCandidateNodes;
+        for (int index = 0; index < start; index++)
+        {
+            int size = SmallTreeSize(spine[index].Left, pending, remaining);
+            if (size < 0) return false;
+            remaining -= size;
+        }
+
+        return true;
+    }
 
     /// <summary>
     /// Whether <paramref name="operand"/> is a crossed group whose first two non-zero terms share a factor
@@ -242,13 +266,24 @@ public partial class ExpressionSimplifier
     /// <param name="limit">The maximum number of nodes.</param>
     /// <returns><see langword="true"/> for an accepted tree.</returns>
     private static bool IsSmallTree(Expression tree, Stack<Expression> pending, int limit = MaximumComparedNodes)
+        => SmallTreeSize(tree, pending, limit) >= 0;
+
+    /// <summary>
+    /// The number of nodes of <paramref name="tree"/>, counted with their repetitions, when it is a small tree in the sense of
+    /// <see cref="IsSmallTree"/> with at most <paramref name="limit"/> nodes; <c>-1</c> otherwise.
+    /// </summary>
+    /// <param name="tree">The tree.</param>
+    /// <param name="pending">A reusable stack (cleared here).</param>
+    /// <param name="limit">The maximum number of nodes.</param>
+    /// <returns>The number of nodes, or <c>-1</c>.</returns>
+    private static int SmallTreeSize(Expression tree, Stack<Expression> pending, int limit)
     {
         pending.Clear();
         pending.Push(tree);
         int visits = 0;
         while (pending.Count > 0)
         {
-            if (++visits > limit) return false;
+            if (++visits > limit) return -1;
             ExpressionResourceBudget.ConsumeStructuralVisit();
             switch (pending.Pop())
             {
@@ -265,11 +300,11 @@ public partial class ExpressionSimplifier
                     for (int index = call.Arguments.Count - 1; index >= 0; index--) pending.Push(call.Arguments[index]);
                     break;
                 default:
-                    return false;
+                    return -1;
             }
         }
 
-        return true;
+        return visits;
     }
 
     /// <summary>
