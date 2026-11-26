@@ -11,12 +11,16 @@ namespace ExpressionSimplifierAudit;
 internal static partial class Campaigns
 {
     /// <summary>
-    /// The internal switch of the latest boundary finishing of refused chains, read by reflection: the binary pair finishing
-    /// (mission B, <c>RefusedBinaryFinishingDisabled</c>) when the checkout has it, otherwise the suffix finishing (mission M4,
-    /// <c>RefusedSuffixFinishingDisabled</c>); <see langword="null"/> on a checkout that has neither.
+    /// The internal switch of the latest mission, read by reflection: the multiplicative DAG guards (§24,
+    /// <c>MultiplicativeDagGuardDisabled</c>) when the checkout has them, the binary pair finishing (mission B,
+    /// <c>RefusedBinaryFinishingDisabled</c>), otherwise the suffix finishing (mission M4, <c>RefusedSuffixFinishingDisabled</c>);
+    /// <see langword="null"/> on a checkout that has none. <c>S5_REFERENCE_SWITCH</c> names another one.
     /// </summary>
     private static readonly PropertyInfo? SuffixFinishingSwitch =
-        typeof(ExpressionSimplifier).GetProperty("RefusedBinaryFinishingDisabled", BindingFlags.NonPublic | BindingFlags.Static)
+        (Environment.GetEnvironmentVariable("S5_REFERENCE_SWITCH") is { Length: > 0 } name
+            ? typeof(ExpressionSimplifier).GetProperty(name, BindingFlags.NonPublic | BindingFlags.Static) : null)
+        ?? typeof(ExpressionSimplifier).GetProperty("MultiplicativeDagGuardDisabled", BindingFlags.NonPublic | BindingFlags.Static)
+        ?? typeof(ExpressionSimplifier).GetProperty("RefusedBinaryFinishingDisabled", BindingFlags.NonPublic | BindingFlags.Static)
         ?? typeof(ExpressionSimplifier).GetProperty("RefusedSuffixFinishingDisabled", BindingFlags.NonPublic | BindingFlags.Static);
 
     /// <summary>
@@ -130,5 +134,16 @@ internal static partial class Campaigns
             var generatorOptions = new GeneratorOptions { MaxDepth = 2 + seed % (options.MaxDepth - 1), Effects = true };
             yield return ("effects", "effects#" + seed, new TreeGenerator(seed, NumericDomain.All["double"], generatorOptions).Build());
         }
+
+        // The multiplicative DAG families (§24), shared and copied, at the sizes the default limits accept.
+        foreach (string family in DagFamilies)
+        {
+            int largest = family is "mdaglong" or "mdaglongtree" ? 6 : family is "mdagmix" ? 8 : family is "mdagtree" ? 10 : 12;
+            for (int n = 0; n <= largest; n++) yield return ("dag", family + " " + n, Families.Build(family, n));
+        }
     }
+
+    /// <summary>The multiplicative DAG families of the reference campaign (§24).</summary>
+    private static readonly string[] DagFamilies =
+        ["mdag", "mdagtree", "mdagq", "mdagm4", "mdag2", "mdagmix", "mdagnone", "mdagopaque", "mdagieee", "mdagnan", "mdaglong", "mdaglongtree", "mdagcustom"];
 }

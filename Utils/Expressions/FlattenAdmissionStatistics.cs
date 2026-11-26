@@ -145,6 +145,21 @@ internal sealed class FlattenAdmissionStatistics
     /// <summary>The number of spine nodes of a prefix run again on top of a finished binary pair.</summary>
     public long BinaryPrefixLevels;
 
+    /// <summary>
+    /// The number of product occurrences visited by the factorable product test (<c>IsFactorableProduct</c>) before it
+    /// returned or handed the term to the test over distinct nodes (mission "multiplicative DAG resource bounds", §24).
+    /// </summary>
+    public long ProductOccurrences;
+
+    /// <summary>The number of terms the factorable product test decided over their distinct product nodes (more product occurrences than the plain walk visits).</summary>
+    public long SharedProductTests;
+
+    /// <summary>The number of distinct product nodes visited by those tests.</summary>
+    public long SharedProductNodes;
+
+    /// <summary>The number of ordinary product nodes expanded by the multiplicative factor collection (<c>CollectMultiplicativeFactors</c>), one structural visit each.</summary>
+    public long CollectedProducts;
+
     /// <summary>The number of grouped quotient chain roots admitted (docs/expressions/SimplifierFlatten.md §16).</summary>
     public long GroupedQuotient;
 

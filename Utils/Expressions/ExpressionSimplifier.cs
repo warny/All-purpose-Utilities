@@ -3873,6 +3873,14 @@ namespace Utils.Mathematics.Expressions
         /// node is only flattened when <see cref="IsOrdinaryBinaryArithmetic(BinaryExpression)"/> proves it
         /// ordinary; otherwise it is kept as one atomic factor so its custom
         /// <see cref="BinaryExpression.Method"/> survives canonicalization.
+        /// <para>
+        /// <b>Cost (mission "multiplicative DAG resource bounds", <c>docs/expressions/SimplifierFlatten.md</c> §24).</b> Every
+        /// caller needs every occurrence of every factor (a shared factor is a factor of the product once per occurrence), so
+        /// the collection follows the occurrences, and each expanded product consumes one structural visit: the list it builds
+        /// is bounded by the structural budget of the operation, and its cost is visible in the minimal budgets, whatever the
+        /// sharing of the product. Its callers give it prepared operands and rule results, which the transformation rebuilt
+        /// node by node, so their occurrences were already paid by the transformation visits.
+        /// </para>
         /// </remarks>
         private void CollectMultiplicativeFactors(List<Expression> factors, Expression expression)
         {
@@ -3880,6 +3888,8 @@ namespace Utils.Mathematics.Expressions
             ExpressionResourceBudget.EnsureStack();
             if (expression is BinaryExpression binaryExpression && binaryExpression.NodeType == ExpressionType.Multiply && IsOrdinaryBinaryArithmetic(binaryExpression))
             {
+                if (!t_multiplicativeDagGuardDisabled) ExpressionResourceBudget.ConsumeStructuralVisit();
+                if (t_admissionStatistics is { } statistics) statistics.CollectedProducts++;
                 CollectMultiplicativeFactors(factors, binaryExpression.Left);
                 CollectMultiplicativeFactors(factors, binaryExpression.Right);
                 return;
