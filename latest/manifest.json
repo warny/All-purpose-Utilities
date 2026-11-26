@@ -6183,7 +6183,7 @@
       "Uid": null,
       "IsMRef": true,
       "Title": "Utils.Mathematics.Expressions.ExpressionSimplifier",
-      "Summary": "<p sourcefile=\"api/Utils.Mathematics.Expressions.ExpressionSimplifier.yml\" sourcestartlinenumber=\"1\">Selective strict structural memoization of comparer-triggered simplifications (roadmap stage S5, P9).</p>\n"
+      "Summary": "<p sourcefile=\"api/Utils.Mathematics.Expressions.ExpressionSimplifier.yml\" sourcestartlinenumber=\"1\">The binary pair finishing of refused chains (mission B, <code>docs/expressions/SimplifierFlatten.md</code> §23): the factorings that\n<xref href=\"Utils.Mathematics.Expressions.ExpressionSimplifier.AdditionOfEqualsElements(System.Linq.Expressions.BinaryExpression%2cSystem.Linq.Expressions.Expression%2cSystem.Linq.Expressions.Expression)\" data-throw-if-not-resolved=\"false\"></xref> and <xref href=\"Utils.Mathematics.Expressions.ExpressionSimplifier.SubstractionOfEqualsElements(System.Linq.Expressions.BinaryExpression%2cSystem.Linq.Expressions.Expression%2cSystem.Linq.Expressions.Expression)\" data-throw-if-not-resolved=\"false\"></xref> apply, on the next call, to a pair that\nthe last canonicalization of a refused chain built, applied once, at the boundary of that chain.</p>\n"
     },
     {
       "type": "ManagedReference",

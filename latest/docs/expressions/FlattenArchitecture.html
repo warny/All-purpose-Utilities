@@ -1219,6 +1219,16 @@ again through <code>TransformLevel</code> with the dispatcher of the chain's gro
 internal accessor of the per-instance dispatcher cache), the refused-chain marker set while it does, so that the nodes those
 levels build are not boundaries. A transformer without flatten groups, or a node of no group, gets no dispatcher and keeps its
 result.</p>
+<h2 id="mission-b-binary-pair-note">Mission B binary pair note</h2>
+<p>The binary pair finishing of <code>SimplifierFlatten.md</code> §23 adds no hook either. Inside <code>FinishRefusedChain</code>, after the whole-chain
+test (M1) and the suffix finishing (M4), the built-in simplifier searches the right spine of a result that stays refused for the
+deepest node a binary factoring rule of the next call may change (the last pair, or a group of identical terms the last
+canonicalization rebuilt), transforms that node again through <code>PrepareExpression</code> with the refused-chain marker set (the
+treatment the traversal gives a crossed operand of a refused chain: admission, rules, finalization), and runs the prefix nodes
+above it through <code>TransformLevel</code> with the group's dispatcher, the loop M4 already uses (<code>RunPrefixLevels</code>). Its search reads type
+tests, runtime reflection objects and raw structure only; a simplification made by the comparer for a factor probe
+(<code>ComparisonMemoDepth &gt; 0</code>) is never finished. <code>RefusedBinaryFinishingDisabled</code> (thread-static, audits and tests) gives back the
+result of <code>master</code> <code>7664b9ca</code>.</p>
 
 </article>
 
