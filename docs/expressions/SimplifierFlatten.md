@@ -3533,7 +3533,7 @@ counted, not truncated, and no product is kept opaque.
   changes, not their set.
 - **New refusal**: a term of more than 64 product occurrences whose revisits (occurrences − distinct product nodes) exceed
   `max(SharedRevisitAllowance = 16, distinct product nodes)` — the rule `IsFactorableChain` applies to shared sub-chains. A tree
-  has no revisit and is never refused by it. The refusal never evaluates anything and never assumes a shared node is evaluated
+  has no revisit and is never refused by it. Since occurrences = distinct + revisits, a term of more than 64 occurrences with at most 16 distinct product nodes has more than 48 revisits: past the plain walk the floor of 16 never binds, and the effective rule is *revisits ≤ distinct product nodes* (occurrences ≤ 2 × distinct). The threshold is a decision boundary, not only an optimization: `s = x * y` squared five times (6 distinct, 63 occurrences, 57 revisits) is admitted, so is its product by one parameter (7, 64), and its product by two parameters (8, 65) is refused; `master` admitted all three. The refusal never evaluates anything and never assumes a shared node is evaluated
   once: it only declines the global factoring, whose work would multiply.
 - **`CollectMultiplicativeFactors`** consumes one structural visit per expanded ordinary product: the list it builds is bounded
   by the structural budget of the operation and visible in the minimal budgets.
@@ -3577,13 +3577,13 @@ corpus on both sides): every summary identical line by line, and every record id
 `terminate` 66,270, `diff` 4,000, `effects` 4,004 records; anomalies 0 / 0 / 53 / 19 / 0 / 1 / 1 / 1 on both sides: the
 documented residues of §17–§23).
 
-**Tests.** Security `ExpressionSimplifierMultiplicativeDagResourceTests` (9 tests): a 40-level shared product decided in fewer
+**Tests.** Security `ExpressionSimplifierMultiplicativeDagResourceTests` (12 tests): a 40-level shared product decided in fewer
 than 1,000 visits; DAG and tree decided alike up to 64 product occurrences for ordinary terms, shared calls (counted per
 occurrence), `NaN`, conversions and custom operators, refused beyond; a moderately shared large product keeps its decision; the
 boundary finishing of results holding the product in M1, M4 and mission B positions linear; public entry points refused by
 `Nodes`, then by `Work` or `StructuralWork` with the node limit lifted, state restored; the factor collection refused just below its
 structural count; hostile extension nodes, impersonating methods and operators never read; a 400-level product on a 256 KiB stack;
-isolation through refusals, nested operations and threads. The walks are run under a 5,000,000-visit safety net on background
+isolation through refusals, nested operations and threads; past the plain walk (each case checked to reach the test over distinct nodes through `SharedProductTests`), one call in 70 factors admitted, a shared sub-product holding a call (two occurrences) and two distinct calls refused, as by the walk of the occurrences; the 63 / 64 / 65 occurrence boundary; revisits equal to the distinct products, one below and one above (43 distinct, 86 / 85 / 87 occurrences) and a 70-factor tree. Two mutations (calls of a shared operand not propagated; `<=` turned into `<` in the allowance) each fail one of these tests. The walks are run under a 5,000,000-visit safety net on background
 threads, so a regression fails in seconds instead of blocking the job: on `master`, 5 of them fail (structural budget exhausted).
 Unit `ExpressionSimplifierMultiplicativeDagTests` (3 tests): six families (product, refused sum, M4 suffix, two products, binary
 pair, no common factor) give their tree copy's result under three policies up to 4 levels, with the source values; from 5 to 8

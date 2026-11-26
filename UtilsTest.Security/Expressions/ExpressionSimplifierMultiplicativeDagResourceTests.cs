@@ -276,6 +276,160 @@ public class ExpressionSimplifierMultiplicativeDagResourceTests
         Assert.IsTrue(statistics.CollectedProducts >= 40, $"{statistics.CollectedProducts} expanded products");
     }
 
+    /// <summary>
+    /// Runs the admission of <c>term + 2 * d</c> with the admission counters installed, the guard on or off (the walk of the
+    /// occurrences of <c>master</c>).
+    /// </summary>
+    /// <param name="term">The product term under test.</param>
+    /// <param name="guardDisabled">Whether <see cref="ExpressionSimplifier.MultiplicativeDagGuardDisabled"/> is set.</param>
+    /// <returns>Whether the chain is admitted, and the number of terms decided over their distinct product nodes.</returns>
+    private static (bool Admitted, long SharedProductTests) AdmissionOfTerm(Expression term, bool guardDisabled = false)
+    {
+        var statistics = new FlattenAdmissionStatistics();
+        ExpressionSimplifier.AdmissionStatistics = statistics;
+        ExpressionSimplifier.MultiplicativeDagGuardDisabled = guardDisabled;
+        try
+        {
+            bool admitted = Admission(Expression.Add(term, Expression.Multiply(Expression.Constant(2.0), D))).Admitted;
+            return (admitted, statistics.SharedProductTests);
+        }
+        finally
+        {
+            ExpressionSimplifier.MultiplicativeDagGuardDisabled = false;
+            ExpressionSimplifier.AdmissionStatistics = null;
+        }
+    }
+
+    /// <summary>The parameter of the second term of <see cref="AdmissionOfTerm"/>, never a factor of a term under test.</summary>
+    private static readonly ParameterExpression D = Expression.Parameter(typeof(double), "d");
+
+    /// <summary>Distinct parameters filling the product chains of the boundary tests.</summary>
+    private static readonly ParameterExpression[] Fillers = Enumerable.Range(0, 128).Select(i => Expression.Parameter(typeof(double), "f" + i)).ToArray();
+
+    /// <summary>
+    /// Builds the left-deep product of <paramref name="factors"/> factors: each shared node of <paramref name="shared"/> used
+    /// as many times as given (the same instance each time), then distinct parameters.
+    /// </summary>
+    /// <param name="factors">The number of factors of the chain (its product nodes are one fewer).</param>
+    /// <param name="shared">The shared factors and their numbers of uses.</param>
+    /// <returns>The product.</returns>
+    private static Expression ChainOf(int factors, params (Expression Node, int Uses)[] shared)
+    {
+        var list = shared.SelectMany(s => Enumerable.Repeat(s.Node, s.Uses)).ToList();
+        Assert.IsTrue(list.Count <= factors, "Too many shared uses for the chain.");
+        list.AddRange(Fillers.Take(factors - list.Count));
+        return list.Aggregate(Expression.Multiply);
+    }
+
+    /// <summary>The distinct and logical counts of the product nodes of a term (memoized by reference), to pin the cases.</summary>
+    /// <param name="term">The term.</param>
+    /// <returns>The distinct product nodes and the product occurrences.</returns>
+    private static (int Distinct, long Occurrences) ProductCounts(Expression term)
+    {
+        var occurrences = new Dictionary<Expression, long>(ReferenceEqualityComparer.Instance);
+        long Count(Expression e)
+        {
+            if (e is not BinaryExpression { NodeType: ExpressionType.Multiply } product) return 0;
+            if (occurrences.TryGetValue(product, out long known)) return known;
+            long count = 1 + Count(product.Left) + Count(product.Right);
+            occurrences[product] = count;
+            return count;
+        }
+
+        long total = Count(term);
+        return (occurrences.Count, total);
+    }
+
+    /// <summary>
+    /// The calls of a term are counted once per occurrence by the test over distinct nodes: a product of more than 64
+    /// ordinary multiplications holding a single call is admitted, and one holding a shared sub-product that holds a call
+    /// (two occurrences of the call, one revisit) is refused, as by the walk of the occurrences; both are decided by the new
+    /// test.
+    /// </summary>
+    [TestMethod]
+    public void CallMultiplicities_AreCountedPerOccurrence_PastThePlainWalk()
+    {
+        MethodInfo sin = typeof(Math).GetMethod(nameof(Math.Sin), [typeof(double)])!;
+        Expression oneCall = Expression.Multiply(ChainOf(70), Expression.Call(sin, X));
+        Expression sharedCall = Expression.Multiply(Expression.Call(sin, X), Y);
+        Expression twoCalls = ChainOf(70, (sharedCall, 2));
+        Expression twoDistinctCalls = Expression.Multiply(ChainOf(70), Expression.Multiply(Expression.Call(sin, X), Expression.Call(sin, Y)));
+
+        Assert.IsTrue(ProductCounts(oneCall).Occurrences > 64);
+        Assert.IsTrue(ProductCounts(twoCalls).Occurrences > 64);
+
+        (bool admitted, long tests) = AdmissionOfTerm(oneCall);
+        Assert.IsTrue(admitted, "One call in a product of 70 factors.");
+        Assert.IsTrue(tests > 0, "The term is decided over its distinct product nodes.");
+        Assert.IsTrue(AdmissionOfTerm(oneCall, guardDisabled: true).Admitted, "The walk of the occurrences admits it too.");
+
+        (admitted, tests) = AdmissionOfTerm(twoCalls);
+        Assert.IsFalse(admitted, "A shared sub-product holding a call is two calls.");
+        Assert.IsTrue(tests > 0);
+        Assert.IsFalse(AdmissionOfTerm(twoCalls, guardDisabled: true).Admitted);
+
+        (admitted, tests) = AdmissionOfTerm(twoDistinctCalls);
+        Assert.IsFalse(admitted, "Two distinct calls.");
+        Assert.IsTrue(tests > 0);
+        Assert.IsFalse(AdmissionOfTerm(twoDistinctCalls, guardDisabled: true).Admitted);
+    }
+
+    /// <summary>
+    /// The plain walk decides up to 64 product occurrences, the test over distinct nodes beyond: <c>s = x * y</c> squared five
+    /// times (6 distinct products, 63 occurrences, 57 revisits) is admitted, so is its product by one parameter (7, 64), and
+    /// its product by two parameters (8, 65) is refused by its revisits; the first two are decided by the plain walk alone.
+    /// </summary>
+    [TestMethod]
+    public void PlainWalkBoundary_At63_64_And65Occurrences()
+    {
+        Expression dag = Dag(5);
+        var cases = new (Expression Term, int Distinct, long Occurrences, bool Admitted, bool SharedTest)[]
+        {
+            (dag, 6, 63, true, false),
+            (Expression.Multiply(dag, Fillers[0]), 7, 64, true, false),
+            (Expression.Multiply(Expression.Multiply(dag, Fillers[0]), Fillers[1]), 8, 65, false, true),
+        };
+
+        foreach ((Expression term, int distinct, long occurrences, bool expected, bool sharedTest) in cases)
+        {
+            Assert.AreEqual((distinct, occurrences), ProductCounts(term), "The case is the intended one.");
+            (bool admitted, long tests) = AdmissionOfTerm(term);
+            Assert.AreEqual(expected, admitted, $"{occurrences} occurrences");
+            Assert.AreEqual(sharedTest, tests > 0, $"{occurrences} occurrences: test over distinct nodes");
+            Assert.IsTrue(AdmissionOfTerm(term, guardDisabled: true).Admitted, $"{occurrences} occurrences: master admits every case");
+        }
+    }
+
+    /// <summary>
+    /// Past the plain walk, a term is admitted while its revisits stay within <c>max(16, distinct product nodes)</c> and refused
+    /// one revisit beyond, whatever the sharing pattern; the floor of 16 is never the bound there, since a term of more than 64
+    /// occurrences has more distinct product nodes than 16 whenever its revisits are at most 48. Every case is decided by the
+    /// test over distinct nodes, and the admitted ones are admitted by the walk of the occurrences too.
+    /// </summary>
+    [TestMethod]
+    public void SharedRevisitAllowance_IsExactPastThePlainWalk()
+    {
+        // u has two product nodes (each use revisits two), v one: 41 chain factors (40 chain products) + 3 shared products.
+        Expression u = Expression.Multiply(Expression.Multiply(A, B), C);
+        Expression v = Expression.Multiply(X, Y);
+        var cases = new (Expression Term, int Distinct, long Occurrences, bool Admitted)[]
+        {
+            (ChainOf(41, (u, 22), (v, 2)), 43, 86, true),   // revisits 2 * 21 + 1 = 43 = distinct
+            (ChainOf(41, (u, 23), (v, 1)), 43, 87, false),  // revisits 2 * 22 + 0 = 44 = distinct + 1
+            (ChainOf(41, (u, 21), (v, 3)), 43, 85, true),   // revisits 42 = distinct - 1
+            (ChainOf(70), 69, 69, true),                    // a tree: no revisit
+        };
+
+        foreach ((Expression term, int distinct, long occurrences, bool expected) in cases)
+        {
+            Assert.AreEqual((distinct, occurrences), ProductCounts(term), "The case is the intended one.");
+            (bool admitted, long tests) = AdmissionOfTerm(term);
+            Assert.AreEqual(expected, admitted, $"{distinct} distinct, {occurrences} occurrences");
+            Assert.IsTrue(tests > 0, "Decided over distinct nodes.");
+            Assert.IsTrue(AdmissionOfTerm(term, guardDisabled: true).Admitted, "Every case is a factorable product for master.");
+        }
+    }
+
     /// <summary>An extension node whose every member throws once armed.</summary>
     private sealed class ArmedExtension : Expression
     {
