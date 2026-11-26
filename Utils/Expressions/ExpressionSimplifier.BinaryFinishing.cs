@@ -75,6 +75,10 @@ public partial class ExpressionSimplifier
             spine.Add(node);
         }
 
+        // The candidate (its spine nodes and their operands) and the prefix (at least one node per left operand) hold together at
+        // least one node per spine node: a longer spine can never pass both bounds, so it is not searched at all.
+        if (spine.Count > 2 * MaximumCandidateNodes) return null;
+
         // A last subtracted term is written 0 - t (BuildAdditiveExpression): a term of the node above, not a pair.
         if (spine[^1] is { NodeType: ExpressionType.Subtract } lastTerm && IsOrdinaryZeroConstant(lastTerm.Left)) spine.RemoveAt(spine.Count - 1);
 
