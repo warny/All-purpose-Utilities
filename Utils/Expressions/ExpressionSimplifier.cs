@@ -2537,18 +2537,18 @@ namespace Utils.Mathematics.Expressions
             // grows by one term per level, and canonicalizing it at every level made the factoring quadratic in allocations.
             // Mission C3c (§21.3): a sum of two single terms is canonicalized all the same, at a constant cost (z*x + z gave
             // z * (x + 1), ordered 1 + x by the next call); only a coefficient that is already a sum keeps the historical node.
-            if (nodeType != ExpressionType.Subtract
+            bool added = nodeType != ExpressionType.Subtract
                 && !HasAdditiveNegation(leftCoefficient)
                 && !HasAdditiveNegation(rightCoefficient)
                 && CountAdditiveConstants(rightCoefficient, type, CountAdditiveConstants(leftCoefficient, type, 0)) < 2
-                && (IsOrdinaryAdditiveNode(leftCoefficient) || IsOrdinaryAdditiveNode(rightCoefficient))
-                && (t_factoredCoefficientFinishingDisabled || !HasFewCoefficientTerms(leftCoefficient, rightCoefficient)))
-            {
-                // Mission K/N/F (K): a small coefficient is canonicalized all the same (2*(b + z) + 2*(c + z) gave
-                // 2 * ((b + z) + (c + z)), merged into 2 * (b + (c + (2 * z))) by the next call); past the bound the historical node
-                // is kept, so the work added per factoring stays constant on a coefficient that grows level by level.
-                return null;
-            }
+                && (IsOrdinaryAdditiveNode(leftCoefficient) || IsOrdinaryAdditiveNode(rightCoefficient));
+
+            // Mission K/N/F (K): a small coefficient of added terms is finished all the same, its common factors included, since it
+            // is the whole chain of the coefficient (2*(b + z) + 2*(c + z) gave 2 * ((b + z) + (c + z)), merged into
+            // 2 * (b + (c + (2 * z))) by the next call); past the bound the historical node is kept, so the work added per
+            // factoring stays constant on a coefficient that grows level by level.
+            if (added && (t_factoredCoefficientFinishingDisabled || !HasFewCoefficientTerms(leftCoefficient, rightCoefficient))) return null;
+            AdditiveFactoring factoring = added ? AdditiveFactoring.CommonFactors : AdditiveFactoring.Monomials;
 
             var terms = new List<(Expression Term, bool IsNegative)>(4);
             CollectAdditiveTerms(terms, leftCoefficient, false);
@@ -2579,7 +2579,7 @@ namespace Utils.Mathematics.Expressions
                 return BuildNegation(CanonicalizeAdditiveTerms(terms, type, recordMetadata: false));
             }
 
-            return CanonicalizeAdditiveTerms(terms, type, recordMetadata: false);
+            return CanonicalizeAdditiveTerms(terms, type, recordMetadata: false, factoring);
         }
 
         /// <summary>
@@ -3202,6 +3202,14 @@ namespace Utils.Mathematics.Expressions
                 && TryOrientNegatedSum(parameters[0], out Expression? oriented))
             {
                 return oriented;
+            }
+
+            // Mission K/N/F (F): the negation of a factored product of a sum holding both signs carries its sign in the sum.
+            if (e is UnaryExpression negatedProduct
+                && IsOrdinaryUnaryNegate(negatedProduct)
+                && TryOrientNegatedProduct(parameters[0], out Expression? orientedProduct))
+            {
+                return orientedProduct;
             }
 
             if (e is BinaryExpression binaryExpression)

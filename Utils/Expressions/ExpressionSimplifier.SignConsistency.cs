@@ -84,7 +84,9 @@ public partial class ExpressionSimplifier
     /// </summary>
     /// <param name="left">The left coefficient, a prepared operand or the coefficient of an earlier factoring.</param>
     /// <param name="right">The right coefficient.</param>
-    /// <returns><see langword="true"/> when the coefficient is small enough to be canonicalized.</returns>
+    /// <returns>
+    /// <see langword="true"/> when the coefficient is small enough to be canonicalized, outside the simplifications of the comparer.
+    /// </returns>
     /// <remarks>
     /// The walk stops as soon as the bound is passed, so it visits at most <see cref="FinishedCoefficientTerms"/> + 1 terms and as
     /// many additions whatever the size of the coefficients, and it reads only node types and runtime reflection objects
@@ -94,6 +96,10 @@ public partial class ExpressionSimplifier
     /// </remarks>
     private static bool HasFewCoefficientTerms(Expression left, Expression right)
     {
+        // A simplification the comparer makes for a factor probe keeps the historical coefficient, as it keeps the historical
+        // decisions of the binary rules (mission B, diff#3627): a canonicalized coefficient there lets a binary rule recognize a
+        // factor that no public call of master recognizes.
+        if (_comparisonMemoDepth > 0) return false;
         int count = CountCoefficientTerms(left, 0);
         return count <= FinishedCoefficientTerms && CountCoefficientTerms(right, count) <= FinishedCoefficientTerms;
     }
@@ -108,15 +114,44 @@ public partial class ExpressionSimplifier
         // both stop past the bound.
         while (count <= FinishedCoefficientTerms)
         {
-            if (expression is not BinaryExpression { NodeType: ExpressionType.Add } addition || !IsOrdinaryBinaryArithmetic(addition)) return count + 1;
+            if (expression is not BinaryExpression { NodeType: ExpressionType.Add } addition || !IsOrdinaryBinaryArithmetic(addition))
+            {
+                return IsAtomicCoefficientTerm(expression, AtomicTermDepth) ? count + 1 : FinishedCoefficientTerms + 1;
+            }
+
             count = addition.Left is BinaryExpression { NodeType: ExpressionType.Add }
                 ? CountCoefficientTerms(addition.Left, count)
-                : count + 1;
+                : IsAtomicCoefficientTerm(addition.Left, AtomicTermDepth) ? count + 1 : FinishedCoefficientTerms + 1;
             expression = addition.Right;
         }
 
         return count;
     }
+
+    /// <summary>The depth of the products and quotients <see cref="IsAtomicCoefficientTerm"/> admits.</summary>
+    private const int AtomicTermDepth = 3;
+
+    /// <summary>
+    /// Whether a term of a factored coefficient is a parameter, a constant, or an ordinary product or quotient of them at most
+    /// <paramref name="depth"/> levels deep (K): a term on which the rules of the next call do nothing beyond what the
+    /// canonicalization of the coefficient does (merging identical monomials, factoring common factors, ordering).
+    /// </summary>
+    /// <param name="term">A term of the coefficient.</param>
+    /// <param name="depth">The remaining depth.</param>
+    /// <returns><see langword="true"/> for such a term.</returns>
+    /// <remarks>
+    /// A term holding a sum, a call or a negation is refused: canonicalizing the coefficient around it gives a form that the next
+    /// call still rewrites, and that a factor probe may recognize where the historical node is not recognized (diff#3627, whose
+    /// coefficient <c>(z * (1 - x)) + (1 + (z * (x - 1)))</c> is equal to <c>1</c>: canonicalized, it let the next factoring take
+    /// it as a factor of the whole chain, a result that is no fixed point). Only node types are read.
+    /// </remarks>
+    private static bool IsAtomicCoefficientTerm(Expression term, int depth) => term switch
+    {
+        ParameterExpression or ConstantExpression => true,
+        BinaryExpression { NodeType: ExpressionType.Multiply or ExpressionType.Divide } binary
+            => depth > 0 && IsOrdinaryBinaryArithmetic(binary) && IsAtomicCoefficientTerm(binary.Left, depth - 1) && IsAtomicCoefficientTerm(binary.Right, depth - 1),
+        _ => false,
+    };
 
     /// <summary>
     /// The orientation of an extracted numeric factor (F): the magnitude of a negative factorable coefficient, or
@@ -249,6 +284,32 @@ public partial class ExpressionSimplifier
             Expression rebuilt = BuildCanonicalProduct(factors, record: false);
             terms[index] = rebuilt is UnaryExpression negation && IsOrdinaryUnaryNegate(negation) ? (negation.Operand, true) : (rebuilt, false);
         }
+    }
+
+    /// <summary>
+    /// The orientation of a negated factored product (F): <c>-(m * s)</c>, for a product <see cref="OrientSubtractedFactoredProducts"/>
+    /// rebuilds, gives the product of the opposite sum, the form the same product takes as a subtracted term of a sum.
+    /// </summary>
+    /// <param name="operand">The prepared operand of an ordinary <c>Negate</c> node.</param>
+    /// <param name="oriented">Receives the product, or <see langword="null"/>.</param>
+    /// <returns><see langword="true"/> when the negation is replaced by <paramref name="oriented"/>.</returns>
+    /// <remarks>
+    /// The negation and a subtracted term are one sign (<see cref="CollectAdditiveTerms"/>): without this, <c>-(2 * (c + (0 - d)))</c>
+    /// at the root and <c>2 * ((0 - c) + d)</c> as a term would choose opposite representatives of one value. Inert operands only:
+    /// a pinned factor is never reached (the product would not be inert).
+    /// </remarks>
+    private bool TryOrientNegatedProduct(Expression operand, [NotNullWhen(true)] out Expression? oriented)
+    {
+        oriented = null;
+        if (t_factorOrientationDisabled || !StabilizesRebuiltForms) return false;
+        if (operand is not BinaryExpression { NodeType: ExpressionType.Multiply } product || !IsOrdinaryBinaryArithmetic(product)) return false;
+        var terms = new List<(Expression Term, bool IsNegative)>(1) { (product, true) };
+        OrientSubtractedFactoredProducts(terms, product.Type);
+
+        // The structural tests first (the common negated product has no sum factor); the effects only for a product to rebuild.
+        if (terms[0].IsNegative || !ExpressionEffectAnalysis.IsInert(ExpressionEffectAnalysis.Analyze(product))) return false;
+        oriented = terms[0].Term;
+        return true;
     }
 
     /// <summary>The largest number of factors of a product <see cref="OrientSubtractedFactoredProducts"/> reads.</summary>
