@@ -35,8 +35,14 @@ public class ExpressionSimplifierFactoringSignSecurityTests
         new() { TrustPolicy = ExpressionTrustPolicy.TrustDeclarations, AggressiveSimplification = true, ExceptionPreservation = ExpressionExceptionPreservation.None },
     ];
 
+    /// <summary>A <see cref="double"/> constant.</summary>
+    /// <param name="value">The value.</param>
+    /// <returns>The constant.</returns>
     private static ConstantExpression K(double value) => Expression.Constant(value);
 
+    /// <summary>Formats with the engine's safe formatter.</summary>
+    /// <param name="expression">The expression.</param>
+    /// <returns>The text.</returns>
     private static string Text(Expression expression) => ExpressionTraceFormatter.Format(expression);
 
     /// <summary>Runs <paramref name="action"/> with the three corrections of the mission switched off (the engine of master).</summary>
@@ -59,10 +65,16 @@ public class ExpressionSimplifierFactoringSignSecurityTests
     /// <summary>An extension node whose every member throws once armed, counting the calls.</summary>
     private sealed class ArmedExtension : Expression
     {
+        /// <summary>Gets or sets whether the members throw.</summary>
         public bool Armed { get; set; }
 
+        /// <summary>Gets the number of calls made while armed.</summary>
         public int Calls { get; private set; }
 
+        /// <summary>Counts a call and throws when armed.</summary>
+        /// <typeparam name="T">The value type.</typeparam>
+        /// <param name="value">The value returned while not armed.</param>
+        /// <returns><paramref name="value"/>.</returns>
         private T Hit<T>(T value)
         {
             if (!Armed) return value;
@@ -155,6 +167,7 @@ public class ExpressionSimplifierFactoringSignSecurityTests
             if (reference is not null) Assert.IsTrue(ExpressionComparer.StructuralEqualsRaw(reference, branch), "result");
         }
 
+        // Simplifies with a new simplifier and returns the result, or the type of the exception thrown.
         static (Expression? Result, Type? Failure) Run(Expression source)
         {
             try
@@ -199,6 +212,7 @@ public class ExpressionSimplifierFactoringSignSecurityTests
     /// <summary>Records the evaluations of the observable members.</summary>
     public static class Probe
     {
+        /// <summary>Backing field of <see cref="Log"/>.</summary>
         [ThreadStatic]
         private static List<string>? t_log;
 
@@ -272,6 +286,7 @@ public class ExpressionSimplifierFactoringSignSecurityTests
             }
         }
 
+        // Compiles and invokes the lambda, returning its value or exception and the evaluation log of the probes.
         static (object? Value, string? Failure, string Log) Evaluate(LambdaExpression lambda, object[] arguments)
         {
             Probe.Log.Clear();

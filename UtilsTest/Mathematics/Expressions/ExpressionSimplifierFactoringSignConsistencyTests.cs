@@ -48,12 +48,27 @@ public class ExpressionSimplifierFactoringSignConsistencyTests
     /// <returns>The constant.</returns>
     private static ConstantExpression K(double value) => Expression.Constant(value);
 
+    /// <summary>An ordinary addition.</summary>
+    /// <param name="x">The left operand.</param>
+    /// <param name="y">The right operand.</param>
+    /// <returns>The node.</returns>
     private static Expression Add(Expression x, Expression y) => Expression.Add(x, y);
 
+    /// <summary>An ordinary subtraction.</summary>
+    /// <param name="x">The left operand.</param>
+    /// <param name="y">The right operand.</param>
+    /// <returns>The node.</returns>
     private static Expression Sub(Expression x, Expression y) => Expression.Subtract(x, y);
 
+    /// <summary>An ordinary multiplication.</summary>
+    /// <param name="x">The left operand.</param>
+    /// <param name="y">The right operand.</param>
+    /// <returns>The node.</returns>
     private static Expression Mul(Expression x, Expression y) => Expression.Multiply(x, y);
 
+    /// <summary>An ordinary negation.</summary>
+    /// <param name="x">The operand.</param>
+    /// <returns>The node.</returns>
     private static Expression Neg(Expression x) => Expression.Negate(x);
 
     /// <summary>
