@@ -233,9 +233,10 @@ public partial class ExpressionSimplifier
     /// <c>0 - t</c> taking only the signed-zero latitude every canonical sum takes.
     /// </para>
     /// <para>
-    /// <b>Cost.</b> The factors of a subtracted product are collected once (one structural visit per product, as every
-    /// multiplicative collection), and the sum is canonicalized once; the rebuilt term is added, so an enclosing canonicalization
-    /// that collects it again does nothing more.
+    /// <b>Cost.</b> Only the right spine of a subtracted product is read, at most <see cref="OrientedProductFactors"/> nodes and
+    /// never a left operand (<see cref="TryCollectCanonicalFactors"/>), so a shared multiplicative DAG is never unfolded (§24); the
+    /// sum is collected and canonicalized once, as a level canonicalizes it (its terms consume the budgets of the
+    /// canonicalization); the rebuilt term is added, so an enclosing canonicalization that collects it again does nothing more.
     /// </para>
     /// </remarks>
     private void OrientSubtractedFactoredProducts(List<(Expression Term, bool IsNegative)> terms, Type type)

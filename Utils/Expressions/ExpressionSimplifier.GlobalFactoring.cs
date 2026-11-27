@@ -783,9 +783,10 @@ public partial class ExpressionSimplifier
         public bool IsNumeric => Value is not null;
 
         /// <summary>
-        /// The coefficient factored out: the common value when every holder has the same one (the historical factoring, so
-        /// <c>-2*x + -2*y</c> still gives <c>-2 * (x + y)</c>), the magnitude when holders have opposite values (<c>2*x + -2*y</c>
-        /// gives <c>2 * (x - y)</c>, as <c>2*x - 2*y</c> does); <see langword="null"/> for a factor.
+        /// The coefficient factored out: its magnitude (mission K/N/F, F: <c>-2*x + -2*y</c> gives <c>-(2 * (x + y))</c>, as
+        /// <c>-2*x - 2*y</c> does, and <c>2*x + -2*y</c> gives <c>2 * (x - y)</c>, as <c>2*x - 2*y</c> does), so the orientation of the
+        /// result depends on the logical signs of the holders only, which their residues carry; <see langword="null"/> for a factor.
+        /// With <see cref="FactorOrientationDisabled"/>, the historical choice: the common value when every holder has the same one.
         /// </summary>
         public object? FactoredValue => _mixedSigns || !t_factorOrientationDisabled ? Magnitude : Value;
 

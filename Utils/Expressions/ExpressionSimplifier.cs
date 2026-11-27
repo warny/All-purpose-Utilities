@@ -2524,6 +2524,13 @@ namespace Utils.Mathematics.Expressions
         /// constants aggregated, identical monomials merged, opposite terms cancelled, pinned terms kept in place): the
         /// coefficient the next call built, without simplifying anything again. A coefficient that becomes a constant goes
         /// through the identities of <see cref="BuildFactoredProduct"/> (<c>y * 1</c> gives <c>y</c>).
+        /// <para>
+        /// Mission K/N/F (K): a coefficient whose terms are all added and that already holds a sum is canonicalized too, with its
+        /// common factors (it is the whole chain of the coefficient), when it holds at most <see cref="FinishedCoefficientTerms"/>
+        /// atomic terms (<see cref="HasFewCoefficientTerms"/>); a longer coefficient, or one holding a term that is not atomic,
+        /// keeps the historical node, so the added work stays constant per factoring and no form the next call would still rewrite
+        /// is built.
+        /// </para>
         /// </remarks>
         private Expression? CanonicalizeFactoredCoefficient(ExpressionType nodeType, Expression leftCoefficient, Expression rightCoefficient)
         {
