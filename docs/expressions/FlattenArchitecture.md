@@ -690,6 +690,13 @@ The sign of an additive term is carried by the flag of `CollectAdditiveTerms`, w
 coefficient. Unifying them needs the level canonicalization to reach the whole-chain factoring first (§20.4); the engine's
 extraction is unchanged.
 
+`SimplifierFlatten.md` §25 adds a constraint on any future normalization of that placement. A level canonicalization is
+collected again by its parent (`TransformDeclinedChainNode`, the children of a refused root, `TransformGroupedLevelByLevel`,
+`RunPrefixLevels`), which inverts the signs of a subtracted group, while a flatten family collects the same terms flat from the
+raw chain. Both give one structure only if the normalization commutes with that inversion (`ν ∘ N ∘ ν = ν ∘ N`): a partial one
+(V1b, C1, C2) does not, a complete one (positive coefficients, or the sign carried by the coefficient) does. The engine
+is unchanged: no "collected by the parent" state was added.
+
 ## C3c consistency note
 
 The boundary finishing of `SimplifierFlatten.md` §21 adds one engine hook, `ExpressionTransformer.FinishRefusedChain`

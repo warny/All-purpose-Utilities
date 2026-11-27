@@ -5414,7 +5414,7 @@ offered to the existing binary rules. At the boundary only, after M1 and M4, the
 next call transformed it, then the prefix levels (shared with M4); quotient atoms and sum factors were not admitted to the
 factorable family (strategy D not needed). Every changed result is the second call of `master`; fixed@2 219 → 188, no new
 multi-pass case or cycle. V1b and V1b + C1, replayed on this branch, add no multi-pass case. Next: the sign normalization
-V1b + C1 as a separate pull request, with the full S5 campaigns. Record: `docs/expressions/SimplifierFlatten.md` §23.
+V1b + C1 as a separate pull request, with the full S5 campaigns. Record: `docs/expressions/SimplifierFlatten.md` §23. *Done 2026-11-27 (§25): V1b + C1 measured and rejected for canonicity, see below.*
 
 ### Multiplicative DAG resource bounds (2026-11-26)
 
@@ -5425,6 +5425,21 @@ multiplicative factor collection is counted. All S5 corpora, the 304 complexity 
 Left: the transformation itself follows the occurrences (no memo by reference, by design), and the comparer probes on balanced
 integral products cost about L^3.3 structural visits, DAG or tree alike (a probe question). Record:
 `docs/expressions/SimplifierFlatten.md` §24.
+
+### Partial sign normalization V1b + C1 — audit (2026-11-27)
+
+Branch `fix/expression-additive-sign-normalization-v1b-c1`, base `f6ecb2a5`. There is no production change. V1b + C1 was
+implemented and measured: it preserves convergence on the measured corpus (209 first passes changed, no new multi-pass case or
+cycle, free or bound; values, exceptions and effects unchanged), but it introduces a canonicity regression. The partial
+normalization V1b is not equivariant under the inversion of the additive sign: a level normalizes `(c < 0, subtracted)` into
+`(|c|, added)`, the parent that subtracts the level gets `(|c|, subtracted)`, while the flat collection keeps `(c, added)`, so
+`(a - ((b/e) - (c * -6.5))) + d` and `((a - (b/e)) + (c * -6.5)) + d` get two structures. The production change is therefore
+rejected, and the invariant "grouped quotient chains = level by level" (seeds 1346, 1973, 2385) is kept. Of the normalizations
+measured, only complete ones (V1, or the dual convention with the sign carried by the coefficient) commute with the inversion.
+Next: the dual convention as its own change, after its two pre-existing residues (gen#643: factored coefficient of a binary
+factoring; gen#3391: `NaN` fold) and the two mechanisms that still make ten `signs` placements association dependent under it
+(`IsNegatedSum` decided on physical signs; the sign of the coefficient `AdditionOfEqualsElements` extracts), pinned as acceptance
+cases (§25.12); V1 as the fallback (gen#2611, gen#699, and the same two mechanisms). Record: `docs/expressions/SimplifierFlatten.md` §25.
 ## Execution-optimizer stages
 
 These remain separate from the simplifier stages above.
