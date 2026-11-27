@@ -1550,6 +1550,10 @@ removal of a double negation (§10).</p>
 <p>The sign normalizations measured in <code>SimplifierFlatten.md</code> §20 need no permission: they rewrite inert terms only, with exact
 identities, and evaluate nothing new. None of them is shipped. They are rejected for convergence (§20.3), not for semantics or
 policies.</p>
+<p>The partial normalization V1b + C1 measured in <code>SimplifierFlatten.md</code> §25 needs no permission either: it rewrites inert terms
+only (pinned terms untouched), and C1 removes a negation and changes a constant, which evaluate nothing, so it may run outside the
+effect gate under every policy. It is rejected for canonicity (the structure depends on the association), not for semantics or
+policies; the engine is unchanged.</p>
 <h2 id="14-level-and-whole-chain-factoring-c3c-consistency">14. Level and whole-chain factoring (C3c consistency)</h2>
 <p>The boundary finishing of <code>SimplifierFlatten.md</code> §21 needs no permission and no new admission: the result of a refused chain is
 factored only when the factorable family admits it, whose terms are all inert under every policy, exactly as the next call
