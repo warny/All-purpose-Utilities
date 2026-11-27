@@ -730,6 +730,13 @@ only (pinned terms untouched), and C1 removes a negation and changes a constant,
 effect gate under every policy. It is rejected for canonicity (the structure depends on the association), not for semantics or
 policies; the engine is unchanged.
 
+The K/N/F corrections of `SimplifierFlatten.md` §26 need no permission either. They rewrite inert terms only: the orientation of a
+negated sum refuses a sum holding a term that is not inert or a `NaN` constant, and the canonicalization they reuse pins every
+term that is not inert; the orientation of a factor negates a factor and a residue sum (exact for the admitted types, the
+signed-zero latitude of every canonical `0 - t` apart); the finishing of a factored coefficient only canonicalizes atomic terms.
+They evaluate nothing new, so they run identically under every policy (`ExpressionSimplifierFactoringSignSecurityTests` checks
+the values, evaluation logs and exceptions under four policies).
+
 ## 14. Level and whole-chain factoring (C3c consistency)
 
 The boundary finishing of `SimplifierFlatten.md` §21 needs no permission and no new admission: the result of a refused chain is

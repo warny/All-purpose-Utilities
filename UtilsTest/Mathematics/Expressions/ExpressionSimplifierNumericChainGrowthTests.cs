@@ -390,7 +390,7 @@ public class ExpressionSimplifierNumericChainGrowthTests
         }
 
         string sharedForm = Simplified(Chain(shared, Expression.Subtract));
-        Assert.AreEqual("((-12 * (x1 + x2)) + (100 * x0))", sharedForm);
+        Assert.AreEqual("((0 - (12 * (x1 + x2))) + (100 * x0))", sharedForm);
         Assert.AreEqual(sharedForm, Simplified(Chain(copies, Expression.Subtract)));
     }
 

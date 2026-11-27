@@ -362,6 +362,22 @@ to `MinValue` (`int.MinValue / 2`: `1073741824` instead of `-1073741824`). The m
 types (C-06). `float`, `double` and `decimal` still give `-(t / u)`. The record is in
 `docs/expressions/ArchitectureC-Audit.md` §8.5.
 
+## Expression engine: orientation of factorings and negated sums (K/N/F)
+
+Behavior change of `ExpressionSimplifier` (and of `ExpressionComparer`, which simplifies first); no public signature and no option
+changed. Some simplified trees have another, equivalent shape:
+
+- A numeric factor is extracted as its magnitude: `-2*x + -2*y` gives `-(2 * (x + y))` instead of `-2 * (x + y)`, and
+  `(-2*x) - (-2*y)` gives `2 * ((0 - x) + y)` instead of `-2 * ((0 - y) + x)`.
+- A factored product of a sum holding both signs is an added term: `a - 2*(c - d)` gives `a + (2 * ((0 - c) + d))`, and
+  `-(2 * (c - d))` gives `2 * ((0 - c) + d)`.
+- The negation of a sum holding a subtracted term is distributed: `-(x - y)`, `-1 * (x - y)` and `(-q) - (d - 2*c)` give flat sums
+  (`(0 - x) + y`); a negated sum of added terms (`-(x + y)`) is kept.
+- A small factored coefficient of added terms is ordered and merged at once: `a*s + b*s + c*s` gives `s * (a + (b + c))`.
+
+Code that compares simplified trees by their text or structure may need new expected values; the values computed are the same
+(signed zeros apart, the S3 latitude). The record is in `docs/expressions/SimplifierFlatten.md` §26.
+
 ## Expression engine: injectable transformation tracing (additive)
 
 New public API in `Utils.Expressions`, without behavior change for code that does not use it: `ExpressionTransformTracing`

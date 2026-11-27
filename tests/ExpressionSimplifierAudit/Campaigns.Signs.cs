@@ -40,7 +40,8 @@ internal static partial class Campaigns
         SignValueComparison.SelfCheck();
         int treesPerPlacement = Math.Clamp(options.Seeds / 200, 6, 40);
         var summary = new StringBuilder("# Sign equivariance campaign\n\n")
-            .Append("Sign variant: ").Append(SignVariant.Describe()).Append(".\n\nPlacements per set: up to ").Append(SignPlacements)
+            .Append("Sign variant: ").Append(SignVariant.Describe()).Append(".\n\nK/N/F variant: ").Append(KnfVariant.Describe())
+            .Append(".\n\nPlacements per set: up to ").Append(SignPlacements)
             .Append("; trees per placement: ").Append(treesPerPlacement + 3).Append(" (left, right, balanced, random).\n\n")
             .Append("| Term set | Binding | Trees | Placements | Association-dependent placements | Max forms per placement | Distinct forms | Unstable | Value mismatches | S3 latitude | Grouped ≠ levels |\n")
             .Append("|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|\n");

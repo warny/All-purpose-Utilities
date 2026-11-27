@@ -254,13 +254,13 @@ public class ExpressionSimplifierSignEquivarianceTests
                 [Sub(Sub(Sub(N(Mul(D, K(3))), N(A)), N(q)), N(Mul(K(-2), C))), Sub(N(Mul(D, K(3))), Add(N(q), Add(N(A), N(Mul(K(-2), C)))))]),
             ("{a, b/e, -2c, -3d} p21", "a + ((b / e) + ((-3 * d) + (0 - (2 * c))))",
                 [Sub(Add(Add(q, N(Mul(K(2), C))), Mul(D, K(-3))), N(A)), Sub(N(Mul(K(2), C)), Sub(Sub(N(A), Mul(D, K(-3))), q))]),
-            ("{a, -2c, 2d, b/e} p0", "a + ((b / e) + (-2 * (c + (0 - d))))",
+            ("{a, -2c, 2d, b/e} p0", "a + ((b / e) + (2 * ((0 - c) + d)))",
                 [Add(A, Sub(Mul(K(-2), C), Sub(Mul(K(-2), D), q))), Add(Sub(Add(A, Mul(K(-2), C)), Mul(K(-2), D)), q)]),
-            ("{a, -2c, 2d, b/e} p4", "a + ((b / e) + (-2 * (c + (0 - d))))",
+            ("{a, -2c, 2d, b/e} p4", "a + ((b / e) + (2 * ((0 - c) + d)))",
                 [Add(A, Add(Mul(K(-2), C), Add(N(Mul(D, K(-2))), q))), Add(Add(Add(A, Mul(K(-2), C)), N(Mul(D, K(-2)))), q)]),
             ("{a, -2c, 2d, b/e} p21", "a + ((b / e) + (2 * ((0 - c) + d)))",
                 [Sub(Sub(Sub(N(Mul(K(2), C)), N(Mul(K(2), D))), N(q)), N(A)), Sub(N(Mul(K(2), C)), Add(N(q), Add(N(A), N(Mul(K(2), D)))))]),
-            ("{a, -2c, 2d, b/e} p23", "a + ((b / e) + (-2 * (c + (0 - d))))",
+            ("{a, -2c, 2d, b/e} p23", "a + ((b / e) + (2 * ((0 - c) + d)))",
                 [Sub(A, Sub(N(Mul(C, K(-2))), Add(N(Mul(D, K(-2))), q))), Add(Add(Sub(A, N(Mul(C, K(-2)))), N(Mul(D, K(-2)))), q)]),
         ];
     }

@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed — `omy.Utils` (`ExpressionSimplifier` consistency of factoring finalization and orientation, K/N/F)
+- **K.** The coefficient of a binary factoring whose terms are all added (`a*s + b*s + c*s`, `2*(b + z) + 2*(c + z)`) is
+  canonicalized, with its common factors, when it holds at most 16 atomic terms (parameters, constants, small products and
+  quotients of them): `(u + v) * (((a + b) + c) + d)` and `2 * ((b + z) + (c + z))` needed a second call, they are now built at
+  once. Past the bound, or with a term holding a sum, a call or a negation, the historical node is kept, so the work added per
+  factoring stays constant.
+- **N.** The negation of a sum holding a subtracted term is the canonical sum of the opposite terms, in the finalization of a
+  `Negate` node and at every rule that builds a negation without transforming it: `(-q) - (d - 2*c)`, `-(x - y)`, `-1 * (x - y)`
+  and `(x - y) * -1` give flat sums whatever their association; `-(x + y)` stays.
+- **F.** A numeric factor is always extracted as its magnitude by the binary and the global factorings, and a factored product of
+  a sum holding both signs carries its sign in the sum: `(-2*x) - (-2*y)` and `(-2*x) + (2*y)` both give `2 * ((0 - x) + y)`,
+  `-2*x + -2*y` gives `-(2 * (x + y))` (was `-2 * (x + y)`), `a - ((2*c) + (-2*d))` gives `a + (2 * ((0 - c) + d))`.
+- Effect: the 23 association-dependent placements of the `signs` campaign (bound parameters) disappear; multi-pass cases of the
+  convergence corpus 188 → 175 (free) / 173 (bound); no new bound cycle; four new free-parameter ties (L-3). Values, exceptions,
+  evaluation order and types are unchanged; inert terms only. Replayed with the experimental dual convention, the ten acceptance
+  placements of §25.12 give one structure. `docs/expressions/SimplifierFlatten.md` §26.
+
 ### Documentation — `omy.Utils` (`ExpressionSimplifier` partial sign normalization V1b + C1 audit)
 - The sign normalization V1b + C1 (`x - (-2 * y)` to `x + (2 * y)`, `-(-2 * x)` to `2 * x`) was implemented and measured
   (`docs/expressions/SimplifierFlatten.md` §25). It is exact and keeps convergence (209 first results changed, no new multi-pass

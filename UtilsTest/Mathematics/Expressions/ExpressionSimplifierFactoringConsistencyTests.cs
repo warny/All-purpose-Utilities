@@ -163,7 +163,7 @@ public class ExpressionSimplifierFactoringConsistencyTests
         ];
         foreach (Expression form in forms) AssertOneCall(form, "2 * ((0 - y) + x)");
 
-        AssertOneCall(Expression.Add(Expression.Multiply(K(-2), X), Expression.Multiply(K(-2), Y)), "-2 * (x + y)");
+        AssertOneCall(Expression.Add(Expression.Multiply(K(-2), X), Expression.Multiply(K(-2), Y)), "-(2 * (x + y))");
         AssertOneCall(Expression.Subtract(Expression.Multiply(K(-2), X), Expression.Multiply(K(2), Y)), "-(2 * (x + y))");
         AssertOneCall(Expression.Subtract(Expression.Negate(Expression.Multiply(K(2), X)), Expression.Multiply(K(2), Y)), "-(2 * (x + y))");
     }

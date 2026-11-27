@@ -1357,7 +1357,7 @@ namespace Utils.Mathematics.Expressions
             if (!IsOrdinaryBinaryArithmetic(e) || IsConstantPair(e)) return null;
             if (NumericValueEquals(right.Value, 0)) return CanDropOperand(left) ? right : null;  // x * 0 => 0
             if (NumericValueEquals(right.Value, 1)) return left;   // x * 1 => x
-            if (NumericValueEquals(right.Value, -1)) return BuildNegation(left); // x * -1 => -x
+            if (NumericValueEquals(right.Value, -1)) return BuildOrientedNegation(left); // x * -1 => -x
             return null;
         }
 
@@ -1374,7 +1374,7 @@ namespace Utils.Mathematics.Expressions
             if (!IsOrdinaryBinaryArithmetic(e) || IsConstantPair(e)) return null;
             if (NumericValueEquals(left.Value, 0)) return CanDropOperand(right) ? left : null;
             if (NumericValueEquals(left.Value, 1)) return right;
-            if (NumericValueEquals(left.Value, -1)) return BuildNegation(right);
+            if (NumericValueEquals(left.Value, -1)) return BuildOrientedNegation(right);
             return null;
         }
 
@@ -1413,7 +1413,7 @@ namespace Utils.Mathematics.Expressions
             if (left is not ConstantExpression)
             {
                 if (NumericValueEquals(right.Value, 1)) return left;
-                if (NumericValueEquals(right.Value, -1) && !IsSignedIntegral(e.Type)) return BuildNegation(left);
+                if (NumericValueEquals(right.Value, -1) && !IsSignedIntegral(e.Type)) return BuildOrientedNegation(left);
             }
             return null;
         }
@@ -2293,7 +2293,7 @@ namespace Utils.Mathematics.Expressions
             }
 
             // Factor out without recursively re-entering this rule on the same shape.
-            return BuildFactoredProduct(ExpressionType.Add, leftleft, rightleft, leftright);
+            return BuildOrientedFactoredProduct(ExpressionType.Add, leftleft, rightleft, leftright);
         }
 
         /// <summary>
@@ -2382,7 +2382,7 @@ namespace Utils.Mathematics.Expressions
             }
 
             // Factor out without recursively re-entering this rule on the same shape.
-            return BuildFactoredProduct(ExpressionType.Subtract, leftleft, rightleft, leftright);
+            return BuildOrientedFactoredProduct(ExpressionType.Subtract, leftleft, rightleft, leftright);
         }
 
         /// <summary>
@@ -2524,6 +2524,13 @@ namespace Utils.Mathematics.Expressions
         /// constants aggregated, identical monomials merged, opposite terms cancelled, pinned terms kept in place): the
         /// coefficient the next call built, without simplifying anything again. A coefficient that becomes a constant goes
         /// through the identities of <see cref="BuildFactoredProduct"/> (<c>y * 1</c> gives <c>y</c>).
+        /// <para>
+        /// Mission K/N/F (K): a coefficient whose terms are all added and that already holds a sum is canonicalized too, with its
+        /// common factors (it is the whole chain of the coefficient), when it holds at most <see cref="FinishedCoefficientTerms"/>
+        /// atomic terms (<see cref="HasFewCoefficientTerms"/>); a longer coefficient, or one holding a term that is not atomic,
+        /// keeps the historical node, so the added work stays constant per factoring and no form the next call would still rewrite
+        /// is built.
+        /// </para>
         /// </remarks>
         private Expression? CanonicalizeFactoredCoefficient(ExpressionType nodeType, Expression leftCoefficient, Expression rightCoefficient)
         {
@@ -2537,14 +2544,18 @@ namespace Utils.Mathematics.Expressions
             // grows by one term per level, and canonicalizing it at every level made the factoring quadratic in allocations.
             // Mission C3c (§21.3): a sum of two single terms is canonicalized all the same, at a constant cost (z*x + z gave
             // z * (x + 1), ordered 1 + x by the next call); only a coefficient that is already a sum keeps the historical node.
-            if (nodeType != ExpressionType.Subtract
+            bool added = nodeType != ExpressionType.Subtract
                 && !HasAdditiveNegation(leftCoefficient)
                 && !HasAdditiveNegation(rightCoefficient)
                 && CountAdditiveConstants(rightCoefficient, type, CountAdditiveConstants(leftCoefficient, type, 0)) < 2
-                && (IsOrdinaryAdditiveNode(leftCoefficient) || IsOrdinaryAdditiveNode(rightCoefficient)))
-            {
-                return null;
-            }
+                && (IsOrdinaryAdditiveNode(leftCoefficient) || IsOrdinaryAdditiveNode(rightCoefficient));
+
+            // Mission K/N/F (K): a small coefficient of added terms is finished all the same, its common factors included, since it
+            // is the whole chain of the coefficient (2*(b + z) + 2*(c + z) gave 2 * ((b + z) + (c + z)), merged into
+            // 2 * (b + (c + (2 * z))) by the next call); past the bound the historical node is kept, so the work added per
+            // factoring stays constant on a coefficient that grows level by level.
+            if (added && (t_factoredCoefficientFinishingDisabled || !HasFewCoefficientTerms(leftCoefficient, rightCoefficient))) return null;
+            AdditiveFactoring factoring = added ? AdditiveFactoring.CommonFactors : AdditiveFactoring.Monomials;
 
             var terms = new List<(Expression Term, bool IsNegative)>(4);
             CollectAdditiveTerms(terms, leftCoefficient, false);
@@ -2575,7 +2586,7 @@ namespace Utils.Mathematics.Expressions
                 return BuildNegation(CanonicalizeAdditiveTerms(terms, type, recordMetadata: false));
             }
 
-            return CanonicalizeAdditiveTerms(terms, type, recordMetadata: false);
+            return CanonicalizeAdditiveTerms(terms, type, recordMetadata: false, factoring);
         }
 
         /// <summary>
@@ -2759,7 +2770,7 @@ namespace Utils.Mathematics.Expressions
         {
             if (!IsOrdinaryBinaryArithmetic(e) || !IsOrdinaryUnaryNegate(right)) return null;
 
-            return BuildNegation(
+            return BuildOrientedNegation(
                 TransformCore(Expression.Multiply(left, right.Operand))
             );
         }
@@ -2772,7 +2783,7 @@ namespace Utils.Mathematics.Expressions
         {
             if (!IsOrdinaryBinaryArithmetic(e) || !IsOrdinaryUnaryNegate(left)) return null;
 
-            return BuildNegation(
+            return BuildOrientedNegation(
                 TransformCore(Expression.Multiply(left.Operand, right))
             );
         }
@@ -2789,7 +2800,7 @@ namespace Utils.Mathematics.Expressions
         {
             if (!IsOrdinaryBinaryArithmetic(e) || !IsOrdinaryUnaryNegate(right) || IsSignedIntegral(e.Type)) return null;
 
-            return BuildNegation(
+            return BuildOrientedNegation(
                 TransformCore(Expression.Divide(left, right.Operand))
             );
         }
@@ -2808,7 +2819,7 @@ namespace Utils.Mathematics.Expressions
         {
             if (!IsOrdinaryBinaryArithmetic(e) || !IsOrdinaryUnaryNegate(left) || IsSignedIntegral(e.Type)) return null;
 
-            return BuildNegation(
+            return BuildOrientedNegation(
                 TransformCore(Expression.Divide(left.Operand, right))
             );
         }
@@ -3192,6 +3203,22 @@ namespace Utils.Mathematics.Expressions
                 return folded;
             }
 
+            // Mission K/N/F (N): the negation of a sum holding an added term is finalized as an additive parent collects it.
+            if (e is UnaryExpression negatedSum
+                && IsOrdinaryUnaryNegate(negatedSum)
+                && TryOrientNegatedSum(parameters[0], out Expression? oriented))
+            {
+                return oriented;
+            }
+
+            // Mission K/N/F (F): the negation of a factored product of a sum holding both signs carries its sign in the sum.
+            if (e is UnaryExpression negatedProduct
+                && IsOrdinaryUnaryNegate(negatedProduct)
+                && TryOrientNegatedProduct(parameters[0], out Expression? orientedProduct))
+            {
+                return orientedProduct;
+            }
+
             if (e is BinaryExpression binaryExpression)
             {
                 if ((binaryExpression.NodeType == ExpressionType.Add || binaryExpression.NodeType == ExpressionType.Subtract)
@@ -3328,6 +3355,10 @@ namespace Utils.Mathematics.Expressions
             // sharing a factor are grouped; both only rebuild terms from the factors and coefficients already present.
             if (MergesMonomials)
             {
+                // Mission K/N/F (F): a subtracted product of a sum holding both signs carries its sign in the sum, before the
+                // merges, so that an oriented term merges with an identical added one.
+                OrientSubtractedFactoredProducts(terms, type);
+
                 if (factoring != AdditiveFactoring.None)
                 {
                     MergeIdenticalMonomials(terms, type, scopes, recordMetadata, out AdditiveTermAnalysis? analyzed, out int[]? sources);
@@ -3726,7 +3757,7 @@ namespace Utils.Mathematics.Expressions
             if (pinned is not null) orderedFactors.AddRange(pinned);
 
             Expression product = BuildRightAssociative(orderedFactors, Expression.Multiply);
-            return negated ? BuildNegation(product) : product;
+            return negated ? BuildOrientedNegation(product) : product;
         }
 
         /// <summary>

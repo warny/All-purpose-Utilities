@@ -89,7 +89,7 @@ internal static partial class Campaigns
         }
 
         var summary = new StringBuilder("# Reference campaign\n\n")
-            .Append("Sign variant: ").Append(variant).Append(".\n\n")
+            .Append("Sign variant: ").Append(variant).Append(".\n\nK/N/F variant: ").Append(KnfVariant.Describe()).Append(".\n\n")
             .Append("Switch: ").Append(SignVariant.Name is null ? SuffixFinishingSwitch.Name : "the sign variant against ref")
             .Append(". H: the finishing switched off; F: H simplified again with it switched off; branch: switched on.\n\n")
             .Append("| Corpus and class | Cases |\n|---|---:|\n");

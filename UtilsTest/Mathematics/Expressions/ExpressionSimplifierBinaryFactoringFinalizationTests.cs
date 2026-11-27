@@ -248,7 +248,7 @@ public class ExpressionSimplifierBinaryFactoringFinalizationTests
         }
 
         Assert.AreEqual("-1E+300 + ((-0.25 / y) + ((-2 * (z / -2)) + (0 - (2 * y))))", Text(S(nested3674)));
-        Assert.AreEqual("-(-2 * (-2 + ((0 - z) + (x / (z * x)))))", Text(S(nested3002)));
+        Assert.AreEqual("2 * (-2 + ((0 - z) + (x / (z * x))))", Text(S(nested3002)));
 
         Assert.AreEqual("2 * (y + (z / -2))", Text(S(Add(M(K(2), Y), M(K(2), Q(Z, K(-2)))))));
         Assert.AreEqual("2 * (-2 + ((0 - z) + (x / (z * x))))", Text(S(Add(M(K(2), Sub(K(-2), Z)), M(K(2), Q(X, M(Z, X)))))));
