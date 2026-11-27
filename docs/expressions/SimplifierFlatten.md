@@ -3666,7 +3666,7 @@ a miscount of that section (the corpora are those of the campaigns, whose sizes 
   `FactorCommonFactors` and `NegateSubtractedConstant`, before `IsNegatedSum`, the keys and the sort; pinned terms are never
   touched, `BuildAdditiveExpression` is unchanged, the keys are computed for the rebuilt product.
 - **C1** as a third case of `TryFoldNegation`, so `BuildNegation` and the finalization of an ordinary `Negate` share it.
-- **Safety, proved and tested in the audit checkout**: the negation and the product by a constant evaluate nothing but the other
+- **Safety (argued, not tested further once the change was rejected)**: the negation and the product by a constant evaluate nothing but the other
   operand, once, after the constant as before; neither unchecked integer nor IEEE operators throw; `-(c * t)` and `(-c) * t` are the
   same ring element on signed integers and the same bits on every non-NaN floating-point product. C1 may therefore run outside the
   effect gate. None of these properties is in question below: every variant is exact.
@@ -3829,8 +3829,8 @@ merges and the factoring), the recognition of 25.2. Two equivariant conventions 
 The interactions with M1, M4 and mission B are those of any change of physical form: they run after the canonicalization, on its
 result, and are unchanged by the convention; the measured residues above are where they meet it. No rule needs a change (they
 receive prepared operands and their results are canonicalized), the C3a metadata are keyed per instance, the effects are those of
-25.2 (inert terms only, pinned terms untouched), and the cost is one type test per term (measured `altsign`, `negcoef`,
-`negprodsum`, `sharedneg` families of §20.5: linear).
+25.2 (inert terms only, pinned terms untouched), and the recognition costs a few type tests per term (not measured for the dual; §20.5 measured V1b + C1 on the `altsign`,
+`negcoef`, `negprodsum` and `sharedneg` families: identical visits, linear).
 
 ### 25.9 Recommendation
 
