@@ -4144,11 +4144,16 @@ checkout:
 | | dual on `master` (§25) | dual + NF | dual + KNF |
 |---|---|---|---|
 | `signs` bound association-dependent placements | 33 (the 23 of `master` + the 10 of 25.12) | **0** | **0** |
-| the ten placements of 25.12 (characterization tests, free and bound) | 10 fail (two structures, or no fixed point) | one structure each | one structure each (5 failures on the texts pinned for the branch only, as the dual changes them) |
+| the ten placements of 25.12 (characterization tests, free and bound) | 10 fail (two structures, or no fixed point) | one structure each | one structure each (failures on texts pinned for the branch only, as the dual changes them, and 26.7's cancellation note) |
 | first passes changed (against `master`) | 339 | 606 | 617 |
 | new multi-pass (free) | 2: gen#643, gen#3391 | 6 | 5: gen#3391 and the 4 free cycles of KNF |
 | `fixed@2` free / bound | 190 / 190 | 186 / 186 | 175 / 173 |
 | cycles free / bound | 51 / 0 | 52 / 0 | 52 / 0 |
+
+One more observation concerns the dual implementation itself, with or without K/N/F: it moves the sign of every subtracted
+product with a coefficient into the coefficient before the grouping, so `q - t + t - t …` with a shared `t = 2*(x - y)` no longer
+cancels (`SharedFactoredProducts_CancelAndMerge` fails under the dual alone and under dual + KNF): the dual change will need the
+cancellation-partner rule of F (26.4).
 
 The ten placements of 25.12 are resolved, and gen#643 is resolved by K. gen#3391 stays (`fixed@2`, the `NaN` fold of §18.2, the
 mission after this one) and is not aggravated. K/N/F is therefore a complete prerequisite of the dual on the measured corpus,
@@ -4156,7 +4161,56 @@ the `NaN` fold apart.
 
 ### 26.8 Complexity and performance
 
-COMPLEXITY_PLACEHOLDER
+**The 304 complexity points of §26.1** (`measure`, limits lifted): 286 points keep every counter identical. The 18 points of
+`negsum` and `subneg` change, all through N: the result is the flat sum instead of `-((0 - x1) + …)` (one node less or three
+more), the transformation visits are equal or lower (`negsum 20` 384 → 375), the rule applications lower (28 → 19, no
+`SubstractionWithNegate` any more), and the comparer simplifications double (36 → 72 at 20 terms: each distributed negation is
+one more canonicalization of a level, a constant factor, still linear). Two more points ran (`e 20`, `o 12`), as the time-based
+stop of a family depends on the load. **DAG probes:** the 43 points common with the baseline are identical (outcomes, visits,
+sizes); `mdaglong 8` and `mdagopaque 16`, killed on the loaded baseline run, completed on the branch.
+
+**Families of the mission** (`measure`, `ref` against `KNF`, 4 to 64 terms; visits, comparer simplifications, bytes, output
+nodes at 64):
+
+| Family | Shape | Visits | Comparer | Allocated | Output |
+|---|---|---|---|---|---|
+| `dagfactor` | growing coefficient (K) | 1,084 = | 319 = | 1.01 → 1.17 MB (+164 KB from 24 terms on: the 16 finished levels, then constant) | 131 = |
+| `bfsumcoef` | repeated monomials (K) | 97,594 → 81,278 | 12,096 → 15,878 | 98.1 → 96.3 MB | 381 = (41 against 65 at 16) |
+| `knfpos` | all coefficients positive | = | = | = | = |
+| `knfneg` | all coefficients negative (F) | 8,578 → 10,842 | 4,528 → 4,776 | +11 % | 131 → 133 (`-(2 * (…))`) |
+| `knfopp` | opposite numeric factors (F) | 20,750 → 20,751 | = | = | = |
+| `knfsharedsum` | shared factored product of a mixed sum (F) | 417 → 425 | 390 → 392 | +4 % | 13 → 11 |
+| `negsum` | nested negated sums (N) | 3,354 → 3,323 | 124 → 248 | 5.0 → 7.1 MB | 192 → 191 |
+| `altsign`, `negcoef`, `negprodsum`, `sharedneg`, `mixsign`, `m4suffix`, `p` | historical sign and factoring families | = | = | +0 to +4 % | = |
+
+Every family keeps the growth of `master` in the measured range (the ratios 32 → 64 of the branch equal those of `master`,
+linear for the sign families, the historical super-linear growth of the refused chains for `knfpos`/`knfneg`/`bfsumcoef`); `knfneg` pays a
+constant factor (+26 % visits) for the negated factored term the global factoring now builds; no new class of complexity.
+
+**Benchmark** (`tests/ExpressionTracingBench/run-campaign.ps1`, baseline the worktree of `b44a1c07`, A/A copy, 3 rounds, idle
+machine; median per operation, allocations of the candidate):
+
+| Scenario | Baseline | A/A | K/N/F | Allocated |
+|---|---:|---:|---:|---:|
+| `ext-root`, `scalar`, `lambda`, `leftsum20`, `p9family16`, `dag10`, `neg2sum16`, `negconst8`, `mixsign16`, `m4suffix16`, `knfnegsum8`, `knfpair` | | −3.1 % to +2.7 % | −2.7 % to +1.6 % | identical (±88 B) |
+| `binary` | 5,550 ns | −3.1 % | +1.4 % | 6,513 → 6,601 B |
+| `negsum16` | 9,808 ns | −3.8 % | +2.3 % | identical |
+| `subcall`, `prod2x` | 7,189 / 14,198 ns | +2.5 % / +0.4 % | +3.0 % / +2.2 % | identical |
+| `nested1179` | 73,502 ns | +1.5 % | +6.4 % | 66,767 → 67,015 B |
+| `knfprod` (F2 rebuild) | 14,682 ns | +1.4 % | +16.3 % | 16,275 → 20,708 B |
+| `bfsum16` (K, 16 products of one sum) | 1,443,764 ns | +1.1 % | +21.8 % | 1.77 → 2.59 MB |
+| `knfnest8` (N, eight nested negated differences) | 76,071 ns | −0.4 % | +34.0 % | 137,617 → 196,970 B |
+| `knfcoef16` (K, the bound itself) | 112,251 ns | −1.1 % | +51.0 % | 211,330 → 375,516 B |
+| `knfcoef16x2` (two calls) | 127,584 ns | +2.3 % | +47.1 % | 241,203 → 404,957 B |
+
+Reading: every scenario outside the shapes of the mission stays in the A/A band. The cost is where the corrections work: K
+canonicalizes a coefficient at each of the first 16 levels (the worst case is a chain of exactly 16 factorings; past it the cost
+is a constant, `dagfactor` 64 +16 % allocations), N canonicalizes once more each negated difference it distributes, F2 rebuilds a
+product. On `knfcoef16` one call of the branch costs more than the two calls `master` needed (187 µs against 128 µs); that is the
+price of a first call that is the fixed point. A lighter K (canonicalization without the common factors) was measured: 12 % fewer
+allocations on `dagfactor 16` (329 KB), not enough to change the picture, and it would leave shared factors of atomic coefficient
+terms to the next call; a lower bound (8) would divide the worst case by about four at the price of `dagfactor` 9–16. Both are
+options, not shipped.
 
 ### 26.9 Residues
 
@@ -4168,6 +4222,12 @@ COMPLEXITY_PLACEHOLDER
 - `master`'s 51 free cycles are not local: the trace of the first call of every one of them holds no repeated state (0
   recurrence; gen#1170 shows one expansion pattern of period 1, without a repeated state). See 26.10.
 - gen#3391 and gen#983 (the `NaN` fold) are unchanged.
+- `reference` (the three corrections off against on, `S5_REFERENCE_SWITCH=FactoringSignConsistencyDisabled`, 144,955 cases plus
+  151 DAG cases): 624 results change (converge 324, terminate 157, diff 110, effects 33), the 151 DAG cases are unchanged, no
+  exception changes. 21 changed results are not fixed points of the branch: 14 were already not fixed points on `master` (the
+  second call of `master` differs from its first: nested#2180, nested#2545, nested#3713, gen#2486, gen#2522, gen#2689, gen#3367,
+  nested#1485, nested#1670, nested#2254, diff#2270, diff#3367, effects#3666, effects#3958), and 7 are free-parameter ties (L-3:
+  the four cycles above, nested#1323, diff#1387, diff#2522, whose two passes only swap tied parameters).
 - `dagfactor` past 16 terms still needs two calls (the bound of K).
 - `diff`: 1 more `same` case becomes `signedZero` in `double` and 3 in `float`, 1 `extreme` becomes `same`/`signedZero` in both
   types, 2 `rounding` become `signedZero` in `float`: the canonical `0 - t` of a distributed negation takes the signed-zero latitude.
@@ -4224,6 +4284,9 @@ proposed, since no measured case would change.
 ### 26.12 Residual limits
 
 - K stops at 16 atomic terms; a coefficient holding a sum, a call or a negation keeps the historical node.
+- Cost on the targeted shapes (26.8): up to +51 % on a chain of exactly 16 binary factorings (K), +34 % on nested negated
+  differences (N), +16 % on a rebuilt factored product (F2); constant factors, no new complexity class.
+- The implementation of the dual convention measured in §25 breaks the cancellation of identical subtracted products (26.7).
 - `short` coefficients keep the sign of their holders in both factorings (outside `CoefficientMagnitude`).
 - The four free L-3 cycles of 26.9.
 - `IsNegatedSum` keeps its physical criterion (sufficient on the measured placements, 26.3).
