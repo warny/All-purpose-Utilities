@@ -37,13 +37,14 @@ internal static partial class Campaigns
     /// </returns>
     public static int Signs(CampaignOptions options, ResultWriter writer)
     {
+        SignValueComparison.SelfCheck();
         int treesPerPlacement = Math.Clamp(options.Seeds / 200, 6, 40);
         var summary = new StringBuilder("# Sign equivariance campaign\n\n")
-            .Append("Variant: ").Append(SignVariant.Name ?? "(none)").Append(". Placements per set: up to ").Append(SignPlacements)
+            .Append("Sign variant: ").Append(SignVariant.Describe()).Append(".\n\nPlacements per set: up to ").Append(SignPlacements)
             .Append("; trees per placement: ").Append(treesPerPlacement + 3).Append(" (left, right, balanced, random).\n\n")
-            .Append("| Term set | Binding | Trees | Placements | Association-dependent placements | Max forms per placement | Distinct forms | Unstable | Value mismatches | Grouped ≠ levels |\n")
-            .Append("|---|---|---:|---:|---:|---:|---:|---:|---:|---:|\n");
-        var totals = new int[7];
+            .Append("| Term set | Binding | Trees | Placements | Association-dependent placements | Max forms per placement | Distinct forms | Unstable | Value mismatches | S3 latitude | Grouped ≠ levels |\n")
+            .Append("|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|\n");
+        var totals = new int[8];
         foreach (SignTermSet set in SignTermSets())
         {
             foreach (bool bound in new[] { false, true })
@@ -51,7 +52,7 @@ internal static partial class Campaigns
                 Worker.BeginCase("signs " + set.Name + " " + bound);
                 var strict = new StrictForm();
                 var allForms = new HashSet<string>();
-                int trees = 0, placements = 0, dependent = 0, maxForms = 0, unstable = 0, mismatches = 0, groupedDifferences = 0;
+                int trees = 0, placements = 0, dependent = 0, maxForms = 0, unstable = 0, mismatches = 0, latitude = 0, groupedDifferences = 0;
                 foreach ((int placement, SignLeaf[] leaves) in SignPlacementsOf(set))
                 {
                     placements++;
@@ -77,17 +78,21 @@ internal static partial class Campaigns
                             writer.Anomaly(new { set = set.Name, bound, placement, kind = "UNSTABLE", source = AuditText.Format(tree), first = AuditText.Format(result), second = again is null ? null : AuditText.Format(again) });
                         }
 
-                        if (!SameSignValues(set, body, bound ? ((LambdaExpression)result!).Body : result!))
+                        SignValueClass values = CompareSignValues(set, body, bound ? ((LambdaExpression)result!).Body : result!);
+                        if (values == SignValueClass.Different)
                         {
                             mismatches++;
                             writer.Anomaly(new { set = set.Name, bound, placement, kind = "VALUE", source = AuditText.Format(tree), first = AuditText.Format(result) });
                         }
+                        else if (values == SignValueClass.Latitude)
+                        {
+                            latitude++;
+                            writer.Record(new { set = set.Name, bound, placement, kind = "S3-LATITUDE", source = AuditText.Format(tree), first = AuditText.Format(result) });
+                        }
 
                         if (GroupedChainsSwitch is not null)
                         {
-                            GroupedChainsSwitch.SetValue(null, true);
-                            (Expression? levels, _) = Simplification.Run(tree);
-                            GroupedChainsSwitch.SetValue(null, false);
+                            Expression? levels = RunWithoutGroupedChains(tree);
                             if (levels is null || strict.Of(levels) != form)
                             {
                                 groupedDifferences++;
@@ -106,18 +111,18 @@ internal static partial class Campaigns
                     }
                 }
 
-                writer.Record(new { set = set.Name, bound, trees, placements, dependent, maxForms, forms = allForms.Count, unstable, mismatches, groupedDifferences });
+                writer.Record(new { set = set.Name, bound, trees, placements, dependent, maxForms, forms = allForms.Count, unstable, mismatches, latitude, groupedDifferences });
                 summary.Append("| ").Append(set.Name).Append(" | ").Append(bound ? "lambda" : "free").Append(" | ").Append(trees).Append(" | ").Append(placements)
                     .Append(" | ").Append(dependent).Append(" | ").Append(maxForms).Append(" | ").Append(allForms.Count).Append(" | ").Append(unstable)
-                    .Append(" | ").Append(mismatches).Append(" | ").Append(groupedDifferences).Append(" |\n");
-                int[] values = [trees, placements, dependent, allForms.Count, unstable, mismatches, groupedDifferences];
-                for (int i = 0; i < totals.Length; i++) totals[i] += values[i];
+                    .Append(" | ").Append(mismatches).Append(" | ").Append(latitude).Append(" | ").Append(groupedDifferences).Append(" |\n");
+                int[] counts = [trees, placements, dependent, allForms.Count, unstable, mismatches, latitude, groupedDifferences];
+                for (int i = 0; i < totals.Length; i++) totals[i] += counts[i];
                 Worker.EndCase();
             }
         }
 
         summary.Append("| **total** | | ").Append(totals[0]).Append(" | ").Append(totals[1]).Append(" | ").Append(totals[2]).Append(" | | ").Append(totals[3])
-            .Append(" | ").Append(totals[4]).Append(" | ").Append(totals[5]).Append(" | ").Append(totals[6]).Append(" |\n");
+            .Append(" | ").Append(totals[4]).Append(" | ").Append(totals[5]).Append(" | ").Append(totals[6]).Append(" | ").Append(totals[7]).Append(" |\n");
         writer.Summary(summary.ToString());
         return writer.AnomalyCount;
     }
@@ -294,42 +299,119 @@ internal static partial class Campaigns
     }
 
     /// <summary>
-    /// Whether the simplified body computes the values of the source on fixed samples: exactly for integers (unchecked
-    /// arithmetic), within the relative reassociation latitude <c>1e-9</c> for <see cref="double"/>; an exception is expected on
-    /// both sides alike.
+    /// Simplifies <paramref name="tree"/> with the grouped quotient chains switched off, then restores the previous value of the
+    /// switch, even when the simplification throws.
+    /// </summary>
+    /// <param name="tree">The tree.</param>
+    /// <returns>The level by level result, or <see langword="null"/> when it throws.</returns>
+    private static Expression? RunWithoutGroupedChains(Expression tree)
+    {
+        object? previous = GroupedChainsSwitch!.GetValue(null);
+        GroupedChainsSwitch.SetValue(null, true);
+        try
+        {
+            return Simplification.Run(tree).Result;
+        }
+        finally
+        {
+            GroupedChainsSwitch.SetValue(null, previous);
+        }
+    }
+
+    /// <summary>The agreement of the values of a source and of its result.</summary>
+    internal enum SignValueClass
+    {
+        /// <summary>The same value (bit for bit for floating-point values, both <c>NaN</c> counting as the same), or the same exception, on every sample.</summary>
+        Identical,
+
+        /// <summary>
+        /// Different values within the S3 latitude on some sample, never outside it: two finite values within the relative
+        /// reassociation tolerance, or zeros of opposite signs.
+        /// </summary>
+        Latitude,
+
+        /// <summary>Different values outside the S3 latitude, or different exceptions, on some sample.</summary>
+        Different,
+    }
+
+    /// <summary>
+    /// Compares the values of the simplified body with those of the source on fixed samples: exactly for integers (unchecked
+    /// arithmetic), through <see cref="SignValueComparison.Compare"/> for <see cref="double"/>; an exception is expected on both
+    /// sides alike.
     /// </summary>
     /// <param name="set">The set.</param>
     /// <param name="source">The source body.</param>
     /// <param name="result">The simplified body.</param>
-    /// <returns><see langword="true"/> when the values agree.</returns>
-    private static bool SameSignValues(SignTermSet set, Expression source, Expression result)
+    /// <returns>The worst class over the samples.</returns>
+    private static SignValueClass CompareSignValues(SignTermSet set, Expression source, Expression result)
     {
         Delegate before = Expression.Lambda(source, set.Parameters).Compile();
         Delegate after = Expression.Lambda(result, set.Parameters).Compile();
         double[][] samples = [[0.5, 1.5, 2.5, -1.25, 4], [3, -2, 0.75, 2, -0.5], [-7, 9, -3, 11, 2]];
+        SignValueClass worst = SignValueClass.Identical;
         foreach (double[] sample in samples)
         {
             object[] arguments = set.Type == typeof(int) ? sample.Select(v => (object)(int)Math.Round(v * 3)).ToArray() : sample.Cast<object>().ToArray();
             (object? x, Exception? ex) = InvokeSample(before, arguments);
             (object? y, Exception? ey) = InvokeSample(after, arguments);
-            if ((ex is null) != (ey is null)) return false;
-            if (ex is not null)
-            {
-                if (ex.GetType() != ey!.GetType()) return false;
-                continue;
-            }
-
-            if (x is double p && y is double q)
-            {
-                if (!(p.Equals(q) || Math.Abs(p - q) <= 1e-9 * Math.Max(Math.Abs(p), Math.Abs(q)))) return false;
-            }
-            else if (!Equals(x, y))
-            {
-                return false;
-            }
+            SignValueClass sampleClass;
+            if ((ex is null) != (ey is null)) sampleClass = SignValueClass.Different;
+            else if (ex is not null) sampleClass = ex.GetType() == ey!.GetType() ? SignValueClass.Identical : SignValueClass.Different;
+            else if (x is double p && y is double q) sampleClass = SignValueComparison.Compare(p, q, 1e-9);
+            else sampleClass = Equals(x, y) ? SignValueClass.Identical : SignValueClass.Different;
+            if (sampleClass > worst) worst = sampleClass;
         }
 
-        return true;
+        return worst;
+    }
+
+    /// <summary>
+    /// The comparison of two <see cref="double"/> values used by the campaign: non-finite values are classified before any tolerance
+    /// (a relative tolerance would accept a finite value against an infinity, or two infinities of opposite signs, since
+    /// <c>∞ ≤ ∞</c>).
+    /// </summary>
+    internal static class SignValueComparison
+    {
+        /// <summary>Classifies two values.</summary>
+        /// <param name="expected">The value of the source.</param>
+        /// <param name="actual">The value of the result.</param>
+        /// <param name="tolerance">The relative tolerance of the S3 reassociation latitude, for finite values only.</param>
+        /// <returns>
+        /// <see cref="SignValueClass.Identical"/> for the same bits or two <c>NaN</c>; <see cref="SignValueClass.Latitude"/> for
+        /// zeros of opposite signs or two different finite values within the tolerance; <see cref="SignValueClass.Different"/>
+        /// otherwise (one <c>NaN</c>, an infinity against any other value, finite values outside the tolerance).
+        /// </returns>
+        public static SignValueClass Compare(double expected, double actual, double tolerance)
+        {
+            if (double.IsNaN(expected) || double.IsNaN(actual)) return double.IsNaN(expected) && double.IsNaN(actual) ? SignValueClass.Identical : SignValueClass.Different;
+            if (BitConverter.DoubleToInt64Bits(expected) == BitConverter.DoubleToInt64Bits(actual)) return SignValueClass.Identical;
+            if (double.IsInfinity(expected) || double.IsInfinity(actual)) return SignValueClass.Different;
+            if (expected == actual) return SignValueClass.Latitude; // +0 and -0
+            return Math.Abs(expected - actual) <= tolerance * Math.Max(Math.Abs(expected), Math.Abs(actual)) ? SignValueClass.Latitude : SignValueClass.Different;
+        }
+
+        /// <summary>Checks the classification on the reference cases before a campaign relies on it.</summary>
+        /// <exception cref="InvalidOperationException">A reference case is misclassified.</exception>
+        public static void SelfCheck()
+        {
+            (double Expected, double Actual, SignValueClass Class)[] cases =
+            [
+                (1, double.PositiveInfinity, SignValueClass.Different),
+                (double.PositiveInfinity, double.NegativeInfinity, SignValueClass.Different),
+                (double.PositiveInfinity, double.PositiveInfinity, SignValueClass.Identical),
+                (double.NaN, -double.NaN, SignValueClass.Identical),
+                (double.NaN, 1, SignValueClass.Different),
+                (1, 1 + 1e-12, SignValueClass.Latitude),
+                (1, 1.5, SignValueClass.Different),
+                (0.0, -0.0, SignValueClass.Latitude),
+                (double.MaxValue, double.PositiveInfinity, SignValueClass.Different),
+            ];
+            foreach ((double expected, double actual, SignValueClass expectedClass) in cases)
+            {
+                SignValueClass found = Compare(expected, actual, 1e-9);
+                if (found != expectedClass) throw new InvalidOperationException($"SignValueComparison.Compare({expected}, {actual}) = {found}, expected {expectedClass}.");
+            }
+        }
     }
 
     /// <summary>Invokes a compiled delegate and unwraps the exception of its body.</summary>

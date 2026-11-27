@@ -74,8 +74,9 @@ of first occurrence): the cycles that remain are not the free-parameter ties of 
 
 Set `S5_SIGN_VARIANT` to run any campaign under a sign normalization variant of `SimplifierFlatten.md` §25 (`ref`, `V1b`, `C1`,
 `V1bC1`, `V1`, `V1C1`, `V1C2`, `C2`, `dual`, `dualC2`). The variants live in an audit checkout only (their internal switches are not part
-of `master`); on a checkout without them the variable has no effect. Under a variant the `reference` campaign compares the variant
-with `ref` (every normalization off).
+of `master`). `ref` runs on any checkout; any other variant fails the run (exit code 3) when a switch it needs is missing or does
+not read back its value, and the summaries of `signs` and `reference` print the requested and the effective variant. Under a
+variant the `reference` campaign compares the variant with `ref` (every normalization off).
 
 Exit codes: `0` no anomaly, `1` anomalies found, `2` usage error, `3` harness failure, `5` a case exceeded `--timeout`, `6` the
 managed heap exceeded `--memory` (MB). On `5` and `6` the case is appended to `<campaign>-aborted.txt`; `run-audit.ps1` resumes

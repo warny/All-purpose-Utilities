@@ -5437,7 +5437,9 @@ normalization V1b is not equivariant under the inversion of the additive sign: a
 rejected, and the invariant "grouped quotient chains = level by level" (seeds 1346, 1973, 2385) is kept. Of the normalizations
 measured, only complete ones (V1, or the dual convention with the sign carried by the coefficient) commute with the inversion.
 Next: the dual convention as its own change, after its two pre-existing residues (gen#643: factored coefficient of a binary
-factoring; gen#3391: `NaN` fold); V1 as the fallback (gen#2611, gen#699). Record: `docs/expressions/SimplifierFlatten.md` §25.
+factoring; gen#3391: `NaN` fold) and the two mechanisms that still make ten `signs` placements association dependent under it
+(`IsNegatedSum` decided on physical signs; the sign of the coefficient `AdditionOfEqualsElements` extracts), pinned as acceptance
+cases (§25.12); V1 as the fallback (gen#2611, gen#699, and the same two mechanisms). Record: `docs/expressions/SimplifierFlatten.md` §25.
 ## Execution-optimizer stages
 
 These remain separate from the simplifier stages above.

@@ -516,9 +516,10 @@ internal static class Worker
         var thread = new Thread(() =>
         {
             CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
-            SignVariant.Apply();
             try
             {
+                // A variant that cannot be activated fails the run here (harness failure, exit code 3).
+                SignVariant.Apply();
                 code = body();
             }
             catch (Exception exception)
@@ -617,53 +618,111 @@ internal sealed class ResultWriter : IDisposable
 /// The sign normalization variant of the campaigns (<c>docs/expressions/SimplifierFlatten.md</c> §25), read once from the
 /// <c>S5_SIGN_VARIANT</c> environment variable and applied to the thread that runs the campaign: <c>ref</c> (every normalization
 /// off, the result of <c>master</c> <c>f6ecb2a5</c>), <c>V1b</c>, <c>C1</c>, <c>V1bC1</c>, <c>V1</c> (V1b and its converse),
-/// <c>V1C1</c>, <c>V1C2</c> (V1 with every direct coefficient absorbing a negation), <c>C2</c> (absorption alone), <c>dual</c> (every subtracted product with a coefficient added with the opposite coefficient: the sign carried by the coefficient) and <c>dualC2</c>. The switches
-/// are internal thread-static properties of the variant checkout of §25 (they are not part of <c>master</c>), read by
-/// reflection, so a checkout without them ignores the variable.
+/// <c>V1C1</c>, <c>V1C2</c> (V1 with every direct coefficient absorbing a negation), <c>C2</c> (absorption alone), <c>dual</c>
+/// (every subtracted product with a coefficient added with the opposite coefficient: the sign carried by the coefficient) and
+/// <c>dualC2</c>.
 /// </summary>
+/// <remarks>
+/// The switches are internal thread-static properties of the variant checkout of §25; <c>master</c> has none of them. Absent
+/// variable and <c>ref</c> run normally on any checkout (an absent switch is a normalization that does not exist, so it is off).
+/// Every other variant requires the switches it turns on: a missing switch, or a switch that does not read back the value
+/// written, throws, so a campaign never reports a variant it did not run. <see cref="Describe"/> gives the requested and the
+/// effective variant for the results.
+/// </remarks>
 internal static class SignVariant
 {
     /// <summary>The variant name, or <see langword="null"/>.</summary>
     public static readonly string? Name = Environment.GetEnvironmentVariable("S5_SIGN_VARIANT") is { Length: > 0 } text ? text.Trim() : null;
 
-    /// <summary>Sets the switches of <see cref="Name"/> on the current thread.</summary>
+    /// <summary>
+    /// The switches, in order: the property name and its value when the normalization it controls is off (the value an absent
+    /// switch stands for).
+    /// </summary>
+    private static readonly (string Property, bool Off)[] Switches =
+    [
+        ("SubtractedCoefficientNormalizationDisabled", true),
+        ("NegatedCoefficientAbsorptionDisabled", true),
+        ("SignVariantV1Enabled", false),
+        ("SignVariantC2Enabled", false),
+        ("SignVariantDualEnabled", false),
+    ];
+
+    /// <summary>The variants: the normalizations each one turns on, in the order of <see cref="Switches"/> (V1b, C1, V1, C2, dual).</summary>
+    private static readonly Dictionary<string, bool[]> Variants = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["ref"] = [false, false, false, false, false],
+        ["V1b"] = [true, false, false, false, false],
+        ["C1"] = [false, true, false, false, false],
+        ["V1bC1"] = [true, true, false, false, false],
+        ["V1"] = [true, false, true, false, false],
+        ["V1C1"] = [true, true, true, false, false],
+        ["V1C2"] = [true, true, true, true, false],
+        ["C2"] = [false, true, false, true, false],
+        ["dual"] = [false, false, false, false, true],
+        ["dualC2"] = [false, true, false, true, true],
+    };
+
+    /// <summary>Sets the switches of <see cref="Name"/> on the current thread; nothing when no variant is requested.</summary>
     /// <exception cref="ArgumentException">The variant is unknown.</exception>
+    /// <exception cref="InvalidOperationException">The checkout cannot activate the variant.</exception>
     public static void Apply()
     {
         if (Name is not null) Apply(Name);
     }
 
-    /// <summary>Sets the switches of the variant <paramref name="name"/> on the current thread.</summary>
+    /// <summary>Sets and verifies the switches of the variant <paramref name="name"/> on the current thread.</summary>
     /// <param name="name">The variant name.</param>
     /// <exception cref="ArgumentException">The variant is unknown.</exception>
+    /// <exception cref="InvalidOperationException">A switch the variant needs is missing, or does not read back its value.</exception>
     public static void Apply(string name)
     {
-        (bool v1b, bool c1, bool v1, bool c2, bool dual) = name.ToLowerInvariant() switch
+        if (!Variants.TryGetValue(name, out bool[]? enabled)) throw new ArgumentException("Unknown S5_SIGN_VARIANT: " + name);
+        for (int i = 0; i < Switches.Length; i++)
         {
-            "ref" => (false, false, false, false, false),
-            "v1b" => (true, false, false, false, false),
-            "c1" => (false, true, false, false, false),
-            "v1bc1" => (true, true, false, false, false),
-            "v1" => (true, false, true, false, false),
-            "v1c1" => (true, true, true, false, false),
-            "v1c2" => (true, true, true, true, false),
-            "c2" => (false, true, false, true, false),
-            "dual" => (false, false, false, false, true),
-            "dualc2" => (false, true, false, true, true),
-            _ => throw new ArgumentException("Unknown S5_SIGN_VARIANT: " + name),
-        };
-        Set("SubtractedCoefficientNormalizationDisabled", !v1b);
-        Set("NegatedCoefficientAbsorptionDisabled", !c1);
-        Set("SignVariantV1Enabled", v1);
-        Set("SignVariantC2Enabled", c2);
-        Set("SignVariantDualEnabled", dual);
+            (string property, bool off) = Switches[i];
+            bool value = enabled[i] ? !off : off;
+            PropertyInfo? switchProperty = typeof(ExpressionSimplifier).GetProperty(property, BindingFlags.NonPublic | BindingFlags.Static);
+            if (switchProperty is null)
+            {
+                if (enabled[i]) throw new InvalidOperationException($"S5_SIGN_VARIANT={name} needs ExpressionSimplifier.{property}, which this checkout does not have (variants run on the audit checkout of SimplifierFlatten.md §25 only).");
+                continue;
+            }
+
+            switchProperty.SetValue(null, value);
+            if (switchProperty.GetValue(null) is not bool read || read != value)
+            {
+                throw new InvalidOperationException($"S5_SIGN_VARIANT={name}: ExpressionSimplifier.{property} does not read back {value}.");
+            }
+        }
     }
 
-    /// <summary>Sets one internal switch of <see cref="ExpressionSimplifier"/> when the checkout has it.</summary>
-    /// <param name="name">The property name.</param>
-    /// <param name="value">The value.</param>
-    private static void Set(string name, bool value)
-        => typeof(ExpressionSimplifier).GetProperty(name, System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)?.SetValue(null, value);
+    /// <summary>
+    /// Describes the variant of the current thread: the requested one and the effective one, recomputed from the switches as they
+    /// read (an absent switch counting as off), with the value of each switch.
+    /// </summary>
+    /// <returns>The description, for the summaries and records of the campaigns.</returns>
+    public static string Describe()
+    {
+        var enabled = new bool[Switches.Length];
+        var values = new List<string>();
+        for (int i = 0; i < Switches.Length; i++)
+        {
+            (string property, bool off) = Switches[i];
+            PropertyInfo? switchProperty = typeof(ExpressionSimplifier).GetProperty(property, BindingFlags.NonPublic | BindingFlags.Static);
+            if (switchProperty is null)
+            {
+                values.Add(property + "=absent");
+                continue;
+            }
+
+            bool value = (bool)switchProperty.GetValue(null)!;
+            enabled[i] = value != off;
+            values.Add(property + "=" + value);
+        }
+
+        string effective = Variants.FirstOrDefault(pair => pair.Value.SequenceEqual(enabled)).Key ?? "unknown combination";
+        return "requested " + (Name ?? "(none)") + ", effective " + effective + " (" + string.Join(", ", values) + ")";
+    }
 }
 
 /// <summary>Simplifies with resource limits and an optional tracer, and classifies the outcome.</summary>

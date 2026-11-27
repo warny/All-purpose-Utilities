@@ -42,6 +42,8 @@ internal static partial class Campaigns
             return 0;
         }
 
+        // The variant as the worker activated it, before the comparisons switch between it and ref.
+        string variant = SignVariant.Describe();
         var counts = new SortedDictionary<string, int>();
         foreach ((string corpus, string label, Expression tree) in ReferenceCases(options))
         {
@@ -87,7 +89,8 @@ internal static partial class Campaigns
         }
 
         var summary = new StringBuilder("# Reference campaign\n\n")
-            .Append("Switch: ").Append(SuffixFinishingSwitch.Name)
+            .Append("Sign variant: ").Append(variant).Append(".\n\n")
+            .Append("Switch: ").Append(SignVariant.Name is null ? SuffixFinishingSwitch.Name : "the sign variant against ref")
             .Append(". H: the finishing switched off; F: H simplified again with it switched off; branch: switched on.\n\n")
             .Append("| Corpus and class | Cases |\n|---|---:|\n");
         foreach (KeyValuePair<string, int> pair in counts) summary.Append("| ").Append(pair.Key.Replace("|", " · ")).Append(" | ").Append(pair.Value).Append(" |\n");

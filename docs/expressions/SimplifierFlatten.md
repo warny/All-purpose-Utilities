@@ -3708,8 +3708,13 @@ A physical term is `τ = (σ, c, f)`: an additive sign `σ ∈ {+, -}`, a direct
 - **Collection** `Γ` turns a tree into the multiset of its terms: it crosses `Add`, `Subtract` and ordinary `Negate`, and the sign
   of a term is the product of the signs above it (`CollectAdditiveTerms`).
 - **Inversion** `N(σ, c, f) = (-σ, c, f)`: what the collection does to every term of a subtracted group or under a negation.
-- **Reconstruction** `R`: a canonical sum of terms, a subtracted term written `0 - t` or `a - t`. On `master`, `Γ(R(T)) = T`
-  (the reconstruction preserves the physical terms).
+- **Reconstruction** `R`: a canonical sum of terms, a subtracted term written `0 - t` or `a - t`. For the pure reconstruction
+  of signed terms (`BuildAdditiveExpression` and the right-associated rebuild of `CanonicalizeAdditiveTerms`, once the terms are
+  fixed), `Γ(R(T)) = T`: an added term is collected back as itself, `0 - t` and `a - t` give back `(-, t)`. The identity does
+  **not** cover the steps of a canonicalization that change the terms before the rebuild: zero removal, constant aggregation,
+  `MergeIdenticalMonomials`, `FactorCommonFactors`, `NegateSubtractedConstant`, cancellation and `IsNegatedSum`, nor the rules.
+  Those steps are part of `K` below; the commutation argument only assumes that they act on the collected terms whatever the
+  association, which is what the flatten proofs of §3–§16 establish for `master`.
 - **Normalization** `ν`, applied to the terms inside a canonicalization: `K(T) = R(ν(T))`, `ν` idempotent.
 
 A group `G` subtracted inside a parent is collected **flat** by a family that reads the raw chain, `ν(N(G))`, and **after a
@@ -3732,6 +3737,13 @@ A partial normalization chooses a representative for one value class only (`{(+,
 term to the other class, where both physical forms stay canonical, so the representative depends on how many inversions came
 before the normalization. Only a normalization that is a function of the value of the term (V1, or the dual) commutes with
 every inversion.
+
+**Scope of the argument.** `ν ∘ N ∘ ν = ν ∘ N` is a local condition on one term under one inversion. It is **necessary** for a
+normalization applied inside the level canonicalizations, as studied here, to keep the association independence of `master`: a
+variant that fails it gives two structures for the counterexample. It is **not sufficient**, and it is not a proof of canonicity
+of the simplifier: the merges, the factorings, `IsNegatedSum`, the rules and the finishing of refused chains read the physical
+signs too, and a complete normalization changes what they see. 25.12 shows ten placements where the dual, which satisfies the
+condition, still gives two structures through `IsNegatedSum` and the sign of a factored coefficient.
 
 The invariants are distinct:
 
@@ -3764,9 +3776,18 @@ sign of `{a, -2c, 2d, b/e}` (`2 * ((0 - c) + d)` against `-2 * (c + (0 - d))`, �
 | dual + C2 | 6 | none | 0 | 0 |
 | C2 | 17 | shared product, `sin` | 0 | 835 |
 
-**Characterizations** (`ExpressionSimplifierSignEquivarianceTests`, 16 cases, all passing on `master`), run under each variant in
-the audit checkout: V1b 8 failures, V1b + C1 8, C1 2, C2 3, V1 1, V1 + C1 1, V1 + C2 1 (the expected text of the minimal
-reproduction, which pins the form of `master`; the structures agree), dual 0, dual + C2 0.
+**Values.** The values of every tree are compared on three samples, the non-finite values classified before any tolerance
+(two `NaN` agree, an infinity only agrees with the same infinity, finite values within the relative tolerance `1e-9` and zeros of
+opposite signs are counted apart as S3 latitude, never as equal). The campaign checks this classification on reference cases
+before it runs. Replayed with it on `master` and every variant: 0 value mismatch and 0 S3 latitude case everywhere, and every
+other count of this section unchanged (the comparison of the first run could have accepted an infinity against a finite value;
+no tree produced one).
+
+**Characterizations** (`ExpressionSimplifierSignEquivarianceTests`, all passing on `master`), run under each variant in the
+audit checkout. The 16 cases of the equivariance matrix: V1b 8 failures, V1b + C1 8, C1 2, C2 3, V1 1, V1 + C1 1, V1 + C2 1
+(the expected text of the minimal reproduction, which pins the form of `master`; the structures agree), dual 0, dual + C2 0.
+The 10 acceptance cases of 25.12 (free and bound parameters): dual 10, dual + C2 10, V1b 7, V1b + C1 7, C1 4, V1 7, V1 + C1 7,
+V1 + C2 8, C2 7. The two mechanisms of 25.12 are therefore not specific to the dual: V1 meets them as well.
 
 ### 25.7 The residues of the complete normalizations
 
@@ -3822,7 +3843,7 @@ merges and the factoring), the recognition of 25.2. Two equivariant conventions 
 | New multi-pass free / bound | 1 / 1 (gen#2611 cycle, gen#699) | 2 / 2 (gen#3391, gen#643) |
 | New cycles | 1 (free) | 0 |
 | Grouped / levels (3,000 seeds) | 2, free-parameter ties | 0 |
-| Characterizations | the minimal reproduction's text only | all pass |
+| Characterizations (16 equivariance cases / 10 acceptance cases of 25.12) | the minimal reproduction's text only / 7 fail | all pass / 10 fail |
 | Agrees with the existing conventions | no: `BuildMergedMonomial` and the folded constants of `NormalizeProductFactors` put the sign in the coefficient (`-4 * x`), which V1 then moves out | yes: the merges and the folded constants already produce it |
 | Lone products | `-(2 * x)` kept (C1 removes `-(-2 * x)`) | `-(2 * x)` kept; C2 adds one cycle (gen#3759) and is not needed |
 
@@ -3837,28 +3858,38 @@ receive prepared operands and their results are canonicalized), the C3a metadata
 Do not ship a partial normalization (V1b, C1, C2, or a pair of them): none commutes with the inversion of a group, so each makes
 the structure depend on the association. Implement **C with the dual convention** (the sign of a product with a coefficient is
 carried by the coefficient; lone negated products and terms without a coefficient keep their placement; C2 not included), as its
-own change, after two separate prerequisites that remove its two residues:
+own change, after separate prerequisites that remove its residues:
 
 1. canonicalize the factored coefficient of a binary factoring when it holds a canonical sum (gen#643, the gen#1594 family of
    §19.3);
 2. decide the place of a `NaN` term in a sum before the dual moves its coefficient (gen#3391, the §18.2 `NaN` fold).
 
+3. make `IsNegatedSum` and the sign of a factored coefficient independent of the placement the dual chooses (the two
+   mechanisms of 25.12, which give two structures on ten placements where `master` gives one).
+
 Then measure the dual alone against that base with the campaigns of this section; the acceptance criteria are those of this
-mission plus the `signs` campaign (no new association-dependent placement outside the two `master` residues) and
-`ExpressionSimplifierSignEquivarianceTests`. V1 is the fallback if the dual's convention is refused for its visible forms
+mission plus the `signs` campaign (no association-dependent placement that `master` does not have) and
+`ExpressionSimplifierSignEquivarianceTests`, the ten cases of 25.12 included. A new divergence is not acceptable because its
+mechanism already exists on `master` for other placements. V1 is the fallback if the dual's convention is refused for its visible forms
 (`x + (-2 * y)` instead of `x + (0 - (2 * y))`); it needs the gen#2611 binary factoring and the gen#699 factoring gap handled first.
 
 ### 25.10 Tests and harness
 
-- `ExpressionSimplifierSignEquivarianceTests` (Unit, `S5-Audit`, 16 cases, pin `master`): the minimal reproduction; the three
+- `ExpressionSimplifierSignEquivarianceTests` (Unit, `S5-Audit`, 39 cases, pin `master`): the value comparison (finite against
+  infinity, opposite infinities, an infinity against itself, `NaN` against `NaN` and against a finite value, NaN payloads, close
+  and different finite values, signed zeros as S3 latitude); the ten acceptance cases of 25.12; the minimal reproduction; the three
   grouped seeds (grouped = level by level, first and second pass); the four combinations of the signs of the coefficient and of
   the term, in refused (quotient) and admitted chains, in left, right, balanced and nested-group associations; one, two and three
   nested inversions; a group simplified alone and collected again; a shared product; extreme coefficients (`-1e300`,
   `-double.MaxValue`, `-double.Epsilon`) and the minimal values of `int`, `long` and `short` (unchecked values compared), free and
   bound parameters. They fail under V1b, V1b + C1, C1 and C2 and pass under the dual.
 - Harness: the `signs` campaign; `S5_SIGN_VARIANT` (`ref`, `V1b`, `C1`, `V1bC1`, `V1`, `V1C1`, `V1C2`, `C2`, `dual`, `dualC2`),
-  applied to the campaign thread; the `reference` campaign compares a variant with `ref`; it reads `SignNormalizationDisabled` when
-  a checkout has it. On `master` the variable has no effect.
+  applied to the campaign thread inside the worker's exception handler. Absent or `ref`, it runs on any checkout; any other
+  variant needs the switches it turns on, writes and reads them back, and fails the run (harness failure, exit code 3) when one is
+  missing, so `master` cannot report a variant it did not run. The summaries of `signs` and `reference` print the requested and
+  the effective variant with the value of every switch. The `reference` campaign compares a variant with `ref`; without a variant
+  it reads `SignNormalizationDisabled` when a checkout has it. The grouped/levels comparison restores the previous value of
+  `GroupedQuotientChainsDisabled` in a `finally`.
 - `ExpressionSimplifierAdditiveSignTests` is unchanged: it still pins the forms of `master`.
 
 ### 25.11 Residual limits
@@ -3867,3 +3898,47 @@ mission plus the `signs` campaign (no new association-dependent placement outsid
 - `master` itself depends on the association in two places measured by `signs`: the negated-sum form `-((0 - a) + …)` of a
   chain starting with a negation, and the sign of a factored coefficient (`2 * ((0 - c) + d)` against `-2 * (c + (0 - d))`).
 - Free-parameter ties (L-3) make 50 free trees of `signs` unstable on `master` (none bound).
+
+### 25.12 The residual placements of the dual convention (acceptance cases)
+
+The ten bound placements of `signs` that give one structure on `master` and two under the dual. Each pair below has the same
+leaves with the same net signs; they are the cases of `ExpressionSimplifierSignEquivarianceTests.DualConventionResidues_GiveOneStructure`
+(sources rebuilt exactly). "Dual" lists the two structures, the first for the first source.
+
+| Placement | Sources | `master` (both) | Dual | Mechanism |
+|---|---|---|---|---|
+| `{a, -b/e, -6.5c, d}` p3 | `(((-(b/e)) - (-(-6.5*c))) - (-d)) - (-a)` ; `(-(b/e)) - ((-(-6.5*c)) + ((-d) + (-a)))` | `a + (d + ((0 - (b / e)) + (-6.5 * c)))` | the same ; `-((0 - a) + ((0 - d) + ((b / e) + (6.5 * c))))` | N |
+| `{a, -b/e, -6.5c, d}` p12 | `(((-(b/e)) + (c*-6.5)) - (-d)) - (-a)` ; `(-(b/e)) - ((-d) - ((c*-6.5) - (-a)))` | `a + (d + ((0 - (b / e)) + (-6.5 * c)))` | the same ; `-((0 - a) + ((0 - d) + ((b / e) + (6.5 * c))))` | N |
+| `{a, -b/e, +6.5c, d}` p3 | as p3 above with `6.5` | `a + (d + ((0 - (b / e)) + (6.5 * c)))` | the same ; `-((0 - a) + ((0 - d) + ((b / e) + (-6.5 * c))))` | N |
+| `{a, -b/e, +6.5c, d}` p12 | as p12 above with `6.5` | `a + (d + ((0 - (b / e)) + (6.5 * c)))` | the same ; `-((0 - a) + ((0 - d) + ((b / e) + (-6.5 * c))))` | N |
+| `{a, b/e, -2c, -3d}` p3 | `(((-(d*3)) - (-a)) - (-(b/e))) - (-(-2*c))` ; `(-(d*3)) - ((-(b/e)) + ((-a) + (-(-2*c))))` | `a + ((b / e) + ((-2 * c) + (0 - (3 * d))))` | `a + ((b / e) + ((-3 * d) + (-2 * c)))` ; `-((0 - a) + ((0 - (b / e)) + ((2 * c) + (3 * d))))` | N |
+| `{a, b/e, -2c, -3d}` p21 | `(((b/e) + (-(2*c))) + (d*-3)) - (-a)` ; `(-(2*c)) - (((-a) - (d*-3)) - (b/e))` | `a + ((b / e) + ((-3 * d) + (0 - (2 * c))))` | `a + ((b / e) + ((-3 * d) + (-2 * c)))` ; `-((0 - a) + ((0 - (b / e)) + ((2 * c) + (3 * d))))` | N |
+| `{a, -2c, 2d, b/e}` p0 | `a + ((-2*c) - ((-2*d) - (b/e)))` ; `((a + (-2*c)) - (-2*d)) + (b/e)` | `a + ((b / e) + (-2 * (c + (0 - d))))` | `a + ((b / e) + (2 * ((0 - c) + d)))` ; `a + ((b / e) + (-2 * (c + (0 - d))))` | F |
+| `{a, -2c, 2d, b/e}` p4 | `a + ((-2*c) + ((-(d*-2)) + (b/e)))` ; `((a + (-2*c)) + (-(d*-2))) + (b/e)` | `a + ((b / e) + (-2 * (c + (0 - d))))` | `a + ((b / e) + (2 * ((0 - c) + d)))` ; `a + ((b / e) + (-2 * (c + (0 - d))))` | F |
+| `{a, -2c, 2d, b/e}` p21 | `(((-(2*c)) - (-(2*d))) - (-(b/e))) - (-a)` ; `(-(2*c)) - ((-(b/e)) + ((-a) + (-(2*d))))` | `a + ((b / e) + (2 * ((0 - c) + d)))` | the same ; `-((0 - a) + ((0 - (b / e)) + (2 * (c + (0 - d)))))` | N and F |
+| `{a, -2c, 2d, b/e}` p23 | `a - ((-(c*-2)) - ((-(d*-2)) + (b/e)))` ; `((a - (-(c*-2))) + (-(d*-2))) + (b/e)` | `a + ((b / e) + (-2 * (c + (0 - d))))` | `a + ((b / e) + (2 * ((0 - c) + d)))` ; `a + ((b / e) + (-2 * (c + (0 - d))))` | F |
+
+The dual structures are those of the `signs` campaign (the forms its records print for these placements); the `master`
+structures are the bound results the test pins.
+
+- **N, the negated-sum rule.** Every second source starts with a negated leaf and subtracts a group holding every other term.
+  On `master` the canonicalization of that group sees only subtracted terms, `IsNegatedSum` rebuilds it as `-(…)`, and the root
+  `(-q) - (-(…))` is collected flat. Under the dual a subtracted product of the group moves its sign into its coefficient, so the
+  group is no longer all subtracted, it is rebuilt as a sum, and the root becomes `(-q) - (sum)`, which
+  `SubstractionWithNegate` turns into `-(q + sum)`: a chain rooted at a negation, kept as it is (§17, the `-(sum)` residue).
+  Whether the group is "all subtracted" is a property of the physical placement, so the decision of `IsNegatedSum` must be
+  made on the logical signs before any complete normalization can keep one structure.
+- **F, the sign of a factored coefficient.** `-2 * c` and `-2 * d` subtracted share the factor `2`. Traced on p0 (first
+  source): on `master`, `SubstractionWithAddition` hands the pair `(0 - (-2 * d)) + (-2 * c)` to the binary rule
+  `AdditionOfEqualsElements`, which factors `-2` (`-2 * ((0 - d) + c)`); under the dual the same rule receives
+  `(-2 * c) + (2 * d)`, the subtracted product having moved its sign into its coefficient, and factors `2`
+  (`2 * ((0 - c) + d)`). The binary rule takes the sign of the extracted coefficient from the physical form of the pair, so the
+  association that builds the pair decides the structure. Traced likewise for N on p3 (second source): on `master` the group
+  gives `-(d + (a + (-6.5 * c)))` and `SubstractionWithNegate(BinaryExpression, Expression, UnaryExpression)` collects it; under
+  the dual it gives `(0 - d) + ((0 - a) + (6.5 * c))` and `SubstractionWithNegate(BinaryExpression, UnaryExpression, Expression)`
+  builds `-((0 - d) + …)`. `master` already shows this
+  mechanism on 11 other placements of the same set (25.6); the fix is a sign convention for factored coefficients that
+  depends on the logical coefficients only.
+- **Link with gen#643 and gen#3391.** None: gen#643 is the canonicalization of a factored coefficient sum, gen#3391 the `NaN`
+  fold. These placements hold no quotient coefficient and no `NaN`.
+- Both mechanisms also make V1 fail 7 of these ten cases (25.6); they are prerequisites of either complete normalization.

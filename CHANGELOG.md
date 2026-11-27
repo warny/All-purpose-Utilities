@@ -12,7 +12,7 @@ All notable changes to this project will be documented in this file.
   (`(a - ((b/e) - (c * -6.5))) + d` and `((a - (b/e)) + (c * -6.5)) + d`), and the grouped quotient chains would stop giving the
   level by level result. The simplifier is unchanged.
 - New permanent characterizations of the association independence of `master` (`ExpressionSimplifierSignEquivarianceTests`) and
-  an audit campaign `signs` with the `S5_SIGN_VARIANT` switch in the S5 harness. A complete, equivariant normalization (the sign
+  an audit campaign `signs` with the `S5_SIGN_VARIANT` switch in the S5 harness (a variant that the checkout cannot activate fails the run; non-finite values are compared before any tolerance). Ten placements that the dual convention still makes association dependent are pinned as acceptance cases. A complete, equivariant normalization (the sign
   carried by the coefficient) is recommended as a separate change.
 
 ### Fixed — `omy.Utils` (`ExpressionSimplifier` multiplicative DAG resource bounds)
