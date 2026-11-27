@@ -725,6 +725,11 @@ The sign normalizations measured in `SimplifierFlatten.md` §20 need no permissi
 identities, and evaluate nothing new. None of them is shipped. They are rejected for convergence (§20.3), not for semantics or
 policies.
 
+The partial normalization V1b + C1 measured in `SimplifierFlatten.md` §25 needs no permission either: it rewrites inert terms
+only (pinned terms untouched), and C1 removes a negation and changes a constant, which evaluate nothing, so it may run outside the
+effect gate under every policy. It is rejected for canonicity (the structure depends on the association), not for semantics or
+policies; the engine is unchanged.
+
 ## 14. Level and whole-chain factoring (C3c consistency)
 
 The boundary finishing of `SimplifierFlatten.md` §21 needs no permission and no new admission: the result of a refused chain is

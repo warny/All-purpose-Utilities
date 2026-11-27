@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Documentation — `omy.Utils` (`ExpressionSimplifier` partial sign normalization V1b + C1 audit)
+- The sign normalization V1b + C1 (`x - (-2 * y)` to `x + (2 * y)`, `-(-2 * x)` to `2 * x`) was implemented and measured
+  (`docs/expressions/SimplifierFlatten.md` §25). It is exact and keeps convergence (209 first results changed, no new multi-pass
+  case or cycle), but it is not shipped: a partial normalization does not commute with the inversion of a subtracted group, so
+  the structure of the result would depend on the association of the source
+  (`(a - ((b/e) - (c * -6.5))) + d` and `((a - (b/e)) + (c * -6.5)) + d`), and the grouped quotient chains would stop giving the
+  level by level result. The simplifier is unchanged.
+- New permanent characterizations of the association independence of `master` (`ExpressionSimplifierSignEquivarianceTests`) and
+  an audit campaign `signs` with the `S5_SIGN_VARIANT` switch in the S5 harness. A complete, equivariant normalization (the sign
+  carried by the coefficient) is recommended as a separate change.
+
 ### Fixed — `omy.Utils` (`ExpressionSimplifier` multiplicative DAG resource bounds)
 - A product node shared by its own operands (`s = s * s`, n + 1 distinct products, 2^(n+1) - 1 occurrences) no longer makes the
   factorable test of the global factoring walk every occurrence: past 64 product occurrences a term is decided over its distinct

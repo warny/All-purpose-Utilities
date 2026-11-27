@@ -11,14 +11,16 @@ namespace ExpressionSimplifierAudit;
 internal static partial class Campaigns
 {
     /// <summary>
-    /// The internal switch of the latest mission, read by reflection: the multiplicative DAG guards (§24,
-    /// <c>MultiplicativeDagGuardDisabled</c>) when the checkout has them, the binary pair finishing (mission B,
+    /// The internal switch of the latest mission, read by reflection: the sign normalizations V1b and C1 (§25,
+    /// <c>SignNormalizationDisabled</c>) when the checkout has them, the multiplicative DAG guards (§24,
+    /// <c>MultiplicativeDagGuardDisabled</c>), the binary pair finishing (mission B,
     /// <c>RefusedBinaryFinishingDisabled</c>), otherwise the suffix finishing (mission M4, <c>RefusedSuffixFinishingDisabled</c>);
     /// <see langword="null"/> on a checkout that has none. <c>S5_REFERENCE_SWITCH</c> names another one.
     /// </summary>
     private static readonly PropertyInfo? SuffixFinishingSwitch =
         (Environment.GetEnvironmentVariable("S5_REFERENCE_SWITCH") is { Length: > 0 } name
             ? typeof(ExpressionSimplifier).GetProperty(name, BindingFlags.NonPublic | BindingFlags.Static) : null)
+        ?? typeof(ExpressionSimplifier).GetProperty("SignNormalizationDisabled", BindingFlags.NonPublic | BindingFlags.Static)
         ?? typeof(ExpressionSimplifier).GetProperty("MultiplicativeDagGuardDisabled", BindingFlags.NonPublic | BindingFlags.Static)
         ?? typeof(ExpressionSimplifier).GetProperty("RefusedBinaryFinishingDisabled", BindingFlags.NonPublic | BindingFlags.Static)
         ?? typeof(ExpressionSimplifier).GetProperty("RefusedSuffixFinishingDisabled", BindingFlags.NonPublic | BindingFlags.Static);
@@ -104,6 +106,13 @@ internal static partial class Campaigns
     /// <returns>The result or the exception.</returns>
     private static (Expression? Result, Exception? Error) RunSuffix(Expression tree, bool disabled)
     {
+        // A sign variant (§25) is compared with the reference of every normalization off, whatever the switch.
+        if (SignVariant.Name is not null)
+        {
+            SignVariant.Apply(disabled ? "ref" : SignVariant.Name);
+            return Simplification.Run(tree);
+        }
+
         SuffixFinishingSwitch!.SetValue(null, disabled);
         try
         {

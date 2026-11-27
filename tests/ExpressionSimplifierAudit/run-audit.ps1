@@ -73,7 +73,7 @@ $environment = @(
     "machine: $env:COMPUTERNAME, $((Get-CimInstance Win32_Processor | Select-Object -First 1).Name), $([Environment]::ProcessorCount) logical processors"
     "os: $([Environment]::OSVersion.VersionString)"
     "dotnet: $(& dotnet --version)"
-    "parameters: Seeds=$Seeds Nested=$Nested Types=$Types CaseTimeout=$CaseTimeoutSeconds MemoryMB=$MemoryMB Unlimited=$Unlimited"
+    "parameters: Seeds=$Seeds Nested=$Nested Types=$Types CaseTimeout=$CaseTimeoutSeconds MemoryMB=$MemoryMB Unlimited=$Unlimited SignVariant=$env:S5_SIGN_VARIANT Policy=$env:S5_AUDIT_POLICY Bind=$env:S5_AUDIT_BIND"
 )
 Set-Content -Path (Join-Path $output 'environment.txt') -Value $environment -Encoding UTF8
 

@@ -516,6 +516,7 @@ internal static class Worker
         var thread = new Thread(() =>
         {
             CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
+            SignVariant.Apply();
             try
             {
                 code = body();
@@ -610,6 +611,59 @@ internal sealed class ResultWriter : IDisposable
         _records.Dispose();
         _anomalies.Dispose();
     }
+}
+
+/// <summary>
+/// The sign normalization variant of the campaigns (<c>docs/expressions/SimplifierFlatten.md</c> §25), read once from the
+/// <c>S5_SIGN_VARIANT</c> environment variable and applied to the thread that runs the campaign: <c>ref</c> (every normalization
+/// off, the result of <c>master</c> <c>f6ecb2a5</c>), <c>V1b</c>, <c>C1</c>, <c>V1bC1</c>, <c>V1</c> (V1b and its converse),
+/// <c>V1C1</c>, <c>V1C2</c> (V1 with every direct coefficient absorbing a negation), <c>C2</c> (absorption alone), <c>dual</c> (every subtracted product with a coefficient added with the opposite coefficient: the sign carried by the coefficient) and <c>dualC2</c>. The switches
+/// are internal thread-static properties of the variant checkout of §25 (they are not part of <c>master</c>), read by
+/// reflection, so a checkout without them ignores the variable.
+/// </summary>
+internal static class SignVariant
+{
+    /// <summary>The variant name, or <see langword="null"/>.</summary>
+    public static readonly string? Name = Environment.GetEnvironmentVariable("S5_SIGN_VARIANT") is { Length: > 0 } text ? text.Trim() : null;
+
+    /// <summary>Sets the switches of <see cref="Name"/> on the current thread.</summary>
+    /// <exception cref="ArgumentException">The variant is unknown.</exception>
+    public static void Apply()
+    {
+        if (Name is not null) Apply(Name);
+    }
+
+    /// <summary>Sets the switches of the variant <paramref name="name"/> on the current thread.</summary>
+    /// <param name="name">The variant name.</param>
+    /// <exception cref="ArgumentException">The variant is unknown.</exception>
+    public static void Apply(string name)
+    {
+        (bool v1b, bool c1, bool v1, bool c2, bool dual) = name.ToLowerInvariant() switch
+        {
+            "ref" => (false, false, false, false, false),
+            "v1b" => (true, false, false, false, false),
+            "c1" => (false, true, false, false, false),
+            "v1bc1" => (true, true, false, false, false),
+            "v1" => (true, false, true, false, false),
+            "v1c1" => (true, true, true, false, false),
+            "v1c2" => (true, true, true, true, false),
+            "c2" => (false, true, false, true, false),
+            "dual" => (false, false, false, false, true),
+            "dualc2" => (false, true, false, true, true),
+            _ => throw new ArgumentException("Unknown S5_SIGN_VARIANT: " + name),
+        };
+        Set("SubtractedCoefficientNormalizationDisabled", !v1b);
+        Set("NegatedCoefficientAbsorptionDisabled", !c1);
+        Set("SignVariantV1Enabled", v1);
+        Set("SignVariantC2Enabled", c2);
+        Set("SignVariantDualEnabled", dual);
+    }
+
+    /// <summary>Sets one internal switch of <see cref="ExpressionSimplifier"/> when the checkout has it.</summary>
+    /// <param name="name">The property name.</param>
+    /// <param name="value">The value.</param>
+    private static void Set(string name, bool value)
+        => typeof(ExpressionSimplifier).GetProperty(name, System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)?.SetValue(null, value);
 }
 
 /// <summary>Simplifies with resource limits and an optional tracer, and classifies the outcome.</summary>
