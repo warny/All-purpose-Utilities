@@ -371,6 +371,24 @@ public class ExpressionSimplifierFactoringSignConsistencyTests
     }
 
     /// <summary>
+    /// F: a subtracted factored product whose identical term is added in the same sum is left to the cancellation (a rebuilt
+    /// product would no longer cancel its partner: <c>q - t + t - t …</c> kept every occurrence), and the oriented occurrences
+    /// merge with each other; the work stays linear in the number of occurrences (the <c>knfsharedsum</c> family).
+    /// </summary>
+    [TestMethod]
+    public void SharedFactoredProducts_CancelAndMerge()
+    {
+        Expression t = Mul(K(2), Sub(X, Y));
+        Expression q = Expression.Divide(A, B);
+        Expression source = q;
+        for (int i = 1; i < 64; i++) source = i % 2 == 1 ? Sub(source, t) : Add(source, t);
+        AssertOneCall(source, "(a / b) + (2 * ((0 - x) + y))");
+        AssertOneCall(Sub(Sub(q, t), t), "(a / b) + (4 * ((0 - x) + y))");
+        AssertOneCall(Add(Sub(q, t), Mul(K(2), Sub(Y, X))), "(a / b) + (4 * ((0 - x) + y))");
+        AssertOneCall(Add(Sub(q, t), Mul(K(-2), Sub(Y, X))), "a / b");
+    }
+
+    /// <summary>
     /// F: the coefficients outside the domain of the magnitude keep the result of master: <see cref="short"/>, unsigned, the
     /// minimal integers, and the non-factorable constants.
     /// </summary>

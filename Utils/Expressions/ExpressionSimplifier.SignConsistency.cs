@@ -242,23 +242,28 @@ public partial class ExpressionSimplifier
     private void OrientSubtractedFactoredProducts(List<(Expression Term, bool IsNegative)> terms, Type type)
     {
         if (t_factorOrientationDisabled || !StabilizesRebuiltForms) return;
+
+        // The subtracted candidates first: only subtracted ordinary products are read, through their bounded right spine.
+        List<(int Index, List<Expression> Factors, int SumIndex)>? candidates = null;
         for (int index = 0; index < terms.Count; index++)
         {
             (Expression term, bool isNegative) = terms[index];
-            if (!isNegative || term is not BinaryExpression { NodeType: ExpressionType.Multiply } product || !IsOrdinaryBinaryArithmetic(product)) continue;
+            if (isNegative && TryFindSingleSumFactor(term, out List<Expression>? factors, out int sumIndex)) (candidates ??= []).Add((index, factors, sumIndex));
+        }
 
-            // One ordinary sum among the factors of a canonical product (right-associated, at most OrientedProductFactors factors,
-            // no product as a left operand): a bounded walk, so a shared multiplicative DAG is never unfolded (§24).
-            if (!TryCollectCanonicalFactors(product, out List<Expression>? factors)) continue;
-            int sumIndex = -1;
-            for (int factor = 0; factor < factors.Count; factor++)
-            {
-                if (factors[factor] is not BinaryExpression { NodeType: ExpressionType.Add or ExpressionType.Subtract } candidate || !IsOrdinaryBinaryArithmetic(candidate)) continue;
-                if (sumIndex >= 0 || !CanonicalizesOperator(candidate)) { sumIndex = -2; break; }
-                sumIndex = factor;
-            }
+        if (candidates is null) return;
 
-            if (sumIndex < 0) continue;
+        // A subtracted product whose identical term is added elsewhere in the sum is left to the cancellation of the
+        // canonicalization (t - t gives nothing): rebuilt, it would no longer be identical to its partner, and t - t would stay.
+        HashSet<Expression>? addedProducts = null;
+        foreach ((Expression term, bool isNegative) in terms)
+        {
+            if (!isNegative && term is BinaryExpression { NodeType: ExpressionType.Multiply }) (addedProducts ??= new HashSet<Expression>(FactorEqualityComparer.Instance)).Add(term);
+        }
+
+        foreach ((int index, List<Expression> factors, int sumIndex) in candidates)
+        {
+            if (addedProducts is not null && addedProducts.Contains(terms[index].Term)) continue;
 
             // Its opposite terms; a sum whose terms are all added (its opposite is a negated sum) or holding NaN is kept.
             var opposite = new List<(Expression Term, bool IsNegative)>();
@@ -279,6 +284,40 @@ public partial class ExpressionSimplifier
             Expression rebuilt = BuildCanonicalProduct(factors, record: false);
             terms[index] = rebuilt is UnaryExpression negation && IsOrdinaryUnaryNegate(negation) ? (negation.Operand, true) : (rebuilt, false);
         }
+    }
+
+    /// <summary>
+    /// Whether <paramref name="term"/> is an ordinary product in the canonical shape holding exactly one ordinary sum of an operator
+    /// that does not throw among its factors (F, <see cref="OrientSubtractedFactoredProducts"/>).
+    /// </summary>
+    /// <param name="term">A term.</param>
+    /// <param name="factors">Receives the factors (<see cref="TryCollectCanonicalFactors"/>), or <see langword="null"/>.</param>
+    /// <param name="sumIndex">Receives the index of the sum among them, or <c>-1</c>.</param>
+    /// <returns><see langword="true"/> for such a product.</returns>
+    private static bool TryFindSingleSumFactor(Expression term, [NotNullWhen(true)] out List<Expression>? factors, out int sumIndex)
+    {
+        sumIndex = -1;
+        factors = null;
+        if (term is not BinaryExpression { NodeType: ExpressionType.Multiply } product || !IsOrdinaryBinaryArithmetic(product)) return false;
+
+        // One ordinary sum among the factors of a canonical product (right-associated, at most OrientedProductFactors factors,
+        // no product as a left operand): a bounded walk, so a shared multiplicative DAG is never unfolded (§24).
+        if (!TryCollectCanonicalFactors(product, out List<Expression>? collected)) return false;
+        for (int factor = 0; factor < collected.Count; factor++)
+        {
+            if (collected[factor] is not BinaryExpression { NodeType: ExpressionType.Add or ExpressionType.Subtract } candidate || !IsOrdinaryBinaryArithmetic(candidate)) continue;
+            if (sumIndex >= 0 || !CanonicalizesOperator(candidate))
+            {
+                sumIndex = -1;
+                return false;
+            }
+
+            sumIndex = factor;
+        }
+
+        if (sumIndex < 0) return false;
+        factors = collected;
+        return true;
     }
 
     /// <summary>

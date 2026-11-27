@@ -3355,6 +3355,10 @@ namespace Utils.Mathematics.Expressions
             // sharing a factor are grouped; both only rebuild terms from the factors and coefficients already present.
             if (MergesMonomials)
             {
+                // Mission K/N/F (F): a subtracted product of a sum holding both signs carries its sign in the sum, before the
+                // merges, so that an oriented term merges with an identical added one.
+                OrientSubtractedFactoredProducts(terms, type);
+
                 if (factoring != AdditiveFactoring.None)
                 {
                     MergeIdenticalMonomials(terms, type, scopes, recordMetadata, out AdditiveTermAnalysis? analyzed, out int[]? sources);
@@ -3362,9 +3366,6 @@ namespace Utils.Mathematics.Expressions
                 }
 
                 NegateSubtractedConstant(terms, type, StabilizesRebuiltForms);
-
-                // Mission K/N/F (F): a subtracted product of a sum holding both signs carries its sign in the sum.
-                OrientSubtractedFactoredProducts(terms, type);
             }
 
             // Mission C3d: a sum whose terms are all subtracted is the negation of their sum, the form the levels build

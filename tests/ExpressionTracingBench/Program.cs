@@ -76,6 +76,15 @@ public static class Program
         // Multiplicative DAG resource bounds (SimplifierFlatten.md §24): ordinary product terms (the plain walk only), a legitimate
         // shared product (within the allowance), a shared product beyond it (refused by the factorable family), its tree copy, and
         // a long integral product (the counted factor collection).
+        // Mission K/N/F (SimplifierFlatten.md §26): a coefficient growing by one term per binary factoring (one and two calls), a
+        // negated leaf minus a mixed group (N), a signed pair and a subtracted factored product of a mixed sum (F), and a chain of
+        // nested negated differences.
+        ["knfcoef16"] = () => Simplify(GrowingCoefficient(16)),
+        ["knfcoef16x2"] = () => SimplifyTwice(GrowingCoefficient(16)),
+        ["knfnegsum8"] = () => Simplify(Expression.Subtract(Expression.Negate(Expression.Divide(Xs[0], Xs[1])), Enumerable.Range(2, 8).Select(i => (Expression)Expression.Multiply(Expression.Constant(i % 2 == 0 ? 2.0 : -2.0), Xs[i])).Aggregate(Expression.Subtract))),
+        ["knfpair"] = () => Simplify(Expression.Subtract(Expression.Multiply(Expression.Constant(-2.0), Xs[0]), Expression.Multiply(Expression.Constant(-2.0), Xs[1]))),
+        ["knfprod"] = () => Simplify(Expression.Subtract(Expression.Divide(Xs[0], Xs[1]), Expression.Multiply(Expression.Constant(2.0), Expression.Subtract(Xs[2], Xs[3])))),
+        ["knfnest8"] = () => Simplify(Enumerable.Range(1, 8).Aggregate((Expression)Xs[0], static (e, i) => Expression.Negate(Expression.Subtract(e, Xs[i])))),
         ["prodsum16"] = () => Simplify(Enumerable.Range(1, 16).Select(i => (Expression)Expression.Multiply(Expression.Multiply(Xs[0], Xs[i]), Xs[i + 20])).Aggregate(Expression.Add)),
         ["mdag2x3"] = () => Simplify(MulDagSum(3, shared: true)),
         ["mdag2x7"] = () => Simplify(MulDagSum(7, shared: true)),
@@ -202,6 +211,18 @@ public static class Program
     {
         var simplifier = new ExpressionSimplifier();
         return new Scenario(() => simplifier.Simplify(simplifier.Simplify(tree)));
+    }
+
+    /// <summary>
+    /// <c>x1*s + x2*s + ... + xn*s</c> with one shared sum <c>s = x62 + x63</c>, left-associated: a binary factoring per level, whose
+    /// coefficient of added terms grows by one term (mission K/N/F, K).
+    /// </summary>
+    /// <param name="terms">The number of products.</param>
+    /// <returns>The chain.</returns>
+    private static Expression GrowingCoefficient(int terms)
+    {
+        Expression shared = Expression.Add(Xs[62], Xs[63]);
+        return Enumerable.Range(1, terms).Select(i => (Expression)Expression.Multiply(Xs[i], shared)).Aggregate(Expression.Add);
     }
 
     /// <summary>

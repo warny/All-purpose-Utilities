@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -421,6 +421,10 @@ internal static class Families
         ("refusednone", "(2 - 1) + x1*y1 + x2*y2 + ... (refused by its constant pair, no common factor once folded)"),
         ("tailquot", "x0*x1 + x0*x2 + ... + x1/x0 (refused by its last quotient; its factorable sub-chain is factored on its own)"),
         ("dagfactor", "s*x1 + s*x2 + ... with s = (u + v) shared (a sum factor: binary factorings level by level, C3d dag)"),
+        ("knfpos", "(x0/q + 2*x1) + 2*x2 + ... (mission K/N/F: coefficients all positive, refused chain)"),
+        ("knfneg", "(x0/q + -2*x1) + -2*x2 + ... (mission K/N/F: coefficients all negative, refused chain)"),
+        ("knfopp", "x0/q + ((-2*x1) - (-2*x2)) + ((-2*x3) - (-2*x4)) + ... (mission K/N/F: opposite numeric factors, pairs)"),
+        ("knfsharedsum", "x0/q - t + t - ... with t = 2*(x1 - x2) shared (mission K/N/F: a shared factored product of a mixed sum)"),
         ("mixsign", "2*x1 - 2*x2 + (-2)*x3 - (-2)*x4 + ... (one coefficient magnitude with both signs)"),
         ("m4suffix", "((2*x1 + x0/q) + 2*x2) + 2*x3 + ... (M4-1: refused by the quotient at every level, the products form the canonical suffix)"),
         ("m4middle", "2*x1 + ... + 2*xk + x0/q + 2*x(k+1) + ... (M4-2: factorable terms before and after the quotient)"),
@@ -493,6 +497,11 @@ internal static class Families
             "refusedfac" => LeftChain(xs.Skip(1).Select(v => (Expression)Expression.Multiply(x, v)).Prepend(Expression.Subtract(Expression.Constant(2.0), Expression.Constant(1.0))), Expression.Add),
             "refusednone" => LeftChain(xs.Skip(1).Select((v, i) => (Expression)Expression.Multiply(v, Expression.Parameter(typeof(double), "y" + (i + 1)))).Prepend(Expression.Subtract(Expression.Constant(2.0), Expression.Constant(1.0))), Expression.Add),
             "tailquot" => Expression.Add(LeftChain(xs.Skip(1).Select(v => (Expression)Expression.Multiply(x, v)).DefaultIfEmpty(x), Expression.Add), Expression.Divide(xs[Math.Min(1, n - 1)], x)),
+            "knfpos" => LeftChain(xs.Skip(1).DefaultIfEmpty(x).Select(v => (Expression)Expression.Multiply(Expression.Constant(2.0), v)).Prepend(Quotient(x, "q")), Expression.Add),
+            "knfneg" => LeftChain(xs.Skip(1).DefaultIfEmpty(x).Select(v => (Expression)Expression.Multiply(Expression.Constant(-2.0), v)).Prepend(Quotient(x, "q")), Expression.Add),
+            "knfopp" => LeftChain(Enumerable.Range(0, Math.Max(1, (n - 1) / 2)).Select(i => (Expression)Expression.Subtract(Expression.Multiply(Expression.Constant(-2.0), xs[Math.Min(n - 1, 1 + 2 * i)]), Expression.Multiply(Expression.Constant(-2.0), xs[Math.Min(n - 1, 2 + 2 * i)]))).Prepend(Quotient(x, "q")), Expression.Add),
+            "knfsharedsum" => Expression.Multiply(Expression.Constant(2.0), Expression.Subtract(xs[Math.Min(1, n - 1)], xs[Math.Min(2, n - 1)])) is var factored
+                ? Enumerable.Range(1, Math.Max(1, n - 1)).Aggregate(Quotient(x, "q"), (acc, i) => i % 2 == 1 ? Expression.Subtract(acc, factored) : Expression.Add(acc, factored)) : x,
             "dagfactor" => Expression.Add(Expression.Parameter(typeof(double), "u"), Expression.Parameter(typeof(double), "v")) is var sum
                 ? LeftChain(xs.Select(v => (Expression)Expression.Multiply(sum, v)), Expression.Add) : x,
             "mixsign" => xs.Select((v, i) => (Expression)Expression.Multiply(Expression.Constant(i % 4 < 2 ? 2.0 : -2.0), v)).Select((term, i) => (term, i))

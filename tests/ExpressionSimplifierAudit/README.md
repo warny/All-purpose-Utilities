@@ -78,6 +78,14 @@ of `master`). `ref` runs on any checkout; any other variant fails the run (exit 
 not read back its value, and the summaries of `signs` and `reference` print the requested and the effective variant. Under a
 variant the `reference` campaign compares the variant with `ref` (every normalization off).
 
+Set `S5_KNF_VARIANT` to run any campaign under a combination of the corrections of `SimplifierFlatten.md` §26: `ref` (the three
+off, the engine of `master` `b44a1c07`), `K`, `N`, `F`, `KN`, `KF`, `NF` or `KNF` (the default of the branch). The switches are
+internal thread-static properties (`FactoredCoefficientFinishingDisabled`, `NegatedSumOrientationDisabled`,
+`FactorOrientationDisabled`); a variant fails the run (exit code 3) when a switch it turns on is missing or does not read back its
+value, and the summaries of `signs` and `reference` print the requested and the effective variant. It combines with
+`S5_SIGN_VARIANT` on the audit checkout of §25 (the dual convention replayed on K/N/F). The reference campaign of the mission runs
+with `S5_REFERENCE_SWITCH=FactoringSignConsistencyDisabled` (the three corrections switched off together).
+
 Exit codes: `0` no anomaly, `1` anomalies found, `2` usage error, `3` harness failure, `5` a case exceeded `--timeout`, `6` the
 managed heap exceeded `--memory` (MB). On `5` and `6` the case is appended to `<campaign>-aborted.txt`; `run-audit.ps1` resumes
 the campaign after it (`--start`, `--resume`).
