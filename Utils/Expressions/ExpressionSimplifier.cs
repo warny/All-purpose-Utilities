@@ -2293,7 +2293,7 @@ namespace Utils.Mathematics.Expressions
             }
 
             // Factor out without recursively re-entering this rule on the same shape.
-            return BuildFactoredProduct(ExpressionType.Add, leftleft, rightleft, leftright);
+            return BuildOrientedFactoredProduct(ExpressionType.Add, leftleft, rightleft, leftright);
         }
 
         /// <summary>
@@ -2382,7 +2382,7 @@ namespace Utils.Mathematics.Expressions
             }
 
             // Factor out without recursively re-entering this rule on the same shape.
-            return BuildFactoredProduct(ExpressionType.Subtract, leftleft, rightleft, leftright);
+            return BuildOrientedFactoredProduct(ExpressionType.Subtract, leftleft, rightleft, leftright);
         }
 
         /// <summary>
@@ -2541,8 +2541,12 @@ namespace Utils.Mathematics.Expressions
                 && !HasAdditiveNegation(leftCoefficient)
                 && !HasAdditiveNegation(rightCoefficient)
                 && CountAdditiveConstants(rightCoefficient, type, CountAdditiveConstants(leftCoefficient, type, 0)) < 2
-                && (IsOrdinaryAdditiveNode(leftCoefficient) || IsOrdinaryAdditiveNode(rightCoefficient)))
+                && (IsOrdinaryAdditiveNode(leftCoefficient) || IsOrdinaryAdditiveNode(rightCoefficient))
+                && (t_factoredCoefficientFinishingDisabled || !HasFewCoefficientTerms(leftCoefficient, rightCoefficient)))
             {
+                // Mission K/N/F (K): a small coefficient is canonicalized all the same (2*(b + z) + 2*(c + z) gave
+                // 2 * ((b + z) + (c + z)), merged into 2 * (b + (c + (2 * z))) by the next call); past the bound the historical node
+                // is kept, so the work added per factoring stays constant on a coefficient that grows level by level.
                 return null;
             }
 
@@ -3192,6 +3196,14 @@ namespace Utils.Mathematics.Expressions
                 return folded;
             }
 
+            // Mission K/N/F (N): the negation of a sum holding an added term is finalized as an additive parent collects it.
+            if (e is UnaryExpression negatedSum
+                && IsOrdinaryUnaryNegate(negatedSum)
+                && TryOrientNegatedSum(parameters[0], out Expression? oriented))
+            {
+                return oriented;
+            }
+
             if (e is BinaryExpression binaryExpression)
             {
                 if ((binaryExpression.NodeType == ExpressionType.Add || binaryExpression.NodeType == ExpressionType.Subtract)
@@ -3335,6 +3347,9 @@ namespace Utils.Mathematics.Expressions
                 }
 
                 NegateSubtractedConstant(terms, type, StabilizesRebuiltForms);
+
+                // Mission K/N/F (F): a subtracted product of a sum holding both signs carries its sign in the sum.
+                OrientSubtractedFactoredProducts(terms, type);
             }
 
             // Mission C3d: a sum whose terms are all subtracted is the negation of their sum, the form the levels build

@@ -520,6 +520,7 @@ internal static class Worker
             {
                 // A variant that cannot be activated fails the run here (harness failure, exit code 3).
                 SignVariant.Apply();
+                KnfVariant.Apply();
                 code = body();
             }
             catch (Exception exception)
@@ -722,6 +723,84 @@ internal static class SignVariant
 
         string effective = Variants.FirstOrDefault(pair => pair.Value.SequenceEqual(enabled)).Key ?? "unknown combination";
         return "requested " + (Name ?? "(none)") + ", effective " + effective + " (" + string.Join(", ", values) + ")";
+    }
+}
+
+/// <summary>
+/// The K/N/F variant of the campaigns (<c>docs/expressions/SimplifierFlatten.md</c> §26), read once from the
+/// <c>S5_KNF_VARIANT</c> environment variable and applied to the thread that runs the campaign: <c>ref</c> (the three corrections
+/// off, the engine of <c>master</c> <c>b44a1c07</c>), <c>K</c>, <c>N</c>, <c>F</c>, <c>KN</c>, <c>KF</c>, <c>NF</c> and <c>KNF</c>
+/// (the default of the branch).
+/// </summary>
+/// <remarks>
+/// The switches are the internal thread-static <c>…Disabled</c> properties of the branch: <c>FactoredCoefficientFinishingDisabled</c>
+/// (K), <c>NegatedSumOrientationDisabled</c> (N) and <c>FactorOrientationDisabled</c> (F). An absent switch is a correction that
+/// does not exist, so <c>ref</c> runs on any checkout; a variant that turns a correction on fails the run (exit code 3) when its
+/// switch is missing or does not read back the value written, as <see cref="SignVariant"/> does.
+/// </remarks>
+internal static class KnfVariant
+{
+    /// <summary>The variant name, or <see langword="null"/>.</summary>
+    public static readonly string? Name = Environment.GetEnvironmentVariable("S5_KNF_VARIANT") is { Length: > 0 } text ? text.Trim() : null;
+
+    /// <summary>The switches, in the order K, N, F; each one is <see langword="true"/> when its correction is off.</summary>
+    private static readonly string[] Switches = ["FactoredCoefficientFinishingDisabled", "NegatedSumOrientationDisabled", "FactorOrientationDisabled"];
+
+    /// <summary>Sets the switches of <see cref="Name"/> on the current thread; nothing when no variant is requested.</summary>
+    /// <exception cref="ArgumentException">The variant is unknown.</exception>
+    /// <exception cref="InvalidOperationException">The checkout cannot activate the variant.</exception>
+    public static void Apply()
+    {
+        if (Name is not null) Apply(Name);
+    }
+
+    /// <summary>Sets and verifies the switches of the variant <paramref name="name"/> on the current thread.</summary>
+    /// <param name="name"><c>ref</c>, or the letters of the corrections turned on.</param>
+    /// <exception cref="ArgumentException">The variant is unknown.</exception>
+    /// <exception cref="InvalidOperationException">A switch the variant needs is missing, or does not read back its value.</exception>
+    public static void Apply(string name)
+    {
+        string letters = name.Equals("ref", StringComparison.OrdinalIgnoreCase) ? "" : name.ToUpperInvariant();
+        if (letters.Any(letter => "KNF".IndexOf(letter) < 0) || letters.Distinct().Count() != letters.Length) throw new ArgumentException("Unknown S5_KNF_VARIANT: " + name);
+        for (int i = 0; i < Switches.Length; i++)
+        {
+            bool enabled = letters.Contains("KNF"[i]);
+            PropertyInfo? property = typeof(ExpressionSimplifier).GetProperty(Switches[i], BindingFlags.NonPublic | BindingFlags.Static);
+            if (property is null)
+            {
+                if (enabled) throw new InvalidOperationException($"S5_KNF_VARIANT={name} needs ExpressionSimplifier.{Switches[i]}, which this checkout does not have.");
+                continue;
+            }
+
+            property.SetValue(null, !enabled);
+            if (property.GetValue(null) is not bool read || read != !enabled)
+            {
+                throw new InvalidOperationException($"S5_KNF_VARIANT={name}: ExpressionSimplifier.{Switches[i]} does not read back {!enabled}.");
+            }
+        }
+    }
+
+    /// <summary>Describes the requested and the effective variant of the current thread, with the value of each switch.</summary>
+    /// <returns>The description.</returns>
+    public static string Describe()
+    {
+        var effective = new StringBuilder();
+        var values = new List<string>();
+        for (int i = 0; i < Switches.Length; i++)
+        {
+            PropertyInfo? property = typeof(ExpressionSimplifier).GetProperty(Switches[i], BindingFlags.NonPublic | BindingFlags.Static);
+            if (property is null)
+            {
+                values.Add(Switches[i] + "=absent");
+                continue;
+            }
+
+            bool disabled = (bool)property.GetValue(null)!;
+            if (!disabled) effective.Append("KNF"[i]);
+            values.Add(Switches[i] + "=" + disabled);
+        }
+
+        return "requested " + (Name ?? "(none)") + ", effective " + (effective.Length == 0 ? "ref" : effective.ToString()) + " (" + string.Join(", ", values) + ")";
     }
 }
 

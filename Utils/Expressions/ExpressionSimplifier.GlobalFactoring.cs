@@ -787,7 +787,7 @@ public partial class ExpressionSimplifier
         /// <c>-2*x + -2*y</c> still gives <c>-2 * (x + y)</c>), the magnitude when holders have opposite values (<c>2*x + -2*y</c>
         /// gives <c>2 * (x - y)</c>, as <c>2*x - 2*y</c> does); <see langword="null"/> for a factor.
         /// </summary>
-        public object? FactoredValue => _mixedSigns ? Magnitude : Value;
+        public object? FactoredValue => _mixedSigns || !t_factorOrientationDisabled ? Magnitude : Value;
 
         /// <summary>The number of distinct terms that hold it.</summary>
         public int Terms { get; private set; }
