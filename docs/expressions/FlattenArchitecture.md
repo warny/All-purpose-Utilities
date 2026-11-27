@@ -697,6 +697,13 @@ raw chain. Both give one structure only if the normalization commutes with that 
 (V1b, C1, C2) does not, a complete one (positive coefficients, or the sign carried by the coefficient) does. The engine
 is unchanged: no "collected by the parent" state was added.
 
+`SimplifierFlatten.md` §26 (K/N/F) keeps that architecture. The orientation of a negated sum and of a factored product is decided
+on the terms an additive parent collects, so a level and the flat collection of the same leaves give one structure, without any
+"collected by the parent" state and without a second pass: the negation of a sum holding a subtracted term is finalized as its
+opposite canonical sum (in `FinalizeExpression` and at the rules that build a negation without transforming it), and a subtracted
+product of a mixed sum is rebuilt in the canonicalization. The transformer is unchanged; §26.10 records why no local history of
+the states of a level was added (no cycle exists within one call, the measured cycles are between public calls).
+
 ## C3c consistency note
 
 The boundary finishing of `SimplifierFlatten.md` §21 adds one engine hook, `ExpressionTransformer.FinishRefusedChain`

@@ -5440,6 +5440,20 @@ Next: the dual convention as its own change, after its two pre-existing residues
 factoring; gen#3391: `NaN` fold) and the two mechanisms that still make ten `signs` placements association dependent under it
 (`IsNegatedSum` decided on physical signs; the sign of the coefficient `AdditionOfEqualsElements` extracts), pinned as acceptance
 cases (§25.12); V1 as the fallback (gen#2611, gen#699, and the same two mechanisms). Record: `docs/expressions/SimplifierFlatten.md` §25.
+### Factoring finalization and orientation K/N/F (2026-11-27)
+
+Branch `fix/expression-factoring-sign-consistency`, base `b44a1c07`. The prerequisites 1 and 3 of §25.9, three mechanisms without
+a common cause. K: the coefficient of a binary factoring whose terms are all added was left unsorted and unmerged (the guard of
+§14.8); it is canonicalized with its common factors up to 16 atomic terms (a bound per factoring, so the `dag` family stays
+linear). N: the rules build `-(q + s)` around a sum holding a subtracted term, which only an additive parent flattened; the
+negation of such a sum is now its canonical opposite sum, in the finalization and at the construction sites (`BuildOrientedNegation`).
+F: numeric factors are extracted as their magnitude by both factorings, and a factored product of a mixed sum is an added term
+(the residues carry the signs). Eight variants measured (`S5_KNF_VARIANT`): N and F are both needed for the association
+independence, K is independent. KNF: 0 bound association-dependent placement of `signs` (23 on `master`), fixed@2 188 → 175 free /
+173 bound, no new bound cycle, four free L-3 ties; the dual convention replayed on it resolves the ten placements of §25.12 and
+gen#643. No local level history: the 51 cycles are between public calls. Next: the `NaN` fold (gen#3391), then the dual convention.
+Record: `docs/expressions/SimplifierFlatten.md` §26.
+
 ## Execution-optimizer stages
 
 These remain separate from the simplifier stages above.

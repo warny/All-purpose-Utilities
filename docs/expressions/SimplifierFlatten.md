@@ -1,6 +1,6 @@
 # Flatten rule of `ExpressionSimplifier` (PR B)
 
-Status: first n-ary treatment of the simplifier, restricted to the *linear additive chains*; §11 describes the shared metadata of mission C3a, §12 the term analysis and the spine chains of mission C3b, §13 the global factoring of mission C3c, §14 the stabilization of mission C3d, §15 the trigonometric rule and the linear quotient chains, §16 the grouped quotient chains, §24 the resource bounds of multiplicative DAGs. Built on the infrastructure of
+Status: first n-ary treatment of the simplifier, restricted to the *linear additive chains*; §11 describes the shared metadata of mission C3a, §12 the term analysis and the spine chains of mission C3b, §13 the global factoring of mission C3c, §14 the stabilization of mission C3d, §15 the trigonometric rule and the linear quotient chains, §16 the grouped quotient chains, §24 the resource bounds of multiplicative DAGs, §25 the audit of the partial sign normalization, §26 the consistency of the finalization and orientation of factorings (K/N/F). Built on the infrastructure of
 [FlattenArchitecture.md](FlattenArchitecture.md) (PR A, `a9ec71ac`). No multiplicative chain, no division, no C3, no change to
 `ExpressionDerivation<T>` or `ExpressionIntegration<T>`.
 
@@ -3942,3 +3942,289 @@ structures are the bound results the test pins.
 - **Link with gen#643 and gen#3391.** None: gen#643 is the canonicalization of a factored coefficient sum, gen#3391 the `NaN`
   fold. These placements hold no quotient coefficient and no `NaN`.
 - Both mechanisms also make V1 fail 7 of these ten cases (25.6); they are prerequisites of either complete normalization.
+
+## 26. Consistency of the finalization and of the orientation of factorings (mission K/N/F)
+
+Mission of 2026-11-27, base `master` `b44a1c07` (PR #727, the audit of §25), branch `fix/expression-factoring-sign-consistency`.
+§25.9 lists three prerequisites of the dual convention; this mission treats the first and the third, which are three mechanisms
+(K, N, F), and leaves the `NaN` fold (gen#3391, gen#983) to its own mission. The dual convention itself is not shipped: it was
+replayed on the branch in an audit checkout (`E:\wt\knf-dual`, not pushed), as §25 did.
+
+### 26.1 Baseline
+
+Measured on a detached worktree of `b44a1c07` with the harness of §25: `terminate` 0, `inventory` 0, `converge` 53, `canon` 19,
+`comparer` 0, `diff` 1, `effects` 1, `s3` 1; stability 70,685 cases, `fixed@2` 188, `fixed@3` 4, `fixed@5` 1, 51 free cycles
+(44 of period 2, 7 of period 3), 0 bound; `reference` 144,955 cases plus 151 DAG cases, all unchanged; the 304 complexity points of
+§25.1 with every counter identical (two more points, `k 20` and `z 20`, ran because the time-based stop of a family depends on the
+load of the machine); the 43 DAG probes common with §25 identical; `signs` (4,000 seeds, 23 trees per placement, 9,660 trees)
+23 bound association-dependent placements and 50 unstable free trees, 0 value mismatch. All the numbers of §25.1 are reproduced.
+
+The historical cases: gen#643 is a fixed point of `master` (it is a residue of the dual only); gen#1594 is now a fixed point (the
+`x / (--1)` path of §19.3 no longer exists); gen#3391 is stable on `master`; gen#983 needs five calls (the `NaN` fold); gen#2973,
+gen#2611 and gen#699 are stable on `master`. The `bfsumcoef` family needs two calls at every size (26.2).
+
+### 26.2 K: the factored coefficient of added terms
+
+`BuildFactoredProduct` builds the coefficient `l op r` of a binary factoring. `CanonicalizeFactoredCoefficient` canonicalizes it
+unless every term is added, it holds fewer than two constants and one operand is already a sum (§14.8, §21.3): the guard that keeps
+the `dag` family linear in allocations. On the corpus the guard leaves three shapes to the next call:
+
+| Shape | Example | First call on `master` | Second call |
+|---|---|---|---|
+| growing coefficient (`dagfactor`) | `a*s + b*s + c*s + d*s`, `s = u + v` shared | `(u + v) * (((a + b) + c) + d)` | `(u + v) * (a + (b + (c + d)))` |
+| repeated monomial (`bfsumcoef`) | `x0/q + 2*(b + z) + 2*(c + z) + 2*(d + z)` | `… + (2 * ((b + z) + ((c + z) + (d + z))))` | `… + (2 * (b + (c + (d + (3 * z)))))` |
+| quotient and canonical sum (gen#643 under the dual) | `(y/y)*w + (y + ((b*z) + (11*x)))*w` | `w * ((y / y) + (y + ((11 * x) + (b * z))))` | `w * (y + ((y / y) + …))` |
+
+The cause is the guard alone: no sort (the three shapes), a repeated monomial (the second), no common factor and no cancellation;
+the product itself is rebuilt correctly (`BuildCanonicalProduct`). gen#1594 is the same mechanism (§19.3).
+
+**Strategies.**
+
+| | Idea | Measured | Verdict |
+|---|---|---|---|
+| K1 | canonicalize the small coefficients only, with an explicit bound on the terms | corrects the three shapes up to the bound; the work per factoring is a constant | **kept, restricted (K1′)** |
+| K2 | detect a pattern that needs the canonicalization (unsorted, repeated) | needs the keys of the terms, i.e. the canonicalization itself | rejected (no cheaper than K1) |
+| K3 | merge two coefficients already canonical | the left coefficient is canonical only if every level was finished, which is K1; the merge still needs the monomial merging and the factoring | rejected (K1 with more code) |
+| K4 | finish the coefficient once, at a natural boundary of the factored product | the boundary is the parent that does not factor again, which only a "collected by the parent" state can tell | rejected (forbidden state) |
+
+K1 canonicalizing every small coefficient broke diff#3627: its coefficient `(z * (1 - x)) + (1 + (z * (x - 1)))` is equal to `1`;
+once canonicalized, the comparer probe of the next factoring recognized it as a factor of the whole chain, and the first call
+built `(-1 + z + y + y/-0) * (1 + …)`, which is not a fixed point. Canonicalizing with the common factors (it is the whole chain of
+the coefficient) gave `1 + (z * ((-1 + x) + (1 + (0 - x))))`, still not a fixed point. Gating K out of the comparer simplifications
+(as mission B gates its finishing) made the comparer and the public calls see different coefficients: 14 hash-consistency
+violations of the `comparer` campaign. The kept variant **K1′** canonicalizes, with the common factors, a coefficient of added
+terms that holds at most `FinishedCoefficientTerms` = 16 **atomic** terms: parameters, constants, and products or quotients of
+them at most three levels deep (`IsAtomicCoefficientTerm`). On such terms the rules of the next call do nothing but what the
+canonicalization does (order, merge identical monomials, factor common factors), so the first call builds the second call's
+coefficient and no probe can see more than the next call does. A coefficient that holds a sum, a call or a negation keeps the
+historical node, in the comparer as in a public call.
+
+**Cost.** `HasFewCoefficientTerms` walks the additive spine of both coefficients without allocating and stops past the bound: at
+most 17 terms, each at most 7 nodes, a constant per factoring. The canonicalization itself is that of a level of at most 16 terms.
+On a coefficient that grows by one term per level, the levels past the bound keep the historical node, so the added work is
+bounded by a constant times the number of factorings (`dagfactor` 32 and 64: §26.8). The `dag` family of §14.8 is untouched past
+16 terms. DAGs: the walk follows additions only, never products, and counts occurrences, so a shared coefficient term counts once
+per occurrence (as the canonicalization collects it). Budgets: the canonicalization consumes them as any level does.
+Idempotence: the canonical coefficient is what the next call builds, so the first call is the fixed point (`dagfactor` up to 16
+terms, `bfsumcoef` at every measured size, gen#643 under the dual); a coefficient past the bound still needs the second call
+(`dagfactor 24`, pinned). Factors: a sum, quotient or power factor is unchanged (the coefficient alone is canonicalized).
+
+### 26.3 N: the orientation of a negated sum
+
+The engine decides "the negation of a sum" at four places with four criteria: `IsNegatedSum` (every inert term physically
+subtracted), `IsSubtractedCoefficient` (the same, a negative constant counting as subtracted), `FactorCommonFactors` (every residue
+subtracted after extraction) and `NegateSubtractedSum` (the rebuilt structure). They agree on what they build: `-(positive sum)`.
+They do not cover the negations built **around** a sum by the rules: `SubstractionWithNegate(BinaryExpression, UnaryExpression,
+Expression)` turns `(-q) - s` into `-(q + s)` whatever the signs of `s`, and `x * -1`, `-1 * x`, `x / -1`, `x * (-y)`, `(-x) / y`, a
+negated canonical product and a negated refused chain all go through `BuildNegation`. When an additive parent collects such a
+negation it inverts the terms and the result is flat; at the root, or as an operand of a product or a call, it stayed
+`-((0 - a) + …)`, while the same leaves associated otherwise gave the flat sum. That is the negated-sum residue of `master` (12 of the
+23 bound placements of 25.6) and mechanism N of 25.12.
+
+**Model.** A negated sum is canonical exactly when the canonicalization of its opposite terms would build it, i.e. when the
+opposite terms are all subtracted (`IsNegatedSum`). The decision is taken on the terms an additive parent collects, so it is the
+same wherever the sum comes from. **Correction** (`TryOrientNegatedSum`): the negation of an ordinary sum that holds a subtracted
+term is the canonical sum of its opposite terms; `-(x + y)` and `-(1 + x)` stay (every term added: the historical negated sums are
+unchanged). It runs in the finalization of an ordinary `Negate` node and at the construction sites listed above
+(`BuildOrientedNegation`), which return their negation without transforming it. The first version measured also distributed a
+negated sum of added terms holding a constant, and only in the finalization: `-1 * (x + 1)` gave `-(1 + x)` (built by
+`MultiplicationWithZeroOrOne`, not transformed), which the next call distributed into `-1 + (0 - x)` (176 new multi-pass cases
+of the `a * (b + c)` family). Both are corrected: a sum of added terms keeps its negation, and the construction sites take the
+finalization's decision (the construction-site lesson of §17.2).
+
+**Proof obligations.**
+
+- *Stable after reconstruction and recollection.* The result is the canonical sum of the opposite terms; a parent collecting it
+  inverts its terms back, which is what it collected from the negation before.
+- *No competing form.* A sum holding a subtracted term is never left negated, a sum of added terms is never distributed.
+- *Termination, no cycle with the rules.* The result is not transformed again at this level; the next call finds a negation that
+  the method keeps or a canonical sum. `NegateWithSubstraction` (`-(a - b)` → `b - a`) and `SubstractionWithNegate` produce, through
+  the finalization, the same flat sum; no rule builds the negation of a flat sum from a canonical sum, so the two forms never
+  alternate (no new bound cycle, 26.6).
+- *Safety.* Built-in type only, ordinary additive nodes (A-10 provenance), an operator that does not throw (never `decimal`), every
+  term inert (no call, no observable read: nothing moves across an evaluation), no `NaN` term (left to the policy-dependent fold).
+  `-(a + b)` and `(-a) + (-b)` are the same ring element on the integers and the same value on IEEE-754 numbers; the canonical
+  `0 - t` may change the sign of a zero (S3 latitude, already taken by every canonical sum).
+
+`IsNegatedSum` itself keeps its physical criterion. Making it read the logical sign (`σ × sign(c)`, the property of the mission)
+was not needed on the `master` placements (N alone removes all 11 bound negated-sum residues) and, under the dual, the dual itself
+puts the sign of a coefficient product in the coefficient before the test, so the test sees the same logical class whatever the
+source placement (26.7, 0 dual residue).
+
+### 26.4 F: the orientation of an extracted factor
+
+Two decisions took the sign of a factor from the physical form. **F1, the numeric factor.** The binary rules recognize the common
+factor of the pair they receive and keep its sign: `(-2*x) - (-2*y)` gave `-2 * ((0 - y) + x)`; the global factoring indexes the
+coefficients by their magnitude but `FactoredValue` kept the common physical value when every holder had it: `-2*x + -2*y` gave
+`-2 * (x + y)` while `-2*x - 2*y` gave `-(2 * (x + y))`. **F2, the factored product of a mixed sum.** A group factored on its own
+and subtracted by its parent gave `0 - (2 * (c + (0 - d)))`, where the whole-chain factoring of the same leaves gives
+`2 * ((0 - c) + d)` (the residues carry the signs): the factoring-sign residue of `master` (11 bound placements) and mechanism F of
+25.12.
+
+The mission separates recognition, orientation and reconstruction. Recognition is unchanged (`FactorEqualityProbe`, the
+candidates and their identity by magnitude, the comparer). **Orientation** (one convention for both factorings): a numeric factor
+is always factored as its magnitude (`OrientFactor`, `FactoredValue`), the signs of the holders move to their residues, and the
+canonicalization of the residues decides the sign of the result: all residues subtracted gives `-(m * (positive sum))`
+(`IsSubtractedCoefficient`, the global `allNegative`), otherwise `m * (mixed sum)`. A factored product of a mixed sum is always an
+added term: a subtracted one is rebuilt with the opposite sum (`OrientSubtractedFactoredProducts`, in the canonicalization
+before the merges, so that an oriented term merges with an identical added one), and so is its lone negation
+(`TryOrientNegatedProduct`), the root taking the same representative as a term. A subtracted product whose identical term is
+added in the same sum is left to the cancellation: the first version rebuilt every occurrence of a shared `t = 2*(x1 - x2)` in
+`q - t + t - t …`, the rebuilt terms no longer cancelled their partners, and the family `knfsharedsum` gave 507 nodes and
+14,765 visits at 64 occurrences (13 nodes and 417 visits on `master`); with the partner test (a hash set of the added products,
+`FactorEqualityComparer`, every hit confirmed structurally) it gives the canonical 11 nodes in 425 visits.
+
+The convention candidate of the mission ("all negative contributions: a negative factor") was compared and rejected: a sum whose
+terms are all negative is the negation of a positive sum for N, and the negative factor would then be moved out again by N
+(`-2 * (x + y)` against `-(2 * (x + y))`), a pair of conventions that disagree. With the magnitude, `-(2 * (x + y))` is the single
+representative of all four placements of `±2*x ± 2*y` whose terms are both negative, and `2 * ((0 - x) + y)` of all four whose terms
+have opposite signs; the factor never moves back to the coefficient, so the two conventions cannot form a loop.
+
+**Domain.** The magnitude of `CoefficientMagnitude`: negative `int`, `long`, `float` and `double`, finite, factorable (not `0`,
+`±1`), not a minimal integer (whose negation is itself). `short` is deliberately outside: `CoefficientMagnitude` does not index it,
+so neither factoring equalizes `2` and `-2` in that type, and both keep their sign there (no silent extension of the types);
+unsigned, `decimal`, nullable, checked and custom operators keep the historical result (pinned). The orientation only negates a
+factor and a residue sum, which is exact (two's complement ring, IEEE-754 sign bit): on `-ε` (the smallest subnormal) the factored
+result differs from the source by the rounding of the factoring itself, as on `master`, and has exactly the bits of `master`'s
+result (pinned).
+
+**Bounded walks.** `OrientSubtractedFactoredProducts` reads only the right spine of a subtracted product, at most 8 factors, and
+never a left operand (`TryCollectCanonicalFactors`): a shared multiplicative DAG is never unfolded (§24). The opposite sum is one
+canonicalization of a level.
+
+### 26.5 What is common, what is not
+
+The three mechanisms have no common cause. K is a guard on the work of a canonicalization; N and F are orientation decisions that
+read the physical placement. N and F share the model of the logical sign (the term an additive parent collects) and one
+reconstruction policy: a negation or a subtracted product is rebuilt as the canonical sum of the opposite terms when that changes
+its orientation, and kept otherwise. The helpers read only node types and runtime reflection objects, reuse `CollectAdditiveTerms`,
+`CanonicalizeAdditiveTerms`, `BuildCanonicalProduct`, `TryFoldNegation` and `CoefficientMagnitude`, and allocate nothing on the
+common path (a negation of a parameter, a product without a sum factor). No second representation of the tree, no ambient state,
+no second pass, no change of the C3c admission, of the thresholds of M1/M4/B or of the protections of #726.
+
+### 26.6 The eight variants
+
+`S5_KNF_VARIANT` (internal thread-static switches `FactoredCoefficientFinishingDisabled`, `NegatedSumOrientationDisabled`,
+`FactorOrientationDisabled`; `ref` sets the three). `ref` reproduces `master` on every campaign (identical records). Corpus of §26.1;
+"first passes" against `master`; multi-pass = not a fixed point after one call.
+
+| Variant | First passes changed | New multi-pass (free) | Removed | `fixed@2` free / bound | `fixed@3` | Cycles free / bound | `signs` bound-dependent placements | `signs` unstable free trees |
+|---|---:|---:|---:|---|---:|---|---:|---:|
+| ref | 0 | 0 | 0 | 188 / 188 | 4 | 51 / 0 | 23 | 50 |
+| K | 12 | 0 | 12 | 176 / 174 | 4 | 51 / 0 | 23 | 50 |
+| N | 179 | 2 | 5 | 187 / 187 | 3 | 50 / 0 | 13 | 0 |
+| F | 139 | 3 | 1 | 186 / 186 | 5 | 54 / 0 | 12 | 50 |
+| KN | 191 | 2 | 17 | 175 / 173 | 3 | 50 / 0 | 13 | 0 |
+| KF | 150 | 3 | 12 | 176 / 174 | 4 | 54 / 0 | 12 | 50 |
+| NF | 302 | 4 | 6 | 185 / 185 | 4 | 52 / 0 | **0** | 0 |
+| **KNF** | 313 | 4 | 17 | **175 / 173** | 3 | 52 / 0 | **0** | **0** |
+
+Every variant: `terminate` 0, `comparer` 0 violation, `canon` the same 19 anomalies as `master`, `diff`, `effects` and `s3` the same
+anomaly as `master`, no new error, exception or type change, 0 value mismatch and 0 S3 latitude case in `signs`, 0 grouped / level
+by level difference in `signs`; the 3,000 seeds of the grouped corpus give the level by level structure after one and two passes.
+
+- **K alone** removes 12 multi-pass cases (`dagfactor` 3, 4, 6, 8, `bfsumcoef` 3, 4, 6, 8, `m4dag` 3, gen#501, nested#1135,
+  nested#2123) and adds none: it is independent of N and F.
+- **N alone** removes the 11 negated-sum placements of `master` and every unstable free tree of `signs` (the 50 trees whose
+  free-parameter ties alternated through `-((0 - a) + …)`), and five multi-pass cases (the free cycles gen#867 and gen#2191, the
+  period-3 cycle nested#1836, nested#1880, nested#3803); it adds two free cycles (26.9).
+- **F alone** removes the 11 factoring-sign placements but 12 remain (23 − 11 = 12: the N placements); it adds three free cycles and
+  moves nested#2180 from `fixed@2` to `fixed@3` (it still converges).
+- **N and F are both necessary** for the association independence: each removes its own placements only, and only NF gives 0 bound
+  placement. NF also gives one form per placement on the `{a, -2c, 2d, b/e}` set where `master` gives two (distinct forms 68 → 52).
+- **K with N and F**: the effects add up (the K removals are kept, NF's orientation applies to the finished coefficients); KNF
+  removes 17 multi-pass cases (`fixed@2` 188 → 175 free, 188 → 173 bound, `fixed@3` 4 → 3) and adds the four free cycles of N and F,
+  no bound one. The `nested#2180` regression of F alone disappears with K.
+
+### 26.7 The dual convention replayed
+
+The dual variant of §25 (`S5_SIGN_VARIANT=dual`), applied after F's orientation in `CanonicalizeAdditiveTerms`, in the audit
+checkout:
+
+| | dual on `master` (§25) | dual + NF | dual + KNF |
+|---|---|---|---|
+| `signs` bound association-dependent placements | 33 (the 23 of `master` + the 10 of 25.12) | **0** | **0** |
+| the ten placements of 25.12 (characterization tests, free and bound) | 10 fail (two structures, or no fixed point) | one structure each | one structure each (5 failures on the texts pinned for the branch only, as the dual changes them) |
+| first passes changed (against `master`) | 339 | 606 | 617 |
+| new multi-pass (free) | 2: gen#643, gen#3391 | 6 | 5: gen#3391 and the 4 free cycles of KNF |
+| `fixed@2` free / bound | 190 / 190 | 186 / 186 | 175 / 173 |
+| cycles free / bound | 51 / 0 | 52 / 0 | 52 / 0 |
+
+The ten placements of 25.12 are resolved, and gen#643 is resolved by K. gen#3391 stays (`fixed@2`, the `NaN` fold of §18.2, the
+mission after this one) and is not aggravated. K/N/F is therefore a complete prerequisite of the dual on the measured corpus,
+the `NaN` fold apart.
+
+### 26.8 Complexity and performance
+
+COMPLEXITY_PLACEHOLDER
+
+### 26.9 Residues
+
+- **Four new free cycles** (gen#1807, gen#2243 from F; gen#3089, gen#3771 from N), all of period 2 and all stable with bound
+  parameters: two subtracted free parameters of one type tie in the canonical order (L-3) and swap at every call, e.g.
+  `(0 - y) + ((0 - x) + (z / x))`. `master` hid them in a negated sum (`-(y + (x + …))`) or a factored product whose sign was taken
+  from the pair. They are L-3 residues, not orientation cycles: the corrections never alternate with themselves or with a rule. Two
+  free cycles of `master` disappear (gen#867, gen#2191) and one period-3 cycle becomes a fixed point (nested#1836).
+- `master`'s 51 free cycles are not local: the trace of the first call of every one of them holds no repeated state (0
+  recurrence; gen#1170 shows one expansion pattern of period 1, without a repeated state). See 26.10.
+- gen#3391 and gen#983 (the `NaN` fold) are unchanged.
+- `dagfactor` past 16 terms still needs two calls (the bound of K).
+- `diff`: 1 more `same` case becomes `signedZero` in `double` and 3 in `float`, 1 `extreme` becomes `same`/`signedZero` in both
+  types, 2 `rounding` become `signedZero` in `float`: the canonical `0 - t` of a distributed negation takes the signed-zero latitude.
+  No `VALUE`, exception or type change.
+
+### 26.10 Local history of the states of a level (extension of the mission)
+
+The extension asked for a history of the successive states of one logical level, to detect fixed points and cycles of local
+rewrites and return the most compact representative.
+
+**Audit of the re-entries.** `TransformCore` prepares the operands, dispatches the rules once and finalizes; a rule that rewrites
+the current node returns a new tree, often after re-entering `TransformCore` or `TransformCoreWithPreparedOperands` on the node it
+built (`AdditionWithNegate`, `SubstractionWithNegate`, `FinishReassociation`, the flatten rules, `FinishRefusedChain` and its M4/B
+rounds, `TransformLevel`). There is no loop of the engine that re-transforms a level until a fixed point: the "same logical level"
+is only the chain of such re-entries, which the engine cannot tell from the transformation of a child or of a comparer probe
+without the rule saying so. A cycle inside one call would be an unbounded re-entry, stopped by the visit budgets and classified by
+the `terminate` campaign: 0 on 66,270 cases. The 51 free cycles of `master` and the 4 new ones are all **between public calls**
+(26.9): each call ends in a fixed state that the next call rewrites. A history attached to one level dies with the level, so it can
+never see them; seeing them needs either a cross-call cache (forbidden: the history must not outlive the level) or running the
+level again until a repetition (a second pass, forbidden). Choosing "the most compact state" of a cross-call cycle would also mask
+an L-3 tie behind a selection, which the mission forbids.
+
+**Decision.** No history is added to `ExpressionTransformer`: it has nothing to detect within a call on the measured corpora, it
+cannot reach the cycles that exist, and the K/N/F corrections do not need it (each is one deterministic finalization step, never
+iterated). The mechanism stays an option for a future engine with an explicit level loop; an independent architectural PR is not
+proposed, since no measured case would change.
+
+### 26.11 Tests and harness
+
+- `ExpressionSimplifierFactoringSignConsistencyTests` (Unit, `S5-Audit`, 24 cases): K (`dagfactor` 3–16 in one call, the bound
+  at 24, the added work bounded by a constant per term, the repeated monomials of `bfsumcoef`, the quotient-and-sum shape, the
+  non-atomic coefficient kept), N (the negated leaf minus a group in four associations, the orientations of `-(x - y)`,
+  `-(x + (0 - y))`, `-1 * (x - y)`, `(x - y) * -1`, the kept `-(x + y)` and `-(1 + x)`, calls, `NaN` and `decimal` kept), F (the
+  five signed pairs and their external negations, three-term chains in five associations, factored products of mixed sums as terms
+  and alone, the coefficients outside the magnitude domain: `short`, `int.MinValue`, `long.MinValue`, `uint`, `NaN`, `±∞`, `±0`, `±1`;
+  `int.MinValue + 1` and `-3` exact on wrapping samples; `-ε`, `-double.MaxValue`, `-1e300` with the bits of `master`), each switch
+  restoring `master` for its mechanism only, and thread isolation of the switches under parallel operations and comparisons.
+  Mutations of the four decisions (the bound of K, the test of N, the orientation of F1, the rebuilding of F2) each fail at least
+  one of them, and were restored.
+- `ExpressionSimplifierFactoringSignSecurityTests` (Security, 5 cases): armed extension nodes and impersonating methods in every
+  position the corrections read are read no more than by `master`, with `master`'s result; checked, lifted, unsigned and `decimal`
+  arithmetic keeps `master`; observable getters, calls and a throwing call keep the value, the evaluation log and the exception
+  under four policies (default, trusted declarations, aggressive, permissive without exception preservation); budgets refused
+  cleanly just below the minimum and the same instance succeeding after; 3,000 nested negated differences on a 256 KiB stack.
+- Updated expectations (the new orientation, documented above): `SignedCoefficients_GiveOneFactoredTree` (`-2*x + -2*y`),
+  `RepeatedTerms_SharedReferencesAndCopies_SameForm`, nested#3002 (now the same tree as its sibling association), and the three
+  F placements of `DualConventionResidues_GiveOneStructure` (the branch gives `2 * ((0 - c) + d)` for all four F placements of
+  the set). The 39 characterizations of #727 are kept, none removed.
+- `SharedFactoredProducts_CancelAndMerge` pins the cancellation partners (the `knfsharedsum` regression) and the merge of the
+  oriented occurrences.
+- Harness: `S5_KNF_VARIANT`, the families `knfpos`, `knfneg`, `knfopp`, `knfsharedsum`; benchmark scenarios `knfcoef16`,
+  `knfcoef16x2`, `knfnegsum8`, `knfpair`, `knfprod`, `knfnest8`.
+
+### 26.12 Residual limits
+
+- K stops at 16 atomic terms; a coefficient holding a sum, a call or a negation keeps the historical node.
+- `short` coefficients keep the sign of their holders in both factorings (outside `CoefficientMagnitude`).
+- The four free L-3 cycles of 26.9.
+- `IsNegatedSum` keeps its physical criterion (sufficient on the measured placements, 26.3).
+- The `NaN` fold (gen#3391, gen#983) is the next mission; the dual convention is its own change after it.
