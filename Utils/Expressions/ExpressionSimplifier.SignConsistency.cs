@@ -84,9 +84,7 @@ public partial class ExpressionSimplifier
     /// </summary>
     /// <param name="left">The left coefficient, a prepared operand or the coefficient of an earlier factoring.</param>
     /// <param name="right">The right coefficient.</param>
-    /// <returns>
-    /// <see langword="true"/> when the coefficient is small enough to be canonicalized, outside the simplifications of the comparer.
-    /// </returns>
+    /// <returns><see langword="true"/> when the coefficient is small enough to be canonicalized and its terms are atomic.</returns>
     /// <remarks>
     /// The walk stops as soon as the bound is passed, so it visits at most <see cref="FinishedCoefficientTerms"/> + 1 terms and as
     /// many additions whatever the size of the coefficients, and it reads only node types and runtime reflection objects
@@ -96,10 +94,6 @@ public partial class ExpressionSimplifier
     /// </remarks>
     private static bool HasFewCoefficientTerms(Expression left, Expression right)
     {
-        // A simplification the comparer makes for a factor probe keeps the historical coefficient, as it keeps the historical
-        // decisions of the binary rules (mission B, diff#3627): a canonicalized coefficient there lets a binary rule recognize a
-        // factor that no public call of master recognizes.
-        if (_comparisonMemoDepth > 0) return false;
         int count = CountCoefficientTerms(left, 0);
         return count <= FinishedCoefficientTerms && CountCoefficientTerms(right, count) <= FinishedCoefficientTerms;
     }
@@ -340,6 +334,27 @@ public partial class ExpressionSimplifier
     }
 
     /// <summary>
+    /// Builds the negation of a prepared operand with the orientations of N and F: <see cref="BuildNegation"/>, unless the operand
+    /// is a sum holding a subtracted term (<see cref="TryOrientNegatedSum"/>) or a factored product of a mixed sum
+    /// (<see cref="TryOrientNegatedProduct"/>).
+    /// </summary>
+    /// <param name="operand">The operand, already prepared or finished.</param>
+    /// <returns>The negation.</returns>
+    /// <remarks>
+    /// The rules that negate a prepared operand (<c>x * -1</c>, <c>-1 * x</c>, <c>x / -1</c>, <c>x * (-y)</c>, <c>(-x) / y</c>, a
+    /// negated canonical product, a negated refused chain) return the negation they build without transforming it, so the
+    /// finalization of the <c>Negate</c> node only saw it at the next call (§17.2): <c>-1 * (x - y)</c> gave
+    /// <c>-(x + (0 - y))</c>, then <c>(0 - x) + y</c>. These construction sites take the same decision as the finalization.
+    /// </remarks>
+    private Expression BuildOrientedNegation(Expression operand)
+    {
+        if (TryFoldNegation(operand, out Expression? folded)) return folded;
+        if (TryOrientNegatedSum(operand, out Expression? sum)) return sum;
+        if (TryOrientNegatedProduct(operand, out Expression? product)) return product;
+        return Expression.Negate(operand);
+    }
+
+    /// <summary>
     /// The orientation of a negated sum (N): the canonical sum of the opposite terms of <paramref name="operand"/>, when it is
     /// not itself a negated sum.
     /// </summary>
@@ -393,11 +408,11 @@ public partial class ExpressionSimplifier
         {
             if (IsNaNConstant(term) || !ExpressionEffectAnalysis.IsInert(ExpressionEffectAnalysis.Analyze(term))) return false;
 
-            // An inverted term that is added, or a constant (whose sign the canonicalization folds into it), may give a flat sum.
-            added |= !isNegative || term is ConstantExpression;
+            added |= !isNegative;
         }
 
-        // Every inverted term is subtracted: the canonicalization gives the negation back (-(x + y) stays as it is).
+        // Every term of the operand is added: the negation is the canonical negated sum, kept as it is (-(x + y), and -(1 + x),
+        // whose constant the canonicalization folds into -1 + (0 - x), a form no level builds from it).
         if (!added) return false;
 
         Expression result = CanonicalizeAdditiveTerms(terms, sum.Type, recordMetadata: false);

@@ -1278,7 +1278,7 @@ public partial class ExpressionSimplifier
                 var terms = new List<(Expression Term, bool IsNegative)>();
                 CollectAdditiveTermsIteratively(terms, chain, new Stack<(Expression Node, bool IsNegative)>());
                 Expression factored = NegateSubtractedSum(CanonicalizeAdditiveTerms(terms, chain.Type, recordMetadata: false, AdditiveFactoring.CommonFactors), chain.Type);
-                return negated ? BuildNegation(factored) : factored;
+                return negated ? BuildOrientedNegation(factored) : factored;
             }
 
             // Mission M4: the chain stays refused; the next call would still factor a factorable suffix of it.
@@ -1289,7 +1289,7 @@ public partial class ExpressionSimplifier
             // last canonicalization built.
             if (finished is null && !t_refusedBinaryFinishingDisabled) finished = FinishRefusedBinaryPair(chain, statistics);
             if (finished is null) return result;
-            result = negated ? BuildNegation(finished) : finished;
+            result = negated ? BuildOrientedNegation(finished) : finished;
         }
     }
 

@@ -1357,7 +1357,7 @@ namespace Utils.Mathematics.Expressions
             if (!IsOrdinaryBinaryArithmetic(e) || IsConstantPair(e)) return null;
             if (NumericValueEquals(right.Value, 0)) return CanDropOperand(left) ? right : null;  // x * 0 => 0
             if (NumericValueEquals(right.Value, 1)) return left;   // x * 1 => x
-            if (NumericValueEquals(right.Value, -1)) return BuildNegation(left); // x * -1 => -x
+            if (NumericValueEquals(right.Value, -1)) return BuildOrientedNegation(left); // x * -1 => -x
             return null;
         }
 
@@ -1374,7 +1374,7 @@ namespace Utils.Mathematics.Expressions
             if (!IsOrdinaryBinaryArithmetic(e) || IsConstantPair(e)) return null;
             if (NumericValueEquals(left.Value, 0)) return CanDropOperand(right) ? left : null;
             if (NumericValueEquals(left.Value, 1)) return right;
-            if (NumericValueEquals(left.Value, -1)) return BuildNegation(right);
+            if (NumericValueEquals(left.Value, -1)) return BuildOrientedNegation(right);
             return null;
         }
 
@@ -1413,7 +1413,7 @@ namespace Utils.Mathematics.Expressions
             if (left is not ConstantExpression)
             {
                 if (NumericValueEquals(right.Value, 1)) return left;
-                if (NumericValueEquals(right.Value, -1) && !IsSignedIntegral(e.Type)) return BuildNegation(left);
+                if (NumericValueEquals(right.Value, -1) && !IsSignedIntegral(e.Type)) return BuildOrientedNegation(left);
             }
             return null;
         }
@@ -2763,7 +2763,7 @@ namespace Utils.Mathematics.Expressions
         {
             if (!IsOrdinaryBinaryArithmetic(e) || !IsOrdinaryUnaryNegate(right)) return null;
 
-            return BuildNegation(
+            return BuildOrientedNegation(
                 TransformCore(Expression.Multiply(left, right.Operand))
             );
         }
@@ -2776,7 +2776,7 @@ namespace Utils.Mathematics.Expressions
         {
             if (!IsOrdinaryBinaryArithmetic(e) || !IsOrdinaryUnaryNegate(left)) return null;
 
-            return BuildNegation(
+            return BuildOrientedNegation(
                 TransformCore(Expression.Multiply(left.Operand, right))
             );
         }
@@ -2793,7 +2793,7 @@ namespace Utils.Mathematics.Expressions
         {
             if (!IsOrdinaryBinaryArithmetic(e) || !IsOrdinaryUnaryNegate(right) || IsSignedIntegral(e.Type)) return null;
 
-            return BuildNegation(
+            return BuildOrientedNegation(
                 TransformCore(Expression.Divide(left, right.Operand))
             );
         }
@@ -2812,7 +2812,7 @@ namespace Utils.Mathematics.Expressions
         {
             if (!IsOrdinaryBinaryArithmetic(e) || !IsOrdinaryUnaryNegate(left) || IsSignedIntegral(e.Type)) return null;
 
-            return BuildNegation(
+            return BuildOrientedNegation(
                 TransformCore(Expression.Divide(left.Operand, right))
             );
         }
@@ -3749,7 +3749,7 @@ namespace Utils.Mathematics.Expressions
             if (pinned is not null) orderedFactors.AddRange(pinned);
 
             Expression product = BuildRightAssociative(orderedFactors, Expression.Multiply);
-            return negated ? BuildNegation(product) : product;
+            return negated ? BuildOrientedNegation(product) : product;
         }
 
         /// <summary>
